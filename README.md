@@ -1,7 +1,8 @@
 # EigenZKit
 
-Transpile R1CS to general proof system, like Plonk and Halo2;
-Generate solidity verifier;
+1. Transpile R1CS to general proof system, like Plonk and Halo2;
+
+2. Generate solidity verifier;
 
 ## Tutorial
 
