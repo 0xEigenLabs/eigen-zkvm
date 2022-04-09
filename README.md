@@ -1,6 +1,7 @@
 # EigenZKit
 
-Transpile R1CS for Plonk and Halo2.
+Transpile R1CS to general proof system, like Plonk and Halo2;
+Generate solidity verifier;
 
 ## Tutorial
 
