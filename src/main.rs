@@ -77,6 +77,15 @@ pub fn verify(
     }
 }
 
+pub fn generate_verifier(
+    vk_file: &String,
+    sol: &String,
+) {
+    let vk = reader::load_verification_key::<Bn256>(vk_file);
+    bellman_vk_codegen::render_verification_key_from_default_template(&vk, sol);
+    println!("Generate verifier {} done", sol);
+}
+
 fn main() {
     let arguments: Vec<String> = env::args().collect();
     // generate proof
@@ -95,5 +104,10 @@ fn main() {
         &String::from("vk.bin"),
         &String::from("proof.bin"),
         &String::from("keccak"),
+    );
+
+    generate_verifier(
+        &String::from("vk.bin"),
+        &String::from("verifier.sol")
     );
 }
