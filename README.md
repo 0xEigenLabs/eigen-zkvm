@@ -12,5 +12,5 @@
 
 2. Generate proof and vk, then verify the proof.
 ```
-cargo run ZKMixer/circuit/mixer_js/mixer.r1cs ZKMixer/circuit/mixer_js/witness.wtns setup_2\^20.key
+cargo run test/ZKMixer/circuit/mixer_js/mixer.r1cs test/ZKMixer/circuit/mixer_js/witness.wtns keys/setup_2\^20.key
 ```

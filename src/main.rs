@@ -87,11 +87,14 @@ pub fn generate_verifier(
 }
 
 fn main() {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
     let arguments: Vec<String> = env::args().collect();
     // generate proof
     let circuit_file = &arguments[1];
     let witness = &arguments[2];
     let srs_monomial_form = &arguments[3];
+    let start = SystemTime::now();
     prove(circuit_file, witness, srs_monomial_form, None,
         &String::from("keccak"),
         &String::from("proof.bin"),
@@ -110,4 +113,8 @@ fn main() {
         &String::from("vk.bin"),
         &String::from("verifier.sol")
     );
+
+    let end = SystemTime::now();
+    println!("time cost: {}", end.duration_since(start).unwrap().as_secs());
+
 }
