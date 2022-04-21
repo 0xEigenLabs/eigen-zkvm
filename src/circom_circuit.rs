@@ -30,6 +30,7 @@ pub type Constraint<E> = (
     Vec<(usize, <E as ScalarEngine>::Fr)>,
 );
 
+/// R1CS spec: https://www.sikoba.com/docs/SKOR_GD_R1CS_Format.pdf
 #[derive(Clone)]
 pub struct R1CS<E: Engine> {
     pub num_inputs: usize,

@@ -17,6 +17,7 @@ pub mod r1cs_file;
 pub mod reader;
 pub mod plonk;
 pub mod transpile;
+pub mod recursive;
 pub mod utils;
 
 pub use franklin_crypto::bellman as bellman_ce;
