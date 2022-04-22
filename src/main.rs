@@ -86,6 +86,16 @@ pub fn generate_verifier(
     println!("Generate verifier {} done", sol);
 }
 
+pub fn generate_recursive_verifier(
+    raw_vk_file: &String,
+    recursive_vk_file: &String,
+    num_inputs: usize,
+    sol: &String,
+) {
+    let old_vk = reader::load_verification_key::<Bn256>(raw_vk_file);
+    let recursive_vk = reader::load_recursive_verification_key(recursive_vk_file);
+}
+
 fn main() {
     use std::time::{SystemTime, UNIX_EPOCH};
 

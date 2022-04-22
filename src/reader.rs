@@ -17,6 +17,7 @@ use crate::bellman_ce::{
 };
 
 use crate::circom_circuit::{CircuitJson, R1CS};
+use crate::recursive::RecursiveVerificationKey;
 
 /// load proof by filename
 pub fn load_proof<E: Engine>(filename: &str) -> Proof<E, PlonkCsWidth4WithNextStepParams> {
@@ -226,4 +227,10 @@ fn load_r1cs_from_bin<R: Read + Seek>(reader: R) -> (R1CS<Bn256>, Vec<usize>) {
         },
         file.wire_mapping.iter().map(|e| *e as usize).collect_vec(),
     )
+}
+
+/// load recursive verification key file by filename
+pub fn load_recursive_verification_key(filename: &str) -> RecursiveVerificationKey<'static> {
+    let mut reader = BufReader::with_capacity(1 << 24, File::open(filename).expect("read recursive vk file err"));
+    RecursiveVerificationKey::read(&mut reader).expect("read recursive vk err")
 }
