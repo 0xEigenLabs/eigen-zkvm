@@ -14,3 +14,9 @@
 ```
 cargo run test/ZKMixer/circuit/mixer_js/mixer.r1cs test/ZKMixer/circuit/mixer_js/witness.wtns keys/setup_2\^20.key
 ```
+
+## Reference
+
+1. https://github.com/fluidex/plonkit
+2. https://github.com/matter-labs/recursive_aggregation_circuit
+3. https://github.com/matter-labs/zksync/tree/master/core/bin/key_generator

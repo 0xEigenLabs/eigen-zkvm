@@ -3,16 +3,20 @@
 use crate::{bellman_ce, utils};
 use bellman_ce::kate_commitment::{Crs, CrsForMonomialForm};
 use bellman_ce::pairing::bn256;
-use bellman_ce::pairing::bn256::Bn256;
-use bellman_ce::pairing::ff::ScalarEngine;
+use bellman_ce::pairing::bn256::{Bn256, Fr};
+use bellman_ce::pairing::ff::{PrimeField, ScalarEngine, PrimeFieldRepr};
 use bellman_ce::pairing::{CurveAffine, Engine};
-use bellman_ce::plonk::better_better_cs::cs::PlonkCsWidth4WithNextStepAndCustomGatesParams;
-use bellman_ce::plonk::better_better_cs::cs::ProvingAssembly;
-use bellman_ce::plonk::better_better_cs::cs::TrivialAssembly;
-use bellman_ce::plonk::better_better_cs::cs::Width4MainGateWithDNext;
-use bellman_ce::plonk::better_better_cs::cs::{Circuit, Setup};
-use bellman_ce::plonk::better_better_cs::setup::VerificationKey;
-use bellman_ce::plonk::better_better_cs::verifier::verify as core_verify;
+use bellman_ce::plonk::better_better_cs::{
+    setup::VerificationKey,
+    verifier::verify as core_verify,
+    cs::{
+        PlonkCsWidth4WithNextStepAndCustomGatesParams,
+        ProvingAssembly,
+        TrivialAssembly,
+        Width4MainGateWithDNext,
+        {Circuit, Setup}
+    }
+};
 use bellman_ce::plonk::commitments::transcript::keccak_transcript::RollingKeccakTranscript;
 use bellman_ce::plonk::{
     better_cs::cs::PlonkCsWidth4WithNextStepParams,
@@ -26,17 +30,75 @@ use franklin_crypto::plonk::circuit::verifier_circuit::data_structs::IntoLimbedW
 use franklin_crypto::plonk::circuit::Width4WithCustomGates;
 use franklin_crypto::rescue::bn256::Bn256RescueParams;
 use itertools::Itertools;
-use recurisive_vk_codegen::circuit::{
+use recursive_aggregation_circuit::circuit::{
     create_recursive_circuit_setup, create_recursive_circuit_vk_and_setup, create_vks_tree, make_aggregate,
     make_public_input_and_limbed_aggregate, RecursiveAggregationCircuitBn256,
 };
 
-use franklin_crypto::bellman::plonk::better_better_cs::proof::Proof;
+use franklin_crypto::bellman::plonk::{
+    better_better_cs::{cs::Circuit as NewCircuit, proof::Proof as NewProof},
+};
+
 use franklin_crypto::bellman::plonk::better_cs::keys::{read_fr_vec, write_fr_vec};
+use ethabi::ethereum_types::U256;
+
+use serde::{ser::SerializeSeq, Serialize, Serializer};
+
+pub mod ethereum_serializer {
+    use super::*;
+    use ethabi::ethereum_types::U256;
+
+    pub fn serialize_g1(point: &<Bn256 as Engine>::G1Affine) -> (U256, U256) {
+        if point.is_zero() {
+            return (U256::zero(), U256::zero());
+        }
+        let uncompressed = point.into_uncompressed();
+
+        let uncompressed_slice = uncompressed.as_ref();
+
+        // bellman serializes points as big endian and in the form x, y
+        // ethereum expects the same order in memory
+        let x = U256::from_big_endian(&uncompressed_slice[0..32]);
+        let y = U256::from_big_endian(&uncompressed_slice[32..64]);
+
+        (x, y)
+    }
+
+    pub fn serialize_g2(point: &<Bn256 as Engine>::G2Affine) -> ((U256, U256), (U256, U256)) {
+        let uncompressed = point.into_uncompressed();
+
+        let uncompressed_slice = uncompressed.as_ref();
+
+        // bellman serializes points as big endian and in the form x1*u, x0, y1*u, y0
+        // ethereum expects the same order in memory
+        let x_1 = U256::from_big_endian(&uncompressed_slice[0..32]);
+        let x_0 = U256::from_big_endian(&uncompressed_slice[32..64]);
+        let y_1 = U256::from_big_endian(&uncompressed_slice[64..96]);
+        let y_0 = U256::from_big_endian(&uncompressed_slice[96..128]);
+
+        ((x_1, x_0), (y_1, y_0))
+    }
+
+    pub fn serialize_fe(field_element: &<Bn256 as ScalarEngine>::Fr) -> U256 {
+        let mut be_bytes = [0u8; 32];
+        field_element
+            .into_repr()
+            .write_be(&mut be_bytes[..])
+            .expect("get new root BE bytes");
+        U256::from_big_endian(&be_bytes[..])
+    }
+}
+
+pub struct Config {
+    pub recursive_vk: VerificationKey<Bn256, RecursiveAggregationCircuitBn256<'static>>, // TODO: fix type
+    pub vk_tree_root: Fr,
+    //    pub vk_max_index: u8,
+    pub individual_input_num: usize,
+}
 
 // notice the life time in RecursiveAggregationCircuit is related to  series of param groups
 // for most cases we could make the params static
-type RecursiveCircuitProof<'a> = Proof<Bn256, RecursiveAggregationCircuitBn256<'a>>;
+type RecursiveCircuitProof<'a> = NewProof<Bn256, RecursiveAggregationCircuitBn256<'a>>;
 
 pub type RecursiveVerificationKey<'a> =
     VerificationKey<Bn256, RecursiveAggregationCircuitBn256<'a>>;
@@ -98,6 +160,95 @@ impl AggregatedProof {
     }
 }
 
+impl Serialize for AggregatedProof {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut seq = serializer.serialize_seq(Some(5))?;
+        let (input, serialized_proof) = serialize_new_proof(&self.proof);
+        seq.serialize_element(&input)?;
+        seq.serialize_element(&serialized_proof)?;
+        let vk_inputs: Vec<U256> = self
+            .individual_vk_inputs
+            .iter()
+            .map(ethereum_serializer::serialize_fe)
+            .collect();
+        seq.serialize_element(&self.individual_vk_idxs)?;
+        seq.serialize_element(&vk_inputs)?;
+        let subproofs_limbs: Vec<U256> = self
+            .aggr_limbs
+            .iter()
+            .map(ethereum_serializer::serialize_fe)
+            .collect();
+        assert_eq!(subproofs_limbs.len(), 16);
+        seq.serialize_element(&subproofs_limbs)?;
+
+        seq.end()
+    }
+}
+
+pub fn serialize_new_proof<C: NewCircuit<bn256::Bn256>>(
+    proof: &NewProof<bn256::Bn256, C>,
+) -> (Vec<U256>, Vec<U256>) {
+    let mut inputs = vec![];
+    for input in proof.inputs.iter() {
+        inputs.push(ethereum_serializer::serialize_fe(input));
+    }
+    let mut serialized_proof = vec![];
+
+    for c in proof.state_polys_commitments.iter() {
+        let (x, y) = ethereum_serializer::serialize_g1(c);
+        serialized_proof.push(x);
+        serialized_proof.push(y);
+    }
+
+    let (x, y) =
+        ethereum_serializer::serialize_g1(&proof.copy_permutation_grand_product_commitment);
+    serialized_proof.push(x);
+    serialized_proof.push(y);
+
+    for c in proof.quotient_poly_parts_commitments.iter() {
+        let (x, y) = ethereum_serializer::serialize_g1(c);
+        serialized_proof.push(x);
+        serialized_proof.push(y);
+    }
+
+    for c in proof.state_polys_openings_at_z.iter() {
+        serialized_proof.push(ethereum_serializer::serialize_fe(c));
+    }
+
+    for (_, _, c) in proof.state_polys_openings_at_dilations.iter() {
+        serialized_proof.push(ethereum_serializer::serialize_fe(c));
+    }
+
+    assert_eq!(proof.gate_setup_openings_at_z.len(), 0);
+
+    for (_, c) in proof.gate_selectors_openings_at_z.iter() {
+        serialized_proof.push(ethereum_serializer::serialize_fe(c));
+    }
+
+    for c in proof.copy_permutation_polys_openings_at_z.iter() {
+        serialized_proof.push(ethereum_serializer::serialize_fe(c));
+    }
+
+    serialized_proof.push(ethereum_serializer::serialize_fe(
+        &proof.copy_permutation_grand_product_opening_at_z_omega,
+    ));
+    serialized_proof.push(ethereum_serializer::serialize_fe(
+        &proof.quotient_poly_opening_at_z,
+    ));
+    serialized_proof.push(ethereum_serializer::serialize_fe(
+        &proof.linearization_poly_opening_at_z,
+    ));
+
+    let (x, y) = ethereum_serializer::serialize_g1(&proof.opening_proof_at_z);
+    serialized_proof.push(x);
+    serialized_proof.push(y);
+
+    let (x, y) = ethereum_serializer::serialize_g1(&proof.opening_proof_at_z_omega);
+    serialized_proof.push(x);
+    serialized_proof.push(y);
+
+    (inputs, serialized_proof)
+}
 
 // only support depth<8. different depths don't really make performance different
 const VK_TREE_DEPTH: usize = 7;

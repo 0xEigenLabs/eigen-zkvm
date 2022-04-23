@@ -1,6 +1,7 @@
-use EigenZKit::{reader, plonk, circom_circuit::CircomCircuit};
-use EigenZKit::bellman_ce::pairing::bn256::Bn256;
-extern crate bellman_vk_codegen;
+use eigen_zkit::{reader, plonk, circom_circuit::CircomCircuit};
+use eigen_zkit::bellman_ce::pairing::bn256::Bn256;
+use eigen_zkit::{recursive, verifier};
+use std::path::Path;
 use std::env;
 
 pub fn prove(
@@ -86,6 +87,61 @@ pub fn generate_verifier(
     println!("Generate verifier {} done", sol);
 }
 
+pub fn export_recursive_verification_key(num_proofs_to_check: usize, num_inputs: usize, srs_monomial_form: &String, vk_file: &String) {
+    let big_crs = reader::load_key_monomial_form(srs_monomial_form);
+    let vk = recursive::export_vk(num_proofs_to_check, num_inputs, &big_crs).expect("must export recursive vk");
+    let path = Path::new(vk_file);
+    assert!(!path.exists(), "dumpcate proof file: {}", path.display());
+    let writer = std::fs::File::create(vk_file).unwrap();
+    vk.write(writer).unwrap();
+}
+
+pub fn recursive_prove(srs_monomial_form: &String, old_proof_list: &String, old_vk: &String, new_proof: &String, proofjson: &String) {
+    let big_crs = reader::load_key_monomial_form(srs_monomial_form);
+    let old_proofs = reader::load_proofs_from_list::<Bn256>(old_proof_list);
+    let old_vk = reader::load_verification_key::<Bn256>(old_vk);
+    let proof = recursive::prove(big_crs, old_proofs, old_vk).unwrap();
+    let path = Path::new(new_proof);
+    assert!(!path.exists(), "dumpcate new proof file: {}", path.display());
+    let path = Path::new(proofjson);
+    assert!(!path.exists(), "dumpcate proofjson: {}", path.display());
+
+    let writer = std::fs::File::create(new_proof).unwrap();
+    proof.write(writer).unwrap();
+
+    let ser_proof_str = serde_json::to_string_pretty(&proof).unwrap();
+    std::fs::write(proofjson, ser_proof_str.as_bytes()).expect("save proofjson error");
+}
+
+pub fn recursive_verify(proof: &String, vk: &String) {
+    let vk = reader::load_recursive_verification_key(vk);
+    let proof = reader::load_aggregated_proof(proof);
+    let correct = recursive::verify(vk, proof).expect("fail to verify recursive proof");
+    if correct {
+        log::info!("Proof is valid");
+    } else {
+        log::info!("Proof is invalid");
+        std::process::exit(400);
+    }
+}
+
+// check an aggregated proof is corresponding to the original proofs
+fn check_aggregation(old_proof_list: &String, old_vk: &String, new_proof: &String) {
+    let old_proofs = reader::load_proofs_from_list::<Bn256>(old_proof_list);
+    let old_vk = reader::load_verification_key::<Bn256>(old_vk);
+    let new_proof = reader::load_aggregated_proof(new_proof);
+
+    let expected = recursive::get_aggregated_input(old_proofs, old_vk).expect("fail to get aggregated input");
+    log::info!("hash to input: {:?}", expected);
+    log::info!("new_proof's input: {:?}", new_proof.proof.inputs[0]);
+
+    if expected == new_proof.proof.inputs[0] {
+        log::info!("Aggregation hash input match");
+    } else {
+        log::error!("Aggregation hash input mismatch");
+    }
+}
+
 pub fn generate_recursive_verifier(
     raw_vk_file: &String,
     recursive_vk_file: &String,
@@ -94,10 +150,19 @@ pub fn generate_recursive_verifier(
 ) {
     let old_vk = reader::load_verification_key::<Bn256>(raw_vk_file);
     let recursive_vk = reader::load_recursive_verification_key(recursive_vk_file);
+    let config = recursive::Config {
+        vk_tree_root: recursive::get_vk_tree_root_hash(old_vk).unwrap(),
+        //vk_max_index: 0, //because we has aggregated only 1 vk
+        individual_input_num: num_inputs,
+        recursive_vk,
+    };
+    verifier::recursive_plonk_verifier::create_verifier_contract_from_default_template(config, sol);
 }
 
+
+
 fn main() {
-    use std::time::{SystemTime, UNIX_EPOCH};
+    use std::time::{SystemTime};
 
     let arguments: Vec<String> = env::args().collect();
     // generate proof

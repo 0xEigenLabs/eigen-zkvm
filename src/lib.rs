@@ -19,6 +19,7 @@ pub mod plonk;
 pub mod transpile;
 pub mod recursive;
 pub mod utils;
+pub mod verifier;
 
 pub use franklin_crypto::bellman as bellman_ce;
 
