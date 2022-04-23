@@ -4,6 +4,23 @@ use eigen_zkit::{recursive, verifier};
 use std::path::Path;
 use std::env;
 
+pub fn analyse(circuit_file: &String, output: &String) {
+    let circuit = CircomCircuit{
+        r1cs: reader::load_r1cs(&circuit_file),
+        witness: None,
+        wire_mapping: None,
+        aux_offset: plonk::AUX_OFFSET,
+    };
+    let mut stats = plonk::analyse(circuit).expect("plonk analyse failed");
+    let writer = std::fs::File::create(output).unwrap();
+    serde_json::to_writer_pretty(writer, &stats).expect("write failed");
+    stats.constraint_stats.clear();
+    log::info!(
+        "analyse result: {}",
+        serde_json::to_string_pretty(&stats).unwrap_or_else(|_| "<failed>".to_owned())
+    );
+}
+
 pub fn prove(
     circuit_file: &String,
     witness: &String,

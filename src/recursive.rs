@@ -1,45 +1,49 @@
 // refers to https://github.com/matter-labs/recursive_aggregation_circuit/blob/master/src/circuit/mod.rs
 #![allow(clippy::needless_range_loop)]
 use crate::{bellman_ce, utils};
-use bellman_ce::kate_commitment::{Crs, CrsForMonomialForm};
-use bellman_ce::pairing::bn256;
-use bellman_ce::pairing::bn256::{Bn256, Fr};
-use bellman_ce::pairing::ff::{PrimeField, ScalarEngine, PrimeFieldRepr};
-use bellman_ce::pairing::{CurveAffine, Engine};
+use bellman_ce::{
+    kate_commitment::{Crs, CrsForMonomialForm},
+    pairing::bn256,
+    pairing::bn256::{Bn256, Fr},
+    pairing::ff::{PrimeField, ScalarEngine, PrimeFieldRepr},
+    pairing::{CurveAffine, Engine},
+    worker::Worker,
+    {Field, SynthesisError},
+};
+
 use bellman_ce::plonk::better_better_cs::{
     setup::VerificationKey,
     verifier::verify as core_verify,
+    proof::Proof as NewProof,
     cs::{
+        Circuit as NewCircuit,
         PlonkCsWidth4WithNextStepAndCustomGatesParams,
         ProvingAssembly,
         TrivialAssembly,
         Width4MainGateWithDNext,
-        {Circuit, Setup}
+        Setup
     }
 };
-use bellman_ce::plonk::commitments::transcript::keccak_transcript::RollingKeccakTranscript;
+
 use bellman_ce::plonk::{
+    commitments::transcript::keccak_transcript::RollingKeccakTranscript,
     better_cs::cs::PlonkCsWidth4WithNextStepParams,
     better_cs::keys::{Proof as OldProof, VerificationKey as OldVerificationKey},
+    better_cs::keys::{read_fr_vec, write_fr_vec}
 };
-use bellman_ce::worker::Worker;
-use bellman_ce::{Field, SynthesisError};
+
 use franklin_crypto::plonk::circuit::bigint::field::RnsParameters;
 use franklin_crypto::plonk::circuit::verifier_circuit::affine_point_wrapper::aux_data::{AuxData, BN256AuxData};
 use franklin_crypto::plonk::circuit::verifier_circuit::data_structs::IntoLimbedWitness;
 use franklin_crypto::plonk::circuit::Width4WithCustomGates;
 use franklin_crypto::rescue::bn256::Bn256RescueParams;
+
 use itertools::Itertools;
 use recursive_aggregation_circuit::circuit::{
     create_recursive_circuit_setup, create_recursive_circuit_vk_and_setup, create_vks_tree, make_aggregate,
     make_public_input_and_limbed_aggregate, RecursiveAggregationCircuitBn256,
 };
 
-use franklin_crypto::bellman::plonk::{
-    better_better_cs::{cs::Circuit as NewCircuit, proof::Proof as NewProof},
-};
-
-use franklin_crypto::bellman::plonk::better_cs::keys::{read_fr_vec, write_fr_vec};
 use ethabi::ethereum_types::U256;
 
 use serde::{ser::SerializeSeq, Serialize, Serializer};
