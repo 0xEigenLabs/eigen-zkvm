@@ -126,7 +126,7 @@ pub fn recursive_verify(proof: &String, vk: &String) {
 }
 
 // check an aggregated proof is corresponding to the original proofs
-fn check_aggregation(old_proof_list: &String, old_vk: &String, new_proof: &String) {
+pub fn check_aggregation(old_proof_list: &String, old_vk: &String, new_proof: &String) {
     let old_proofs = reader::load_proofs_from_list::<Bn256>(old_proof_list);
     let old_vk = reader::load_verification_key::<Bn256>(old_vk);
     let new_proof = reader::load_aggregated_proof(new_proof);
