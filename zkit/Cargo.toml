@@ -1,0 +1,22 @@
+[package]
+name = "zkit"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+zklib = { path = "../zklib" }
+clap = { package = "clap-v3", version = "3.0.0-beta.1" } # todo: replace with official v3 when it's released to crates.io
+
+ansi_term = "0.12.1"
+wast = "39.0.0"
+
+## from circom
+parser = { git = "https://github.com/iden3/circom.git", version = "2.0.1" }
+program_structure = { git = "https://github.com/iden3/circom.git", version = "2.0.1" }
+type_analysis = { git = "https://github.com/iden3/circom.git", version = "2.0.0"}
+constraint_generation = { git = "https://github.com/iden3/circom.git", version = "2.0.1" }
+constraint_writers = { git = "https://github.com/iden3/circom.git", version = "2.0.1"}
+compiler = { git = "https://github.com/iden3/circom.git", version = "2.0.1"}
+dag = { git = "https://github.com/iden3/circom.git", version = "2.0.1"}

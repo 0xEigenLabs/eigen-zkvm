@@ -12,9 +12,11 @@ Cargo.lock
 
 # Added by cargo
 
-/target
+target
 proof.json
 public.json
 vk.bin
 proof.bin
 verifier.sol
+log_substitution.json
+ir_log

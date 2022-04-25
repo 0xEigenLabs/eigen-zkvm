@@ -6,14 +6,42 @@
 
 ## Tutorial
 
-### Plonk
-
-1. evaluate the circuits num, and setup $POWER, then download monomial form SRS from `https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${POWER}.key`
-
-2. Generate proof and vk, then verify the proof.
 ```
-cargo run test/ZKMixer/circuit/mixer_js/mixer.r1cs test/ZKMixer/circuit/mixer_js/witness.wtns keys/setup_2\^20.key
+cargo build
 ```
+
+1. Compile the circuit
+
+```
+export WORKSPACE=/tmp/abc
+./target/debug/zkit compile -i test/multiplier.circom --O2=full -o $WORKSPACE
+```
+
+2. Generate witness
+
+```
+node ${WORKSPACE}/multiplier_js/generate_witness.js ${WORKSPACE}/multiplier_js/multiplier.wasm test/input.json $WORKSPACE/witness.wtns
+```
+
+3. Export verification key
+
+```
+./target/debug/zkit export_verification_key -s zklib/keys/setup_2\^20.key  -c $WORKSPACE/multiplier.r1cs
+```
+
+4. evaluate the circuits num, and setup $POWER, then download monomial form SRS from `https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${POWER}.key`
+
+```
+./target/debug/zkit prove -c $WORKSPACE/multiplier.r1cs -w $WORKSPACE/witness.wtns -s zklib/keys/setup_2\^20.key
+
+```
+
+5. Verify the proof.
+
+```
+./target/debug/zkit verify -p proof.bin -v vk.bin
+```
+
 
 ## Reference
 

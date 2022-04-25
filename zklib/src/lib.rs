@@ -23,5 +23,7 @@ pub mod verifier;
 
 pub use franklin_crypto::bellman as bellman_ce;
 
+pub mod api;
+
 #[cfg(test)]
 mod tests;

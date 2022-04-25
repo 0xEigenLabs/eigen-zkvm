@@ -1,10 +1,22 @@
-use eigen_zkit::{reader, plonk, circom_circuit::CircomCircuit};
-use eigen_zkit::bellman_ce::pairing::bn256::Bn256;
-use eigen_zkit::{recursive, verifier};
+use crate::{reader, plonk, circom_circuit::CircomCircuit};
+use crate::bellman_ce::pairing::bn256::Bn256;
+use crate::{recursive, verifier};
 use std::path::Path;
-use std::env;
 
-pub fn analyse(circuit_file: &String, output: &String) {
+// generate a monomial_form SRS, and save it to a file
+pub fn setup(power: u32, srs_monomial_form: &String) -> Result<(), ()>{
+    let srs = plonk::gen_key_monomial_form(power).unwrap();
+    let path = Path::new(srs_monomial_form);
+    assert!(!path.exists(), "duplicate srs_monomial_form file: {}", path.display());
+    let writer = std::fs::File::create(srs_monomial_form).unwrap();
+    srs.write(writer).unwrap();
+    log::info!("srs_monomial_form saved to {}", srs_monomial_form);
+    Result::Ok(())
+}
+
+// circuit filename default resolver
+
+pub fn analyse(circuit_file: &String, output: &String) -> Result<(), ()>{
     let circuit = CircomCircuit{
         r1cs: reader::load_r1cs(&circuit_file),
         witness: None,
@@ -19,6 +31,7 @@ pub fn analyse(circuit_file: &String, output: &String) {
         "analyse result: {}",
         serde_json::to_string_pretty(&stats).unwrap_or_else(|_| "<failed>".to_owned())
     );
+    Result::Ok(())
 }
 
 pub fn prove(
@@ -30,7 +43,7 @@ pub fn prove(
     proof_bin: &String,
     proof_json: &String,
     public_json: &String
-    ) {
+    ) -> Result<(), ()> {
     let circuit = CircomCircuit {
         r1cs: reader::load_r1cs(circuit_file),
         witness: Some(reader::load_witness_from_file::<Bn256>(witness)),
@@ -55,13 +68,14 @@ pub fn prove(
 
     std::fs::write(proof_json, ser_proof_str.as_bytes()).expect("save proof json error");
     std::fs::write(public_json, ser_inputs_str.as_bytes()).expect("save public json error");
+    Result::Ok(())
 }
 
 pub fn export_verification_key(
     srs_monomial_form: &String,
     circuit_file: &String,
     output_vk: &String
-) {
+) -> Result<(), ()> {
     let circuit = CircomCircuit {
         r1cs: reader::load_r1cs(circuit_file),
         witness: None,
@@ -77,13 +91,14 @@ pub fn export_verification_key(
     let writer = std::fs::File::create(output_vk).unwrap();
     vk.write(writer).unwrap();
     println!("Verification key saved to {}", output_vk);
+    Result::Ok(())
 }
 
 pub fn verify(
     vk_file: &String,
     proof_bin: &String,
     transcript: &String
-) {
+) -> Result<(), ()> {
     let vk = reader::load_verification_key::<Bn256>(vk_file);
     let proof = reader::load_proof::<Bn256>(proof_bin);
     let ok = plonk::verify(&vk, &proof, transcript).expect("failed to verify proof");
@@ -93,15 +108,17 @@ pub fn verify(
         println!("Proof is invalid");
         std::process::exit(400);
     }
+    Result::Ok(())
 }
 
 pub fn generate_verifier(
     vk_file: &String,
     sol: &String,
-) {
+) -> Result<(), ()> {
     let vk = reader::load_verification_key::<Bn256>(vk_file);
     bellman_vk_codegen::render_verification_key_from_default_template(&vk, sol);
     println!("Generate verifier {} done", sol);
+    Result::Ok(())
 }
 
 pub fn export_recursive_verification_key(num_proofs_to_check: usize, num_inputs: usize, srs_monomial_form: &String, vk_file: &String) {
@@ -174,39 +191,4 @@ pub fn generate_recursive_verifier(
         recursive_vk,
     };
     verifier::recursive_plonk_verifier::create_verifier_contract_from_default_template(config, sol);
-}
-
-
-
-fn main() {
-    use std::time::{SystemTime};
-
-    let arguments: Vec<String> = env::args().collect();
-    // generate proof
-    let circuit_file = &arguments[1];
-    let witness = &arguments[2];
-    let srs_monomial_form = &arguments[3];
-    let start = SystemTime::now();
-    prove(circuit_file, witness, srs_monomial_form, None,
-        &String::from("keccak"),
-        &String::from("proof.bin"),
-        &String::from("proof.json"),
-        &String::from("public.json"));
-
-    export_verification_key(srs_monomial_form, circuit_file, &String::from("vk.bin"));
-
-    verify(
-        &String::from("vk.bin"),
-        &String::from("proof.bin"),
-        &String::from("keccak"),
-    );
-
-    generate_verifier(
-        &String::from("vk.bin"),
-        &String::from("verifier.sol")
-    );
-
-    let end = SystemTime::now();
-    println!("time cost: {}", end.duration_since(start).unwrap().as_secs());
-
 }
