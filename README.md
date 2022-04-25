@@ -9,6 +9,7 @@
 ```
 cargo build
 ```
+and download monomial form SRS from `https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${POWER}.key`
 
 1. Compile the circuit
 
@@ -26,13 +27,13 @@ node ${WORKSPACE}/multiplier_js/generate_witness.js ${WORKSPACE}/multiplier_js/m
 3. Export verification key
 
 ```
-./target/debug/zkit export_verification_key -s zklib/keys/setup_2\^20.key  -c $WORKSPACE/multiplier.r1cs
+./target/debug/zkit export_verification_key -s keys/setup_2\^10.key  -c $WORKSPACE/multiplier.r1cs
 ```
 
 4. evaluate the circuits num, and setup $POWER, then download monomial form SRS from `https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${POWER}.key`
 
 ```
-./target/debug/zkit prove -c $WORKSPACE/multiplier.r1cs -w $WORKSPACE/witness.wtns -s zklib/keys/setup_2\^20.key
+./target/debug/zkit prove -c $WORKSPACE/multiplier.r1cs -w $WORKSPACE/witness.wtns -s keys/setup_2\^10.key
 
 ```
 
