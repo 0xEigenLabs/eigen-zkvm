@@ -42,6 +42,12 @@ node ${WORKSPACE}/multiplier_js/generate_witness.js ${WORKSPACE}/multiplier_js/m
 ./target/debug/zkit verify -p proof.bin -v vk.bin
 ```
 
+6. Generate verifier
+
+```
+./target/debug/zkit generate_verifier
+```
+
 
 ## Reference
 
