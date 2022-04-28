@@ -11,10 +11,11 @@ ZKIT="${CUR_DIR}/../target/release/zkit"
 WORKSPACE=/tmp/recursive
 rm -rf $WORKSPACE && mkdir -p $WORKSPACE
 
-SRS=${CUR_DIR}/../keys/setup_2^${POWER}.key
+SRS=${CUR_DIR}/../keys/setup_2^10.key
+BIG_SRS=${CUR_DIR}/../keys/setup_2^${POWER}.key
 
-if [ ! -f $SRS  ]; then
-   curl https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${POWER}.key -o $SRS
+if [ ! -f $BIG_SRS ]; then
+   curl https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${POWER}.key -o $BIG_SRS
 fi
 
 echo "1. compile circuit"
@@ -48,10 +49,10 @@ done
 cat $OLD_PROOF_LIST
 
 echo "5. export recursive vk"
-${ZKIT} export_recursive_verification_key -c $i -i 3 -s ${SRS} -o $WORKSPACE/recursive_vk.bin
+${ZKIT} export_recursive_verification_key -c $i -i 3 -s ${BIG_SRS} -o $WORKSPACE/recursive_vk.bin
 
 echo "6. generate recursive proof"
-${ZKIT} recursive_prove -s ${SRS} -f $OLD_PROOF_LIST  -v $WORKSPACE/vk.bin -n $WORKSPACE/recursive_proof.bin  -j $WORKSPACE/recursive_proof.json
+${ZKIT} recursive_prove -s ${BIG_SRS} -f $OLD_PROOF_LIST  -v $WORKSPACE/vk.bin -n $WORKSPACE/recursive_proof.bin  -j $WORKSPACE/recursive_proof.json
 
 echo "7. verify"
 ${ZKIT} recursive_verify -p $WORKSPACE/recursive_proof.bin -v $WORKSPACE/recursive_vk.bin
