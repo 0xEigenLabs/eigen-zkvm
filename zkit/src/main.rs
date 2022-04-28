@@ -1,5 +1,9 @@
 extern crate clap;
-use zklib::api::{prove, export_verification_key, verify, generate_verifier, setup};
+use zklib::api::{
+    prove, export_verification_key, verify, generate_verifier, setup,
+    export_recursive_verification_key, recursive_prove,
+    recursive_verify, generate_recursive_verifier
+};
 use clap::Clap;
 use std::time::SystemTime;
 
@@ -47,7 +51,7 @@ struct ProveOpt {
     circuit_file: String,
     #[clap(short)]
     witness: String,
-    /// Input file
+    /// SRS monomial form
     #[clap(short)]
     srs_monomial_form: String,
 
@@ -96,6 +100,62 @@ struct ExportVerificationKeyOpt {
 }
 
 #[derive(Debug, Clap)]
+struct ExportRecursiveVerificationKeyOpt {
+    #[clap(short = "c")]
+    num_proofs_to_check: usize,
+    #[clap(short = "i")]
+    num_inputs: usize,
+    #[clap(short)]
+    srs_monomial_form: String,
+    #[clap(short, long = "vk", default_value = "recursive_vk.bin")]
+    output_vk: String,
+}
+
+#[derive(Debug, Clap)]
+struct RecursiveProveOpt {
+    /// SRS monomial form
+    #[clap(short)]
+    srs_monomial_form: String,
+
+    #[clap(short = "f")]
+    old_proof_list: String,
+
+    #[clap(short = "v", default_value = "vk.bin")]
+    old_vk: String,
+
+    #[clap(short = "n", default_value = "recursive_proof.bin")]
+    new_proof: String,
+
+    #[clap(short = "j", default_value = "proof.json")]
+    proof_json: String,
+}
+
+#[derive(Debug, Clap)]
+struct RecursiveVerifyOpt {
+    #[clap(short = "p", default_value = "recursive_proof.bin")]
+    proof: String,
+    #[clap(short = "v", default_value = "recursive_vk.bin")]
+    vk: String,
+}
+
+/// A subcommand for generating a Solidity recursive verifier smart contract
+#[derive(Debug, Clap)]
+struct GenerateRecursiveVerifierOpt {
+    /// Original individual verification key file
+    #[clap(short = "o", long = "old_vk", default_value = "vk.bin")]
+    old_vk: String,
+    /// Aggregated verification key file
+    #[clap(short = "n", long = "new_vk", default_value = "recursive_vk.bin")]
+    new_vk: String,
+    /// Num of inputs
+    #[clap(short = "i", long = "num_inputs")]
+    num_inputs: usize,
+    /// Output solidity file
+    #[clap(short = "s", long = "sol", default_value = "verifier.sol")]
+    sol: String,
+}
+
+#[derive(Debug, Clap)]
 enum Command {
     #[clap(name = "setup")]
     Setup(SetupOpt),
@@ -110,6 +170,14 @@ enum Command {
     ExportVerificationKey(ExportVerificationKeyOpt),
     #[clap(name = "generate_verifier")]
     GenerateVerifier(GenerateVerifierOpt),
+    #[clap(name = "export_recursive_verification_key")]
+    ExportRecursiveVerificationKey(ExportRecursiveVerificationKeyOpt),
+    #[clap(name = "recursive_prove")]
+    RecursiveProve(RecursiveProveOpt),
+    #[clap(name = "recursive_verify")]
+    RecursiveVerify(RecursiveVerifyOpt),
+    #[clap(name = "generate_recursive_verifier")]
+    GenerateRecursiveVerifier(GenerateRecursiveVerifierOpt),
 }
 
 #[derive(Debug, Clap)]
@@ -200,6 +268,31 @@ fn main() {
             &args.circuit_file,
             &args.output_vk,
         ),
+
+        Command::ExportRecursiveVerificationKey(args) => export_recursive_verification_key(
+            args.num_proofs_to_check,
+            args.num_inputs,
+            &args.srs_monomial_form,
+            &args.output_vk,
+        ),
+        Command::RecursiveProve(args) => recursive_prove(
+            &args.srs_monomial_form,
+            &args.old_proof_list,
+            &args.old_vk,
+            &args.new_proof,
+            &args.proof_json
+        ),
+        Command::RecursiveVerify(args) => recursive_verify(
+            &args.proof,
+            &args.vk
+        ),
+        Command::GenerateRecursiveVerifier(args) => generate_recursive_verifier(
+            &args.old_vk,
+            &args.new_vk,
+            args.num_inputs,
+            &args.sol
+        ),
+
     };
     let end = SystemTime::now();
     println!("time cost: {}", end.duration_since(start).unwrap().as_secs());

@@ -121,16 +121,17 @@ pub fn generate_verifier(
     Result::Ok(())
 }
 
-pub fn export_recursive_verification_key(num_proofs_to_check: usize, num_inputs: usize, srs_monomial_form: &String, vk_file: &String) {
+pub fn export_recursive_verification_key(num_proofs_to_check: usize, num_inputs: usize, srs_monomial_form: &String, vk_file: &String) -> Result<(), ()> {
     let big_crs = reader::load_key_monomial_form(srs_monomial_form);
     let vk = recursive::export_vk(num_proofs_to_check, num_inputs, &big_crs).expect("must export recursive vk");
     let path = Path::new(vk_file);
     assert!(!path.exists(), "dumpcate proof file: {}", path.display());
     let writer = std::fs::File::create(vk_file).unwrap();
     vk.write(writer).unwrap();
+    Result::Ok(())
 }
 
-pub fn recursive_prove(srs_monomial_form: &String, old_proof_list: &String, old_vk: &String, new_proof: &String, proofjson: &String) {
+pub fn recursive_prove(srs_monomial_form: &String, old_proof_list: &String, old_vk: &String, new_proof: &String, proofjson: &String) -> Result<(), ()> {
     let big_crs = reader::load_key_monomial_form(srs_monomial_form);
     let old_proofs = reader::load_proofs_from_list::<Bn256>(old_proof_list);
     let old_vk = reader::load_verification_key::<Bn256>(old_vk);
@@ -145,9 +146,10 @@ pub fn recursive_prove(srs_monomial_form: &String, old_proof_list: &String, old_
 
     let ser_proof_str = serde_json::to_string_pretty(&proof).unwrap();
     std::fs::write(proofjson, ser_proof_str.as_bytes()).expect("save proofjson error");
+    Result::Ok(())
 }
 
-pub fn recursive_verify(proof: &String, vk: &String) {
+pub fn recursive_verify(proof: &String, vk: &String) -> Result<(), ()> {
     let vk = reader::load_recursive_verification_key(vk);
     let proof = reader::load_aggregated_proof(proof);
     let correct = recursive::verify(vk, proof).expect("fail to verify recursive proof");
@@ -157,10 +159,11 @@ pub fn recursive_verify(proof: &String, vk: &String) {
         log::info!("Proof is invalid");
         std::process::exit(400);
     }
+    Result::Ok(())
 }
 
 // check an aggregated proof is corresponding to the original proofs
-pub fn check_aggregation(old_proof_list: &String, old_vk: &String, new_proof: &String) {
+pub fn check_aggregation(old_proof_list: &String, old_vk: &String, new_proof: &String) -> Result<(), ()> {
     let old_proofs = reader::load_proofs_from_list::<Bn256>(old_proof_list);
     let old_vk = reader::load_verification_key::<Bn256>(old_vk);
     let new_proof = reader::load_aggregated_proof(new_proof);
@@ -171,8 +174,10 @@ pub fn check_aggregation(old_proof_list: &String, old_vk: &String, new_proof: &S
 
     if expected == new_proof.proof.inputs[0] {
         log::info!("Aggregation hash input match");
+        Result::Ok(())
     } else {
         log::error!("Aggregation hash input mismatch");
+        Result::Err(())
     }
 }
 
@@ -181,7 +186,7 @@ pub fn generate_recursive_verifier(
     recursive_vk_file: &String,
     num_inputs: usize,
     sol: &String,
-) {
+) -> Result<(), ()> {
     let old_vk = reader::load_verification_key::<Bn256>(raw_vk_file);
     let recursive_vk = reader::load_recursive_verification_key(recursive_vk_file);
     let config = recursive::Config {
@@ -191,4 +196,5 @@ pub fn generate_recursive_verifier(
         recursive_vk,
     };
     verifier::recursive_plonk_verifier::create_verifier_contract_from_default_template(config, sol);
+    Result::Ok(())
 }
