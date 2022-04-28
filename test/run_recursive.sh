@@ -5,9 +5,9 @@
 
 cargo build --release
 
-POWER=20
+POWER=24
 CUR_DIR=$(cd $(dirname $0);pwd)
-ZKIT="${CUR_DIR}/../target/debug/zkit"
+ZKIT="${CUR_DIR}/../target/release/zkit"
 
 WORKSPACE=/tmp/recursive
 rm -rf $WORKSPACE && mkdir -p $WORKSPACE
