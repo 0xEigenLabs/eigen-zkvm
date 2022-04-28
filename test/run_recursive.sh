@@ -1,8 +1,7 @@
 #!/bin/bash
-#set -e
+set -e
 
 ## build
-
 cargo build --release
 
 POWER=24
@@ -43,7 +42,7 @@ for wtns in `ls $CUR_DIR/recursive/input`
 do
     input=${CUR_DIR}/recursive/input/$wtns
     echo $input/proof.bin >> $OLD_PROOF_LIST
-    let "i++"
+    i=$((i+1))
 done
 
 cat $OLD_PROOF_LIST
