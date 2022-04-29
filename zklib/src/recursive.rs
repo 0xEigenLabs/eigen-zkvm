@@ -32,21 +32,25 @@ use bellman_ce::plonk::{
     better_cs::keys::{read_fr_vec, write_fr_vec}
 };
 
-use franklin_crypto::plonk::circuit::bigint::field::RnsParameters;
-use franklin_crypto::plonk::circuit::verifier_circuit::affine_point_wrapper::aux_data::{AuxData, BN256AuxData};
-use franklin_crypto::plonk::circuit::verifier_circuit::data_structs::IntoLimbedWitness;
-use franklin_crypto::plonk::circuit::Width4WithCustomGates;
+use franklin_crypto::plonk::circuit::{
+    bigint::field::RnsParameters,
+    verifier_circuit::affine_point_wrapper::aux_data::{AuxData, BN256AuxData},
+    verifier_circuit::data_structs::IntoLimbedWitness,
+    Width4WithCustomGates
+};
 use franklin_crypto::rescue::bn256::Bn256RescueParams;
 
-use itertools::Itertools;
 use recursive_aggregation_circuit::circuit::{
     create_recursive_circuit_setup, create_recursive_circuit_vk_and_setup, create_vks_tree, make_aggregate,
     make_public_input_and_limbed_aggregate, RecursiveAggregationCircuitBn256,
 };
 
 use ethabi::ethereum_types::U256;
-
+use itertools::Itertools;
 use serde::{ser::SerializeSeq, Serialize, Serializer};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use std::io::{Read, Write};
+
 
 pub mod ethereum_serializer {
     use super::*;
@@ -114,9 +118,6 @@ pub struct AggregatedProof {
     pub individual_vk_idxs: Vec<usize>,
     pub aggr_limbs: Vec<bn256::Fr>,
 }
-
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use std::io::{Read, Write};
 
 fn read_usize_vec<R: Read>(mut reader: R) -> std::io::Result<Vec<usize>> {
     let num_elements = reader.read_u64::<LittleEndian>()?;

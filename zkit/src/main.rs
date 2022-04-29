@@ -77,6 +77,7 @@ struct VerifyOpt {
     vk_file: String,
     #[clap(short)]
     proof_bin: String,
+    /// Transcript can be keccak or rescue, keccak default
     #[clap(short, default_value = "keccak")]
     transcript: String
 }

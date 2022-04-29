@@ -21,7 +21,7 @@ export WORKSPACE=/tmp/abc
 2. Generate witness
 
 ```
-node ${WORKSPACE}/multiplier_js/generate_witness.js ${WORKSPACE}/multiplier_js/multiplier.wasm test/input.json $WORKSPACE/witness.wtns
+node ${WORKSPACE}/multiplier_js/generate_witness.js ${WORKSPACE}/multiplier_js/multiplier.wasm test/single/input.json $WORKSPACE/witness.wtns
 ```
 
 3. Export verification key
