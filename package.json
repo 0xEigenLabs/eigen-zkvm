@@ -1,0 +1,22 @@
+{
+  "name": "EigenZkit",
+  "version": "0.0.1",
+  "description": "A zkSNARK toolkit to work with circom zkSNARKs DSL in plonk proof system",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ieigen/EigenZkit.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ieigen/EigenZkit/issues"
+  },
+  "homepage": "https://github.com/ieigen/EigenZkit",
+  "dependencies": {
+    "circomlib": "^2.0.2"
+  }
+}

@@ -21,6 +21,5 @@ verifier.sol
 log_substitution.json
 ir_log
 node_modules
-package.json
 yarn.lock
 keys/setup_*.key
