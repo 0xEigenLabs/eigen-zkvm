@@ -7,7 +7,7 @@
 ## Tutorial
 
 ```
-cargo build
+cargo build --release
 ```
 and download monomial form SRS from `https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${POWER}.key`
 
@@ -15,7 +15,7 @@ and download monomial form SRS from `https://universal-setup.ams3.digitaloceansp
 
 ```
 export WORKSPACE=/tmp/abc
-./target/debug/zkit compile -i test/multiplier.circom --O2=full -o $WORKSPACE
+./target/release/zkit compile -i test/multiplier.circom --O2=full -o $WORKSPACE
 ```
 
 2. Generate witness
@@ -27,26 +27,26 @@ node ${WORKSPACE}/multiplier_js/generate_witness.js ${WORKSPACE}/multiplier_js/m
 3. Export verification key
 
 ```
-./target/debug/zkit export_verification_key -s keys/setup_2\^10.key  -c $WORKSPACE/multiplier.r1cs
+./target/release/zkit export_verification_key -s keys/setup_2\^10.key  -c $WORKSPACE/multiplier.r1cs
 ```
 
 4. evaluate the circuits num, and setup $POWER, then download monomial form SRS from `https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${POWER}.key`
 
 ```
-./target/debug/zkit prove -c $WORKSPACE/multiplier.r1cs -w $WORKSPACE/witness.wtns -s keys/setup_2\^10.key
+./target/release/zkit prove -c $WORKSPACE/multiplier.r1cs -w $WORKSPACE/witness.wtns -s keys/setup_2\^10.key
 
 ```
 
 5. Verify the proof.
 
 ```
-./target/debug/zkit verify -p proof.bin -v vk.bin
+./target/release/zkit verify -p proof.bin -v vk.bin
 ```
 
 6. Generate verifier
 
 ```
-./target/debug/zkit generate_verifier
+./target/release/zkit generate_verifier
 ```
 
 
