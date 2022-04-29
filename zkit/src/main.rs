@@ -86,7 +86,7 @@ struct VerifyOpt {
 struct GenerateVerifierOpt {
     #[clap(short, default_value = "vk.bin")]
     vk_file: String,
-    #[clap(short, default_value = "verifier.sol")]
+    #[clap(short = "s", long = "sol", default_value = "verifier.sol")]
     sol: String,
 }
 
