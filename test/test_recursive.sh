@@ -28,7 +28,7 @@ echo "1. compile circuit"
 ${ZKIT} compile -i ${CIRCUIT}.circom --O2=full -o $WORKSPACE
 
 echo "2. export verification key"
-${ZKIT} export_verification_key -s ${SRS} -c $WORKSPACE/${CIRCUIT}.r1cs -o $WORKSPACE/vk.bin
+${ZKIT} export_verification_key -s ${SRS} -c $WORKSPACE/${CIRCUIT}.r1cs -v $WORKSPACE/vk.bin
 
 echo "3. generate each proof"
 for wtns in `ls $CUR_DIR/recursive/input`
@@ -55,7 +55,7 @@ done
 cat $OLD_PROOF_LIST
 
 echo "5. export recursive vk"
-${ZKIT} export_recursive_verification_key -c $i -i 3 -s ${BIG_SRS} -o $WORKSPACE/recursive_vk.bin
+${ZKIT} export_recursive_verification_key -c $i -i 3 -s ${BIG_SRS} -v $WORKSPACE/recursive_vk.bin
 
 echo "6. generate recursive proof"
 ${ZKIT} recursive_prove -s ${BIG_SRS} -f $OLD_PROOF_LIST  -v $WORKSPACE/vk.bin -n $WORKSPACE/recursive_proof.bin  -j $WORKSPACE/recursive_proof.json
@@ -64,4 +64,4 @@ echo "7. verify"
 ${ZKIT} recursive_verify -p $WORKSPACE/recursive_proof.bin -v $WORKSPACE/recursive_vk.bin
 
 echo "8. generate verifier"
-${ZKIT} generate_recursive_verifier -o $WORKSPACE/vk.bin -n $WORKSPACE/recursive_vk.bin -i 3 -s $WORKSPACE/verifier.sol
+${ZKIT} generate_recursive_verifier -v $WORKSPACE/vk.bin -n $WORKSPACE/recursive_vk.bin -i 3 -s $WORKSPACE/verifier.sol

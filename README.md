@@ -1,57 +1,20 @@
 # EigenZKit
+Write by Circom, prove by Plonk+.
 
 1. Transpile R1CS to PlonK prove system, with recursive proof support;
-
 2. Generate solidity verifier;
 
 ## Tutorial
+* Single proof
+[test_single.sh](./test/test_single.sh)
 
-```
-cargo build --release
-```
-and download monomial form SRS from `https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${POWER}.key`
-
-1. Compile the circuit
-
-```
-export WORKSPACE=/tmp/abc
-./target/release/zkit compile -i test/multiplier.circom --O2=full -o $WORKSPACE
-```
-
-2. Generate witness
-
-```
-node ${WORKSPACE}/multiplier_js/generate_witness.js ${WORKSPACE}/multiplier_js/multiplier.wasm test/single/input.json $WORKSPACE/witness.wtns
-```
-
-3. Export verification key
-
-```
-./target/release/zkit export_verification_key -s keys/setup_2\^10.key  -c $WORKSPACE/multiplier.r1cs
-```
-
-4. evaluate the circuits num, and setup $POWER, then download monomial form SRS from `https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${POWER}.key`
-
-```
-./target/release/zkit prove -c $WORKSPACE/multiplier.r1cs -w $WORKSPACE/witness.wtns -s keys/setup_2\^10.key
-
-```
-
-5. Verify the proof.
-
-```
-./target/release/zkit verify -p proof.bin -v vk.bin
-```
-
-6. Generate verifier
-
-```
-./target/release/zkit generate_verifier
-```
-
+* Recursive proof
+[test_recursive.sh](./test/test_recursive.sh)
 
 ## Reference
 
-1. https://github.com/fluidex/plonkit
-2. https://github.com/matter-labs/recursive_aggregation_circuit
-3. https://github.com/matter-labs/zksync/tree/master/core/bin/key_generator
+Inspired by:
+1. https://github.com/iden3/circom
+2. https://github.com/fluidex/plonkit
+3. https://github.com/matter-labs/recursive_aggregation_circuit
+4. https://github.com/matter-labs/zksync/tree/master/core/bin/key_generator

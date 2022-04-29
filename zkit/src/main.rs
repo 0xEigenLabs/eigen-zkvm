@@ -96,7 +96,7 @@ struct ExportVerificationKeyOpt {
     srs_monomial_form: String,
     #[clap(short)]
     circuit_file: String,
-    #[clap(short, default_value = "vk.bin")]
+    #[clap(short = "v", default_value = "vk.bin")]
     output_vk: String
 }
 
@@ -108,7 +108,7 @@ struct ExportRecursiveVerificationKeyOpt {
     num_inputs: usize,
     #[clap(short)]
     srs_monomial_form: String,
-    #[clap(short, long = "vk", default_value = "recursive_vk.bin")]
+    #[clap(short = "v", long = "vk", default_value = "recursive_vk.bin")]
     output_vk: String,
 }
 
