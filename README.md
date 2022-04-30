@@ -1,8 +1,11 @@
 # EigenZKit
 Write by Circom, prove by Plonk+.
 
-1. Transpile R1CS to PlonK prove system, with recursive proof support;
-2. Generate solidity verifier;
+* [x] Transpile R1CS to PlonK prove system, with recursive proof support;
+
+* [x] Generate solidity verifier;
+
+* [  ] GPU acceleration for proving;
 
 ## Tutorial
 * Single proof
