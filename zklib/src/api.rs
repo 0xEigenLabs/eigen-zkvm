@@ -116,7 +116,7 @@ pub fn generate_verifier(
     sol: &String,
 ) -> Result<(), ()> {
     let vk = reader::load_verification_key::<Bn256>(vk_file);
-    bellman_vk_codegen::render_verification_key_from_default_template(&vk, sol);
+    bellman_vk_codegen::render_verification_key_from_default_template(&vk, sol, true);
     println!("Generate verifier {} done", sol);
     Result::Ok(())
 }
