@@ -18,6 +18,7 @@ public.json
 vk.bin
 proof.bin
 verifier.sol
+plonk4verifier.sol
 log_substitution.json
 ir_log
 node_modules
