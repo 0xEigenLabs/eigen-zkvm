@@ -12,6 +12,8 @@ rm -rf $WORKSPACE && mkdir -p $WORKSPACE
 
 SRS=${CUR_DIR}/../keys/setup_2^${POWER}.key
 
+cd $CUR_DIR
+
 echo "1. Compile the circuit"
 ${ZKIT} compile -i $CIRCUIT.circom --O2=full -o $WORKSPACE
 
@@ -28,4 +30,7 @@ echo "5. Verify the proof"
 ${ZKIT} verify -p $WORKSPACE/proof.bin -v $WORKSPACE/vk.bin
 
 echo "6. Generate verifier"
-${ZKIT} generate_verifier -v $WORKSPACE/vk.bin
+${ZKIT} generate_verifier -v $WORKSPACE/vk.bin -s single/contracts/verifier.sol
+
+echo "7. run verifier test"
+cd $CUR_DIR/single && yarn test
