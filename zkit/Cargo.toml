@@ -2,6 +2,10 @@
 name = "zkit"
 version = "0.1.0"
 edition = "2021"
+license = "Apache-2.0"
+description = "Eigen ZKit command tools"
+documentation = "ieigen.com"
+homepage = "ieigen.com"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
