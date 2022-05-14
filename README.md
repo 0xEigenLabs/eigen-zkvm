@@ -14,9 +14,13 @@ Write by Circom, prove by Plonk+.
 * Recursive proof
 [test_recursive.sh](./test/test_recursive.sh)
 
-## Reference
+## Applications
+* [ZKZRU](https://github.com/ieigen/ZKZRU)
 
-Inspired by:
+## Acknowledgement
+
+Thanks to the previous work from:
+
 1. https://github.com/iden3/circom
 2. https://github.com/fluidex/plonkit
 3. https://github.com/matter-labs/recursive_aggregation_circuit
