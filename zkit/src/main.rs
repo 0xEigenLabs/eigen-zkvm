@@ -1,11 +1,10 @@
 extern crate clap;
-use zklib::api::{
-    prove, export_verification_key, verify, generate_verifier, setup,
-    export_recursive_verification_key, recursive_prove,
-    recursive_verify, generate_recursive_verifier
-};
 use clap::Clap;
 use std::time::SystemTime;
+use zklib::api::{
+    export_recursive_verification_key, export_verification_key, generate_recursive_verifier,
+    generate_verifier, prove, recursive_prove, recursive_verify, setup, verify,
+};
 
 mod compilation_user;
 mod execution_user;
@@ -79,7 +78,7 @@ struct VerifyOpt {
     proof_bin: String,
     /// Transcript can be keccak or rescue, keccak default
     #[clap(short, default_value = "keccak")]
-    transcript: String
+    transcript: String,
 }
 
 #[derive(Debug, Clap)]
@@ -97,7 +96,7 @@ struct ExportVerificationKeyOpt {
     #[clap(short)]
     circuit_file: String,
     #[clap(short = "v", default_value = "vk.bin")]
-    output_vk: String
+    output_vk: String,
 }
 
 #[derive(Debug, Clap)]
@@ -188,13 +187,18 @@ struct Cli {
     command: Command,
 }
 
-pub fn compile(opt: CompilierOpt) -> Result<(), ()>{
+pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
     use compilation_user::CompilerConfig;
     use execution_user::ExecutionConfig;
     let fullopt = opt.full_simplification.len() > 0;
     let o2_arg = opt.full_simplification.as_str();
     println!("os arg {}", o2_arg);
-    let o_style = input_user::get_simplification_style(opt.no_simplification, opt.reduced_simplification, fullopt, &o2_arg)?;
+    let o_style = input_user::get_simplification_style(
+        opt.no_simplification,
+        opt.reduced_simplification,
+        fullopt,
+        &o2_arg,
+    )?;
     let input = std::path::PathBuf::from(opt.input);
     let output = std::path::PathBuf::from(opt.output);
 
@@ -225,10 +229,10 @@ pub fn compile(opt: CompilierOpt) -> Result<(), ()>{
         c_flag: user_input.c_flag(),
         wasm_flag: user_input.wasm_flag(),
         wat_flag: user_input.wat_flag(),
-	js_folder: user_input.js_folder().to_string(),
-	wasm_name: user_input.wasm_name().to_string(),
-	c_folder: user_input.c_folder().to_string(),
-	c_run_name: user_input.c_run_name().to_string(),
+        js_folder: user_input.js_folder().to_string(),
+        wasm_name: user_input.wasm_name().to_string(),
+        c_folder: user_input.c_folder().to_string(),
+        c_run_name: user_input.c_run_name().to_string(),
         c_file: user_input.c_file().to_string(),
         dat_file: user_input.dat_file().to_string(),
         wat_file: user_input.wat_file().to_string(),
@@ -255,20 +259,11 @@ fn main() {
             &args.proof_json,
             &args.public_json,
         ),
-        Command::Verify(args) => verify(
-            &args.vk_file,
-            &args.proof_bin,
-            &args.transcript,
-        ),
-        Command::GenerateVerifier(args) => generate_verifier(
-            &args.vk_file,
-            &args.sol,
-        ),
-        Command::ExportVerificationKey(args) => export_verification_key(
-            &args.srs_monomial_form,
-            &args.circuit_file,
-            &args.output_vk,
-        ),
+        Command::Verify(args) => verify(&args.vk_file, &args.proof_bin, &args.transcript),
+        Command::GenerateVerifier(args) => generate_verifier(&args.vk_file, &args.sol),
+        Command::ExportVerificationKey(args) => {
+            export_verification_key(&args.srs_monomial_form, &args.circuit_file, &args.output_vk)
+        }
 
         Command::ExportRecursiveVerificationKey(args) => export_recursive_verification_key(
             args.num_proofs_to_check,
@@ -281,20 +276,16 @@ fn main() {
             &args.old_proof_list,
             &args.old_vk,
             &args.new_proof,
-            &args.proof_json
+            &args.proof_json,
         ),
-        Command::RecursiveVerify(args) => recursive_verify(
-            &args.proof,
-            &args.vk
-        ),
-        Command::GenerateRecursiveVerifier(args) => generate_recursive_verifier(
-            &args.old_vk,
-            &args.new_vk,
-            args.num_inputs,
-            &args.sol
-        ),
-
+        Command::RecursiveVerify(args) => recursive_verify(&args.proof, &args.vk),
+        Command::GenerateRecursiveVerifier(args) => {
+            generate_recursive_verifier(&args.old_vk, &args.new_vk, args.num_inputs, &args.sol)
+        }
     };
     let end = SystemTime::now();
-    println!("time cost: {}", end.duration_since(start).unwrap().as_secs());
+    println!(
+        "time cost: {}",
+        end.duration_since(start).unwrap().as_secs()
+    );
 }

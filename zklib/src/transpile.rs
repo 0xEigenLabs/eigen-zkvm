@@ -2,7 +2,8 @@ use crate::bellman_ce;
 use bellman_ce::pairing::Engine;
 use bellman_ce::plonk::better_cs::adaptor::{TranspilationVariant, Transpiler};
 use bellman_ce::plonk::better_cs::cs::{
-    ConstraintSystem as PlonkConstraintSystem, PlonkConstraintSystemParams, PlonkCsWidth4WithNextStepParams,
+    ConstraintSystem as PlonkConstraintSystem, PlonkConstraintSystemParams,
+    PlonkCsWidth4WithNextStepParams,
 };
 use bellman_ce::plonk::cs::gates::Variable as PlonkVariable;
 use bellman_ce::SynthesisError;
@@ -39,7 +40,9 @@ impl<E: Engine, P: PlonkConstraintSystemParams<E>> TranspilerWrapper<E, P> {
     }
 }
 
-impl<E: Engine, P: PlonkConstraintSystemParams<E>> PlonkConstraintSystem<E, P> for TranspilerWrapper<E, P> {
+impl<E: Engine, P: PlonkConstraintSystemParams<E>> PlonkConstraintSystem<E, P>
+    for TranspilerWrapper<E, P>
+{
     fn alloc<F>(&mut self, value: F) -> Result<PlonkVariable, SynthesisError>
     where
         F: FnOnce() -> Result<E::Fr, SynthesisError>,
@@ -58,14 +61,17 @@ impl<E: Engine, P: PlonkConstraintSystemParams<E>> PlonkConstraintSystem<E, P> f
         this_step_coeffs: P::ThisTraceStepCoefficients,
         next_step_coeffs: P::NextTraceStepCoefficients,
     ) -> Result<(), SynthesisError> {
-        self.inner.new_gate(variables, this_step_coeffs, next_step_coeffs)
+        self.inner
+            .new_gate(variables, this_step_coeffs, next_step_coeffs)
     }
     fn get_dummy_variable(&self) -> PlonkVariable {
         self.inner.get_dummy_variable()
     }
 }
 
-impl<E: Engine, P: PlonkConstraintSystemParams<E>> bellman_ce::ConstraintSystem<E> for TranspilerWrapper<E, P> {
+impl<E: Engine, P: PlonkConstraintSystemParams<E>> bellman_ce::ConstraintSystem<E>
+    for TranspilerWrapper<E, P>
+{
     type Root = Self;
 
     fn one() -> bellman_ce::Variable {
@@ -73,7 +79,11 @@ impl<E: Engine, P: PlonkConstraintSystemParams<E>> bellman_ce::ConstraintSystem<
         bellman_ce::Variable::new_unchecked(bellman_ce::Index::Input(0))
     }
 
-    fn alloc<F, A, AR>(&mut self, a: A, f: F) -> Result<bellman_ce::Variable, bellman_ce::SynthesisError>
+    fn alloc<F, A, AR>(
+        &mut self,
+        a: A,
+        f: F,
+    ) -> Result<bellman_ce::Variable, bellman_ce::SynthesisError>
     where
         F: FnOnce() -> Result<E::Fr, bellman_ce::SynthesisError>,
         A: FnOnce() -> AR,
@@ -81,7 +91,11 @@ impl<E: Engine, P: PlonkConstraintSystemParams<E>> bellman_ce::ConstraintSystem<
     {
         <Transpiler<E, P> as bellman_ce::ConstraintSystem<E>>::alloc(&mut self.inner, a, f)
     }
-    fn alloc_input<F, A, AR>(&mut self, a: A, f: F) -> Result<bellman_ce::Variable, bellman_ce::SynthesisError>
+    fn alloc_input<F, A, AR>(
+        &mut self,
+        a: A,
+        f: F,
+    ) -> Result<bellman_ce::Variable, bellman_ce::SynthesisError>
     where
         F: FnOnce() -> Result<E::Fr, bellman_ce::SynthesisError>,
         A: FnOnce() -> AR,

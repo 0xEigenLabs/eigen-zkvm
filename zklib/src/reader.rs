@@ -17,17 +17,25 @@ use crate::bellman_ce::{
 };
 
 use crate::circom_circuit::{CircuitJson, R1CS};
-use crate::recursive::{RecursiveVerificationKey, AggregatedProof};
+use crate::recursive::{AggregatedProof, RecursiveVerificationKey};
 
 /// load proof by filename
 pub fn load_proof<E: Engine>(filename: &str) -> Proof<E, PlonkCsWidth4WithNextStepParams> {
-    Proof::<E, PlonkCsWidth4WithNextStepParams>::read(File::open(filename).expect("read proof file err")).expect("read proof err")
+    Proof::<E, PlonkCsWidth4WithNextStepParams>::read(
+        File::open(filename).expect("read proof file err"),
+    )
+    .expect("read proof err")
 }
 
 /// load multiple proofs form a list
-pub fn load_proofs_from_list<E: Engine>(list: &str) -> Vec<Proof<E, PlonkCsWidth4WithNextStepParams>> {
+pub fn load_proofs_from_list<E: Engine>(
+    list: &str,
+) -> Vec<Proof<E, PlonkCsWidth4WithNextStepParams>> {
     let file = File::open(list).expect("read proof list file err");
-    let lines: Vec<String> = BufReader::new(file).lines().map(|l| l.expect("could not parse line")).collect();
+    let lines: Vec<String> = BufReader::new(file)
+        .lines()
+        .map(|l| l.expect("could not parse line"))
+        .collect();
     let proofs: Vec<Proof<E, PlonkCsWidth4WithNextStepParams>> = lines
         .iter()
         .map(|l| {
@@ -47,31 +55,46 @@ pub fn load_proofs_from_list<E: Engine>(list: &str) -> Vec<Proof<E, PlonkCsWidth
 }
 
 /// load verification key file by filename
-pub fn load_verification_key<E: Engine>(filename: &str) -> VerificationKey<E, PlonkCsWidth4WithNextStepParams> {
-    let mut reader = BufReader::with_capacity(1 << 24, File::open(filename).expect("read vk file err"));
+pub fn load_verification_key<E: Engine>(
+    filename: &str,
+) -> VerificationKey<E, PlonkCsWidth4WithNextStepParams> {
+    let mut reader =
+        BufReader::with_capacity(1 << 24, File::open(filename).expect("read vk file err"));
     VerificationKey::<E, PlonkCsWidth4WithNextStepParams>::read(&mut reader).expect("read vk err")
 }
 
 /// get universal setup file by filename
-fn get_universal_setup_file_buff_reader(setup_file_name: &str) -> Result<BufReader<File>, anyhow::Error> {
-    let setup_file =
-        File::open(setup_file_name).map_err(|e| format_err!("Failed to open universal setup file {}, err: {}", setup_file_name, e))?;
+fn get_universal_setup_file_buff_reader(
+    setup_file_name: &str,
+) -> Result<BufReader<File>, anyhow::Error> {
+    let setup_file = File::open(setup_file_name).map_err(|e| {
+        format_err!(
+            "Failed to open universal setup file {}, err: {}",
+            setup_file_name,
+            e
+        )
+    })?;
     Ok(BufReader::with_capacity(1 << 29, setup_file))
 }
 
 /// load monomial form SRS by filename
 pub fn load_key_monomial_form<E: Engine>(filename: &str) -> Crs<E, CrsForMonomialForm> {
-    let mut buf_reader = get_universal_setup_file_buff_reader(filename).expect("read key_monomial_form file err");
+    let mut buf_reader =
+        get_universal_setup_file_buff_reader(filename).expect("read key_monomial_form file err");
     Crs::<E, CrsForMonomialForm>::read(&mut buf_reader).expect("read key_monomial_form err")
 }
 
 /// load optional lagrange form SRS by filename
-pub fn maybe_load_key_lagrange_form<E: Engine>(option_filename: Option<String>) -> Option<Crs<E, CrsForLagrangeForm>> {
+pub fn maybe_load_key_lagrange_form<E: Engine>(
+    option_filename: Option<String>,
+) -> Option<Crs<E, CrsForLagrangeForm>> {
     match option_filename {
         None => None,
         Some(filename) => {
-            let mut buf_reader = get_universal_setup_file_buff_reader(&filename).expect("read key_lagrange_form file err");
-            let key_lagrange_form = Crs::<E, CrsForLagrangeForm>::read(&mut buf_reader).expect("read key_lagrange_form err");
+            let mut buf_reader = get_universal_setup_file_buff_reader(&filename)
+                .expect("read key_lagrange_form file err");
+            let key_lagrange_form = Crs::<E, CrsForLagrangeForm>::read(&mut buf_reader)
+                .expect("read key_lagrange_form err");
             Some(key_lagrange_form)
         }
     }
@@ -88,20 +111,30 @@ pub fn load_witness_from_file<E: Engine>(filename: &str) -> Vec<E::Fr> {
 
 /// load witness from json file by filename
 pub fn load_witness_from_json_file<E: Engine>(filename: &str) -> Vec<E::Fr> {
-    let reader = OpenOptions::new().read(true).open(filename).expect("unable to open.");
+    let reader = OpenOptions::new()
+        .read(true)
+        .open(filename)
+        .expect("unable to open.");
     load_witness_from_json::<E, BufReader<File>>(BufReader::new(reader))
 }
 
 /// load witness from json by a reader
 fn load_witness_from_json<E: Engine, R: Read>(reader: R) -> Vec<E::Fr> {
     let witness: Vec<String> = serde_json::from_reader(reader).expect("unable to read.");
-    witness.into_iter().map(|x| E::Fr::from_str(&x).unwrap()).collect::<Vec<E::Fr>>()
+    witness
+        .into_iter()
+        .map(|x| E::Fr::from_str(&x).unwrap())
+        .collect::<Vec<E::Fr>>()
 }
 
 /// load witness from bin file by filename
 pub fn load_witness_from_bin_file<E: Engine>(filename: &str) -> Vec<E::Fr> {
-    let reader = OpenOptions::new().read(true).open(filename).expect("unable to open.");
-    load_witness_from_bin_reader::<E, BufReader<File>>(BufReader::new(reader)).expect("read witness failed")
+    let reader = OpenOptions::new()
+        .read(true)
+        .open(filename)
+        .expect("unable to open.");
+    load_witness_from_bin_reader::<E, BufReader<File>>(BufReader::new(reader))
+        .expect("read witness failed")
 }
 
 /// load witness from u8 array
@@ -110,7 +143,9 @@ pub fn load_witness_from_array<E: Engine>(buffer: Vec<u8>) -> Result<Vec<E::Fr>,
 }
 
 /// load witness from u8 array by a reader
-fn load_witness_from_bin_reader<E: Engine, R: Read>(mut reader: R) -> Result<Vec<E::Fr>, anyhow::Error> {
+fn load_witness_from_bin_reader<E: Engine, R: Read>(
+    mut reader: R,
+) -> Result<Vec<E::Fr>, anyhow::Error> {
     let mut wtns_header = [0u8; 4];
     reader.read_exact(&mut wtns_header)?;
     if wtns_header != [119, 116, 110, 115] {
@@ -175,7 +210,10 @@ pub fn load_r1cs(filename: &str) -> R1CS<Bn256> {
 
 /// load r1cs from json file by filename
 fn load_r1cs_from_json_file<E: Engine>(filename: &str) -> R1CS<E> {
-    let reader = OpenOptions::new().read(true).open(filename).expect("unable to open.");
+    let reader = OpenOptions::new()
+        .read(true)
+        .open(filename)
+        .expect("unable to open.");
     load_r1cs_from_json(BufReader::new(reader))
 }
 
@@ -195,7 +233,13 @@ fn load_r1cs_from_json<E: Engine, R: Read>(reader: R) -> R1CS<E> {
     let constraints = circuit_json
         .constraints
         .iter()
-        .map(|c| (convert_constraint(&c[0]), convert_constraint(&c[1]), convert_constraint(&c[2])))
+        .map(|c| {
+            (
+                convert_constraint(&c[0]),
+                convert_constraint(&c[1]),
+                convert_constraint(&c[2]),
+            )
+        })
         .collect_vec();
 
     R1CS {
@@ -208,7 +252,10 @@ fn load_r1cs_from_json<E: Engine, R: Read>(reader: R) -> R1CS<E> {
 
 /// load r1cs from bin file by filename
 fn load_r1cs_from_bin_file(filename: &str) -> (R1CS<Bn256>, Vec<usize>) {
-    let reader = OpenOptions::new().read(true).open(filename).expect("unable to open.");
+    let reader = OpenOptions::new()
+        .read(true)
+        .open(filename)
+        .expect("unable to open.");
     load_r1cs_from_bin(BufReader::new(reader))
 }
 
@@ -231,11 +278,15 @@ fn load_r1cs_from_bin<R: Read + Seek>(reader: R) -> (R1CS<Bn256>, Vec<usize>) {
 
 /// load recursive proof file by filename
 pub fn load_aggregated_proof(filename: &str) -> AggregatedProof {
-    AggregatedProof::read(File::open(filename).expect("read aggregated proof file err")).expect("read aggregated proof err")
+    AggregatedProof::read(File::open(filename).expect("read aggregated proof file err"))
+        .expect("read aggregated proof err")
 }
 
 /// load recursive verification key file by filename
 pub fn load_recursive_verification_key(filename: &str) -> RecursiveVerificationKey<'static> {
-    let mut reader = BufReader::with_capacity(1 << 24, File::open(filename).expect("read recursive vk file err"));
+    let mut reader = BufReader::with_capacity(
+        1 << 24,
+        File::open(filename).expect("read recursive vk file err"),
+    );
     RecursiveVerificationKey::read(&mut reader).expect("read recursive vk err")
 }

@@ -1,12 +1,12 @@
-use handlebars::to_json;
-use handlebars::Handlebars;
-use std::collections::HashMap;
 use franklin_crypto::bellman::pairing::{
     bn256::{Bn256 as NodeEngine, Fr},
     CurveAffine, Engine,
 };
 use franklin_crypto::bellman::plonk::{better_better_cs::setup::VerificationKey, domains::Domain};
+use handlebars::to_json;
+use handlebars::Handlebars;
 use recursive_aggregation_circuit::circuit::RecursiveAggregationCircuitBn256;
+use std::collections::HashMap;
 
 pub use crate::recursive::Config;
 
@@ -14,7 +14,7 @@ pub use recursive_aggregation_circuit::circuit;
 
 use franklin_crypto::bellman::pairing::{
     bn256::Bn256,
-    ff::{PrimeField, PrimeFieldRepr, ScalarEngine}
+    ff::{PrimeField, PrimeFieldRepr, ScalarEngine},
 };
 
 pub(crate) fn render_scalar_to_hex<F: PrimeField>(el: &F) -> String {
@@ -69,7 +69,6 @@ pub mod ethereum_serializer {
         U256::from_big_endian(&be_bytes[..])
     }
 }
-
 
 pub(crate) fn rendered_key(
     recursive_vk: VerificationKey<NodeEngine, RecursiveAggregationCircuitBn256<'static>>,
