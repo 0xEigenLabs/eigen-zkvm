@@ -44,7 +44,10 @@ pub fn gen_key_monomial_form(power: u32) -> Result<Crs<E, CrsForMonomialForm>, a
         log::info!("estimated run time: {} secs", estimated_time);
     }
 
-    Ok(Crs::<E, CrsForMonomialForm>::crs_42(1 << power, &Worker::new()))
+    Ok(Crs::<E, CrsForMonomialForm>::crs_42(
+        1 << power,
+        &Worker::new(),
+    ))
 }
 
 pub struct SetupForProver {
@@ -100,10 +103,18 @@ impl SetupForProver {
         key_lagrange_form: Option<Crs<E, CrsForLagrangeForm>>,
     ) -> Result<Self, anyhow::Error> {
         let (gates_count, hints) = transpile_with_gates_count(circuit.clone())?;
-        log::info!("transpile done, gates_count {} hints size {}", gates_count, hints.len());
+        log::info!(
+            "transpile done, gates_count {} hints size {}",
+            gates_count,
+            hints.len()
+        );
         let setup_polynomials = setup(circuit, &hints)?;
         let size = setup_polynomials.n.next_power_of_two().trailing_zeros();
-        log::info!("circuit setup_polynomials.n {:?} size {}", setup_polynomials.n, size);
+        log::info!(
+            "circuit setup_polynomials.n {:?} size {}",
+            setup_polynomials.n,
+            size
+        );
         let setup_power_of_two = std::cmp::max(size, SETUP_MIN_POW2);
         anyhow::ensure!(
             (SETUP_MIN_POW2..=SETUP_MAX_POW2).contains(&setup_power_of_two),
@@ -119,12 +130,17 @@ impl SetupForProver {
     }
 
     // generate a verification key for a circuit
-    pub fn make_verification_key(&self) -> Result<VerificationKey<E, PlonkCsWidth4WithNextStepParams>, SynthesisError> {
+    pub fn make_verification_key(
+        &self,
+    ) -> Result<VerificationKey<E, PlonkCsWidth4WithNextStepParams>, SynthesisError> {
         make_verification_key(&self.setup_polynomials, &self.key_monomial_form)
     }
 
     // quickly valiate whether a witness is satisfied
-    pub fn validate_witness<C: Circuit<E> + Clone>(&self, circuit: C) -> Result<(), SynthesisError> {
+    pub fn validate_witness<C: Circuit<E> + Clone>(
+        &self,
+        circuit: C,
+    ) -> Result<(), SynthesisError> {
         is_satisfied_using_one_shot_check(circuit, &self.hints)
     }
 
@@ -149,14 +165,16 @@ impl SetupForProver {
                 }
             },
             None => match transcript {
-                "keccak" => prove_by_steps::<_, _, RollingKeccakTranscript<<E as ScalarEngine>::Fr>>(
-                    circuit,
-                    &self.hints,
-                    &self.setup_polynomials,
-                    None,
-                    &self.key_monomial_form,
-                    None,
-                ),
+                "keccak" => {
+                    prove_by_steps::<_, _, RollingKeccakTranscript<<E as ScalarEngine>::Fr>>(
+                        circuit,
+                        &self.hints,
+                        &self.setup_polynomials,
+                        None,
+                        &self.key_monomial_form,
+                        None,
+                    )
+                }
                 "rescue" => {
                     let (bn256_param, rns_param) = get_default_rescue_transcript_params();
                     prove_by_steps::<_, _, RescueTranscriptForRNS<E>>(
@@ -192,9 +210,11 @@ pub fn verify(
     transcript: &str,
 ) -> Result<bool, SynthesisError> {
     match transcript {
-        "keccak" => {
-            crate::bellman_ce::plonk::better_cs::verifier::verify::<_, _, RollingKeccakTranscript<<E as ScalarEngine>::Fr>>(proof, vk, None)
-        }
+        "keccak" => crate::bellman_ce::plonk::better_cs::verifier::verify::<
+            _,
+            _,
+            RollingKeccakTranscript<<E as ScalarEngine>::Fr>,
+        >(proof, vk, None),
         "rescue" => {
             let (bn256_param, rns_param) = get_default_rescue_transcript_params();
             crate::bellman_ce::plonk::better_cs::verifier::verify::<_, _, RescueTranscriptForRNS<E>>(
@@ -209,11 +229,17 @@ pub fn verify(
     }
 }
 
-fn get_default_rescue_transcript_params() -> (<E as RescueEngine>::Params, RnsParameters<E, <E as Engine>::Fq>) {
+fn get_default_rescue_transcript_params() -> (
+    <E as RescueEngine>::Params,
+    RnsParameters<E, <E as Engine>::Fq>,
+) {
     use franklin_crypto::rescue::bn256::Bn256RescueParams;
     let rns_params = RnsParameters::<E, <E as Engine>::Fq>::new_for_field(68, 110, 4);
     let rescue_params = Bn256RescueParams::new_checked_2_into_1();
-    let transcript_params: (<E as RescueEngine>::Params, RnsParameters<E, <E as Engine>::Fq>) = (rescue_params, rns_params);
+    let transcript_params: (
+        <E as RescueEngine>::Params,
+        RnsParameters<E, <E as Engine>::Fq>,
+    ) = (rescue_params, rns_params);
     transcript_params
 }
 

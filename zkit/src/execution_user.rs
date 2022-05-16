@@ -53,7 +53,10 @@ fn generate_output_r1cs(file: &str, exporter: &dyn ConstraintExporter) -> Result
         println!("{} {}", Colour::Green.paint("Written successfully:"), file);
         Result::Ok(())
     } else {
-        eprintln!("{}", Colour::Red.paint("Could not write the output in the given path"));
+        eprintln!(
+            "{}",
+            Colour::Red.paint("Could not write the output in the given path")
+        );
         Result::Err(())
     }
 }
@@ -63,7 +66,10 @@ fn generate_output_sym(file: &str, exporter: &dyn ConstraintExporter) -> Result<
         println!("{} {}", Colour::Green.paint("Written successfully:"), file);
         Result::Ok(())
     } else {
-        eprintln!("{}", Colour::Red.paint("Could not write the output in the given path"));
+        eprintln!(
+            "{}",
+            Colour::Red.paint("Could not write the output in the given path")
+        );
         Result::Err(())
     }
 }
@@ -73,10 +79,17 @@ fn generate_json_constraints(
     exporter: &dyn ConstraintExporter,
 ) -> Result<(), ()> {
     if let Ok(()) = exporter.json_constraints(&debug) {
-        println!("{} {}", Colour::Green.paint("Constraints written in:"), debug.json_constraints);
+        println!(
+            "{} {}",
+            Colour::Green.paint("Constraints written in:"),
+            debug.json_constraints
+        );
         Result::Ok(())
     } else {
-        eprintln!("{}", Colour::Red.paint("Could not write the output in the given path"));
+        eprintln!(
+            "{}",
+            Colour::Red.paint("Could not write the output in the given path")
+        );
         Result::Err(())
     }
 }

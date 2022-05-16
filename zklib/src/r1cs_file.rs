@@ -46,7 +46,10 @@ fn read_header<R: Read>(mut reader: R, size: u64) -> Result<Header> {
     let mut prime_size = vec![0u8; field_size as usize];
     reader.read_exact(&mut prime_size)?;
     if size != 32 + field_size as u64 {
-        return Err(Error::new(ErrorKind::InvalidData, "Invalid header section size"));
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "Invalid header section size",
+        ));
     }
 
     Ok(Header {
@@ -61,16 +64,26 @@ fn read_header<R: Read>(mut reader: R, size: u64) -> Result<Header> {
     })
 }
 
-fn read_constraint_vec<R: Read, E: Engine>(mut reader: R, header: &Header) -> Result<Vec<(usize, E::Fr)>> {
+fn read_constraint_vec<R: Read, E: Engine>(
+    mut reader: R,
+    header: &Header,
+) -> Result<Vec<(usize, E::Fr)>> {
     let n_vec = reader.read_u32::<LittleEndian>()? as usize;
     let mut vec = Vec::with_capacity(n_vec);
     for _ in 0..n_vec {
-        vec.push((reader.read_u32::<LittleEndian>()? as usize, read_field::<&mut R, E>(&mut reader)?));
+        vec.push((
+            reader.read_u32::<LittleEndian>()? as usize,
+            read_field::<&mut R, E>(&mut reader)?,
+        ));
     }
     Ok(vec)
 }
 
-fn read_constraints<R: Read, E: Engine>(mut reader: R, size: u64, header: &Header) -> Result<Vec<Constraint<E>>> {
+fn read_constraints<R: Read, E: Engine>(
+    mut reader: R,
+    size: u64,
+    header: &Header,
+) -> Result<Vec<Constraint<E>>> {
     // todo check section size
     let mut vec = Vec::with_capacity(header.n_constraints as usize);
     for _ in 0..header.n_constraints {
@@ -85,14 +98,20 @@ fn read_constraints<R: Read, E: Engine>(mut reader: R, size: u64, header: &Heade
 
 fn read_map<R: Read>(mut reader: R, size: u64, header: &Header) -> Result<Vec<u64>> {
     if size != header.n_wires as u64 * 8 {
-        return Err(Error::new(ErrorKind::InvalidData, "Invalid map section size"));
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "Invalid map section size",
+        ));
     }
     let mut vec = Vec::with_capacity(header.n_wires as usize);
     for _ in 0..header.n_wires {
         vec.push(reader.read_u64::<LittleEndian>()?);
     }
     if vec[0] != 0 {
-        return Err(Error::new(ErrorKind::InvalidData, "Wire 0 should always be mapped to 0"));
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "Wire 0 should always be mapped to 0",
+        ));
     }
     Ok(vec)
 }
@@ -133,17 +152,36 @@ pub fn from_reader<R: Read + Seek>(mut reader: R) -> Result<R1CSFile<Bn256>> {
     reader.seek(SeekFrom::Start(*section_offsets.get(&header_type).unwrap()))?;
     let header = read_header(&mut reader, *section_sizes.get(&header_type).unwrap())?;
     if header.field_size != 32 {
-        return Err(Error::new(ErrorKind::InvalidData, "This parser only supports 32-byte fields"));
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "This parser only supports 32-byte fields",
+        ));
     }
-    if header.prime_size != hex!("010000f093f5e1439170b97948e833285d588181b64550b829a031e1724e6430") {
-        return Err(Error::new(ErrorKind::InvalidData, "This parser only supports bn256"));
+    if header.prime_size != hex!("010000f093f5e1439170b97948e833285d588181b64550b829a031e1724e6430")
+    {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "This parser only supports bn256",
+        ));
     }
 
-    reader.seek(SeekFrom::Start(*section_offsets.get(&constraint_type).unwrap()))?;
-    let constraints = read_constraints::<&mut R, Bn256>(&mut reader, *section_sizes.get(&constraint_type).unwrap(), &header)?;
+    reader.seek(SeekFrom::Start(
+        *section_offsets.get(&constraint_type).unwrap(),
+    ))?;
+    let constraints = read_constraints::<&mut R, Bn256>(
+        &mut reader,
+        *section_sizes.get(&constraint_type).unwrap(),
+        &header,
+    )?;
 
-    reader.seek(SeekFrom::Start(*section_offsets.get(&wire2label_type).unwrap()))?;
-    let wire_mapping = read_map(&mut reader, *section_sizes.get(&wire2label_type).unwrap(), &header)?;
+    reader.seek(SeekFrom::Start(
+        *section_offsets.get(&wire2label_type).unwrap(),
+    ))?;
+    let wire_mapping = read_map(
+        &mut reader,
+        *section_sizes.get(&wire2label_type).unwrap(),
+        &header,
+    )?;
 
     Ok(R1CSFile {
         version,

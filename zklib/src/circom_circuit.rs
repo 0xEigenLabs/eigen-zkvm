@@ -54,7 +54,12 @@ impl<'a, E: Engine> CircomCircuit<E> {
             None => None,
             Some(w) => match &self.wire_mapping {
                 None => Some(w[1..self.r1cs.num_inputs].to_vec()),
-                Some(m) => Some(m[1..self.r1cs.num_inputs].iter().map(|i| w[*i]).collect_vec()),
+                Some(m) => Some(
+                    m[1..self.r1cs.num_inputs]
+                        .iter()
+                        .map(|i| w[*i])
+                        .collect_vec(),
+                ),
             },
         }
     }
@@ -114,11 +119,12 @@ impl<'a, E: Engine> Circuit<E> for CircomCircuit<E> {
             }
         };
         let make_lc = |lc_data: Vec<(usize, E::Fr)>| {
-            lc_data
-                .iter()
-                .fold(LinearCombination::<E>::zero(), |lc: LinearCombination<E>, (index, coeff)| {
+            lc_data.iter().fold(
+                LinearCombination::<E>::zero(),
+                |lc: LinearCombination<E>, (index, coeff)| {
                     lc + (*coeff, Variable::new_unchecked(make_index(*index)))
-                })
+                },
+            )
         };
         for (i, constraint) in self.r1cs.constraints.iter().enumerate() {
             // 0 * LC = 0 must be ignored

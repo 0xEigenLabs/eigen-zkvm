@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use ansi_term::Colour;
+use std::path::PathBuf;
 
 pub struct Input {
     pub input_program: PathBuf,
@@ -44,26 +44,40 @@ const SYM: &'static str = "sym";
 const JSON: &'static str = "json";
 
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub enum SimplificationStyle { O0, O1, O2(usize) }
-pub fn get_simplification_style(o_0: bool, o_1: bool, o_2: bool, o_2_argument: &str) -> Result<SimplificationStyle, ()> {
-
-    let no_rounds =
-        if o_2_argument == "full" {
-            Ok(usize::MAX) }
-        else {
-            usize::from_str_radix(o_2_argument, 10)
-        };
+pub enum SimplificationStyle {
+    O0,
+    O1,
+    O2(usize),
+}
+pub fn get_simplification_style(
+    o_0: bool,
+    o_1: bool,
+    o_2: bool,
+    o_2_argument: &str,
+) -> Result<SimplificationStyle, ()> {
+    let no_rounds = if o_2_argument == "full" {
+        Ok(usize::MAX)
+    } else {
+        usize::from_str_radix(o_2_argument, 10)
+    };
     match (o_0, o_1, o_2, no_rounds) {
         (true, _, _, _) => Ok(SimplificationStyle::O0),
         (_, true, _, _) => Ok(SimplificationStyle::O1),
         (_, _, true, Ok(no_rounds)) => Ok(SimplificationStyle::O2(no_rounds)),
         (false, false, false, _) => Ok(SimplificationStyle::O1),
-        _ => Result::Err(eprintln!("{}", Colour::Red.paint("invalid number of rounds")))
-        }
+        _ => Result::Err(eprintln!(
+            "{}",
+            Colour::Red.paint("invalid number of rounds")
+        )),
+    }
 }
 
 impl Input {
-    pub fn new(input: PathBuf, output_path: PathBuf, o_style: SimplificationStyle) -> Result<Input, ()> {
+    pub fn new(
+        input: PathBuf,
+        output_path: PathBuf,
+        o_style: SimplificationStyle,
+    ) -> Result<Input, ()> {
         let file_name = input.file_stem().unwrap().to_str().unwrap().to_string();
         let output_c_path = Input::build_folder(&output_path, &file_name, CPP);
         let output_js_path = Input::build_folder(&output_path, &file_name, JS);
@@ -94,7 +108,11 @@ impl Input {
             json_constraint_flag: true,
             json_substitution_flag: false,
             print_ir_flag: false,
-            no_rounds: if let SimplificationStyle::O2(r) = o_style { r } else { 0 },
+            no_rounds: if let SimplificationStyle::O2(r) = o_style {
+                r
+            } else {
+                0
+            },
             fast_flag: o_style == SimplificationStyle::O0,
             reduced_simplification_flag: o_style == SimplificationStyle::O1,
             parallel_simplification_flag: false, // TODO
@@ -105,14 +123,14 @@ impl Input {
 
     fn build_folder(output_path: &PathBuf, filename: &str, ext: &str) -> PathBuf {
         let mut file = output_path.clone();
-        let folder_name = format!("{}_{}",filename,ext);
+        let folder_name = format!("{}_{}", filename, ext);
         file.push(folder_name);
         file
     }
 
     fn build_output(output_path: &PathBuf, filename: &str, ext: &str) -> PathBuf {
         let mut file = output_path.clone();
-        file.push(format!("{}.{}",filename,ext));
+        file.push(format!("{}.{}", filename, ext));
         file
     }
 

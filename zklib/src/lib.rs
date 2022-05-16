@@ -13,11 +13,11 @@ extern crate num_traits;
 extern crate rand;
 
 pub mod circom_circuit;
+pub mod plonk;
 pub mod r1cs_file;
 pub mod reader;
-pub mod plonk;
-pub mod transpile;
 pub mod recursive;
+pub mod transpile;
 pub mod utils;
 pub mod verifier;
 
