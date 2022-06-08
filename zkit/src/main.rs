@@ -192,7 +192,6 @@ pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
     use execution_user::ExecutionConfig;
     let fullopt = opt.full_simplification.len() > 0;
     let o2_arg = opt.full_simplification.as_str();
-    println!("os arg {}", o2_arg);
     let o_style = input_user::get_simplification_style(
         opt.no_simplification,
         opt.reduced_simplification,
