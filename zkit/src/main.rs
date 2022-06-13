@@ -66,7 +66,7 @@ struct ProveOpt {
     #[clap(short = "j", default_value = "proof.json")]
     proof_json: String,
 
-    #[clap(default_value = "public.json")]
+    #[clap(short = "p", default_value = "public.json")]
     public_json: String,
 }
 
