@@ -8,7 +8,6 @@ on:
 jobs:
   create-release:
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
     strategy:
       fail-fast: false
       matrix:
