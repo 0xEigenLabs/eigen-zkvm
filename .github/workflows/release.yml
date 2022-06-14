@@ -10,10 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: taiki-e/github-actions/install-rust@main
-        with:
-          toolchain: nightly
-      - run: cargo package
       - uses: taiki-e/create-gh-release-action@v1
         with:
           changelog: CHANGELOG.md
