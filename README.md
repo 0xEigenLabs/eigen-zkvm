@@ -7,7 +7,7 @@ EigenZKit is a ZK DAPP development toolkit,  enabling the developer to write cir
 
 * [x] Generate solidity verifier;
 
-* [  ] GPU acceleration for proving;
+* [x] GPU acceleration for proving, not opensourced; 
 
 ## Tutorial
 * Single proof
