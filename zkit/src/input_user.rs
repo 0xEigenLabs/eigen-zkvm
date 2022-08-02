@@ -119,7 +119,7 @@ impl Input {
             parallel_simplification_flag: false, // TODO
             inspect_constraints_flag: false,
             flag_verbose: false,
-            prime: P_0.to_string(),
+            prime: "bn128".to_string(),
         })
     }
 
