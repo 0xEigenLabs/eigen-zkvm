@@ -30,6 +30,7 @@ pub struct Input {
     pub inspect_constraints_flag: bool,
     pub no_rounds: usize,
     pub flag_verbose: bool,
+    pub prime: String,
 }
 
 const P_0: &'static str =
@@ -118,6 +119,7 @@ impl Input {
             parallel_simplification_flag: false, // TODO
             inspect_constraints_flag: false,
             flag_verbose: false,
+            prime: P_0.to_string(),
         })
     }
 
@@ -216,5 +218,8 @@ impl Input {
     }
     pub fn no_rounds(&self) -> usize {
         self.no_rounds
+    }
+    pub fn prime(&self) -> String {
+        self.prime.clone()
     }
 }
