@@ -9,6 +9,9 @@ EigenZKit is a ZK DAPP development toolkit,  enabling the developer to write cir
 
 * [x] GPU acceleration for proving, not opensourced; 
 
+* [] Mixed Proof system on Plonk and FRI.
+
+
 ## Tutorial
 * Single proof
 [test_single.sh](./test/test_single.sh)
