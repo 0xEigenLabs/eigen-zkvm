@@ -37,7 +37,7 @@ pub fn execute_project(
         inspect_constraints: config.inspect_constraints_flag,
         prime: config.prime,
         // https://github.com/iden3/circom/commit/8f140c1dec7975b339bfe17c1f08d8081b913560
-        flag_old_heuristics: false
+        flag_old_heuristics: false,
     };
     let (exporter, vcp) = build_circuit(program_archive, build_config)?;
     if config.r1cs_flag {
