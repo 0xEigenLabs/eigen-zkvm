@@ -13,6 +13,12 @@ EigenZKit is a ZK DAPP development toolkit,  enabling the developer to write cir
 
 
 ## Tutorial
+* Generate universal setup key
+```
+zkit setup -p 13 setup_2^13.key
+```
+For power in range 20 to 26, you can download directly from [universal-setup hub](https://universal-setup.ams3.digitaloceanspaces.com).
+
 * Single proof
 [test_single.sh](./test/test_single.sh)
 
