@@ -26,7 +26,7 @@ For power in range 20 to 26, you can download directly from [universal-setup hub
 [test_recursive.sh](./test/test_recursive.sh)
 
 ## Applications
-* [ZKZRU](https://github.com/ieigen/ZKZRU)
+* [ZKZRU](https://github.com/0xEigenLabs/ZKZRU)
 
 ## Acknowledgement
 

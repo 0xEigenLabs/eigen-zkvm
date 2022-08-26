@@ -1,5 +1,5 @@
 {
-  "name": "EigenZkit",
+  "name": "eigen-zkit",
   "version": "0.0.1",
   "description": "A zkSNARK toolkit to work with circom zkSNARKs DSL in plonk proof system",
   "main": "index.js",
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ieigen/EigenZkit.git"
+    "url": "git+https://github.com/0xEigenLabs/eigen-zkit.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ieigen/EigenZkit/issues"
+    "url": "https://github.com/0xEigenLabs/eigen-zkit/issues"
   },
-  "homepage": "https://github.com/ieigen/EigenZkit",
+  "homepage": "https://github.com/0xEigenLabs/eigen-zkit",
   "dependencies": {
     "circomlib": "^2.0.2"
   }
