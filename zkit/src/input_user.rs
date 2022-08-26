@@ -31,6 +31,7 @@ pub struct Input {
     pub no_rounds: usize,
     pub flag_verbose: bool,
     pub prime: String,
+    pub link_libraries: Vec<PathBuf>,
 }
 
 const P_0: &'static str =
@@ -120,6 +121,7 @@ impl Input {
             inspect_constraints_flag: false,
             flag_verbose: false,
             prime: "bn128".to_string(),
+            link_libraries: vec![],
         })
     }
 

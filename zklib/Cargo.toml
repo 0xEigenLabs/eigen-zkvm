@@ -1,6 +1,6 @@
 [package]
 name = "zklib"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 license = "Apache-2.0"
 description = "Eigen ZKit Library"
@@ -14,12 +14,10 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 anyhow = "1.0.34"
-bellman_vk_codegen = { git = "https://github.com/0xEigenLabs/solidity_plonk_verifier.git", version = "0.2.0", features = [ "multicore" ] }
-recursive_aggregation_circuit = { package = "recursive_aggregation_circuit", git = "https://github.com/matter-labs/recursive_aggregation_circuit.git", version = "1.0.0"}
+bellman_vk_codegen = { git = "https://github.com/0xEigenLabs/solidity_plonk_verifier.git", version = "0.2.0" }
+recursive_aggregation_circuit = { package = "recursive_aggregation_circuit", git = "https://github.com/0xEigenLabs/recursive_aggregation_circuit.git", version = "1.0.0"}
 byteorder = "1"
-clap = { package = "clap-v3", version = "3.0.0-beta.1" } # todo: replace with official v3 when it's released to crates.io
-env_logger = "0.8.2"
-franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = [ "multicore", "plonk" ], version = "0.0.5"}
+franklin-crypto = { git = "https://github.com/0xEigenLabs/franklin-crypto", branch = "beta", features = [ "plonk" ], version = "0.0.5"}
 
 hex-literal = "0.2.1"
 itertools = "0.8.1"
@@ -32,4 +30,17 @@ serde_json = "1.0"
 
 handlebars = "3.*"
 hex = "*"
-ethabi = "14"
+
+ethabi = { version = "14", optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2.51", features = ["serde-serialize"]  }
+wasm-bindgen-futures = "0.4.1"
+rand = { version="0.6.5", features = ["wasm-bindgen"] }
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[features]
+default = ["bellman_vk_codegen/multicore", "franklin-crypto/multicore", "ethabi", "recursive_aggregation_circuit/multicore"]
+wasm = ["bellman_vk_codegen/wasm", "recursive_aggregation_circuit/wasm"]

@@ -1,6 +1,9 @@
 use crate::bellman_ce::pairing::bn256::Bn256;
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
+
+#[cfg(not(feature = "wasm"))]
 use crate::{recursive, verifier};
+
 use std::path::Path;
 
 // generate a monomial_form SRS, and save it to a file
@@ -19,7 +22,6 @@ pub fn setup(power: u32, srs_monomial_form: &String) -> Result<(), ()> {
 }
 
 // circuit filename default resolver
-
 pub fn analyse(circuit_file: &String, output: &String) -> Result<(), ()> {
     let circuit = CircomCircuit {
         r1cs: reader::load_r1cs(&circuit_file),
@@ -121,6 +123,7 @@ pub fn generate_verifier(vk_file: &String, sol: &String) -> Result<(), ()> {
     Result::Ok(())
 }
 
+#[cfg(not(feature = "wasm"))]
 pub fn export_recursive_verification_key(
     num_proofs_to_check: usize,
     num_inputs: usize,
@@ -137,6 +140,7 @@ pub fn export_recursive_verification_key(
     Result::Ok(())
 }
 
+#[cfg(not(feature = "wasm"))]
 pub fn recursive_prove(
     srs_monomial_form: &String,
     old_proof_list: &String,
@@ -165,6 +169,7 @@ pub fn recursive_prove(
     Result::Ok(())
 }
 
+#[cfg(not(feature = "wasm"))]
 pub fn recursive_verify(proof: &String, vk: &String) -> Result<(), ()> {
     let vk = reader::load_recursive_verification_key(vk);
     let proof = reader::load_aggregated_proof(proof);
@@ -179,6 +184,7 @@ pub fn recursive_verify(proof: &String, vk: &String) -> Result<(), ()> {
 }
 
 // check an aggregated proof is corresponding to the original proofs
+#[cfg(not(feature = "wasm"))]
 pub fn check_aggregation(
     old_proof_list: &String,
     old_vk: &String,
@@ -202,6 +208,7 @@ pub fn check_aggregation(
     }
 }
 
+#[cfg(not(feature = "wasm"))]
 pub fn generate_recursive_verifier(
     raw_vk_file: &String,
     recursive_vk_file: &String,

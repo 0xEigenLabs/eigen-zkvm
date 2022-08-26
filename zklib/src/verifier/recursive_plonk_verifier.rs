@@ -1,3 +1,4 @@
+#![cfg(not(target_arch = "wasm32"))]
 use franklin_crypto::bellman::pairing::{
     bn256::{Bn256 as NodeEngine, Fr},
     CurveAffine, Engine,
@@ -25,6 +26,7 @@ pub(crate) fn render_scalar_to_hex<F: PrimeField>(el: &F) -> String {
     format!("0x{}", hex::encode(buff))
 }
 
+#[cfg(not(feature = "wasm"))]
 pub mod ethereum_serializer {
     use super::*;
     use ethabi::ethereum_types::U256;

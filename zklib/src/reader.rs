@@ -17,6 +17,8 @@ use crate::bellman_ce::{
 };
 
 use crate::circom_circuit::{CircuitJson, R1CS};
+
+#[cfg(not(feature = "wasm"))]
 use crate::recursive::{AggregatedProof, RecursiveVerificationKey};
 
 /// load proof by filename
@@ -143,7 +145,7 @@ pub fn load_witness_from_array<E: Engine>(buffer: Vec<u8>) -> Result<Vec<E::Fr>,
 }
 
 /// load witness from u8 array by a reader
-fn load_witness_from_bin_reader<E: Engine, R: Read>(
+pub fn load_witness_from_bin_reader<E: Engine, R: Read>(
     mut reader: R,
 ) -> Result<Vec<E::Fr>, anyhow::Error> {
     let mut wtns_header = [0u8; 4];
@@ -260,7 +262,7 @@ fn load_r1cs_from_bin_file(filename: &str) -> (R1CS<Bn256>, Vec<usize>) {
 }
 
 /// load r1cs from bin by a reader
-fn load_r1cs_from_bin<R: Read + Seek>(reader: R) -> (R1CS<Bn256>, Vec<usize>) {
+pub fn load_r1cs_from_bin<R: Read + Seek>(reader: R) -> (R1CS<Bn256>, Vec<usize>) {
     let file = crate::r1cs_file::from_reader(reader).expect("unable to read.");
     let num_inputs = (1 + file.header.n_pub_in + file.header.n_pub_out) as usize;
     let num_variables = file.header.n_wires as usize;
@@ -277,12 +279,14 @@ fn load_r1cs_from_bin<R: Read + Seek>(reader: R) -> (R1CS<Bn256>, Vec<usize>) {
 }
 
 /// load recursive proof file by filename
+#[cfg(not(feature = "wasm"))]
 pub fn load_aggregated_proof(filename: &str) -> AggregatedProof {
     AggregatedProof::read(File::open(filename).expect("read aggregated proof file err"))
         .expect("read aggregated proof err")
 }
 
 /// load recursive verification key file by filename
+#[cfg(not(feature = "wasm"))]
 pub fn load_recursive_verification_key(filename: &str) -> RecursiveVerificationKey<'static> {
     let mut reader = BufReader::with_capacity(
         1 << 24,

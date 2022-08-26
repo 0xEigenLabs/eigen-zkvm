@@ -1,5 +1,4 @@
 # EigenZKit
-Write by Circom, prove by Plonk+.
 
 EigenZKit is a ZK DAPP development toolkit,  enabling the developer to write circuits(R1CS) by Circom, transpile the circuits to PLONKish Arithmetization, optimize the proving with the mixed proof system, and finally generate the solidity verifier. 
 
@@ -8,6 +7,8 @@ EigenZKit is a ZK DAPP development toolkit,  enabling the developer to write cir
 * [x] Generate solidity verifier;
 
 * [x] GPU acceleration for proving, not opensourced; 
+
+* [x] WASM friendly for single proving and verifing, NodeJS/Javascript prover and verifier, [plonkjs](https://github.com/0xEigenLabs/plonkjs)
 
 * [] Mixed Proof system on Plonk and FRI.
 

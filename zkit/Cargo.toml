@@ -1,6 +1,6 @@
 [package]
 name = "zkit"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 license = "Apache-2.0"
 description = "Eigen ZKit command tools"
@@ -10,7 +10,7 @@ homepage = "eigen.cash"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-zklib = { path = "../zklib", version = "0.1.0" }
+zklib = { path = "../zklib", version = "0.0.1" }
 clap = { package = "clap-v3", version = "3.0.0-beta.1" } # todo: replace with official v3 when it's released to crates.io
 
 ansi_term = "0.12.1"

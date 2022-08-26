@@ -31,7 +31,7 @@ pub type Constraint<E> = (
 );
 
 /// R1CS spec: https://www.sikoba.com/docs/SKOR_GD_R1CS_Format.pdf
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct R1CS<E: Engine> {
     pub num_inputs: usize,
     pub num_aux: usize,
@@ -39,7 +39,7 @@ pub struct R1CS<E: Engine> {
     pub constraints: Vec<Constraint<E>>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CircomCircuit<E: Engine> {
     pub r1cs: R1CS<E>,
     pub witness: Option<Vec<E::Fr>>,
