@@ -248,7 +248,7 @@ fn main() {
     let start = SystemTime::now();
     let _ = match args.command {
         Command::Setup(args) => setup(args.power, &args.srs_monomial_form),
-        Command::Compile(args) => compile(args),
+        Command::Compile(args) => compile(args).map_err(|_| anyhow::anyhow!("compile error")),
         Command::Prove(args) => prove(
             &args.circuit_file,
             &args.witness,

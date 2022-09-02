@@ -15,6 +15,8 @@ clap = { package = "clap-v3", version = "3.0.0-beta.1" } # todo: replace with of
 
 ansi_term = "0.12.1"
 wast = "39.0.0"
+anyhow = "1.0.34"
+#thiserror = "1.0.33"
 
 ## from circom
 parser = { git = "https://github.com/iden3/circom.git", version = "2.0.1" }
