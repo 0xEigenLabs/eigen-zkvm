@@ -17,11 +17,13 @@ SRS=${CUR_DIR}/../keys/setup_2^${POWER}.key
 BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.key
 
 if [ ! -f $SRS ]; then
-   curl https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${POWER}.key -o $SRS
+#   curl https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${POWER}.key -o $SRS
+    ${ZKIT} setup -p ${POWER} -s ${SRS}
 fi
 
 if [ ! -f $BIG_SRS ]; then
-   curl https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${BIG_POWER}.key -o $BIG_SRS
+#   curl https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${BIG_POWER}.key -o $BIG_SRS
+    ${ZKIT} setup -p ${BIG_POWER} -s ${BIG_SRS}
 fi
 
 echo "1. compile circuit"
@@ -64,4 +66,4 @@ echo "7. verify"
 ${ZKIT} recursive_verify -p $WORKSPACE/recursive_proof.bin -v $WORKSPACE/recursive_vk.bin
 
 echo "8. generate verifier"
-${ZKIT} generate_recursive_verifier -v $WORKSPACE/vk.bin -n $WORKSPACE/recursive_vk.bin -i 3 -s $WORKSPACE/verifier.sol
+${ZKIT} generate_recursive_verifier -o $WORKSPACE/vk.bin -n $WORKSPACE/recursive_vk.bin -i 3 -s $WORKSPACE/verifier.sol

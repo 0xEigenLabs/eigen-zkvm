@@ -4,13 +4,13 @@ version = "0.0.1"
 edition = "2021"
 license = "Apache-2.0"
 description = "Eigen ZKit command tools"
-documentation = "eigen.cash"
-homepage = "eigen.cash"
+documentation = "https://eigen.cash"
+homepage = "https://eigen.cash"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-zklib = { path = "../zklib", version = "0.0.1" }
+zklib = { package="plonky", path = "../plonky", version = "0.0.1" }
 clap = { package = "clap-v3", version = "3.0.0-beta.1" } # todo: replace with official v3 when it's released to crates.io
 
 ansi_term = "0.12.1"
@@ -19,10 +19,10 @@ anyhow = "1.0.34"
 #thiserror = "1.0.33"
 
 ## from circom
-parser = { git = "https://github.com/iden3/circom.git", version = "2.0.1" }
-program_structure = { git = "https://github.com/iden3/circom.git", version = "2.0.1" }
-type_analysis = { git = "https://github.com/iden3/circom.git", version = "2.0.0"}
-constraint_generation = { git = "https://github.com/iden3/circom.git", version = "2.0.1" }
-constraint_writers = { git = "https://github.com/iden3/circom.git", version = "2.0.1"}
-compiler = { git = "https://github.com/iden3/circom.git", version = "2.0.1"}
-dag = { git = "https://github.com/iden3/circom.git", version = "2.0.1"}
+parser = { git = "https://github.com/iden3/circom.git", version = "2.0.8" }
+program_structure = { git = "https://github.com/iden3/circom.git", version = "2.0.8" }
+type_analysis = { git = "https://github.com/iden3/circom.git", version = "2.0.8"}
+constraint_generation = { git = "https://github.com/iden3/circom.git", version = "2.0.8" }
+constraint_writers = { git = "https://github.com/iden3/circom.git", version = "2.0.6"}
+compiler = { git = "https://github.com/iden3/circom.git", version = "2.0.8"}
+dag = { git = "https://github.com/iden3/circom.git", version = "2.0.8"}

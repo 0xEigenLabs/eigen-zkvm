@@ -1,5 +1,6 @@
 [workspace]
 members = [
   "zkit",
-  "zklib",
+  "plonky",
+  "starky",
 ]
