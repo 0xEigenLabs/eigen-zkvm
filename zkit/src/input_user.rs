@@ -79,6 +79,7 @@ impl Input {
         input: PathBuf,
         output_path: PathBuf,
         o_style: SimplificationStyle,
+        prime: String,
     ) -> Result<Input, ()> {
         let file_name = input.file_stem().unwrap().to_str().unwrap().to_string();
         let output_c_path = Input::build_folder(&output_path, &file_name, CPP);
@@ -120,7 +121,8 @@ impl Input {
             parallel_simplification_flag: false, // TODO
             inspect_constraints_flag: false,
             flag_verbose: false,
-            prime: "bn128".to_string(),
+            //prime: "bn128".to_string(), //goldilocks
+            prime: prime,
             link_libraries: vec![],
         })
     }
@@ -221,7 +223,7 @@ impl Input {
     pub fn no_rounds(&self) -> usize {
         self.no_rounds
     }
-    pub fn prime(&self) -> String {
+    pub fn get_prime(&self) -> String {
         self.prime.clone()
     }
 }

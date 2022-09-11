@@ -32,6 +32,10 @@ pub struct CompilierOpt {
     #[clap(long = "O0", hidden = false)]
     no_simplification: bool,
 
+    /// prime field, like goldilocks
+    #[clap(short = "p", default_value = "bn128")]
+    prime: String,
+
     ///Set reduced simplification
     #[clap(long = "O1", hidden = false)]
     reduced_simplification: bool,
@@ -201,7 +205,7 @@ pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
     let input = std::path::PathBuf::from(opt.input);
     let output = std::path::PathBuf::from(opt.output);
 
-    let user_input = input_user::Input::new(input, output, o_style)?;
+    let user_input = input_user::Input::new(input, output, o_style, opt.prime)?;
     let mut program_archive = parser_user::parse_project(&user_input)?;
 
     type_analysis_user::analyse_project(&mut program_archive)?;
@@ -220,7 +224,7 @@ pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
         sym: user_input.sym_file().to_string(),
         r1cs: user_input.r1cs_file().to_string(),
         json_constraints: user_input.json_constraints_file().to_string(),
-        prime: user_input.prime(),
+        prime: user_input.get_prime(),
     };
     let circuit = execution_user::execute_project(program_archive, config)?;
     let compilation_config = CompilerConfig {
