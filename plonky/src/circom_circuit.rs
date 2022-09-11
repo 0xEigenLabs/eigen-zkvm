@@ -87,7 +87,7 @@ impl<'a, E: Engine> Circuit<E> for CircomCircuit<E> {
                 || format!("variable {}", i),
                 || {
                     Ok(match witness {
-                        None => E::Fr::from_str("1").unwrap(),
+                        None => E::Fr::from_str(&format!("alloc input {} error", i)).unwrap(),
                         Some(w) => match wire_mapping {
                             None => w[i],
                             Some(m) => w[m[i]],
@@ -101,7 +101,10 @@ impl<'a, E: Engine> Circuit<E> for CircomCircuit<E> {
                 || format!("aux {}", i + self.aux_offset),
                 || {
                     Ok(match witness {
-                        None => E::Fr::from_str("1").unwrap(),
+                        None => {
+                            E::Fr::from_str(&format!("alloc aux {} error", i + self.aux_offset))
+                                .unwrap()
+                        }
                         Some(w) => match wire_mapping {
                             None => w[i + self.r1cs.num_inputs],
                             Some(m) => w[m[i + self.r1cs.num_inputs]],

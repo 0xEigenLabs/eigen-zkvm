@@ -1,5 +1,5 @@
 # EigenZKit
-
+set -ex
 
 cargo build --release
 
@@ -13,6 +13,10 @@ rm -rf $WORKSPACE && mkdir -p $WORKSPACE
 SRS=${CUR_DIR}/../keys/setup_2^${POWER}.key
 
 cd $CUR_DIR
+
+if [ ! -f $SRS ]; then
+    ${ZKIT} setup -p ${POWER} -s ${SRS}
+fi
 
 echo "1. Compile the circuit"
 ${ZKIT} compile -i $CIRCUIT.circom --O2=full -o $WORKSPACE

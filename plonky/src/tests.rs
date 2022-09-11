@@ -26,6 +26,7 @@ fn test_analyze() {
 
     let result = crate::plonk::analyse(circuit).unwrap();
 
+    println!("11111 {}", serde_json::to_string(&result).unwrap());
     assert_eq!(
         CIRCUIT_ANALYZE_RESULT,
         serde_json::to_string(&result).unwrap()

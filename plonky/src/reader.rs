@@ -257,7 +257,7 @@ fn load_r1cs_from_bin_file(filename: &str) -> (R1CS<Bn256>, Vec<usize>) {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
-        .expect("unable to open.");
+        .expect(&format!("unable to open {}.", filename));
     load_r1cs_from_bin(BufReader::new(reader))
 }
 

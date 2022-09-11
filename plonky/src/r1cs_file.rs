@@ -1,4 +1,5 @@
 // some codes borrowed from https://github.com/poma/zkutil/blob/master/src/r1cs_reader.rs
+// Implement of https://github.com/iden3/r1csfile/blob/master/doc/r1cs_bin_format.md
 #![allow(unused_variables, dead_code)]
 use crate::bellman_ce::pairing::{
     bn256::Bn256,
@@ -135,8 +136,9 @@ pub fn from_reader<R: Read + Seek>(mut reader: R) -> Result<R1CSFile<Bn256>> {
     let mut section_offsets = HashMap::<u32, u64>::new();
     let mut section_sizes = HashMap::<u32, u64>::new();
 
-    // get file offset of each section
-    for _ in 0..num_sections {
+    // get file offset of each section, we donot support custom gate yet, so ignore the
+    // last two sections.
+    for i in 0..(num_sections) {
         let section_type = reader.read_u32::<LittleEndian>()?;
         let section_size = reader.read_u64::<LittleEndian>()?;
         let offset = reader.seek(SeekFrom::Current(0))?;

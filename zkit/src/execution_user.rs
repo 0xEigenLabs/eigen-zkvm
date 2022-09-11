@@ -53,7 +53,7 @@ pub fn execute_project(
 }
 
 fn generate_output_r1cs(file: &str, exporter: &dyn ConstraintExporter) -> Result<(), ()> {
-    if let Result::Ok(()) = exporter.r1cs(file, false /*custom_gates*/) {
+    if let Result::Ok(()) = exporter.r1cs(file, true /*custom_gates*/) {
         println!("{} {}", Colour::Green.paint("Written successfully:"), file);
         Result::Ok(())
     } else {
