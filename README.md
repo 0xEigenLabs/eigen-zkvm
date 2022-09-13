@@ -1,6 +1,6 @@
 # EigenZKit
 
-EigenZKit is a ZK DAPP development toolkit,  enabling the developer to write circuits(R1CS) by Circom, transpile the circuits to PLONKish Arithmetization, optimize the proving with the mixed proof system, and finally generate the solidity verifier. 
+EigenZKit is a mixed proof system toolkits, allowing the developers to write Zero-knowledge applications, proving with the mixed proof system to achieve no trusted setup, constant on-chain proof size and low gas cost, and finally generating the solidity verifier.
 
 * [x] Transpile R1CS to PlonK prove system, with aggregation proof;
 
@@ -10,7 +10,14 @@ EigenZKit is a ZK DAPP development toolkit,  enabling the developer to write cir
 
 * [x] WASM friendly for single proving and verifing, NodeJS/Javascript prover and verifier, [plonkjs](https://github.com/0xEigenLabs/plonkjs)
 
-* [] Mixed Proof system on Plonk and FRI.
+* [x] Mixed Proof system on Plonk and FRI. Under optimization.
+
+* [] Stark vm implementation
+
+
+## How mixed proof system works
+
+![mixed-proof-system](./docs/mixed-proof-system.png)
 
 
 ## Tutorial
@@ -23,16 +30,11 @@ For power in range 20 to 26, you can download directly from [universal-setup hub
 * Single proof
 [test_single.sh](./test/test_single.sh)
 
-* Recursive proof
+* Aggregation proof
 [test_recursive.sh](./test/test_recursive.sh)
 
+* Mixed proof system
+[Fibonacci](./fri_verifier)
+
 ## Applications
-* [ZKZRU](https://github.com/0xEigenLabs/ZKZRU)
-
-## Acknowledgement
-
-Thanks to the previous work from:
-
-1. https://github.com/iden3/circom
-2. https://github.com/matter-labs/recursive_aggregation_circuit
-3. https://github.com/matter-labs/zksync/tree/master/core/bin/key_generator
+* [zk-zkRollup](https://github.com/0xEigenLabs/zk-zkrollup)

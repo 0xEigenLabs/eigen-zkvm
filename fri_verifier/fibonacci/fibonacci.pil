@@ -1,0 +1,11 @@
+constant %N = 16;
+namespace Fibonacci(%N);
+    pol constant ISLAST;
+
+    pol commit aBeforeLast, aLast;
+    (1-ISLAST)*(aBeforeLast' - aLast) = 0;
+    (1-ISLAST)*(aLast' - (aBeforeLast + aLast)) = 0;
+
+    public out = aLast(%N - 1);
+    ISLAST * (aLast - :out) = 0;
+

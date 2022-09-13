@@ -1,5 +1,5 @@
 use ansi_term::Colour;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct Input {
     pub input_program: PathBuf,
@@ -80,10 +80,16 @@ impl Input {
         output_path: PathBuf,
         o_style: SimplificationStyle,
         prime: String,
+        paths: Vec<String>,
     ) -> Result<Input, ()> {
         let file_name = input.file_stem().unwrap().to_str().unwrap().to_string();
         let output_c_path = Input::build_folder(&output_path, &file_name, CPP);
         let output_js_path = Input::build_folder(&output_path, &file_name, JS);
+        let mut link_libraries: Vec<PathBuf> = vec![];
+        for path in paths.into_iter() {
+            link_libraries.push(Path::new(&path).to_path_buf());
+        }
+
         Result::Ok(Input {
             field: P_0,
             input_program: input,
@@ -123,7 +129,7 @@ impl Input {
             flag_verbose: false,
             //prime: "bn128".to_string(), //goldilocks
             prime: prime,
-            link_libraries: vec![],
+            link_libraries: link_libraries,
         })
     }
 
