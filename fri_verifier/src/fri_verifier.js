@@ -20,6 +20,8 @@ const plonkSetup = require("../node_modules/pil-stark/src/compressor12/compresso
 const {BigBuffer} = require("pilcom");
 const { newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
 
+const util = require('util')
+
 module.exports = {
   async generate(workspace, pilFile, builder, starkStruct) {
     // create and compile the trace polynomial
@@ -70,15 +72,13 @@ module.exports = {
     // gen stark info
     const c12StarkStruct = {
       nBits: 16,
-      nBitsExt: 19,
+      nBitsExt: 17,
       nQueries: 8,
       verificationHashType: "BN128",
       steps: [
-        {nBits: 19},
-        {nBits: 15},
-        {nBits: 11},
-        {nBits: 7},
-        {nBits: 4}
+        {nBits: 17},
+        {nBits: 13},
+        {nBits: 7}
       ]
     }
 
@@ -240,7 +240,11 @@ module.exports = {
   },
 
   async pil2circom(pil, constRoot, starkStruct) {
+    //console.log(util.inspect(pil, {showHidden: false, depth: null, colors: true}))
     const starkInfo = starkInfoGen(pil, starkStruct);
+
+    //console.log(util.inspect(starkInfo, {showHidden: false, depth: null, colors: true}))
+
     this.setDimensions(starkInfo.verifierCode.first);
     this.setDimensions(starkInfo.verifierQueryCode.first);
     let template;

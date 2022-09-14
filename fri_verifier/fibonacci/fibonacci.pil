@@ -8,4 +8,3 @@ namespace Fibonacci(%N);
 
     public out = aLast(%N - 1);
     ISLAST * (aLast - :out) = 0;
-

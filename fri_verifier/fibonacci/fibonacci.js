@@ -29,7 +29,8 @@ const version = require("../package").version;
 const argv = require("yargs")
   .version(version)
   .usage("node fibonacci.js -w /path/to/workspace")
-  .alias("w", "workspace")   // workspace to stash temp and output files
+  .alias("w", "workspace") //workspace to stash temp and output files
+  .demand('workspace')
   .argv;
 
 // construct the stark parameters

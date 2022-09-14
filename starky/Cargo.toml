@@ -6,5 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-
-
+miden-assembly = { git = "https://github.com/maticnetwork/miden" }
+miden = { git = "https://github.com/maticnetwork/miden" }
+anyhow = "1.0.33"
