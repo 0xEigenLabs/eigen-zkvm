@@ -45,6 +45,9 @@ const starkStruct = {
   ]
 }
 const pilFile = path.join(__dirname, "./fibonacci.pil");
+
+var start = new Date().getTime()
 fri_verifier.generate(argv.workspace, pilFile, new FibonacciJS(), starkStruct).then(() => {
-  console.log("Done")
+  var end = new Date().getTime()
+  console.log('cost is', `${end - start}ms`)
 })
