@@ -5,7 +5,7 @@ cargo build --release
 
 CIRCUIT=c12.verifier
 CUR_DIR=$(cd $(dirname $0);pwd)
-POWER=23
+POWER=24
 export RUST_BACKTRACE=1
 ZKIT="${CUR_DIR}/../target/release/zkit"
 WORKSPACE=/tmp/${CIRCUIT}

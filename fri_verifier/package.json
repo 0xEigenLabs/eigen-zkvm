@@ -12,7 +12,7 @@
       "circomlib": "^2.0.5",
       "circomlibjs": "^0.1.6",
       "pilcom": "^0.0.17",
-      "pil-stark": "0.0.23"
+      "pil-stark": "0.0.25"
   },
   "files": [
       "index.js",

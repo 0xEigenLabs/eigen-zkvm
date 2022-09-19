@@ -1,5 +1,5 @@
 const path = require("path");
-const { expect } = require("chai");
+const { assert } = require("chai");
 const fs = require("fs");
 const ejs = require("ejs");
 const wasm_tester = require("circom_tester").wasm;
@@ -22,8 +22,21 @@ const { newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require
 
 const util = require('util')
 
+function elapse(phase, res) {
+  var end = new Date().getTime()
+  var cost = 0;
+  var total = 0;
+  if (res.length > 0) {
+    cost = end - res[res.length - 1][3];
+    total = end - res[0][3];
+  }
+  res.push([phase, cost/1000, total/1000, end]);
+}
+
 module.exports = {
   async generate(workspace, pilFile, builder, starkStruct) {
+    let timer = []
+    elapse("begin", timer);
     // create and compile the trace polynomial
     let pil = await compile(FGL, pilFile);
 
@@ -34,13 +47,15 @@ module.exports = {
 
     // verify the input and trace constraints
     const res = await verifyPil(FGL, pil, cmPols, constPols);
-    expect(res.length).eq(0);
+    assert(res.length == 0);
 
+    elapse("arithmetization", timer);
 
     // prove and verify the stark proof
     const proof = await this.proveAndVerify(pil, constPols, cmPols, starkStruct);
     let zkIn = proof2zkin(proof.proof);
     zkIn.publics = proof.publics;
+    elapse("proving", timer);
 
     // generate vk
     const vk = await this.buildConsttree(pil, constPols, cmPols, starkStruct);
@@ -49,31 +64,30 @@ module.exports = {
     const verifier = await this.pil2circom(pil, vk.constRoot, starkStruct)
     await fs.promises.writeFile(circomFile, verifier, "utf8");
 
+    elapse("pil2circom", timer);
+
     //TODO: this is for debug
     let circuit = await wasm_tester(circomFile, {O:1, prime: "goldilocks", include: "../node_modules/pil-stark/circuits.gl", output: workspace});
     console.log("End comliling..., circuits: ", circuit);
 
+    elapse("snark_compile", timer);
     // setup key
     const F = FGL;
     const r1csFile = path.join(circuit.dir, "fibonacci.verifier.r1cs")
     const r1cs = await readR1cs(r1csFile, {F: F, logger:console });
     const setupRes = await plonkSetup(r1cs);
 
-    const c12ExecFile = path.join(workspace, "c12.exec");
-    await this.writeExecFile(c12ExecFile, setupRes.plonkAdditions, setupRes.sMap);
-
     let c12PilFile = path.join(workspace, "c12.pil");
     await fs.promises.writeFile(c12PilFile, setupRes.pilStr, "utf8");
-    let c12ConstFile = path.join(workspace, "c12.const");
-    await setupRes.constPols.saveToFile(c12ConstFile)
 
     const c12Pil = await compile(F, c12PilFile, null, {}/*pilConfig*/);
+    elapse("snark_setup", timer);
 
     // gen stark info
     const c12StarkStruct = {
       nBits: 16,
       nBitsExt: 17,
-      nQueries: 8,
+      nQueries: 9,
       verificationHashType: "BN128",
       steps: [
         {nBits: 17},
@@ -89,7 +103,7 @@ module.exports = {
     const c12CmPols = newCommitPolsArray(c12Pil);
     const c12ConstPols = newConstantPolsArray(c12Pil);
     // load const pols
-    await c12ConstPols.loadFromFile(c12ConstFile);
+    c12ConstPols.$$array = setupRes.constPols.$$array;
 
     const wasmFile = path.join(workspace, "fibonacci.verifier_js/fibonacci.verifier.wasm");
     const fd =await fs.promises.open(wasmFile, "r");
@@ -101,11 +115,15 @@ module.exports = {
     const wc = await WitnessCalculatorBuilder(wasm);
 
     // read input
-    const { nAdds, nSMap, addsBuff, sMapBuff } = await this.readExecFile(c12ExecFile);
+    const nAdds = setupRes.plonkAdditions.length;
+    const nSMap = setupRes.sMap[0].length;
+    const addsBuff = setupRes.plonkAdditions;
+    const sMapBuff = setupRes.sMap;
+
     const w = await wc.calculateWitness(zkIn);
 
     for (let i=0; i<nAdds; i++) {
-      w.push( F.add( F.mul( w[addsBuff[i*4]], addsBuff[i*4 + 2]), F.mul( w[addsBuff[i*4+1]],  addsBuff[i*4+3]  )));
+      w.push( F.add( F.mul( w[addsBuff[i][0]], addsBuff[i][2]), F.mul( w[addsBuff[i][1]],  addsBuff[i][3])));
     }
 
     const Nbits = log2(nSMap -1) +1;
@@ -113,8 +131,8 @@ module.exports = {
 
     for (let i=0; i<nSMap; i++) {
       for (let j=0; j<12; j++) {
-        if (sMapBuff[12*i+j] != 0) {
-          c12CmPols.Compressor.a[j][i] = w[sMapBuff[12*i+j]];
+        if (sMapBuff[j][i] != 0) {
+          c12CmPols.Compressor.a[j][i] = w[sMapBuff[j][i]];
         } else {
           c12CmPols.Compressor.a[j][i] = 0n;
         }
@@ -127,20 +145,25 @@ module.exports = {
       }
     }
 
+    elapse("snark_wtns", timer);
     const c12Vk = await this.buildConsttree(c12Pil, c12ConstPols, c12CmPols, c12StarkStruct);
     const c12Verifier = await this.pil2circom(c12Pil, c12Vk.constRoot, c12StarkStruct)
     let c12CircomFile = path.join(workspace, "c12.verifier.circom");
     await fs.promises.writeFile(c12CircomFile, c12Verifier, "utf8");
     // verify
+    elapse("pil2circom_2", timer);
 
     const c12Proof = await this.proveAndVerify(c12Pil, c12ConstPols, c12CmPols, c12StarkStruct);
 
+    elapse("snark_prove", timer);
     const c12ZkIn = proof2zkin(c12Proof.proof);
     c12ZkIn.proverAddr = BigInt("0x2FD31EB1BB3f0Ac8C4feBaF1114F42431c1F29E4");
     c12ZkIn.publics = c12Proof.publics;
 
+    // ----debug begin----
     let publicFile = path.join(workspace, "c12.public.info.json")
     await fs.promises.writeFile(publicFile, JSONbig.stringify(c12Proof.publics, null, 1), "utf8");
+    // ----debug end----
 
     let zkinFile = path.join(workspace, "c12.zkin.json")
     await fs.promises.writeFile(zkinFile, JSONbig.stringify(c12ZkIn, (k, v) => {
@@ -151,50 +174,12 @@ module.exports = {
       }
     }, 1), "utf8");
 
+    // ----debug begin----
     let proofFile = path.join(workspace, "c12.proof.json")
     await fs.promises.writeFile(proofFile, JSONbig.stringify(c12Proof.proof, null, 1), "utf8");
-  },
-
-  async writeExecFile(execFile, adds, sMap) {
-
-    const size = 2 + adds.length*4 + sMap.length*sMap[0].length;
-    const buff = new BigUint64Array(size);
-
-    buff[0] = BigInt(adds.length);
-    buff[1] = BigInt(sMap[0].length);
-
-    for (let i=0; i< adds.length; i++) {
-      buff[2 + i*4     ] = BigInt(adds[i][0]);
-      buff[2 + i*4 + 1 ] = BigInt(adds[i][1]);
-      buff[2 + i*4 + 2 ] = adds[i][2];
-      buff[2 + i*4 + 3 ] = adds[i][3];
-    }
-
-    for (let i=0; i<sMap[0].length; i++) {
-      for (let c=0; c<12; c++) {
-        buff[2 + adds.length*4 + 12*i + c] = BigInt(sMap[c][i]);
-      }
-    }
-
-    const fd =await fs.promises.open(execFile, "w+");
-    await fd.write(buff);
-    await fd.close();
-
-  },
-
-  async readExecFile(execFile) {
-    const fd =await fs.promises.open(execFile, "r");
-    const buffH = new BigUint64Array(2);
-    await fd.read(buffH, 0, 2*8);
-    const nAdds= Number(buffH[0]);
-    const nSMap= Number(buffH[1]);
-    const addsBuff = new BigUint64Array(nAdds*4);
-    await fd.read(addsBuff, 0, nAdds*4*8);
-
-    const sMapBuff = new BigUint64Array(nSMap*12);
-    await fd.read(sMapBuff, 0, nSMap*12*8);
-    await fd.close();
-    return { nAdds, nSMap, addsBuff, sMapBuff };
+    elapse("snark_generate_input", timer);
+    console.log("cost: ", timer);
+    // ----debug end----
   },
 
   async buildConsttree(pil, constPols, cmPols, starkStruct) {
@@ -235,7 +220,7 @@ module.exports = {
     const setup = await starkSetup(constPols, pil, starkStruct);
     const proof = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo);
     const verified = await starkVerify(proof.proof, proof.publics, setup.constRoot, setup.starkInfo);
-    expect(verified).eq(true);
+    assert(verified == true);
     return proof;
   },
 
