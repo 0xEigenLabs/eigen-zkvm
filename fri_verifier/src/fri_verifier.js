@@ -2,15 +2,11 @@ const path = require("path");
 const { assert } = require("chai");
 const fs = require("fs");
 const ejs = require("ejs");
-const wasm_tester = require("circom_tester").wasm;
 const { FGL, starkSetup, starkGen, starkVerify } = require("pil-stark");
 const { interpolate } = require("../node_modules/pil-stark/src/fft_p.js");
 const buildMerkleHashGL = require("../node_modules/pil-stark/src/merklehash_p.js");
 const starkInfoGen = require("../node_modules/pil-stark/src/starkinfo.js");
-const F1Field = require("../node_modules/pil-stark/src/f3g.js");
 const { proof2zkin } = require("../node_modules/pil-stark/src/proof2zkin.js");
-const { WitnessCalculatorBuilder } = require("circom_runtime");
-const {log2} = require("../node_modules/pil-stark/src/utils.js");
 const buildMerklehashBN128 = require("../node_modules/pil-stark/src/merklehash_bn128_p.js");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true, storeAsString: true });
 
@@ -34,7 +30,7 @@ function elapse(phase, res) {
 }
 
 module.exports = {
-  async generate(workspace, pilFile, builder, starkStruct) {
+  async generate(workspace, pilFile, builder, starkStruct, proverAddr) {
     let timer = []
     elapse("begin", timer);
     // create and compile the trace polynomial
@@ -55,131 +51,30 @@ module.exports = {
     const proof = await this.proveAndVerify(pil, constPols, cmPols, starkStruct);
     let zkIn = proof2zkin(proof.proof);
     zkIn.publics = proof.publics;
+    zkIn.proverAddr = BigInt(proverAddr);
     elapse("proving", timer);
 
     // generate vk
     const vk = await this.buildConsttree(pil, constPols, cmPols, starkStruct);
 
-    const circomFile = path.join(__dirname, "../node_modules/pil-stark/circuits.gl/fibonacci.verifier.circom");
+    const  circomFile = path.join(workspace, "fibonacci.circom")
     const verifier = await this.pil2circom(pil, vk.constRoot, starkStruct)
+    console.log(circomFile);
     await fs.promises.writeFile(circomFile, verifier, "utf8");
 
-    elapse("pil2circom", timer);
-
-    //TODO: this is for debug
-    let circuit = await wasm_tester(circomFile, {O:1, prime: "goldilocks", include: "../node_modules/pil-stark/circuits.gl", output: workspace});
-    console.log("End comliling..., circuits: ", circuit);
-
-    elapse("snark_compile", timer);
-    // setup key
-    const F = FGL;
-    const r1csFile = path.join(circuit.dir, "fibonacci.verifier.r1cs")
-    const r1cs = await readR1cs(r1csFile, {F: F, logger:console });
-    const setupRes = await plonkSetup(r1cs);
-
-    let c12PilFile = path.join(workspace, "c12.pil");
-    await fs.promises.writeFile(c12PilFile, setupRes.pilStr, "utf8");
-
-    const c12Pil = await compile(F, c12PilFile, null, {}/*pilConfig*/);
-    elapse("snark_setup", timer);
-
-    // gen stark info
-    const c12StarkStruct = {
-      nBits: 18,
-      nBitsExt: 21,
-      nQueries: 9,
-      verificationHashType: "BN128",
-      steps: [
-        {nBits: 21},
-        {nBits: 13},
-        {nBits: 7}
-      ]
-    }
-
-    // generate vk
-    const starkInfo = starkInfoGen(c12Pil, c12StarkStruct);
-    // prove
-
-    const c12CmPols = newCommitPolsArray(c12Pil);
-    const c12ConstPols = newConstantPolsArray(c12Pil);
-    // load const pols
-    c12ConstPols.$$array = setupRes.constPols.$$array;
-
-    const wasmFile = path.join(workspace, "fibonacci.verifier_js/fibonacci.verifier.wasm");
-    const fd =await fs.promises.open(wasmFile, "r");
-    const st =await fd.stat();
-    const wasm = new Uint8Array(st.size);
-    await fd.read(wasm, 0, st.size);
-    await fd.close();
-
-    const wc = await WitnessCalculatorBuilder(wasm);
-
-    // read input
-    const nAdds = setupRes.plonkAdditions.length;
-    const nSMap = setupRes.sMap[0].length;
-    const addsBuff = setupRes.plonkAdditions;
-    const sMapBuff = setupRes.sMap;
-
-    const w = await wc.calculateWitness(zkIn);
-
-    for (let i=0; i<nAdds; i++) {
-      w.push( F.add( F.mul( w[addsBuff[i][0]], addsBuff[i][2]), F.mul( w[addsBuff[i][1]],  addsBuff[i][3])));
-    }
-
-    const Nbits = log2(nSMap -1) +1;
-    const N = 1 << Nbits
-
-    for (let i=0; i<nSMap; i++) {
-      for (let j=0; j<12; j++) {
-        if (sMapBuff[j][i] != 0) {
-          c12CmPols.Compressor.a[j][i] = w[sMapBuff[j][i]];
-        } else {
-          c12CmPols.Compressor.a[j][i] = 0n;
-        }
-      }
-    }
-
-    for (let i=nSMap; i<N; i++) {
-      for (let j=0; j<12; j++) {
-        c12CmPols.Compressor.a[j][i] = 0n;
-      }
-    }
-
-    elapse("snark_wtns", timer);
-    const c12Vk = await this.buildConsttree(c12Pil, c12ConstPols, c12CmPols, c12StarkStruct);
-    const c12Verifier = await this.pil2circom(c12Pil, c12Vk.constRoot, c12StarkStruct)
-    let c12CircomFile = path.join(workspace, "c12.verifier.circom");
-    await fs.promises.writeFile(c12CircomFile, c12Verifier, "utf8");
-    // verify
-    elapse("pil2circom_2", timer);
-
-    const c12Proof = await this.proveAndVerify(c12Pil, c12ConstPols, c12CmPols, c12StarkStruct);
-
-    elapse("snark_prove", timer);
-    const c12ZkIn = proof2zkin(c12Proof.proof);
-    c12ZkIn.proverAddr = BigInt("0x2FD31EB1BB3f0Ac8C4feBaF1114F42431c1F29E4");
-    c12ZkIn.publics = c12Proof.publics;
-
     // ----debug begin----
-    let publicFile = path.join(workspace, "c12.public.info.json")
-    await fs.promises.writeFile(publicFile, JSONbig.stringify(c12Proof.publics, null, 1), "utf8");
+    let publicFile = path.join(workspace, "fibonacci.public.info.json")
+    await fs.promises.writeFile(publicFile, JSONbig.stringify(proof.publics, null, 1), "utf8");
     // ----debug end----
 
-    let zkinFile = path.join(workspace, "c12.zkin.json")
-    await fs.promises.writeFile(zkinFile, JSONbig.stringify(c12ZkIn, (k, v) => {
+    let zkinFile = path.join(workspace, "fibonacci.zkin.json")
+    await fs.promises.writeFile(zkinFile, JSONbig.stringify(zkIn, (k, v) => {
       if (typeof(v) === "bigint") {
         return v.toString();
       } else {
         return v;
       }
     }, 1), "utf8");
-
-    // ----debug begin----
-    let proofFile = path.join(workspace, "c12.proof.json")
-    await fs.promises.writeFile(proofFile, JSONbig.stringify(c12Proof.proof, null, 1), "utf8");
-    elapse("snark_generate_input", timer);
-    console.log("cost: ", timer);
-    // ----debug end----
   },
 
   async buildConsttree(pil, constPols, cmPols, starkStruct) {
@@ -240,7 +135,6 @@ module.exports = {
     } else {
       throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
     }
-
     const obj = {
       F: FGL,
       starkInfo: starkInfo,
