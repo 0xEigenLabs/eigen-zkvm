@@ -10,11 +10,7 @@ const { proof2zkin } = require("../node_modules/pil-stark/src/proof2zkin.js");
 const buildMerklehashBN128 = require("../node_modules/pil-stark/src/merklehash_bn128_p.js");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true, storeAsString: true });
 
-const {readR1cs} = require("r1csfile");
-const plonkSetup = require("../node_modules/pil-stark/src/compressor12/compressor12_setup.js");
-
-const {BigBuffer} = require("pilcom");
-const { newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
+const { BigBuffer, newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
 
 const util = require('util')
 

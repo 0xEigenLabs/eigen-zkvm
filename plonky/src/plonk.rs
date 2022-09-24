@@ -153,6 +153,7 @@ impl SetupForProver {
         is_satisfied_using_one_shot_check(circuit.clone(), &self.hints).expect("must satisfy");
         match &self.key_lagrange_form {
             Some(key_lagrange_form) => match transcript {
+                // NOTE: prove is not enabled in GPU bellman
                 "keccak" => prove::<_, _, RollingKeccakTranscript<<E as ScalarEngine>::Fr>>(
                     circuit,
                     &self.hints,
