@@ -1,6 +1,6 @@
 const { FGL } = require("pil-stark");
 //const { newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
-const {fri_verifier} = require("../index.js");
+const {fri_verifier, utils} = require("../index.js");
 const path = require("path");
 
 class FibonacciJS {
@@ -36,14 +36,16 @@ const argv = require("yargs")
 // construct the stark parameters
 const starkStruct = {
   nBits: 4,
-  nBitsExt: 5,
+  nBitsExt: 11,
   nQueries: 7,
   verificationHashType: "GL",
   steps: [
-    {nBits: 5},
+    {nBits: 11},
     {nBits: 3}
   ]
 }
+console.log("security level(bits)", utils.security_test(starkStruct, 1024))
+
 const pilFile = path.join(__dirname, "./fibonacci.pil");
 
 var start = new Date().getTime()

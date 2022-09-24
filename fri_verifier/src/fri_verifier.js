@@ -85,12 +85,12 @@ module.exports = {
 
     // gen stark info
     const c12StarkStruct = {
-      nBits: 16,
-      nBitsExt: 17,
+      nBits: 18,
+      nBitsExt: 21,
       nQueries: 9,
       verificationHashType: "BN128",
       steps: [
-        {nBits: 17},
+        {nBits: 21},
         {nBits: 13},
         {nBits: 7}
       ]
