@@ -10,10 +10,9 @@ EigenZKit is a mixed proof system toolkits, allowing the developers to write Zer
 
 * [x] WASM friendly for single proving and verifing, NodeJS/Javascript prover and verifier, [plonkjs](https://github.com/0xEigenLabs/plonkjs)
 
-* [x] Mixed Proof system on Plonk and FRI. Under optimization.
+* [x] Mixed Proof system on Plonk and FRI.
 
-* [] Stark vm implementation
-
+* [] Stark VM with recursive proof
 
 ## How mixed proof system works
 

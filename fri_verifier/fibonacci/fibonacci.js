@@ -41,6 +41,7 @@ const starkStruct = {
   verificationHashType: "BN128",
   steps: [
     {nBits: 13},
+    {nBits: 11},
     {nBits: 3}
   ]
 }
