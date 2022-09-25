@@ -1,5 +1,6 @@
-# fri_verifier
-FRI proof verification by Circom
+# starkjs
+
+Implement Stark by JS, and generate Circom verifier.
 
 
 ## Run Fibonacci
