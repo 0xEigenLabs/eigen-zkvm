@@ -1,0 +1,17 @@
+[package]
+name = "SM"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+#miden-assembly = { git = "https://github.com/maticnetwork/miden" }
+#miden = { git = "https://github.com/maticnetwork/miden" }
+anyhow = "1.0.33"
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+rand =  { version = "0.8" }
+thiserror="1.0"
+
+[dev-dependencies]

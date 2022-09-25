@@ -19,10 +19,10 @@ fi
 cd $CUR_DIR
 
 echo "1. Compile the circuit"
-${ZKIT} compile -i ../fri_verifier/circuits/$CIRCUIT.circom -l "../fri_verifier/node_modules/pil-stark/circuits.bn128" -l "../fri_verifier/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
+${ZKIT} compile -i ../starkjs/circuits/$CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
 
 echo "2. Generate witness"
-node ${WORKSPACE}/${CIRCUIT}_js/generate_witness.js ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm  ../fri_verifier/circuits/${CIRCUIT}.zkin.json $WORKSPACE/witness.wtns
+node ${WORKSPACE}/${CIRCUIT}_js/generate_witness.js ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm  ../starkjs/circuits/${CIRCUIT}.zkin.json $WORKSPACE/witness.wtns
 
 echo "3. Export verification key"
 ${ZKIT} export_verification_key -s ${SRS}  -c $WORKSPACE/$CIRCUIT.r1cs -v $WORKSPACE/vk.bin
