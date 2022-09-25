@@ -3,16 +3,14 @@ const { assert } = require("chai");
 const fs = require("fs");
 const ejs = require("ejs");
 const { FGL, starkSetup, starkGen, starkVerify } = require("pil-stark");
-const { interpolate } = require("../node_modules/pil-stark/src/fft_p.js");
-const buildMerkleHashGL = require("../node_modules/pil-stark/src/merklehash_p.js");
-const starkInfoGen = require("../node_modules/pil-stark/src/starkinfo.js");
-const { proof2zkin } = require("../node_modules/pil-stark/src/proof2zkin.js");
-const buildMerklehashBN128 = require("../node_modules/pil-stark/src/merklehash_bn128_p.js");
+const { interpolate } = require("./fft_p.js");
+//const buildMerkleHashGL = require("../node_modules/pil-stark/src/merklehash_p.js");
+const starkInfoGen = require("./starkinfo.js");
+const { proof2zkin } = require("./proof2zkin.js");
+const buildMerklehashBN128 = require("./merklehash_bn128_p.js");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true, storeAsString: true });
 
 const { BigBuffer, newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
-
-const util = require('util')
 
 function elapse(phase, res) {
   var end = new Date().getTime()
@@ -89,8 +87,8 @@ module.exports = {
     if (starkStruct.verificationHashType == "BN128") {
       MH = await buildMerklehashBN128();
     } else if (starkStruct.verificationHashType == "GL"){
-      MH = await buildMerkleHashGL();
-    } else {
+    //  MH = await buildMerkleHashGL();
+    //} else {
       throw new Error("Invalid hash type: " + starkStruct.verificationHashType)
     }
 
@@ -116,10 +114,7 @@ module.exports = {
   },
 
   async pil2circom(pil, constRoot, starkStruct) {
-    //console.log(util.inspect(pil, {showHidden: false, depth: null, colors: true}))
     const starkInfo = starkInfoGen(pil, starkStruct);
-
-    //console.log(util.inspect(starkInfo, {showHidden: false, depth: null, colors: true}))
 
     this.setDimensions(starkInfo.verifierCode.first);
     this.setDimensions(starkInfo.verifierQueryCode.first);

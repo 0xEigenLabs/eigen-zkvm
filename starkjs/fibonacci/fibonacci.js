@@ -1,5 +1,4 @@
 const { FGL } = require("pil-stark");
-//const { newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
 const {fri_verifier, utils} = require("../index.js");
 const path = require("path");
 

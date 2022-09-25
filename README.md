@@ -33,7 +33,7 @@ For power in range 20 to 26, you can download directly from [universal-setup hub
 [test_recursive.sh](./test/test_recursive.sh)
 
 * Mixed proof system
-[Fibonacci](./fri_verifier)
+[Fibonacci](./starkjs)
 
 ## Applications
 * [zk-zkRollup](https://github.com/0xEigenLabs/zk-zkrollup)
