@@ -51,5 +51,19 @@ Security bits: 77
 Generate stark proof and proof verifier: ~39s
 Snark setup key power: 24
 Snark proof size: 1.2k
-Snark time cost: 144s
+Snark time cost(GPU): 144s
+```
+
+* e3 (GPU only):
+```
+starkStruct.nBits: 20
+starkStruct.nBitsExt: 21 // extend 1
+starkStruct.nQueries: 100
+starkStruct.verificationHashType: BN128 //AKA. BN256 in Ethereum
+
+Security bits: 100
+Generate stark proof and proof verifier: ~298s
+Snark setup key power: 26
+Snark proof size: 1.2k
+Snark time cost(GPU): 546s
 ```

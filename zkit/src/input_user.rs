@@ -114,7 +114,7 @@ impl Input {
             r1cs_flag: true,
             sym_flag: true,
             main_inputs_flag: false,
-            json_constraint_flag: true,
+            json_constraint_flag: false,
             json_substitution_flag: false,
             print_ir_flag: false,
             no_rounds: if let SimplificationStyle::O2(r) = o_style {

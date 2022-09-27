@@ -34,14 +34,16 @@ const argv = require("yargs")
 
 // construct the stark parameters
 const starkStruct = {
-  nBits: 4,
-  nBitsExt: 13,
-  nQueries: 7,
+  nBits: 21,
+  nBitsExt: 24,
+  nQueries: 100,
   verificationHashType: "BN128",
   steps: [
-    {nBits: 13},
-    {nBits: 11},
-    {nBits: 3}
+    {nBits: 24},
+    {nBits: 19},
+    {nBits: 14},
+    {nBits: 10},
+    {nBits: 6}
   ]
 }
 console.log("security level(bits)", utils.security_test(starkStruct, 1024))
