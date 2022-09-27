@@ -19,14 +19,28 @@ module.exports = {
 
     let d = starkStruct.nBits;
     let b = starkStruct.nBitsExt;
+    let field_security = q - this.trailing_zeros(b);
+
+    let security_per_query = b - d;
+    let query_security = security_per_query * starkStruct.nQueries;
 
     let c = 128; //https://www.poseidon-hash.info/
-    let n = starkStruct.nQueries;
 
-    console.log(d,b,n,q-t-b, (b-d)*n, c);
-
-    return Math.min(q - t - b, (b - d) * n, c)
+    return Math.min(field_security, query_security, c)
   },
+
+  trailing_zeros(v) {
+    var c = 32
+    v &= -v
+    if (v) c--
+    if (v & 0x0000FFFF) c -= 16
+    if (v & 0x00FF00FF) c -= 8
+    if (v & 0x0F0F0F0F) c -= 4
+    if (v & 0x33333333) c -= 2
+    if (v & 0x55555555) c -= 1
+    return c
+  },
+
   log2( V )
   {
     return( ( ( V & 0xFFFF0000 ) !== 0 ? ( V &= 0xFFFF0000, 16 ) : 0 ) | ( ( V & 0xFF00FF00 ) !== 0 ? ( V &= 0xFF00FF00, 8 ) : 0 ) | ( ( V & 0xF0F0F0F0 ) !== 0 ? ( V &= 0xF0F0F0F0, 4 ) : 0 ) | ( ( V & 0xCCCCCCCC ) !== 0 ? ( V &= 0xCCCCCCCC, 2 ) : 0 ) | ( ( V & 0xAAAAAAAA ) !== 0 ) );
