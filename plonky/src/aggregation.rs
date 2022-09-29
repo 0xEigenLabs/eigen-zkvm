@@ -94,7 +94,7 @@ pub mod ethereum_serializer {
 }
 
 pub struct Config {
-    pub recursive_vk: VerificationKey<Bn256, RecursiveAggregationCircuitBn256<'static>>, // TODO: fix type
+    pub aggregation_vk: VerificationKey<Bn256, RecursiveAggregationCircuitBn256<'static>>, // TODO: fix type
     pub vk_tree_root: Fr,
     //    pub vk_max_index: u8,
     pub individual_input_num: usize,
@@ -102,13 +102,13 @@ pub struct Config {
 
 // notice the life time in RecursiveAggregationCircuit is related to  series of param groups
 // for most cases we could make the params static
-type RecursiveCircuitProof<'a> = NewProof<Bn256, RecursiveAggregationCircuitBn256<'a>>;
+type AggregationCircuitProof<'a> = NewProof<Bn256, RecursiveAggregationCircuitBn256<'a>>;
 
-pub type RecursiveVerificationKey<'a> =
+pub type AggregationVerificationKey<'a> =
     VerificationKey<Bn256, RecursiveAggregationCircuitBn256<'a>>;
 
 pub struct AggregatedProof {
-    pub proof: RecursiveCircuitProof<'static>,
+    pub proof: AggregationCircuitProof<'static>,
     pub individual_vk_inputs: Vec<bn256::Fr>, // flatten Vec<Vec<bn256::Fr>> into Vec<bn256::Fr>
     pub individual_num_inputs: usize,
     pub individual_vk_idxs: Vec<usize>,
@@ -145,7 +145,7 @@ impl AggregatedProof {
     }
 
     pub fn read<R: Read>(mut reader: R) -> std::io::Result<Self> {
-        let proof = RecursiveCircuitProof::<'static>::read(&mut reader)?;
+        let proof = AggregationCircuitProof::<'static>::read(&mut reader)?;
         let vk_inputs = read_fr_vec::<bn256::Fr, _>(&mut reader)?;
         let aggr_limbs = read_fr_vec::<bn256::Fr, _>(&mut reader)?;
         let vk_idexs = read_usize_vec(&mut reader)?;

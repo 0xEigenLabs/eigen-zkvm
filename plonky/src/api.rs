@@ -2,7 +2,7 @@ use crate::bellman_ce::pairing::bn256::Bn256;
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
 
 #[cfg(not(feature = "wasm"))]
-use crate::{recursive, verifier};
+use crate::{aggregation, verifier};
 
 use anyhow::Result;
 use std::path::Path;
@@ -115,14 +115,14 @@ pub fn generate_verifier(vk_file: &String, sol: &String) -> Result<()> {
 }
 
 #[cfg(not(feature = "wasm"))]
-pub fn export_recursive_verification_key(
+pub fn export_aggregation_verification_key(
     num_proofs_to_check: usize,
     num_inputs: usize,
     srs_monomial_form: &String,
     vk_file: &String,
 ) -> Result<()> {
     let big_crs = reader::load_key_monomial_form(srs_monomial_form);
-    let vk = recursive::export_vk(num_proofs_to_check, num_inputs, &big_crs)?;
+    let vk = aggregation::export_vk(num_proofs_to_check, num_inputs, &big_crs)?;
     let path = Path::new(vk_file);
     assert!(!path.exists(), "dumpcate proof file: {}", path.display());
     let writer = std::fs::File::create(vk_file)?;
@@ -131,7 +131,7 @@ pub fn export_recursive_verification_key(
 }
 
 #[cfg(not(feature = "wasm"))]
-pub fn recursive_prove(
+pub fn aggregation_prove(
     srs_monomial_form: &String,
     old_proof_list: &String,
     old_vk: &String,
@@ -141,7 +141,7 @@ pub fn recursive_prove(
     let big_crs = reader::load_key_monomial_form(srs_monomial_form);
     let old_proofs = reader::load_proofs_from_list::<Bn256>(old_proof_list);
     let old_vk = reader::load_verification_key::<Bn256>(old_vk);
-    let proof = recursive::prove(big_crs, old_proofs, old_vk)?;
+    let proof = aggregation::prove(big_crs, old_proofs, old_vk)?;
     let path = Path::new(new_proof);
     assert!(
         !path.exists(),
@@ -160,10 +160,10 @@ pub fn recursive_prove(
 }
 
 #[cfg(not(feature = "wasm"))]
-pub fn recursive_verify(proof: &String, vk: &String) -> Result<()> {
-    let vk = reader::load_recursive_verification_key(vk);
+pub fn aggregation_verify(proof: &String, vk: &String) -> Result<()> {
+    let vk = reader::load_aggregation_verification_key(vk);
     let proof = reader::load_aggregated_proof(proof);
-    let correct = recursive::verify(vk, proof)?;
+    let correct = aggregation::verify(vk, proof)?;
     anyhow::ensure!(correct, "Proof is invalid");
     Result::Ok(())
 }
@@ -179,7 +179,7 @@ pub fn check_aggregation(
     let old_vk = reader::load_verification_key::<Bn256>(old_vk);
     let new_proof = reader::load_aggregated_proof(new_proof);
 
-    let expected = recursive::get_aggregated_input(old_proofs, old_vk)?;
+    let expected = aggregation::get_aggregated_input(old_proofs, old_vk)?;
 
     anyhow::ensure!(
         expected == new_proof.proof.inputs[0],
@@ -189,19 +189,19 @@ pub fn check_aggregation(
 }
 
 #[cfg(not(feature = "wasm"))]
-pub fn generate_recursive_verifier(
+pub fn generate_aggregation_verifier(
     raw_vk_file: &String,
-    recursive_vk_file: &String,
+    aggregation_vk_file: &String,
     num_inputs: usize,
     sol: &String,
 ) -> Result<()> {
     let old_vk = reader::load_verification_key::<Bn256>(raw_vk_file);
-    let recursive_vk = reader::load_recursive_verification_key(recursive_vk_file);
-    let config = recursive::Config {
-        vk_tree_root: recursive::get_vk_tree_root_hash(old_vk)?,
+    let aggregation_vk = reader::load_aggregation_verification_key(aggregation_vk_file);
+    let config = aggregation::Config {
+        vk_tree_root: aggregation::get_vk_tree_root_hash(old_vk)?,
         //vk_max_index: 0, //because we has aggregated only 1 vk
         individual_input_num: num_inputs,
-        recursive_vk,
+        aggregation_vk,
     };
     verifier::recursive_plonk_verifier::create_verifier_contract_from_default_template(config, sol);
     Result::Ok(())

@@ -2,8 +2,9 @@ extern crate clap;
 use clap::Clap;
 use std::time::SystemTime;
 use zklib::api::{
-    export_recursive_verification_key, export_verification_key, generate_recursive_verifier,
-    generate_verifier, prove, recursive_prove, recursive_verify, setup, verify,
+    aggregation_prove, aggregation_verify, export_aggregation_verification_key,
+    export_verification_key, generate_aggregation_verifier, generate_verifier, prove, setup,
+    verify,
 };
 
 mod compilation_user;
@@ -107,19 +108,19 @@ struct ExportVerificationKeyOpt {
 }
 
 #[derive(Debug, Clap)]
-struct ExportRecursiveVerificationKeyOpt {
+struct ExportAggregationVerificationKeyOpt {
     #[clap(short = "c")]
     num_proofs_to_check: usize,
     #[clap(short = "i")]
     num_inputs: usize,
     #[clap(short)]
     srs_monomial_form: String,
-    #[clap(short = "v", long = "vk", default_value = "recursive_vk.bin")]
+    #[clap(short = "v", long = "vk", default_value = "aggregation_vk.bin")]
     output_vk: String,
 }
 
 #[derive(Debug, Clap)]
-struct RecursiveProveOpt {
+struct AggregationProveOpt {
     /// SRS monomial form
     #[clap(short)]
     srs_monomial_form: String,
@@ -130,7 +131,7 @@ struct RecursiveProveOpt {
     #[clap(short = "v", default_value = "vk.bin")]
     old_vk: String,
 
-    #[clap(short = "n", default_value = "recursive_proof.bin")]
+    #[clap(short = "n", default_value = "aggregation_proof.bin")]
     new_proof: String,
 
     #[clap(short = "j", default_value = "proof.json")]
@@ -138,21 +139,21 @@ struct RecursiveProveOpt {
 }
 
 #[derive(Debug, Clap)]
-struct RecursiveVerifyOpt {
-    #[clap(short = "p", default_value = "recursive_proof.bin")]
+struct AggregationVerifyOpt {
+    #[clap(short = "p", default_value = "aggregation_proof.bin")]
     proof: String,
-    #[clap(short = "v", default_value = "recursive_vk.bin")]
+    #[clap(short = "v", default_value = "aggregation_vk.bin")]
     vk: String,
 }
 
-/// A subcommand for generating a Solidity recursive verifier smart contract
+/// A subcommand for generating a Solidity aggregation verifier smart contract
 #[derive(Debug, Clap)]
-struct GenerateRecursiveVerifierOpt {
+struct GenerateAggregationVerifierOpt {
     /// Original individual verification key file
     #[clap(short = "o", long = "old_vk", default_value = "vk.bin")]
     old_vk: String,
     /// Aggregated verification key file
-    #[clap(short = "n", long = "new_vk", default_value = "recursive_vk.bin")]
+    #[clap(short = "n", long = "new_vk", default_value = "aggregation_vk.bin")]
     new_vk: String,
     /// Num of inputs
     #[clap(short = "i", long = "num_inputs")]
@@ -177,14 +178,14 @@ enum Command {
     ExportVerificationKey(ExportVerificationKeyOpt),
     #[clap(name = "generate_verifier")]
     GenerateVerifier(GenerateVerifierOpt),
-    #[clap(name = "export_recursive_verification_key")]
-    ExportRecursiveVerificationKey(ExportRecursiveVerificationKeyOpt),
-    #[clap(name = "recursive_prove")]
-    RecursiveProve(RecursiveProveOpt),
-    #[clap(name = "recursive_verify")]
-    RecursiveVerify(RecursiveVerifyOpt),
-    #[clap(name = "generate_recursive_verifier")]
-    GenerateRecursiveVerifier(GenerateRecursiveVerifierOpt),
+    #[clap(name = "export_aggregation_verification_key")]
+    ExportAggregationVerificationKey(ExportAggregationVerificationKeyOpt),
+    #[clap(name = "aggregation_prove")]
+    AggregationProve(AggregationProveOpt),
+    #[clap(name = "aggregation_verify")]
+    AggregationVerify(AggregationVerifyOpt),
+    #[clap(name = "generate_aggregation_verifier")]
+    GenerateAggregationVerifier(GenerateAggregationVerifierOpt),
 }
 
 #[derive(Debug, Clap)]
@@ -273,22 +274,22 @@ fn main() {
             export_verification_key(&args.srs_monomial_form, &args.circuit_file, &args.output_vk)
         }
 
-        Command::ExportRecursiveVerificationKey(args) => export_recursive_verification_key(
+        Command::ExportAggregationVerificationKey(args) => export_aggregation_verification_key(
             args.num_proofs_to_check,
             args.num_inputs,
             &args.srs_monomial_form,
             &args.output_vk,
         ),
-        Command::RecursiveProve(args) => recursive_prove(
+        Command::AggregationProve(args) => aggregation_prove(
             &args.srs_monomial_form,
             &args.old_proof_list,
             &args.old_vk,
             &args.new_proof,
             &args.proof_json,
         ),
-        Command::RecursiveVerify(args) => recursive_verify(&args.proof, &args.vk),
-        Command::GenerateRecursiveVerifier(args) => {
-            generate_recursive_verifier(&args.old_vk, &args.new_vk, args.num_inputs, &args.sol)
+        Command::AggregationVerify(args) => aggregation_verify(&args.proof, &args.vk),
+        Command::GenerateAggregationVerifier(args) => {
+            generate_aggregation_verifier(&args.old_vk, &args.new_vk, args.num_inputs, &args.sol)
         }
     };
     let end = SystemTime::now();

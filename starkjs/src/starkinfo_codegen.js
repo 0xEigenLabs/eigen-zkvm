@@ -1,6 +1,7 @@
 // copied and modified from pil-stark
 
 function pilCodeGen(ctx, expId, prime, mode) {
+    console.log("pilCodeGen", expId, prime, mode);
     prime = prime || false;
 
     if ((mode=="evalQ")&&(prime)) {

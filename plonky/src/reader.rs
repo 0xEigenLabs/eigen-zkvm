@@ -19,7 +19,7 @@ use crate::bellman_ce::{
 use crate::circom_circuit::{CircuitJson, R1CS};
 
 #[cfg(not(feature = "wasm"))]
-use crate::recursive::{AggregatedProof, RecursiveVerificationKey};
+use crate::aggregation::{AggregatedProof, AggregationVerificationKey};
 
 /// load proof by filename
 pub fn load_proof<E: Engine>(filename: &str) -> Proof<E, PlonkCsWidth4WithNextStepParams> {
@@ -278,19 +278,19 @@ pub fn load_r1cs_from_bin<R: Read + Seek>(reader: R) -> (R1CS<Bn256>, Vec<usize>
     )
 }
 
-/// load recursive proof file by filename
+/// load aggregation proof file by filename
 #[cfg(not(feature = "wasm"))]
 pub fn load_aggregated_proof(filename: &str) -> AggregatedProof {
     AggregatedProof::read(File::open(filename).expect("read aggregated proof file err"))
         .expect("read aggregated proof err")
 }
 
-/// load recursive verification key file by filename
+/// load aggregation verification key file by filename
 #[cfg(not(feature = "wasm"))]
-pub fn load_recursive_verification_key(filename: &str) -> RecursiveVerificationKey<'static> {
+pub fn load_aggregation_verification_key(filename: &str) -> AggregationVerificationKey<'static> {
     let mut reader = BufReader::with_capacity(
         1 << 24,
-        File::open(filename).expect("read recursive vk file err"),
+        File::open(filename).expect("read aggregation vk file err"),
     );
-    RecursiveVerificationKey::read(&mut reader).expect("read recursive vk err")
+    AggregationVerificationKey::read(&mut reader).expect("read aggregation vk err")
 }

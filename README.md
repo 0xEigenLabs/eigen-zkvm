@@ -1,6 +1,6 @@
 # EigenZKit
 
-EigenZKit is a mixed proof system toolkits, allowing the developers to write Zero-knowledge applications, proving with the mixed proof system to achieve no trusted setup, constant on-chain proof size and low gas cost, and finally generating the solidity verifier.
+EigenZKit is a hybrid proof system toolkits, allowing the developers to write Zero-knowledge applications, proving with the hybrid proof system to achieve no trusted setup, constant on-chain proof size and low gas cost, and finally generating the solidity verifier.
 
 * [x] Transpile R1CS to PlonK prove system, with aggregation proof;
 
@@ -10,11 +10,11 @@ EigenZKit is a mixed proof system toolkits, allowing the developers to write Zer
 
 * [x] WASM friendly for single proving and verifing, NodeJS/Javascript prover and verifier, [plonkjs](https://github.com/0xEigenLabs/plonkjs)
 
-* [x] Mixed Proof system on Plonk and FRI.
+* [x] Hybrid Proof system on Plonk and FRI.
 
 * [] Stark VM with recursive proof
 
-## How mixed proof system works
+## How hybrid proof system works
 
 ![mixed-proof-system](./docs/mixed-proof-system.png)
 
@@ -30,9 +30,9 @@ For power in range 20 to 26, you can download directly from [universal-setup hub
 [test_single.sh](./test/test_single.sh)
 
 * Aggregation proof
-[test_recursive.sh](./test/test_recursive.sh)
+[test_aggregation.sh](./test/test_aggregation.sh)
 
-* Mixed proof system
+* Hybrid proof system
 [Fibonacci](./starkjs)
 
 ## Applications

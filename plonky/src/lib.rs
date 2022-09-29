@@ -18,7 +18,7 @@ pub mod r1cs_file;
 pub mod reader;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub mod recursive;
+pub mod aggregation;
 
 pub mod transpile;
 pub mod utils;

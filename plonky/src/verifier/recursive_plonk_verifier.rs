@@ -9,7 +9,7 @@ use handlebars::Handlebars;
 use recursive_aggregation_circuit::circuit::RecursiveAggregationCircuitBn256;
 use std::collections::HashMap;
 
-pub use crate::recursive::Config;
+pub use crate::aggregation::Config;
 
 pub use recursive_aggregation_circuit::circuit;
 
@@ -184,7 +184,7 @@ pub fn create_verifier_contract_from_template(
     // template_params.insert("vk_max_index".to_string(), to_json(config.vk_max_index));
 
     // TODO: improve?
-    let key_details = rendered_key(config.recursive_vk);
+    let key_details = rendered_key(config.aggregation_vk);
     for (k, v) in key_details {
         template_params.insert(k, to_json(v));
     }
