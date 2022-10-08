@@ -5,7 +5,7 @@ cargo build --release
 
 CIRCUIT=fibonacci
 CUR_DIR=$(cd $(dirname $0);pwd)
-POWER=26
+POWER=20
 export RUST_BACKTRACE=1
 ZKIT="${CUR_DIR}/../target/release/zkit"
 WORKSPACE=/tmp/${CIRCUIT}
