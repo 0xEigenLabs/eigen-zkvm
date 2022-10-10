@@ -4,7 +4,8 @@
   "description": "State Machine for recursive layer.",
   "main": "index.js",
   "scripts": {
-    "setup": "cross-env BDIR=${npm_config_build:=build/proof}",
+    "setup": "cross-env BDIR=${npm_config_build:=build/proof} NODE_OPTIONS=\"--max-old-space-size=819200\" ",
+    "genstarkstruct": "node tools/gen_debug_starkstruct.js -t BN128 -p pil/main.pil -s $BDIR/starkstruct.json",
     "buildrom": "(cd node_modules/@0xpolygonhermez/zkevm-rom && npm run build -- -s 23) && cp node_modules/@0xpolygonhermez/zkevm-rom/build/rom.json $BDIR/rom.json",
     "buildstoragerom": "(cd node_modules/@0xpolygonhermez/zkevm-storage-rom && npm run build --) && cp node_modules/@0xpolygonhermez/zkevm-storage-rom/build/storage_sm_rom.json $BDIR/storage_sm_rom.json"
   },
@@ -14,7 +15,7 @@
     "@0xpolygonhermez/zkevm-commonjs": "https://github.com/eigmax/zkevm-commonjs.git",
     "@0xpolygonhermez/zkevm-rom": "https://github.com/0xpolygonhermez/zkevm-rom.git#v0.4.0.0",
     "@0xpolygonhermez/zkevm-storage-rom": "https://github.com/0xpolygonhermez/zkevm-storage-rom.git",
-    "ejs": "^3.1.6",
+    "jison": "^0.4.18",
     "ethers": "^5.4.7",
     "ffjavascript": "^0.2.55",
     "pil-stark": "0.0.26",

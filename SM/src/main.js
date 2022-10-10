@@ -1,6 +1,7 @@
 const { FGL } = require("pil-stark");
 const {fri_verifier, utils} = require("../../starkjs/index.js");
 const path = require("path");
+const fs = require("fs");
 
 const VM = require("./vm.js");
 
@@ -15,34 +16,7 @@ const argv = require("yargs")
   .argv;
 
 // construct the stark parameters
-const starkStruct = {
-  nBits: 16,
-  nBitsExt: 17,
-  nQueries: 4,
-  verificationHashType: "BN128",
-  steps: [
-    {nBits: 17},
-    {nBits: 13},
-    {nBits: 9},
-    {nBits: 5}
-  ]
-}
-
-/*
-{
-    "nBits": 22,
-    "nBitsExt": 24,
-    "nQueries": 64,
-    "verificationHashType": "BN128",
-    "steps": [
-        {"nBits": 24},
-        {"nBits": 20},
-        {"nBits": 16},
-        {"nBits": 11},
-        {"nBits": 6}
-    ]
-}
-*/
+const starkStruct = JSON.parse(fs.readFileSync(path.join(__dirname, "../build/proof/starkstruct.json")))
 
 console.log("security level(bits)", utils.security_test(starkStruct, 2**23))
 
@@ -53,10 +27,11 @@ var start = new Date().getTime()
 const input = {
   inputFile: path.join(__dirname, "../tools/build-genesis/input_executor.json"),
   romFile: path.join(__dirname, "../build/proof/rom.json"),
-  debug: true,
+  debug: false,
+  debugInfo: { inputName: 'input_executor' },
   unsigned: false,
-  execute: true,
-  tracer: true,
+  execute: false,
+  tracer: false,
   outputFile: path.join(argv.workspace, "aaa.out")
 }
 
