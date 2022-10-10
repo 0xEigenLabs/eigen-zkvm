@@ -187,10 +187,6 @@ module.exports = class VM {
         await cmPols.saveToFile(argv.outputFile);
     }
 
-    if (logsFile) {
-        console.log("Writing logs...");
-        fs.writeFileSync(logsFile, JSON.stringify(requiredMain.Logs, null, 2));
-    }
     console.log("Executor finished correctly");
   }
 }
