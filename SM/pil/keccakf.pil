@@ -1,0 +1,17 @@
+include "global.pil";
+include "norm_gate9.pil";
+
+
+namespace KeccakF(%N);
+
+    pol constant ConnA, ConnB, ConnC, NormalizedGate, GateType;
+    pol commit a,b,c;
+
+    {a, b, c} connect {ConnA, ConnB, ConnC};
+
+    (1-NormalizedGate)*(a+b-c) = 0;
+
+    NormalizedGate { GateType, a, b, c } in NormGate9.Latch { NormGate9.gateType, NormGate9.latch_a, NormGate9.latch_b, NormGate9.latch_c } ;
+
+    Global.L1 * a = 0;
+    Global.L1 * (72624976668147841-b) = 0;
