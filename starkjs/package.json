@@ -11,7 +11,7 @@
   "dependencies": {
       "circomlib": "^2.0.5",
       "circomlibjs": "^0.1.6",
-      "pilcom": "^0.0.17",
+      "pilcom": "^0.0.18",
       "tmp-promise": "3.0.3",
       "pil-stark": "0.0.26"
   },

@@ -24,16 +24,16 @@ function elapse(phase, res) {
 }
 
 module.exports = {
-  async generate(workspace, pilFile, builder, starkStruct, proverAddr) {
+  async generate(workspace, pilFile, builder, starkStruct, proverAddr, input) {
     let timer = []
     elapse("begin", timer);
     // create and compile the trace polynomial
     let pil = await compile(FGL, pilFile);
 
     let constPols = newConstantPolsArray(pil);
-    await builder.buildConstants(constPols.Fibonacci);
+    await builder.buildConstants(constPols, input);
     let cmPols = newCommitPolsArray(pil);
-    await builder.execute(cmPols.Fibonacci, [1, 2]);
+    await builder.execute(cmPols, input);
 
     // verify the input and trace constraints
     const res = await verifyPil(FGL, pil, cmPols, constPols);
