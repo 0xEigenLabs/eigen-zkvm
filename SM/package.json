@@ -1,0 +1,29 @@
+{
+  "name": "sm",
+  "version": "0.0.1",
+  "description": "State Machine for recursive layer.",
+  "main": "index.js",
+  "scripts": {
+    "setup": "cross-env BDIR=${npm_config_build:=build/proof}",
+    "buildrom": "(cd node_modules/@0xpolygonhermez/zkevm-rom && npm run build -- -s 23) && cp node_modules/@0xpolygonhermez/zkevm-rom/build/rom.json $BDIR/rom.json"
+  },
+  "author": "",
+  "dependencies": {
+    "@0xpolygonhermez/zkasmcom": "https://github.com/0xPolygonHermez/zkasmcom.git#v0.4.0.0",
+    "@0xpolygonhermez/zkevm-commonjs": "https://github.com/eigmax/zkevm-commonjs.git",
+    "@0xpolygonhermez/zkevm-rom": "https://github.com/0xpolygonhermez/zkevm-rom.git#v0.4.0.0",
+    "ejs": "^3.1.6",
+    "ethers": "^5.4.7",
+    "ffjavascript": "^0.2.55",
+    "pil-stark": "0.0.26",
+    "pilcom": "0.0.18"
+  },
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "yargs": "^17.4.0",
+    "chai-as-promised": "^7.1.1",
+    "circom_tester": "^0.0.9",
+    "cross-env": "^7.0.3",
+    "mocha": "^9.1.3"
+  }
+}
