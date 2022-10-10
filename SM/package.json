@@ -13,7 +13,7 @@
     "@0xpolygonhermez/zkasmcom": "https://github.com/0xPolygonHermez/zkasmcom.git#v0.4.0.0",
     "@0xpolygonhermez/zkevm-commonjs": "https://github.com/eigmax/zkevm-commonjs.git",
     "@0xpolygonhermez/zkevm-rom": "https://github.com/0xpolygonhermez/zkevm-rom.git#v0.4.0.0",
-    "@0xpolygonhermez/zkevm-rom": "https://github.com/0xpolygonhermez/zkevm-storage-rom.git",
+    "@0xpolygonhermez/zkevm-storage-rom": "https://github.com/0xpolygonhermez/zkevm-storage-rom.git",
     "ejs": "^3.1.6",
     "ethers": "^5.4.7",
     "ffjavascript": "^0.2.55",
