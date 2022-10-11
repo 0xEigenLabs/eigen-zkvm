@@ -24,11 +24,12 @@ function elapse(phase, res) {
 }
 
 module.exports = {
-  async generate(workspace, pilFile, builder, starkStruct, proverAddr, input) {
+  async generate(workspace, pilFile, pilConfig, builder, starkStruct, proverAddr, input) {
     let timer = []
     elapse("begin", timer);
     // create and compile the trace polynomial
-    let pil = await compile(FGL, pilFile);
+    //let pil = await compile(FGL, pilFile);
+    const pil = await compile(FGL, pilFile, null,  pilConfig);
 
     let constPols = newConstantPolsArray(pil);
     await builder.buildConstants(constPols, input);
