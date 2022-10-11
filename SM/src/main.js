@@ -39,7 +39,7 @@ const pilConfig = { defines: {N: 2 ** 23},
   namespaces: ['Global', 'Main', 'Rom', 'Byte4', 'MemAlign'],
   verbose: true,
   color: true,
-  disableUnusedError: true});
+  disableUnusedError: true
 }
 
 fri_verifier.generate(argv.workspace, pilFile, pilConfig, new VM(), starkStruct, proverAddr, input).then(() => {
