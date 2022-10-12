@@ -10,7 +10,7 @@ console.log(VM);
 const version = require("../package").version;
 const argv = require("yargs")
   .version(version)
-  .usage("node fibonacci.js -w /path/to/workspace")
+  .usage("node main.js -w /path/to/workspace")
   .alias("w", "workspace") //workspace to stash temp and output files
   .demand('workspace')
   .argv;
@@ -38,8 +38,8 @@ const input = {
 const pilConfig = { defines: {N: 2 ** 23},
   namespaces: ['Global', 'Main', 'Rom', 'Byte4', 'MemAlign'],
   verbose: true,
-  color: true,
-  disableUnusedError: true
+  color: true
+//  disableUnusedError: true
 }
 
 fri_verifier.generate(argv.workspace, pilFile, pilConfig, new VM(), starkStruct, proverAddr, input).then(() => {

@@ -52,17 +52,17 @@ module.exports = {
     // generate vk
     const vk = await this.buildConsttree(pil, constPols, cmPols, starkStruct);
 
-    const  circomFile = path.join(workspace, "fibonacci.circom")
+    const  circomFile = path.join(workspace, "circuit.circom")
     const verifier = await this.pil2circom(pil, vk.constRoot, starkStruct)
     console.log(circomFile);
     await fs.promises.writeFile(circomFile, verifier, "utf8");
 
     // ----debug begin----
-    let publicFile = path.join(workspace, "fibonacci.public.info.json")
+    let publicFile = path.join(workspace, "circuit.public.info.json")
     await fs.promises.writeFile(publicFile, JSONbig.stringify(proof.publics, null, 1), "utf8");
     // ----debug end----
 
-    let zkinFile = path.join(workspace, "fibonacci.zkin.json")
+    let zkinFile = path.join(workspace, "circuit.zkin.json")
     await fs.promises.writeFile(zkinFile, JSONbig.stringify(zkIn, (k, v) => {
       if (typeof(v) === "bigint") {
         return v.toString();
