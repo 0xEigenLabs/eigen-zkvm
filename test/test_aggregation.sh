@@ -10,7 +10,7 @@ CUR_DIR=$(cd $(dirname $0);pwd)
 ZKIT="${CUR_DIR}/../target/release/zkit"
 CIRCUIT="circuit"
 
-cd ${CUR_DIR} && yarn
+cd ${CUR_DIR} && npm i 
 
 WORKSPACE=/tmp/aggregation
 rm -rf $WORKSPACE && mkdir -p $WORKSPACE

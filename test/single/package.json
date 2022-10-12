@@ -4,8 +4,8 @@
     "lint": "./node_modules/.bin/eslint src --ext .ts",
     "clean": "rm -rf build dist typechain cache artifacts",
     "compile": "hardhat compile",
-    "build": "yarn clean && yarn && ./node_modules/.bin/tsc",
-    "test": "yarn build && yarn compile && npx hardhat test"
+    "build": "npm run clean && npm i && ./node_modules/.bin/tsc",
+    "test": "npm run build && npm run compile && npx hardhat test"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",
