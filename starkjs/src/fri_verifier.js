@@ -20,6 +20,7 @@ function elapse(phase, res) {
     cost = end - res[res.length - 1][3];
     total = end - res[0][3];
   }
+  console.log(phase, cost/1000, total/1000);
   res.push([phase, cost/1000, total/1000, end]);
 }
 
@@ -41,8 +42,10 @@ module.exports = {
 
     let constPols = newConstantPolsArray(pil);
     await builder.buildConstants(constPols, input);
+    elapse("buildConstants", timer);
     let cmPols = newCommitPolsArray(pil);
     await builder.execute(cmPols, input);
+    elapse("execute", timer);
 
     // verify the input and trace constraints
     const res = await verifyPil(FGL, pil, cmPols, constPols);
