@@ -4,9 +4,9 @@
   "description": "State Machine for recursive layer.",
   "main": "index.js",
   "scripts": {
-    "genstarkstruct": "source tools/setup.sh && node tools/gen_debug_starkstruct.js -t BN128 -p pil/main.pil -s $BDIR/starkstruct.json",
-    "buildrom": "source tools/setup.sh && (cd node_modules/@0xpolygonhermez/zkevm-rom && npm run build -- -s 23) && cp node_modules/@0xpolygonhermez/zkevm-rom/build/rom.json $BDIR/rom.json",
-    "buildstoragerom": "source tools/setup.sh && (cd node_modules/@0xpolygonhermez/zkevm-storage-rom && npm run build --) && cp node_modules/@0xpolygonhermez/zkevm-storage-rom/build/storage_sm_rom.json $BDIR/storage_sm_rom.json"
+    "genstarkstruct": "./tools/setup.sh && node tools/gen_debug_starkstruct.js -t BN128 -p pil/main.pil -s $BDIR/starkstruct.json",
+    "buildrom": "./tools/setup.sh && (cd node_modules/@0xpolygonhermez/zkevm-rom && npm run build -- -s 23) && cp node_modules/@0xpolygonhermez/zkevm-rom/build/rom.json $BDIR/rom.json",
+    "buildstoragerom": "./tools/setup.sh && (cd node_modules/@0xpolygonhermez/zkevm-storage-rom && npm run build --) && cp node_modules/@0xpolygonhermez/zkevm-storage-rom/build/storage_sm_rom.json $BDIR/storage_sm_rom.json"
   },
   "author": "",
   "dependencies": {
