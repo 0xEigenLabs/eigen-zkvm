@@ -32,7 +32,7 @@ const input = {
   unsigned: false,
   execute: false,
   tracer: false,
-  outputFile: path.join(argv.workspace, "aaa.out")
+  outputFile: path.join(argv.workspace, "zkevm.commit")
 }
 
 const pilConfig = { defines: {N: 2 ** 23},
@@ -42,7 +42,9 @@ const pilConfig = { defines: {N: 2 ** 23},
 //  disableUnusedError: true
 }
 
-fri_verifier.generate(argv.workspace, pilFile, pilConfig, new VM(), starkStruct, proverAddr, input).then(() => {
+const fileCachePil = path.join(argv.workspace, "vm.pil.cache");
+
+fri_verifier.generate(argv.workspace, pilFile, pilConfig, fileCachePil, new VM(), starkStruct, proverAddr, input).then(() => {
   var end = new Date().getTime()
   console.log('cost is', `${end - start}ms`)
 })

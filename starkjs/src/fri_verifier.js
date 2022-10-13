@@ -24,12 +24,20 @@ function elapse(phase, res) {
 }
 
 module.exports = {
-  async generate(workspace, pilFile, pilConfig, builder, starkStruct, proverAddr, input) {
+  async generate(workspace, pilFile, pilConfig, fileCachePil, builder, starkStruct, proverAddr, input) {
     let timer = []
     elapse("begin", timer);
     // create and compile the trace polynomial
-    //let pil = await compile(FGL, pilFile);
-    const pil = await compile(FGL, pilFile, null,  pilConfig);
+    let pil;
+
+    if (typeof fileCachePil !== 'undefined' && fs.existsSync(fileCachePil)) {
+      pil = JSON.parse(await fs.promises.readFile(fileCachePil, "utf8"));
+    } else {
+      pil = await compile(FGL, pilFile, null, pilConfig);
+      if (typeof fileCachePil !== "undefined") {
+        await fs.promises.writeFile(fileCachePil, JSON.stringify(pil, null, 1) + "\n", "utf8");
+      }
+    }
 
     let constPols = newConstantPolsArray(pil);
     await builder.buildConstants(constPols, input);
