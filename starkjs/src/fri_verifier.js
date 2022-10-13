@@ -62,11 +62,14 @@ module.exports = {
 
     // generate vk
     const vk = await this.buildConsttree(pil, constPols, cmPols, starkStruct);
+    elapse("buildConsttree", timer);
 
     const  circomFile = path.join(workspace, "circuit.circom")
     const verifier = await this.pil2circom(pil, vk.constRoot, starkStruct)
+    elapse("pil2circom", timer);
     console.log(circomFile);
     await fs.promises.writeFile(circomFile, verifier, "utf8");
+    elapse("pil2circomToFile", timer);
 
     // ----debug begin----
     let publicFile = path.join(workspace, "circuit.public.info.json")
