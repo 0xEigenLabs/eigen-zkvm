@@ -45,7 +45,9 @@ module.exports = {
 
     // prove and verify the stark proof
     const proof = await this.proveAndVerify(pil, constPols, cmPols, starkStruct);
+    elapse("proveAndVerify", timer);
     let zkIn = proof2zkin(proof.proof);
+    elapse("proof2zkin", timer);
     zkIn.publics = proof.publics;
     zkIn.proverAddr = BigInt(proverAddr);
     elapse("proving", timer);
@@ -111,9 +113,14 @@ module.exports = {
   },
 
   async proveAndVerify(pil, constPols, cmPols, starkStruct) {
+    let timer = []
+    elapse("proveAndVerify/start", timer);
     const setup = await starkSetup(constPols, pil, starkStruct);
+    elapse("proveAndVerify/starkSetup", timer);
     const proof = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo);
+    elapse("proveAndVerify/starkGen", timer);
     const verified = await starkVerify(proof.proof, proof.publics, setup.constRoot, setup.starkInfo);
+    elapse("proveAndVerify/starkVerify", timer);
     assert(verified == true);
     return proof;
   },
