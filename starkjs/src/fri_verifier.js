@@ -10,19 +10,9 @@ const { proof2zkin } = require("./proof2zkin.js");
 const buildMerklehashBN128 = require("./merklehash_bn128_p.js");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true, storeAsString: true });
 
-const { BigBuffer, newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
+const {elapse} = require("./utils");
 
-function elapse(phase, res) {
-  var end = new Date().getTime()
-  var cost = 0;
-  var total = 0;
-  if (res.length > 0) {
-    cost = end - res[res.length - 1][3];
-    total = end - res[0][3];
-  }
-  console.log(phase, cost/1000, total/1000);
-  res.push([phase, cost/1000, total/1000, end]);
-}
+const { BigBuffer, newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
 
 module.exports = {
   async generate(workspace, pilFile, pilConfig, fileCachePil, builder, starkStruct, proverAddr, input) {
