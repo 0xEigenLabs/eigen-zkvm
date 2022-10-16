@@ -13,6 +13,7 @@
     "circomlibjs": "^0.1.6",
     "pilcom": "^0.0.18",
     "tmp-promise": "3.0.3",
+    "json-bigint": "^1.0.0",
     "pil-stark": "0.0.26"
   },
   "files": [
