@@ -4,23 +4,24 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "demo": "mkdir -p circuits && node fibonacci/fibonacci.js -w circuits"
   },
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-      "circomlib": "^2.0.5",
-      "circomlibjs": "^0.1.6",
-      "pilcom": "^0.0.18",
-      "tmp-promise": "3.0.3",
-      "pil-stark": "0.0.26"
+    "circomlib": "^2.0.5",
+    "circomlibjs": "^0.1.6",
+    "pilcom": "^0.0.18",
+    "tmp-promise": "3.0.3",
+    "pil-stark": "0.0.26"
   },
   "files": [
-      "index.js",
-      "src/*.js"
+    "index.js",
+    "src/*.js"
   ],
   "devDependencies": {
     "chai": "^4.3.6",
-    "mocha": "^10.0.0"
+    "mocha": "^10.0.0",
+    "yargs": "^17.4.0"
   }
 }
