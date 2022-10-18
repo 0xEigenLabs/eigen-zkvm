@@ -1,5 +1,5 @@
 # SM
-State Machine for recursive layer.
+State Machine based zkVM prototype abstracted from [zkevm-proverjs](https://github.com/0xPolygonHermez/zkevm-proverjs/tree/main/pil).
 
 # Run
 
