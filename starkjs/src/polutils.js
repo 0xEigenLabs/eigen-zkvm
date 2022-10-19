@@ -18,6 +18,7 @@ module.exports.evalPol = function evalPol(F, p, x) {
     return res;
 }
 
+/*
 module.exports.extendPol = function extendPol(F, p, extendBits) {
     extendBits = extendBits || 1;
     let res = new Array(p.length);
@@ -93,3 +94,4 @@ module.exports.calculateZ = function(F, num, den) {
 
     return z;
 }
+*/

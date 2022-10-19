@@ -1,0 +1,35 @@
+namespace Rom(%N);
+
+    pol constant CONST0;
+    pol constant CONST1;
+    pol constant CONST2;
+    pol constant CONST3;
+    pol constant CONST4;
+    pol constant CONST5;
+    pol constant CONST6;
+    pol constant CONST7;
+    pol constant offset;
+    pol constant inA, inB, inC, inROTL_C, inD, inE, inSR, inFREE, inCTX, inSP, inPC, inGAS, inMAXMEM, inHASHPOS, inSTEP, inRR;
+    pol constant setA, setB, setC, setD, setE, setSR, setCTX, setSP, setPC, setGAS, setMAXMEM, setHASHPOS, JMP, JMPN, JMPC, setRR;
+    pol constant incStack, incCode;
+    pol constant isStack;
+    pol constant isCode;
+    pol constant isMem;
+    pol constant ind, indRR;
+    pol constant useCTX;
+    pol constant mOp, mWR;
+    pol constant sWR, sRD;
+    pol constant arith;
+    pol constant arithEq0;
+    pol constant arithEq1;
+    pol constant arithEq2;
+    pol constant arithEq3;
+    pol constant memAlign, memAlignWR, memAlignWR8;
+    pol constant hashK, hashKLen, hashKDigest;
+    pol constant hashP, hashPLen, hashPDigest;
+    pol constant bin;
+    pol constant binOpcode;
+    pol constant assert;
+
+    pol constant line;
+

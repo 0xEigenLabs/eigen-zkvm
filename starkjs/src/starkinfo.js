@@ -11,7 +11,7 @@ const generateFRIPolynomial = require("./starkinfo_fri_prover");
 const generateConstraintPolynomialVerifier = require("./starkinfo_cp_ver");
 const generateVerifierQuery = require("./starkinfo_fri_ver");
 const map = require("./starkinfo_map");
-// const cPolBuilder = require("./cpolbuilder.js")
+const { elapse } = require("./utils");
 
 module.exports = function starkInfoGen(_pil, starkStruct) {
     const pil = JSON.parse(JSON.stringify(_pil));    // Make a copy as we are going to destroy pil
@@ -61,24 +61,33 @@ module.exports = function starkInfoGen(_pil, starkStruct) {
         code: []
     };
 
-
+    let timer = [];
+    elapse("start", timer);
     generateStep2(res, pil, ctx);                        // H1, H2
     res.nCm2 = pil.nCommitments - res.nCm1;
 
+    elapse("starkInfoGen/generateStep2", timer);
+
     generateStep3(res, pil, ctx);                        // Z Polynomials and LC of permutation chcks.
     res.nCm3 = pil.nCommitments - res.nCm1 - res.nCm2;
+    elapse("starkInfoGen/generateStep3", timer);
 
     generateConstraintPolynomial(res, pil, ctx, ctx2ns);            // Step4
     res.nCm4 = pil.nCommitments - res.nCm3 -res.nCm2-res.nCm1;
     res.nQ = pil.nQ;
+    elapse("starkInfoGen/generateConstraintPolynomial", timer);
 
     generateConstraintPolynomialVerifier(res, pil);
+    elapse("starkInfoGen/generateConstraintPolynomialVerifier", timer);
 
     generateFRIPolynomial(res, pil, ctx2ns);
+    elapse("starkInfoGen/generateFRIPolynomial", timer);
 
     generateVerifierQuery(res, pil);
+    elapse("starkInfoGen/generateVerifierQuery", timer);
 
     map(res, pil);
+    elapse("starkInfoGen/map", timer);
 
 //    cPolBuilder(pil, res.cExp);
 
