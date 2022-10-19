@@ -1,5 +1,5 @@
 const { FGL } = require("pil-stark");
-const {fri_verifier, utils} = require("../index.js");
+const {pil_verifier, utils} = require("../index.js");
 const path = require("path");
 
 class FibonacciJS {
@@ -51,7 +51,7 @@ const pilFile = path.join(__dirname, "./fibonacci.pil");
 const proverAddr = "0x2FD31EB1BB3f0Ac8C4feBaF1114F42431c1F29E4";
 var start = new Date().getTime()
 const pilConfig = {};
-fri_verifier.generate(argv.workspace, pilFile, pilConfig, undefined, new FibonacciJS(), starkStruct, proverAddr, [1, 2]).then(() => {
+pil_verifier.generate(argv.workspace, pilFile, pilConfig, undefined, new FibonacciJS(), starkStruct, proverAddr, [1, 2]).then(() => {
   var end = new Date().getTime()
   console.log('cost is', `${end - start}ms`)
 })

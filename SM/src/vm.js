@@ -1,7 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 const { F1Field } = require("ffjavascript");
-const { newConstantPolsArray, compile, newCommitPolsArray } = require("pilcom");
+const { newConstantPolsArray, newCommitPolsArray } = require("pilcom");
 const { fri_verifier } = require("../../starkjs");
 
 const smArith = require("./sm/sm_arith/sm_arith.js");

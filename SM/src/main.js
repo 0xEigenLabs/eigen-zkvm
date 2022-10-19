@@ -1,5 +1,5 @@
 const { FGL } = require("pil-stark");
-const {fri_verifier, utils} = require("../../starkjs/index.js");
+const {pil_verifier, utils} = require("../../starkjs/index.js");
 const path = require("path");
 const fs = require("fs");
 
@@ -24,7 +24,7 @@ const pilFile = path.join(__dirname, "../pil/main.pil");
 const proverAddr = "0x2FD31EB1BB3f0Ac8C4feBaF1114F42431c1F29E4";
 var start = new Date().getTime()
 
-const input = {
+const config = {
   inputFile: path.join(__dirname, "../tools/build-genesis/input_executor.json"),
   romFile: path.join(__dirname, "../build/proof/rom.json"),
   debug: false,
@@ -42,9 +42,9 @@ const pilConfig = { defines: {N: 2 ** 23},
 //  disableUnusedError: true
 }
 
-const fileCachePil = path.join(argv.workspace, "vm.pil.cache");
+const fileCachePil = path.join(argv.workspace, "vm.pil.json");
 
-fri_verifier.generate(argv.workspace, pilFile, pilConfig, fileCachePil, new VM(), starkStruct, proverAddr, input).then(() => {
+pil_verifier.generate(argv.workspace, pilFile, pilConfig, fileCachePil, new VM(), starkStruct, proverAddr, config).then(() => {
   var end = new Date().getTime()
   console.log('cost is', `${end - start}ms`)
 })
