@@ -8,6 +8,10 @@ const {
 // paths files
 const pathInput = path.join(__dirname, "./input_gen.json");
 const pathOutput = path.join(__dirname, "./input_executor.json");
+const pathDB = path.join(__dirname, "./smt.db")
+
+const dbhandler = require("../dbhandler.js");
+var dbproxy = new Proxy({}, dbhandler);
 
 async function main(){
     // build poseidon
@@ -44,7 +48,7 @@ async function main(){
     const customRawTx = processorUtils.rawTxToCustomRawTx(rawTxEthers);
 
     // create a zkEVMDB and build a batch
-    const db = new MemDB(F);
+    const db = new MemDB(F, dbproxy);
 
     const zkEVMDB = await ZkEVMDB.newZkEVM(
         db,
@@ -97,6 +101,7 @@ async function main(){
 
     fs.writeFileSync(pathOutput, JSON.stringify(starkInput, null, 2));
     fs.writeFileSync(pathInput, JSON.stringify(generateData, null, 2));
+    fs.writeFileSync(pathDB, JSON.stringify(dbproxy, null, 2));
 }
 
 main();
