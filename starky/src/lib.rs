@@ -13,7 +13,7 @@ pub mod tests {
 
     #[test]
     fn test_fft_eval() {
-        let n = 2i32.pow(28) as usize;
+        let n = 2i32.pow(8) as usize;
 
         // build a random polynomial
         let mut p: Vec<BaseElement> = rand_vector(n);
