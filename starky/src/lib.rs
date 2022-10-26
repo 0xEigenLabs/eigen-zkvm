@@ -1,4 +1,6 @@
 pub mod errors;
+pub mod pil;
+pub mod polsarray;
 
 #[cfg(test)]
 pub mod tests {
