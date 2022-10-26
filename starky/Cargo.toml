@@ -10,7 +10,8 @@ anyhow = "1.0.33"
 
 winterfell = { version="0.4", default-features = false }
 core-utils = { version = "0.4", package = "winter-utils", default-features = false }
-rand-utils = { version = "0.4", package = "winter-rand-utils", optional = true }
+rand-utils = { version = "0.4", package = "winter-rand-utils" }
+winter-math = { version = "0.4" }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 rand =  { version = "0.8" }
