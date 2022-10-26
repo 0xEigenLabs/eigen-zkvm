@@ -70,7 +70,7 @@ pub struct ConnectionIdentity {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct PILJson {
+pub struct PIL {
     pub nCommitments: i32,
     pub nQ: i32,
     pub nIm: i32,
@@ -84,16 +84,62 @@ pub struct PILJson {
     pub connectionIdentities: Vec<ConnectionIdentity>,
 }
 
-pub fn read_pil(filename: &str) -> Result<PILJson> {
+#[derive(Serialize, Deserialize)]
+pub struct StarkStruct {
+    pub nBits: i32,
+    pub nBitsExt: i32,
+    pub nQueries: i32,
+    pub verificationHashType: String,
+    pub steps: Vec<HashMap<String, i32>>,
+}
+
+pub fn load_json<T>(filename: &str) -> Result<T>
+where
+    T: serde::de::DeserializeOwned,
+{
     let mut file = File::open(filename)?;
     let mut data = String::new();
     file.read_to_string(&mut data)?;
+    read_json(data)
+}
 
-    let json: PILJson = serde_json::from_str(&data)?;
-    Ok(json)
+pub fn read_json<T>(data: String) -> Result<T>
+where
+    T: serde::de::DeserializeOwned,
+{
+    Ok(serde_json::from_str(&data)?)
 }
 
 #[test]
 pub fn test_read_pil() {
-    read_pil("data/fib.pil.json").unwrap();
+    load_json::<PIL>("data/fib.pil.json").unwrap();
+}
+
+#[test]
+pub fn test_read_struct() {
+    let json_str = r#"
+    {
+        "nBits": 23,
+        "nBitsExt": 24,
+        "nQueries": 4,
+        "verificationHashType": "BN128",
+        "steps": [
+        {
+            "nBits": 24
+        },
+        {
+            "nBits": 20
+        },
+        {
+            "nBits": 16
+        },
+        {
+            "nBits": 12
+        },
+        {
+            "nBits": 8
+        }
+        ]
+    }"#;
+    read_json::<StarkStruct>(json_str.to_string()).unwrap();
 }
