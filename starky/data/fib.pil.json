@@ -1,0 +1,230 @@
+{
+  "nCommitments": 2,
+  "nQ": 0,
+  "nIm": 0,
+  "nConstants": 1,
+  "publics": [
+    {
+      "polType": "cmP",
+      "polId": 1,
+      "idx": 31,
+      "id": 0,
+      "name": "out"
+    }
+  ],
+  "references": {
+    "Fibonacci.ISLAST": {
+      "type": "constP",
+      "id": 0,
+      "polDeg": 32,
+      "isArray": false
+    },
+    "Fibonacci.aBeforeLast": {
+      "type": "cmP",
+      "id": 0,
+      "polDeg": 32,
+      "isArray": false
+    },
+    "Fibonacci.aLast": {
+      "type": "cmP",
+      "id": 1,
+      "polDeg": 32,
+      "isArray": false
+    }
+  },
+  "expressions": [
+    {
+      "op": "sub",
+      "deg": 2,
+      "values": [
+        {
+          "op": "mul",
+          "deg": 2,
+          "values": [
+            {
+              "op": "sub",
+              "deg": 1,
+              "values": [
+                {
+                  "op": "number",
+                  "deg": 0,
+                  "value": "1"
+                },
+                {
+                  "op": "const",
+                  "deg": 1,
+                  "id": 0,
+                  "next": false
+                }
+              ]
+            },
+            {
+              "op": "sub",
+              "deg": 1,
+              "values": [
+                {
+                  "op": "cm",
+                  "deg": 1,
+                  "id": 0,
+                  "next": true
+                },
+                {
+                  "op": "cm",
+                  "deg": 1,
+                  "id": 1,
+                  "next": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "number",
+          "deg": 0,
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "op": "sub",
+      "deg": 2,
+      "values": [
+        {
+          "op": "mul",
+          "deg": 2,
+          "values": [
+            {
+              "op": "sub",
+              "deg": 1,
+              "values": [
+                {
+                  "op": "number",
+                  "deg": 0,
+                  "value": "1"
+                },
+                {
+                  "op": "const",
+                  "deg": 1,
+                  "id": 0,
+                  "next": false
+                }
+              ]
+            },
+            {
+              "op": "sub",
+              "deg": 1,
+              "values": [
+                {
+                  "op": "cm",
+                  "deg": 1,
+                  "id": 1,
+                  "next": true
+                },
+                {
+                  "op": "add",
+                  "deg": 1,
+                  "values": [
+                    {
+                      "op": "cm",
+                      "deg": 1,
+                      "id": 0,
+                      "next": false
+                    },
+                    {
+                      "op": "cm",
+                      "deg": 1,
+                      "id": 1,
+                      "next": false
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "number",
+          "deg": 0,
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "op": "sub",
+      "deg": 2,
+      "values": [
+        {
+          "op": "mul",
+          "deg": 2,
+          "values": [
+            {
+              "op": "const",
+              "deg": 1,
+              "id": 0,
+              "next": false
+            },
+            {
+              "op": "sub",
+              "deg": 1,
+              "values": [
+                {
+                  "op": "cm",
+                  "deg": 1,
+                  "id": 1,
+                  "next": false
+                },
+                {
+                  "op": "public",
+                  "deg": 0,
+                  "id": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "number",
+          "deg": 0,
+          "value": "0"
+        }
+      ]
+    }
+  ],
+  "polIdentities": [
+    {
+      "e": 0,
+      "fileName": "fibonacci.pil",
+      "line": 6
+    },
+    {
+      "e": 1,
+      "fileName": "fibonacci.pil",
+      "line": 7
+    },
+    {
+      "e": 2,
+      "fileName": "fibonacci.pil",
+      "line": 10
+    }
+  ],
+  "plookupIdentities": [
+    {
+      "f": [
+        0,
+        1,
+        2
+      ],
+      "t": [
+        4,
+        5,
+        6
+      ],
+      "selF": 3,
+      "selT": 7,
+      "fileName": "plookup.pil",
+      "line": 9
+    }
+  ],
+  "permutationIdentities": [],
+  "connectionIdentities": []
+}
