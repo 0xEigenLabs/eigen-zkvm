@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::fs::File;
 
 use std::io::{Read, Write};
+use winter_math::StarkField;
 
 use crate::errors::Result;
 use winter_math::fields::f64::BaseElement;
@@ -15,7 +16,7 @@ pub struct PolsArray {
     // nameSpace, namePol, defArray's index,
     pub def: HashMap<String, HashMap<String, (bool, Vec<usize>)>>,
     pub defArray: Vec<Pol>,
-    pub array: Vec<Vec<u64>>,
+    pub array: Vec<Vec<BaseElement>>,
     pub n: usize,
 }
 
@@ -44,11 +45,10 @@ impl PolsArray {
         };
 
         let mut def: HashMap<String, HashMap<String, ArrayPol>> = HashMap::new();
-        // FIXME: use precise size
         let mut defArray: Vec<Pol> = vec![Pol::default(); nPols as usize];
-        let mut array: Vec<Vec<u64>> = vec![Vec::new(); nPols as usize];
+        let mut array: Vec<Vec<BaseElement>> = vec![Vec::new(); nPols as usize];
         for i in 0..array.len() {
-            array[i] = vec![0u64; nPols as usize];
+            array[i] = vec![BaseElement::default(); nPols as usize];
         }
         println!("reference {:?}", pil.references);
         for (refName, ref_) in pil.references.iter() {
@@ -82,7 +82,7 @@ impl PolsArray {
                             polDeg: ref_.polDeg,
                         };
                         arrayPols.1[i] = ref_.id + i;
-                        array[ref_.id + i] = vec![0u64; ref_.polDeg];
+                        array[ref_.id + i] = vec![BaseElement::default(); ref_.polDeg];
                     }
                     ns.insert(namePols, arrayPols);
                     def.insert(nameSpace, ns);
@@ -101,7 +101,7 @@ impl PolsArray {
                     let mut ns: HashMap<String, ArrayPol> = HashMap::new();
                     ns.insert(namePols, arrayPols);
                     def.insert(nameSpace, ns);
-                    array[ref_.id] = vec![0u64; ref_.polDeg];
+                    array[ref_.id] = vec![BaseElement::default(); ref_.polDeg];
                 }
             }
         }
@@ -129,7 +129,6 @@ impl PolsArray {
 
         let mut i = 0;
         let mut j = 0;
-        let mut n = 0;
         let mut k = 0;
         while k < totalSize {
             println!(
@@ -149,7 +148,7 @@ impl PolsArray {
             };
             n = rs / 8;
             for l in 0..n {
-                self.array[i][j] = buff[l];
+                self.array[i][j] = BaseElement::from(buff[l]);
                 i += 1;
                 if i == self.nPols {
                     i = 0;
@@ -171,11 +170,7 @@ impl PolsArray {
         let mut p = 0usize;
         for i in 0..self.n {
             for j in 0..self.nPols {
-                buff[p] = self.array[j][i];
-                if buff[p] < 0 {
-                    // BUG: impossible to LT 0
-                    buff[p] += 0xffffffff00000001u64
-                }
+                buff[p] = self.array[j][i].as_int() % 0xFFFFFFFF00000001; //u128
                 p += 1;
                 if p == buff.capacity() {
                     // copy to [u8]

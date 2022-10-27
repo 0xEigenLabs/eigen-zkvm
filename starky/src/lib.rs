@@ -1,5 +1,6 @@
 pub mod errors;
 pub mod polsarray;
+pub mod stark_setup;
 pub mod types;
 
 #[cfg(test)]
