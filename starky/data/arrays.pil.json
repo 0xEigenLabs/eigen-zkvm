@@ -1,0 +1,226 @@
+{
+ "nCommitments": 6,
+ "nQ": 0,
+ "nIm": 0,
+ "nConstants": 2,
+ "publics": [],
+ "references": {
+  "Arrays2.d": {
+   "type": "constP",
+   "elementType": "field",
+   "id": 0,
+   "polDeg": 65536,
+   "isArray": true,
+   "len": 2
+  },
+  "Arrays2.c": {
+   "type": "cmP",
+   "elementType": "field",
+   "id": 0,
+   "polDeg": 65536,
+   "isArray": false
+  },
+  "Arrays1.a": {
+   "type": "cmP",
+   "elementType": "field",
+   "id": 1,
+   "polDeg": 65536,
+   "isArray": false
+  },
+  "Arrays1.b": {
+   "type": "cmP",
+   "elementType": "field",
+   "id": 2,
+   "polDeg": 65536,
+   "isArray": true,
+   "len": 3
+  },
+  "Arrays1.c": {
+   "type": "cmP",
+   "elementType": "field",
+   "id": 5,
+   "polDeg": 65536,
+   "isArray": false
+  }
+ },
+ "expressions": [
+  {
+   "op": "sub",
+   "deg": 2,
+   "values": [
+    {
+     "op": "add",
+     "deg": 1,
+     "values": [
+      {
+       "op": "const",
+       "deg": 1,
+       "id": 0,
+       "next": false
+      },
+      {
+       "op": "const",
+       "deg": 1,
+       "id": 1,
+       "next": false
+      }
+     ]
+    },
+    {
+     "op": "mul",
+     "deg": 2,
+     "values": [
+      {
+       "op": "cm",
+       "deg": 1,
+       "id": 0,
+       "next": false
+      },
+      {
+       "op": "const",
+       "deg": 1,
+       "id": 0,
+       "next": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "op": "addc",
+   "deg": 2,
+   "values": [
+    {
+     "op": "mul",
+     "deg": 2,
+     "values": [
+      {
+       "op": "cm",
+       "deg": 1,
+       "id": 1,
+       "next": false
+      },
+      {
+       "op": "cm",
+       "deg": 1,
+       "id": 2,
+       "next": false
+      }
+     ]
+    }
+   ],
+   "const": "-1"
+  },
+  {
+   "op": "sub",
+   "deg": 2,
+   "values": [
+    {
+     "op": "mul",
+     "deg": 2,
+     "values": [
+      {
+       "op": "cm",
+       "deg": 1,
+       "id": 3,
+       "next": false
+      },
+      {
+       "op": "cm",
+       "deg": 1,
+       "id": 3,
+       "next": false
+      }
+     ]
+    },
+    {
+     "op": "mul",
+     "deg": 2,
+     "values": [
+      {
+       "op": "cm",
+       "deg": 1,
+       "id": 4,
+       "next": false
+      },
+      {
+       "op": "const",
+       "deg": 1,
+       "id": 1,
+       "next": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "op": "cm",
+   "deg": 1,
+   "id": 2,
+   "next": false
+  },
+  {
+   "op": "cm",
+   "deg": 1,
+   "id": 1,
+   "next": false
+  },
+  {
+   "op": "cm",
+   "deg": 1,
+   "id": 3,
+   "next": false
+  },
+  {
+   "op": "cm",
+   "deg": 1,
+   "id": 0,
+   "next": false
+  },
+  {
+   "op": "const",
+   "deg": 1,
+   "id": 1,
+   "next": false
+  },
+  {
+   "op": "const",
+   "deg": 1,
+   "id": 0,
+   "next": false
+  }
+ ],
+ "polIdentities": [
+  {
+   "e": 0,
+   "fileName": "/Users/jbaylina/git/zkevm/zkpil/test/examples/arrays.pil",
+   "line": 6
+  },
+  {
+   "e": 1,
+   "fileName": "/Users/jbaylina/git/zkevm/zkpil/test/examples/arrays.pil",
+   "line": 11
+  },
+  {
+   "e": 2,
+   "fileName": "/Users/jbaylina/git/zkevm/zkpil/test/examples/arrays.pil",
+   "line": 12
+  }
+ ],
+ "plookupIdentities": [
+  {
+   "f": [
+    3,
+    4
+   ],
+   "t": [
+    6,
+    7
+   ],
+   "selF": 5,
+   "selT": 8,
+   "fileName": "/Users/jbaylina/git/zkevm/zkpil/test/examples/arrays.pil",
+   "line": 14
+  }
+ ]
+}

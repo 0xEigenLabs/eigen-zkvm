@@ -6,26 +6,28 @@ use std::io::Read;
 
 use crate::errors::Result;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Public {
     pub polType: String,
     pub polId: i32,
     pub idx: i32,
-    pub id: i32,
+    pub id: usize,
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Reference {
     pub polType: Option<String>,
     #[serde(rename = "type")]
     pub type_: String,
-    pub id: i32,
-    pub polDeg: i32,
+    pub id: usize,
+    pub polDeg: usize,
     pub isArray: bool,
+    pub elementType: Option<String>, // "field, s8, s16, s32, s64, u16, u8"
+    pub len: Option<usize>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Expression {
     pub op: String, // number, cm, add, sub, ...
     pub deg: i32,
@@ -34,14 +36,14 @@ pub struct Expression {
     pub values: Option<Vec<Expression>>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PolIdentity {
     pub e: i32,
     pub fileName: String,
     pub line: i32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PlookupIdentity {
     pub f: Option<Vec<i32>>,
     pub t: Option<Vec<i32>>,
@@ -51,7 +53,7 @@ pub struct PlookupIdentity {
     pub line: i32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PermutationIdentity {
     pub f: Option<Vec<i32>>,
     pub t: Option<Vec<i32>>,
@@ -61,7 +63,7 @@ pub struct PermutationIdentity {
     pub line: i32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ConnectionIdentity {
     pub pols: Option<Vec<i32>>,
     pub connections: Option<Vec<i32>>,
@@ -69,7 +71,7 @@ pub struct ConnectionIdentity {
     pub line: i32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PIL {
     pub nCommitments: i32,
     pub nQ: i32,
@@ -80,11 +82,11 @@ pub struct PIL {
     pub expressions: Vec<Expression>,
     pub polIdentities: Vec<PolIdentity>,
     pub plookupIdentities: Vec<PlookupIdentity>,
-    pub permutationIdentities: Vec<PermutationIdentity>,
-    pub connectionIdentities: Vec<ConnectionIdentity>,
+    pub permutationIdentities: Option<Vec<PermutationIdentity>>,
+    pub connectionIdentities: Option<Vec<ConnectionIdentity>>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct StarkStruct {
     pub nBits: i32,
     pub nBitsExt: i32,
@@ -113,6 +115,10 @@ where
 #[test]
 pub fn test_read_pil() {
     load_json::<PIL>("data/fib.pil.json").unwrap();
+    println!(
+        "arrays.pil.json: {:?}",
+        load_json::<PIL>("data/arrays.pil.json").unwrap()
+    );
 }
 
 #[test]
