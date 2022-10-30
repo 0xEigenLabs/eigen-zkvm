@@ -197,14 +197,6 @@ impl PolsArray {
         }
         Ok(())
     }
-
-    pub fn writeToBuff(&self, buff: Vec<u64>, pos: usize) -> Result<()> {
-        panic!("not implemented");
-    }
-
-    pub fn writeToBigBuff(&self, buff: Vec<u64>, pos: usize) -> Result<()> {
-        panic!("not implemented");
-    }
 }
 
 #[cfg(test)]
@@ -215,17 +207,12 @@ pub mod tests {
     #[test]
     fn test_load_polsarray() {
         let pil = types::load_json::<PIL>("data/fib.pil.json").unwrap();
-        println!("pil {:?}", pil);
-        let mut pc = PolsArray::new(&pil, PolKind::Constant, 32);
-        println!("pc {:?}", pc);
-        pc.load("data/fib.const").unwrap();
-        println!("const pols {:?}", pc);
-        pc.save("data/fib.const.cp").unwrap();
+        let mut cp = PolsArray::new(&pil, PolKind::Constant, 32);
+        cp.load("data/fib.const").unwrap();
+        cp.save("data/fib.const.cp").unwrap();
 
-        let mut pcm = PolsArray::new(&pil, PolKind::Commit, 32);
-        println!("pcm {:?}", pcm);
-        pcm.load("data/fib.exec").unwrap();
-        println!("cm pols {:?}", pcm);
-        pcm.save("data/fib.exec.cp").unwrap();
+        let mut cmp = PolsArray::new(&pil, PolKind::Commit, 32);
+        cmp.load("data/fib.exec").unwrap();
+        cmp.save("data/fib.exec.cp").unwrap();
     }
 }

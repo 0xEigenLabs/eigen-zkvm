@@ -1,4 +1,5 @@
 pub mod errors;
+pub mod linear_hash;
 pub mod polsarray;
 pub mod stark_setup;
 pub mod types;

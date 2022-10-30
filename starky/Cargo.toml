@@ -8,10 +8,13 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.33"
 
-winterfell = { version="0.4", default-features = false }
-core-utils = { version = "0.4", package = "winter-utils", default-features = false }
+winterfell = { version="0.4", default-features = false, features = ["concurrent"] }
+winter-prover = { version="0.4", default-features = false, features = ["concurrent"] }
+winter-air = { version="0.4", default-features = false }
+winter-utils = { version = "0.4", package = "winter-utils", default-features = false, features = ["concurrent"] }
 rand-utils = { version = "0.4", package = "winter-rand-utils" }
-winter-math = { version = "0.4" }
+winter-math = { version = "0.4" , features = ["concurrent"] }
+winter-crypto = { version = "0.4" , features = ["concurrent"] }
 
 serde = { version = "1.0", features = [ "derive" ] }
 serde_json = "1.0"
