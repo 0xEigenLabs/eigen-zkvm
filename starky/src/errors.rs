@@ -19,6 +19,15 @@ pub enum EigenError {
     #[error("json serialization error")]
     SerdeError(#[from] serde_json::Error),
 
+    #[error("Peseidon hash error`{0}`")]
+    PoseidonHashError(String),
+
     #[error("Unknown error, `{0}`")]
     Unknown(String),
+}
+
+impl From<String> for EigenError {
+    fn from(e: String) -> Self {
+        EigenError::Unknown(e)
+    }
 }

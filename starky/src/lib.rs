@@ -1,8 +1,18 @@
 pub mod errors;
-pub mod linear_hash;
 pub mod polsarray;
 pub mod stark_setup;
 pub mod types;
+
+pub mod linearhash_bn128;
+mod poseidon_bn128_constants;
+
+pub mod poseidon_bn128;
+
+#[macro_use]
+extern crate ff;
+
+#[macro_use]
+extern crate lazy_static;
 
 #[cfg(test)]
 pub mod tests {
