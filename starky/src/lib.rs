@@ -8,6 +8,11 @@ mod poseidon_bn128_constants;
 
 pub mod poseidon_bn128;
 
+mod merklehash_bn128;
+
+mod digest_bn128;
+pub use digest_bn128::ElementDigest;
+
 #[macro_use]
 extern crate ff;
 

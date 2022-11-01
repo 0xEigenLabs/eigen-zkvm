@@ -1,7 +1,9 @@
 use crate::poseidon_bn128::{Fr, Poseidon};
+use crate::ElementDigest;
 use ff::*;
+use winter_crypto::Hasher;
 use winter_math::fields::f64::BaseElement;
-use winter_math::StarkField;
+use winter_math::{FieldElement, StarkField};
 
 use crate::errors::Result;
 
@@ -19,7 +21,8 @@ impl LinearHashBN128 {
         LinearHashBN128 { h: Poseidon::new() }
     }
 
-    fn hash(&self, values: &Vec<Vec<BaseElement>>) -> Result<Fr> {
+    /// used for hash leaves only, converting element from GL to BN128
+    fn hash_element_matrix(&self, values: &Vec<Vec<BaseElement>>) -> Result<Fr> {
         let mut st = Fr::zero();
         let mut vals3: Vec<Fr> = vec![];
 
@@ -68,6 +71,26 @@ impl LinearHashBN128 {
     }
 }
 
+/// hasher element over BN128
+impl Hasher for LinearHashBN128 {
+    type Digest = ElementDigest;
+
+    fn hash(bytes: &[u8]) -> Self::Digest {
+        let hasher = LinearHashBN128::new();
+        let elems: &[BaseElement] = unsafe { BaseElement::bytes_as_elements(bytes).unwrap() };
+        let digest = hasher.hash_element_matrix(&vec![elems.to_vec()]).unwrap();
+        ElementDigest::default()
+    }
+
+    fn merge(values: &[Self::Digest; 2]) -> Self::Digest {
+        ElementDigest::default()
+    }
+
+    fn merge_with_int(seed: Self::Digest, value: u64) -> Self::Digest {
+        ElementDigest::default()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::linearhash_bn128::LinearHashBN128;
@@ -90,7 +113,7 @@ mod tests {
             })
             .collect();
 
-        let st = LinearHashBN128::new().hash(&inputs).unwrap();
+        let st = LinearHashBN128::new().hash_element_matrix(&inputs).unwrap();
         assert_eq!(
             st.to_string(),
             "Fr(0x29c2ac38b7b8d18b9c1b575369cb4ab930ef71ebd5e4631b3916360233a29cae)",
