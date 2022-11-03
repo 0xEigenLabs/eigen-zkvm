@@ -18,6 +18,7 @@ pub struct Constants {
     pub n_rounds_p: Vec<usize>,
 }
 
+/// TODO: implement singleton instance
 pub fn load_constants() -> Constants {
     let (c_str, m_str) = constants::constants();
     let mut c: Vec<Vec<Fr>> = Vec::new();

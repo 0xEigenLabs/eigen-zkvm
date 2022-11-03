@@ -13,6 +13,9 @@ mod merklehash_bn128;
 mod digest_bn128;
 pub use digest_bn128::ElementDigest;
 
+mod constant;
+mod traits;
+
 #[macro_use]
 extern crate ff;
 

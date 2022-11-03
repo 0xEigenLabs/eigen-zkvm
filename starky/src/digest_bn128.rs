@@ -1,10 +1,16 @@
 use crate::poseidon_bn128::Fr;
 use core::slice;
-use ff::Field;
+use ff::*;
 use winter_crypto::Digest;
 use winter_math::StarkField;
 use winter_math::{fields::f64::BaseElement, FieldElement};
 use winter_utils::{ByteReader, ByteWriter, Deserializable, DeserializationError, Serializable};
+
+use num_bigint::BigUint;
+use num_traits::Num;
+use num_traits::ToPrimitive;
+
+use std::ops::{AddAssign, MulAssign};
 
 const DIGEST_SIZE: usize = 4;
 
@@ -27,6 +33,7 @@ impl ElementDigest {
     }
 }
 
+/// Field mapping
 /// Fr always consists of [u64; limbs], here for bn128, the limbs is 4.
 impl From<&Fr> for ElementDigest {
     fn from(e: &Fr) -> Self {
@@ -46,6 +53,61 @@ impl Into<Fr> for ElementDigest {
         result.0 .0[1] = self.0[1].as_int().into();
         result.0 .0[2] = self.0[2].as_int().into();
         result.0 .0[3] = self.0[3].as_int().into();
+        result
+    }
+}
+
+impl crate::traits::FieldMapping for ElementDigest {
+    fn to_BN128(e: &[BaseElement; 4]) -> Fr {
+        let mut result = BigUint::from(e[0].as_int());
+
+        let mut added = BigUint::from(e[1].as_int());
+        added = added << 64;
+        result += added;
+
+        let mut added = BigUint::from(e[2].as_int());
+        added = added << 128;
+        result += added;
+
+        let mut added = BigUint::from(e[3].as_int());
+        added = added << 192;
+        result += added;
+
+        Fr::from_str(&result.to_string()).unwrap()
+    }
+
+    /// by js:
+    /// const r = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+    /// const n64 = Math.floor((bitLength(r - 1n) - 1)/64) +1;
+    /// const f1size = n64*8;
+    /// return BigInt(a) * ( 1n << BigInt(f1size*8)) % r;
+    fn to_montgomery(e: &Fr) -> Fr {
+        // opt: precompute
+        let _2_256 = BigUint::from(1u32) << 256;
+        let ee: BigUint =
+            BigUint::from_str_radix(&(to_hex(e).trim_start_matches('0')), 16).unwrap();
+        let r = BigUint::from_str_radix(
+            "21888242871839275222246405745257275088548364400416034343698204186575808495617",
+            10,
+        )
+        .unwrap();
+
+        let ee: BigUint = (&_2_256 * ee) % r;
+        Fr::from_str(&ee.to_string()).unwrap()
+    }
+
+    fn to_GL(f: &Fr) -> [BaseElement; 4] {
+        let mut f = BigUint::from_str_radix(&(to_hex(f).trim_start_matches('0')), 16).unwrap();
+        let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();
+
+        let mut result = [BaseElement::ZERO; 4];
+
+        for i in 0..4 {
+            let t = &f & &mask;
+            result[i] = BaseElement::from(t.to_u64().unwrap());
+            f = &f >> 64;
+        }
+
         result
     }
 }
@@ -108,9 +170,11 @@ impl From<ElementDigest> for [u8; 32] {
 pub mod tests {
     use crate::digest_bn128::ElementDigest;
     use crate::poseidon_bn128::Fr;
+    use crate::traits::FieldMapping;
     use ff::PrimeField;
     use rand_utils::rand_vector;
     use winter_math::fields::f64::BaseElement;
+    use winter_math::StarkField;
 
     #[test]
     fn test_fr_to_element_digest_and_versus() {
@@ -129,5 +193,33 @@ pub mod tests {
         let e = ElementDigest::from(&f);
         let f2: Fr = e.into();
         assert_eq!(f, f2);
+    }
+
+    #[test]
+    fn test_fr_to_mont_to_element_digest_and_versus() {
+        let b4: Vec<BaseElement> = vec![3u32, 1003, 2003, 0]
+            .iter()
+            .map(|e| BaseElement::from(e.clone()))
+            .collect();
+        let mut f1: Fr = ElementDigest::to_BN128(&b4[..].try_into().unwrap());
+        println!("f111 {:?}", f1.to_string());
+
+        // to Montgomery
+        let f1 = ElementDigest::to_montgomery(&f1);
+        println!("f111 {:?}", f1.to_string());
+
+        let e1 = ElementDigest::to_GL(&f1);
+        let expected: [BaseElement; 4] = vec![
+            10593660675180540444u64,
+            2538813791642109216,
+            4942736554053463004,
+            3183287946373923876,
+        ]
+        .iter()
+        .map(|e| BaseElement::from(e.clone()))
+        .collect::<Vec<BaseElement>>()
+        .try_into()
+        .unwrap();
+        assert_eq!(expected, e1);
     }
 }

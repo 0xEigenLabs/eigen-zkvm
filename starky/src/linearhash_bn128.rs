@@ -1,7 +1,7 @@
 use crate::poseidon_bn128::{Fr, Poseidon};
 use crate::ElementDigest;
 use ff::*;
-use winter_crypto::Hasher;
+use winter_crypto::{Digest, Hasher};
 use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
 
@@ -11,10 +11,7 @@ pub struct LinearHashBN128 {
     h: Poseidon,
 }
 
-lazy_static::lazy_static! {
-    static ref OFFSET_2_64: Fr = Fr::from_str("18446744073709551616").unwrap();
-    static ref OFFSET_2_128: Fr = Fr::from_str("340282366920938463463374607431768211456").unwrap();
-}
+use crate::constant::*;
 
 impl LinearHashBN128 {
     pub fn new() -> Self {
@@ -22,16 +19,16 @@ impl LinearHashBN128 {
     }
 
     /// used for hash leaves only, converting element from GL to BN128
-    fn hash_element_matrix(&self, values: &Vec<Vec<BaseElement>>) -> Result<Fr> {
+    pub fn hash_element_matrix(&self, columns: &Vec<Vec<BaseElement>>) -> Result<Fr> {
         let mut st = Fr::zero();
         let mut vals3: Vec<Fr> = vec![];
 
         let mut acc = Fr::zero();
         let mut accN = 0;
 
-        for val in values.iter() {
-            for elem in val.iter() {
-                // BaseElement to Fr
+        for col in columns.iter() {
+            for elem in col.iter() {
+                // NOTE: BaseElement to Fr
                 let mut e = Fr::from_str(&elem.as_int().to_string()).unwrap();
                 if accN == 1 {
                     e.mul_assign(&OFFSET_2_64);
@@ -79,14 +76,21 @@ impl Hasher for LinearHashBN128 {
         let hasher = LinearHashBN128::new();
         let elems: &[BaseElement] = unsafe { BaseElement::bytes_as_elements(bytes).unwrap() };
         let digest = hasher.hash_element_matrix(&vec![elems.to_vec()]).unwrap();
-        ElementDigest::default()
+        Self::Digest::from(&digest)
     }
 
+    /// Returns a hash of two digests. This method is intended for use in construction of
+    /// Merkle trees.
     fn merge(values: &[Self::Digest; 2]) -> Self::Digest {
-        ElementDigest::default()
+        let hasher = Poseidon::new();
+        let inp = vec![values[0].into(), values[1].into()];
+        let init_state = Fr::zero();
+        Self::Digest::from(&hasher.hash(&inp, &init_state).unwrap())
     }
 
+    /// Returns hash(`seed` || `value`). This method is intended for use in PRNG and PoW contexts.
     fn merge_with_int(seed: Self::Digest, value: u64) -> Self::Digest {
+        panic!("Unimplemented method");
         ElementDigest::default()
     }
 }

@@ -3,7 +3,7 @@ set -ex
 
 cargo build --release
 
-CIRCUIT=fibonacci
+CIRCUIT=circuit
 CUR_DIR=$(cd $(dirname $0);pwd)
 POWER=20
 export RUST_BACKTRACE=1
