@@ -2,6 +2,12 @@
 use crate::poseidon_bn128_constants as constants;
 use ff::*;
 
+use winter_crypto::{Digest, Hasher};
+use crate::ElementDigest;
+use winter_math::fields::f64::BaseElement;
+use winter_math::FieldElement;
+use winter_math::StarkField;
+
 #[derive(PrimeField)]
 #[PrimeFieldModulus = "21888242871839275222246405745257275088548364400416034343698204186575808495617"]
 #[PrimeFieldGenerator = "7"]
@@ -129,6 +135,36 @@ impl Poseidon {
         }
 
         Ok(state[0])
+    }
+}
+
+/// hasher element over BN128
+impl Hasher for Poseidon {
+    type Digest = ElementDigest;
+
+    fn hash(bytes: &[u8]) -> Self::Digest {
+        let hasher = Poseidon::new();
+        let elems: &[BaseElement] = unsafe { BaseElement::bytes_as_elements(bytes).unwrap() };
+        debug_assert_eq!(elems.len(), 16);
+        let elems: Vec<Fr> = elems.iter().map(|e| Fr::from_str(&e.as_int().to_string()).unwrap()).collect();
+        let init_state = Fr::zero();
+        let digest = hasher.hash(&elems, &init_state).unwrap();
+        Self::Digest::from(&digest)
+    }
+
+    /// Returns a hash of two digests. This method is intended for use in construction of
+    /// Merkle trees.
+    fn merge(values: &[Self::Digest; 2]) -> Self::Digest {
+        let hasher = Poseidon::new();
+        let inp = vec![values[0].into(), values[1].into()];
+        let init_state = Fr::zero();
+        Self::Digest::from(&hasher.hash(&inp, &init_state).unwrap())
+    }
+
+    /// Returns hash(`seed` || `value`). This method is intended for use in PRNG and PoW contexts.
+    fn merge_with_int(seed: Self::Digest, value: u64) -> Self::Digest {
+        panic!("Unimplemented method");
+        ElementDigest::default()
     }
 }
 

@@ -69,9 +69,9 @@ impl crate::traits::FieldMapping for ElementDigest {
         added = added << 128;
         result += added;
 
-        let mut added = BigUint::from(e[3].as_int());
-        added = added << 192;
-        result += added;
+        //let mut added = BigUint::from(e[3].as_int());
+        //added = added << 192;
+        //result += added;
 
         Fr::from_str(&result.to_string()).unwrap()
     }
@@ -202,11 +202,9 @@ pub mod tests {
             .map(|e| BaseElement::from(e.clone()))
             .collect();
         let mut f1: Fr = ElementDigest::to_BN128(&b4[..].try_into().unwrap());
-        println!("f111 {:?}", f1.to_string());
 
         // to Montgomery
         let f1 = ElementDigest::to_montgomery(&f1);
-        println!("f111 {:?}", f1.to_string());
 
         let e1 = ElementDigest::to_GL(&f1);
         let expected: [BaseElement; 4] = vec![
