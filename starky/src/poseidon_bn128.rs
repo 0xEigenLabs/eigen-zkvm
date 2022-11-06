@@ -2,8 +2,8 @@
 use crate::poseidon_bn128_constants as constants;
 use ff::*;
 
-use winter_crypto::{Digest, Hasher};
 use crate::ElementDigest;
+use winter_crypto::{Digest, Hasher};
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
 use winter_math::StarkField;
@@ -146,7 +146,10 @@ impl Hasher for Poseidon {
         let hasher = Poseidon::new();
         let elems: &[BaseElement] = unsafe { BaseElement::bytes_as_elements(bytes).unwrap() };
         debug_assert_eq!(elems.len(), 16);
-        let elems: Vec<Fr> = elems.iter().map(|e| Fr::from_str(&e.as_int().to_string()).unwrap()).collect();
+        let elems: Vec<Fr> = elems
+            .iter()
+            .map(|e| Fr::from_str(&e.as_int().to_string()).unwrap())
+            .collect();
         let init_state = Fr::zero();
         let digest = hasher.hash(&elems, &init_state).unwrap();
         Self::Digest::from(&digest)
@@ -162,9 +165,8 @@ impl Hasher for Poseidon {
     }
 
     /// Returns hash(`seed` || `value`). This method is intended for use in PRNG and PoW contexts.
-    fn merge_with_int(seed: Self::Digest, value: u64) -> Self::Digest {
+    fn merge_with_int(_seed: Self::Digest, _value: u64) -> Self::Digest {
         panic!("Unimplemented method");
-        ElementDigest::default()
     }
 }
 

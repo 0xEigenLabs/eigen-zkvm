@@ -1,6 +1,3 @@
-use std::error;
-use std::fmt;
-
 use thiserror::Error;
 
 pub type Result<T> = std::result::Result<T, EigenError>;

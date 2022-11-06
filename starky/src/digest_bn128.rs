@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use crate::poseidon_bn128::Fr;
 use core::slice;
 use ff::*;
@@ -201,7 +202,7 @@ pub mod tests {
             .iter()
             .map(|e| BaseElement::from(e.clone()))
             .collect();
-        let mut f1: Fr = ElementDigest::to_BN128(&b4[..].try_into().unwrap());
+        let f1: Fr = ElementDigest::to_BN128(&b4[..].try_into().unwrap());
 
         // to Montgomery
         let f1 = ElementDigest::to_montgomery(&f1);
