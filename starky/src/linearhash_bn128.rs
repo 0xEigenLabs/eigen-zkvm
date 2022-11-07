@@ -83,7 +83,7 @@ impl LinearHashBN128 {
 
     pub fn inner_hash_digest(&self, elems: &[ElementDigest], init_state: &Fr) -> Result<ElementDigest> {
         assert_eq!(elems.len(), 16);
-        let elems = elems.iter().map(|e| ElementDigest::to_BN128(&e.0)).collect::<Vec<Fr>>();
+        let elems = elems.iter().map(|e| e.clone().into() ).collect::<Vec<Fr>>();
         let digest = self.h.hash(&elems, init_state)?;
         Ok(ElementDigest::from(&digest))
     }
