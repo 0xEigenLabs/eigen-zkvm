@@ -136,7 +136,17 @@ pub fn merklize_level(
             let idx = p_out + i * n_ops_per_thread + j;
             println!("set {}, {:?}", idx, tree.nodes[idx]);
             tree.nodes[idx] = *v;
-            println!("to: {:?}", tree.nodes[idx]);
+
+            println!("to: {:?}, which is ", tree.nodes[idx]);
+            let ddd: Vec<_> = tree.nodes[idx]
+                .0
+                .iter()
+                .map(|e| {
+                    print!("hased result: {:?} ", e.as_int());
+                    1u32
+                })
+                .collect();
+
         }
     }
     Ok(())
