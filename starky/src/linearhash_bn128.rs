@@ -81,8 +81,15 @@ impl LinearHashBN128 {
         ElementDigest::to_GL(&bn_mont)
     }
 
-    pub fn inner_hash_block(&self, elems: &[BaseElement], init_state: &Fr) -> Result<Fr> {
-        println!("inner_hash_block size: {}", elems.len());
+    pub fn inner_hash_digest(&self, elems: &[ElementDigest], init_state: &Fr) -> Result<ElementDigest> {
+        assert_eq!(elems.len(), 16);
+        let elems = elems.iter().map(|e| ElementDigest::to_BN128(&e.0)).collect::<Vec<Fr>>();
+        let digest = self.h.hash(&elems, init_state)?;
+        Ok(ElementDigest::from(&digest))
+    }
+
+    fn inner_hash_block(&self, elems: &[BaseElement], init_state: &Fr) -> Result<Fr> {
+        //println!("inner_hash_block size: {}", elems.len());
         let elems = elems
             .chunks(4)
             .map(|e| {
@@ -100,7 +107,7 @@ impl LinearHashBN128 {
                 r
             })
             .collect::<Vec<Fr>>();
-        println!("\nelem.length {:?}, {:?}", elems.len(), elems);
+        //println!("\nelem.length {:?}, {:?}", elems.len(), elems);
         Ok(self.h.hash(&elems, init_state)?)
     }
 

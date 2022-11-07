@@ -6,6 +6,7 @@ use crate::poseidon_bn128::{Fr, Poseidon};
 use winter_crypto::Hasher;
 use winter_math::fields::f64::BaseElement;
 use winter_math::StarkField;
+use ff::Field;
 
 pub struct MerkleTree {
     pub elements: Vec<Vec<BaseElement>>,
@@ -26,6 +27,7 @@ fn get_n_nodes(n_: usize) -> usize {
             acc += 1;
         }
     }
+    println!("get_n_nodes {}", acc);
     acc
 }
 
@@ -69,7 +71,6 @@ pub fn merkelize(columns: &Vec<Vec<BaseElement>>) -> Result<MerkleTree> {
             // TODO: parallel hash
             let node = leaves_hash.hash_element_array(&batch)?;
 
-            /*
             let ddd: Vec<_> = node
                 .0
                 .iter()
@@ -79,7 +80,6 @@ pub fn merkelize(columns: &Vec<Vec<BaseElement>>) -> Result<MerkleTree> {
                 })
                 .collect();
             println!("");
-            */
             leaves.push(node);
             batch = vec![];
         }
@@ -89,16 +89,22 @@ pub fn merkelize(columns: &Vec<Vec<BaseElement>>) -> Result<MerkleTree> {
     // merklize level
     let mut tree = MerkleTree {
         elements: columns.clone(),
-        nodes: vec![ElementDigest::default(); get_n_nodes(columns.len()) * 4],
+        nodes: vec![ElementDigest::default(); get_n_nodes(columns.len())],
         h: leaves_hash,
     };
+
+    // set leaves
+    for (i, leaf) in leaves.iter().enumerate() {
+        tree.nodes[i] = *leaf;
+    }
 
     let mut n256: usize = height;
     let mut next_n256: usize = (n256 - 1) / 16 + 1;
     let mut p_in: usize = 0;
     let mut p_out: usize = p_in + next_n256 * 16;
     while n256 > 1 {
-        merklize_level(&mut tree, p_in, next_n256, p_out);
+        println!("p_in {}, next_n256 {}, p_out {}", p_in, next_n256, p_out);
+        merklize_level(&mut tree, p_in, next_n256, p_out)?;
         n256 = next_n256;
         next_n256 = (n256 - 1) / 16 + 1;
         p_in = p_out;
@@ -114,16 +120,24 @@ pub fn merklize_level(
     n_ops: usize,
     p_out: usize,
 ) -> Result<()> {
-    let n_ops_per_thread = (n_ops - 1) / get_max_workers() + 1;
+    let mut n_ops_per_thread = (n_ops - 1) / get_max_workers() + 1;
     if n_ops_per_thread < MIN_OPS_PER_THREAD {
         n_ops_per_thread = MIN_OPS_PER_THREAD;
     }
 
+    println!("merkelize_level ops {} n_pt {}", n_ops, n_ops_per_thread);
     for i in (0..n_ops).step_by(n_ops_per_thread) {
         let cur_n_ops = std::cmp::min(n_ops_per_thread, n_ops - i);
-        let bb = &tree.nodes[(p_in / 8 + i)..(p_in / 8 + (i + cur_n_ops))];
+        println!("p_in={}, cur_n_ops={}", p_in, cur_n_ops);
+        let bb = &tree.nodes[(p_in + i*16)..(p_in + (i + cur_n_ops)*16)];
+        println!(">>>  handle {} to {}", (p_in + i * 16), p_in + (i + cur_n_ops)*16);
         let res = do_merklize_level(tree, bb, i, n_ops)?;
-        tree.nodes[p_out / 8 + i * n_ops_per_thread * 4] = res;
+        for (j, v) in res.iter().enumerate() {
+            let idx = p_out + i * n_ops_per_thread + j;
+            println!("set {}, {:?}", idx, tree.nodes[idx]);
+            tree.nodes[idx] = *v;
+            println!("to: {:?}", tree.nodes[idx]);
+        }
     }
     Ok(())
 }
@@ -134,12 +148,12 @@ fn do_merklize_level(
     st_i: usize,
     st_n: usize,
 ) -> Result<Vec<ElementDigest>> {
-    println!("merklizing bn128 hash start.... {}/{}", st_i, st_n);
-    let n_ops = buff_in.len() / (4 * 16);
+    println!("merklizing bn128 hash start.... {}/{}, buff size {}", st_i, st_n, buff_in.len());
+    let n_ops = buff_in.len() / 16;
     let mut buff_out64: Vec<ElementDigest> = vec![];
     for i in 0..n_ops {
         let digest: Fr = Fr::zero();
-        buff_out64.push(tree.h.inner_hash_block(buff_in, &digest)?);
+        buff_out64.push(tree.h.inner_hash_digest(&buff_in[(i*16)..(i*16+16)], &digest)?);
     }
     Ok(buff_out64)
 }
@@ -169,7 +183,7 @@ mod tests {
     #[test]
     fn test_merklehash() {
         let n_pols = 13;
-        let n = 8;
+        let n = 256;
 
         let mut cols: Vec<Vec<BaseElement>> = vec![Vec::new(); n];
         for i in 0..n {
@@ -180,11 +194,11 @@ mod tests {
         }
 
         let tree = merkelize(&cols).unwrap();
-        let root = tree.root();
+        //let root = tree.root();
 
-        let bn: Fr = (*root).into();
-        let bn_mont = ElementDigest::to_montgomery(&bn);
+        //let bn: Fr = (*root).into();
+        //let bn_mont = ElementDigest::to_montgomery(&bn);
 
-        println!("root : {:?} {:?}", bn.to_string(), bn_mont.to_string());
+        //println!("root : {:?} {:?}", bn.to_string(), bn_mont.to_string());
     }
 }
