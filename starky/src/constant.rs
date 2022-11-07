@@ -8,8 +8,8 @@ lazy_static::lazy_static! {
     pub static ref OFFSET_2_192: Fr = Fr::from_str("6277101735386680763835789423207666416102355444464034512896").unwrap();
 }
 
-pub const min_ops_per_thread: usize = 1 << 12;
-pub const max_ops_per_thread: usize = 1 << 16;
+pub const MIN_OPS_PER_THREAD: usize = 1 << 12;
+pub const MAX_OPS_PER_THREAD: usize = 1 << 16;
 
 pub fn get_max_workers() -> usize {
     num_cpus::get() - 1

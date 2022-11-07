@@ -19,7 +19,7 @@ pub enum EigenError {
     #[error("poseidon hash error`{0}`")]
     PoseidonHashError(String),
 
-    #[error("build merkle tree error`{0}`")]
+    #[error("merkle tree error`{0}`")]
     MerkleTreeError(String),
 
     #[error("Unknown error, `{0}`")]

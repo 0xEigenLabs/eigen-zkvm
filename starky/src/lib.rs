@@ -24,14 +24,14 @@ extern crate lazy_static;
 
 #[cfg(test)]
 pub mod tests {
-    use rand_utils::{rand_value, rand_vector};
+    use rand_utils::rand_vector;
     use winter_math::fft::evaluate_poly;
     use winter_math::fft::get_twiddles;
+    use winter_math::fields::f128::BaseElement;
     use winter_math::get_power_series;
     use winter_math::log2;
-    use winter_math::polynom::{self, eval};
+    use winter_math::polynom;
     use winter_math::StarkField;
-    use winter_math::{fields::f128::BaseElement, FieldElement};
 
     #[test]
     fn test_fft_eval() {
