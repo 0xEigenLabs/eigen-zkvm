@@ -86,7 +86,7 @@ impl crate::traits::FieldMapping for ElementDigest {
         // opt: precompute
         let _2_256 = BigUint::from(1u32) << 256;
         let se = to_hex(e);
-        let se = se.trim_right_matches('0');
+        let se = se.trim_end_matches('0');
         let ee: BigUint = match se.len() {
             0 => BigUint::from(0u32),
             _ => BigUint::from_str_radix(&se, 16).unwrap(),
@@ -104,7 +104,7 @@ impl crate::traits::FieldMapping for ElementDigest {
 
     fn to_GL(f: &Fr) -> [BaseElement; 4] {
         let se = to_hex(f);
-        let se = se.trim_right_matches('0');
+        let se = se.trim_end_matches('0');
         let mut f: BigUint = match se.len() {
             0 => BigUint::from(0u32),
             _ => BigUint::from_str_radix(&se, 16).unwrap(),

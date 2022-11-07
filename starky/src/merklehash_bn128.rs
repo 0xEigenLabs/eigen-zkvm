@@ -31,7 +31,6 @@ pub fn merkelize(columns: &Vec<Vec<BaseElement>>) -> Result<MerkleTree<Poseidon>
     for i in (0..height).step_by(n_per_thread_f) {
         let cur_n = std::cmp::min(n_per_thread_f, height - i);
         // get elements from row i to i + cur_n
-        let mut batch: Vec<BaseElement> = vec![];
         println!("cur_n {} {}", i, i + cur_n);
         for j in 0..cur_n {
             batch.append(&mut columns[i + j].clone());
@@ -46,14 +45,12 @@ pub fn merkelize(columns: &Vec<Vec<BaseElement>>) -> Result<MerkleTree<Poseidon>
 
             // TODO: parallel hash
             let node = leaves_hash.hash_element_array(&batch)?;
-            //let node = ElementDigest::new(LinearHashBN128::to_bn128_mont(&node.0));
 
-            println!("height {} ", j);
             let ddd: Vec<_> = node
                 .0
                 .iter()
                 .map(|e| {
-                    print!("n: {:?} ", e.as_int());
+                    print!("hased result: {:?} ", e.as_int());
                     1u32
                 })
                 .collect();
@@ -95,6 +92,9 @@ mod tests {
         let tree = merkelize(&cols).unwrap();
         let root = tree.root();
 
-        println!("root : {:?}", root);
+        let bn: Fr = (*root).into();
+        let bn_mont = ElementDigest::to_montgomery(&bn);
+
+        println!("root : {:?} {:?}", bn.to_string(), bn_mont.to_string());
     }
 }

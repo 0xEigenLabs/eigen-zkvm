@@ -1,6 +1,7 @@
 #![allow(clippy::derive_hash_xor_eq, clippy::too_many_arguments)]
 use crate::poseidon_bn128_constants as constants;
 use ff::*;
+use crate::traits::FieldMapping;
 
 use crate::ElementDigest;
 use winter_crypto::{Digest, Hasher};
@@ -145,10 +146,10 @@ impl Hasher for Poseidon {
     fn hash(bytes: &[u8]) -> Self::Digest {
         let hasher = Poseidon::new();
         let elems: &[BaseElement] = unsafe { BaseElement::bytes_as_elements(bytes).unwrap() };
-        debug_assert_eq!(elems.len(), 16);
+        debug_assert_eq!(elems.len(), 16 * 4);
         let elems: Vec<Fr> = elems
-            .iter()
-            .map(|e| Fr::from_str(&e.as_int().to_string()).unwrap())
+            .chunks(4)
+            .map(|e| ElementDigest::to_BN128(e.try_into().unwrap()))
             .collect();
         let init_state = Fr::zero();
         let digest = hasher.hash(&elems, &init_state).unwrap();

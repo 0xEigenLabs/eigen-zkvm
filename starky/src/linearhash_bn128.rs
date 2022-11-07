@@ -78,19 +78,31 @@ impl LinearHashBN128 {
     pub fn to_bn128_mont(st64: &[BaseElement; 4]) -> [BaseElement; 4] {
         let bn: Fr = ElementDigest::to_BN128(st64);
         let bn_mont = ElementDigest::to_montgomery(&bn);
-        //println!("to_bn128_mont {}", bn_mont.to_string());
         ElementDigest::to_GL(&bn_mont)
     }
 
     fn inner_hash_block(&self, elems: &[BaseElement], init_state: &Fr) -> Result<Fr> {
-        println!("elem.length {:?}", elems.len());
+        println!("inner_hash_block size: {}", elems.len());
         let elems = elems
             .chunks(4)
-            .map(|e| {
-                ElementDigest::to_BN128(e.try_into().unwrap())
-            })
+            .map(|e|
+                {
+                    let r = ElementDigest::to_BN128(e.try_into().unwrap());
+                    /*let r = ElementDigest::to_montgomery(&bn);
+
+                    let ee = ElementDigest::to_GL(&r);
+                    ee
+                        .iter()
+                        .map(|e| {
+                            print!(" {}", e.as_int())
+                        })
+                    .collect::<Vec<()>>();
+                    */
+                    r
+                }
+            )
             .collect::<Vec<Fr>>();
-        println!("elem.length {:?}, {:?}", elems.len(), elems);
+        println!("\nelem.length {:?}, {:?}", elems.len(), elems);
         Ok(self.h.hash(&elems, init_state)?)
     }
 
@@ -118,28 +130,14 @@ impl LinearHashBN128 {
             in64[p] = *val;
             p += 1;
             if p == 16 * 4 {
-                let in64_mont = in64
-                    .chunks(4)
-                    .map(|e| Self::to_bn128_mont(&e[..].try_into().unwrap()))
-                    .into_iter()
-                    .flat_map(|e| e)
-                    .collect::<Vec<BaseElement>>();
-                //in64_mont.iter().map(|e| { println!("hash 1 {}", e.as_int()); 5}).collect::<Vec<i64>>();
-                digest = self.inner_hash_block(&in64_mont[..], &digest)?;
+                digest = self.inner_hash_block(&in64[..], &digest)?;
                 p = 0;
             }
             if i % 3 == 2 {
                 in64[p] = BaseElement::ZERO;
                 p += 1;
                 if p == 16 * 4 {
-                    let in64_mont = in64
-                        .chunks(4)
-                        .map(|e| Self::to_bn128_mont(&e[..].try_into().unwrap()))
-                        .into_iter()
-                        .flat_map(|e| e)
-                        .collect::<Vec<BaseElement>>();
-                    //in64_mont.iter().map(|e| { println!("hash 2 {}", e.as_int()); 5}).collect::<Vec<i64>>();
-                    digest = self.inner_hash_block(&in64_mont[..], &digest)?;
+                    digest = self.inner_hash_block(&in64[..], &digest)?;
                     p = 0;
                 }
             }
@@ -150,28 +148,14 @@ impl LinearHashBN128 {
                 in64[p] = BaseElement::ZERO;
                 p += 1;
             }
-
-            let in64_mont = in64[..(nLast * 4)]
-                .chunks(4)
-                .map(|e| Self::to_bn128_mont(&e[..].try_into().unwrap()))
-                .into_iter()
-                .flat_map(|e| e)
-                .collect::<Vec<BaseElement>>();
-            //println!("size: {}", in64_mont.len());
-            in64_mont
-                .iter()
-                .map(|e| {
-                    println!("hash 3 {}", e.as_int());
-                    5
-                })
-                .collect::<Vec<i64>>();
-            digest = self.inner_hash_block(&in64_mont[..], &digest)?;
+            digest = self.inner_hash_block(&in64[..(nLast*4)], &digest)?;
         }
         Ok(ElementDigest::from(&digest))
     }
 }
 
 /// asher element over BN128
+/*
 impl Hasher for LinearHashBN128 {
     type Digest = ElementDigest;
 
@@ -198,6 +182,7 @@ impl Hasher for LinearHashBN128 {
         panic!("Unimplemented method");
     }
 }
+*/
 
 #[cfg(test)]
 mod tests {
