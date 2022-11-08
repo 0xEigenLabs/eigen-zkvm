@@ -13,6 +13,7 @@ pub struct MerkleTree {
     pub elements: Vec<Vec<BaseElement>>,
     pub nodes: Vec<ElementDigest>,
     pub h: LinearHashBN128,
+    pub poseidon: Poseidon,
 }
 
 fn get_n_nodes(n_: usize) -> usize {
@@ -32,7 +33,9 @@ fn get_n_nodes(n_: usize) -> usize {
     acc
 }
 
-pub fn merkelize(columns: &Vec<Vec<BaseElement>>) -> Result<MerkleTree> {
+impl MerkleTree {
+
+pub fn merkelize(columns: &Vec<Vec<BaseElement>>) -> Result<Self> {
     let leaves_hash = LinearHashBN128::new();
 
     let mut leaves: Vec<crate::ElementDigest> = vec![];
@@ -92,6 +95,7 @@ pub fn merkelize(columns: &Vec<Vec<BaseElement>>) -> Result<MerkleTree> {
         elements: columns.clone(),
         nodes: vec![ElementDigest::default(); get_n_nodes(columns.len())],
         h: leaves_hash,
+        poseidon: Poseidon::new(),
     };
 
     // set leaves
@@ -105,7 +109,7 @@ pub fn merkelize(columns: &Vec<Vec<BaseElement>>) -> Result<MerkleTree> {
     let mut p_out: usize = p_in + next_n256 * 16;
     while n256 > 1 {
         println!("p_in {}, next_n256 {}, p_out {}", p_in, next_n256, p_out);
-        merklize_level(&mut tree, p_in, next_n256, p_out)?;
+        tree.merklize_level(p_in, next_n256, p_out)?;
         n256 = next_n256;
         next_n256 = (n256 - 1) / 16 + 1;
         p_in = p_out;
@@ -116,7 +120,7 @@ pub fn merkelize(columns: &Vec<Vec<BaseElement>>) -> Result<MerkleTree> {
 }
 
 pub fn merklize_level(
-    tree: &mut MerkleTree,
+    &mut self,
     p_in: usize,
     n_ops: usize,
     p_out: usize,
@@ -130,20 +134,20 @@ pub fn merklize_level(
     for i in (0..n_ops).step_by(n_ops_per_thread) {
         let cur_n_ops = std::cmp::min(n_ops_per_thread, n_ops - i);
         println!("p_in={}, cur_n_ops={}", p_in, cur_n_ops);
-        let bb = &tree.nodes[(p_in + i * 16)..(p_in + (i + cur_n_ops) * 16)];
+        let bb = &self.nodes[(p_in + i * 16)..(p_in + (i + cur_n_ops) * 16)];
         println!(
             ">>>  handle {} to {}",
             (p_in + i * 16),
             p_in + (i + cur_n_ops) * 16
         );
-        let res = do_merklize_level(tree, bb, i, n_ops)?;
+        let res = self.do_merklize_level(bb, i, n_ops)?;
         for (j, v) in res.iter().enumerate() {
             let idx = p_out + i * n_ops_per_thread + j;
-            println!("set {}, {:?}", idx, tree.nodes[idx]);
-            tree.nodes[idx] = *v;
+            println!("set {}, {:?}", idx, self.nodes[idx]);
+            self.nodes[idx] = *v;
 
-            println!("to: {:?}, which is ", tree.nodes[idx]);
-            let ddd: Vec<_> = tree.nodes[idx]
+            println!("to: {:?}, which is ", self.nodes[idx]);
+            let ddd: Vec<_> = self.nodes[idx]
                 .0
                 .iter()
                 .map(|e| {
@@ -157,7 +161,7 @@ pub fn merklize_level(
 }
 
 fn do_merklize_level(
-    tree: &MerkleTree,
+    &self,
     buff_in: &[ElementDigest],
     st_i: usize,
     st_n: usize,
@@ -173,18 +177,18 @@ fn do_merklize_level(
     for i in 0..n_ops {
         let digest: Fr = Fr::zero();
         buff_out64.push(
-            tree.h
+            self.h
                 .inner_hash_digest(&buff_in[(i * 16)..(i * 16 + 16)], &digest)?,
         );
     }
     Ok(buff_out64)
 }
 
-pub fn get_element(tree: &MerkleTree, idx: usize, sub_idx: usize) -> BaseElement {
-    tree.elements[sub_idx][idx]
+pub fn get_element(&self, idx: usize, sub_idx: usize) -> BaseElement {
+    self.elements[sub_idx][idx]
 }
 
-fn merkle_gen_merkle_proof(tree: &MerkleTree, idx: usize, offset: usize, n: usize) -> Vec<Fr> {
+fn merkle_gen_merkle_proof(&self, idx: usize, offset: usize, n: usize) -> Vec<Fr> {
     if n <= 1 {
         return vec![];
     }
@@ -193,14 +197,13 @@ fn merkle_gen_merkle_proof(tree: &MerkleTree, idx: usize, offset: usize, n: usiz
     let mut sibs: Vec<Fr> = vec![];
 
     for i in 0..16 {
-        let buff8 = tree.nodes[offset + (si + i)].into();
+        let buff8 = self.nodes[offset + (si + i)].into();
         sibs.push(buff8);
     }
 
     let next_n = (n - 1) / 16 + 1;
 
-    sibs.append(&mut merkle_gen_merkle_proof(
-        tree,
+    sibs.append(&mut self.merkle_gen_merkle_proof(
         next_idx,
         offset + next_n * 16,
         next_n,
@@ -209,27 +212,57 @@ fn merkle_gen_merkle_proof(tree: &MerkleTree, idx: usize, offset: usize, n: usiz
     sibs
 }
 
-pub fn get_group_proof(tree: &MerkleTree, idx: usize) -> Result<(Vec<BaseElement>, Vec<Fr>)> {
-    if idx < 0 || idx >= tree.elements.len() {
+pub fn get_group_proof(&self, idx: usize) -> Result<(Vec<BaseElement>, Vec<Fr>)> {
+    if idx < 0 || idx >= self.elements.len() {
         return Err(EigenError::MerkleTreeError(
             "access invalid node".to_string(),
         ));
     }
 
-    let mut v = vec![BaseElement::ZERO; tree.elements.len()];
-    for i in 0..tree.elements.len() {
-        v[i] = get_element(tree, idx, i);
+    let mut v = vec![BaseElement::ZERO; self.elements.len()];
+    for i in 0..self.elements.len() {
+        v[i] = self.get_element(idx, i);
     }
-    let mp = merkle_gen_merkle_proof(tree, idx, 0, tree.elements[0].len());
+    let mp = self.merkle_gen_merkle_proof(idx, 0, self.elements[0].len());
 
     Ok((v, mp))
 }
 
-/*
-pub fn calculate_root_from_group_proof(tree: &MerkleTree, idx: usize, val: &Vec<BaseElement>) -> Result<ElementDigest> {
+fn merkle_calculate_root_from_proof(&self, mp: &Vec<Fr>, idx: usize, value: &ElementDigest, offset: usize) -> Result<ElementDigest> {
+    if mp.len() == offset {
+        return Ok(value.clone());
+    }
+    let cur_idx = idx & 0xF;
+    let next_idx = idx >> 4;
+    let mut vals: Vec<Fr> = vec![];
+    for i in 0..16 {
+        vals.push(mp[offset + i]);
+    }
+    let init = Fr::zero();
+    let next_value = self.poseidon.hash(&vals, &init)?;
+    self.merkle_calculate_root_from_proof(mp, next_idx, next_value, offset + 1)
+}
+
+pub fn calculate_root_from_group_proof(&self, mp: &Vec<Fr>, idx: usize, vals: &Vec<Vec<BaseElement>>) -> Result<ElementDigest> {
+    let h = self.h.hash_element_matrix(vals)?;
+    self.merkle_calculate_root_from_proof(mp, idx, &h, 0)
+}
+
+pub fn eq_root(&self, r1: &ElementDigest, r2: &ElementDigest) -> bool {
+    r1 == r2
+}
+
+pub fn verify_group_proof(&self, root: &ElementDigest, mp: &Vec<Fr>, idx: usize, group_elements: &Vec<BaseElement>) -> Result<bool> {
+    let c_root = self.calculate_root_from_group_proof(mp, idx, group_elements)?;
+    Ok(self.eq_root(root, &c_root))
+}
+
+pub fn root(&self) -> ElementDigest {
+    self.nodes[self.nodes.len() - 1]
+}
+
 
 }
-*/
 
 #[cfg(test)]
 mod tests {
