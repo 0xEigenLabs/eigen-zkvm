@@ -163,36 +163,6 @@ impl LinearHashBN128 {
     }
 }
 
-/// asher element over BN128
-/*
-impl Hasher for LinearHashBN128 {
-    type Digest = ElementDigest;
-
-    // implement instance.exports.poseidon(pSt, pIn, 16, pSt, 1);
-    fn hash(bytes: &[u8]) -> Self::Digest {
-        let hasher = Self::new();
-        let elems: &[BaseElement] = unsafe { BaseElement::bytes_as_elements(bytes).unwrap() };
-        //println!("Hasher::hash {:?}", elems);
-        let digest = hasher.hash_element_matrix(&vec![elems.to_vec()]).unwrap();
-        Self::Digest::from(&digest)
-    }
-
-    /// Returns a hash of two digests. This method is intended for use in construction of
-    /// Merkle trees.
-    fn merge(values: &[Self::Digest; 2]) -> Self::Digest {
-        let hasher = Poseidon::new();
-        let inp = vec![values[0].into(), values[1].into()];
-        let init_state = Fr::zero();
-        Self::Digest::from(&hasher.hash(&inp, &init_state).unwrap())
-    }
-
-    /// Returns hash(`seed` || `value`). This method is intended for use in PRNG and PoW contexts.
-    fn merge_with_int(_seed: Self::Digest, _value: u64) -> Self::Digest {
-        panic!("Unimplemented method");
-    }
-}
-*/
-
 #[cfg(test)]
 mod tests {
     use crate::linearhash_bn128::LinearHashBN128;
