@@ -3,11 +3,11 @@ use crate::digest_bn128::ElementDigest;
 use crate::errors::{EigenError, Result};
 use crate::linearhash_bn128::LinearHashBN128;
 use crate::poseidon_bn128::{Fr, Poseidon};
+use ff::Field;
 use winter_crypto::Hasher;
 use winter_math::fields::f64::BaseElement;
-use winter_math::StarkField;
 use winter_math::FieldElement;
-use ff::Field;
+use winter_math::StarkField;
 
 pub struct MerkleTree {
     pub elements: Vec<Vec<BaseElement>>,
@@ -130,8 +130,12 @@ pub fn merklize_level(
     for i in (0..n_ops).step_by(n_ops_per_thread) {
         let cur_n_ops = std::cmp::min(n_ops_per_thread, n_ops - i);
         println!("p_in={}, cur_n_ops={}", p_in, cur_n_ops);
-        let bb = &tree.nodes[(p_in + i*16)..(p_in + (i + cur_n_ops)*16)];
-        println!(">>>  handle {} to {}", (p_in + i * 16), p_in + (i + cur_n_ops)*16);
+        let bb = &tree.nodes[(p_in + i * 16)..(p_in + (i + cur_n_ops) * 16)];
+        println!(
+            ">>>  handle {} to {}",
+            (p_in + i * 16),
+            p_in + (i + cur_n_ops) * 16
+        );
         let res = do_merklize_level(tree, bb, i, n_ops)?;
         for (j, v) in res.iter().enumerate() {
             let idx = p_out + i * n_ops_per_thread + j;
@@ -147,7 +151,6 @@ pub fn merklize_level(
                     1u32
                 })
                 .collect();
-
         }
     }
     Ok(())
@@ -159,12 +162,20 @@ fn do_merklize_level(
     st_i: usize,
     st_n: usize,
 ) -> Result<Vec<ElementDigest>> {
-    println!("merklizing bn128 hash start.... {}/{}, buff size {}", st_i, st_n, buff_in.len());
+    println!(
+        "merklizing bn128 hash start.... {}/{}, buff size {}",
+        st_i,
+        st_n,
+        buff_in.len()
+    );
     let n_ops = buff_in.len() / 16;
     let mut buff_out64: Vec<ElementDigest> = vec![];
     for i in 0..n_ops {
         let digest: Fr = Fr::zero();
-        buff_out64.push(tree.h.inner_hash_digest(&buff_in[(i*16)..(i*16+16)], &digest)?);
+        buff_out64.push(
+            tree.h
+                .inner_hash_digest(&buff_in[(i * 16)..(i * 16 + 16)], &digest)?,
+        );
     }
     Ok(buff_out64)
 }
@@ -174,7 +185,7 @@ pub fn get_element(tree: &MerkleTree, idx: usize, sub_idx: usize) -> BaseElement
 }
 
 fn merkle_gen_merkle_proof(tree: &MerkleTree, idx: usize, offset: usize, n: usize) -> Vec<Fr> {
-    if n<= 1 {
+    if n <= 1 {
         return vec![];
     }
     let next_idx = idx >> 4;
@@ -186,20 +197,27 @@ fn merkle_gen_merkle_proof(tree: &MerkleTree, idx: usize, offset: usize, n: usiz
         sibs.push(buff8);
     }
 
-    let next_n = (n-1)/16+1;
+    let next_n = (n - 1) / 16 + 1;
 
-    sibs.append(&mut merkle_gen_merkle_proof(tree, next_idx, offset + next_n * 16, next_n));
+    sibs.append(&mut merkle_gen_merkle_proof(
+        tree,
+        next_idx,
+        offset + next_n * 16,
+        next_n,
+    ));
     //return [sibs, merkle_genMerkleProof(tree, nextIdx, offset+ nextN*16*32, nextN )];
     sibs
 }
 
 pub fn get_group_proof(tree: &MerkleTree, idx: usize) -> Result<(Vec<BaseElement>, Vec<Fr>)> {
     if idx < 0 || idx >= tree.elements.len() {
-        return Err(EigenError::MerkleTreeError("access invalid node".to_string()));
+        return Err(EigenError::MerkleTreeError(
+            "access invalid node".to_string(),
+        ));
     }
 
     let mut v = vec![BaseElement::ZERO; tree.elements.len()];
-    for i in 0..tree.elements.len(){
+    for i in 0..tree.elements.len() {
         v[i] = get_element(tree, idx, i);
     }
     let mp = merkle_gen_merkle_proof(tree, idx, 0, tree.elements[0].len());
