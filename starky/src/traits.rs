@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use crate::poseidon_bn128::Fr;
 use winter_math::fields::f64::BaseElement;
 

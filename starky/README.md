@@ -63,9 +63,6 @@ Because the nExtBits reaches up to 24 so this step would be very slow, especiall
 
 [Code](https://github.com/0xPolygonHermez/pil-stark/blob/main/src/stark_gen.js#L245)
 
-## Time distribution analysis
-![timecost](time_cost_sm.png)
-
 ## Optimization
 
 ### Rewrite pil-stark by Rust

@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use crate::polsarray::PolsArray;
 use crate::types::{StarkStruct, PIL};
 

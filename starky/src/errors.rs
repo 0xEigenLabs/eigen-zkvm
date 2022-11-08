@@ -1,6 +1,3 @@
-use std::error;
-use std::fmt;
-
 use thiserror::Error;
 
 pub type Result<T> = std::result::Result<T, EigenError>;
@@ -19,8 +16,11 @@ pub enum EigenError {
     #[error("json serialization error")]
     SerdeError(#[from] serde_json::Error),
 
-    #[error("Peseidon hash error`{0}`")]
+    #[error("poseidon hash error`{0}`")]
     PoseidonHashError(String),
+
+    #[error("merkle tree error`{0}`")]
+    MerkleTreeError(String),
 
     #[error("Unknown error, `{0}`")]
     Unknown(String),

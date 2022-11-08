@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use crate::poseidon_bn128::{Fr, Poseidon};
 use crate::ElementDigest;
 use ff::*;
@@ -6,6 +7,7 @@ use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
 
 use crate::errors::Result;
+use crate::traits::FieldMapping;
 
 pub struct LinearHashBN128 {
     h: Poseidon,
@@ -19,6 +21,11 @@ impl LinearHashBN128 {
     }
 
     /// used for hash leaves only, converting element from GL to BN128
+    /// columns:
+    ///    0, 0, 0,
+    ///    1, 1, 1,
+    ///      ...,
+    ///    n, n, n,
     pub fn hash_element_matrix(&self, columns: &Vec<Vec<BaseElement>>) -> Result<Fr> {
         let mut st = Fr::zero();
         let mut vals3: Vec<Fr> = vec![];
@@ -66,32 +73,93 @@ impl LinearHashBN128 {
         }
         Ok(st)
     }
-}
 
-/// hasher element over BN128
-impl Hasher for LinearHashBN128 {
-    type Digest = ElementDigest;
-
-    fn hash(bytes: &[u8]) -> Self::Digest {
-        let hasher = LinearHashBN128::new();
-        let elems: &[BaseElement] = unsafe { BaseElement::bytes_as_elements(bytes).unwrap() };
-        let digest = hasher.hash_element_matrix(&vec![elems.to_vec()]).unwrap();
-        Self::Digest::from(&digest)
+    /// convert to BN128 in montgomery
+    pub fn to_bn128_mont(st64: &[BaseElement; 4]) -> [BaseElement; 4] {
+        let bn: Fr = ElementDigest::to_BN128(st64);
+        let bn_mont = ElementDigest::to_montgomery(&bn);
+        ElementDigest::to_GL(&bn_mont)
     }
 
-    /// Returns a hash of two digests. This method is intended for use in construction of
-    /// Merkle trees.
-    fn merge(values: &[Self::Digest; 2]) -> Self::Digest {
-        let hasher = Poseidon::new();
-        let inp = vec![values[0].into(), values[1].into()];
-        let init_state = Fr::zero();
-        Self::Digest::from(&hasher.hash(&inp, &init_state).unwrap())
+    pub fn inner_hash_digest(
+        &self,
+        elems: &[ElementDigest],
+        init_state: &Fr,
+    ) -> Result<ElementDigest> {
+        assert_eq!(elems.len(), 16);
+        let elems = elems.iter().map(|e| e.clone().into()).collect::<Vec<Fr>>();
+        let digest = self.h.hash(&elems, init_state)?;
+        Ok(ElementDigest::from(&digest))
     }
 
-    /// Returns hash(`seed` || `value`). This method is intended for use in PRNG and PoW contexts.
-    fn merge_with_int(seed: Self::Digest, value: u64) -> Self::Digest {
-        panic!("Unimplemented method");
-        ElementDigest::default()
+    fn inner_hash_block(&self, elems: &[BaseElement], init_state: &Fr) -> Result<Fr> {
+        //println!("inner_hash_block size: {}", elems.len());
+        let elems = elems
+            .chunks(4)
+            .map(|e| {
+                let r = ElementDigest::to_BN128(e.try_into().unwrap());
+                /*let r = ElementDigest::to_montgomery(&bn);
+
+                let ee = ElementDigest::to_GL(&r);
+                ee
+                    .iter()
+                    .map(|e| {
+                        print!(" {}", e.as_int())
+                    })
+                .collect::<Vec<()>>();
+                */
+                r
+            })
+            .collect::<Vec<Fr>>();
+        //println!("\nelem.length {:?}, {:?}", elems.len(), elems);
+        Ok(self.h.hash(&elems, init_state)?)
+    }
+
+    /// columns:
+    ///    0, 0, 0,  -> element
+    ///    1, 1, 1,  -> element
+    ///      ...,
+    ///    n, n, n,
+    pub fn hash_element_array(&self, vals: &Vec<BaseElement>) -> Result<ElementDigest> {
+        let mut st64 = [BaseElement::ZERO; 4];
+        let mut in64: [BaseElement; 64] = [BaseElement::ZERO; 64];
+        let mut digest: Fr = Fr::zero();
+        //println!("hash_element_array size: {}", vals.len());
+        if vals.len() <= 4 {
+            for (i, v) in vals.iter().enumerate() {
+                st64[i] = *v;
+            }
+            let gl_mont = Self::to_bn128_mont(&st64);
+            return Ok(ElementDigest::from(gl_mont));
+        }
+
+        let mut p = 0;
+
+        for (i, val) in vals.iter().enumerate() {
+            in64[p] = *val;
+            p += 1;
+            if p == 16 * 4 {
+                digest = self.inner_hash_block(&in64[..], &digest)?;
+                p = 0;
+            }
+            if i % 3 == 2 {
+                in64[p] = BaseElement::ZERO;
+                p += 1;
+                if p == 16 * 4 {
+                    digest = self.inner_hash_block(&in64[..], &digest)?;
+                    p = 0;
+                }
+            }
+        }
+        if p > 0 {
+            let nLast = (p - 1) / 4 + 1;
+            while p < nLast * 4 {
+                in64[p] = BaseElement::ZERO;
+                p += 1;
+            }
+            digest = self.inner_hash_block(&in64[..(nLast * 4)], &digest)?;
+        }
+        Ok(ElementDigest::from(&digest))
     }
 }
 
@@ -104,7 +172,7 @@ mod tests {
     use winter_math::StarkField;
 
     #[test]
-    fn test_linearhashBN128() {
+    fn test_linearhash_bn128() {
         let inputs: Vec<_> = (0..100).collect::<Vec<u64>>();
         let inputs: Vec<Vec<BaseElement>> = inputs
             .iter()

@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use crate::poseidon_bn128::Fr;
 use core::slice;
 use ff::*;
@@ -15,7 +16,7 @@ use std::ops::{AddAssign, MulAssign};
 const DIGEST_SIZE: usize = 4;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct ElementDigest([BaseElement; DIGEST_SIZE]);
+pub struct ElementDigest(pub [BaseElement; DIGEST_SIZE]);
 
 impl ElementDigest {
     pub fn new(value: [BaseElement; DIGEST_SIZE]) -> Self {
@@ -84,8 +85,13 @@ impl crate::traits::FieldMapping for ElementDigest {
     fn to_montgomery(e: &Fr) -> Fr {
         // opt: precompute
         let _2_256 = BigUint::from(1u32) << 256;
-        let ee: BigUint =
-            BigUint::from_str_radix(&(to_hex(e).trim_start_matches('0')), 16).unwrap();
+        let se = to_hex(e);
+        let se = se.trim_end_matches('0');
+        let ee: BigUint = match se.len() {
+            0 => BigUint::from(0u32),
+            _ => BigUint::from_str_radix(&se, 16).unwrap(),
+        };
+
         let r = BigUint::from_str_radix(
             "21888242871839275222246405745257275088548364400416034343698204186575808495617",
             10,
@@ -97,7 +103,13 @@ impl crate::traits::FieldMapping for ElementDigest {
     }
 
     fn to_GL(f: &Fr) -> [BaseElement; 4] {
-        let mut f = BigUint::from_str_radix(&(to_hex(f).trim_start_matches('0')), 16).unwrap();
+        let se = to_hex(f);
+        let se = se.trim_end_matches('0');
+        let mut f: BigUint = match se.len() {
+            0 => BigUint::from(0u32),
+            _ => BigUint::from_str_radix(&se, 16).unwrap(),
+        };
+
         let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();
 
         let mut result = [BaseElement::ZERO; 4];
@@ -201,12 +213,10 @@ pub mod tests {
             .iter()
             .map(|e| BaseElement::from(e.clone()))
             .collect();
-        let mut f1: Fr = ElementDigest::to_BN128(&b4[..].try_into().unwrap());
-        println!("f111 {:?}", f1.to_string());
+        let f1: Fr = ElementDigest::to_BN128(&b4[..].try_into().unwrap());
 
         // to Montgomery
         let f1 = ElementDigest::to_montgomery(&f1);
-        println!("f111 {:?}", f1.to_string());
 
         let e1 = ElementDigest::to_GL(&f1);
         let expected: [BaseElement; 4] = vec![
