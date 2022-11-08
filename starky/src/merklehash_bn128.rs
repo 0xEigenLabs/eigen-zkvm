@@ -6,6 +6,7 @@ use crate::poseidon_bn128::{Fr, Poseidon};
 use winter_crypto::Hasher;
 use winter_math::fields::f64::BaseElement;
 use winter_math::StarkField;
+use winter_math::FieldElement;
 use ff::Field;
 
 pub struct MerkleTree {
@@ -172,13 +173,43 @@ pub fn get_element(tree: &MerkleTree, idx: usize, sub_idx: usize) -> BaseElement
     tree.elements[sub_idx][idx]
 }
 
-/*
-pub fn get_group_proof(tree: &MerkleTree, idx) -> Result <()> {
-    if idx < 0 || idx >= tree.columns.len() {
-        return EigenError::MerkleTreeError("access invalid node".to_string())
+fn merkle_gen_merkle_proof(tree: &MerkleTree, idx: usize, offset: usize, n: usize) -> Vec<Fr> {
+    if n<= 1 {
+        return vec![];
+    }
+    let next_idx = idx >> 4;
+    let si = idx & 0xFFFFFFF0;
+    let mut sibs: Vec<Fr> = vec![];
+
+    for i in 0..16 {
+        let buff8 = tree.nodes[offset + (si + i)].into();
+        sibs.push(buff8);
     }
 
-    let v =
+    let next_n = (n-1)/16+1;
+
+    sibs.append(&mut merkle_gen_merkle_proof(tree, next_idx, offset + next_n * 16, next_n));
+    //return [sibs, merkle_genMerkleProof(tree, nextIdx, offset+ nextN*16*32, nextN )];
+    sibs
+}
+
+pub fn get_group_proof(tree: &MerkleTree, idx: usize) -> Result<(Vec<BaseElement>, Vec<Fr>)> {
+    if idx < 0 || idx >= tree.elements.len() {
+        return Err(EigenError::MerkleTreeError("access invalid node".to_string()));
+    }
+
+    let mut v = vec![BaseElement::ZERO; tree.elements.len()];
+    for i in 0..tree.elements.len(){
+        v[i] = get_element(tree, idx, i);
+    }
+    let mp = merkle_gen_merkle_proof(tree, idx, 0, tree.elements[0].len());
+
+    Ok((v, mp))
+}
+
+/*
+pub fn calculate_root_from_group_proof(tree: &MerkleTree, idx: usize, val: &Vec<BaseElement>) -> Result<ElementDigest> {
+
 }
 */
 
