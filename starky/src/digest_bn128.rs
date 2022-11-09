@@ -11,10 +11,11 @@ use num_bigint::BigUint;
 use num_traits::Num;
 use num_traits::ToPrimitive;
 
-use std::ops::{AddAssign, MulAssign};
+//use std::ops::{AddAssign, MulAssign};
 
 const DIGEST_SIZE: usize = 4;
 
+#[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct ElementDigest(pub [BaseElement; DIGEST_SIZE]);
 

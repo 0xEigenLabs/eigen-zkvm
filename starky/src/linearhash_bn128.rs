@@ -96,20 +96,7 @@ impl LinearHashBN128 {
         //println!("inner_hash_block size: {}", elems.len());
         let elems = elems
             .chunks(4)
-            .map(|e| {
-                let r = ElementDigest::to_BN128(e.try_into().unwrap());
-                /*let r = ElementDigest::to_montgomery(&bn);
-
-                let ee = ElementDigest::to_GL(&r);
-                ee
-                    .iter()
-                    .map(|e| {
-                        print!(" {}", e.as_int())
-                    })
-                .collect::<Vec<()>>();
-                */
-                r
-            })
+            .map(|e| ElementDigest::to_BN128(e.try_into().unwrap()))
             .collect::<Vec<Fr>>();
         //println!("\nelem.length {:?}, {:?}", elems.len(), elems);
         Ok(self.h.hash(&elems, init_state)?)
