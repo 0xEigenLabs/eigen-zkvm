@@ -1,6 +1,8 @@
 #![allow(non_snake_case)]
+use crate::merklehash_bn128::MerkleTree;
 use crate::polsarray::PolsArray;
 use crate::types::{StarkStruct, PIL};
+use crate::ElementDigest;
 
 use winter_math::fft::{self, get_inv_twiddles};
 use winter_math::{
@@ -52,6 +54,12 @@ pub fn interpolate_in_pil(
     m
 }
 
+pub struct StarkSetup {
+    const_tree: MerkleTree,
+    const_root: ElementDigest,
+    stark_info: usize,
+}
+
 /// STARK SETUP
 ///
 ///  calculate the trace polynomial over extended field, return the new polynomial's coefficient.
@@ -60,6 +68,10 @@ pub fn stark_setup(const_pol: &PolsArray, pil: &PIL, stark_struct: &StarkStruct)
     let nBitsExt = stark_struct.nBitsExt;
 
     let mut p: Vec<Vec<BaseElement>> = vec![Vec::new(); const_pol.nPols];
+    println!(
+        "nPols {} n {}, {:?}",
+        const_pol.nPols, const_pol.n, const_pol.array
+    );
     for i in 0..const_pol.nPols {
         for j in 0..const_pol.n {
             p[i].push(const_pol.array[i][j])
@@ -67,12 +79,16 @@ pub fn stark_setup(const_pol: &PolsArray, pil: &PIL, stark_struct: &StarkStruct)
     }
 
     let m = interpolate_in_pil(&p, 1 << (nBitsExt - nBits));
+    /*
     println!("length {}", m[0].len() * m.len());
     for i in &m[0] {
         println!("{:?}\n", i.as_int());
     }
+    */
 
     //const constTree = await MH.merkelize(constPolsArrayE, pil.nConstants, nExt);
+    let const_tree =
+        MerkleTree::merkelize(p, const_pol.n << (nBitsExt - nBits), const_pol.nPols).unwrap();
 }
 
 #[cfg(test)]

@@ -2,7 +2,7 @@
 use crate::poseidon_bn128::{Fr, Poseidon};
 use crate::ElementDigest;
 use ff::*;
-use winter_crypto::{Digest, Hasher};
+use winter_crypto::Digest;
 use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
 
@@ -21,11 +21,6 @@ impl LinearHashBN128 {
     }
 
     /// used for hash leaves only, converting element from GL to BN128
-    /// columns:
-    ///    0, 0, 0,
-    ///    1, 1, 1,
-    ///      ...,
-    ///    n, n, n,
     pub fn hash_element_matrix(&self, columns: &Vec<Vec<BaseElement>>) -> Result<Fr> {
         let mut st = Fr::zero();
         let mut vals3: Vec<Fr> = vec![];
@@ -96,30 +91,12 @@ impl LinearHashBN128 {
         //println!("inner_hash_block size: {}", elems.len());
         let elems = elems
             .chunks(4)
-            .map(|e| {
-                let r = ElementDigest::to_BN128(e.try_into().unwrap());
-                /*let r = ElementDigest::to_montgomery(&bn);
-
-                let ee = ElementDigest::to_GL(&r);
-                ee
-                    .iter()
-                    .map(|e| {
-                        print!(" {}", e.as_int())
-                    })
-                .collect::<Vec<()>>();
-                */
-                r
-            })
+            .map(|e| ElementDigest::to_BN128(e.try_into().unwrap()))
             .collect::<Vec<Fr>>();
         //println!("\nelem.length {:?}, {:?}", elems.len(), elems);
         Ok(self.h.hash(&elems, init_state)?)
     }
 
-    /// columns:
-    ///    0, 0, 0,  -> element
-    ///    1, 1, 1,  -> element
-    ///      ...,
-    ///    n, n, n,
     pub fn hash_element_array(&self, vals: &Vec<BaseElement>) -> Result<ElementDigest> {
         let mut st64 = [BaseElement::ZERO; 4];
         let mut in64: [BaseElement; 64] = [BaseElement::ZERO; 64];

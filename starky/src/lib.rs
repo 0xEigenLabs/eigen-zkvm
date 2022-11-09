@@ -16,6 +16,9 @@ pub use digest_bn128::ElementDigest;
 mod constant;
 mod traits;
 
+mod f3g;
+mod starkinfo;
+
 #[macro_use]
 extern crate ff;
 
