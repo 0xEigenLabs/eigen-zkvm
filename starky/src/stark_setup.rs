@@ -68,6 +68,10 @@ pub fn stark_setup(const_pol: &PolsArray, pil: &PIL, stark_struct: &StarkStruct)
     let nBitsExt = stark_struct.nBitsExt;
 
     let mut p: Vec<Vec<BaseElement>> = vec![Vec::new(); const_pol.nPols];
+    println!(
+        "nPols {} n {}, {:?}",
+        const_pol.nPols, const_pol.n, const_pol.array
+    );
     for i in 0..const_pol.nPols {
         for j in 0..const_pol.n {
             p[i].push(const_pol.array[i][j])
@@ -83,7 +87,8 @@ pub fn stark_setup(const_pol: &PolsArray, pil: &PIL, stark_struct: &StarkStruct)
     */
 
     //const constTree = await MH.merkelize(constPolsArrayE, pil.nConstants, nExt);
-    let const_tree = MerkleTree::merkelize(p).unwrap();
+    let const_tree =
+        MerkleTree::merkelize(p, const_pol.n << (nBitsExt - nBits), const_pol.nPols).unwrap();
 }
 
 #[cfg(test)]

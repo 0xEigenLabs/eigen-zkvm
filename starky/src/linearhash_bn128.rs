@@ -2,7 +2,7 @@
 use crate::poseidon_bn128::{Fr, Poseidon};
 use crate::ElementDigest;
 use ff::*;
-use winter_crypto::{Digest, Hasher};
+use winter_crypto::Digest;
 use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
 
@@ -21,11 +21,6 @@ impl LinearHashBN128 {
     }
 
     /// used for hash leaves only, converting element from GL to BN128
-    /// columns:
-    ///    0, 0, 0,
-    ///    1, 1, 1,
-    ///      ...,
-    ///    n, n, n,
     pub fn hash_element_matrix(&self, columns: &Vec<Vec<BaseElement>>) -> Result<Fr> {
         let mut st = Fr::zero();
         let mut vals3: Vec<Fr> = vec![];
@@ -102,11 +97,6 @@ impl LinearHashBN128 {
         Ok(self.h.hash(&elems, init_state)?)
     }
 
-    /// columns:
-    ///    0, 0, 0,  -> element
-    ///    1, 1, 1,  -> element
-    ///      ...,
-    ///    n, n, n,
     pub fn hash_element_array(&self, vals: &Vec<BaseElement>) -> Result<ElementDigest> {
         let mut st64 = [BaseElement::ZERO; 4];
         let mut in64: [BaseElement; 64] = [BaseElement::ZERO; 64];

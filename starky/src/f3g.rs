@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use core::slice;
 use rand_utils::rand_vector;
 use winter_math::fields::f64::BaseElement;

@@ -11,9 +11,11 @@ use winter_math::StarkField;
 
 pub struct MerkleTree {
     pub elements: Vec<Vec<BaseElement>>,
+    pub width: usize,
+    pub height: usize,
     pub nodes: Vec<ElementDigest>,
-    pub h: LinearHashBN128,
-    pub poseidon: Poseidon,
+    h: LinearHashBN128,
+    poseidon: Poseidon,
 }
 
 fn get_n_nodes(n_: usize) -> usize {
@@ -33,14 +35,13 @@ fn get_n_nodes(n_: usize) -> usize {
 }
 
 impl MerkleTree {
-    pub fn merkelize(columns: Vec<Vec<BaseElement>>) -> Result<Self> {
+    pub fn merkelize(columns: Vec<Vec<BaseElement>>, width: usize, height: usize) -> Result<Self> {
         let leaves_hash = LinearHashBN128::new();
 
         let mut leaves: Vec<crate::ElementDigest> = vec![];
         let mut batch: Vec<BaseElement> = vec![];
 
-        let height = columns.len();
-        let width = columns[0].len();
+        println!("width {}, height {}, {:?}", width, height, columns);
         let max_workers = get_max_workers();
 
         let mut n_per_thread_f = (height - 1) / max_workers + 1;
@@ -92,9 +93,11 @@ impl MerkleTree {
         //println!("leaves size {}", leaves.len());
         // merklize level
         let mut tree = MerkleTree {
-            nodes: vec![ElementDigest::default(); get_n_nodes(columns.len())],
+            nodes: vec![ElementDigest::default(); get_n_nodes(height)],
             elements: columns,
             h: leaves_hash,
+            width: width,
+            height: height,
             poseidon: Poseidon::new(),
         };
 
@@ -207,17 +210,17 @@ impl MerkleTree {
     }
 
     pub fn get_group_proof(&self, idx: usize) -> Result<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
-        if idx < 0 || idx >= self.elements[0].len() {
+        if idx >= self.width {
             return Err(EigenError::MerkleTreeError(
                 "access invalid node".to_string(),
             ));
         }
 
-        let mut v = vec![BaseElement::ZERO; self.elements[0].len()];
-        for i in 0..self.elements[0].len() {
+        let mut v = vec![BaseElement::ZERO; self.width];
+        for i in 0..self.width {
             v[i] = self.get_element(idx, i);
         }
-        let mp = self.merkle_gen_merkle_proof(idx, 0, self.elements.len());
+        let mp = self.merkle_gen_merkle_proof(idx, 0, self.height);
 
         Ok((v, mp))
     }
@@ -298,7 +301,7 @@ mod tests {
             }
         }
 
-        let tree = MerkleTree::merkelize(cols).unwrap();
+        let tree = MerkleTree::merkelize(cols, n_pols, n).unwrap();
 
         let (v, mp) = tree.get_group_proof(idx).unwrap();
         println!("get_group_proof: {},\n v = ", idx);
