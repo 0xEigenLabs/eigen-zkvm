@@ -26,7 +26,6 @@ pub struct ContextC<'a> {
 }
 
 pub struct ContextF {
-    //pub code: &'a mut Segment,
     pub exp_map: HashMap<(i32, i32), i32>,
     pub tmp_used: i32,
 }
