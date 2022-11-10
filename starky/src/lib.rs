@@ -1,6 +1,5 @@
 pub mod errors;
 pub mod polsarray;
-pub mod stark_setup;
 pub mod types;
 
 pub mod linearhash_bn128;
@@ -18,6 +17,8 @@ mod traits;
 
 mod f3g;
 mod starkinfo;
+mod starkinfo_codegen;
+mod stark_setup;
 
 #[macro_use]
 extern crate ff;
