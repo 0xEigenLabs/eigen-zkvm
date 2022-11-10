@@ -16,9 +16,9 @@ mod constant;
 mod traits;
 
 mod f3g;
+mod stark_setup;
 mod starkinfo;
 mod starkinfo_codegen;
-mod stark_setup;
 
 #[macro_use]
 extern crate ff;

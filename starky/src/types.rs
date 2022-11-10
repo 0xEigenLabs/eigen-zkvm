@@ -32,11 +32,11 @@ pub struct Expression {
     pub op: String, // number, cm, add, sub, ...
     pub deg: i32,
     pub id: Option<i32>,
-    pub next: Option<()>,
-    pub value: String,
-    pub values: Vec<Expression>,
-    pub keep: Option<()>, // true: some(()), false: none
-    pub keep2ns: Option<()>, // true: some(()), false: none
+    pub next: Option<bool>, // None is false, the other would be true. same as others with type Option<bool>
+    pub value: Option<String>,
+    pub values: Option<Vec<Expression>>,
+    pub keep: Option<bool>,
+    pub keep2ns: Option<bool>,
     pub idQ: Option<i32>,
     pub const_: Option<i64>,
 }

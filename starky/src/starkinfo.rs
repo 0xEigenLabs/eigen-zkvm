@@ -1,8 +1,10 @@
-use crate::f3g as field;
-use std::collections::HashMap;
-use crate::types::{StarkStruct, PIL};
 use crate::errors::{EigenError, Result};
-use crate::starkinfo_codegen::{Context, Calculated, pil_code_gen, build_code, iterate_code, Node, ContextF, Segment};
+use crate::f3g as field;
+use crate::starkinfo_codegen::{
+    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, Node, Segment,
+};
+use crate::types::{StarkStruct, PIL};
+use std::collections::HashMap;
 
 pub struct StarkInfo {
     var_pol_map: usize,
@@ -15,7 +17,6 @@ pub struct StarkInfo {
 }
 
 impl StarkInfo {
-
     fn new(pil: &PIL, stark_struct: &StarkStruct) -> Result<()> {
         let pil_deg = pil.references.values().nth(0).unwrap().polDeg as i32;
 
@@ -26,7 +27,10 @@ impl StarkInfo {
         }
 
         if stark_struct.nBitsExt != stark_struct.steps[0]["nBits"] {
-            return Err(EigenError::MustEqualDegreeError(stark_struct.nBitsExt, stark_struct.steps[0]["nBits"]));
+            return Err(EigenError::MustEqualDegreeError(
+                stark_struct.nBitsExt,
+                stark_struct.steps[0]["nBits"],
+            ));
         }
 
         Ok(())
@@ -35,7 +39,6 @@ impl StarkInfo {
     }
 
     pub fn generate_pubulic_calculators(&mut self, pil: &PIL) -> Result<()> {
-
         for p in pil.publics.iter() {
             if p.polType.as_str() == "imP" {
                 let mut ctx = Context {
@@ -54,24 +57,24 @@ impl StarkInfo {
 
                 let mut ctx_f = ContextF {
                     exp_map: HashMap::new(),
-                    code: &mut segment,
-                    tmp_used: 0,
+                    tmp_used: segment.tmp_used,
                 };
 
-                let f = |r: &mut Node, ctx: &mut ContextF| {
-                    let p = if r.prime.is_some()  {1} else {0};
+                let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
+                    let p = if r.prime.is_some() { 1 } else { 0 };
                     if r.type_.as_str() == "exp" {
                         if ctx.exp_map.get(&(p, r.id.unwrap())).is_none() {
-                            ctx.exp_map.insert((p, r.id.unwrap()), ctx.code.tmp_used);
-                            ctx.code.tmp_used += 1;
+                            ctx.exp_map.insert((p, r.id.unwrap()), ctx.tmp_used);
+                            ctx.tmp_used += 1;
                         }
                         r.prime = None;
                         r.type_ = "tmp".to_string();
                         r.id = Some(*ctx.exp_map.get(&(p, r.id.unwrap())).unwrap());
                     }
                 };
-                iterate_code(f ,&mut ctx_f);
+                iterate_code(&mut segment, fix_ref, &mut ctx_f);
 
+                segment.tmp_used = ctx_f.tmp_used;
                 self.publics_code.push(segment);
                 ctx.calculated = Calculated {
                     exps: vec![],
@@ -81,5 +84,4 @@ impl StarkInfo {
         }
         Ok(())
     }
-
 }
