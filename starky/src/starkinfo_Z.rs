@@ -1,12 +1,15 @@
 use crate::expressionops::ExpressionOps as E;
 use crate::helper::get_ks;
 use crate::starkinfo::StarkInfo;
-use crate::starkinfo_codegen::{build_code, pil_code_gen, Context};
 use crate::starkinfo::PECTX;
+use crate::starkinfo_codegen::{build_code, pil_code_gen, Context};
 
 impl StarkInfo {
     pub fn generate_permutation_LC(&mut self, ctx: &mut Context) {
-        let ppi = ctx.pil.permutationIdentities.as_ref().unwrap().clone();
+        let ppi = match &ctx.pil.permutationIdentities {
+            Some(x) => x.clone(),
+            _ => Vec::new(),
+        };
         for pi in ppi.iter() {
             let mut t_exp = E::nop();
             let u = E::challenge("u".to_string());
@@ -30,7 +33,6 @@ impl StarkInfo {
 
             let t_exp_id = ctx.pil.expressions.len() as i32;
             ctx.pil.expressions.push(t_exp);
-
 
             let mut f_exp = E::nop();
             for j in pi.f.as_ref().unwrap().iter() {
@@ -56,10 +58,7 @@ impl StarkInfo {
             pil_code_gen(ctx, f_exp_id.clone(), false, &"".to_string());
             pil_code_gen(ctx, t_exp_id.clone(), false, &"".to_string());
 
-            self.pe_ctx.push(PECTX {
-                f_exp_id,
-                t_exp_id,
-            });
+            self.pe_ctx.push(PECTX { f_exp_id, t_exp_id });
         }
     }
 }

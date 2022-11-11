@@ -87,7 +87,7 @@ pub struct PlookupIdentity {
     pub line: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PermutationIdentity {
     pub f: Option<Vec<i32>>,
     pub t: Option<Vec<i32>>,
