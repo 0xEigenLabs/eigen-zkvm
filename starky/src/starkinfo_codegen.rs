@@ -4,11 +4,13 @@ use crate::types::PIL;
 use std::collections::HashMap;
 use winter_math::fields::f64::BaseElement;
 
+#[derive(Debug)]
 pub struct Calculated {
     pub exps: Vec<bool>,
     pub exps_prime: Vec<bool>,
 }
 
+#[derive(Debug)]
 pub struct Context<'a> {
     pub pil: &'a PIL,
     pub exp_id: i32,
@@ -18,6 +20,7 @@ pub struct Context<'a> {
     pub calculated_mark: HashMap<(String, i32), bool>,
 }
 
+#[derive(Debug)]
 pub struct ContextC<'a> {
     pub pil: &'a PIL,
     pub exp_id: i32,
@@ -25,12 +28,13 @@ pub struct ContextC<'a> {
     pub code: Vec<Subcode>,
 }
 
+#[derive(Debug)]
 pub struct ContextF {
     pub exp_map: HashMap<(i32, i32), i32>,
     pub tmp_used: i32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Node {
     pub type_: String,
     pub id: Option<i32>,
@@ -60,13 +64,14 @@ impl Node {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Subcode {
     pub op: String,
     pub dest: Node,
     pub src: Vec<Node>,
 }
 
+#[derive(Debug)]
 pub struct Segment {
     pub first: Vec<Subcode>,
     pub i: Vec<Subcode>,
@@ -74,6 +79,7 @@ pub struct Segment {
     pub tmp_used: i32,
 }
 
+#[derive(Debug)]
 pub struct Code {
     pub exp_id: i32,
     pub prime: Option<bool>,
@@ -82,6 +88,7 @@ pub struct Code {
     pub idQ: Option<i32>,
 }
 
+#[derive(Debug)]
 struct MapSections {
     pub cm1_n: i32,
     pub cm1_2ns: i32,

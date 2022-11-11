@@ -6,18 +6,19 @@ use crate::starkinfo_codegen::{
 use crate::types::{StarkStruct, PIL};
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct StarkInfo {
     var_pol_map: usize,
     pu_ctx: usize,
     pe_ctx: usize,
     ci_ctx: usize,
-    n_constants: usize,
-    n_publics: usize,
+    n_constants: i32,
+    n_publics: i32,
     publics_code: Vec<Segment>,
 }
 
 impl StarkInfo {
-    fn new(pil: &PIL, stark_struct: &StarkStruct) -> Result<()> {
+    pub fn new(pil: &PIL, stark_struct: &StarkStruct) -> Result<StarkInfo> {
         let pil_deg = pil.references.values().nth(0).unwrap().polDeg as i32;
 
         let stark_deg = 2i32.pow(stark_struct.nBits as u32);
@@ -33,9 +34,18 @@ impl StarkInfo {
             ));
         }
 
-        Ok(())
-
-        //Ok(StarkInfo::new())
+        let mut info = StarkInfo {
+            var_pol_map: 0,
+            pu_ctx: 0,
+            pe_ctx: 0,
+            ci_ctx: 0,
+            n_constants: pil.nConstants,
+            n_publics: pil.publics.len() as i32,
+            publics_code: vec![],
+        };
+        info.generate_pubulic_calculators(pil);
+        println!("{:?}", info);
+        Ok(info)
     }
 
     pub fn generate_pubulic_calculators(&mut self, pil: &PIL) -> Result<()> {

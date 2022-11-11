@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 use crate::merklehash_bn128::MerkleTree;
 use crate::polsarray::PolsArray;
+use crate::starkinfo;
 use crate::types::{StarkStruct, PIL};
 use crate::ElementDigest;
 
@@ -89,6 +90,8 @@ pub fn stark_setup(const_pol: &PolsArray, pil: &PIL, stark_struct: &StarkStruct)
     //const constTree = await MH.merkelize(constPolsArrayE, pil.nConstants, nExt);
     let const_tree =
         MerkleTree::merkelize(p, const_pol.n << (nBitsExt - nBits), const_pol.nPols).unwrap();
+
+    let res = starkinfo::StarkInfo::new(pil, stark_struct);
 }
 
 #[cfg(test)]
