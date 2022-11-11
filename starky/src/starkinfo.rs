@@ -1,24 +1,40 @@
 use crate::errors::{EigenError, Result};
+use crate::expressionops::ExpressionOps as E;
 use crate::f3g as field;
 use crate::starkinfo_codegen::{
     build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, Node, Segment,
 };
-use crate::types::{StarkStruct, PIL};
+use crate::types::{Expression, StarkStruct, PIL};
 use std::collections::HashMap;
+
+#[derive(Default, Debug)]
+pub struct PUCTX {
+    pub f_exp_id: i32,
+    pub t_exp_id: i32,
+    pub h1_id: i32,
+    pub h2_id: i32,
+}
+
+#[derive(Default, Debug)]
+pub struct PECTX {
+    pub f_exp_id: i32,
+    pub t_exp_id: i32,
+}
 
 #[derive(Debug)]
 pub struct StarkInfo {
-    var_pol_map: usize,
-    pu_ctx: usize,
-    pe_ctx: usize,
-    ci_ctx: usize,
-    n_constants: i32,
-    n_publics: i32,
-    publics_code: Vec<Segment>,
+    pub var_pol_map: usize,
+    pub n_cm1: i32,
+    pub pu_ctx: Vec<PUCTX>,
+    pub pe_ctx: Vec<PECTX>,
+    pub ci_ctx: usize,
+    pub n_constants: i32,
+    pub n_publics: i32,
+    pub publics_code: Vec<Segment>,
 }
 
 impl StarkInfo {
-    pub fn new(pil: &PIL, stark_struct: &StarkStruct) -> Result<StarkInfo> {
+    pub fn new(pil: &mut PIL, stark_struct: &StarkStruct) -> Result<StarkInfo> {
         let pil_deg = pil.references.values().nth(0).unwrap().polDeg as i32;
 
         let stark_deg = 2i32.pow(stark_struct.nBits as u32);
@@ -36,34 +52,51 @@ impl StarkInfo {
 
         let mut info = StarkInfo {
             var_pol_map: 0,
-            pu_ctx: 0,
-            pe_ctx: 0,
+            pu_ctx: Vec::new(),
+            pe_ctx: Vec::new(),
             ci_ctx: 0,
             n_constants: pil.nConstants,
             n_publics: pil.publics.len() as i32,
             publics_code: vec![],
+            n_cm1: pil.nCommitments,
         };
-        info.generate_pubulic_calculators(pil);
-        println!("{:?}", info);
+
+        let mut ctx = Context {
+            pil: pil,
+            calculated: Calculated {
+                exps: vec![],
+                exps_prime: vec![],
+            },
+            tmp_used: 0,
+            code: vec![],
+            calculated_mark: HashMap::new(),
+            exp_id: -1,
+        };
+        info.generate_pubulic_calculators(&mut ctx);
+
+        let mut ctx = Context {
+            pil: pil,
+            calculated: Calculated {
+                exps: vec![],
+                exps_prime: vec![],
+            },
+            tmp_used: 0,
+            code: vec![],
+            exp_id: -1,
+            calculated_mark: HashMap::new(),
+        };
+
+        info.generate_step2(&mut ctx);
+        println!("{:?}, {:?}", pil, info);
         Ok(info)
     }
 
-    pub fn generate_pubulic_calculators(&mut self, pil: &PIL) -> Result<()> {
-        for p in pil.publics.iter() {
+    pub fn generate_pubulic_calculators(&mut self, ctx: &mut Context) -> Result<()> {
+        let publics = ctx.pil.publics.clone();
+        for p in publics.iter() {
             if p.polType.as_str() == "imP" {
-                let mut ctx = Context {
-                    pil: pil,
-                    calculated: Calculated {
-                        exps: vec![],
-                        exps_prime: vec![],
-                    },
-                    tmp_used: 0,
-                    code: vec![],
-                    calculated_mark: HashMap::new(),
-                    exp_id: -1,
-                };
-                pil_code_gen(&mut ctx, p.polId, false, &"".to_string());
-                let mut segment = build_code(&mut ctx);
+                pil_code_gen(ctx, p.polId, false, &"".to_string());
+                let mut segment = build_code(ctx);
 
                 let mut ctx_f = ContextF {
                     exp_map: HashMap::new(),
@@ -93,5 +126,64 @@ impl StarkInfo {
             }
         }
         Ok(())
+    }
+
+    pub fn generate_step2(&mut self, ctx: &mut Context) {
+        let ppi = ctx.pil.plookupIdentities.clone();
+        for pi in ppi.iter() {
+            let u = E::challenge("u".to_string());
+            let def_val = E::challenge("defVal".to_string());
+
+            let mut t_exp: Expression = E::nop();
+            for j in pi.t.as_ref().unwrap().iter() {
+                let e = E::exp(*j, None);
+                if E::is_nop(&t_exp) {
+                    t_exp = e;
+                } else {
+                    t_exp = E::add(&E::mul(&u, &t_exp), &e);
+                }
+            }
+
+            if pi.selT.is_some() {
+                t_exp = E::sub(&t_exp, &def_val);
+                t_exp = E::mul(&t_exp, &E::exp(pi.selT.unwrap(), None));
+                t_exp = E::add(&t_exp, &def_val);
+                t_exp.idQ = Some(ctx.pil.nQ as i32);
+                ctx.pil.nQ += 1;
+            }
+
+            let t_exp_id = ctx.pil.expressions.len() as i32;
+            t_exp.keep = Some(true);
+            ctx.pil.expressions.push(t_exp);
+
+            let mut f_exp = E::nop();
+            for j in pi.f.as_ref().unwrap().iter() {
+                let e = E::exp(j.clone(), None);
+                if f_exp == E::nop() {
+                    f_exp = e;
+                } else {
+                    f_exp = E::add(&E::mul(&f_exp, &u), &e);
+                }
+            }
+
+            let f_exp_id = ctx.pil.expressions.len() as i32;
+            f_exp.keep = Some(true);
+            ctx.pil.expressions.push(f_exp);
+
+            pil_code_gen(ctx, f_exp_id.clone(), false, &"".to_string());
+            pil_code_gen(ctx, t_exp_id.clone(), false, &"".to_string());
+
+            let h1_id = ctx.pil.nCommitments;
+            ctx.pil.nCommitments += 1;
+            let h2_id = ctx.pil.nCommitments;
+            ctx.pil.nCommitments += 1;
+
+            self.pu_ctx.push(PUCTX {
+                f_exp_id,
+                t_exp_id,
+                h1_id,
+                h2_id,
+            });
+        }
     }
 }

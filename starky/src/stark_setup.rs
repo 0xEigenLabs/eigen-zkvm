@@ -64,7 +64,7 @@ pub struct StarkSetup {
 /// STARK SETUP
 ///
 ///  calculate the trace polynomial over extended field, return the new polynomial's coefficient.
-pub fn stark_setup(const_pol: &PolsArray, pil: &PIL, stark_struct: &StarkStruct) {
+pub fn stark_setup(const_pol: &PolsArray, pil: &mut PIL, stark_struct: &StarkStruct) {
     let nBits = stark_struct.nBits;
     let nBitsExt = stark_struct.nBitsExt;
 
@@ -131,11 +131,11 @@ pub mod tests {
 
     #[test]
     fn test_stark_setup() {
-        let pil = load_json::<PIL>("data/fib.pil.json").unwrap();
+        let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant, 32);
         const_pol.load("data/fib.const").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
-        stark_setup(&const_pol, &pil, &stark_struct);
+        stark_setup(&const_pol, &mut pil, &stark_struct);
     }
 }

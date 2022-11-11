@@ -6,7 +6,7 @@ use std::io::Read;
 
 use crate::errors::Result;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Public {
     pub polType: String,
     pub polId: i32,
@@ -27,7 +27,7 @@ pub struct Reference {
     pub len: Option<usize>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Expression {
     pub op: String, // number, cm, add, sub, ...
     pub deg: i32,
@@ -41,6 +41,35 @@ pub struct Expression {
     pub const_: Option<i64>,
 }
 
+impl PartialEq for Expression {
+    fn eq(&self, other: &Self) -> bool {
+        self.op == other.op && self.deg == other.deg && self.id == other.id
+    }
+}
+
+impl Expression {
+    pub fn new(
+        op: String,
+        deg: i32,
+        id: Option<i32>,
+        value: Option<String>,
+        values: Option<Vec<Expression>>,
+    ) -> Self {
+        Expression {
+            op: op,
+            deg: deg,
+            id: id,
+            next: None,
+            value: value,
+            values: values,
+            keep: None,
+            keep2ns: None,
+            idQ: None,
+            const_: None,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PolIdentity {
     pub e: i32,
@@ -48,7 +77,7 @@ pub struct PolIdentity {
     pub line: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PlookupIdentity {
     pub f: Option<Vec<i32>>,
     pub t: Option<Vec<i32>>,

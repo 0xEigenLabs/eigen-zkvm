@@ -15,9 +15,12 @@ pub use digest_bn128::ElementDigest;
 mod constant;
 mod traits;
 
+mod expressionops;
 mod f3g;
+mod helper;
 mod stark_setup;
 mod starkinfo;
+mod starkinfo_Z;
 mod starkinfo_codegen;
 
 #[macro_use]

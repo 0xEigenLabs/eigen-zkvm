@@ -12,7 +12,7 @@ pub struct Calculated {
 
 #[derive(Debug)]
 pub struct Context<'a> {
-    pub pil: &'a PIL,
+    pub pil: &'a mut PIL,
     pub exp_id: i32,
     pub tmp_used: i32,
     pub code: Vec<Code>,
@@ -126,13 +126,8 @@ pub fn pil_code_gen(ctx: &mut Context, exp_id: i32, prime: bool, mode: &String) 
         return Ok(());
     }
 
-    calculate_deps(
-        ctx,
-        &ctx.pil.expressions[exp_id as usize],
-        prime,
-        exp_id,
-        &mode,
-    );
+    let expr = ctx.pil.expressions[exp_id as usize].clone();
+    calculate_deps(ctx, &expr, prime, exp_id, &mode);
 
     let mut code_ctx = ContextC {
         pil: ctx.pil,
@@ -566,7 +561,7 @@ pub fn expression_error(pil: &PIL, strerr: String, e1: i32, e2: i32) -> Result<(
 }
 
 pub fn build_code(ctx: &mut Context) -> Segment {
-    let mut step_code = Segment {
+    let step_code = Segment {
         first: build_linear_code(ctx, "first".to_string()),
         i: build_linear_code(ctx, "i".to_string()),
         last: build_linear_code(ctx, "last".to_string()),
