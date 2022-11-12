@@ -13,6 +13,7 @@ pub struct PUCTX {
     pub t_exp_id: i32,
     pub h1_id: i32,
     pub h2_id: i32,
+
     pub z_id: i32,
     pub c1_id: i32,
     pub c2_id: i32,
