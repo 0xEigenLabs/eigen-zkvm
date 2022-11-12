@@ -51,7 +51,10 @@ pub struct StarkInfo {
     pub ci_ctx: Vec<CICTX>,
     pub n_constants: i32,
     pub n_publics: i32,
+    pub c_exp: i32,
     pub publics_code: Vec<Segment>,
+    pub step4: Segment,
+    pub step42ns: Segment,
 }
 
 impl StarkInfo {
@@ -80,6 +83,9 @@ impl StarkInfo {
             n_publics: pil.publics.len() as i32,
             publics_code: vec![],
             n_cm1: pil.nCommitments,
+            c_exp: 0,
+            step4: Segment::default(),
+            step42ns: Segment::default(),
         };
 
         let mut ctx = Context {
@@ -109,6 +115,19 @@ impl StarkInfo {
 
         info.generate_step2(&mut ctx);
         println!("{:?}, {:?}", pil, info);
+
+        let mut ctx2ns = Context {
+            pil: pil,
+            calculated: Calculated {
+                exps: Vec::new(),
+                exps_prime: Vec::new(),
+            },
+            tmp_used: 0,
+            code: vec![],
+            calculated_mark: HashMap::new(),
+            exp_id: -1,
+        };
+
         Ok(info)
     }
 

@@ -34,7 +34,7 @@ pub struct ContextF {
     pub tmp_used: i32,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Node {
     pub type_: String,
     pub id: Option<i32>,
@@ -64,14 +64,14 @@ impl Node {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Subcode {
     pub op: String,
     pub dest: Node,
     pub src: Vec<Node>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Segment {
     pub first: Vec<Subcode>,
     pub i: Vec<Subcode>,
