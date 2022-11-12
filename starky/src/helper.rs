@@ -9,7 +9,7 @@ use std::ops::Mul;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
 
-pub fn get_ks(fr: &BaseElement, n: usize) -> Vec<BaseElement> {
+pub fn get_ks(n: usize) -> Vec<BaseElement> {
     let mut ks: Vec<BaseElement> = vec![BaseElement::ZERO; n];
     ks[0] = BaseElement::from(12275445934081160404u64);
     for i in 1..n {

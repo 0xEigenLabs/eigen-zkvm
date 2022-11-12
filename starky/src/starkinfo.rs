@@ -14,12 +14,31 @@ pub struct PUCTX {
     pub h1_id: i32,
     pub h2_id: i32,
     pub z_id: i32,
+    pub c1_id: i32,
+    pub c2_id: i32,
+    pub num_id: i32,
+    pub den_id: i32,
 }
 
 #[derive(Default, Debug)]
 pub struct PECTX {
     pub f_exp_id: i32,
     pub t_exp_id: i32,
+
+    pub z_id: i32,
+    pub c1_id: i32,
+    pub c2_id: i32,
+    pub num_id: i32,
+    pub den_id: i32,
+}
+
+#[derive(Default, Debug)]
+pub struct CICTX {
+    pub z_id: i32,
+    pub c1_id: i32,
+    pub c2_id: i32,
+    pub num_id: i32,
+    pub den_id: i32,
 }
 
 #[derive(Debug)]
@@ -28,7 +47,7 @@ pub struct StarkInfo {
     pub n_cm1: i32,
     pub pu_ctx: Vec<PUCTX>,
     pub pe_ctx: Vec<PECTX>,
-    pub ci_ctx: usize,
+    pub ci_ctx: Vec<CICTX>,
     pub n_constants: i32,
     pub n_publics: i32,
     pub publics_code: Vec<Segment>,
@@ -55,7 +74,7 @@ impl StarkInfo {
             var_pol_map: 0,
             pu_ctx: Vec::new(),
             pe_ctx: Vec::new(),
-            ci_ctx: 0,
+            ci_ctx: Vec::new(),
             n_constants: pil.nConstants,
             n_publics: pil.publics.len() as i32,
             publics_code: vec![],
@@ -184,7 +203,11 @@ impl StarkInfo {
                 t_exp_id,
                 h1_id,
                 h2_id,
-                0,
+                z_id: 0,
+                c1_id: 0,
+                c2_id: 0,
+                num_id: 0,
+                den_id: 0,
             });
         }
     }

@@ -50,9 +50,9 @@ impl ExpressionOps {
         exp
     }
 
-    pub fn const_(id: i32, next: bool) -> Expression {
+    pub fn const_(id: i32, next: Option<bool>) -> Expression {
         let mut exp = Expression::new("const".to_string(), 0, Some(id), None, None);
-        exp.next = Some(next);
+        exp.next = next;
         exp
     }
 

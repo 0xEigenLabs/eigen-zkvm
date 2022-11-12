@@ -97,7 +97,7 @@ pub struct PermutationIdentity {
     pub line: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ConnectionIdentity {
     pub pols: Option<Vec<i32>>,
     pub connections: Option<Vec<i32>>,

@@ -1,8 +1,10 @@
 use crate::expressionops::ExpressionOps as E;
+use crate::f3g::F3G;
 use crate::helper::get_ks;
 use crate::starkinfo::StarkInfo;
-use crate::starkinfo::PECTX;
+use crate::starkinfo::{CICTX, PECTX};
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Context};
+use crate::types::PolIdentity;
 
 impl StarkInfo {
     pub fn generate_permutation_LC(&mut self, ctx: &mut Context) {
@@ -58,268 +60,282 @@ impl StarkInfo {
             pil_code_gen(ctx, f_exp_id.clone(), false, &"".to_string());
             pil_code_gen(ctx, t_exp_id.clone(), false, &"".to_string());
 
-            self.pe_ctx.push(PECTX { f_exp_id, t_exp_id });
+            self.pe_ctx.push(PECTX {
+                f_exp_id,
+                t_exp_id,
+                c1_id: 0,
+                c2_id: 0,
+                den_id: 0,
+                num_id: 0,
+                z_id: 0,
+            });
         }
     }
 
-    pub fn generate_plonk_Z(&mut self, &mut ctx: Context) {
-        let pui = ctx.pil.plookupIdentities;
-        for (i,pu) in pui.iter().enumerate() {
-           self.pu_ctx[i].z_id = ctx.pil.nCommitments;
-           ctx.pil.nCommitments += 1;
+    pub fn generate_plonk_Z(&mut self, ctx: &mut Context) {
+        let pui = ctx.pil.plookupIdentities.clone();
+        for (i, _pu) in pui.iter().enumerate() {
+            self.pu_ctx[i].z_id = ctx.pil.nCommitments;
+            ctx.pil.nCommitments += 1;
 
-           let h1 = E::cm(self.pu_ctx[i].h1_id, None);
-           let h2 = E::cm(self.pu_ctx[i].h2_id, None);
+            let h1 = E::cm(self.pu_ctx[i].h1_id, None);
+            let h2 = E::cm(self.pu_ctx[i].h2_id, None);
 
-           let h1p = E::cm(self.pu_ctx[i].h1_id, Some(true));
-           let f = E::cm(self.pu_ctx[i].f_exp_id, None);
-           let t = E::cm(self.pu_ctx[i].t_exp_id, None);
-           let tp = E::cm(self.pu_ctx[i].t_exp_id, Some(true));
+            let h1p = E::cm(self.pu_ctx[i].h1_id, Some(true));
+            let f = E::cm(self.pu_ctx[i].f_exp_id, None);
+            let t = E::cm(self.pu_ctx[i].t_exp_id, None);
+            let tp = E::cm(self.pu_ctx[i].t_exp_id, Some(true));
 
-           let zp = E::cm(self.pu_ctx[i].z_id, Some(true));
+            let z = E::cm(self.pu_ctx[i].z_id, None);
+            let zp = E::cm(self.pu_ctx[i].z_id, Some(true));
 
-           if ctx.pil.references["Global.L1".to_string()].get().is_none() {
-               panic!("Global.L1 must be defined");
-           }
+            if ctx.pil.references.get(&"Global.L1".to_string()).is_none() {
+                panic!("Global.L1 must be defined");
+            }
 
+            let l1 = E::const_(ctx.pil.references[&"Global.L1".to_string()].id as i32, None);
+            let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
+            c1.deg = 2;
 
-        }
+            self.pu_ctx[i].c1_id = ctx.pil.expressions.len() as i32;
+            ctx.pil.expressions.push(c1);
+            ctx.pil.polIdentities.push(PolIdentity {
+                e: self.pu_ctx[i].c1_id.clone(),
+                line: 0,
+                fileName: "".to_string(),
+            });
 
-    }
+            let gamma = E::challenge("gamma".to_string());
+            let beta = E::challenge("beta".to_string());
 
-    /*
-function generatePlookupZ(res, pil, ctx) {
-    const E = new ExpressionOps();
-
-    for (let i=0; i<pil.plookupIdentities.length; i++) {
-        const puCtx = res.puCtx[i];
-        puCtx.zId = pil.nCommitments++;
-
-
-        const h1 = E.cm(puCtx.h1Id);
-        const h2 =  E.cm(puCtx.h2Id);
-        const h1p = E.cm(puCtx.h1Id, true);
-        const f = E.exp(puCtx.fExpId);
-        const t = E.exp(puCtx.tExpId);
-        const tp = E.exp(puCtx.tExpId, true);
-        const z = E.cm(puCtx.zId);
-        const zp = E.cm(puCtx.zId, true);
-
-        if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
-
-        const l1 = E.const(pil.references["Global.L1"].id);
-
-        const c1 = E.mul(l1,  E.sub(z, E.number(1)));
-        c1.deg=2;
-        puCtx.c1Id = pil.expressions.length;
-        pil.expressions.push(c1);
-        pil.polIdentities.push({e: puCtx.c1Id});
-
-        const gamma = E.challenge("gamma");
-        const beta = E.challenge("beta");
-
-        const numExp = E.mul(
-            E.mul(
-                E.add(f, gamma),
-                E.add(
-                    E.add(
-                        t,
-                        E.mul(
-                            tp,
-                            beta
-                        )
+            let mut num_exp = E::mul(
+                &E::mul(
+                    &E::add(&f, &gamma),
+                    &E::add(
+                        &E::add(&t, &E::mul(&tp, &beta)),
+                        &E::mul(&gamma, &E::add(&E::number("1".to_string()), &beta)),
                     ),
-                    E.mul(gamma,E.add(E.number(1), beta))
-                )
-            ),
-            E.add(E.number(1), beta)
-        );
-        numExp.idQ = pil.nQ++;
-        puCtx.numId = pil.expressions.length;
-        numExp.keep = true;
-        pil.expressions.push(numExp);
-
-        const denExp = E.mul(
-            E.add(
-                E.add(
-                    h1,
-                    E.mul(
-                        h2,
-                        beta
-                    )
                 ),
-                E.mul(gamma,E.add(E.number(1), beta))
-            ),
-            E.add(
-                E.add(
-                    h2,
-                    E.mul(
-                        h1p,
-                        beta
-                    )
+                &E::add(&E::number("1".to_string()), &beta),
+            );
+
+            num_exp.idQ = Some(ctx.pil.nQ);
+
+            ctx.pil.nQ += 1;
+            self.pu_ctx[i].num_id = ctx.pil.expressions.len() as i32;
+            ctx.pil.expressions.push(num_exp);
+
+            let mut den_exp = E::mul(
+                &E::mul(
+                    &E::add(&f, &gamma),
+                    &E::add(
+                        &E::add(&h1, &E::mul(&h2, &beta)),
+                        &E::mul(&gamma, &E::add(&E::number("1".to_string()), &beta)),
+                    ),
                 ),
-                E.mul(gamma,E.add(E.number(1), beta))
-            )
-        );
-        denExp.idQ = pil.nQ++;
-        puCtx.denId = pil.expressions.length;
-        denExp.keep = true;
-        pil.expressions.push(denExp);
+                &E::add(
+                    &E::add(&h2, &E::mul(&h1p, &beta)),
+                    &E::mul(&gamma, &E::add(&E::number("1".to_string()), &beta)),
+                ),
+            );
 
-        const num = E.exp(puCtx.numId);
-        const den = E.exp(puCtx.denId);
+            den_exp.idQ = Some(ctx.pil.nQ);
+            ctx.pil.nQ += 1;
 
-        const c2 = E.sub(  E.mul(zp, den), E.mul(z, num)  );
-        c2.deg=2;
-        puCtx.c2Id = pil.expressions.length;
-        pil.expressions.push(c2);
-        pil.polIdentities.push({e: puCtx.c2Id});
+            self.pu_ctx[i].den_id = ctx.pil.expressions.len() as i32;
+            den_exp.keep = Some(true);
+            ctx.pil.expressions.push(den_exp);
 
-        pilCodeGen(ctx, puCtx.numId, false);
-        pilCodeGen(ctx, puCtx.denId, false);
-    }
-}
+            let num = E::exp(self.pu_ctx[i].num_id, None);
+            let den = E::exp(self.pu_ctx[i].den_id, None);
 
+            let mut c2 = E::sub(&E::mul(&zp, &den), &E::mul(&z, &num));
+            c2.deg = 2;
+            self.pu_ctx[i].c2_id = ctx.pil.expressions.len() as i32;
+            ctx.pil.expressions.push(c2);
 
-function generatePermutationZ(res, pil, ctx) {
-    const E = new ExpressionOps();
-
-    for (let i=0; i<pil.permutationIdentities.length; i++) {
-        peCtx = res.peCtx[i];
-
-        peCtx.zId = pil.nCommitments++;
-
-        const f = E.exp(peCtx.fExpId);
-        const t = E.exp(peCtx.tExpId);
-        const z = E.cm(peCtx.zId);
-        const zp = E.cm(peCtx.zId, true);
-
-        if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
-
-        const l1 = E.const(pil.references["Global.L1"].id);
-
-        const c1 = E.mul(l1,  E.sub(z, E.number(1)));
-        c1.deg=2;
-        peCtx.c1Id = pil.expressions.length;
-        pil.expressions.push(c1);
-        pil.polIdentities.push({e: peCtx.c1Id});
-
-        const beta = E.challenge("beta");
-
-        const numExp = E.add( f, beta);
-        peCtx.numId = pil.expressions.length;
-        numExp.keep = true;
-        pil.expressions.push(numExp);
-
-        const denExp = E.add( t, beta);
-        peCtx.denId = pil.expressions.length;
-        denExp.keep = true;
-        pil.expressions.push(denExp);
-
-        const c2 = E.sub(  E.mul(zp,  E.exp( peCtx.denId )), E.mul(z, E.exp( peCtx.numId )));
-        c2.deg=2;
-        peCtx.c2Id = pil.expressions.length;
-        pil.expressions.push(c2);
-        pil.polIdentities.push({e: peCtx.c2Id});
-
-        pilCodeGen(ctx, peCtx.numId, false);
-        pilCodeGen(ctx, peCtx.denId, false);
-    }
-}
-
-function generateConnectionsZ(res, pil, ctx) {
-    const E = new ExpressionOps();
-    const F = new F1Field();
-
-    for (let i=0; i<pil.connectionIdentities.length; i++) {
-        const ci = pil.connectionIdentities[i];
-        const ciCtx = {};
-
-        ciCtx.zId = pil.nCommitments++;
-
-        const beta = E.challenge("beta");
-        const gamma = E.challenge("gamma");
-
-        let numExp = E.add(
-            E.add(
-                E.exp(ci.pols[0]),
-                E.mul(beta, E.x())
-            ), gamma);
-
-        let denExp = E.add(
-            E.add(
-                E.exp(ci.pols[0]),
-                E.mul(beta, E.exp(ci.connections[0]))
-            ), gamma);
-
-        ciCtx.numId = pil.expressions.length;
-        numExp.keep = true;
-        pil.expressions.push(numExp);
-
-        ciCtx.denId = pil.expressions.length;
-        denExp.keep = true;
-        pil.expressions.push(denExp);
-
-        let ks = getKs(F, ci.pols.length-1);
-        for (let i=1; i<ci.pols.length; i++) {
-            const numExp =
-                E.mul(
-                    E.exp(ciCtx.numId),
-                    E.add(
-                        E.add(
-                            E.exp(ci.pols[i]),
-                            E.mul(E.mul(beta, E.number(ks[i-1])), E.x())
-                        ),
-                        gamma
-                    )
-                );
-            numExp.idQ = pil.nQ++;
-
-            const denExp =
-                E.mul(
-                    E.exp(ciCtx.denId),
-                    E.add(
-                        E.add(
-                            E.exp(ci.pols[i]),
-                            E.mul(beta, E.exp(ci.connections[i]))
-                        ),
-                        gamma
-                    )
-                );
-            denExp.idQ = pil.nQ++;
-
-            ciCtx.numId = pil.expressions.length;
-            pil.expressions.push(numExp);
-
-            ciCtx.denId = pil.expressions.length;
-            pil.expressions.push(denExp);
+            ctx.pil.polIdentities.push(PolIdentity {
+                e: self.pu_ctx[i].c2_id.clone(),
+                line: 0,
+                fileName: "".to_string(),
+            });
+            pil_code_gen(ctx, self.pu_ctx[i].num_id.clone(), false, &"".to_string());
+            pil_code_gen(ctx, self.pu_ctx[i].den_id.clone(), false, &"".to_string());
         }
-
-        const z = E.cm(ciCtx.zId);
-        const zp = E.cm(ciCtx.zId, true);
-
-        if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
-
-        const l1 = E.const(pil.references["Global.L1"].id);
-
-        const c1 = E.mul(l1,  E.sub(z, E.number(1)));
-        c1.deg=2;
-        ciCtx.c1Id = pil.expressions.length;
-        pil.expressions.push(c1);
-        pil.polIdentities.push({e: ciCtx.c1Id});
-
-
-        const c2 = E.sub(  E.mul(zp,  E.exp( ciCtx.denId )), E.mul(z, E.exp( ciCtx.numId )));
-        c2.deg=2;
-        ciCtx.c2Id = pil.expressions.length;
-        pil.expressions.push(c2);
-        pil.polIdentities.push({e: ciCtx.c2Id});
-
-        pilCodeGen(ctx, ciCtx.numId, false);
-        pilCodeGen(ctx, ciCtx.denId, false);
-
-        res.ciCtx.push(ciCtx);
     }
-}
-*/
+
+    pub fn generate_permutation_Z(&mut self, ctx: &mut Context) {
+        let ppi = match &ctx.pil.permutationIdentities {
+            Some(x) => x.clone(),
+            _ => Vec::new(),
+        };
+
+        for (i, pi) in ppi.iter().enumerate() {
+            self.pe_ctx[i].z_id = ctx.pil.nCommitments;
+            ctx.pil.nCommitments += 1;
+
+            let f = E::exp(self.pe_ctx[i].f_exp_id, None);
+            let t = E::exp(self.pe_ctx[i].t_exp_id, None);
+            let z = E::cm(self.pe_ctx[i].z_id, None);
+            let zp = E::cm(self.pe_ctx[i].z_id, Some(true));
+
+            if ctx.pil.references.get(&"Global.L1".to_string()).is_none() {
+                panic!("Global.L1 must be defined");
+            }
+            let l1 = E::const_(ctx.pil.references[&"Global.L1".to_string()].id as i32, None);
+            let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
+            c1.deg = 2;
+
+            self.pe_ctx[i].c1_id = ctx.pil.expressions.len() as i32;
+            ctx.pil.expressions.push(c1);
+            ctx.pil.polIdentities.push(PolIdentity {
+                e: self.pe_ctx[i].c1_id.clone(),
+                line: 0,
+                fileName: "".to_string(),
+            });
+
+            let beta = E::challenge("beta".to_string());
+
+            let mut num_exp = E::add(&f, &beta);
+            self.pe_ctx[i].num_id = ctx.pil.expressions.len() as i32;
+            num_exp.keep = Some(true);
+            ctx.pil.expressions.push(num_exp);
+
+            let mut den_exp = E::add(&t, &beta);
+            self.pe_ctx[i].den_id = ctx.pil.expressions.len() as i32;
+            den_exp.keep = Some(true);
+            ctx.pil.expressions.push(den_exp);
+
+            let mut c2 = E::sub(
+                &E::mul(&zp, &E::exp(self.pe_ctx[i].den_id.clone(), None)),
+                &E::mul(&z, &E::exp(self.pe_ctx[i].num_id.clone(), None)),
+            );
+            c2.deg = 2;
+            self.pe_ctx[i].c2_id = ctx.pil.expressions.len() as i32;
+            ctx.pil.expressions.push(c2);
+            ctx.pil.polIdentities.push(PolIdentity {
+                e: self.pe_ctx[i].c2_id.clone(),
+                line: 0,
+                fileName: "".to_string(),
+            });
+
+            pil_code_gen(ctx, self.pe_ctx[i].num_id.clone(), false, &"".to_string());
+            pil_code_gen(ctx, self.pe_ctx[i].den_id.clone(), false, &"".to_string());
+        }
+    }
+
+    pub fn generate_connections_Z(&mut self, ctx: &mut Context) {
+        let cii = match &ctx.pil.connectionIdentities {
+            Some(x) => x.clone(),
+            _ => Vec::new(),
+        };
+
+        for ci in cii.iter() {
+            let ci_pols = match &ci.pols {
+                Some(x) => x.clone(),
+                _ => panic!("ci.pols is empty"),
+            };
+            let ci_connections = match &ci.connections {
+                Some(x) => x.clone(),
+                _ => panic!("ci.connections is empty"),
+            };
+
+            let mut ci_ctx = CICTX::default();
+            ci_ctx.z_id = ctx.pil.nCommitments as i32;
+            ctx.pil.nCommitments += 1;
+
+            let gamma = E::challenge("gamma".to_string());
+            let beta = E::challenge("beta".to_string());
+
+            let mut num_exp = E::add(
+                &E::add(&E::exp(ci_pols[0], None), &E::mul(&beta, &E::x())),
+                &gamma,
+            );
+
+            let mut den_exp = E::add(
+                &E::add(
+                    &E::exp(ci_pols[0], None),
+                    &E::mul(&beta, &E::exp(ci_connections[0], None)),
+                ),
+                &gamma,
+            );
+            ci_ctx.num_id = ctx.pil.expressions.len() as i32;
+            num_exp.keep = Some(true);
+            ctx.pil.expressions.push(num_exp);
+
+            ci_ctx.den_id = ctx.pil.expressions.len() as i32;
+            den_exp.keep = Some(true);
+            ctx.pil.expressions.push(den_exp);
+
+            let ks = get_ks(ci_pols.len() - 1);
+            for i in 1..ci_pols.len() {
+                let mut num_exp = E::mul(
+                    &E::exp(ci_ctx.num_id, None),
+                    &E::add(
+                        &E::add(
+                            &E::exp(ci_pols[i], None),
+                            &E::mul(&E::mul(&beta, &E::number(ks[i - 1].to_string())), &E::x()),
+                        ),
+                        &gamma,
+                    ),
+                );
+                num_exp.idQ = Some(ctx.pil.nQ);
+                ctx.pil.nQ += 1;
+
+                let mut den_exp = E::mul(
+                    &E::exp(ci_ctx.den_id, None),
+                    &E::add(
+                        &E::add(
+                            &E::exp(ci_pols[i], None),
+                            &E::mul(&beta, &E::exp(ci_connections[i], None)),
+                        ),
+                        &gamma,
+                    ),
+                );
+                den_exp.idQ = Some(ctx.pil.nQ);
+                ctx.pil.nQ += 1;
+
+                ci_ctx.num_id = ctx.pil.expressions.len() as i32;
+                ctx.pil.expressions.push(num_exp);
+                ci_ctx.den_id = ctx.pil.expressions.len() as i32;
+                ctx.pil.expressions.push(den_exp);
+            }
+
+            let z = E::cm(ci_ctx.z_id, None);
+            let zp = E::cm(ci_ctx.z_id, Some(true));
+
+            if ctx.pil.references.get(&"Global.L1".to_string()).is_none() {
+                panic!("Global.L1 must be defined");
+            }
+            let l1 = E::const_(ctx.pil.references[&"Global.L1".to_string()].id as i32, None);
+            let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
+            c1.deg = 2;
+
+            ci_ctx.c1_id = ctx.pil.expressions.len() as i32;
+            ctx.pil.expressions.push(c1);
+
+            ctx.pil.polIdentities.push(PolIdentity {
+                e: ci_ctx.c1_id.clone(),
+                line: 0,
+                fileName: "".to_string(),
+            });
+
+            let mut c2 = E::sub(
+                &E::mul(&zp, &E::exp(ci_ctx.den_id.clone(), None)),
+                &E::mul(&z, &E::exp(ci_ctx.num_id.clone(), None)),
+            );
+            c2.deg = 2;
+            ci_ctx.c2_id = ctx.pil.expressions.len() as i32;
+            ctx.pil.expressions.push(c2);
+            ctx.pil.polIdentities.push(PolIdentity {
+                e: ci_ctx.c2_id.clone(),
+                line: 0,
+                fileName: "".to_string(),
+            });
+
+            pil_code_gen(ctx, ci_ctx.num_id.clone(), false, &"".to_string());
+            pil_code_gen(ctx, ci_ctx.den_id.clone(), false, &"".to_string());
+            self.ci_ctx.push(ci_ctx);
+        }
+    }
 }
