@@ -34,6 +34,7 @@ pub struct ContextF {
     pub tmp_used: i32,
     pub ev_idx: EVIdx,
     pub ev_map: Vec<Node>,
+    pub dom: String,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -44,6 +45,8 @@ pub struct Node {
     pub dim: Option<i32>,
     pub prime: Option<bool>,
     pub tree_pos: Option<i32>,
+    pub p: i32,
+    pub exp_id : i32,
 }
 
 impl Node {
@@ -62,6 +65,8 @@ impl Node {
             dim: dim,
             prime: prime,
             tree_pos: tree_pos,
+            p: -1,
+            exp_id: -1,
         }
     }
 }
@@ -90,8 +95,23 @@ pub struct Code {
     pub idQ: Option<i32>,
 }
 
-#[derive(Debug)]
-struct MapSections {
+#[derive(Debug, Default)]
+pub struct SectionVec {
+    pub cm1_n: Vec<i32>,
+    pub cm1_2ns: Vec<i32>,
+    pub cm2_n: Vec<i32>,
+    pub cm2_2ns: Vec<i32>,
+    pub cm3_n: Vec<i32>,
+    pub cm3_2ns: Vec<i32>,
+    pub q_2ns: Vec<i32>,
+    pub exps_withq_n: Vec<i32>,
+    pub exps_withq_2ns: Vec<i32>,
+    pub exps_withoutq_n: Vec<i32>,
+    pub exps_withoutq_2ns: Vec<i32>,
+}
+
+#[derive(Debug, Default)]
+pub struct Section {
     pub cm1_n: i32,
     pub cm1_2ns: i32,
     pub cm2_n: i32,
@@ -103,6 +123,15 @@ struct MapSections {
     pub exps_withq_2ns: i32,
     pub exps_withoutq_n: i32,
     pub exps_withoutq_2ns: i32,
+    pub map_total_n: i32,
+}
+
+#[derive(Debug, Default)]
+pub struct PolType {
+    pub section: String,
+    pub section_pos: i32,
+    pub dim: i32,
+    pub exp_id: i32,
 }
 
 #[derive(Debug, Clone)]
@@ -672,13 +701,17 @@ fn get_exp_and_expprimes(ctx: &mut Context) -> HashMap<i32, bool> {
     res
 }
 
-pub fn iterate_code(code: &mut Segment, f: fn(&mut Node, &mut ContextF), ctx: &mut ContextF) {
+pub fn iterate_code<F>(code: &mut Segment, f: F, ctx: &mut ContextF)
+    where F: Fn(&mut Node, &mut ContextF)
+{
     iterate(&mut code.first, f, ctx);
     iterate(&mut code.i, f, ctx);
     iterate(&mut code.last, f, ctx);
 }
 
-fn iterate(code: &mut Vec<Subcode>, f: fn(&mut Node, &mut ContextF), ctx: &mut ContextF) {
+fn iterate<F>(code: &mut Vec<Subcode>, f: F, ctx: &mut ContextF)
+    where F: Fn(&mut Node, &mut ContextF)
+{
     for c in code.iter_mut() {
         for s in c.src.iter_mut() {
             f(s, ctx);

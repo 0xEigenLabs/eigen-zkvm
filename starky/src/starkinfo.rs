@@ -2,7 +2,7 @@ use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps as E;
 use crate::f3g as field;
 use crate::starkinfo_codegen::{
-    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node, Segment,
+    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node, Segment, PolType, Section, SectionVec
 };
 use crate::types::{Expression, StarkStruct, PIL};
 use std::collections::HashMap;
@@ -42,10 +42,14 @@ pub struct CICTX {
     pub den_id: i32,
 }
 
-#[derive(Debug)]
+
+#[derive(Debug, Default)]
 pub struct StarkInfo {
-    pub var_pol_map: usize,
+    pub var_pol_map: Vec<PolType>,
     pub n_cm1: i32,
+    pub n_cm2: i32,
+    pub n_cm3: i32,
+    pub n_cm4: i32,
     pub pu_ctx: Vec<PUCTX>,
     pub pe_ctx: Vec<PECTX>,
     pub ci_ctx: Vec<CICTX>,
@@ -53,6 +57,8 @@ pub struct StarkInfo {
     pub n_publics: i32,
     pub c_exp: i32,
     pub publics_code: Vec<Segment>,
+    pub step2prev: Segment,
+    pub step3prev: Segment,
     pub step4: Segment,
     pub step42ns: Segment,
     pub ev_map: Vec<Node>,
@@ -61,6 +67,18 @@ pub struct StarkInfo {
     pub step52ns: Segment,
     pub verifier_query_code: Segment,
     pub n_exps: i32,
+
+    pub cm_n: Vec<i32>,
+    pub cm_2ns: Vec<i32>,
+    pub exps_n: Vec<i32>,
+    pub exps_2ns: Vec<i32>,
+    pub qs: Vec<i32>,
+    pub map_sections: SectionVec,
+    pub map_sectionsN1: Section,
+    pub map_sectionsN3: Section,
+    pub map_sectionsN: Section,
+    pub map_offsets: Section,
+    pub map_deg: Section,
 }
 
 impl StarkInfo {
@@ -81,7 +99,7 @@ impl StarkInfo {
         }
 
         let mut info = StarkInfo {
-            var_pol_map: 0,
+            var_pol_map: Vec::new(),
             pu_ctx: Vec::new(),
             pe_ctx: Vec::new(),
             ci_ctx: Vec::new(),
@@ -89,7 +107,12 @@ impl StarkInfo {
             n_publics: pil.publics.len() as i32,
             publics_code: vec![],
             n_cm1: pil.nCommitments,
+            n_cm2: 0,
+            n_cm3: 0,
+            n_cm4: 0,
             c_exp: 0,
+            step2prev: Segment::default(),
+            step3prev: Segment::default(),
             step4: Segment::default(),
             step42ns: Segment::default(),
             ev_map: Vec::new(),
@@ -98,6 +121,18 @@ impl StarkInfo {
             step52ns: Segment::default(),
             verifier_query_code: Segment::default(),
             n_exps: 0,
+
+            cm_n: Vec::new(),
+            cm_2ns: Vec::new(),
+            exps_n: Vec::new(),
+            exps_2ns: Vec::new(),
+            qs: Vec::new(),
+            map_sections: SectionVec::new(),
+            map_sectionsN1: Section::default(),
+            map_sectionsN3: Section::default(),
+            map_sectionsN: Section::default(),
+            map_offsets: Section::default(),
+            map_deg: Section::default(),
         };
 
         let mut ctx = Context {
@@ -155,6 +190,7 @@ impl StarkInfo {
                     tmp_used: segment.tmp_used,
                     ev_idx: EVIdx::new(),
                     ev_map: Vec::new(),
+                    dom: "".to_string(),
                 };
 
                 let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
@@ -244,6 +280,8 @@ impl StarkInfo {
                 den_id: 0,
             });
         }
+
+        self.step2prev = build_code(ctx);
         Ok(())
     }
 }

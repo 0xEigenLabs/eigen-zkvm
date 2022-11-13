@@ -26,6 +26,7 @@ mod starkinfo_cp_prover;
 mod starkinfo_cp_ver;
 mod starkinfo_fri_prover;
 mod starkinfo_fri_ver;
+mod starkinfo_map;
 
 #[macro_use]
 extern crate ff;

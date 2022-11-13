@@ -118,6 +118,11 @@ pub struct PIL {
     pub plookupIdentities: Vec<PlookupIdentity>,
     pub permutationIdentities: Option<Vec<PermutationIdentity>>,
     pub connectionIdentities: Option<Vec<ConnectionIdentity>>,
+
+    #[serde(skip)]
+    pub cm_dims: Vec<i32>,
+    #[serde(skip)]
+    pub q2exp: Vec<i32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
