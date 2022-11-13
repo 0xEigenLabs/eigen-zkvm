@@ -1,3 +1,4 @@
+use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::f3g::F3G;
 use crate::helper::get_ks;
@@ -7,7 +8,7 @@ use crate::starkinfo_codegen::{build_code, pil_code_gen, Context};
 use crate::types::PolIdentity;
 
 impl StarkInfo {
-    pub fn generate_permutation_LC(&mut self, ctx: &mut Context) {
+    pub fn generate_permutation_LC(&mut self, ctx: &mut Context) -> Result<()> {
         let ppi = match &ctx.pil.permutationIdentities {
             Some(x) => x.clone(),
             _ => Vec::new(),
@@ -57,8 +58,8 @@ impl StarkInfo {
             let f_exp_id = ctx.pil.expressions.len() as i32;
             ctx.pil.expressions.push(f_exp);
 
-            pil_code_gen(ctx, f_exp_id.clone(), false, &"".to_string());
-            pil_code_gen(ctx, t_exp_id.clone(), false, &"".to_string());
+            pil_code_gen(ctx, f_exp_id.clone(), false, &"".to_string())?;
+            pil_code_gen(ctx, t_exp_id.clone(), false, &"".to_string())?;
 
             self.pe_ctx.push(PECTX {
                 f_exp_id,
@@ -70,9 +71,10 @@ impl StarkInfo {
                 z_id: 0,
             });
         }
+        Ok(())
     }
 
-    pub fn generate_plonk_Z(&mut self, ctx: &mut Context) {
+    pub fn generate_plonk_Z(&mut self, ctx: &mut Context) -> Result<()> {
         let pui = ctx.pil.plookupIdentities.clone();
         for (i, _pu) in pui.iter().enumerate() {
             self.pu_ctx[i].z_id = ctx.pil.nCommitments;
@@ -159,12 +161,13 @@ impl StarkInfo {
                 line: 0,
                 fileName: "".to_string(),
             });
-            pil_code_gen(ctx, self.pu_ctx[i].num_id.clone(), false, &"".to_string());
-            pil_code_gen(ctx, self.pu_ctx[i].den_id.clone(), false, &"".to_string());
+            pil_code_gen(ctx, self.pu_ctx[i].num_id.clone(), false, &"".to_string())?;
+            pil_code_gen(ctx, self.pu_ctx[i].den_id.clone(), false, &"".to_string())?;
         }
+        Ok(())
     }
 
-    pub fn generate_permutation_Z(&mut self, ctx: &mut Context) {
+    pub fn generate_permutation_Z(&mut self, ctx: &mut Context) -> Result<()> {
         let ppi = match &ctx.pil.permutationIdentities {
             Some(x) => x.clone(),
             _ => Vec::new(),
@@ -219,12 +222,13 @@ impl StarkInfo {
                 fileName: "".to_string(),
             });
 
-            pil_code_gen(ctx, self.pe_ctx[i].num_id.clone(), false, &"".to_string());
-            pil_code_gen(ctx, self.pe_ctx[i].den_id.clone(), false, &"".to_string());
+            pil_code_gen(ctx, self.pe_ctx[i].num_id.clone(), false, &"".to_string())?;
+            pil_code_gen(ctx, self.pe_ctx[i].den_id.clone(), false, &"".to_string())?;
         }
+        Ok(())
     }
 
-    pub fn generate_connections_Z(&mut self, ctx: &mut Context) {
+    pub fn generate_connections_Z(&mut self, ctx: &mut Context) -> Result<()> {
         let cii = match &ctx.pil.connectionIdentities {
             Some(x) => x.clone(),
             _ => Vec::new(),
@@ -333,9 +337,10 @@ impl StarkInfo {
                 fileName: "".to_string(),
             });
 
-            pil_code_gen(ctx, ci_ctx.num_id.clone(), false, &"".to_string());
-            pil_code_gen(ctx, ci_ctx.den_id.clone(), false, &"".to_string());
+            pil_code_gen(ctx, ci_ctx.num_id.clone(), false, &"".to_string())?;
+            pil_code_gen(ctx, ci_ctx.den_id.clone(), false, &"".to_string())?;
             self.ci_ctx.push(ci_ctx);
         }
+        Ok(())
     }
 }

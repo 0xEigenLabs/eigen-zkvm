@@ -1,3 +1,4 @@
+use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::f3g::F3G;
 use crate::helper::get_ks;
@@ -8,7 +9,7 @@ use crate::types::PolIdentity;
 use std::collections::HashMap;
 
 impl StarkInfo {
-    pub fn generate_fri_polynomial(&mut self, ctx: &mut Context) {
+    pub fn generate_fri_polynomial(&mut self, ctx: &mut Context) -> Result<()> {
         let vf1 = E::challenge("vf1".to_string());
         let vf2 = E::challenge("vf2".to_string());
 
@@ -75,7 +76,8 @@ impl StarkInfo {
         fri_exp.keep2ns = Some(true);
         ctx.pil.expressions.push(fri_exp);
 
-        pil_code_gen(ctx, self.fri_exp_id, false, &"".to_string());
+        pil_code_gen(ctx, self.fri_exp_id, false, &"".to_string())?;
         self.step52ns = build_code(ctx);
+        Ok(())
     }
 }

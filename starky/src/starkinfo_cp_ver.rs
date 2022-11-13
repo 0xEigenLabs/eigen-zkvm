@@ -1,3 +1,4 @@
+use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::f3g::F3G;
 use crate::helper::get_ks;
@@ -10,8 +11,8 @@ use crate::types::PolIdentity;
 use std::collections::HashMap;
 
 impl StarkInfo {
-    pub fn generate_constraint_polynomial_verifier(&mut self, ctx: &mut Context) {
-        pil_code_gen(ctx, self.c_exp, false, &"correctQ".to_string());
+    pub fn generate_constraint_polynomial_verifier(&mut self, ctx: &mut Context) -> Result<()> {
+        pil_code_gen(ctx, self.c_exp, false, &"correctQ".to_string())?;
 
         let mut code = build_code(ctx);
 
@@ -61,5 +62,6 @@ impl StarkInfo {
         code.tmp_used = ctx.tmp_used;
         self.verifier_code = code;
         self.ev_map = ctx_f.ev_map.clone();
+        Ok(())
     }
 }

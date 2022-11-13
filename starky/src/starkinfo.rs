@@ -107,7 +107,7 @@ impl StarkInfo {
             calculated_mark: HashMap::new(),
             exp_id: -1,
         };
-        info.generate_pubulic_calculators(&mut ctx);
+        info.generate_pubulic_calculators(&mut ctx)?;
 
         let mut ctx = Context {
             pil: pil,
@@ -121,7 +121,7 @@ impl StarkInfo {
             calculated_mark: HashMap::new(),
         };
 
-        info.generate_step2(&mut ctx);
+        info.generate_step2(&mut ctx)?;
         println!("{:?}, {:?}", pil, info);
 
         let mut ctx2ns = Context {
@@ -143,7 +143,7 @@ impl StarkInfo {
         let publics = ctx.pil.publics.clone();
         for p in publics.iter() {
             if p.polType.as_str() == "imP" {
-                pil_code_gen(ctx, p.polId, false, &"".to_string());
+                pil_code_gen(ctx, p.polId, false, &"".to_string())?;
                 let mut segment = build_code(ctx);
 
                 let mut ctx_f = ContextF {
@@ -178,7 +178,7 @@ impl StarkInfo {
         Ok(())
     }
 
-    pub fn generate_step2(&mut self, ctx: &mut Context) {
+    pub fn generate_step2(&mut self, ctx: &mut Context) -> Result<()> {
         let ppi = ctx.pil.plookupIdentities.clone();
         for pi in ppi.iter() {
             let u = E::challenge("u".to_string());
@@ -220,8 +220,8 @@ impl StarkInfo {
             f_exp.keep = Some(true);
             ctx.pil.expressions.push(f_exp);
 
-            pil_code_gen(ctx, f_exp_id.clone(), false, &"".to_string());
-            pil_code_gen(ctx, t_exp_id.clone(), false, &"".to_string());
+            pil_code_gen(ctx, f_exp_id.clone(), false, &"".to_string())?;
+            pil_code_gen(ctx, t_exp_id.clone(), false, &"".to_string())?;
 
             let h1_id = ctx.pil.nCommitments;
             ctx.pil.nCommitments += 1;
@@ -240,5 +240,6 @@ impl StarkInfo {
                 den_id: 0,
             });
         }
+        Ok(())
     }
 }

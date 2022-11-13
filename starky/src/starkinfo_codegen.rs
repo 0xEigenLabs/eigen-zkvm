@@ -149,11 +149,11 @@ impl EVIdx {
 // mode: "" by default
 pub fn pil_code_gen(ctx: &mut Context, exp_id: i32, prime: bool, mode: &String) -> Result<()> {
     if mode.as_str() == "evalQ" && prime {
-        pil_code_gen(ctx, exp_id, false, mode);
+        pil_code_gen(ctx, exp_id, false, mode)?;
         if ctx.pil.expressions[exp_id as usize].idQ.is_some()
             && !ctx.pil.expressions[exp_id as usize].keep2ns.is_none()
         {
-            pil_code_gen(ctx, exp_id, true, &"".to_string());
+            pil_code_gen(ctx, exp_id, true, &"".to_string())?;
         }
         return Ok(());
     }
@@ -168,7 +168,7 @@ pub fn pil_code_gen(ctx: &mut Context, exp_id: i32, prime: bool, mode: &String) 
     }
 
     let expr = ctx.pil.expressions[exp_id as usize].clone();
-    calculate_deps(ctx, &expr, prime, exp_id, &mode);
+    calculate_deps(ctx, &expr, prime, exp_id, &mode)?;
 
     let mut code_ctx = ContextC {
         pil: ctx.pil,
@@ -583,12 +583,12 @@ pub fn calculate_deps(
         if prime && expr.next.is_some() {
             expression_error(ctx.pil, "Double prime".to_string(), exp_id, id)?;
         }
-        pil_code_gen(ctx, id, prime || expr.next.is_some(), mode);
+        pil_code_gen(ctx, id, prime || expr.next.is_some(), mode)?;
     }
     match &expr.values {
         Some(x) => {
             for e in x.iter() {
-                calculate_deps(ctx, e, prime, exp_id, mode);
+                calculate_deps(ctx, e, prime, exp_id, mode)?;
             }
         }
         &None => {}
