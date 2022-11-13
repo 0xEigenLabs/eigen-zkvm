@@ -2,7 +2,7 @@ use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps as E;
 use crate::f3g as field;
 use crate::starkinfo_codegen::{
-    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, Node, Segment,
+    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node, Segment,
 };
 use crate::types::{Expression, StarkStruct, PIL};
 use std::collections::HashMap;
@@ -55,6 +55,8 @@ pub struct StarkInfo {
     pub publics_code: Vec<Segment>,
     pub step4: Segment,
     pub step42ns: Segment,
+    pub ev_map: Vec<Node>,
+    pub verifier_code: Segment,
 }
 
 impl StarkInfo {
@@ -86,6 +88,8 @@ impl StarkInfo {
             c_exp: 0,
             step4: Segment::default(),
             step42ns: Segment::default(),
+            ev_map: Vec::new(),
+            verifier_code: Segment::default(),
         };
 
         let mut ctx = Context {
@@ -141,6 +145,8 @@ impl StarkInfo {
                 let mut ctx_f = ContextF {
                     exp_map: HashMap::new(),
                     tmp_used: segment.tmp_used,
+                    ev_idx: EVIdx::new(),
+                    ev_map: Vec::new(),
                 };
 
                 let fix_ref = |r: &mut Node, ctx: &mut ContextF| {

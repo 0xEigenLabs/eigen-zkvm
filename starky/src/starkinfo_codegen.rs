@@ -28,10 +28,12 @@ pub struct ContextC<'a> {
     pub code: Vec<Subcode>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ContextF {
     pub exp_map: HashMap<(i32, i32), i32>,
     pub tmp_used: i32,
+    pub ev_idx: EVIdx,
+    pub ev_map: Vec<Node>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -101,6 +103,45 @@ struct MapSections {
     pub exps_withq_2ns: i32,
     pub exps_withoutq_n: i32,
     pub exps_withoutq_2ns: i32,
+}
+
+#[derive(Debug, Clone)]
+pub struct EVIdx {
+    pub cm: HashMap<(i32, i32), i32>,
+    pub q: HashMap<(i32, i32), i32>,
+    pub const_: HashMap<(i32, i32), i32>,
+}
+
+impl EVIdx {
+    pub fn new() -> Self {
+        EVIdx {
+            cm: HashMap::new(),
+            q: HashMap::new(),
+            const_: HashMap::new(),
+        }
+    }
+
+    pub fn get(&self, type_: &str, p: i32, id: i32) -> Option<&i32> {
+        if type_ == "cm" {
+            self.cm.get(&(p, id))
+        } else if type_ == "q" {
+            self.q.get(&(p, id))
+        } else {
+            assert_eq!(type_, "const");
+            self.const_.get(&(p, id))
+        }
+    }
+
+    pub fn set(&mut self, type_: &str, p: i32, id: i32, idx: i32) {
+        if type_ == "cm" {
+            self.cm.insert((p, id), idx);
+        } else if type_ == "q" {
+            self.cm.insert((p, id), idx);
+        } else {
+            assert_eq!(type_, "const");
+            self.const_.insert((p, id), idx);
+        }
+    }
 }
 
 //

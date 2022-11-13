@@ -23,6 +23,7 @@ mod starkinfo;
 mod starkinfo_Z;
 mod starkinfo_codegen;
 mod starkinfo_cp_prover;
+mod starkinfo_cp_ver;
 
 #[macro_use]
 extern crate ff;
