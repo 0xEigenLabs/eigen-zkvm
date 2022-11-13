@@ -4,7 +4,7 @@ use crate::f3g::F3G;
 use crate::helper::get_ks;
 use crate::starkinfo::{CICTX, PECTX, StarkInfo};
 use crate::starkinfo_codegen::{
-    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node, PolType, MapOffsetOrDeg, Segment
+    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node, PolType, MapOffsetOrDeg, Segment, Section
 };
 use crate::types::{PIL, Expression, StarkStruct};
 use std::collections::HashMap;
@@ -167,6 +167,44 @@ impl StarkInfo {
         self.fix_prover_code(&mut self.step42ns, "2ns");
         self.fix_prover_code(&mut self.step52ns, "2ns");
 
+        let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
+            if r.type_.as_str() == "cm" {
+                let p1 = self.var_pol_map[self.cm_2ns[r.id.unwrap() as usize]];
+                match p1.section.as_str() {
+                    "cm1_2ns" => { r.type_ = "tree1".to_string(); },
+                    "cm2_2ns" => { r.type_ = "tree2".to_string(); },
+                    "cm3_2ns" => { r.type_ = "tree3".to_string(); },
+                    _ => { panic!("Invalid cm section"); },
+                }
+                r.tree_pos = p1.section_pos;
+                r.dim = p1.dim;
+            } else if r.type_.as_str() == "q" {
+                let p2 = self.var_pol_map[self.qs[r.id.unwrap() as usize]];
+                r.type_ = "tree4".to_string();
+                r.tree_pos = p2.section_pos;
+                r.dim = p2.dim;
+            }
+        };
+
+        iterate_code(&mut self.verifier_query_code, fix_ref, ctx);
+
+        /*
+    for (let i=0; i<res.nPublics; i++) {
+        if (res.publicsCode[i]) {
+            setCodeDimensions(res.publicsCode[i], res, 1);
+        }
+    }
+
+    setCodeDimensions(res.step2prev, res, 1);
+    setCodeDimensions(res.step3prev,res, 1);
+    setCodeDimensions(res.step4, res, 1);
+    setCodeDimensions(res.step42ns, res, 1);
+    setCodeDimensions(res.step52ns, res, 1);
+    setCodeDimensions(res.verifierCode, res, 3);
+    setCodeDimensions(res.verifierQueryCode, res, 1);
+        */
+
+
         Ok(())
     }
 
@@ -179,9 +217,7 @@ impl StarkInfo {
             dom: dom.to_string(),
         };
 
-
         let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
-
             match r.type_.as_str() {
                 "cm" =>  {
                     if ctx.dom.as_str() == "n" {
@@ -241,40 +277,58 @@ impl StarkInfo {
         segment.tmp_used = ctx_f.tmp_used;
     }
 
+    //FIXME: use it as Section's method
+    fn set_section_field(name: &str, sec: &mut Section, value: i32) {
+        match name {
+            "cm1_n" => { sec.cm1_n = value; },
+            "cm1_2ns" => { sec.cm1_2ns = value; },
+            "cm2_n" => {sec.cm2_n = value; },
+            "cm2_2ns" => { sec.cm2_2ns = value; },
+            "cm3_n" => { sec.cm3_n = value; },
+            "cm3_2ns" => { sec.cm3_2ns = value;  },
+            "q_2ns" => {sec.q_2ns = value; },
+            "exps_withq_n" => { sec.exps_withq_2ns = value; },
+            "exps_withq_2ns" => { sec.exps_withq_2ns = value; },
+            "exps_withoutq_n" => { sec.exps_withoutq_n = value; },
+            "exps_withoutq_2ns" => {sec.exps_withoutq_2ns = value; },
+            _ => { panic!("invalid domain {}", name); },
+        }
+    }
+
     fn map_section(&mut self) -> Result<()> {
+        let names: [&str] = [
+            "cm1_n",
+            "cm1_2ns",
+            "cm2_n",
+            "cm2_2ns",
+            "cm3_n",
+            "cm3_2ns",
+            "q_2ns",
+            "exps_withq_n",
+            "exps_withq_2ns",
+            "exps_withoutq_n",
+            "exps_withoutq_2ns",
+        ];
 
-        //map sections  cm1_n
-        //map sections  cm1_2ns
-        //map sections  cm2_n
-        //map sections  cm2_2ns
-        //map sections  cm3_n
-        //map sections  cm3_2ns
-        //map sections  q_2ns
-        //map sections  exps_withq_n
-        //map sections  exps_withq_2ns
-        //map sections  exps_withoutq_n
-        //map sections  exps_withoutq_2ns
-
-        let mut p = 0;
-        for e in 1..=3 {
-
-
-            for pp in self.var_pol_map.iter_mut() {
-                if pp.section == s && pp.dim == e {
-                    pp.section_pos = p;
-                    p += e;
+        for s in names.iter() {
+            let mut p = 0;
+            for e in 1..=3 {
+                for pp in self.var_pol_map.iter_mut() {
+                    if pp.section == s && pp.dim == e {
+                        pp.section_pos = p;
+                        p += e;
+                    }
+                }
+                if e == 1 {
+                    Self::set_section_field(s, &mut self.map_sectionsN1, p);
+                }
+                if e == 3 {
+                    Self::set_section_field(s, &mut self.map_sectionsN, p);
                 }
             }
-            if e == 1 {
-                self.map_sectionsN1[s] == p;
-            }
-            if e == 3 {
-                self.map_sectionsN[s] = p;
-            }
+            let t = (self.map_sectionsN[s] - self.map_sectionsN1[s] ) / 3;
+            Self::set_section_field(s, &mut self.map_sectionsN3, t);
         }
-
-        self.map_sectionsN3[s] = (self.map_sectionsN[s] - self.map_sectionsN1[s] ) / 3;
-
         Ok(())
     }
 
@@ -300,5 +354,4 @@ impl StarkInfo {
              _ => panic!("Exp op not defined: {}", exp.op),
         }
     }
-
 }
