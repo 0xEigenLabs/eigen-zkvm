@@ -59,6 +59,8 @@ pub struct StarkInfo {
     pub verifier_code: Segment,
     pub fri_exp_id: i32,
     pub step52ns: Segment,
+    pub verifier_query_code: Segment,
+    pub n_exps: i32,
 }
 
 impl StarkInfo {
@@ -94,6 +96,8 @@ impl StarkInfo {
             verifier_code: Segment::default(),
             fri_exp_id: 0,
             step52ns: Segment::default(),
+            verifier_query_code: Segment::default(),
+            n_exps: 0,
         };
 
         let mut ctx = Context {
