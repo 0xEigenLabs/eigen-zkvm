@@ -57,6 +57,8 @@ pub struct StarkInfo {
     pub step42ns: Segment,
     pub ev_map: Vec<Node>,
     pub verifier_code: Segment,
+    pub fri_exp_id: i32,
+    pub step52ns: Segment,
 }
 
 impl StarkInfo {
@@ -90,6 +92,8 @@ impl StarkInfo {
             step42ns: Segment::default(),
             ev_map: Vec::new(),
             verifier_code: Segment::default(),
+            fri_exp_id: 0,
+            step52ns: Segment::default(),
         };
 
         let mut ctx = Context {
