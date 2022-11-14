@@ -188,6 +188,12 @@ impl StarkInfo {
 
         iterate_code(&mut self.verifier_query_code, fix_ref, ctx);
 
+        for i in 0..self.n_publics {
+            if self.publics_code[i].tmp_used >= 0 { //FIXME
+                set_code_demensions(self.publics_code[i], stark_struct, 1);
+            }
+        }
+
         /*
     for (let i=0; i<res.nPublics; i++) {
         if (res.publicsCode[i]) {
@@ -206,6 +212,31 @@ impl StarkInfo {
 
 
         Ok(())
+    }
+
+    fn set_dim(r: &mut Node, dim: i32, tmp_dim: &mut Vec<i32>) {
+        match r.type_.as_str() {
+            "tmp" => { tmp_dim[r.id.unwrap()] = dim; r.dim = Some(dim); },
+            "exp" | "cm" | "q" => {r.dim = Some(dim); },
+            _ => { panic!("Invalid referenece type set {}", r.type_); }
+        }
+    }
+
+    fn get_dim(r: &mut Node, tmp_dim: &mut Vec<i32>) {
+        let mut d = 0;
+        match r.type_.as_str() {
+            "tmp" => {d = tmp_dim[r.id.unwrap()];},
+            "tree1" | "tree2" | "tree3" | "tree4" => { d = r.dim.unwrap(); },
+
+            "exp" => {
+                d = if self.var_pol_map[self.exps_2ns[r.id.unwrap()]].tmp_used >= 0? {self.var_pol_map[self.exps_2ns[r.id.unwrap()]].dim} else {self.var_pol_map[self.exps_n[r.id.unwrap()].dim};
+            },
+            ""
+        }
+    }
+
+    fn set_code_demensions (segment: &mut Segment, stark_struct: &StarkStruct, dim_x: i32) -> Result<()> {
+
     }
 
     fn fix_prover_code(&mut self, segment: &mut Segment, dom: &str) {
