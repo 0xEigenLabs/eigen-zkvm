@@ -190,52 +190,85 @@ impl StarkInfo {
 
         for i in 0..self.n_publics {
             if self.publics_code[i].tmp_used >= 0 { //FIXME
-                set_code_demensions(self.publics_code[i], stark_struct, 1);
+                self.set_code_dimensions(&mut self.publics_code[i], stark_struct, 1);
             }
         }
 
-        /*
-    for (let i=0; i<res.nPublics; i++) {
-        if (res.publicsCode[i]) {
-            setCodeDimensions(res.publicsCode[i], res, 1);
-        }
-    }
-
-    setCodeDimensions(res.step2prev, res, 1);
-    setCodeDimensions(res.step3prev,res, 1);
-    setCodeDimensions(res.step4, res, 1);
-    setCodeDimensions(res.step42ns, res, 1);
-    setCodeDimensions(res.step52ns, res, 1);
-    setCodeDimensions(res.verifierCode, res, 3);
-    setCodeDimensions(res.verifierQueryCode, res, 1);
-        */
-
+        self.set_code_dimensions(&mut self.step2prev, stark_struct, 1);
+        self.set_code_dimensions(&mut self.step3prev, stark_struct, 1);
+        self.set_code_dimensions(&mut self.step4, stark_struct, 1);
+        self.set_code_dimensions(&mut self.step42ns, stark_struct, 1);
+        self.set_code_dimensions(&mut self.step5ns, stark_struct, 1);
+        self.set_code_dimensions(&mut self.verifier_code, stark_struct, 1);
+        self.set_code_dimensions(&mut self.verifier_query_code, stark_struct, 1);
 
         Ok(())
     }
 
-    fn set_dim(r: &mut Node, dim: i32, tmp_dim: &mut Vec<i32>) {
+    fn set_dim(&self, r: &mut Node, dim: i32, tmp_dim: &mut Vec<i32>) {
         match r.type_.as_str() {
-            "tmp" => { tmp_dim[r.id.unwrap()] = dim; r.dim = Some(dim); },
+            "tmp" => { tmp_dim[r.id.unwrap() as usize] = dim; r.dim = Some(dim); },
             "exp" | "cm" | "q" => {r.dim = Some(dim); },
             _ => { panic!("Invalid referenece type set {}", r.type_); }
         }
     }
 
-    fn get_dim(r: &mut Node, tmp_dim: &mut Vec<i32>) {
+    fn get_dim(&mut self, r: &mut Node, tmp_dim: &mut Vec<i32>, dim_x: i32) -> i32 {
         let mut d = 0;
         match r.type_.as_str() {
-            "tmp" => {d = tmp_dim[r.id.unwrap()];},
+            "tmp" => {d = tmp_dim[r.id.unwrap() as usize];},
             "tree1" | "tree2" | "tree3" | "tree4" => { d = r.dim.unwrap(); },
 
             "exp" => {
-                d = if self.var_pol_map[self.exps_2ns[r.id.unwrap()]].tmp_used >= 0? {self.var_pol_map[self.exps_2ns[r.id.unwrap()]].dim} else {self.var_pol_map[self.exps_n[r.id.unwrap()].dim};
+                d = if self.var_pol_map[self.exps_2ns[r.id.unwrap() as usize]].tmp_used >= 0? {self.var_pol_map[self.exps_2ns[r.id.unwrap() as usize]].dim} else {self.var_pol_map[self.exps_n[r.id.unwrap()].dim};
             },
-            ""
+            "cm" => {
+                d = self.var_pol_map[self.cm_2ns[r.id.unwrap()]].dim;
+            },
+            "q" => {
+                d = self.var_pol_map[self.cm_qs[r.id.unwrap()]].dim;
+            },
+            "const" | "number" | "public" | "Zi" =>  { d = 1; },
+            "eval"| "challenge" | "Z" =>  { d = 3; },
+            "xDivXSubXi" | "xDivXSubWXi" | "x" => { d = dim_x; },
+            _ => { panic!("Invalid reference type get {}", r.type_); }
+        }
+        if d == 0 {
+            panic!("Invalid dim");
+        }
+        r.dim = Some(d);
+        d
+    }
+
+    fn _set_code_dimensions(&self, codes: &mut Vec<Subcode>, tmp_dim: &mut Vec<i32>) {
+        for c in codes.iter_mut() {
+            let mut new_dim = 0;
+
+            match c.op.as_str() {
+                "add" => {
+                    new_dim = std::cmp::max(self.get_dim(c.src[0], tmp_dim), self.get_dim(c.src[1]), tmp_dim);
+                },
+                "sub" => {
+                    new_dim = std::cmp::max(self.get_dim(c.src[0], tmp_dim), self.get_dim(c.src[1], tmp_dim));
+                },
+                "mul" => {
+                    new_dim = std::cmp::max(self.get_dim(c.src[0], tmp_dim), self.get_dim(c.src[1], tmp_dim));
+                },
+                "copy" => {
+                    new_dim = self.get_dim(c.src[0], tmp_dim);
+                },
+                _ => { panic!("Invalid op: {}", c.op); }
+            };
+            self.set_dim(c.dist, dim, tmp_dim);
         }
     }
 
-    fn set_code_demensions (segment: &mut Segment, stark_struct: &StarkStruct, dim_x: i32) -> Result<()> {
+    fn set_code_dimensions (&mut self, segment: &mut Segment, stark_struct: &StarkStruct, dim_x: i32) -> Result<()> {
+        let mut tmp_dim: Vec<i32> = [];
+
+        self._set_code_dimensions(&mut segment.first, &mut tmp_dim);
+        self._set_code_dimensions(&mut segment.i, &mut tmp_dim);
+        self._set_code_dimensions(&mut segment.last, &mut tmp_dim);
 
     }
 
