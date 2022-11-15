@@ -158,18 +158,18 @@ impl StarkInfo {
         };
 
         for p in self.publics_code.iter_mut() {
-            self.fix_prover_code(p, "n");
+            self.fix_prover_code(p, "n", ctx.pil);
         }
 
-        self.fix_prover_code(&mut self.step2prev, "n");
-        self.fix_prover_code(&mut self.step3prev, "n");
-        self.fix_prover_code(&mut self.step4, "n");
-        self.fix_prover_code(&mut self.step42ns, "2ns");
-        self.fix_prover_code(&mut self.step52ns, "2ns");
+        self.fix_prover_code(&mut self.step2prev, "n", ctx.pil);
+        self.fix_prover_code(&mut self.step3prev, "n", ctx.pil);
+        self.fix_prover_code(&mut self.step4, "n", ctx.pil);
+        self.fix_prover_code(&mut self.step42ns, "2ns", ctx.pil);
+        self.fix_prover_code(&mut self.step52ns, "2ns", ctx.pil);
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
             if r.type_.as_str() == "cm" {
-                let p1 = self.var_pol_map[self.cm_2ns[r.id.unwrap() as usize]];
+                let p1 = self.var_pol_map[self.cm_2ns[r.id as usize]];
                 match p1.section.as_str() {
                     "cm1_2ns" => { r.type_ = "tree1".to_string(); },
                     "cm2_2ns" => { r.type_ = "tree2".to_string(); },
@@ -179,17 +179,17 @@ impl StarkInfo {
                 r.tree_pos = p1.section_pos;
                 r.dim = p1.dim;
             } else if r.type_.as_str() == "q" {
-                let p2 = self.var_pol_map[self.qs[r.id.unwrap() as usize]];
+                let p2 = self.var_pol_map[self.qs[r.id as usize]];
                 r.type_ = "tree4".to_string();
                 r.tree_pos = p2.section_pos;
                 r.dim = p2.dim;
             }
         };
 
-        iterate_code(&mut self.verifier_query_code, fix_ref, ctx);
+        iterate_code(&mut self.verifier_query_code, fix_ref, ctx_f);
 
-        for i in 0..self.n_publics {
-            if self.publics_code[i].tmp_used >= 0 { //FIXME
+        for i in 0..(self.n_publics as usize) {
+            if self.publics_code[i].tmp_used >= 0 { //FIXME impl Default for it
                 self.set_code_dimensions(&mut self.publics_code[i], stark_struct, 1);
             }
         }
@@ -198,7 +198,7 @@ impl StarkInfo {
         self.set_code_dimensions(&mut self.step3prev, stark_struct, 1);
         self.set_code_dimensions(&mut self.step4, stark_struct, 1);
         self.set_code_dimensions(&mut self.step42ns, stark_struct, 1);
-        self.set_code_dimensions(&mut self.step5ns, stark_struct, 1);
+        self.set_code_dimensions(&mut self.step52ns, stark_struct, 1);
         self.set_code_dimensions(&mut self.verifier_code, stark_struct, 1);
         self.set_code_dimensions(&mut self.verifier_query_code, stark_struct, 1);
 
@@ -207,7 +207,7 @@ impl StarkInfo {
 
     fn set_dim(&self, r: &mut Node, dim: i32, tmp_dim: &mut Vec<i32>) {
         match r.type_.as_str() {
-            "tmp" => { tmp_dim[r.id.unwrap() as usize] = dim; r.dim = Some(dim); },
+            "tmp" => { tmp_dim[r.id as usize] = dim; r.dim = Some(dim); },
             "exp" | "cm" | "q" => {r.dim = Some(dim); },
             _ => { panic!("Invalid referenece type set {}", r.type_); }
         }
@@ -216,17 +216,17 @@ impl StarkInfo {
     fn get_dim(&mut self, r: &mut Node, tmp_dim: &mut Vec<i32>, dim_x: i32) -> i32 {
         let mut d = 0;
         match r.type_.as_str() {
-            "tmp" => {d = tmp_dim[r.id.unwrap() as usize];},
+            "tmp" => {d = tmp_dim[r.id as usize];},
             "tree1" | "tree2" | "tree3" | "tree4" => { d = r.dim.unwrap(); },
 
             "exp" => {
-                d = if self.var_pol_map[self.exps_2ns[r.id.unwrap() as usize]].tmp_used >= 0? {self.var_pol_map[self.exps_2ns[r.id.unwrap() as usize]].dim} else {self.var_pol_map[self.exps_n[r.id.unwrap()].dim};
+                d = if self.var_pol_map[self.exps_2ns[r.id as usize] as usize].section.len() > 0 {self.var_pol_map[self.exps_2ns[r.id as usize] as usize].dim} else {self.var_pol_map[self.exps_n[r.id as usize] as usize].dim};
             },
             "cm" => {
-                d = self.var_pol_map[self.cm_2ns[r.id.unwrap()]].dim;
+                d = self.var_pol_map[self.cm_2ns[r.id as usize] as usize].dim;
             },
             "q" => {
-                d = self.var_pol_map[self.cm_qs[r.id.unwrap()]].dim;
+                d = self.var_pol_map[self.qs[r.id as usize] as usize].dim;
             },
             "const" | "number" | "public" | "Zi" =>  { d = 1; },
             "eval"| "challenge" | "Z" =>  { d = 3; },
@@ -240,40 +240,42 @@ impl StarkInfo {
         d
     }
 
-    fn _set_code_dimensions(&self, codes: &mut Vec<Subcode>, tmp_dim: &mut Vec<i32>) {
+    fn _set_code_dimensions(&self, codes: &mut Vec<Subcode>, tmp_dim: &mut Vec<i32>, dim_x: i32) {
         for c in codes.iter_mut() {
             let mut new_dim = 0;
 
             match c.op.as_str() {
                 "add" => {
-                    new_dim = std::cmp::max(self.get_dim(c.src[0], tmp_dim), self.get_dim(c.src[1]), tmp_dim);
+                    new_dim = std::cmp::max(self.get_dim(c.src[0], tmp_dim, dim_x), self.get_dim(c.src[1], tmp_dim, dim_x));
                 },
                 "sub" => {
-                    new_dim = std::cmp::max(self.get_dim(c.src[0], tmp_dim), self.get_dim(c.src[1], tmp_dim));
+                    new_dim = std::cmp::max(self.get_dim(c.src[0], tmp_dim, dim_x), self.get_dim(c.src[1], tmp_dim, dim_x));
                 },
                 "mul" => {
-                    new_dim = std::cmp::max(self.get_dim(c.src[0], tmp_dim), self.get_dim(c.src[1], tmp_dim));
+                    new_dim = std::cmp::max(self.get_dim(c.src[0], tmp_dim, dim_x), self.get_dim(c.src[1], tmp_dim, dim_x));
                 },
                 "copy" => {
-                    new_dim = self.get_dim(c.src[0], tmp_dim);
+                    new_dim = self.get_dim(c.src[0], tmp_dim, dim_x);
                 },
                 _ => { panic!("Invalid op: {}", c.op); }
             };
-            self.set_dim(c.dist, dim, tmp_dim);
+            self.set_dim(c.dist, new_dim, tmp_dim);
         }
     }
 
     fn set_code_dimensions (&mut self, segment: &mut Segment, stark_struct: &StarkStruct, dim_x: i32) -> Result<()> {
-        let mut tmp_dim: Vec<i32> = [];
+        let mut tmp_dim: Vec<i32> = vec![];
 
-        self._set_code_dimensions(&mut segment.first, &mut tmp_dim);
-        self._set_code_dimensions(&mut segment.i, &mut tmp_dim);
-        self._set_code_dimensions(&mut segment.last, &mut tmp_dim);
+        self._set_code_dimensions(&mut segment.first, &mut tmp_dim, dim_x);
+        self._set_code_dimensions(&mut segment.i, &mut tmp_dim, dim_x);
+        self._set_code_dimensions(&mut segment.last, &mut tmp_dim, dim_x);
 
+        Ok(())
     }
 
-    fn fix_prover_code(&mut self, segment: &mut Segment, dom: &str) {
+    fn fix_prover_code(&mut self, segment: &mut Segment, dom: &str, pil: &mut PIL) {
         let mut ctx_f = ContextF {
+            pil: pil,
             exp_map: HashMap::new(),
             tmp_used: segment.tmp_used,
             ev_idx: EVIdx::new(),
@@ -285,9 +287,9 @@ impl StarkInfo {
             match r.type_.as_str() {
                 "cm" =>  {
                     if ctx.dom.as_str() == "n" {
-                        r.p = self.cm_n[r.id.unwrap() as usize];
+                        r.p = self.cm_n[r.id as usize];
                     } else if ctx.dom.as_str() == "2ns" {
-                        r.p = self.cm_2ns[r.id.unwrap() as usize];
+                        r.p = self.cm_2ns[r.id as usize];
                     } else {
                         panic!("Invalid domain {}", ctx.dom);
                     }
@@ -297,36 +299,36 @@ impl StarkInfo {
                     if ctx.dom.as_str() == "n" {
                         panic!("Accession q in domain n");
                     } else if ctx.dom.as_str() == "2ns" {
-                        r.p = self.qs[r.id.unwrap() as usize];
+                        r.p = self.qs[r.id as usize];
                     } else {
                         panic!("Invalid domain {}", ctx.dom);
                     }
                 },
 
                 "exp" => {
-                    if ctx.pil.expressions[r.id.unwrap() as usize].idQ.is_some() { //FIXME ctx has no pil
+                    if ctx.pil.expressions[r.id as usize].idQ.is_some() { //FIXME ctx has no pil
                         if ctx.dom.as_str() == "n" {
-                            r.p = self.exps_n[r.id.unwrap() as usize];
+                            r.p = self.exps_n[r.id as usize];
                         } else if ctx.dom.as_str() == "2ns" {
-                            r.p = self.exps_2ns[r.id.unwrap() as usize];
+                            r.p = self.exps_2ns[r.id as usize];
                         } else {
                             panic!("Invalid domain {}", ctx.dom);
                         }
-                    } else if ctx.pil.expressions[r.id.unwrap() as usize].keep.is_some() && ctx.dom.as_str() == "n" {
-                        r.p = self.exps_n[r.id.unwrap() as usize];
-                    } else if ctx.pil.expressions[r.id.unwrap() as usize].keep2ns.is_some() {
+                    } else if ctx.pil.expressions[r.id as usize].keep.is_some() && ctx.dom.as_str() == "n" {
+                        r.p = self.exps_n[r.id as usize];
+                    } else if ctx.pil.expressions[r.id as usize].keep2ns.is_some() {
                         if ctx.dom.as_str() == "n" {
                             panic!("Accession q in domain n");
                         }
                     } else {
                         let p = if r.prime.is_some() {1} else {0};
-                        if ctx.exp_map.get(&(p, r.id.unwrap())).is_none() {
-                            ctx.exp_map.insert((p, r.id.unwrap()), ctx.tmp_used);
+                        if ctx.exp_map.get(&(p, r.id)).is_none() {
+                            ctx.exp_map.insert((p, r.id), ctx.tmp_used);
                             ctx.tmp_used += 1;
                         }
                         r.type_ = "tmp".to_string();
-                        r.exp_id = r.id.unwrap();
-                        r.id = ctx.exp_map.get(&(p, r.id.unwrap()));
+                        r.exp_id = r.id;
+                        r.id = *ctx.exp_map.get(&(p, r.id)).unwrap();
                     }
                 },
                 "const" | "number" | "challenge" | "public" | "tmp" | "Zi" | "xDivXSubXi" | "xDivXSubWXi" | "eval" | "x" => {},
@@ -359,6 +361,23 @@ impl StarkInfo {
         }
     }
 
+    if get_section_field(name: &str, sec: &mut Section) -> i32 {
+        match name {
+            "cm1_n" => { sec.cm1_n },
+            "cm1_2ns" => { sec.cm1_2ns },
+            "cm2_n" => {sec.cm2_n },
+            "cm2_2ns" => { sec.cm2_2ns },
+            "cm3_n" => { sec.cm3_n },
+            "cm3_2ns" => { sec.cm3_2ns },
+            "q_2ns" => {sec.q_2ns },
+            "exps_withq_n" => { sec.exps_withq_2ns },
+            "exps_withq_2ns" => { sec.exps_withq_2ns },
+            "exps_withoutq_n" => { sec.exps_withoutq_n },
+            "exps_withoutq_2ns" => {sec.exps_withoutq_2ns },
+            _ => { panic!("invalid domain {}", name); },
+        }
+    }
+
     fn map_section(&mut self) -> Result<()> {
         let names: [&str] = [
             "cm1_n",
@@ -374,11 +393,11 @@ impl StarkInfo {
             "exps_withoutq_2ns",
         ];
 
-        for s in names.iter() {
+        for (i, s) in names.iter().enumerate() {
             let mut p = 0;
             for e in 1..=3 {
                 for pp in self.var_pol_map.iter_mut() {
-                    if pp.section == s && pp.dim == e {
+                    if &pp.section.as_str() == s && pp.dim == e {
                         pp.section_pos = p;
                         p += e;
                     }
@@ -390,7 +409,7 @@ impl StarkInfo {
                     Self::set_section_field(s, &mut self.map_sectionsN, p);
                 }
             }
-            let t = (self.map_sectionsN[s] - self.map_sectionsN1[s] ) / 3;
+            let t = (Self::get_section_field(s, self.map_sectionsN) - Self::get_section_field(s, self.map_sectionsN1)) / 3;
             Self::set_section_field(s, &mut self.map_sectionsN3, t);
         }
         Ok(())
