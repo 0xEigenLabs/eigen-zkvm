@@ -401,22 +401,6 @@ impl StarkInfo {
         }
     }
 
-    /*
-    fn get_segment_mut(&mut self, kind_type: i32, kind_id: usize) -> &mut Segment {
-        match kind_type {
-            0 => &mut self.publics_code[kind_id],
-            1 => &mut self.step2prev,
-            2 => &mut self.step3prev,
-            3 => &mut self.step4,
-            4 => &mut self.step42ns,
-            5 => &mut self.step52ns,
-            6 => &mut self.verifier_code,
-            7 => &mut self.verifier_query_code,
-            _ => panic!("invalid segment, kind={}", kind_type),
-        }
-    }
-    */
-
     fn set_code_dimensions(
         &mut self,
         segment: &mut Segment,
