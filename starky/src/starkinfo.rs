@@ -5,7 +5,7 @@ use crate::starkinfo_codegen::{
     build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node, PolType,
     Section, SectionVec, Segment,
 };
-use crate::types::{Expression, StarkStruct, PIL};
+use crate::types::{Expression, Public, StarkStruct, PIL};
 use std::collections::HashMap;
 
 #[derive(Default, Debug)]
@@ -86,6 +86,8 @@ pub struct StarkInfo {
     pub map_sectionsN: Section,
     pub map_offsets: Section,
     pub map_deg: Section,
+
+    pub publics: Vec<Public>,
 }
 
 impl StarkInfo {
@@ -133,6 +135,8 @@ impl StarkInfo {
             map_sectionsN: Section::default(),
             map_offsets: Section::default(),
             map_deg: Section::default(),
+
+            publics: Vec::new(),
         };
 
         let mut program = Program {
@@ -185,6 +189,7 @@ impl StarkInfo {
         info.generate_fri_polynomial(&mut ctx, &mut program)?;
         info.generate_fri_verifier(&mut ctx, &mut program)?;
         info.map(&mut ctx, &stark_struct, &mut program)?;
+        info.publics = pil.publics.clone();
 
         Ok(info)
     }
