@@ -38,7 +38,7 @@ impl StarkInfo {
                 Some(_) => fri2_exp.clone(),
                 None => fri1_exp.clone(),
             };
-            let ev_id = ev.id.unwrap();
+            let ev_id = ev.id;
             let e = match ev.type_.as_str() {
                 "cm" => E::cm(ev_id, None),
                 "q" => E::q(ev_id, None),

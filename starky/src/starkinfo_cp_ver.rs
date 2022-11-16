@@ -17,30 +17,26 @@ impl StarkInfo {
         let mut code = build_code(ctx);
 
         let mut ctx_f = ContextF {
+            pil: ctx.pil,
             exp_map: HashMap::new(),
             tmp_used: code.tmp_used,
             ev_idx: EVIdx::new(),
             ev_map: Vec::new(),
+            dom: "".to_string(),
         };
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
             let p = if r.prime.is_some() { 1 } else { 0 };
-            let id = r.id.unwrap();
+            let id = r.id;
             match r.type_.as_str() {
                 "cm" | "q" | "const" => {
                     if ctx.ev_idx.get(r.type_.as_str(), p, id).is_none() {
                         ctx.ev_idx
                             .set(r.type_.as_str(), p, id, ctx.ev_map.len() as i32);
-                        ctx.ev_map.push(Node::new(
-                            r.type_.clone(),
-                            r.id,
-                            None,
-                            None,
-                            r.prime,
-                            None,
-                        ));
+                        ctx.ev_map
+                            .push(Node::new(r.type_.clone(), r.id, None, -1, r.prime, -1));
                         r.prime = None;
-                        r.id = ctx.ev_idx.get(r.type_.as_str(), p, id).clone().copied();
+                        r.id = *ctx.ev_idx.get(r.type_.as_str(), p, id).unwrap();
                         r.type_ = "eval".to_string();
                     }
                 }
@@ -51,14 +47,14 @@ impl StarkInfo {
                     }
                     r.prime = None;
                     r.type_ = "tmp".to_string();
-                    r.id = ctx.exp_map.get(&(p, id)).clone().copied();
+                    r.id = *ctx.exp_map.get(&(p, id)).unwrap();
                 }
 
                 "number" | "challenge" | "public" | "tmp" | "Z" | "x" | "eval" => {}
                 _ => panic!("{}", format!("Invalid reference type: {}", r.type_)),
             }
         };
-        iterate_code(&mut code, fix_ref, &mut ctx_f);
+        iterate_code(&mut code, &fix_ref, &mut ctx_f);
         code.tmp_used = ctx.tmp_used;
         self.verifier_code = code;
         self.ev_map = ctx_f.ev_map.clone();

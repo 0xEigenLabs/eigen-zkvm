@@ -8,14 +8,14 @@ use crate::starkinfo_codegen::{build_code, pil_code_gen, Context};
 use crate::types::PolIdentity;
 
 impl StarkInfo {
-
-    pub fn generate_step3(&mut self, ctx: &mut Context) -> Result<()>{
+    pub fn generate_step3(&mut self, ctx: &mut Context) -> Result<()> {
         self.generate_permutation_LC(ctx)?;
         self.generate_plonk_Z(ctx)?;
         self.generate_permutation_Z(ctx)?;
         self.generate_connections_Z(ctx)?;
 
         self.step3prev = build_code(ctx);
+        Ok(())
     }
 
     pub fn generate_permutation_LC(&mut self, ctx: &mut Context) -> Result<()> {

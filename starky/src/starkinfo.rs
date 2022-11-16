@@ -2,7 +2,8 @@ use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps as E;
 use crate::f3g as field;
 use crate::starkinfo_codegen::{
-    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node, Segment, PolType, Section, SectionVec
+    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node, PolType,
+    Section, SectionVec, Segment,
 };
 use crate::types::{Expression, StarkStruct, PIL};
 use std::collections::HashMap;
@@ -41,7 +42,6 @@ pub struct CICTX {
     pub num_id: i32,
     pub den_id: i32,
 }
-
 
 #[derive(Debug, Default)]
 pub struct StarkInfo {
@@ -127,7 +127,7 @@ impl StarkInfo {
             exps_n: Vec::new(),
             exps_2ns: Vec::new(),
             qs: Vec::new(),
-            map_sections: SectionVec::new(),
+            map_sections: SectionVec::default(),
             map_sectionsN1: Section::default(),
             map_sectionsN3: Section::default(),
             map_sectionsN: Section::default(),
@@ -186,6 +186,7 @@ impl StarkInfo {
                 let mut segment = build_code(ctx);
 
                 let mut ctx_f = ContextF {
+                    pil: ctx.pil,
                     exp_map: HashMap::new(),
                     tmp_used: segment.tmp_used,
                     ev_idx: EVIdx::new(),
@@ -196,16 +197,16 @@ impl StarkInfo {
                 let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
                     let p = if r.prime.is_some() { 1 } else { 0 };
                     if r.type_.as_str() == "exp" {
-                        if ctx.exp_map.get(&(p, r.id.unwrap())).is_none() {
-                            ctx.exp_map.insert((p, r.id.unwrap()), ctx.tmp_used);
+                        if ctx.exp_map.get(&(p, r.id)).is_none() {
+                            ctx.exp_map.insert((p, r.id), ctx.tmp_used);
                             ctx.tmp_used += 1;
                         }
                         r.prime = None;
                         r.type_ = "tmp".to_string();
-                        r.id = Some(*ctx.exp_map.get(&(p, r.id.unwrap())).unwrap());
+                        r.id = *ctx.exp_map.get(&(p, r.id)).unwrap();
                     }
                 };
-                iterate_code(&mut segment, fix_ref, &mut ctx_f);
+                iterate_code(&mut segment, &fix_ref, &mut ctx_f);
 
                 segment.tmp_used = ctx_f.tmp_used;
                 self.publics_code.push(segment);

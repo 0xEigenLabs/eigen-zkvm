@@ -29,7 +29,7 @@ pub struct ContextC<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct ContextF {
+pub struct ContextF<'a> {
     pub pil: &'a PIL,
     pub exp_map: HashMap<(i32, i32), i32>,
     pub tmp_used: i32,
@@ -43,11 +43,11 @@ pub struct Node {
     pub type_: String,
     pub id: i32,
     pub value: Option<String>,
-    pub dim: Option<i32>,
+    pub dim: i32,
     pub prime: Option<bool>,
-    pub tree_pos: Option<i32>,
+    pub tree_pos: i32,
     pub p: i32,
-    pub exp_id : i32,
+    pub exp_id: i32,
 }
 
 impl Node {
@@ -55,9 +55,9 @@ impl Node {
         type_: String,
         id: i32,
         value: Option<String>,
-        dim: Option<i32>,
+        dim: i32,
         prime: Option<bool>,
-        tree_pos: Option<i32>,
+        tree_pos: i32,
     ) -> Self {
         Node {
             type_: type_,
@@ -85,6 +85,17 @@ pub struct Segment {
     pub i: Vec<Subcode>,
     pub last: Vec<Subcode>,
     pub tmp_used: i32,
+}
+
+impl Segment {
+    pub fn get_code_mut_by_idx(&mut self, i: i32) -> &mut Vec<Subcode> {
+        match i {
+            0 => &mut self.first,
+            1 => &mut self.i,
+            2 => &mut self.last,
+            _ => panic!("invalid code idx: {}", i),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -215,38 +226,24 @@ pub fn pil_code_gen(ctx: &mut Context, exp_id: i32, prime: bool, mode: &String) 
             ));
         }
 
-        let rqz = Node::new(
-            "tmp".to_string(),
-            code_ctx.tmp_used,
-            None,
-            None,
-            None,
-            None,
-        );
+        let rqz = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
         code_ctx.tmp_used += 1;
 
-        let exp_node = Node::new(
-            "exp".to_string(),
-            exp_id,
-            None,
-            None,
-            Some(prime),
-            None,
-        );
+        let exp_node = Node::new("exp".to_string(), exp_id, None, -1, Some(prime), -1);
         code_ctx.code.push(Subcode {
             op: "sub".to_string(),
             src: vec![ret_ref.clone(), exp_node],
             dest: rqz.clone(),
         });
 
-        let Zi = Node::new("Zi".to_string(), None, None, None, None, None);
+        let Zi = Node::new("Zi".to_string(), -1, None, -1, None, -1);
         let q = Node::new(
             "q".to_string(),
             ctx.pil.expressions[exp_id as usize].idQ.unwrap(),
             None,
-            None,
+            -1,
             Some(prime),
-            None,
+            -1,
         );
         code_ctx.code.push(Subcode {
             op: "mul".to_string(),
@@ -255,38 +252,24 @@ pub fn pil_code_gen(ctx: &mut Context, exp_id: i32, prime: bool, mode: &String) 
         });
     } else if (mode.as_str() == "correctQ") && (ctx.pil.expressions[exp_id as usize].idQ.is_some())
     {
-        let rqz = Node::new(
-            "tmp".to_string(),
-            code_ctx.tmp_used,
-            None,
-            None,
-            None,
-            None,
-        );
+        let rqz = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
         code_ctx.tmp_used += 1;
 
         let q = Node::new(
             "q".to_string(),
             ctx.pil.expressions[exp_id as usize].idQ.unwrap(),
             None,
-            None,
+            -1,
             Some(prime),
-            None,
+            -1,
         );
-        let Z = Node::new("Z".to_string(), -1, None, None, Some(prime), None);
+        let Z = Node::new("Z".to_string(), -1, None, -1, Some(prime), -1);
         code_ctx.code.push(Subcode {
             op: "mul".to_string(),
             dest: rqz.clone(),
             src: vec![q, Z],
         });
-        let exp_node = Node::new(
-            "exp".to_string(),
-            exp_id,
-            None,
-            None,
-            Some(prime),
-            None,
-        );
+        let exp_node = Node::new("exp".to_string(), exp_id, None, -1, Some(prime), -1);
         code_ctx.code.push(Subcode {
             op: "sub".to_string(),
             dest: exp_node,
@@ -294,26 +277,12 @@ pub fn pil_code_gen(ctx: &mut Context, exp_id: i32, prime: bool, mode: &String) 
         });
     } else {
         if ret_ref.type_.as_str() == "tmp" {
-            let exp_node = Node::new(
-                "exp".to_string(),
-                exp_id,
-                None,
-                None,
-                Some(prime),
-                None,
-            );
+            let exp_node = Node::new("exp".to_string(), exp_id, None, -1, Some(prime), -1);
             let size = code_ctx.code.len() - 1;
             code_ctx.code[size].dest = exp_node;
             code_ctx.tmp_used -= 1;
         } else {
-            let exp_node = Node::new(
-                "exp".to_string(),
-                exp_id,
-                None,
-                None,
-                Some(prime),
-                None,
-            );
+            let exp_node = Node::new("exp".to_string(), exp_id, None, -1, Some(prime), -1);
             code_ctx.code.push(Subcode {
                 op: "copy".to_string(),
                 dest: exp_node,
@@ -351,14 +320,7 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
         "add" => {
             let a = eval_exp(code_ctx, &(values[0]), prime)?;
             let b = eval_exp(code_ctx, &(values[1]), prime)?;
-            let r = Node::new(
-                "tmp".to_string(),
-                code_ctx.tmp_used,
-                None,
-                None,
-                None,
-                None,
-            );
+            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
             code_ctx.tmp_used += 1;
             let c = Subcode {
                 op: "add".to_string(),
@@ -371,14 +333,7 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
         "sub" => {
             let a = eval_exp(code_ctx, &(values[0]), prime)?;
             let b = eval_exp(code_ctx, &(values[1]), prime)?;
-            let r = Node::new(
-                "tmp".to_string(),
-                code_ctx.tmp_used,
-                None,
-                None,
-                None,
-                None,
-            );
+            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
             code_ctx.tmp_used += 1;
             let c = Subcode {
                 op: "sub".to_string(),
@@ -391,14 +346,7 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
         "mul" => {
             let a = eval_exp(code_ctx, &values[0], prime)?;
             let b = eval_exp(code_ctx, &values[1], prime)?;
-            let r = Node::new(
-                "tmp".to_string(),
-                code_ctx.tmp_used,
-                None,
-                None,
-                None,
-                None,
-            );
+            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
             code_ctx.tmp_used += 1;
             let c = Subcode {
                 op: "mul".to_string(),
@@ -412,20 +360,13 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
             let a = eval_exp(code_ctx, &values[0], prime)?;
             let b = Node::new(
                 "number".to_string(),
-                None,
+                -1,
                 Some(exp.const_.unwrap().to_string()),
+                -1,
                 None,
-                None,
-                None,
+                -1,
             );
-            let r = Node::new(
-                "tmp".to_string(),
-                code_ctx.tmp_used,
-                None,
-                None,
-                None,
-                None,
-            );
+            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
             code_ctx.tmp_used += 1;
             let c = Subcode {
                 op: "add".to_string(),
@@ -439,20 +380,13 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
             let a = eval_exp(code_ctx, &values[0], prime)?;
             let b = Node::new(
                 "number".to_string(),
-                None,
+                -1,
                 Some(exp.const_.unwrap().to_string()),
+                -1,
                 None,
-                None,
-                None,
+                -1,
             );
-            let r = Node::new(
-                "tmp".to_string(),
-                code_ctx.tmp_used,
-                None,
-                None,
-                None,
-                None,
-            );
+            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
             code_ctx.tmp_used += 1;
 
             let c = Subcode {
@@ -466,22 +400,15 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
         "neg" => {
             let a = Node::new(
                 "number".to_string(),
-                None,
+                -1,
                 Some("0".to_string()),
+                -1,
                 None,
-                None,
-                None,
+                -1,
             );
             let b = eval_exp(code_ctx, &values[0], prime)?;
 
-            let r = Node::new(
-                "tmp".to_string(),
-                code_ctx.tmp_used,
-                None,
-                None,
-                None,
-                None,
-            );
+            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
             code_ctx.tmp_used += 1;
 
             let c = Subcode {
@@ -498,11 +425,11 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
             }
             Ok(Node::new(
                 "cm".to_string(),
-                exp.id,
+                exp.id.unwrap(),
                 None,
-                None,
+                -1,
                 Some(exp.next.is_some() || prime),
-                None,
+                -1,
             ))
         }
         "const" => {
@@ -511,11 +438,11 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
             }
             Ok(Node::new(
                 "const".to_string(),
-                exp.id,
+                exp.id.unwrap(),
                 None,
-                None,
+                -1,
                 Some(exp.next.is_some() || prime),
-                None,
+                -1,
             ))
         }
         "exp" => {
@@ -524,11 +451,11 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
             }
             Ok(Node::new(
                 "exp".to_string(),
-                exp.id,
+                exp.id.unwrap(),
                 None,
-                None,
+                -1,
                 Some(exp.next.is_some() || prime),
-                None,
+                -1,
             ))
         }
         "q" => {
@@ -537,62 +464,48 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
             }
             Ok(Node::new(
                 "q".to_string(),
-                exp.id,
+                exp.id.unwrap(),
                 None,
-                None,
+                -1,
                 Some(exp.next.is_some() || prime),
-                None,
+                -1,
             ))
         }
         "number" => Ok(Node::new(
             "number".to_string(),
-            None,
+            -1,
             exp.value.clone(),
+            -1,
             None,
-            None,
-            None,
+            -1,
         )),
         "public" => Ok(Node::new(
             "public".to_string(),
-            exp.id,
+            exp.id.unwrap(),
             None,
+            -1,
             None,
-            None,
-            None,
+            -1,
         )),
         "challenge" => Ok(Node::new(
             "challenge".to_string(),
-            exp.id,
+            exp.id.unwrap(),
             None,
+            -1,
             None,
-            None,
-            None,
+            -1,
         )),
         "eval" => Ok(Node::new(
             "eval".to_string(),
-            exp.id,
+            exp.id.unwrap(),
             None,
+            -1,
             None,
-            None,
-            None,
+            -1,
         )),
-        "xDivXSubXi" => Ok(Node::new(
-            "xDivXSubXi".to_string(),
-            None,
-            None,
-            None,
-            None,
-            None,
-        )),
-        "xDivXSubWXi" => Ok(Node::new(
-            "xDivXSubWXi".to_string(),
-            None,
-            None,
-            None,
-            None,
-            None,
-        )),
-        "x" => Ok(Node::new("x".to_string(), None, None, None, None, None)),
+        "xDivXSubXi" => Ok(Node::new("xDivXSubXi".to_string(), -1, None, -1, None, -1)),
+        "xDivXSubWXi" => Ok(Node::new("xDivXSubWXi".to_string(), -1, None, -1, None, -1)),
+        "x" => Ok(Node::new("x".to_string(), -1, None, -1, None, -1)),
         _ => Err(EigenError::InvalidOperator(exp.op.to_string())),
     }
 }
@@ -702,16 +615,18 @@ fn get_exp_and_expprimes(ctx: &mut Context) -> HashMap<i32, bool> {
     res
 }
 
-pub fn iterate_code<F>(code: &mut Segment, f: F, ctx: &mut ContextF)
-    where F: Fn(&mut Node, &mut ContextF)
+pub fn iterate_code<F>(code: &mut Segment, f: &F, ctx: &mut ContextF)
+where
+    F: Fn(&mut Node, &mut ContextF),
 {
     iterate(&mut code.first, f, ctx);
     iterate(&mut code.i, f, ctx);
     iterate(&mut code.last, f, ctx);
 }
 
-fn iterate<F>(code: &mut Vec<Subcode>, f: F, ctx: &mut ContextF)
-    where F: Fn(&mut Node, &mut ContextF)
+fn iterate<F>(code: &mut Vec<Subcode>, f: &F, ctx: &mut ContextF)
+where
+    F: Fn(&mut Node, &mut ContextF),
 {
     for c in code.iter_mut() {
         for s in c.src.iter_mut() {
