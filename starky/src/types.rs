@@ -15,7 +15,7 @@ pub struct Public {
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Reference {
     pub polType: Option<String>,
     #[serde(rename = "type")]
@@ -70,7 +70,7 @@ impl Expression {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PolIdentity {
     pub e: i32,
     pub fileName: String,
@@ -105,7 +105,7 @@ pub struct ConnectionIdentity {
     pub line: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PIL {
     pub nCommitments: i32,
     pub nQ: i32,

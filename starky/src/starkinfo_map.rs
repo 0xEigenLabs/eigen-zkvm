@@ -284,17 +284,17 @@ impl StarkInfo {
         for i in 0..(self.n_publics as usize) {
             if program.publics_code[i].tmp_used >= 0 {
                 //FIXME impl Default for it
-                self.set_code_dimensions(&mut program.publics_code[i], stark_struct, 1);
+                self.set_code_dimensions(&mut program.publics_code[i], 1);
             }
         }
 
-        self.set_code_dimensions(&mut program.step2prev, stark_struct, 1);
-        self.set_code_dimensions(&mut program.step3prev, stark_struct, 1);
-        self.set_code_dimensions(&mut program.step4, stark_struct, 1);
-        self.set_code_dimensions(&mut program.step42ns, stark_struct, 1);
-        self.set_code_dimensions(&mut program.step52ns, stark_struct, 1);
-        self.set_code_dimensions(&mut program.verifier_code, stark_struct, 1);
-        self.set_code_dimensions(&mut program.verifier_query_code, stark_struct, 1);
+        self.set_code_dimensions(&mut program.step2prev, 1);
+        self.set_code_dimensions(&mut program.step3prev, 1);
+        self.set_code_dimensions(&mut program.step4, 1);
+        self.set_code_dimensions(&mut program.step42ns, 1);
+        self.set_code_dimensions(&mut program.step52ns, 1);
+        self.set_code_dimensions(&mut program.verifier_code, 1);
+        self.set_code_dimensions(&mut program.verifier_query_code, 1);
 
         Ok(())
     }
@@ -399,12 +399,7 @@ impl StarkInfo {
         }
     }
 
-    fn set_code_dimensions(
-        &mut self,
-        segment: &mut Segment,
-        stark_struct: &StarkStruct,
-        dim_x: i32,
-    ) -> Result<()> {
+    fn set_code_dimensions(&mut self, segment: &mut Segment, dim_x: i32) -> Result<()> {
         let mut tmp_dim: Vec<i32> = vec![];
 
         self._set_code_dimensions(&mut segment.first, &mut tmp_dim, dim_x);
@@ -564,7 +559,7 @@ impl StarkInfo {
             "exps_withoutq_2ns",
         ];
 
-        for (i, s) in names.iter().enumerate() {
+        for s in names.iter() {
             let mut p = 0;
             for e in 1..=3 {
                 for pp in self.var_pol_map.iter_mut() {

@@ -55,22 +55,6 @@ pub struct Program {
     pub verifier_query_code: Segment,
 }
 
-impl Program {
-    pub fn get(&mut self, kind_type: i32, kind_id: usize) -> &mut Segment {
-        match kind_type {
-            0 => &mut self.publics_code[kind_id],
-            1 => &mut self.step2prev,
-            2 => &mut self.step3prev,
-            3 => &mut self.step4,
-            4 => &mut self.step42ns,
-            5 => &mut self.step52ns,
-            6 => &mut self.verifier_code,
-            7 => &mut self.verifier_query_code,
-            _ => panic!("invalid segment, kind={}", kind_type),
-        }
-    }
-}
-
 #[derive(Debug, Default)]
 pub struct StarkInfo {
     pub var_pol_map: Vec<PolType>,
@@ -78,6 +62,7 @@ pub struct StarkInfo {
     pub n_cm2: i32,
     pub n_cm3: i32,
     pub n_cm4: i32,
+    pub n_q: i32,
     pub pu_ctx: Vec<PUCTX>,
     pub pe_ctx: Vec<PECTX>,
     pub ci_ctx: Vec<CICTX>,
@@ -131,6 +116,7 @@ impl StarkInfo {
             n_cm2: 0,
             n_cm3: 0,
             n_cm4: 0,
+            n_q: 0,
             c_exp: 0,
             ev_map: Vec::new(),
             fri_exp_id: 0,
@@ -161,7 +147,7 @@ impl StarkInfo {
         };
 
         let mut ctx = Context {
-            pil: pil,
+            pil: &mut pil.clone(),
             calculated: Calculated {
                 exps: vec![],
                 exps_prime: vec![],
@@ -173,20 +159,11 @@ impl StarkInfo {
         };
         info.generate_pubulic_calculators(&mut ctx, &mut program)?;
 
-        let mut ctx = Context {
-            pil: pil,
-            calculated: Calculated {
-                exps: vec![],
-                exps_prime: vec![],
-            },
-            tmp_used: 0,
-            code: vec![],
-            exp_id: -1,
-            calculated_mark: HashMap::new(),
-        };
+        info.generate_step2(&mut ctx, &mut program)?; // H1, H2
+        info.n_cm2 = pil.nCommitments - info.n_cm1;
 
-        info.generate_step2(&mut ctx, &mut program)?;
-        println!("{:?}, {:?}", pil, info);
+        info.generate_step3(&mut ctx, &mut program)?; // Z Polynonmial and LC of the permutation checks
+        info.n_cm3 = pil.nCommitments - info.n_cm1 - info.n_cm2;
 
         let mut ctx2ns = Context {
             pil: pil,
@@ -199,6 +176,15 @@ impl StarkInfo {
             calculated_mark: HashMap::new(),
             exp_id: -1,
         };
+
+        info.generate_constraint_polynomial(&mut ctx, &mut ctx2ns, &mut program)?;
+        info.n_cm4 = pil.nCommitments - info.n_cm1 - info.n_cm2 - info.n_cm3;
+        info.n_q = pil.nQ;
+
+        info.generate_constraint_polynomial_verifier(&mut ctx, &mut program)?;
+        info.generate_fri_polynomial(&mut ctx, &mut program)?;
+        info.generate_fri_verifier(&mut ctx, &mut program)?;
+        info.map(&mut ctx, &stark_struct, &mut program)?;
 
         Ok(info)
     }
@@ -219,7 +205,6 @@ impl StarkInfo {
                     exp_map: HashMap::new(),
                     tmp_used: segment.tmp_used,
                     ev_idx: EVIdx::new(),
-                    //ev_map: Vec::new(),
                     dom: "".to_string(),
                     starkinfo: self,
                 };
