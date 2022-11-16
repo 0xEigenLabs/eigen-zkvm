@@ -36,12 +36,8 @@ impl StarkInfo {
             match r.type_.as_str() {
                 "cm" | "q" | "const" => {
                     if ctx.ev_idx.get(r.type_.as_str(), p, id).is_none() {
-                        ctx.ev_idx.set(
-                            r.type_.as_str(),
-                            p,
-                            id,
-                            ctx.starkinfo.ev_map.len() as i32,
-                        );
+                        ctx.ev_idx
+                            .set(r.type_.as_str(), p, id, ctx.starkinfo.ev_map.len() as i32);
                         ctx.starkinfo.ev_map.push(Node::new(
                             r.type_.clone(),
                             r.id,

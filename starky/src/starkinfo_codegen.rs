@@ -556,7 +556,9 @@ pub fn build_code(ctx: &mut Context) -> Segment {
 
     if ctx.calculated.exps.len() < ctx.pil.expressions.len() {
         ctx.calculated.exps.resize(ctx.pil.expressions.len(), false);
-        ctx.calculated.exps_prime.resize(ctx.pil.expressions.len(), false);
+        ctx.calculated
+            .exps_prime
+            .resize(ctx.pil.expressions.len(), false);
     }
     for (i, e) in ctx.pil.expressions.iter().enumerate() {
         if (!e.keep.is_some()) && e.idQ.is_none() {
