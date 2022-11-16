@@ -37,7 +37,7 @@ pub struct ContextF<'a> {
     pub ev_idx: EVIdx,
     pub dom: String,
 
-    pub starkinfo_ptr: &'a mut StarkInfo,
+    pub starkinfo: &'a mut StarkInfo,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -554,6 +554,10 @@ pub fn build_code(ctx: &mut Context) -> Segment {
         tmp_used: ctx.tmp_used,
     };
 
+    if ctx.calculated.exps.len() < ctx.pil.expressions.len() {
+        ctx.calculated.exps.resize(ctx.pil.expressions.len(), false);
+        ctx.calculated.exps_prime.resize(ctx.pil.expressions.len(), false);
+    }
     for (i, e) in ctx.pil.expressions.iter().enumerate() {
         if (!e.keep.is_some()) && e.idQ.is_none() {
             ctx.calculated.exps[i] = false;

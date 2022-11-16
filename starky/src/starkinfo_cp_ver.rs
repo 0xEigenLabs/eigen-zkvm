@@ -27,7 +27,7 @@ impl StarkInfo {
             ev_idx: EVIdx::new(),
             //ev_map: Vec::new(),
             dom: "".to_string(),
-            starkinfo_ptr: self,
+            starkinfo: self,
         };
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
@@ -40,9 +40,9 @@ impl StarkInfo {
                             r.type_.as_str(),
                             p,
                             id,
-                            ctx.starkinfo_ptr.ev_map.len() as i32,
+                            ctx.starkinfo.ev_map.len() as i32,
                         );
-                        ctx.starkinfo_ptr.ev_map.push(Node::new(
+                        ctx.starkinfo.ev_map.push(Node::new(
                             r.type_.clone(),
                             r.id,
                             None,

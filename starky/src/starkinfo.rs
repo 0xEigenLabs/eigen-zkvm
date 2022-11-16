@@ -221,7 +221,7 @@ impl StarkInfo {
                     ev_idx: EVIdx::new(),
                     //ev_map: Vec::new(),
                     dom: "".to_string(),
-                    starkinfo_ptr: self,
+                    starkinfo: self,
                 };
 
                 let fix_ref = |r: &mut Node, ctx: &mut ContextF| {

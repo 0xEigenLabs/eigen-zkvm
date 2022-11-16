@@ -245,8 +245,8 @@ impl StarkInfo {
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
             if r.type_.as_str() == "cm" {
-                let p1 = &ctx.starkinfo_ptr.var_pol_map
-                    [ctx.starkinfo_ptr.cm_2ns[r.id as usize] as usize];
+                let p1 = &ctx.starkinfo.var_pol_map
+                    [ctx.starkinfo.cm_2ns[r.id as usize] as usize];
                 match p1.section.as_str() {
                     "cm1_2ns" => {
                         r.type_ = "tree1".to_string();
@@ -265,7 +265,7 @@ impl StarkInfo {
                 r.dim = p1.dim;
             } else if r.type_.as_str() == "q" {
                 let p2 =
-                    &ctx.starkinfo_ptr.var_pol_map[ctx.starkinfo_ptr.qs[r.id as usize] as usize];
+                    &ctx.starkinfo.var_pol_map[ctx.starkinfo.qs[r.id as usize] as usize];
                 r.type_ = "tree4".to_string();
                 r.tree_pos = p2.section_pos;
                 r.dim = p2.dim;
@@ -279,7 +279,7 @@ impl StarkInfo {
             ev_idx: EVIdx::new(),
             //ev_map: Vec::new(),
             dom: "".to_string(),
-            starkinfo_ptr: self,
+            starkinfo: self,
         }; // FIXME?
         iterate_code(&mut program.verifier_query_code, fix_ref, &mut ctx_f);
 
@@ -424,16 +424,16 @@ impl StarkInfo {
             ev_idx: EVIdx::new(),
             //ev_map: Vec::new(),
             dom: dom.to_string(),
-            starkinfo_ptr: self,
+            starkinfo: self,
         };
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
             match r.type_.as_str() {
                 "cm" => {
                     if ctx.dom.as_str() == "n" {
-                        r.p = ctx.starkinfo_ptr.cm_n[r.id as usize];
+                        r.p = ctx.starkinfo.cm_n[r.id as usize];
                     } else if ctx.dom.as_str() == "2ns" {
-                        r.p = ctx.starkinfo_ptr.cm_2ns[r.id as usize];
+                        r.p = ctx.starkinfo.cm_2ns[r.id as usize];
                     } else {
                         panic!("Invalid domain {}", ctx.dom);
                     }
@@ -443,7 +443,7 @@ impl StarkInfo {
                     if ctx.dom.as_str() == "n" {
                         panic!("Accession q in domain n");
                     } else if ctx.dom.as_str() == "2ns" {
-                        r.p = ctx.starkinfo_ptr.qs[r.id as usize];
+                        r.p = ctx.starkinfo.qs[r.id as usize];
                     } else {
                         panic!("Invalid domain {}", ctx.dom);
                     }
@@ -453,16 +453,16 @@ impl StarkInfo {
                     if ctx.pil.expressions[r.id as usize].idQ.is_some() {
                         //FIXME ctx has no pil
                         if ctx.dom.as_str() == "n" {
-                            r.p = ctx.starkinfo_ptr.exps_n[r.id as usize];
+                            r.p = ctx.starkinfo.exps_n[r.id as usize];
                         } else if ctx.dom.as_str() == "2ns" {
-                            r.p = ctx.starkinfo_ptr.exps_2ns[r.id as usize];
+                            r.p = ctx.starkinfo.exps_2ns[r.id as usize];
                         } else {
                             panic!("Invalid domain {}", ctx.dom);
                         }
                     } else if ctx.pil.expressions[r.id as usize].keep.is_some()
                         && ctx.dom.as_str() == "n"
                     {
-                        r.p = ctx.starkinfo_ptr.exps_n[r.id as usize];
+                        r.p = ctx.starkinfo.exps_n[r.id as usize];
                     } else if ctx.pil.expressions[r.id as usize].keep2ns.is_some() {
                         if ctx.dom.as_str() == "n" {
                             panic!("Accession q in domain n");
