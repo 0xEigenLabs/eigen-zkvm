@@ -2,7 +2,7 @@ use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::f3g::F3G;
 use crate::helper::get_ks;
-use crate::starkinfo::StarkInfo;
+use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo::{CICTX, PECTX};
 use crate::starkinfo_codegen::{
     build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node,
@@ -11,7 +11,11 @@ use crate::types::PolIdentity;
 use std::collections::HashMap;
 
 impl StarkInfo {
-    pub fn generate_constraint_polynomial_verifier(&mut self, ctx: &mut Context) -> Result<()> {
+    pub fn generate_constraint_polynomial_verifier(
+        &mut self,
+        ctx: &mut Context,
+        program: &mut Program,
+    ) -> Result<()> {
         pil_code_gen(ctx, self.c_exp, false, &"correctQ".to_string())?;
 
         let mut code = build_code(ctx);
@@ -21,8 +25,9 @@ impl StarkInfo {
             exp_map: HashMap::new(),
             tmp_used: code.tmp_used,
             ev_idx: EVIdx::new(),
-            ev_map: Vec::new(),
+            //ev_map: Vec::new(),
             dom: "".to_string(),
+            starkinfo_ptr: self,
         };
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
@@ -31,10 +36,20 @@ impl StarkInfo {
             match r.type_.as_str() {
                 "cm" | "q" | "const" => {
                     if ctx.ev_idx.get(r.type_.as_str(), p, id).is_none() {
-                        ctx.ev_idx
-                            .set(r.type_.as_str(), p, id, ctx.ev_map.len() as i32);
-                        ctx.ev_map
-                            .push(Node::new(r.type_.clone(), r.id, None, -1, r.prime, -1));
+                        ctx.ev_idx.set(
+                            r.type_.as_str(),
+                            p,
+                            id,
+                            ctx.starkinfo_ptr.ev_map.len() as i32,
+                        );
+                        ctx.starkinfo_ptr.ev_map.push(Node::new(
+                            r.type_.clone(),
+                            r.id,
+                            None,
+                            -1,
+                            r.prime,
+                            -1,
+                        ));
                         r.prime = None;
                         r.id = *ctx.ev_idx.get(r.type_.as_str(), p, id).unwrap();
                         r.type_ = "eval".to_string();
@@ -54,10 +69,10 @@ impl StarkInfo {
                 _ => panic!("{}", format!("Invalid reference type: {}", r.type_)),
             }
         };
-        iterate_code(&mut code, &fix_ref, &mut ctx_f);
+        iterate_code(&mut code, fix_ref, &mut ctx_f);
         code.tmp_used = ctx.tmp_used;
-        self.verifier_code = code;
-        self.ev_map = ctx_f.ev_map.clone();
+        program.verifier_code = code;
+        //self.ev_map = ctx_f.ev_map.clone();
         Ok(())
     }
 }

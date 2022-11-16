@@ -2,14 +2,18 @@ use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::f3g::F3G;
 use crate::helper::get_ks;
-use crate::starkinfo::StarkInfo;
+use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo::{CICTX, PECTX};
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Calculated, Context};
 use crate::types::PolIdentity;
 use std::collections::HashMap;
 
 impl StarkInfo {
-    pub fn generate_fri_polynomial(&mut self, ctx: &mut Context) -> Result<()> {
+    pub fn generate_fri_polynomial(
+        &mut self,
+        ctx: &mut Context,
+        program: &mut Program,
+    ) -> Result<()> {
         let vf1 = E::challenge("vf1".to_string());
         let vf2 = E::challenge("vf2".to_string());
 
@@ -77,7 +81,7 @@ impl StarkInfo {
         ctx.pil.expressions.push(fri_exp);
 
         pil_code_gen(ctx, self.fri_exp_id, false, &"".to_string())?;
-        self.step52ns = build_code(ctx);
+        program.step52ns = build_code(ctx);
         Ok(())
     }
 }

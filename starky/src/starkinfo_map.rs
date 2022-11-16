@@ -2,7 +2,7 @@ use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::f3g::F3G;
 use crate::helper::get_ks;
-use crate::starkinfo::{StarkInfo, CICTX, PECTX};
+use crate::starkinfo::{Program, StarkInfo, CICTX, PECTX};
 use crate::starkinfo_codegen::{
     build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node, PolType,
     Section, Segment, Subcode,
@@ -11,7 +11,12 @@ use crate::types::{Expression, StarkStruct, PIL};
 use std::collections::HashMap;
 
 impl StarkInfo {
-    pub fn map(&mut self, ctx: &mut Context, stark_struct: &StarkStruct) -> Result<()> {
+    pub fn map(
+        &mut self,
+        ctx: &mut Context,
+        stark_struct: &StarkStruct,
+        program: &mut Program,
+    ) -> Result<()> {
         let mut add_pol = |pol_type: PolType| -> i32 {
             self.var_pol_map.push(pol_type);
             (self.var_pol_map.len() - 1) as i32
@@ -228,19 +233,20 @@ impl StarkInfo {
             map_total_n: -1,
         };
 
-        for i in 0..self.publics_code.len() {
-            self.fix_prover_code(0, i, "n", ctx.pil);
+        for i in 0..program.publics_code.len() {
+            self.fix_prover_code(&mut program.publics_code[i], "n", ctx.pil);
         }
 
-        self.fix_prover_code(1, 0, "n", ctx.pil);
-        self.fix_prover_code(2, 0, "n", ctx.pil);
-        self.fix_prover_code(3, 0, "n", ctx.pil);
-        self.fix_prover_code(4, 0, "2ns", ctx.pil);
-        self.fix_prover_code(5, 0, "2ns", ctx.pil);
+        self.fix_prover_code(&mut program.step2prev, "n", ctx.pil);
+        self.fix_prover_code(&mut program.step3prev, "n", ctx.pil);
+        self.fix_prover_code(&mut program.step4, "n", ctx.pil);
+        self.fix_prover_code(&mut program.step42ns, "2ns", ctx.pil);
+        self.fix_prover_code(&mut program.step52ns, "2ns", ctx.pil);
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
             if r.type_.as_str() == "cm" {
-                let p1 = &self.var_pol_map[self.cm_2ns[r.id as usize] as usize];
+                let p1 = &ctx.starkinfo_ptr.var_pol_map
+                    [ctx.starkinfo_ptr.cm_2ns[r.id as usize] as usize];
                 match p1.section.as_str() {
                     "cm1_2ns" => {
                         r.type_ = "tree1".to_string();
@@ -258,7 +264,8 @@ impl StarkInfo {
                 r.tree_pos = p1.section_pos;
                 r.dim = p1.dim;
             } else if r.type_.as_str() == "q" {
-                let p2 = &self.var_pol_map[self.qs[r.id as usize] as usize];
+                let p2 =
+                    &ctx.starkinfo_ptr.var_pol_map[ctx.starkinfo_ptr.qs[r.id as usize] as usize];
                 r.type_ = "tree4".to_string();
                 r.tree_pos = p2.section_pos;
                 r.dim = p2.dim;
@@ -270,25 +277,26 @@ impl StarkInfo {
             exp_map: HashMap::new(),
             tmp_used: -1,
             ev_idx: EVIdx::new(),
-            ev_map: Vec::new(),
+            //ev_map: Vec::new(),
             dom: "".to_string(),
+            starkinfo_ptr: self,
         }; // FIXME?
-        iterate_code(&mut self.verifier_query_code, &fix_ref, &mut ctx_f);
+        iterate_code(&mut program.verifier_query_code, fix_ref, &mut ctx_f);
 
         for i in 0..(self.n_publics as usize) {
-            if self.publics_code[i].tmp_used >= 0 {
+            if program.publics_code[i].tmp_used >= 0 {
                 //FIXME impl Default for it
-                self.set_code_dimensions(0, i, stark_struct, 1);
+                self.set_code_dimensions(&mut program.publics_code[i], stark_struct, 1);
             }
         }
 
-        self.set_code_dimensions(1, 0, stark_struct, 1);
-        self.set_code_dimensions(2, 0, stark_struct, 1);
-        self.set_code_dimensions(3, 0, stark_struct, 1);
-        self.set_code_dimensions(4, 0, stark_struct, 1);
-        self.set_code_dimensions(5, 0, stark_struct, 1);
-        self.set_code_dimensions(6, 0, stark_struct, 1);
-        self.set_code_dimensions(7, 0, stark_struct, 1);
+        self.set_code_dimensions(&mut program.step2prev, stark_struct, 1);
+        self.set_code_dimensions(&mut program.step3prev, stark_struct, 1);
+        self.set_code_dimensions(&mut program.step4, stark_struct, 1);
+        self.set_code_dimensions(&mut program.step42ns, stark_struct, 1);
+        self.set_code_dimensions(&mut program.step52ns, stark_struct, 1);
+        self.set_code_dimensions(&mut program.verifier_code, stark_struct, 1);
+        self.set_code_dimensions(&mut program.verifier_query_code, stark_struct, 1);
 
         Ok(())
     }
@@ -363,7 +371,6 @@ impl StarkInfo {
     ) {
         for c in codes.iter_mut() {
             let mut new_dim = 0;
-
             match c.op.as_str() {
                 "add" => {
                     new_dim = std::cmp::max(
@@ -394,6 +401,7 @@ impl StarkInfo {
         }
     }
 
+    /*
     fn get_segment_mut(&mut self, kind_type: i32, kind_id: usize) -> &mut Segment {
         match kind_type {
             0 => &mut self.publics_code[kind_id],
@@ -407,45 +415,41 @@ impl StarkInfo {
             _ => panic!("invalid segment, kind={}", kind_type),
         }
     }
+    */
 
     fn set_code_dimensions(
         &mut self,
-        kind_type: i32,
-        kind_id: usize,
+        segment: &mut Segment,
         stark_struct: &StarkStruct,
         dim_x: i32,
     ) -> Result<()> {
-        let segment = self.get_segment_mut(kind_type, kind_id);
         let mut tmp_dim: Vec<i32> = vec![];
 
-        let mut code = segment.get_code_mut_by_idx(0);
-        self._set_code_dimensions(&mut code, &mut tmp_dim, dim_x);
-        let mut code = segment.get_code_mut_by_idx(1);
-        self._set_code_dimensions(&mut code, &mut tmp_dim, dim_x);
-        let mut code = segment.get_code_mut_by_idx(2);
-        self._set_code_dimensions(&mut code, &mut tmp_dim, dim_x);
+        self._set_code_dimensions(&mut segment.first, &mut tmp_dim, dim_x);
+        self._set_code_dimensions(&mut segment.i, &mut tmp_dim, dim_x);
+        self._set_code_dimensions(&mut segment.last, &mut tmp_dim, dim_x);
 
         Ok(())
     }
 
-    fn fix_prover_code(&mut self, kind_type: i32, kind_id: usize, dom: &str, pil: &mut PIL) {
-        let segment = self.get_segment_mut(kind_type, kind_id);
+    fn fix_prover_code(&mut self, segment: &mut Segment, dom: &str, pil: &mut PIL) {
         let mut ctx_f = ContextF {
-            pil: pil,
+            pil,
             exp_map: HashMap::new(),
             tmp_used: segment.tmp_used,
             ev_idx: EVIdx::new(),
-            ev_map: Vec::new(),
+            //ev_map: Vec::new(),
             dom: dom.to_string(),
+            starkinfo_ptr: self,
         };
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
             match r.type_.as_str() {
                 "cm" => {
                     if ctx.dom.as_str() == "n" {
-                        r.p = self.cm_n[r.id as usize];
+                        r.p = ctx.starkinfo_ptr.cm_n[r.id as usize];
                     } else if ctx.dom.as_str() == "2ns" {
-                        r.p = self.cm_2ns[r.id as usize];
+                        r.p = ctx.starkinfo_ptr.cm_2ns[r.id as usize];
                     } else {
                         panic!("Invalid domain {}", ctx.dom);
                     }
@@ -455,7 +459,7 @@ impl StarkInfo {
                     if ctx.dom.as_str() == "n" {
                         panic!("Accession q in domain n");
                     } else if ctx.dom.as_str() == "2ns" {
-                        r.p = self.qs[r.id as usize];
+                        r.p = ctx.starkinfo_ptr.qs[r.id as usize];
                     } else {
                         panic!("Invalid domain {}", ctx.dom);
                     }
@@ -465,16 +469,16 @@ impl StarkInfo {
                     if ctx.pil.expressions[r.id as usize].idQ.is_some() {
                         //FIXME ctx has no pil
                         if ctx.dom.as_str() == "n" {
-                            r.p = self.exps_n[r.id as usize];
+                            r.p = ctx.starkinfo_ptr.exps_n[r.id as usize];
                         } else if ctx.dom.as_str() == "2ns" {
-                            r.p = self.exps_2ns[r.id as usize];
+                            r.p = ctx.starkinfo_ptr.exps_2ns[r.id as usize];
                         } else {
                             panic!("Invalid domain {}", ctx.dom);
                         }
                     } else if ctx.pil.expressions[r.id as usize].keep.is_some()
                         && ctx.dom.as_str() == "n"
                     {
-                        r.p = self.exps_n[r.id as usize];
+                        r.p = ctx.starkinfo_ptr.exps_n[r.id as usize];
                     } else if ctx.pil.expressions[r.id as usize].keep2ns.is_some() {
                         if ctx.dom.as_str() == "n" {
                             panic!("Accession q in domain n");
@@ -498,7 +502,7 @@ impl StarkInfo {
             }
         };
 
-        iterate_code(segment, &fix_ref, &mut ctx_f);
+        iterate_code(segment, fix_ref, &mut ctx_f);
         segment.tmp_used = ctx_f.tmp_used;
     }
 

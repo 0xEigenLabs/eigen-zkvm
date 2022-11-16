@@ -1,4 +1,5 @@
 use crate::errors::{EigenError, Result};
+use crate::starkinfo::StarkInfo;
 use crate::types::Expression;
 use crate::types::PIL;
 use std::collections::HashMap;
@@ -28,14 +29,15 @@ pub struct ContextC<'a> {
     pub code: Vec<Subcode>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ContextF<'a> {
     pub pil: &'a PIL,
     pub exp_map: HashMap<(i32, i32), i32>,
     pub tmp_used: i32,
     pub ev_idx: EVIdx,
-    pub ev_map: Vec<Node>,
     pub dom: String,
+
+    pub starkinfo_ptr: &'a mut StarkInfo,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -615,19 +617,13 @@ fn get_exp_and_expprimes(ctx: &mut Context) -> HashMap<i32, bool> {
     res
 }
 
-pub fn iterate_code<F>(code: &mut Segment, f: &F, ctx: &mut ContextF)
-where
-    F: Fn(&mut Node, &mut ContextF),
-{
+pub fn iterate_code(code: &mut Segment, f: fn(&mut Node, &mut ContextF), ctx: &mut ContextF) {
     iterate(&mut code.first, f, ctx);
     iterate(&mut code.i, f, ctx);
     iterate(&mut code.last, f, ctx);
 }
 
-fn iterate<F>(code: &mut Vec<Subcode>, f: &F, ctx: &mut ContextF)
-where
-    F: Fn(&mut Node, &mut ContextF),
-{
+fn iterate(code: &mut Vec<Subcode>, f: fn(&mut Node, &mut ContextF), ctx: &mut ContextF) {
     for c in code.iter_mut() {
         for s in c.src.iter_mut() {
             f(s, ctx);

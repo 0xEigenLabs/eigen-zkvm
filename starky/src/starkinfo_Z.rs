@@ -2,19 +2,19 @@ use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::f3g::F3G;
 use crate::helper::get_ks;
-use crate::starkinfo::StarkInfo;
+use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo::{CICTX, PECTX};
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Context};
 use crate::types::PolIdentity;
 
 impl StarkInfo {
-    pub fn generate_step3(&mut self, ctx: &mut Context) -> Result<()> {
+    pub fn generate_step3(&mut self, ctx: &mut Context, program: &mut Program) -> Result<()> {
         self.generate_permutation_LC(ctx)?;
         self.generate_plonk_Z(ctx)?;
         self.generate_permutation_Z(ctx)?;
         self.generate_connections_Z(ctx)?;
 
-        self.step3prev = build_code(ctx);
+        program.step3prev = build_code(ctx);
         Ok(())
     }
 

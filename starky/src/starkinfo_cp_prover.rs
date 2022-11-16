@@ -2,7 +2,7 @@ use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::f3g::F3G;
 use crate::helper::get_ks;
-use crate::starkinfo::StarkInfo;
+use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo::{CICTX, PECTX};
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Calculated, Context};
 use crate::types::PolIdentity;
@@ -13,6 +13,7 @@ impl StarkInfo {
         &mut self,
         ctx: &mut Context,
         ctx2ns: &mut Context,
+        program: &mut Program,
     ) -> Result<()> {
         let vc = E::challenge("vc".to_string());
         let mut c_exp = E::nop();
@@ -40,8 +41,8 @@ impl StarkInfo {
             }
         }
 
-        self.step4 = build_code(ctx);
-        self.step42ns = build_code(ctx2ns);
+        program.step4 = build_code(ctx);
+        program.step42ns = build_code(ctx2ns);
         Ok(())
     }
 }
