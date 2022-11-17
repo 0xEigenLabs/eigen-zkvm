@@ -73,4 +73,4 @@ Rust: the others
 
 ### HW acceleration
 * Poseidon Hash on GPU/Multicore for 256bits scalar field
-* FFT on GPU/Multicore for polynomial execution
+* FFT on GPU/MultiCore for polynomial execution
