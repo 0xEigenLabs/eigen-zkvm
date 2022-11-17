@@ -197,7 +197,6 @@ impl StarkInfo {
         println!("exps_n: {:?}", self.exps_n);
         println!("exps_2ns: {:?}", self.exps_2ns);
 
-
         self.map_section()?;
         let N = 1 << stark_struct.nBits;
         let Next = 1 << stark_struct.nBitsExt;
