@@ -41,7 +41,7 @@ impl StarkInfo {
         for i in 0..pil.expressions.len() {
             println!("expressions {:?} {:?}", i, pil.expressions.len());
             if pil.expressions[i].idQ.is_some() {
-                pil_code_gen(ctx, pil, i as i32, false, "")?; // FIXME: prime should be undefined
+                pil_code_gen(ctx, pil, i as i32, false, "")?;
                 pil_code_gen(ctx2ns, pil, i as i32, false, "evalQ")?;
             }
         }

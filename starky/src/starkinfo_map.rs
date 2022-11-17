@@ -456,7 +456,7 @@ impl StarkInfo {
                             panic!("Accession q in domain n");
                         }
                     } else {
-                        let p = if r.prime.is_some() { 1 } else { 0 };
+                        let p = if r.prime { 1 } else { 0 };
                         if ctx.exp_map.get(&(p, r.id)).is_none() {
                             ctx.exp_map.insert((p, r.id), ctx.tmp_used);
                             ctx.tmp_used += 1;

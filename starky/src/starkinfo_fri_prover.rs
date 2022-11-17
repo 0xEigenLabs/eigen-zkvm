@@ -40,8 +40,8 @@ impl StarkInfo {
         let x1 = E::challenge("xi".to_string());
         for (i, ev) in self.ev_map.iter().enumerate() {
             let mut fri_exp = match ev.prime {
-                Some(_) => fri2_exp.clone(),
-                None => fri1_exp.clone(),
+                true => fri2_exp.clone(),
+                _ => fri1_exp.clone(),
             };
             let ev_id = ev.id;
             let e = match ev.type_.as_str() {
@@ -56,7 +56,7 @@ impl StarkInfo {
                 fri_exp = E::add(&E::mul(&fri_exp, &vf2), &E::sub(&e, &E::eval(i as i32)));
             }
 
-            if ev.prime.is_some() {
+            if ev.prime {
                 fri2_exp = fri_exp;
             } else {
                 fri1_exp = fri_exp;

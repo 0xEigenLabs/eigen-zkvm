@@ -43,7 +43,7 @@ pub struct Node {
     pub id: i32,
     pub value: Option<String>,
     pub dim: i32,
-    pub prime: Option<bool>,
+    pub prime: bool,
     pub tree_pos: i32,
     pub p: i32,
     pub exp_id: i32,
@@ -55,7 +55,7 @@ impl Node {
         id: i32,
         value: Option<String>,
         dim: i32,
-        prime: Option<bool>,
+        prime: bool,
         tree_pos: i32,
     ) -> Self {
         Node {
@@ -228,23 +228,23 @@ pub fn pil_code_gen(
             ));
         }
 
-        let rqz = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
+        let rqz = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, false, -1);
         code_ctx.tmp_used += 1;
 
-        let exp_node = Node::new("exp".to_string(), exp_id, None, -1, Some(prime), -1);
+        let exp_node = Node::new("exp".to_string(), exp_id, None, -1, prime, -1);
         code_ctx.code.push(Subcode {
             op: "sub".to_string(),
             src: vec![ret_ref.clone(), exp_node],
             dest: rqz.clone(),
         });
 
-        let Zi = Node::new("Zi".to_string(), -1, None, -1, None, -1);
+        let Zi = Node::new("Zi".to_string(), -1, None, -1, false, -1);
         let q = Node::new(
             "q".to_string(),
             pil.expressions[exp_id as usize].idQ.unwrap(),
             None,
             -1,
-            Some(prime),
+            prime,
             -1,
         );
         code_ctx.code.push(Subcode {
@@ -253,7 +253,7 @@ pub fn pil_code_gen(
             dest: q,
         });
     } else if (mode == "correctQ") && (pil.expressions[exp_id as usize].idQ.is_some()) {
-        let rqz = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
+        let rqz = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, false, -1);
         code_ctx.tmp_used += 1;
 
         let q = Node::new(
@@ -261,16 +261,16 @@ pub fn pil_code_gen(
             pil.expressions[exp_id as usize].idQ.unwrap(),
             None,
             -1,
-            Some(prime),
+            prime,
             -1,
         );
-        let Z = Node::new("Z".to_string(), -1, None, -1, Some(prime), -1);
+        let Z = Node::new("Z".to_string(), -1, None, -1, prime, -1);
         code_ctx.code.push(Subcode {
             op: "mul".to_string(),
             dest: rqz.clone(),
             src: vec![q, Z],
         });
-        let exp_node = Node::new("exp".to_string(), exp_id, None, -1, Some(prime), -1);
+        let exp_node = Node::new("exp".to_string(), exp_id, None, -1, prime, -1);
         code_ctx.code.push(Subcode {
             op: "sub".to_string(),
             dest: exp_node,
@@ -278,12 +278,12 @@ pub fn pil_code_gen(
         });
     } else {
         if ret_ref.type_.as_str() == "tmp" {
-            let exp_node = Node::new("exp".to_string(), exp_id, None, -1, Some(prime), -1);
+            let exp_node = Node::new("exp".to_string(), exp_id, None, -1, prime, -1);
             let size = code_ctx.code.len() - 1;
             code_ctx.code[size].dest = exp_node;
             code_ctx.tmp_used -= 1;
         } else {
-            let exp_node = Node::new("exp".to_string(), exp_id, None, -1, Some(prime), -1);
+            let exp_node = Node::new("exp".to_string(), exp_id, None, -1, prime, -1);
             code_ctx.code.push(Subcode {
                 op: "copy".to_string(),
                 dest: exp_node,
@@ -326,7 +326,7 @@ pub fn eval_exp(
         "add" => {
             let a = eval_exp(code_ctx, pil, &(values[0]), prime)?;
             let b = eval_exp(code_ctx, pil, &(values[1]), prime)?;
-            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
+            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, false, -1);
             code_ctx.tmp_used += 1;
             let c = Subcode {
                 op: "add".to_string(),
@@ -339,7 +339,7 @@ pub fn eval_exp(
         "sub" => {
             let a = eval_exp(code_ctx, pil, &(values[0]), prime)?;
             let b = eval_exp(code_ctx, pil, &(values[1]), prime)?;
-            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
+            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, false, -1);
             code_ctx.tmp_used += 1;
             let c = Subcode {
                 op: "sub".to_string(),
@@ -352,7 +352,7 @@ pub fn eval_exp(
         "mul" => {
             let a = eval_exp(code_ctx, pil, &values[0], prime)?;
             let b = eval_exp(code_ctx, pil, &values[1], prime)?;
-            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
+            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, false, -1);
             code_ctx.tmp_used += 1;
             let c = Subcode {
                 op: "mul".to_string(),
@@ -369,10 +369,10 @@ pub fn eval_exp(
                 -1,
                 Some(exp.const_.unwrap().to_string()),
                 -1,
-                None,
+                false,
                 -1,
             );
-            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
+            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, false, -1);
             code_ctx.tmp_used += 1;
             let c = Subcode {
                 op: "add".to_string(),
@@ -389,10 +389,10 @@ pub fn eval_exp(
                 -1,
                 Some(exp.const_.unwrap().to_string()),
                 -1,
-                None,
+                false,
                 -1,
             );
-            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
+            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, false, -1);
             code_ctx.tmp_used += 1;
 
             let c = Subcode {
@@ -409,12 +409,12 @@ pub fn eval_exp(
                 -1,
                 Some("0".to_string()),
                 -1,
-                None,
+                false,
                 -1,
             );
             let b = eval_exp(code_ctx, pil, &values[0], prime)?;
 
-            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
+            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, false, -1);
             code_ctx.tmp_used += 1;
 
             let c = Subcode {
@@ -434,7 +434,7 @@ pub fn eval_exp(
                 exp.id.unwrap(),
                 None,
                 -1,
-                Some(exp.next.is_some() || prime),
+                exp.next.is_some() || prime,
                 -1,
             ))
         }
@@ -447,7 +447,7 @@ pub fn eval_exp(
                 exp.id.unwrap(),
                 None,
                 -1,
-                Some(exp.next.is_some() || prime),
+                exp.next.is_some() || prime,
                 -1,
             ))
         }
@@ -460,7 +460,7 @@ pub fn eval_exp(
                 exp.id.unwrap(),
                 None,
                 -1,
-                Some(exp.next.is_some() || prime),
+                exp.next.is_some() || prime,
                 -1,
             ))
         }
@@ -473,7 +473,7 @@ pub fn eval_exp(
                 exp.id.unwrap(),
                 None,
                 -1,
-                Some(exp.next.is_some() || prime),
+                exp.next.is_some() || prime,
                 -1,
             ))
         }
@@ -482,7 +482,7 @@ pub fn eval_exp(
             -1,
             exp.value.clone(),
             -1,
-            None,
+            false,
             -1,
         )),
         "public" => Ok(Node::new(
@@ -490,7 +490,7 @@ pub fn eval_exp(
             exp.id.unwrap(),
             None,
             -1,
-            None,
+            false,
             -1,
         )),
         "challenge" => Ok(Node::new(
@@ -498,7 +498,7 @@ pub fn eval_exp(
             exp.id.unwrap(),
             None,
             -1,
-            None,
+            false,
             -1,
         )),
         "eval" => Ok(Node::new(
@@ -506,12 +506,19 @@ pub fn eval_exp(
             exp.id.unwrap(),
             None,
             -1,
-            None,
+            false,
             -1,
         )),
-        "xDivXSubXi" => Ok(Node::new("xDivXSubXi".to_string(), -1, None, -1, None, -1)),
-        "xDivXSubWXi" => Ok(Node::new("xDivXSubWXi".to_string(), -1, None, -1, None, -1)),
-        "x" => Ok(Node::new("x".to_string(), -1, None, -1, None, -1)),
+        "xDivXSubXi" => Ok(Node::new("xDivXSubXi".to_string(), -1, None, -1, false, -1)),
+        "xDivXSubWXi" => Ok(Node::new(
+            "xDivXSubWXi".to_string(),
+            -1,
+            None,
+            -1,
+            false,
+            -1,
+        )),
+        "x" => Ok(Node::new("x".to_string(), -1, None, -1, false, -1)),
         _ => Err(EigenError::InvalidOperator(exp.op.to_string())),
     }
 }
