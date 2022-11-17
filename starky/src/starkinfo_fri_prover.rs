@@ -41,6 +41,7 @@ impl StarkInfo {
         let mut fri2_exp = E::nop();
         //let xi = E::challenge("xi".to_string());
         println!("ev_map {:?}", self.ev_map);
+
         for (i, ev) in self.ev_map.iter().enumerate() {
             let mut fri_exp = match ev.prime {
                 true => fri2_exp.clone(),
@@ -67,6 +68,7 @@ impl StarkInfo {
         }
 
         println!("fri_exp 3 {:?}", fri_exp);
+
         fri1_exp = E::mul(&fri1_exp, &E::xDivXSubXi());
         if !E::is_nop(&fri_exp) {
             fri_exp = E::add(&E::mul(&vf1, &fri_exp), &fri1_exp);
@@ -75,6 +77,7 @@ impl StarkInfo {
         }
 
         println!("fri_exp 4 {:?}", fri_exp);
+
         fri2_exp = E::mul(&fri2_exp, &E::xDivXSubWXi());
         if !E::is_nop(&fri_exp) {
             fri_exp = E::add(&E::mul(&vf1, &fri_exp), &fri2_exp);
@@ -94,6 +97,7 @@ impl StarkInfo {
             "pil_code_gen in fri prover {:?}",
             pil.expressions[self.fri_exp_id as usize]
         );
+
         pil_code_gen(ctx, pil, self.fri_exp_id, false, "")?;
         program.step52ns = build_code(ctx, pil);
         Ok(())

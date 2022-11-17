@@ -52,6 +52,7 @@ impl StarkInfo {
             if E::is_nop(&t_exp) {
                 panic!("nop {}", format!("{:?}", t_exp));
             }
+
             let t_exp_id = pil.expressions.len() as i32;
             pil.expressions.push(t_exp);
 
@@ -77,6 +78,7 @@ impl StarkInfo {
             if E::is_nop(&f_exp) {
                 panic!("nop {}", format!("{:?}", f_exp));
             }
+
             pil.expressions.push(f_exp);
 
             pil_code_gen(ctx, pil, f_exp_id.clone(), false, "")?;
@@ -123,6 +125,7 @@ impl StarkInfo {
             if E::is_nop(&c1) {
                 panic!("nop {:?}", format!("{:?}", c1));
             }
+
             self.pu_ctx[i].c1_id = pil.expressions.len() as i32;
             pil.expressions.push(c1);
             pil.polIdentities.push(PolIdentity {
@@ -151,6 +154,7 @@ impl StarkInfo {
             if E::is_nop(&num_exp) {
                 panic!("nop {:?}", format!("{:?}", num_exp));
             }
+
             self.pu_ctx[i].num_id = pil.expressions.len() as i32;
             pil.expressions.push(num_exp);
 
@@ -176,6 +180,7 @@ impl StarkInfo {
             if E::is_nop(&den_exp) {
                 panic!("nop {:?}", format!("{:?}", den_exp));
             }
+
             pil.expressions.push(den_exp);
 
             let num = E::exp(self.pu_ctx[i].num_id, None);
@@ -187,6 +192,7 @@ impl StarkInfo {
             if E::is_nop(&c2) {
                 panic!("nop {:?}", format!("{:?}", c2));
             }
+
             pil.expressions.push(c2);
 
             pil.polIdentities.push(PolIdentity {
@@ -226,6 +232,7 @@ impl StarkInfo {
             if E::is_nop(&c1) {
                 panic!("nop {:?}", format!("{:?}", c1));
             }
+
             pil.expressions.push(c1);
             pil.polIdentities.push(PolIdentity {
                 e: self.pe_ctx[i].c1_id.clone(),
@@ -241,6 +248,7 @@ impl StarkInfo {
             if E::is_nop(&num_exp) {
                 panic!("nop {:?}", format!("{:?}", num_exp));
             }
+
             pil.expressions.push(num_exp);
 
             let mut den_exp = E::add(&t, &beta);
@@ -249,6 +257,7 @@ impl StarkInfo {
             if E::is_nop(&den_exp) {
                 panic!("nop {:?}", format!("{:?}", den_exp));
             }
+
             pil.expressions.push(den_exp);
 
             let mut c2 = E::sub(
@@ -390,9 +399,11 @@ impl StarkInfo {
             );
             c2.deg = 2;
             ci_ctx.c2_id = pil.expressions.len() as i32;
+
             if E::is_nop(&c2) {
                 panic!("nop {:?}", format!("{:?}", c2));
             }
+
             pil.expressions.push(c2);
             pil.polIdentities.push(PolIdentity {
                 e: ci_ctx.c2_id.clone(),

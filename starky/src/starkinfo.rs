@@ -191,6 +191,7 @@ impl StarkInfo {
             exp_id: -1,
         };
         println!("generate_constraint_polynomial");
+
         info.generate_constraint_polynomial(&mut ctx, &mut ctx2ns, pil, &mut program)?;
         info.n_cm4 = pil.nCommitments - info.n_cm1 - info.n_cm2 - info.n_cm3;
         info.n_q = pil.nQ;
@@ -338,6 +339,7 @@ impl StarkInfo {
             if E::is_nop(&f_exp) {
                 panic!("nop {}", format!("{:?}", f_exp));
             }
+
             pil.expressions.push(f_exp);
 
             pil_code_gen(ctx, pil, f_exp_id.clone(), false, "")?;

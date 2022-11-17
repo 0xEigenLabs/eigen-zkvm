@@ -68,6 +68,7 @@ impl StarkInfo {
             println!("ev_map: {:?}", ctx.starkinfo.ev_map);
         };
         println!("fri prover: {:?}", code);
+
         iterate_code(&mut code, fix_ref, &mut ctx_f, pil);
         code.tmp_used = ctx.tmp_used;
         program.verifier_code = code;

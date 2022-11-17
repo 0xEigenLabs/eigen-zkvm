@@ -46,6 +46,7 @@ impl StarkInfo {
 
             "number" | "challenge" | "public" | "tmp" | "xDivXSubXi" | "xDivXSubWXi" | "Z"
             | "x" | "eval" | "tree1" | "tree2" | "tree3" | "tree3" => {}
+
             _ => panic!("{}", format!("Invalid reference type: {}", r.type_)),
         };
         iterate_code(&mut code, fix_ref, &mut ctx_f, pil);

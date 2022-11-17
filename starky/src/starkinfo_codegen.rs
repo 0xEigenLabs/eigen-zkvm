@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps;
+
 use crate::starkinfo::StarkInfo;
 use crate::types::Expression;
 use crate::types::PIL;
@@ -35,6 +36,7 @@ pub struct ContextF<'a> {
     pub tmp_used: i32,
     pub ev_idx: EVIdx,
     pub dom: String,
+
     pub starkinfo: &'a mut StarkInfo,
 }
 
