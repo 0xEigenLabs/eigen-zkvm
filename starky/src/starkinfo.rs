@@ -151,7 +151,6 @@ impl StarkInfo {
         };
 
         let mut ctx = Context {
-            pil: &mut pil.clone(),
             calculated: Calculated {
                 exps: vec![],
                 exps_prime: vec![],
@@ -161,16 +160,15 @@ impl StarkInfo {
             calculated_mark: HashMap::new(),
             exp_id: -1,
         };
-        info.generate_pubulic_calculators(&mut ctx, &mut program)?;
+        info.generate_pubulic_calculators(&mut ctx, pil, &mut program)?;
 
-        info.generate_step2(&mut ctx, &mut program)?; // H1, H2
+        info.generate_step2(&mut ctx, pil, &mut program)?; // H1, H2
         info.n_cm2 = pil.nCommitments - info.n_cm1;
 
-        info.generate_step3(&mut ctx, &mut program)?; // Z Polynonmial and LC of the permutation checks
+        info.generate_step3(&mut ctx, pil, &mut program)?; // Z Polynonmial and LC of the permutation checks
         info.n_cm3 = pil.nCommitments - info.n_cm1 - info.n_cm2;
 
         let mut ctx2ns = Context {
-            pil: pil,
             calculated: Calculated {
                 exps: Vec::new(),
                 exps_prime: Vec::new(),
@@ -181,14 +179,14 @@ impl StarkInfo {
             exp_id: -1,
         };
 
-        info.generate_constraint_polynomial(&mut ctx, &mut ctx2ns, &mut program)?;
+        info.generate_constraint_polynomial(&mut ctx, &mut ctx2ns, pil, &mut program)?;
         info.n_cm4 = pil.nCommitments - info.n_cm1 - info.n_cm2 - info.n_cm3;
         info.n_q = pil.nQ;
 
-        info.generate_constraint_polynomial_verifier(&mut ctx, &mut program)?;
-        info.generate_fri_polynomial(&mut ctx, &mut program)?;
-        info.generate_fri_verifier(&mut ctx, &mut program)?;
-        info.map(&mut ctx, &stark_struct, &mut program)?;
+        info.generate_constraint_polynomial_verifier(&mut ctx, pil, &mut program)?;
+        info.generate_fri_polynomial(&mut ctx, pil, &mut program)?;
+        info.generate_fri_verifier(&mut ctx, pil, &mut program)?;
+        info.map(&mut ctx, pil, &stark_struct, &mut program)?;
         info.publics = pil.publics.clone();
 
         Ok(info)
@@ -197,16 +195,16 @@ impl StarkInfo {
     pub fn generate_pubulic_calculators(
         &mut self,
         ctx: &mut Context,
+        pil: &mut PIL,
         program: &mut Program,
     ) -> Result<()> {
-        let publics = ctx.pil.publics.clone();
+        let publics = pil.publics.clone();
         for p in publics.iter() {
             if p.polType.as_str() == "imP" {
-                pil_code_gen(ctx, p.polId, false, &"".to_string())?;
-                let mut segment = build_code(ctx);
+                pil_code_gen(ctx, pil, p.polId, false, "")?;
+                let mut segment = build_code(ctx, pil);
 
                 let mut ctx_f = ContextF {
-                    pil: ctx.pil,
                     exp_map: HashMap::new(),
                     tmp_used: segment.tmp_used,
                     ev_idx: EVIdx::new(),
@@ -214,7 +212,7 @@ impl StarkInfo {
                     starkinfo: self,
                 };
 
-                let fix_ref = |r: &mut Node, ctx: &mut ContextF| {
+                let fix_ref = |r: &mut Node, ctx: &mut ContextF, pil: &mut PIL| {
                     let p = if r.prime.is_some() { 1 } else { 0 };
                     if r.type_.as_str() == "exp" {
                         if ctx.exp_map.get(&(p, r.id)).is_none() {
@@ -226,7 +224,7 @@ impl StarkInfo {
                         r.id = *ctx.exp_map.get(&(p, r.id)).unwrap();
                     }
                 };
-                iterate_code(&mut segment, fix_ref, &mut ctx_f);
+                iterate_code(&mut segment, fix_ref, &mut ctx_f, pil);
 
                 segment.tmp_used = ctx_f.tmp_used;
                 program.publics_code.push(segment);
@@ -239,8 +237,13 @@ impl StarkInfo {
         Ok(())
     }
 
-    pub fn generate_step2(&mut self, ctx: &mut Context, program: &mut Program) -> Result<()> {
-        let ppi = ctx.pil.plookupIdentities.clone();
+    pub fn generate_step2(
+        &mut self,
+        ctx: &mut Context,
+        pil: &mut PIL,
+        program: &mut Program,
+    ) -> Result<()> {
+        let ppi = pil.plookupIdentities.clone();
         for pi in ppi.iter() {
             let u = E::challenge("u".to_string());
             let def_val = E::challenge("defVal".to_string());
@@ -259,13 +262,13 @@ impl StarkInfo {
                 t_exp = E::sub(&t_exp, &def_val);
                 t_exp = E::mul(&t_exp, &E::exp(pi.selT.unwrap(), None));
                 t_exp = E::add(&t_exp, &def_val);
-                t_exp.idQ = Some(ctx.pil.nQ as i32);
-                ctx.pil.nQ += 1;
+                t_exp.idQ = Some(pil.nQ as i32);
+                pil.nQ += 1;
             }
 
-            let t_exp_id = ctx.pil.expressions.len() as i32;
+            let t_exp_id = pil.expressions.len() as i32;
             t_exp.keep = Some(true);
-            ctx.pil.expressions.push(t_exp);
+            pil.expressions.push(t_exp);
 
             let mut f_exp = E::nop();
             for j in pi.f.as_ref().unwrap().iter() {
@@ -277,17 +280,17 @@ impl StarkInfo {
                 }
             }
 
-            let f_exp_id = ctx.pil.expressions.len() as i32;
+            let f_exp_id = pil.expressions.len() as i32;
             f_exp.keep = Some(true);
-            ctx.pil.expressions.push(f_exp);
+            pil.expressions.push(f_exp);
 
-            pil_code_gen(ctx, f_exp_id.clone(), false, &"".to_string())?;
-            pil_code_gen(ctx, t_exp_id.clone(), false, &"".to_string())?;
+            pil_code_gen(ctx, pil, f_exp_id.clone(), false, "")?;
+            pil_code_gen(ctx, pil, t_exp_id.clone(), false, "")?;
 
-            let h1_id = ctx.pil.nCommitments;
-            ctx.pil.nCommitments += 1;
-            let h2_id = ctx.pil.nCommitments;
-            ctx.pil.nCommitments += 1;
+            let h1_id = pil.nCommitments;
+            pil.nCommitments += 1;
+            let h2_id = pil.nCommitments;
+            pil.nCommitments += 1;
 
             self.pu_ctx.push(PUCTX {
                 f_exp_id,
@@ -302,7 +305,7 @@ impl StarkInfo {
             });
         }
 
-        program.step2prev = build_code(ctx);
+        program.step2prev = build_code(ctx, pil);
         Ok(())
     }
 }

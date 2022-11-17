@@ -5,21 +5,26 @@ use crate::helper::get_ks;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo::{CICTX, PECTX};
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Context};
-use crate::types::PolIdentity;
+use crate::types::{PolIdentity, PIL};
 
 impl StarkInfo {
-    pub fn generate_step3(&mut self, ctx: &mut Context, program: &mut Program) -> Result<()> {
-        self.generate_permutation_LC(ctx)?;
-        self.generate_plonk_Z(ctx)?;
-        self.generate_permutation_Z(ctx)?;
-        self.generate_connections_Z(ctx)?;
+    pub fn generate_step3(
+        &mut self,
+        ctx: &mut Context,
+        pil: &mut PIL,
+        program: &mut Program,
+    ) -> Result<()> {
+        self.generate_permutation_LC(ctx, pil)?;
+        self.generate_plonk_Z(ctx, pil)?;
+        self.generate_permutation_Z(ctx, pil)?;
+        self.generate_connections_Z(ctx, pil)?;
 
-        program.step3prev = build_code(ctx);
+        program.step3prev = build_code(ctx, pil);
         Ok(())
     }
 
-    pub fn generate_permutation_LC(&mut self, ctx: &mut Context) -> Result<()> {
-        let ppi = match &ctx.pil.permutationIdentities {
+    pub fn generate_permutation_LC(&mut self, ctx: &mut Context, pil: &mut PIL) -> Result<()> {
+        let ppi = match &pil.permutationIdentities {
             Some(x) => x.clone(),
             _ => Vec::new(),
         };
@@ -40,12 +45,12 @@ impl StarkInfo {
                 t_exp = E::sub(&t_exp, &def_val);
                 t_exp = E::mul(&t_exp, &E::exp(pi.selT.unwrap(), None));
                 t_exp = E::add(&t_exp, &def_val);
-                t_exp.idQ = Some(ctx.pil.nQ);
-                ctx.pil.nQ += 1;
+                t_exp.idQ = Some(pil.nQ);
+                pil.nQ += 1;
             }
 
-            let t_exp_id = ctx.pil.expressions.len() as i32;
-            ctx.pil.expressions.push(t_exp);
+            let t_exp_id = pil.expressions.len() as i32;
+            pil.expressions.push(t_exp);
 
             let mut f_exp = E::nop();
             for j in pi.f.as_ref().unwrap().iter() {
@@ -61,15 +66,15 @@ impl StarkInfo {
                 f_exp = E::sub(&f_exp, &def_val);
                 f_exp = E::mul(&f_exp, &E::exp(pi.selF.unwrap(), None));
                 f_exp = E::add(&f_exp, &def_val);
-                f_exp.idQ = Some(ctx.pil.nQ);
-                ctx.pil.nQ += 1;
+                f_exp.idQ = Some(pil.nQ);
+                pil.nQ += 1;
             }
 
-            let f_exp_id = ctx.pil.expressions.len() as i32;
-            ctx.pil.expressions.push(f_exp);
+            let f_exp_id = pil.expressions.len() as i32;
+            pil.expressions.push(f_exp);
 
-            pil_code_gen(ctx, f_exp_id.clone(), false, &"".to_string())?;
-            pil_code_gen(ctx, t_exp_id.clone(), false, &"".to_string())?;
+            pil_code_gen(ctx, pil, f_exp_id.clone(), false, "")?;
+            pil_code_gen(ctx, pil, t_exp_id.clone(), false, "")?;
 
             self.pe_ctx.push(PECTX {
                 f_exp_id,
@@ -84,11 +89,11 @@ impl StarkInfo {
         Ok(())
     }
 
-    pub fn generate_plonk_Z(&mut self, ctx: &mut Context) -> Result<()> {
-        let pui = ctx.pil.plookupIdentities.clone();
+    pub fn generate_plonk_Z(&mut self, ctx: &mut Context, pil: &mut PIL) -> Result<()> {
+        let pui = pil.plookupIdentities.clone();
         for (i, _pu) in pui.iter().enumerate() {
-            self.pu_ctx[i].z_id = ctx.pil.nCommitments;
-            ctx.pil.nCommitments += 1;
+            self.pu_ctx[i].z_id = pil.nCommitments;
+            pil.nCommitments += 1;
 
             let h1 = E::cm(self.pu_ctx[i].h1_id, None);
             let h2 = E::cm(self.pu_ctx[i].h2_id, None);
@@ -101,17 +106,17 @@ impl StarkInfo {
             let z = E::cm(self.pu_ctx[i].z_id, None);
             let zp = E::cm(self.pu_ctx[i].z_id, Some(true));
 
-            if ctx.pil.references.get(&"Global.L1".to_string()).is_none() {
+            if pil.references.get(&"Global.L1".to_string()).is_none() {
                 panic!("Global.L1 must be defined");
             }
 
-            let l1 = E::const_(ctx.pil.references[&"Global.L1".to_string()].id as i32, None);
+            let l1 = E::const_(pil.references[&"Global.L1".to_string()].id as i32, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 
-            self.pu_ctx[i].c1_id = ctx.pil.expressions.len() as i32;
-            ctx.pil.expressions.push(c1);
-            ctx.pil.polIdentities.push(PolIdentity {
+            self.pu_ctx[i].c1_id = pil.expressions.len() as i32;
+            pil.expressions.push(c1);
+            pil.polIdentities.push(PolIdentity {
                 e: self.pu_ctx[i].c1_id.clone(),
                 line: 0,
                 fileName: "".to_string(),
@@ -131,11 +136,11 @@ impl StarkInfo {
                 &E::add(&E::number("1".to_string()), &beta),
             );
 
-            num_exp.idQ = Some(ctx.pil.nQ);
+            num_exp.idQ = Some(pil.nQ);
 
-            ctx.pil.nQ += 1;
-            self.pu_ctx[i].num_id = ctx.pil.expressions.len() as i32;
-            ctx.pil.expressions.push(num_exp);
+            pil.nQ += 1;
+            self.pu_ctx[i].num_id = pil.expressions.len() as i32;
+            pil.expressions.push(num_exp);
 
             let mut den_exp = E::mul(
                 &E::mul(
@@ -151,57 +156,57 @@ impl StarkInfo {
                 ),
             );
 
-            den_exp.idQ = Some(ctx.pil.nQ);
-            ctx.pil.nQ += 1;
+            den_exp.idQ = Some(pil.nQ);
+            pil.nQ += 1;
 
-            self.pu_ctx[i].den_id = ctx.pil.expressions.len() as i32;
+            self.pu_ctx[i].den_id = pil.expressions.len() as i32;
             den_exp.keep = Some(true);
-            ctx.pil.expressions.push(den_exp);
+            pil.expressions.push(den_exp);
 
             let num = E::exp(self.pu_ctx[i].num_id, None);
             let den = E::exp(self.pu_ctx[i].den_id, None);
 
             let mut c2 = E::sub(&E::mul(&zp, &den), &E::mul(&z, &num));
             c2.deg = 2;
-            self.pu_ctx[i].c2_id = ctx.pil.expressions.len() as i32;
-            ctx.pil.expressions.push(c2);
+            self.pu_ctx[i].c2_id = pil.expressions.len() as i32;
+            pil.expressions.push(c2);
 
-            ctx.pil.polIdentities.push(PolIdentity {
+            pil.polIdentities.push(PolIdentity {
                 e: self.pu_ctx[i].c2_id.clone(),
                 line: 0,
                 fileName: "".to_string(),
             });
-            pil_code_gen(ctx, self.pu_ctx[i].num_id.clone(), false, &"".to_string())?;
-            pil_code_gen(ctx, self.pu_ctx[i].den_id.clone(), false, &"".to_string())?;
+            pil_code_gen(ctx, pil, self.pu_ctx[i].num_id.clone(), false, "")?;
+            pil_code_gen(ctx, pil, self.pu_ctx[i].den_id.clone(), false, "")?;
         }
         Ok(())
     }
 
-    pub fn generate_permutation_Z(&mut self, ctx: &mut Context) -> Result<()> {
-        let ppi = match &ctx.pil.permutationIdentities {
+    pub fn generate_permutation_Z(&mut self, ctx: &mut Context, pil: &mut PIL) -> Result<()> {
+        let ppi = match &pil.permutationIdentities {
             Some(x) => x.clone(),
             _ => Vec::new(),
         };
 
         for (i, pi) in ppi.iter().enumerate() {
-            self.pe_ctx[i].z_id = ctx.pil.nCommitments;
-            ctx.pil.nCommitments += 1;
+            self.pe_ctx[i].z_id = pil.nCommitments;
+            pil.nCommitments += 1;
 
             let f = E::exp(self.pe_ctx[i].f_exp_id, None);
             let t = E::exp(self.pe_ctx[i].t_exp_id, None);
             let z = E::cm(self.pe_ctx[i].z_id, None);
             let zp = E::cm(self.pe_ctx[i].z_id, Some(true));
 
-            if ctx.pil.references.get(&"Global.L1".to_string()).is_none() {
+            if pil.references.get(&"Global.L1".to_string()).is_none() {
                 panic!("Global.L1 must be defined");
             }
-            let l1 = E::const_(ctx.pil.references[&"Global.L1".to_string()].id as i32, None);
+            let l1 = E::const_(pil.references[&"Global.L1".to_string()].id as i32, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 
-            self.pe_ctx[i].c1_id = ctx.pil.expressions.len() as i32;
-            ctx.pil.expressions.push(c1);
-            ctx.pil.polIdentities.push(PolIdentity {
+            self.pe_ctx[i].c1_id = pil.expressions.len() as i32;
+            pil.expressions.push(c1);
+            pil.polIdentities.push(PolIdentity {
                 e: self.pe_ctx[i].c1_id.clone(),
                 line: 0,
                 fileName: "".to_string(),
@@ -210,36 +215,36 @@ impl StarkInfo {
             let beta = E::challenge("beta".to_string());
 
             let mut num_exp = E::add(&f, &beta);
-            self.pe_ctx[i].num_id = ctx.pil.expressions.len() as i32;
+            self.pe_ctx[i].num_id = pil.expressions.len() as i32;
             num_exp.keep = Some(true);
-            ctx.pil.expressions.push(num_exp);
+            pil.expressions.push(num_exp);
 
             let mut den_exp = E::add(&t, &beta);
-            self.pe_ctx[i].den_id = ctx.pil.expressions.len() as i32;
+            self.pe_ctx[i].den_id = pil.expressions.len() as i32;
             den_exp.keep = Some(true);
-            ctx.pil.expressions.push(den_exp);
+            pil.expressions.push(den_exp);
 
             let mut c2 = E::sub(
                 &E::mul(&zp, &E::exp(self.pe_ctx[i].den_id.clone(), None)),
                 &E::mul(&z, &E::exp(self.pe_ctx[i].num_id.clone(), None)),
             );
             c2.deg = 2;
-            self.pe_ctx[i].c2_id = ctx.pil.expressions.len() as i32;
-            ctx.pil.expressions.push(c2);
-            ctx.pil.polIdentities.push(PolIdentity {
+            self.pe_ctx[i].c2_id = pil.expressions.len() as i32;
+            pil.expressions.push(c2);
+            pil.polIdentities.push(PolIdentity {
                 e: self.pe_ctx[i].c2_id.clone(),
                 line: 0,
                 fileName: "".to_string(),
             });
 
-            pil_code_gen(ctx, self.pe_ctx[i].num_id.clone(), false, &"".to_string())?;
-            pil_code_gen(ctx, self.pe_ctx[i].den_id.clone(), false, &"".to_string())?;
+            pil_code_gen(ctx, pil, self.pe_ctx[i].num_id.clone(), false, "")?;
+            pil_code_gen(ctx, pil, self.pe_ctx[i].den_id.clone(), false, "")?;
         }
         Ok(())
     }
 
-    pub fn generate_connections_Z(&mut self, ctx: &mut Context) -> Result<()> {
-        let cii = match &ctx.pil.connectionIdentities {
+    pub fn generate_connections_Z(&mut self, ctx: &mut Context, pil: &mut PIL) -> Result<()> {
+        let cii = match &pil.connectionIdentities {
             Some(x) => x.clone(),
             _ => Vec::new(),
         };
@@ -255,8 +260,8 @@ impl StarkInfo {
             };
 
             let mut ci_ctx = CICTX::default();
-            ci_ctx.z_id = ctx.pil.nCommitments as i32;
-            ctx.pil.nCommitments += 1;
+            ci_ctx.z_id = pil.nCommitments as i32;
+            pil.nCommitments += 1;
 
             let gamma = E::challenge("gamma".to_string());
             let beta = E::challenge("beta".to_string());
@@ -273,13 +278,13 @@ impl StarkInfo {
                 ),
                 &gamma,
             );
-            ci_ctx.num_id = ctx.pil.expressions.len() as i32;
+            ci_ctx.num_id = pil.expressions.len() as i32;
             num_exp.keep = Some(true);
-            ctx.pil.expressions.push(num_exp);
+            pil.expressions.push(num_exp);
 
-            ci_ctx.den_id = ctx.pil.expressions.len() as i32;
+            ci_ctx.den_id = pil.expressions.len() as i32;
             den_exp.keep = Some(true);
-            ctx.pil.expressions.push(den_exp);
+            pil.expressions.push(den_exp);
 
             let ks = get_ks(ci_pols.len() - 1);
             for i in 1..ci_pols.len() {
@@ -293,8 +298,8 @@ impl StarkInfo {
                         &gamma,
                     ),
                 );
-                num_exp.idQ = Some(ctx.pil.nQ);
-                ctx.pil.nQ += 1;
+                num_exp.idQ = Some(pil.nQ);
+                pil.nQ += 1;
 
                 let mut den_exp = E::mul(
                     &E::exp(ci_ctx.den_id, None),
@@ -306,29 +311,29 @@ impl StarkInfo {
                         &gamma,
                     ),
                 );
-                den_exp.idQ = Some(ctx.pil.nQ);
-                ctx.pil.nQ += 1;
+                den_exp.idQ = Some(pil.nQ);
+                pil.nQ += 1;
 
-                ci_ctx.num_id = ctx.pil.expressions.len() as i32;
-                ctx.pil.expressions.push(num_exp);
-                ci_ctx.den_id = ctx.pil.expressions.len() as i32;
-                ctx.pil.expressions.push(den_exp);
+                ci_ctx.num_id = pil.expressions.len() as i32;
+                pil.expressions.push(num_exp);
+                ci_ctx.den_id = pil.expressions.len() as i32;
+                pil.expressions.push(den_exp);
             }
 
             let z = E::cm(ci_ctx.z_id, None);
             let zp = E::cm(ci_ctx.z_id, Some(true));
 
-            if ctx.pil.references.get(&"Global.L1".to_string()).is_none() {
+            if pil.references.get(&"Global.L1".to_string()).is_none() {
                 panic!("Global.L1 must be defined");
             }
-            let l1 = E::const_(ctx.pil.references[&"Global.L1".to_string()].id as i32, None);
+            let l1 = E::const_(pil.references[&"Global.L1".to_string()].id as i32, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 
-            ci_ctx.c1_id = ctx.pil.expressions.len() as i32;
-            ctx.pil.expressions.push(c1);
+            ci_ctx.c1_id = pil.expressions.len() as i32;
+            pil.expressions.push(c1);
 
-            ctx.pil.polIdentities.push(PolIdentity {
+            pil.polIdentities.push(PolIdentity {
                 e: ci_ctx.c1_id.clone(),
                 line: 0,
                 fileName: "".to_string(),
@@ -339,16 +344,16 @@ impl StarkInfo {
                 &E::mul(&z, &E::exp(ci_ctx.num_id.clone(), None)),
             );
             c2.deg = 2;
-            ci_ctx.c2_id = ctx.pil.expressions.len() as i32;
-            ctx.pil.expressions.push(c2);
-            ctx.pil.polIdentities.push(PolIdentity {
+            ci_ctx.c2_id = pil.expressions.len() as i32;
+            pil.expressions.push(c2);
+            pil.polIdentities.push(PolIdentity {
                 e: ci_ctx.c2_id.clone(),
                 line: 0,
                 fileName: "".to_string(),
             });
 
-            pil_code_gen(ctx, ci_ctx.num_id.clone(), false, &"".to_string())?;
-            pil_code_gen(ctx, ci_ctx.den_id.clone(), false, &"".to_string())?;
+            pil_code_gen(ctx, pil, ci_ctx.num_id.clone(), false, "")?;
+            pil_code_gen(ctx, pil, ci_ctx.den_id.clone(), false, "")?;
             self.ci_ctx.push(ci_ctx);
         }
         Ok(())

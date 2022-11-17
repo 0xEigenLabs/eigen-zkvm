@@ -5,20 +5,21 @@ use crate::helper::get_ks;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo::{CICTX, PECTX};
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Calculated, Context};
-use crate::types::PolIdentity;
+use crate::types::{PolIdentity, PIL};
 use std::collections::HashMap;
 
 impl StarkInfo {
     pub fn generate_fri_polynomial(
         &mut self,
         ctx: &mut Context,
+        pil: &mut PIL,
         program: &mut Program,
     ) -> Result<()> {
         let vf1 = E::challenge("vf1".to_string());
         let vf2 = E::challenge("vf2".to_string());
 
         let mut fri_exp = E::nop();
-        for i in 0..ctx.pil.nCommitments {
+        for i in 0..pil.nCommitments {
             if E::is_nop(&fri_exp) {
                 fri_exp = E::cm(i, None);
             } else {
@@ -26,7 +27,7 @@ impl StarkInfo {
             }
         }
 
-        for i in 0..ctx.pil.nQ {
+        for i in 0..pil.nQ {
             if E::is_nop(&fri_exp) {
                 fri_exp = E::q(i, None);
             } else {
@@ -76,12 +77,12 @@ impl StarkInfo {
             fri_exp = fri2_exp;
         }
 
-        self.fri_exp_id = ctx.pil.expressions.len() as i32;
+        self.fri_exp_id = pil.expressions.len() as i32;
         fri_exp.keep2ns = Some(true);
-        ctx.pil.expressions.push(fri_exp);
+        pil.expressions.push(fri_exp);
 
-        pil_code_gen(ctx, self.fri_exp_id, false, &"".to_string())?;
-        program.step52ns = build_code(ctx);
+        pil_code_gen(ctx, pil, self.fri_exp_id, false, "")?;
+        program.step52ns = build_code(ctx, pil);
         Ok(())
     }
 }

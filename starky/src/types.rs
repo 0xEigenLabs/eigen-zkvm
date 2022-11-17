@@ -23,7 +23,9 @@ pub struct Reference {
     pub id: usize,
     pub polDeg: usize,
     pub isArray: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub elementType: Option<String>, // "field, s8, s16, s32, s64, u16, u8"
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub len: Option<usize>,
 }
 
@@ -31,13 +33,21 @@ pub struct Reference {
 pub struct Expression {
     pub op: String, // number, cm, add, sub, ...
     pub deg: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub next: Option<bool>, // None is false, the other would be true. same as others with type Option<bool>
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub values: Option<Vec<Expression>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub keep: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub keep2ns: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub idQ: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub const_: Option<i64>,
 }
 
@@ -79,9 +89,13 @@ pub struct PolIdentity {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PlookupIdentity {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub f: Option<Vec<i32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub t: Option<Vec<i32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub selF: Option<i32>, //selector
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub selT: Option<i32>,
     pub fileName: String,
     pub line: i32,
@@ -89,9 +103,13 @@ pub struct PlookupIdentity {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PermutationIdentity {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub f: Option<Vec<i32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub t: Option<Vec<i32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub selF: Option<i32>, //selector
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub selT: Option<i32>,
     pub fileName: String,
     pub line: i32,
@@ -99,7 +117,9 @@ pub struct PermutationIdentity {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ConnectionIdentity {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pols: Option<Vec<i32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub connections: Option<Vec<i32>>,
     pub fileName: String,
     pub line: i32,

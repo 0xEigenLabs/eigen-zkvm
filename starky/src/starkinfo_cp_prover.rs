@@ -5,7 +5,7 @@ use crate::helper::get_ks;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo::{CICTX, PECTX};
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Calculated, Context};
-use crate::types::PolIdentity;
+use crate::types::{PolIdentity, PIL};
 use std::collections::HashMap;
 
 impl StarkInfo {
@@ -13,11 +13,12 @@ impl StarkInfo {
         &mut self,
         ctx: &mut Context,
         ctx2ns: &mut Context,
+        pil: &mut PIL,
         program: &mut Program,
     ) -> Result<()> {
         let vc = E::challenge("vc".to_string());
         let mut c_exp = E::nop();
-        for pi in ctx.pil.polIdentities.iter() {
+        for pi in pil.polIdentities.iter() {
             let e = E::exp(pi.e, None);
 
             if E::is_nop(&c_exp) {
@@ -27,22 +28,26 @@ impl StarkInfo {
             }
         }
 
-        c_exp.idQ = Some(ctx.pil.nQ);
-        ctx.pil.nQ += 1;
+        c_exp.idQ = Some(pil.nQ);
+        pil.nQ += 1;
 
-        self.c_exp = ctx.pil.expressions.len() as i32;
-        ctx.pil.expressions.push(c_exp);
+        self.c_exp = pil.expressions.len() as i32;
+        pil.expressions.push(c_exp);
+        println!(
+            "expressions[3] {:?}",
+            serde_json::to_string(&pil.expressions[3])
+        );
 
-        let pe = &(ctx.pil.expressions).clone();
-        for (i, p) in pe.iter().enumerate() {
-            if p.idQ.is_some() {
-                pil_code_gen(ctx, i as i32, false, &"".to_string())?; // FIXME: prime should be undefined
-                pil_code_gen(ctx2ns, i as i32, false, &"evalQ".to_string())?;
+        for i in 0..pil.expressions.len() {
+            println!("expressions {:?} {:?}", i, pil.expressions.len());
+            if pil.expressions[i].idQ.is_some() {
+                pil_code_gen(ctx, pil, i as i32, false, "")?; // FIXME: prime should be undefined
+                pil_code_gen(ctx2ns, pil, i as i32, false, "evalQ")?;
             }
         }
 
-        program.step4 = build_code(ctx);
-        program.step42ns = build_code(ctx2ns);
+        program.step4 = build_code(ctx, pil);
+        program.step42ns = build_code(ctx2ns, pil);
         Ok(())
     }
 }

@@ -12,18 +12,16 @@ pub struct Calculated {
 }
 
 #[derive(Debug)]
-pub struct Context<'a> {
-    pub pil: &'a mut PIL,
+pub struct Context {
     pub exp_id: i32,
     pub tmp_used: i32,
     pub code: Vec<Code>,
     pub calculated: Calculated,
-    pub calculated_mark: HashMap<(String, i32), bool>,
+    pub calculated_mark: HashMap<(&'static str, i32), bool>,
 }
 
 #[derive(Debug)]
-pub struct ContextC<'a> {
-    pub pil: &'a PIL,
+pub struct ContextC {
     pub exp_id: i32,
     pub tmp_used: i32,
     pub code: Vec<Subcode>,
@@ -31,7 +29,6 @@ pub struct ContextC<'a> {
 
 #[derive(Debug)]
 pub struct ContextF<'a> {
-    pub pil: &'a PIL,
     pub exp_map: HashMap<(i32, i32), i32>,
     pub tmp_used: i32,
     pub ev_idx: EVIdx,
@@ -190,38 +187,41 @@ impl EVIdx {
 //
 // prime: false by default
 // mode: "" by default
-pub fn pil_code_gen(ctx: &mut Context, exp_id: i32, prime: bool, mode: &String) -> Result<()> {
-    if mode.as_str() == "evalQ" && prime {
-        pil_code_gen(ctx, exp_id, false, mode)?;
-        if ctx.pil.expressions[exp_id as usize].idQ.is_some()
-            && !ctx.pil.expressions[exp_id as usize].keep2ns.is_none()
+pub fn pil_code_gen(
+    ctx: &mut Context,
+    pil: &mut PIL,
+    exp_id: i32,
+    prime: bool,
+    mode: &str,
+) -> Result<()> {
+    println!("pil_code_gen: {} {}", exp_id, pil.expressions.len());
+    if mode == "evalQ" && prime {
+        pil_code_gen(ctx, pil, exp_id, false, mode)?;
+        if pil.expressions[exp_id as usize].idQ.is_some()
+            && !pil.expressions[exp_id as usize].keep2ns.is_none()
         {
-            pil_code_gen(ctx, exp_id, true, &"".to_string())?;
+            pil_code_gen(ctx, pil, exp_id, true, "")?;
         }
         return Ok(());
     }
 
-    let prime_idx = (if prime { "expsPrime" } else { "exps" }).to_string();
-    if ctx
-        .calculated_mark
-        .get(&(prime_idx.clone(), exp_id))
-        .is_some()
-    {
+    let prime_idx = if prime { "expsPrime" } else { "exps" };
+    if ctx.calculated_mark.get(&(prime_idx, exp_id)).is_some() {
         return Ok(());
     }
 
-    let expr = ctx.pil.expressions[exp_id as usize].clone();
-    calculate_deps(ctx, &expr, prime, exp_id, &mode)?;
+    let expr = &pil.expressions[exp_id as usize].clone();
+    calculate_deps(ctx, pil, expr, prime, exp_id, mode)?;
 
     let mut code_ctx = ContextC {
-        pil: ctx.pil,
         exp_id: exp_id,
         tmp_used: ctx.tmp_used,
         code: Vec::new(),
     };
 
-    let ret_ref = eval_exp(&mut code_ctx, &ctx.pil.expressions[exp_id as usize], prime)?;
-    if (mode.as_str() == "evalQ") && (ctx.pil.expressions[exp_id as usize].idQ.is_some()) {
+    let exp = pil.expressions[exp_id as usize].clone();
+    let ret_ref = eval_exp(&mut code_ctx, pil, &exp, prime)?;
+    if (mode == "evalQ") && (pil.expressions[exp_id as usize].idQ.is_some()) {
         if prime {
             return Err(EigenError::InvalidOperator(
                 "EvalQ cannot be prime".to_string(),
@@ -241,7 +241,7 @@ pub fn pil_code_gen(ctx: &mut Context, exp_id: i32, prime: bool, mode: &String) 
         let Zi = Node::new("Zi".to_string(), -1, None, -1, None, -1);
         let q = Node::new(
             "q".to_string(),
-            ctx.pil.expressions[exp_id as usize].idQ.unwrap(),
+            pil.expressions[exp_id as usize].idQ.unwrap(),
             None,
             -1,
             Some(prime),
@@ -252,14 +252,13 @@ pub fn pil_code_gen(ctx: &mut Context, exp_id: i32, prime: bool, mode: &String) 
             src: vec![Zi, rqz],
             dest: q,
         });
-    } else if (mode.as_str() == "correctQ") && (ctx.pil.expressions[exp_id as usize].idQ.is_some())
-    {
+    } else if (mode == "correctQ") && (pil.expressions[exp_id as usize].idQ.is_some()) {
         let rqz = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
         code_ctx.tmp_used += 1;
 
         let q = Node::new(
             "q".to_string(),
-            ctx.pil.expressions[exp_id as usize].idQ.unwrap(),
+            pil.expressions[exp_id as usize].idQ.unwrap(),
             None,
             -1,
             Some(prime),
@@ -297,8 +296,8 @@ pub fn pil_code_gen(ctx: &mut Context, exp_id: i32, prime: bool, mode: &String) 
         exp_id: exp_id,
         prime: Some(prime),
         code: code_ctx.code,
-        idQ: if ctx.pil.expressions[exp_id as usize].idQ.is_some() {
-            ctx.pil.expressions[exp_id as usize].idQ
+        idQ: if pil.expressions[exp_id as usize].idQ.is_some() {
+            pil.expressions[exp_id as usize].idQ
         } else {
             None
         },
@@ -312,7 +311,12 @@ pub fn pil_code_gen(ctx: &mut Context, exp_id: i32, prime: bool, mode: &String) 
     Ok(())
 }
 
-pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Result<Node> {
+pub fn eval_exp(
+    code_ctx: &mut ContextC,
+    pil: &mut PIL,
+    exp: &Expression,
+    prime: bool,
+) -> Result<Node> {
     let def: Vec<Expression> = vec![];
     let values = match &exp.values {
         Some(x) => x,
@@ -320,8 +324,8 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
     };
     match exp.op.as_str() {
         "add" => {
-            let a = eval_exp(code_ctx, &(values[0]), prime)?;
-            let b = eval_exp(code_ctx, &(values[1]), prime)?;
+            let a = eval_exp(code_ctx, pil, &(values[0]), prime)?;
+            let b = eval_exp(code_ctx, pil, &(values[1]), prime)?;
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
             code_ctx.tmp_used += 1;
             let c = Subcode {
@@ -333,8 +337,8 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
             Ok(r)
         }
         "sub" => {
-            let a = eval_exp(code_ctx, &(values[0]), prime)?;
-            let b = eval_exp(code_ctx, &(values[1]), prime)?;
+            let a = eval_exp(code_ctx, pil, &(values[0]), prime)?;
+            let b = eval_exp(code_ctx, pil, &(values[1]), prime)?;
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
             code_ctx.tmp_used += 1;
             let c = Subcode {
@@ -346,8 +350,8 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
             Ok(r)
         }
         "mul" => {
-            let a = eval_exp(code_ctx, &values[0], prime)?;
-            let b = eval_exp(code_ctx, &values[1], prime)?;
+            let a = eval_exp(code_ctx, pil, &values[0], prime)?;
+            let b = eval_exp(code_ctx, pil, &values[1], prime)?;
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
             code_ctx.tmp_used += 1;
             let c = Subcode {
@@ -359,7 +363,7 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
             Ok(r)
         }
         "addc" => {
-            let a = eval_exp(code_ctx, &values[0], prime)?;
+            let a = eval_exp(code_ctx, pil, &values[0], prime)?;
             let b = Node::new(
                 "number".to_string(),
                 -1,
@@ -379,7 +383,7 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
             Ok(r)
         }
         "mulc" => {
-            let a = eval_exp(code_ctx, &values[0], prime)?;
+            let a = eval_exp(code_ctx, pil, &values[0], prime)?;
             let b = Node::new(
                 "number".to_string(),
                 -1,
@@ -408,7 +412,7 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
                 None,
                 -1,
             );
-            let b = eval_exp(code_ctx, &values[0], prime)?;
+            let b = eval_exp(code_ctx, pil, &values[0], prime)?;
 
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, -1, None, -1);
             code_ctx.tmp_used += 1;
@@ -423,7 +427,7 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
         }
         "cm" => {
             if exp.next.is_some() && prime {
-                expression_error(code_ctx.pil, "double Prime".to_string(), code_ctx.exp_id, 0)?;
+                expression_error(pil, "double Prime".to_string(), code_ctx.exp_id, 0)?;
             }
             Ok(Node::new(
                 "cm".to_string(),
@@ -436,7 +440,7 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
         }
         "const" => {
             if exp.next.is_some() && prime {
-                expression_error(code_ctx.pil, "double Prime".to_string(), code_ctx.exp_id, 0)?;
+                expression_error(pil, "double Prime".to_string(), code_ctx.exp_id, 0)?;
             }
             Ok(Node::new(
                 "const".to_string(),
@@ -449,7 +453,7 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
         }
         "exp" => {
             if exp.next.is_some() && prime {
-                expression_error(code_ctx.pil, "double Prime".to_string(), code_ctx.exp_id, 0)?;
+                expression_error(pil, "double Prime".to_string(), code_ctx.exp_id, 0)?;
             }
             Ok(Node::new(
                 "exp".to_string(),
@@ -462,7 +466,7 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
         }
         "q" => {
             if exp.next.is_some() && prime {
-                expression_error(code_ctx.pil, "double Prime".to_string(), code_ctx.exp_id, 0)?;
+                expression_error(pil, "double Prime".to_string(), code_ctx.exp_id, 0)?;
             }
             Ok(Node::new(
                 "q".to_string(),
@@ -514,10 +518,11 @@ pub fn eval_exp(code_ctx: &mut ContextC, exp: &Expression, prime: bool) -> Resul
 
 pub fn calculate_deps(
     ctx: &mut Context,
+    pil: &mut PIL,
     expr: &Expression,
     prime: bool,
     exp_id: i32,
-    mode: &String,
+    mode: &str,
 ) -> Result<()> {
     if expr.op == "exp" {
         let id: i32 = if expr.id.is_some() {
@@ -526,14 +531,14 @@ pub fn calculate_deps(
             0
         };
         if prime && expr.next.is_some() {
-            expression_error(ctx.pil, "Double prime".to_string(), exp_id, id)?;
+            expression_error(pil, "Double prime".to_string(), exp_id, id)?;
         }
-        pil_code_gen(ctx, id, prime || expr.next.is_some(), mode)?;
+        pil_code_gen(ctx, pil, id, prime || expr.next.is_some(), mode)?;
     }
     match &expr.values {
         Some(x) => {
             for e in x.iter() {
-                calculate_deps(ctx, e, prime, exp_id, mode)?;
+                calculate_deps(ctx, pil, e, prime, exp_id, mode)?;
             }
         }
         &None => {}
@@ -546,21 +551,21 @@ pub fn expression_error(pil: &PIL, strerr: String, e1: i32, e2: i32) -> Result<(
     Err(EigenError::ExpressionError(strerr))
 }
 
-pub fn build_code(ctx: &mut Context) -> Segment {
+pub fn build_code(ctx: &mut Context, pil: &mut PIL) -> Segment {
     let step_code = Segment {
-        first: build_linear_code(ctx, "first".to_string()),
-        i: build_linear_code(ctx, "i".to_string()),
-        last: build_linear_code(ctx, "last".to_string()),
+        first: build_linear_code(ctx, pil, "first".to_string()),
+        i: build_linear_code(ctx, pil, "i".to_string()),
+        last: build_linear_code(ctx, pil, "last".to_string()),
         tmp_used: ctx.tmp_used,
     };
 
-    if ctx.calculated.exps.len() < ctx.pil.expressions.len() {
-        ctx.calculated.exps.resize(ctx.pil.expressions.len(), false);
+    if ctx.calculated.exps.len() < pil.expressions.len() {
+        ctx.calculated.exps.resize(pil.expressions.len(), false);
         ctx.calculated
             .exps_prime
-            .resize(ctx.pil.expressions.len(), false);
+            .resize(pil.expressions.len(), false);
     }
-    for (i, e) in ctx.pil.expressions.iter().enumerate() {
+    for (i, e) in pil.expressions.iter().enumerate() {
         if (!e.keep.is_some()) && e.idQ.is_none() {
             ctx.calculated.exps[i] = false;
             ctx.calculated.exps_prime[i] = false;
@@ -570,9 +575,9 @@ pub fn build_code(ctx: &mut Context) -> Segment {
     step_code
 }
 
-pub fn build_linear_code(ctx: &mut Context, loop_pos: String) -> Vec<Subcode> {
+pub fn build_linear_code(ctx: &mut Context, pil: &mut PIL, loop_pos: String) -> Vec<Subcode> {
     let exp_and_expprimes = match loop_pos.as_str() {
-        "i" | "last" => get_exp_and_expprimes(ctx),
+        "i" | "last" => get_exp_and_expprimes(ctx, pil),
         _ => HashMap::<i32, bool>::new(),
     };
 
@@ -593,16 +598,12 @@ pub fn build_linear_code(ctx: &mut Context, loop_pos: String) -> Vec<Subcode> {
 }
 
 //FIXME where is the exp_id from
-fn get_exp_and_expprimes(ctx: &mut Context) -> HashMap<i32, bool> {
+fn get_exp_and_expprimes(ctx: &mut Context, pil: &mut PIL) -> HashMap<i32, bool> {
     let mut calc_exps = HashMap::<i32, i32>::new();
     for (i, c) in ctx.code.iter().enumerate() {
-        if (ctx.pil.expressions[ctx.code[i].exp_id as usize]
-            .idQ
-            .is_some())
-            || ctx.pil.expressions[ctx.code[i].exp_id as usize]
-                .keep
-                .is_some()
-            || ctx.pil.expressions[ctx.code[i].exp_id as usize]
+        if (pil.expressions[ctx.code[i].exp_id as usize].idQ.is_some())
+            || pil.expressions[ctx.code[i].exp_id as usize].keep.is_some()
+            || pil.expressions[ctx.code[i].exp_id as usize]
                 .keep2ns
                 .is_some()
         {
@@ -623,17 +624,27 @@ fn get_exp_and_expprimes(ctx: &mut Context) -> HashMap<i32, bool> {
     res
 }
 
-pub fn iterate_code(code: &mut Segment, f: fn(&mut Node, &mut ContextF), ctx: &mut ContextF) {
-    iterate(&mut code.first, f, ctx);
-    iterate(&mut code.i, f, ctx);
-    iterate(&mut code.last, f, ctx);
+pub fn iterate_code(
+    code: &mut Segment,
+    f: fn(&mut Node, &mut ContextF, pil: &mut PIL),
+    ctx: &mut ContextF,
+    pil: &mut PIL,
+) {
+    iterate(&mut code.first, f, ctx, pil);
+    iterate(&mut code.i, f, ctx, pil);
+    iterate(&mut code.last, f, ctx, pil);
 }
 
-fn iterate(code: &mut Vec<Subcode>, f: fn(&mut Node, &mut ContextF), ctx: &mut ContextF) {
+fn iterate(
+    code: &mut Vec<Subcode>,
+    f: fn(&mut Node, &mut ContextF, pil: &mut PIL),
+    ctx: &mut ContextF,
+    pil: &mut PIL,
+) {
     for c in code.iter_mut() {
         for s in c.src.iter_mut() {
-            f(s, ctx);
+            f(s, ctx, pil);
         }
-        f(&mut c.dest, ctx);
+        f(&mut c.dest, ctx, pil);
     }
 }
