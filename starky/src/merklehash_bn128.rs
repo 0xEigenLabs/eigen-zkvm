@@ -40,7 +40,7 @@ impl MerkleTree {
         let mut leaves: Vec<crate::ElementDigest> = vec![];
         let mut batch: Vec<BaseElement> = vec![];
 
-        println!("width {}, height {}, {:?}", width, height, columns);
+        //println!("width {}, height {}, {:?}", width, height, columns);
         let max_workers = get_max_workers();
 
         let mut n_per_thread_f = (height - 1) / max_workers + 1;

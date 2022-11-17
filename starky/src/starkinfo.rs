@@ -161,10 +161,11 @@ impl StarkInfo {
             exp_id: -1,
         };
         info.generate_pubulic_calculators(&mut ctx, pil, &mut program)?;
-
+        println!("generate_step2");
         info.generate_step2(&mut ctx, pil, &mut program)?; // H1, H2
         info.n_cm2 = pil.nCommitments - info.n_cm1;
 
+        println!("generate_step3");
         info.generate_step3(&mut ctx, pil, &mut program)?; // Z Polynonmial and LC of the permutation checks
         info.n_cm3 = pil.nCommitments - info.n_cm1 - info.n_cm2;
 
@@ -179,14 +180,63 @@ impl StarkInfo {
             exp_id: -1,
         };
 
+        let mut ctx = Context {
+            calculated: Calculated {
+                exps: vec![],
+                exps_prime: vec![],
+            },
+            tmp_used: 0,
+            code: vec![],
+            calculated_mark: HashMap::new(),
+            exp_id: -1,
+        };
+        println!("generate_constraint_polynomial");
+
         info.generate_constraint_polynomial(&mut ctx, &mut ctx2ns, pil, &mut program)?;
         info.n_cm4 = pil.nCommitments - info.n_cm1 - info.n_cm2 - info.n_cm3;
         info.n_q = pil.nQ;
 
+        let mut ctx = Context {
+            calculated: Calculated {
+                exps: vec![],
+                exps_prime: vec![],
+            },
+            tmp_used: 0,
+            code: vec![],
+            calculated_mark: HashMap::new(),
+            exp_id: -1,
+        };
+        println!("generate_constraint_polynomial_verifier");
         info.generate_constraint_polynomial_verifier(&mut ctx, pil, &mut program)?;
-        info.generate_fri_polynomial(&mut ctx, pil, &mut program)?;
+        println!("generate_fri_polynomial");
+        info.generate_fri_polynomial(&mut ctx2ns, pil, &mut program)?;
+
+        let mut ctx = Context {
+            calculated: Calculated {
+                exps: vec![],
+                exps_prime: vec![],
+            },
+            tmp_used: 0,
+            code: vec![],
+            calculated_mark: HashMap::new(),
+            exp_id: -1,
+        };
+        println!("generate_fri_verifier");
         info.generate_fri_verifier(&mut ctx, pil, &mut program)?;
+
+        let mut ctx = Context {
+            calculated: Calculated {
+                exps: vec![],
+                exps_prime: vec![],
+            },
+            tmp_used: 0,
+            code: vec![],
+            calculated_mark: HashMap::new(),
+            exp_id: -1,
+        };
+        println!("map");
         info.map(&mut ctx, pil, &stark_struct, &mut program)?;
+
         info.publics = pil.publics.clone();
 
         Ok(info)
@@ -268,6 +318,10 @@ impl StarkInfo {
 
             let t_exp_id = pil.expressions.len() as i32;
             t_exp.keep = Some(true);
+
+            if E::is_nop(&t_exp) {
+                panic!("nop {}", format!("{:?}", t_exp));
+            }
             pil.expressions.push(t_exp);
 
             let mut f_exp = E::nop();
@@ -282,6 +336,10 @@ impl StarkInfo {
 
             let f_exp_id = pil.expressions.len() as i32;
             f_exp.keep = Some(true);
+            if E::is_nop(&f_exp) {
+                panic!("nop {}", format!("{:?}", f_exp));
+            }
+
             pil.expressions.push(f_exp);
 
             pil_code_gen(ctx, pil, f_exp_id.clone(), false, "")?;

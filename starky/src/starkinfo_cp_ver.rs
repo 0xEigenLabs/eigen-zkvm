@@ -17,7 +17,9 @@ impl StarkInfo {
         pil: &mut PIL,
         program: &mut Program,
     ) -> Result<()> {
+        println!("c_exp {} {:?} {:?}", self.c_exp, pil, ctx);
         pil_code_gen(ctx, pil, self.c_exp, false, "correctQ")?;
+        println!("ctx {:?}", ctx);
 
         let mut code = build_code(ctx, pil);
 
@@ -29,7 +31,7 @@ impl StarkInfo {
             starkinfo: self,
         };
 
-        let fix_ref = |r: &mut Node, ctx: &mut ContextF, pil: &mut PIL| {
+        let fix_ref = |r: &mut Node, ctx: &mut ContextF, _pil: &mut PIL| {
             let p = if r.prime { 1 } else { 0 };
             let id = r.id;
             match r.type_.as_str() {
@@ -63,7 +65,10 @@ impl StarkInfo {
                 "number" | "challenge" | "public" | "tmp" | "Z" | "x" | "eval" => {}
                 _ => panic!("{}", format!("Invalid reference type: {}", r.type_)),
             }
+            println!("ev_map: {:?}", ctx.starkinfo.ev_map);
         };
+        println!("fri prover: {:?}", code);
+
         iterate_code(&mut code, fix_ref, &mut ctx_f, pil);
         code.tmp_used = ctx.tmp_used;
         program.verifier_code = code;

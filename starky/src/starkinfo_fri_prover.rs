@@ -27,6 +27,7 @@ impl StarkInfo {
             }
         }
 
+        println!("fri_exp 1 {:?}", fri_exp);
         for i in 0..pil.nQ {
             if E::is_nop(&fri_exp) {
                 fri_exp = E::q(i, None);
@@ -35,9 +36,12 @@ impl StarkInfo {
             }
         }
 
+        println!("fri_exp 2 {:?}", fri_exp);
         let mut fri1_exp = E::nop();
         let mut fri2_exp = E::nop();
-        let x1 = E::challenge("xi".to_string());
+        //let xi = E::challenge("xi".to_string());
+        println!("ev_map {:?}", self.ev_map);
+
         for (i, ev) in self.ev_map.iter().enumerate() {
             let mut fri_exp = match ev.prime {
                 true => fri2_exp.clone(),
@@ -63,12 +67,16 @@ impl StarkInfo {
             }
         }
 
+        println!("fri_exp 3 {:?}", fri_exp);
+
         fri1_exp = E::mul(&fri1_exp, &E::xDivXSubXi());
         if !E::is_nop(&fri_exp) {
             fri_exp = E::add(&E::mul(&vf1, &fri_exp), &fri1_exp);
         } else {
             fri_exp = fri1_exp;
         }
+
+        println!("fri_exp 4 {:?}", fri_exp);
 
         fri2_exp = E::mul(&fri2_exp, &E::xDivXSubWXi());
         if !E::is_nop(&fri_exp) {
@@ -77,9 +85,18 @@ impl StarkInfo {
             fri_exp = fri2_exp;
         }
 
+        println!("fri_exp {:?}", fri_exp);
         self.fri_exp_id = pil.expressions.len() as i32;
         fri_exp.keep2ns = Some(true);
+        if E::is_nop(&fri_exp) {
+            panic!("nop {:?}", format!("{:?}", fri_exp));
+        }
         pil.expressions.push(fri_exp);
+
+        println!(
+            "pil_code_gen in fri prover {:?}",
+            pil.expressions[self.fri_exp_id as usize]
+        );
 
         pil_code_gen(ctx, pil, self.fri_exp_id, false, "")?;
         program.step52ns = build_code(ctx, pil);

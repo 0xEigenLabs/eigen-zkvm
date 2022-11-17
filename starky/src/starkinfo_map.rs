@@ -111,8 +111,8 @@ impl StarkInfo {
             pil.cm_dims[(self.n_cm1 + self.n_cm2 + i) as usize] = 3;
         }
 
-        let mut q_dims: Vec<i32> = vec![]; // FIXME: useless??
-        pil.q2exp = vec![];
+        let mut q_dims: Vec<i32> = vec![-1i32; pil.expressions.len()]; // FIXME: useless??
+        pil.q2exp = vec![-1i32; pil.expressions.len()]; // OPT
 
         for (i, e) in pil.expressions.iter().enumerate() {
             if e.idQ.is_some() {
@@ -187,12 +187,16 @@ impl StarkInfo {
                     section_pos: -1,
                 });
                 self.map_sections.exps_withq_2ns.push(pp_2ns.clone());
+                self.exps_n.push(-1); //null
                 self.exps_2ns.push(pp_2ns);
             } else {
-                self.exps_n[i] = -1; //null
-                self.exps_2ns[i] = -1;
+                self.exps_n.push(-1); //null
+                self.exps_2ns.push(-1);
             }
         }
+        println!("exps_n: {:?}", self.exps_n);
+        println!("exps_2ns: {:?}", self.exps_2ns);
+
 
         self.map_section()?;
         let N = 1 << stark_struct.nBits;
@@ -278,8 +282,8 @@ impl StarkInfo {
         iterate_code(&mut program.verifier_query_code, fix_ref, &mut ctx_f, pil);
 
         for i in 0..(self.n_publics as usize) {
-            if program.publics_code[i].tmp_used >= 0 {
-                //FIXME impl Default for it
+            if i < program.publics_code.len() && program.publics_code[i].tmp_used >= 0 {
+                // NOTE: tmp_used = -1, means undefined
                 self.set_code_dimensions(&mut program.publics_code[i], 1);
             }
         }
@@ -295,10 +299,10 @@ impl StarkInfo {
         Ok(())
     }
 
-    fn set_dim(&self, r: &mut Node, dim: i32, tmp_dim: &mut Vec<i32>) {
+    fn set_dim(&self, r: &mut Node, dim: i32, tmp_dim: &mut HashMap<i32, i32>) {
         match r.type_.as_str() {
             "tmp" => {
-                tmp_dim[r.id as usize] = dim;
+                tmp_dim.insert(r.id, dim);
                 r.dim = dim;
             }
             "exp" | "cm" | "q" => {
@@ -310,11 +314,11 @@ impl StarkInfo {
         }
     }
 
-    fn get_dim(&mut self, r: &mut Node, tmp_dim: &mut Vec<i32>, dim_x: i32) -> i32 {
+    fn get_dim(&mut self, r: &mut Node, tmp_dim: &mut HashMap<i32, i32>, dim_x: i32) -> i32 {
         let mut d = 0;
         match r.type_.as_str() {
             "tmp" => {
-                d = tmp_dim[r.id as usize];
+                d = *tmp_dim.get(&r.id).unwrap();
             }
             "tree1" | "tree2" | "tree3" | "tree4" => {
                 d = r.dim;
@@ -360,7 +364,7 @@ impl StarkInfo {
     fn _set_code_dimensions(
         &mut self,
         codes: &mut Vec<Subcode>,
-        tmp_dim: &mut Vec<i32>,
+        tmp_dim: &mut HashMap<i32, i32>,
         dim_x: i32,
     ) {
         for c in codes.iter_mut() {
@@ -396,7 +400,7 @@ impl StarkInfo {
     }
 
     fn set_code_dimensions(&mut self, segment: &mut Segment, dim_x: i32) -> Result<()> {
-        let mut tmp_dim: Vec<i32> = vec![];
+        let mut tmp_dim: HashMap<i32, i32> = HashMap::new();
 
         self._set_code_dimensions(&mut segment.first, &mut tmp_dim, dim_x);
         self._set_code_dimensions(&mut segment.i, &mut tmp_dim, dim_x);
@@ -579,7 +583,6 @@ impl StarkInfo {
     }
 
     pub fn get_exp_dim(pil: &PIL, exp: &Expression) -> i32 {
-        let exp_id = exp.id.unwrap();
         match exp.op.as_str() {
             "add" | "sub" | "mul" | "addc" | "mulc" | "neg" => {
                 let mut md = 1;
@@ -592,10 +595,13 @@ impl StarkInfo {
                 }
                 md
             }
-            "cm" => pil.cm_dims[exp_id as usize],
+            "cm" => pil.cm_dims[exp.id.unwrap() as usize],
             "const" => 1,
-            "exp" => Self::get_exp_dim(pil, &pil.expressions[exp_id as usize]),
-            "q" => Self::get_exp_dim(pil, &pil.expressions[pil.q2exp[exp_id as usize] as usize]),
+            "exp" => Self::get_exp_dim(pil, &pil.expressions[exp.id.unwrap() as usize]),
+            "q" => Self::get_exp_dim(
+                pil,
+                &pil.expressions[pil.q2exp[exp.id.unwrap() as usize] as usize],
+            ),
             "number" | "public" => 1,
             "challenge" | "eval" | "xDivXSubXi" | "xDivXSubWXi" => 3,
             "x" => 1,

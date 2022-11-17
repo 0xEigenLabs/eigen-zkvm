@@ -1,4 +1,7 @@
+#![allow(non_snake_case)]
 use crate::errors::{EigenError, Result};
+use crate::expressionops::ExpressionOps;
+
 use crate::starkinfo::StarkInfo;
 use crate::types::Expression;
 use crate::types::PIL;
@@ -176,7 +179,7 @@ impl EVIdx {
         if type_ == "cm" {
             self.cm.insert((p, id), idx);
         } else if type_ == "q" {
-            self.cm.insert((p, id), idx);
+            self.q.insert((p, id), idx);
         } else {
             assert_eq!(type_, "const");
             self.const_.insert((p, id), idx);
@@ -194,12 +197,11 @@ pub fn pil_code_gen(
     prime: bool,
     mode: &str,
 ) -> Result<()> {
-    println!("pil_code_gen: {} {}", exp_id, pil.expressions.len());
+    println!("pil_code_gen: {} {}, {:?}", exp_id, prime, mode);
     if mode == "evalQ" && prime {
         pil_code_gen(ctx, pil, exp_id, false, mode)?;
-        if pil.expressions[exp_id as usize].idQ.is_some()
-            && !pil.expressions[exp_id as usize].keep2ns.is_none()
-        {
+        let exp_in = &pil.expressions[exp_id as usize];
+        if exp_in.idQ.is_some() && !exp_in.keep2ns.is_none() {
             pil_code_gen(ctx, pil, exp_id, true, "")?;
         }
         return Ok(());
@@ -210,8 +212,8 @@ pub fn pil_code_gen(
         return Ok(());
     }
 
-    let expr = &pil.expressions[exp_id as usize].clone();
-    calculate_deps(ctx, pil, expr, prime, exp_id, mode)?;
+    let exp = pil.expressions[exp_id as usize].clone();
+    calculate_deps(ctx, pil, &exp, prime, exp_id, mode)?;
 
     let mut code_ctx = ContextC {
         exp_id: exp_id,
@@ -317,6 +319,10 @@ pub fn eval_exp(
     exp: &Expression,
     prime: bool,
 ) -> Result<Node> {
+    println!("eval, expression {:?}", exp);
+    if ExpressionOps::is_nop(exp) {
+        panic!("exp: {:?}", exp);
+    }
     let def: Vec<Expression> = vec![];
     let values = match &exp.values {
         Some(x) => x,
@@ -426,46 +432,46 @@ pub fn eval_exp(
             Ok(r)
         }
         "cm" => {
-            if exp.next.is_some() && prime {
-                expression_error(pil, "double Prime".to_string(), code_ctx.exp_id, 0)?;
+            if exp.next() && prime {
+                expression_error(pil, "Double Prime".to_string(), code_ctx.exp_id, 0)?;
             }
             Ok(Node::new(
                 "cm".to_string(),
                 exp.id.unwrap(),
                 None,
                 -1,
-                exp.next.is_some() || prime,
+                exp.next() || prime,
                 -1,
             ))
         }
         "const" => {
-            if exp.next.is_some() && prime {
-                expression_error(pil, "double Prime".to_string(), code_ctx.exp_id, 0)?;
+            if exp.next() && prime {
+                expression_error(pil, "Double Prime".to_string(), code_ctx.exp_id, 0)?;
             }
             Ok(Node::new(
                 "const".to_string(),
                 exp.id.unwrap(),
                 None,
                 -1,
-                exp.next.is_some() || prime,
+                exp.next() || prime,
                 -1,
             ))
         }
         "exp" => {
-            if exp.next.is_some() && prime {
-                expression_error(pil, "double Prime".to_string(), code_ctx.exp_id, 0)?;
+            if exp.next() && prime {
+                expression_error(pil, "Double Prime".to_string(), code_ctx.exp_id, 0)?;
             }
             Ok(Node::new(
                 "exp".to_string(),
                 exp.id.unwrap(),
                 None,
                 -1,
-                exp.next.is_some() || prime,
+                exp.next() || prime,
                 -1,
             ))
         }
         "q" => {
-            if exp.next.is_some() && prime {
+            if exp.next() && prime {
                 expression_error(pil, "double Prime".to_string(), code_ctx.exp_id, 0)?;
             }
             Ok(Node::new(
@@ -473,7 +479,7 @@ pub fn eval_exp(
                 exp.id.unwrap(),
                 None,
                 -1,
-                exp.next.is_some() || prime,
+                exp.next() || prime,
                 -1,
             ))
         }
@@ -519,7 +525,7 @@ pub fn eval_exp(
             -1,
         )),
         "x" => Ok(Node::new("x".to_string(), -1, None, -1, false, -1)),
-        _ => Err(EigenError::InvalidOperator(exp.op.to_string())),
+        _ => Err(EigenError::InvalidOperator(format!("eval_exp: {}", exp.op))),
     }
 }
 
@@ -537,10 +543,10 @@ pub fn calculate_deps(
         } else {
             0
         };
-        if prime && expr.next.is_some() {
+        if prime && expr.next() {
             expression_error(pil, "Double prime".to_string(), exp_id, id)?;
         }
-        pil_code_gen(ctx, pil, id, prime || expr.next.is_some(), mode)?;
+        pil_code_gen(ctx, pil, id, prime || expr.next(), mode)?;
     }
     match &expr.values {
         Some(x) => {

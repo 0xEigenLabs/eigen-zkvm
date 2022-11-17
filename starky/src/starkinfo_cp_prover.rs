@@ -32,6 +32,10 @@ impl StarkInfo {
         pil.nQ += 1;
 
         self.c_exp = pil.expressions.len() as i32;
+
+        if E::is_nop(&c_exp) {
+            panic!("nop {:?}", format!("{:?}", c_exp));
+        }
         pil.expressions.push(c_exp);
         println!(
             "expressions[3] {:?}",

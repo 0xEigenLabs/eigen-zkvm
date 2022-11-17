@@ -51,6 +51,12 @@ pub struct Expression {
     pub const_: Option<i64>,
 }
 
+impl Expression {
+    pub fn next(&self) -> bool {
+        return !(self.next.is_none() || !self.next.unwrap());
+    }
+}
+
 impl PartialEq for Expression {
     fn eq(&self, other: &Self) -> bool {
         self.op == other.op && self.deg == other.deg && self.id == other.id
