@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 use crate::merklehash_bn128::MerkleTree;
 use crate::polsarray::PolsArray;
+use crate::starkinfo;
 use crate::types::{StarkStruct, PIL};
 use crate::ElementDigest;
 
@@ -63,7 +64,7 @@ pub struct StarkSetup {
 /// STARK SETUP
 ///
 ///  calculate the trace polynomial over extended field, return the new polynomial's coefficient.
-pub fn stark_setup(const_pol: &PolsArray, pil: &PIL, stark_struct: &StarkStruct) {
+pub fn stark_setup(const_pol: &PolsArray, pil: &mut PIL, stark_struct: &StarkStruct) {
     let nBits = stark_struct.nBits;
     let nBitsExt = stark_struct.nBitsExt;
 
@@ -89,6 +90,8 @@ pub fn stark_setup(const_pol: &PolsArray, pil: &PIL, stark_struct: &StarkStruct)
     //const constTree = await MH.merkelize(constPolsArrayE, pil.nConstants, nExt);
     let const_tree =
         MerkleTree::merkelize(p, const_pol.n << (nBitsExt - nBits), const_pol.nPols).unwrap();
+
+    let res = starkinfo::StarkInfo::new(pil, stark_struct);
 }
 
 #[cfg(test)]
@@ -128,11 +131,11 @@ pub mod tests {
 
     #[test]
     fn test_stark_setup() {
-        let pil = load_json::<PIL>("data/fib.pil.json").unwrap();
+        let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant, 32);
         const_pol.load("data/fib.const").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
-        stark_setup(&const_pol, &pil, &stark_struct);
+        stark_setup(&const_pol, &mut pil, &stark_struct);
     }
 }
