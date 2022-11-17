@@ -4,7 +4,6 @@ use crate::errors::{EigenError, Result};
 use crate::linearhash_bn128::LinearHashBN128;
 use crate::poseidon_bn128::{Fr, Poseidon};
 use ff::Field;
-use winter_crypto::Hasher;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
 use winter_math::StarkField;
@@ -41,7 +40,7 @@ impl MerkleTree {
         let mut leaves: Vec<crate::ElementDigest> = vec![];
         let mut batch: Vec<BaseElement> = vec![];
 
-        println!("width {}, height {}, {:?}", width, height, columns);
+        //println!("width {}, height {}, {:?}", width, height, columns);
         let max_workers = get_max_workers();
 
         let mut n_per_thread_f = (height - 1) / max_workers + 1;

@@ -22,6 +22,15 @@ pub enum EigenError {
     #[error("merkle tree error`{0}`")]
     MerkleTreeError(String),
 
+    #[error("degree should be equal, but `{0}` != `{1}`")]
+    MustEqualDegreeError(i32, i32),
+
+    #[error("expression error, msg `{0}`")]
+    ExpressionError(String),
+
+    #[error("invalid op, msg `{0}`")]
+    InvalidOperator(String),
+
     #[error("Unknown error, `{0}`")]
     Unknown(String),
 }

@@ -92,7 +92,6 @@ module.exports = function starkInfoGen(_pil, starkStruct) {
 //    cPolBuilder(pil, res.cExp);
 
     res.publics = pil.publics;
-
     return res;
 
 }

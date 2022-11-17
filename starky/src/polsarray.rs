@@ -138,7 +138,10 @@ impl PolsArray {
             );
             let mut n = std::cmp::min(buff8.len() / 8, totalSize - k);
             let rs = f.read(&mut buff8[..(n * 8)])?;
-            println!("read size: {} {} totalSize {}", rs, n, totalSize);
+            println!(
+                "read size: read size = {}, n = {}, k = {}, totalSize = {}",
+                rs, n, k, totalSize
+            );
             let buff: &[u64] = unsafe {
                 std::slice::from_raw_parts(
                     buff8.as_ptr() as *const u64,

@@ -6,7 +6,7 @@ use std::io::Read;
 
 use crate::errors::Result;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Public {
     pub polType: String,
     pub polId: i32,
@@ -15,7 +15,7 @@ pub struct Public {
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Reference {
     pub polType: Option<String>,
     #[serde(rename = "type")]
@@ -23,55 +23,115 @@ pub struct Reference {
     pub id: usize,
     pub polDeg: usize,
     pub isArray: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub elementType: Option<String>, // "field, s8, s16, s32, s64, u16, u8"
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub len: Option<usize>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Expression {
     pub op: String, // number, cm, add, sub, ...
     pub deg: i32,
-    pub next: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next: Option<bool>, // None is false, the other would be true. same as others with type Option<bool>
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub values: Option<Vec<Expression>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub keep: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub keep2ns: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub idQ: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub const_: Option<i64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+impl Expression {
+    pub fn next(&self) -> bool {
+        return !(self.next.is_none() || !self.next.unwrap());
+    }
+}
+
+impl PartialEq for Expression {
+    fn eq(&self, other: &Self) -> bool {
+        self.op == other.op && self.deg == other.deg && self.id == other.id
+    }
+}
+
+impl Expression {
+    pub fn new(
+        op: String,
+        deg: i32,
+        id: Option<i32>,
+        value: Option<String>,
+        values: Option<Vec<Expression>>,
+    ) -> Self {
+        Expression {
+            op: op,
+            deg: deg,
+            id: id,
+            next: None,
+            value: value,
+            values: values,
+            keep: None,
+            keep2ns: None,
+            idQ: None,
+            const_: None,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PolIdentity {
     pub e: i32,
     pub fileName: String,
     pub line: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PlookupIdentity {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub f: Option<Vec<i32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub t: Option<Vec<i32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub selF: Option<i32>, //selector
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub selT: Option<i32>,
     pub fileName: String,
     pub line: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PermutationIdentity {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub f: Option<Vec<i32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub t: Option<Vec<i32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub selF: Option<i32>, //selector
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub selT: Option<i32>,
     pub fileName: String,
     pub line: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ConnectionIdentity {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pols: Option<Vec<i32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub connections: Option<Vec<i32>>,
     pub fileName: String,
     pub line: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PIL {
     pub nCommitments: i32,
     pub nQ: i32,
@@ -84,6 +144,11 @@ pub struct PIL {
     pub plookupIdentities: Vec<PlookupIdentity>,
     pub permutationIdentities: Option<Vec<PermutationIdentity>>,
     pub connectionIdentities: Option<Vec<ConnectionIdentity>>,
+
+    #[serde(skip)]
+    pub cm_dims: Vec<i32>,
+    #[serde(skip)]
+    pub q2exp: Vec<i32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

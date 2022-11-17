@@ -1,6 +1,5 @@
 pub mod errors;
 pub mod polsarray;
-pub mod stark_setup;
 pub mod types;
 
 pub mod linearhash_bn128;
@@ -16,8 +15,18 @@ pub use digest_bn128::ElementDigest;
 mod constant;
 mod traits;
 
+mod expressionops;
 mod f3g;
+mod helper;
+mod stark_setup;
 mod starkinfo;
+mod starkinfo_Z;
+mod starkinfo_codegen;
+mod starkinfo_cp_prover;
+mod starkinfo_cp_ver;
+mod starkinfo_fri_prover;
+mod starkinfo_fri_ver;
+mod starkinfo_map;
 
 #[macro_use]
 extern crate ff;
