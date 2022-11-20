@@ -56,10 +56,11 @@ pub fn interpolate_in_pil(
     m
 }
 
+#[derive(Default)]
 pub struct StarkSetup {
-    const_tree: MerkleTree,
-    const_root: ElementDigest,
-    stark_info: StarkInfo,
+    pub const_tree: MerkleTree,
+    pub const_root: ElementDigest,
+    pub starkinfo: StarkInfo,
 }
 
 /// STARK SETUP
@@ -93,7 +94,7 @@ pub fn stark_setup_new(
     Ok(StarkSetup {
         const_root: const_tree.root(),
         const_tree: const_tree,
-        stark_info: starkinfo,
+        starkinfo: starkinfo,
     })
 }
 

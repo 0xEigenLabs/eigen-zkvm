@@ -398,14 +398,12 @@ impl StarkInfo {
         }
     }
 
-    fn set_code_dimensions(&mut self, segment: &mut Segment, dim_x: i32) -> Result<()> {
+    fn set_code_dimensions(&mut self, segment: &mut Segment, dim_x: i32) {
         let mut tmp_dim: HashMap<i32, i32> = HashMap::new();
 
         self._set_code_dimensions(&mut segment.first, &mut tmp_dim, dim_x);
         self._set_code_dimensions(&mut segment.i, &mut tmp_dim, dim_x);
         self._set_code_dimensions(&mut segment.last, &mut tmp_dim, dim_x);
-
-        Ok(())
     }
 
     fn fix_prover_code(&mut self, segment: &mut Segment, dom: &str, pil: &mut PIL) {

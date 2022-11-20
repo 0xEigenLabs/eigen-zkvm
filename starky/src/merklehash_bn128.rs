@@ -8,6 +8,7 @@ use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
 use winter_math::StarkField;
 
+#[derive(Default)]
 pub struct MerkleTree {
     pub elements: Vec<Vec<BaseElement>>,
     pub width: usize,

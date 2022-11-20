@@ -10,7 +10,7 @@ anyhow = "1.0.33"
 
 winterfell = { version="0.4", default-features = false, features = ["concurrent"] }
 winter-prover = { version="0.4", default-features = false, features = ["concurrent"] }
-winter-air = { version="0.4", default-features = false }
+winter-fri = { version="0.4", default-features = false, features = ["concurrent"] }
 winter-utils = { version = "0.4", package = "winter-utils", default-features = false, features = ["concurrent"] }
 rand-utils = { version = "0.4", package = "winter-rand-utils" }
 winter-math = { version = "0.4" , features = ["concurrent"] }

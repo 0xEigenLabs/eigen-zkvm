@@ -9,6 +9,7 @@ use winter_math::{FieldElement, StarkField};
 use crate::errors::Result;
 use crate::traits::FieldMapping;
 
+#[derive(Default)]
 pub struct LinearHashBN128 {
     h: Poseidon,
 }
