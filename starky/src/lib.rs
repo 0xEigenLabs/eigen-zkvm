@@ -29,8 +29,8 @@ mod starkinfo_fri_prover;
 mod starkinfo_fri_ver;
 mod starkinfo_map;
 
+mod interpreter;
 mod transcript_bn128;
-//mod interpreter;
 
 #[macro_use]
 extern crate ff;

@@ -15,7 +15,6 @@ use crate::constant::{SHIFT, TWIDDLES};
 use winter_math::{fft, fields::f64::BaseElement};
 use winter_math::{FieldElement, StarkField};
 
-#[derive(Default)]
 pub struct StarkContext {
     pub nbits: i32,
     pub nbits_ext: i32,
@@ -36,10 +35,46 @@ pub struct StarkContext {
     pub exps_withoutq_2ns: Vec<BaseElement>,
     pub x_n: Vec<BaseElement>,
     pub x_2ns: Vec<BaseElement>,
-    pub Zi: Vec<BaseElement>,
+    pub Zi: Box<dyn Fn(usize) -> BaseElement>,
     pub const_n: Vec<BaseElement>,
     pub const_2ns: Vec<BaseElement>,
     pub publics: Vec<BaseElement>,
+    pub xDivXSubXi: Vec<BaseElement>,
+    pub xDivXSubWXi: Vec<BaseElement>,
+    pub evals: Vec<F3G>,
+}
+
+impl Default for StarkContext {
+    fn default() -> Self {
+        StarkContext {
+            nbits: 0,
+            nbits_ext: 0,
+            N: 0,
+            Next: 0,
+            challenge: Vec::new(),
+            tmp: Vec::new(),
+            cm1_n: Vec::new(),
+            cm2_n: Vec::new(),
+            cm3_n: Vec::new(),
+            exps_withq_n: Vec::new(),
+            exps_withoutq_n: Vec::new(),
+            cm1_2ns: Vec::new(),
+            cm2_2ns: Vec::new(),
+            cm3_2ns: Vec::new(),
+            q_2ns: Vec::new(),
+            exps_withq_2ns: Vec::new(),
+            exps_withoutq_2ns: Vec::new(),
+            x_n: Vec::new(),
+            x_2ns: Vec::new(),
+            Zi: Box::new(|i: usize| BaseElement::ZERO),
+            const_n: Vec::new(),
+            const_2ns: Vec::new(),
+            publics: Vec::new(),
+            xDivXSubXi: Vec::new(),
+            xDivXSubWXi: Vec::new(),
+            evals: Vec::new(),
+        }
+    }
 }
 
 pub struct StarkProof<'a> {
@@ -47,7 +82,6 @@ pub struct StarkProof<'a> {
     fri_proof: FriProof,
     root: [ElementDigest; 4],
     publics: Vec<Segment>,
-    evals: Vec<F3G>,
 }
 
 impl<'a> StarkProof<'a> {
@@ -87,7 +121,7 @@ impl<'a> StarkProof<'a> {
         Ok(ctx)
     }
 
-    pub fn build_Zh_Inv(nBits: usize, extendBits: usize) -> Vec<BaseElement> {
+    pub fn build_Zh_Inv(nBits: usize, extendBits: usize) -> Box<dyn Fn(usize) -> BaseElement> {
         let mut w = BaseElement::ONE;
         let mut sn = SHIFT.clone();
         for i in 0..nBits {
@@ -98,6 +132,6 @@ impl<'a> StarkProof<'a> {
             ZHInv[i] = -(sn * w - BaseElement::ONE);
             w = w * TWIDDLES[extendBits];
         }
-        ZHInv
+        Box::new(|i: usize| ZHInv[i].clone())
     }
 }
