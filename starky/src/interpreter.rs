@@ -1,36 +1,294 @@
-use crate::stark_codegen::Subcode;
+use crate::f3g::F3G;
 use crate::stark_gen::StarkContext;
 use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::Node;
-use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
+use crate::starkinfo_codegen::Subcode;
+use std::fmt;
+use winter_math::{FieldElement, StarkField};
 
-pub fn compile_code(
-    ctx: &StarkContext,
-    starkinfo: &mut StarkInfo,
-    dom: &str,
-    code: &mut Vec<Subcode>,
-    ret: bool,
-) -> Box<dyn Fn(i32) -> BaseElement> {
-    Box::new(|input_i: i32| -> BaseElement { compile(ctx, starkinfo, dom, code, ret, input_i) })
+#[derive(Clone, Debug)]
+pub enum Ops {
+    Vari(F3G), // instant value
+    Add,       // add and push the result into stack
+    Sub,       // sub and push the result into stack
+    Mul,       // mul and push the result into stack
+    Copy_,     // push instant value into stack
+    Assign,    // assign value from mem into an address. *op = val
+    Refer,     // refer to a variable in memory
+    Ret,       // must return
 }
 
-fn compile(
+/// example: `ctx.const_n[${r.id} + ((i+1)%${N})*${ctx.starkInfo.nConstants} ]`;
+/// where the r.id, N, ctx.starkInfo.nConstants modified by `${}` are the instant value, ctx.const_n and i are the symble.
+/// the symbol should the fields of the global context, have same name as Section.
+/// so the example would be Expr { op: Refer, syms: [ctx.const_n, i], defs: [Vari, Vari...] }
+#[derive(Clone, Debug)]
+pub struct Expr {
+    pub op: Ops,
+    pub syms: Vec<String>,
+    pub defs: Vec<Expr>,
+}
+
+impl Expr {
+    pub fn new(op: Ops, syms: Vec<String>, defs: Vec<Expr>) -> Self {
+        Self { op, syms, defs }
+    }
+}
+
+impl From<F3G> for Expr {
+    fn from(v: F3G) -> Self {
+        Expr::new(Ops::Vari(v), vec![], vec![])
+    }
+}
+
+pub struct Block {
+    pub namespace: String,
+    pub exprs: Vec<Expr>,
+}
+
+impl Block {
+    /// parameters: ctx, i
+    /// example:
+    /// let block = compile_code();
+    /// block.eval(&mut ctx, i);
+    pub fn eval(&self, ctx: &mut StarkContext, arg_i: usize) -> F3G {
+        let mut val_stack: Vec<F3G> = Vec::new();
+        let mut op_stack: Vec<usize> = Vec::new();
+
+        let length = self.exprs.len();
+
+        let mut i = 0usize;
+        while i < length {
+            let expr = &self.exprs[i];
+            i += 1;
+            match expr.op {
+                Ops::Ret => {
+                    return val_stack.pop().unwrap();
+                }
+                Ops::Vari(x) => {
+                    val_stack.push(x);
+                }
+                Ops::Add => {
+                    let lhs = val_stack.pop().unwrap();
+                    let rhs = val_stack.pop().unwrap();
+                    val_stack.push(lhs + rhs);
+                }
+                Ops::Mul => {
+                    let lhs = val_stack.pop().unwrap();
+                    let rhs = val_stack.pop().unwrap();
+                    val_stack.push(lhs - rhs);
+                }
+                Ops::Sub => {
+                    let lhs = val_stack.pop().unwrap();
+                    let rhs = val_stack.pop().unwrap();
+                    val_stack.push(lhs * rhs);
+                }
+                Ops::Copy_ => {
+                    let x = if let Ops::Vari(x) = expr.defs[0].op {
+                        x
+                    } else {
+                        panic!("invalid oprand {:?}", expr)
+                    };
+                    val_stack.push(x);
+                }
+                Ops::Assign => {
+                    let addr = &expr.syms[0];
+                    let id = if let Ops::Vari(x) = expr.defs[1].op {
+                        x.to_be().as_int() as usize
+                    } else {
+                        panic!("invalid oprand {:?}", expr)
+                    };
+                    let val = val_stack.pop().unwrap(); // get the value from stack
+                                                        //*addr = value
+                    match addr.as_str() {
+                        "tmp" => {
+                            ctx.tmp[id] = val;
+                        }
+                        "cm1_n" => {
+                            ctx.cm1_n[id] = val;
+                        }
+                        "cm1_2ns" => {
+                            ctx.cm1_2ns[id] = val;
+                        }
+                        "cm2_n" => {
+                            ctx.cm2_n[id] = val;
+                        }
+                        "cm2_2ns" => {
+                            ctx.cm2_2ns[id] = val;
+                        }
+                        "cm3_n" => {
+                            ctx.cm3_n[id] = val;
+                        }
+                        "cm3_2ns" => {
+                            ctx.cm3_2ns[id] = val;
+                        }
+                        "q_2ns" => {
+                            ctx.q_2ns[id] = val;
+                        }
+                        "exps_n" => {
+                            ctx.exps_n[id] = val;
+                        }
+                        "exps_2ns" => {
+                            ctx.exps_2ns[id] = val;
+                        }
+                        "exps_withq_n" => {
+                            ctx.exps_withq_n[id] = val;
+                        }
+                        "exps_withq_2ns" => {
+                            ctx.exps_withq_2ns[id] = val;
+                        }
+                        _ => {
+                            panic!("invalid symbol {:?}", addr);
+                        }
+                    }
+                }
+                Ops::Refer => {
+                    // push value into stack
+                    // syms: [addr, i, dim]
+                    let addr = &expr.syms[0];
+                    let i = if expr.syms.len() == 2 { true } else { false }; // i exists
+                    let dim = if expr.syms.len() == 3 { 3 } else { 1 };
+
+                    // defs: [offset, next, N, size] => index = offset + ((1+next)%N) * size
+                    let get_val = |i: usize| -> usize {
+                        match expr.defs[i].op {
+                            Ops::Vari(x) => x.to_be().as_int() as usize,
+                            _ => {
+                                panic!("invalid oprand {:?}", expr);
+                            }
+                        }
+                    };
+
+                    let get_4 = || {
+                        let offset = get_val(0);
+                        let next = get_val(1);
+                        let N = get_val(2);
+                        let size = get_val(3);
+                        offset + ((arg_i + next) % N) * size
+                    };
+
+                    let x = match addr.as_str() {
+                        "tmp" => {
+                            let id = get_val(0);
+                            ctx.tmp[id]
+                        }
+                        "cm1_n" => {
+                            let id = get_4();
+                            ctx.cm1_n[id]
+                        }
+                        "cm1_2ns" => {
+                            let id = get_4();
+                            ctx.cm1_2ns[id]
+                        }
+                        "cm2_n" => {
+                            let id = get_4();
+                            ctx.cm2_n[id]
+                        }
+                        "cm2_2ns" => {
+                            let id = get_4();
+                            ctx.cm2_2ns[id]
+                        }
+                        "cm3_n" => {
+                            let id = get_4();
+                            ctx.cm3_n[id]
+                        }
+                        "cm3_2ns" => {
+                            let id = get_4();
+                            ctx.cm3_2ns[id]
+                        }
+                        "q_2ns" => {
+                            let id = get_4();
+                            ctx.q_2ns[id]
+                        }
+                        "exps_n" => {
+                            let id = get_4();
+                            ctx.exps_n[id]
+                        }
+                        "exps_2ns" => {
+                            let id = get_4();
+                            ctx.exps_2ns[id]
+                        }
+                        "const_n" => {
+                            let id = get_4();
+                            ctx.const_n[id]
+                        }
+                        "const_2ns" => {
+                            let id = get_4();
+                            ctx.const_2ns[id]
+                        }
+                        "exps_withq_n" => {
+                            let id = get_4();
+                            ctx.exps_withq_n[id]
+                        }
+                        "exps_withq_2ns" => {
+                            let id = get_4();
+                            ctx.exps_withq_2ns[id]
+                        }
+                        "publics" => {
+                            let id = get_val(0);
+                            ctx.publics[id]
+                        }
+                        "challenge" => {
+                            let id = get_val(0);
+                            ctx.challenge[id]
+                        }
+                        "evals" => {
+                            let id = get_val(0);
+                            ctx.evals[id]
+                        }
+                        "xDivXSubXi" => {
+                            let id = arg_i;
+                            F3G::new(
+                                ctx.xDivXSubXi[3 * id],
+                                ctx.xDivXSubXi[3 * id + 1],
+                                ctx.xDivXSubXi[3 * id + 2],
+                            )
+                        }
+                        "xDivXSubWXi" => {
+                            let id = arg_i;
+                            F3G::new(
+                                ctx.xDivXSubWXi[3 * id],
+                                ctx.xDivXSubWXi[3 * id + 1],
+                                ctx.xDivXSubWXi[3 * id + 2],
+                            )
+                        }
+                        "x_n" => ctx.x_n[arg_i],
+                        "x_2ns" => ctx.x_2ns[arg_i],
+                        "Zi" => (ctx.Zi)(arg_i),
+                        _ => {
+                            panic!("invalid symbol {:?}", addr);
+                        }
+                    };
+                    val_stack.push(x);
+                }
+                _ => {
+                    panic!("Invalid op in block");
+                }
+            }
+        }
+        F3G::ZERO
+    }
+}
+
+impl fmt::Display for Block {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {:?})", self.namespace, self.exprs)
+    }
+}
+
+fn compile_code(
     ctx: &StarkContext,
     starkinfo: &mut StarkInfo,
     dom: &str,
     code: &mut Vec<Subcode>,
     ret: bool,
-    input_i: i32,
-) -> BaseElement {
+) -> Block {
     let next = if dom == "n" {
         1
     } else {
         1 << (ctx.nbits_ext - ctx.nbits)
     };
     let next = next as usize;
-
-    let input_i = input_i as usize;
 
     let N = if dom == "n" {
         1 << ctx.nbits
@@ -39,17 +297,25 @@ fn compile(
     };
     let N = N as usize;
 
+    let mut body: Block = Block {
+        namespace: "ctx".to_string(),
+        exprs: Vec::new(),
+    };
+
     for i in 0..code.len() {
-        let src = vec![BaseElement::ZERO; code[i].src.len()];
+        let mut src: Vec<Expr> = Vec::new();
         for j in 0..code[i].src.len() {
-            src[j] = get_ref(ctx, &code[i].src[j], &dom, &next, &N, &input_i);
+            src[j] = get_ref(ctx, starkinfo, &code[i].src[j], &dom, &next, &N);
         }
 
-        let exp = match code[i].op.as_str() {
-            "add" => src[0] + src[1],
-            "sub" => src[0] - src[1],
-            "mul" => src[0] * src[1],
-            "copy" => src[0],
+        let exp = match (&code[i].op).as_str() {
+            "add" => Expr::new(Ops::Add, Vec::new(), (&src[0..2]).to_vec()),
+            "sub" => Expr::new(Ops::Sub, Vec::new(), (&src[0..2]).to_vec()),
+            "muk" => Expr::new(Ops::Mul, Vec::new(), (&src[0..2]).to_vec()),
+            "copy" => Expr::new(Ops::Copy_, Vec::new(), (&src[0..1]).to_vec()),
+            _ => {
+                panic!("Invalid op")
+            }
         };
         set_ref(
             ctx,
@@ -59,46 +325,42 @@ fn compile(
             dom,
             &next,
             &N,
-            &input_i,
+            &mut body,
         );
     }
 
     if ret {
-        get_ref(
-            ctx,
-            starkinfo,
-            code[code.length - 1].dest,
-            dom,
-            next,
-            N,
-            input_i,
-        )
-    } else {
-        BaseElement::ZERO
+        let sz = code.len() - 1;
+        body.exprs
+            .push(get_ref(ctx, starkinfo, &mut code[sz].dest, &dom, &next, &N));
+        body.exprs.push(Expr::new(Ops::Ret, vec![], vec![]));
     }
+    body
 }
 
 fn set_ref(
     ctx: &StarkContext,
     starkinfo: &mut StarkInfo,
     r: &mut Node,
-    val: BaseElement,
+    val: Expr,
     dom: &str,
     next: &usize,
     N: &usize,
-    i: &usize,
-) -> Expr {
+    body: &mut Block,
+) {
     let e_dst = match r.type_.as_str() {
-        "tmp" => Expr {
-            dom: "".to_string(),
-            op: "assign".to_string(),
-            oprands: [ctx.tmp[r.id], BaseElement::ZERO, BaseElement::ZERO],
-        },
+        "tmp" => Expr::new(
+            Ops::Refer,
+            vec!["tmp".to_string()],
+            vec![Expr::from(F3G::from(r.id))],
+        ),
         "exp" => {
             if dom == "n" {
-                eval_map(&starkinfo.exps_n[r.id], &r.prime, &next, &N, &i)
+                let pol_id = starkinfo.exps_n[r.id as usize].clone();
+                eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else if dom == "2ns" {
-                eval_map(&starkinfo.exps_2ns[r.id], &r.prime, &next, &N, &i)
+                let pol_id = starkinfo.exps_2ns[r.id as usize].clone();
+                eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
             }
@@ -107,22 +369,18 @@ fn set_ref(
             if dom == "n" {
                 panic!("Accesssing q in domain n");
             } else if dom == "2ns" {
-                eval_map(&starkinfo.q_2ns[r.id], &r.prime, next, N, i)
+                let pol_id = starkinfo.qs[r.id as usize];
+                eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
             }
         }
-
         _ => {
             panic!("Invalid reference type set {}", r.type_)
         }
     };
-
-    Expr {
-        dom: "".to_string(),
-        op: "assign".to_string(),
-        oprands: [e_dst, val, BaseElement::ZERO],
-    }
+    body.exprs.push(val);
+    body.exprs.push(Expr::new(Ops::Assign, vec![], vec![e_dst]));
 }
 
 fn get_ref(
@@ -132,30 +390,61 @@ fn get_ref(
     dom: &str,
     next: &usize,
     N: &usize,
-    i: &usize,
-) -> Vec<BaseElement> {
+) -> Expr {
     match r.type_.as_str() {
-        "tmp" => ctx.const_n[r.id],
+        "tmp" => Expr::new(
+            Ops::Refer,
+            vec!["tmp".to_string()],
+            vec![Expr::from(F3G::from(r.id))],
+        ),
         "const" => {
             if dom == "n" {
                 if r.prime {
-                    return vec![
-                        ctx.const_n
-                            [r.id + (i + 1) % N * ctx.stark_setup.starkinfo.n_contants as usize],
-                    ];
+                    Expr::new(
+                        Ops::Refer,
+                        vec!["const_n".to_string(), "i".to_string()],
+                        vec![
+                            Expr::from(F3G::from(r.id)),
+                            Expr::from(F3G::ONE),
+                            Expr::from(F3G::from(N)),
+                            Expr::from(F3G::from(starkinfo.n_constants)),
+                        ],
+                    )
                 } else {
-                    return vec![
-                        ctx.const_n[r.id + i * ctx.stark_setup.starkinfo.n_contants as usize],
-                    ];
+                    Expr::new(
+                        Ops::Refer,
+                        vec!["const_n".to_string(), "i".to_string()],
+                        vec![
+                            Expr::from(F3G::from(r.id)),
+                            Expr::from(F3G::ZERO),
+                            Expr::from(F3G::from(N)),
+                            Expr::from(F3G::from(starkinfo.n_constants)),
+                        ],
+                    )
                 }
             } else if dom == "2ns" {
                 if r.prime {
-                    return vec![
-                        ctx.const_2ns
-                            [r.id + (i + 1) % N * ctx.stark_setup.starkinfo.n_contants as usize],
-                    ];
+                    Expr::new(
+                        Ops::Refer,
+                        vec!["const_2ns".to_string(), "i".to_string()],
+                        vec![
+                            Expr::from(F3G::from(r.id)),
+                            Expr::from(F3G::from(next)),
+                            Expr::from(F3G::from(N)),
+                            Expr::from(F3G::from(starkinfo.n_constants)),
+                        ],
+                    )
                 } else {
-                    return vec![ctx.const_2ns[r.id + i * ctx.stark_setup.starkinfo.n_contants]];
+                    Expr::new(
+                        Ops::Refer,
+                        vec!["const_2ns".to_string(), "i".to_string()],
+                        vec![
+                            Expr::from(F3G::from(r.id)),
+                            Expr::from(F3G::ZERO),
+                            Expr::from(F3G::from(N)),
+                            Expr::from(F3G::from(starkinfo.n_constants)),
+                        ],
+                    )
                 }
             } else {
                 panic!("Invalid dom");
@@ -164,10 +453,10 @@ fn get_ref(
         "cm" => {
             if dom == "n" {
                 let pol_id = starkinfo.cm_n[r.id as usize];
-                return eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N, &i);
+                eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else if dom == "2ns" {
                 let pol_id = starkinfo.cm_2ns[r.id as usize];
-                return eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N, &i);
+                eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
             }
@@ -176,8 +465,8 @@ fn get_ref(
             if dom == "n" {
                 panic!("Accesssing q in domain n");
             } else if dom == "2ns" {
-                let pol_id = starkinfo.q_2ns[r.id as usize];
-                return eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N, &i);
+                let pol_id = starkinfo.qs[r.id as usize];
+                eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
             }
@@ -185,54 +474,61 @@ fn get_ref(
         "exp" => {
             if dom == "n" {
                 let pol_id = starkinfo.exps_n[r.id as usize].clone();
-                return eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N, &i);
+                eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else if dom == "2ns" {
                 let pol_id = starkinfo.exps_2ns[r.id as usize].clone();
-                return eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N, &i);
+                eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
             }
         }
 
-        "number" => {
-            vec![BaseElement::from(r.value.unwrap().parse::<u64>().unwrap())]
-        }
-
-        "public" => {
-            vec![ctx.publics[r.id as usize]]
-        }
-        "challenge" => {
-            vec![ctx.challenge[r.id as usize]]
-        }
-        "eval" => {
-            vec![ctx.evals[r.id as usize]]
-        }
-        "xDivXSubXi" => {
-            vec![
-                ctx.xDivXSubXi[3 * i],
-                ctx.xDivXSubXi[3 * i + 1],
-                ctx.xDivXSubXi[3 * i + 2],
-            ]
-        }
-        "xDivXSubWXi" => {
-            vec![
-                ctx.xDivXSubWXi[3 * i],
-                ctx.xDivXSubWXi[3 * i + 1],
-                ctx.xDivXSubWXi[3 * i + 2],
-            ]
-        }
+        "number" => Expr::new(
+            Ops::Refer,
+            vec![],
+            vec![Expr::from(F3G::from(
+                r.value.clone().unwrap().parse::<u64>().unwrap(),
+            ))],
+        ),
+        "public" => Expr::new(
+            Ops::Refer,
+            vec!["publics".to_string()],
+            vec![Expr::from(F3G::from(r.id))],
+        ),
+        "challenge" => Expr::new(
+            Ops::Refer,
+            vec!["challenge".to_string()],
+            vec![Expr::from(F3G::from(r.id))],
+        ),
+        "eval" => Expr::new(
+            Ops::Refer,
+            vec!["evals".to_string()],
+            vec![Expr::from(F3G::from(r.id))],
+        ),
+        "xDivXSubXi" => Expr::new(
+            Ops::Refer,
+            vec!["xDivXSubXi".to_string(), "i".to_string()],
+            vec![],
+        ),
+        "xDivXSubWXi" => Expr::new(
+            Ops::Refer,
+            vec!["xDivXSubWXi".to_string(), "i".to_string()],
+            vec![],
+        ),
         "x" => {
             if dom == "n" {
-                return vec![ctx.x_n[*i]];
+                Expr::new(Ops::Refer, vec!["x_n".to_string(), "i".to_string()], vec![])
             } else if dom == "2ns" {
-                return vec![ctx.x_2ns[*i]];
+                Expr::new(
+                    Ops::Refer,
+                    vec!["x_2ns".to_string(), "i".to_string()],
+                    vec![],
+                )
             } else {
                 panic!("Invalid dom");
             }
         }
-        "Zi" => {
-            vec![(ctx.Zi)(*i)]
-        }
+        "Zi" => Expr::new(Ops::Refer, vec!["Zi".to_string(), "i".to_string()], vec![]),
         _ => panic!("Invalid reference type get, {}", r.type_),
     }
 }
@@ -244,134 +540,41 @@ fn eval_map(
     prime: &bool,
     next: &usize,
     N: &usize,
-    i: &usize,
-) -> Vec<BaseElement> {
+) -> Expr {
     let p = &starkinfo.var_pol_map[*pol_id as usize];
-    let offset = p.section_pos as usize;
-    let size = starkinfo.map_sectionsN.get(&p.section) as usize;
+    let offset = Expr::from(F3G::from(p.section_pos));
+    let size = Expr::from(F3G::from(starkinfo.map_sectionsN.get(&p.section)));
+    let next = Expr::from(F3G::from(*next));
+    let NB = Expr::from(F3G::from(*N));
+    let zero = Expr::from(F3G::ZERO);
+
     if p.dim == 1 {
         if *prime {
-            match p.section.as_str() {
-                "cm1_n" => vec![ctx.cm1_n[offset + ((i + next) % N) * size]],
-                "cm1_2ns" => vec![ctx.cm1_2ns[offset + ((i + next) % N) * size]],
-                "cm2_n" => vec![ctx.cm2_n[offset + ((i + next) % N) * size]],
-                "cm2_2ns" => vec![ctx.cm2_2ns[offset + ((i + next) % N) * size]],
-                "cm3_n" => vec![ctx.cm3_n[offset + ((i + next) % N) * size]],
-                "cm3_2ns" => vec![ctx.cm3_2ns[offset + ((i + next) % N) * size]],
-                "q_2ns" => vec![ctx.q_2ns[offset + ((i + next) % N) * size]],
-                "exps_withq_2ns" => vec![ctx.exps_withq_2ns[offset + ((i + next) % N) * size]],
-                _ => {
-                    panic!("Invalid section {}", p.section);
-                }
-            }
+            Expr::new(
+                Ops::Refer,
+                vec![p.section.clone(), "i".to_string()],
+                vec![offset, next, NB, size],
+            )
         } else {
-            match p.section.as_str() {
-                "cm1_n" => vec![ctx.cm1_n[offset + i * size]],
-                "cm1_2ns" => vec![ctx.cm1_2ns[offset + i * size]],
-                "cm2_n" => vec![ctx.cm2_n[offset + i * size]],
-                "cm2_2ns" => vec![ctx.cm2_2ns[offset + i * size]],
-                "cm3_n" => vec![ctx.cm3_n[offset + i * size]],
-                "cm3_2ns" => vec![ctx.cm3_2ns[offset + i * size]],
-                "q_2ns" => vec![ctx.q_2ns[offset + i * size]],
-                "exps_withq_2ns" => vec![ctx.exps_withq_2ns[offset + i * size]],
-                _ => {
-                    panic!("Invalid section {}", p.section);
-                }
-            }
+            Expr::new(
+                Ops::Refer,
+                vec![p.section.clone(), "i".to_string()],
+                vec![offset, zero, NB, size],
+            )
         }
     } else if p.dim == 3 {
         if *prime {
-            match p.section.as_str() {
-                "cm1_n" => vec![
-                    ctx.cm1_n[offset + ((i + next) % N) * size],
-                    ctx.cm1_n[offset + ((i + next) % N) * size + 1],
-                    ctx.cm1_n[offset + ((i + next) % N) * size + 2],
-                ],
-                "cm1_2ns" => vec![
-                    ctx.cm1_2ns[offset + ((i + next) % N) * size],
-                    ctx.cm1_2ns[offset + ((i + next) % N) * size + 1],
-                    ctx.cm1_2ns[offset + ((i + next) % N) * size + 2],
-                ],
-                "cm2_n" => vec![
-                    ctx.cm2_n[offset + ((i + next) % N) * size],
-                    ctx.cm2_n[offset + ((i + next) % N) * size + 1],
-                    ctx.cm2_n[offset + ((i + next) % N) * size + 2],
-                ],
-                "cm2_2ns" => vec![
-                    ctx.cm2_2ns[offset + ((i + next) % N) * size],
-                    ctx.cm2_2ns[offset + ((i + next) % N) * size + 1],
-                    ctx.cm2_2ns[offset + ((i + next) % N) * size + 2],
-                ],
-                "cm3_n" => vec![
-                    ctx.cm3_n[offset + ((i + next) % N) * size],
-                    ctx.cm3_n[offset + ((i + next) % N) * size + 1],
-                    ctx.cm3_n[offset + ((i + next) % N) * size + 2],
-                ],
-                "cm3_2ns" => vec![
-                    ctx.cm3_2ns[offset + ((i + next) % N) * size],
-                    ctx.cm3_2ns[offset + ((i + next) % N) * size + 1],
-                    ctx.cm3_2ns[offset + ((i + next) % N) * size + 2],
-                ],
-                "q_2ns" => vec![
-                    ctx.q_2ns[offset + ((i + next) % N) * size],
-                    ctx.q_2ns[offset + ((i + next) % N) * size + 1],
-                    ctx.q_2ns[offset + ((i + next) % N) * size + 2],
-                ],
-                "exps_withq_2ns" => vec![
-                    ctx.exps_withq_2ns[offset + ((i + next) % N) * size],
-                    ctx.exps_withq_2ns[offset + ((i + next) % N) * size + 1],
-                    ctx.exps_withq_2ns[offset + ((i + next) % N) * size + 2],
-                ],
-                _ => {
-                    panic!("Invalid section {}", p.section);
-                }
-            }
+            Expr::new(
+                Ops::Refer,
+                vec![p.section.clone(), "i".to_string(), "3".to_string()],
+                vec![offset, next, NB, size],
+            )
         } else {
-            match p.section.as_str() {
-                "cm1_n" => vec![
-                    ctx.cm1_n[offset + i * size],
-                    ctx.cm1_n[offset + i * size + 1],
-                    ctx.cm1_n[offset + i * size + 2],
-                ],
-                "cm1_2ns" => vec![
-                    ctx.cm1_2ns[offset + i * size],
-                    ctx.cm1_2ns[offset + i * size + 1],
-                    ctx.cm1_2ns[offset + i * size + 2],
-                ],
-                "cm2_n" => vec![
-                    ctx.cm2_n[offset + i * size],
-                    ctx.cm2_n[offset + i * size + 1],
-                    ctx.cm2_n[offset + i * size + 2],
-                ],
-                "cm2_2ns" => vec![
-                    ctx.cm2_2ns[offset + i * size],
-                    ctx.cm2_2ns[offset + i * size + 1],
-                    ctx.cm2_2ns[offset + i * size + 2],
-                ],
-                "cm3_n" => vec![
-                    ctx.cm3_n[offset + i * size],
-                    ctx.cm3_n[offset + i * size + 1],
-                    ctx.cm3_n[offset + i * size + 2],
-                ],
-                "cm3_2ns" => vec![
-                    ctx.cm3_2ns[offset + i * size],
-                    ctx.cm3_2ns[offset + i * size + 1],
-                    ctx.cm3_2ns[offset + i * size + 2],
-                ],
-                "q_2ns" => vec![
-                    ctx.q_2ns[offset + i * size],
-                    ctx.q_2ns[offset + i * size + 1],
-                    ctx.q_2ns[offset + i * size + 2],
-                ],
-                "exps_withq_2ns" => vec![
-                    ctx.exps_withq_2ns[offset + i * size],
-                    ctx.exps_withq_2ns[offset + i * size + 1],
-                    ctx.exps_withq_2ns[offset + i * size + 2],
-                ],
-                _ => {
-                    panic!("Invalid section {}", p.section);
-                }
-            }
+            Expr::new(
+                Ops::Refer,
+                vec![p.section.clone(), "i".to_string(), "3".to_string()],
+                vec![offset, zero, NB, size],
+            )
         }
     } else {
         panic!("Invalid dim {}", p.dim);

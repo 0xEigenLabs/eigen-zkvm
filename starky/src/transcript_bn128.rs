@@ -69,10 +69,11 @@ impl TranscriptBN128 {
         Ok(())
     }
 
-    pub fn put(&mut self, es: &[Fr]) {
+    pub fn put(&mut self, es: &[Fr]) -> Result<()> {
         for e in es.iter() {
-            self.add_1(e);
+            self.add_1(e)?;
         }
+        Ok(())
     }
 
     fn add_1(&mut self, e: &Fr) -> Result<()> {

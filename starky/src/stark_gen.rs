@@ -12,7 +12,8 @@ use crate::types::{StarkStruct, PIL};
 use winter_fri::FriProof;
 
 use crate::constant::{SHIFT, TWIDDLES};
-use winter_math::{fft, fields::f64::BaseElement};
+use winter_math::fft;
+use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
 
 pub struct StarkContext {
@@ -20,28 +21,31 @@ pub struct StarkContext {
     pub nbits_ext: i32,
     pub N: i32,
     pub Next: i32,
-    pub challenge: Vec<BaseElement>,
-    pub tmp: Vec<BaseElement>,
-    pub cm1_n: Vec<BaseElement>,
-    pub cm2_n: Vec<BaseElement>,
-    pub cm3_n: Vec<BaseElement>,
-    pub exps_withq_n: Vec<BaseElement>,
-    pub exps_withoutq_n: Vec<BaseElement>,
-    pub cm1_2ns: Vec<BaseElement>,
-    pub cm2_2ns: Vec<BaseElement>,
-    pub cm3_2ns: Vec<BaseElement>,
-    pub q_2ns: Vec<BaseElement>,
-    pub exps_withq_2ns: Vec<BaseElement>,
-    pub exps_withoutq_2ns: Vec<BaseElement>,
-    pub x_n: Vec<BaseElement>,
-    pub x_2ns: Vec<BaseElement>,
-    pub Zi: Box<dyn Fn(usize) -> BaseElement>,
-    pub const_n: Vec<BaseElement>,
-    pub const_2ns: Vec<BaseElement>,
-    pub publics: Vec<BaseElement>,
+    pub challenge: Vec<F3G>,
+    pub tmp: Vec<F3G>,
+    pub cm1_n: Vec<F3G>,
+    pub cm2_n: Vec<F3G>,
+    pub cm3_n: Vec<F3G>,
+    pub exps_withq_n: Vec<F3G>,
+    pub exps_withoutq_n: Vec<F3G>,
+    pub cm1_2ns: Vec<F3G>,
+    pub cm2_2ns: Vec<F3G>,
+    pub cm3_2ns: Vec<F3G>,
+    pub q_2ns: Vec<F3G>,
+    pub exps_withq_2ns: Vec<F3G>,
+    pub exps_withoutq_2ns: Vec<F3G>,
+    pub x_n: Vec<F3G>,
+    pub x_2ns: Vec<F3G>,
+    pub Zi: Box<dyn Fn(usize) -> F3G>,
+    pub const_n: Vec<F3G>,
+    pub const_2ns: Vec<F3G>,
+    pub publics: Vec<F3G>,
     pub xDivXSubXi: Vec<BaseElement>,
     pub xDivXSubWXi: Vec<BaseElement>,
     pub evals: Vec<F3G>,
+
+    pub exps_n: Vec<F3G>,
+    pub exps_2ns: Vec<F3G>,
 }
 
 impl Default for StarkContext {
@@ -66,13 +70,15 @@ impl Default for StarkContext {
             exps_withoutq_2ns: Vec::new(),
             x_n: Vec::new(),
             x_2ns: Vec::new(),
-            Zi: Box::new(|i: usize| BaseElement::ZERO),
+            Zi: Box::new(|i: usize| F3G::ZERO),
             const_n: Vec::new(),
             const_2ns: Vec::new(),
             publics: Vec::new(),
             xDivXSubXi: Vec::new(),
             xDivXSubWXi: Vec::new(),
             evals: Vec::new(),
+            exps_n: Vec::new(),
+            exps_2ns: Vec::new(),
         }
     }
 }
@@ -100,14 +106,14 @@ impl<'a> StarkProof<'a> {
 
         let mut ctx = StarkContext::default();
 
-        ctx.x_n = vec![BaseElement::ZERO; N];
-        let mut xx = BaseElement::ONE;
+        ctx.x_n = vec![F3G::ZERO; N];
+        let mut xx = F3G::ONE;
         for i in 0..N {
             ctx.x_n[i] = xx;
             xx = xx * TWIDDLES[nBits];
         }
 
-        ctx.x_2ns = vec![BaseElement::ZERO; N];
+        ctx.x_2ns = vec![F3G::ZERO; N];
         let mut xx = SHIFT.clone();
         for i in 0..(1 << extendBits) {
             ctx.x_2ns[i] = xx;
@@ -116,22 +122,22 @@ impl<'a> StarkProof<'a> {
 
         ctx.Zi = Self::build_Zh_Inv(nBits, extendBits);
 
-        //ctx.const_n = const_pols.to_vec();
+        ctx.const_n = const_pols.to_vec();
 
         Ok(ctx)
     }
 
-    pub fn build_Zh_Inv(nBits: usize, extendBits: usize) -> Box<dyn Fn(usize) -> BaseElement> {
-        let mut w = BaseElement::ONE;
+    pub fn build_Zh_Inv(nBits: usize, extendBits: usize) -> Box<dyn Fn(usize) -> F3G + 'static> {
+        let mut w = F3G::ONE;
         let mut sn = SHIFT.clone();
         for i in 0..nBits {
             sn = sn * sn;
         }
         let mut ZHInv = vec![];
         for i in 0..(1 << extendBits) {
-            ZHInv[i] = -(sn * w - BaseElement::ONE);
+            ZHInv[i] = -(sn * w - F3G::ONE);
             w = w * TWIDDLES[extendBits];
         }
-        Box::new(|i: usize| ZHInv[i].clone())
+        Box::new(move |i: usize| ZHInv[i].clone())
     }
 }
