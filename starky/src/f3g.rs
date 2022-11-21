@@ -27,13 +27,6 @@ impl F3G {
         }
     }
 
-    pub fn new_1(a: BaseElement) -> Self {
-        F3G {
-            cube: CubeExtension::<BaseElement>::new(a, BaseElement::ZERO, BaseElement::ZERO),
-            dim: 1,
-        }
-    }
-
     pub fn to_be(&self) -> BaseElement {
         assert_eq!(self.dim, 1);
         let elems = self.as_base_elements();
@@ -64,7 +57,7 @@ impl F3G {
                 cube: self.cube.inv(),
                 dim: 3,
             },
-            1 => Self::new_1(self.to_be().inv()),
+            1 => Self::from(self.to_be().inv()),
             _ => {
                 panic!("Invalid dim");
             }
@@ -82,7 +75,7 @@ impl F3G {
                 cube: self.cube.square(),
                 dim: 3,
             },
-            1 => Self::new_1(self.to_be().square()),
+            1 => Self::from(self.to_be().square()),
             _ => {
                 panic!("Invalid dim");
             }
@@ -198,7 +191,7 @@ impl Add for F3G {
                 cube: self.cube.add(rhs.cube),
                 dim: 3,
             },
-            1 => Self::new_1(self.to_be() + rhs.to_be()),
+            1 => Self::from(self.to_be() + rhs.to_be()),
             _ => {
                 panic!("Invalid dim");
             }
@@ -214,7 +207,7 @@ impl Sub for F3G {
                 cube: self.cube.sub(rhs.cube),
                 dim: 3,
             },
-            1 => Self::new_1(self.to_be() - rhs.to_be()),
+            1 => Self::from(self.to_be() - rhs.to_be()),
             _ => {
                 panic!("Invalid dim");
             }
@@ -230,7 +223,7 @@ impl Mul for F3G {
                 cube: self.cube.mul(rhs.cube),
                 dim: 3,
             },
-            1 => Self::new_1(self.to_be() * rhs.to_be()),
+            1 => Self::from(self.to_be() * rhs.to_be()),
             _ => {
                 panic!("Invalid dim");
             }
@@ -246,7 +239,7 @@ impl Div for F3G {
                 cube: self.cube.div(rhs.cube),
                 dim: 3,
             },
-            1 => Self::new_1(self.to_be() / rhs.to_be()),
+            1 => Self::from(self.to_be() / rhs.to_be()),
             _ => {
                 panic!("Invalid dim");
             }
@@ -262,7 +255,7 @@ impl Neg for F3G {
                 cube: self.cube.neg(),
                 dim: 3,
             },
-            1 => Self::new_1(-self.to_be()),
+            1 => Self::from(-self.to_be()),
             _ => {
                 panic!("Invalid dim");
             }
@@ -270,33 +263,42 @@ impl Neg for F3G {
     }
 }
 
+impl From<BaseElement> for F3G {
+    fn from(value: BaseElement) -> Self {
+        F3G {
+            cube: CubeExtension::<BaseElement>::new(value, BaseElement::ZERO, BaseElement::ZERO),
+            dim: 1,
+        }
+    }
+}
+
 impl From<u64> for F3G {
     fn from(value: u64) -> Self {
-        Self::new_1(BaseElement::from(value))
+        Self::from(BaseElement::from(value))
     }
 }
 
 impl From<i32> for F3G {
     fn from(value: i32) -> Self {
-        Self::new_1(BaseElement::from(value as u64))
+        Self::from(BaseElement::from(value as u64))
     }
 }
 
 impl From<usize> for F3G {
     fn from(value: usize) -> Self {
-        Self::new_1(BaseElement::from(value as u64))
+        Self::from(BaseElement::from(value as u64))
     }
 }
 
 impl From<&i32> for F3G {
     fn from(value: &i32) -> Self {
-        Self::new_1(BaseElement::from(*value as u64))
+        Self::from(BaseElement::from(*value as u64))
     }
 }
 
 impl From<&usize> for F3G {
     fn from(value: &usize) -> Self {
-        Self::new_1(BaseElement::from(*value as u64))
+        Self::from(BaseElement::from(*value as u64))
     }
 }
 

@@ -122,7 +122,7 @@ impl<'a> StarkProof<'a> {
 
         ctx.Zi = Self::build_Zh_Inv(nBits, extendBits);
 
-        ctx.const_n = const_pols.to_vec();
+        ctx.const_n = const_pols.write_buff();
 
         Ok(ctx)
     }
