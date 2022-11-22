@@ -4,10 +4,9 @@ use crate::traits::FieldMapping;
 use ff::*;
 
 use crate::ElementDigest;
-use winter_crypto::{Digest, Hasher};
+use winter_crypto::Hasher;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
-use winter_math::StarkField;
 
 #[derive(PrimeField)]
 #[PrimeFieldModulus = "21888242871839275222246405745257275088548364400416034343698204186575808495617"]

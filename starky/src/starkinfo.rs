@@ -1,6 +1,6 @@
+#![allow(non_snake_case)]
 use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps as E;
-use crate::f3g as field;
 use crate::starkinfo_codegen::{
     build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node, PolType,
     Section, SectionVec, Segment,

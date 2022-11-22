@@ -6,7 +6,6 @@ use crate::starkinfo::StarkInfo;
 use crate::types::Expression;
 use crate::types::PIL;
 use std::collections::HashMap;
-use winter_math::fields::f64::BaseElement;
 
 #[derive(Debug)]
 pub struct Calculated {

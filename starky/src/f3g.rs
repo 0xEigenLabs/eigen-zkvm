@@ -1,11 +1,8 @@
 #![allow(dead_code)]
-use core::slice;
-use num_traits::Pow;
 use rand_utils::rand_vector;
 use winter_math::fields::f64::BaseElement;
 use winter_math::fields::CubeExtension;
 use winter_math::{FieldElement, StarkField};
-use winter_utils::AsBytes;
 
 use core::ops::{Add, Div, Mul, Neg, Sub};
 
@@ -308,9 +305,6 @@ pub mod tests {
 
     use crate::f3g::F3G;
     use winter_math::fields::f64::BaseElement;
-    use winter_math::fields::CubeExtension;
-    use winter_math::FieldElement;
-    use winter_math::StarkField;
 
     #[test]
     fn test_f3g_add() {

@@ -191,7 +191,6 @@ pub mod tests {
     use ff::PrimeField;
     use rand_utils::rand_vector;
     use winter_math::fields::f64::BaseElement;
-    use winter_math::StarkField;
 
     #[test]
     fn test_fr_to_element_digest_and_versus() {

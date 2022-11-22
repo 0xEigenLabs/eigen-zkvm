@@ -1,10 +1,11 @@
+#![allow(non_snake_case, dead_code)]
 use crate::f3g::F3G;
 use crate::stark_gen::StarkContext;
 use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::Node;
 use crate::starkinfo_codegen::Subcode;
 use std::fmt;
-use winter_math::{FieldElement, StarkField};
+use winter_math::StarkField;
 
 #[derive(Clone, Debug)]
 pub enum Ops {
@@ -276,11 +277,11 @@ impl fmt::Display for Block {
     }
 }
 
-fn compile_code(
+pub fn compile_code(
     ctx: &StarkContext,
-    starkinfo: &mut StarkInfo,
+    starkinfo: &StarkInfo,
+    code: &Vec<Subcode>,
     dom: &str,
-    code: &mut Vec<Subcode>,
     ret: bool,
 ) -> Block {
     let next = if dom == "n" {
@@ -320,7 +321,7 @@ fn compile_code(
         set_ref(
             ctx,
             starkinfo,
-            &mut code[i].dest,
+            &code[i].dest,
             exp,
             dom,
             &next,
@@ -332,7 +333,7 @@ fn compile_code(
     if ret {
         let sz = code.len() - 1;
         body.exprs
-            .push(get_ref(ctx, starkinfo, &mut code[sz].dest, &dom, &next, &N));
+            .push(get_ref(ctx, starkinfo, &code[sz].dest, &dom, &next, &N));
         body.exprs.push(Expr::new(Ops::Ret, vec![], vec![]));
     }
     body
@@ -340,8 +341,8 @@ fn compile_code(
 
 fn set_ref(
     ctx: &StarkContext,
-    starkinfo: &mut StarkInfo,
-    r: &mut Node,
+    starkinfo: &StarkInfo,
+    r: &Node,
     val: Expr,
     dom: &str,
     next: &usize,
@@ -385,7 +386,7 @@ fn set_ref(
 
 fn get_ref(
     ctx: &StarkContext,
-    starkinfo: &mut StarkInfo,
+    starkinfo: &StarkInfo,
     r: &Node,
     dom: &str,
     next: &usize,
@@ -535,7 +536,7 @@ fn get_ref(
 
 fn eval_map(
     ctx: &StarkContext,
-    starkinfo: &mut StarkInfo,
+    starkinfo: &StarkInfo,
     pol_id: &i32,
     prime: &bool,
     next: &usize,

@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use crate::errors::Result;
 use crate::helper::{biguint_to_be, biguint_to_fr, fr_to_biguint};
 use crate::poseidon_bn128::{Fr, Poseidon};
@@ -7,8 +8,6 @@ use std::collections::VecDeque;
 use winter_math::fields::f64::BaseElement;
 
 use num_bigint::BigUint;
-use num_traits::Num;
-use num_traits::ToPrimitive;
 
 pub struct TranscriptBN128 {
     state: Fr,
