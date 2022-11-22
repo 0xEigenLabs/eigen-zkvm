@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+use crate::helper::fr_to_biguint;
 use crate::poseidon_bn128::Fr;
 use core::slice;
 use ff::*;
@@ -104,12 +105,15 @@ impl crate::traits::FieldMapping for ElementDigest {
     }
 
     fn to_GL(f: &Fr) -> [BaseElement; 4] {
+        /*
         let se = to_hex(f);
         let se = se.trim_end_matches('0');
         let mut f: BigUint = match se.len() {
             0 => BigUint::from(0u32),
             _ => BigUint::from_str_radix(&se, 16).unwrap(),
         };
+        */
+        let mut f = fr_to_biguint(f);
 
         let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();
 
@@ -187,7 +191,6 @@ pub mod tests {
     use ff::PrimeField;
     use rand_utils::rand_vector;
     use winter_math::fields::f64::BaseElement;
-    use winter_math::StarkField;
 
     #[test]
     fn test_fr_to_element_digest_and_versus() {

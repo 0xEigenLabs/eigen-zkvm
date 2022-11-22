@@ -2,7 +2,9 @@
 use crate::poseidon_bn128::Fr;
 use ff::*;
 
+use crate::f3g::F3G;
 use std::collections::HashMap;
+use winter_math::{fft, fields::f64::BaseElement};
 
 lazy_static::lazy_static! {
     pub static ref OFFSET_2_64: Fr = Fr::from_str("18446744073709551616").unwrap();
@@ -20,6 +22,9 @@ lazy_static::lazy_static! {
         m.insert("xi", 7);
         m
     };
+
+    pub static ref SHIFT: F3G = F3G::from(BaseElement::from(49u32));
+    pub static ref TWIDDLES: Vec<F3G> = fft::get_twiddles::<BaseElement>(2usize.pow(32)).iter().map( |e| F3G::from(*e) ).collect();
 }
 
 pub const MIN_OPS_PER_THREAD: usize = 1 << 12;

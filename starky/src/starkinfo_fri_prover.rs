@@ -1,12 +1,8 @@
 use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
-use crate::f3g::F3G;
-use crate::helper::get_ks;
 use crate::starkinfo::{Program, StarkInfo};
-use crate::starkinfo::{CICTX, PECTX};
-use crate::starkinfo_codegen::{build_code, pil_code_gen, Calculated, Context};
-use crate::types::{PolIdentity, PIL};
-use std::collections::HashMap;
+use crate::starkinfo_codegen::{build_code, pil_code_gen, Context};
+use crate::types::PIL;
 
 impl StarkInfo {
     pub fn generate_fri_polynomial(

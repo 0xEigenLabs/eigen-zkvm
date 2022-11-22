@@ -1,13 +1,9 @@
 use crate::errors::Result;
-use crate::expressionops::ExpressionOps as E;
-use crate::f3g::F3G;
-use crate::helper::get_ks;
 use crate::starkinfo::{Program, StarkInfo};
-use crate::starkinfo::{CICTX, PECTX};
 use crate::starkinfo_codegen::{
-    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node,
+    build_code, iterate_code, pil_code_gen, Context, ContextF, EVIdx, Node,
 };
-use crate::types::{PolIdentity, PIL};
+use crate::types::PIL;
 use std::collections::HashMap;
 
 impl StarkInfo {

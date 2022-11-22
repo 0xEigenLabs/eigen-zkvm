@@ -2,13 +2,13 @@
 use crate::poseidon_bn128::{Fr, Poseidon};
 use crate::ElementDigest;
 use ff::*;
-use winter_crypto::Digest;
 use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
 
 use crate::errors::Result;
 use crate::traits::FieldMapping;
 
+#[derive(Default)]
 pub struct LinearHashBN128 {
     h: Poseidon,
 }

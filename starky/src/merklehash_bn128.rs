@@ -1,13 +1,14 @@
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::{EigenError, Result};
+use crate::f3g::F3G;
 use crate::linearhash_bn128::LinearHashBN128;
 use crate::poseidon_bn128::{Fr, Poseidon};
 use ff::Field;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
-use winter_math::StarkField;
 
+#[derive(Default)]
 pub struct MerkleTree {
     pub elements: Vec<Vec<BaseElement>>,
     pub width: usize,
@@ -15,6 +16,18 @@ pub struct MerkleTree {
     pub nodes: Vec<ElementDigest>,
     h: LinearHashBN128,
     poseidon: Poseidon,
+}
+
+impl MerkleTree {
+    pub fn write_buff(&self) -> Vec<F3G> {
+        let mut buff: Vec<F3G> = vec![];
+        for i in 0..self.width {
+            for j in 0..self.height {
+                buff.push(F3G::from(self.elements[j][i]));
+            }
+        }
+        buff
+    }
 }
 
 fn get_n_nodes(n_: usize) -> usize {

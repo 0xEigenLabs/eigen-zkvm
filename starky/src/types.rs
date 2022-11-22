@@ -151,7 +151,7 @@ pub struct PIL {
     pub q2exp: Vec<i32>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct StarkStruct {
     pub nBits: i32,
     pub nBitsExt: i32,

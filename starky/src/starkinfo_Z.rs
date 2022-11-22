@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::f3g::F3G;

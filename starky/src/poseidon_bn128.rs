@@ -4,10 +4,9 @@ use crate::traits::FieldMapping;
 use ff::*;
 
 use crate::ElementDigest;
-use winter_crypto::{Digest, Hasher};
+use winter_crypto::Hasher;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
-use winter_math::StarkField;
 
 #[derive(PrimeField)]
 #[PrimeFieldModulus = "21888242871839275222246405745257275088548364400416034343698204186575808495617"]
@@ -114,6 +113,15 @@ impl Poseidon {
     /// Hash function
     /// init_state would be Fr::zero() initially
     pub fn hash(&self, inp: &Vec<Fr>, init_state: &Fr) -> Result<Fr, String> {
+        let result = self.hash_inner(inp, init_state, 1)?;
+        Ok(result[0])
+    }
+
+    pub fn hash_ex(&self, inp: &Vec<Fr>, init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
+        self.hash_inner(inp, init_state, out)
+    }
+
+    fn hash_inner(&self, inp: &Vec<Fr>, init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
         if inp.is_empty() || inp.len() > self.constants.n_rounds_p.len() {
             return Err(format!(
                 "Wrong inputs length {} > {}",
@@ -135,7 +143,7 @@ impl Poseidon {
             state = self.mix(&state, &self.constants.m[t - 2]);
         }
 
-        Ok(state[0])
+        Ok((&state[0..out]).to_vec())
     }
 }
 

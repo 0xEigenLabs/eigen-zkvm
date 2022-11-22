@@ -6,10 +6,7 @@ use crate::starkinfo::{self, StarkInfo};
 use crate::types::{StarkStruct, PIL};
 use crate::ElementDigest;
 
-use winter_math::fft::{self, get_inv_twiddles};
-use winter_math::{
-    fields::f64::BaseElement, get_power_series, log2, polynom, FieldElement, StarkField,
-};
+use winter_math::{fft, fields::f64::BaseElement, polynom, FieldElement, StarkField};
 
 use winter_utils::{iter, transpose_slice};
 
@@ -56,10 +53,11 @@ pub fn interpolate_in_pil(
     m
 }
 
+#[derive(Default)]
 pub struct StarkSetup {
-    const_tree: MerkleTree,
-    const_root: ElementDigest,
-    stark_info: StarkInfo,
+    pub const_tree: MerkleTree,
+    pub const_root: ElementDigest,
+    pub starkinfo: StarkInfo,
 }
 
 /// STARK SETUP
@@ -86,6 +84,7 @@ pub fn stark_setup_new(
         }
     }
 
+    //extend and merkelize
     let m = interpolate_in_pil(&p, 1 << (nBitsExt - nBits));
     let const_tree = MerkleTree::merkelize(p, const_pol.n << (nBitsExt - nBits), const_pol.nPols)?;
 
@@ -93,7 +92,7 @@ pub fn stark_setup_new(
     Ok(StarkSetup {
         const_root: const_tree.root(),
         const_tree: const_tree,
-        stark_info: starkinfo,
+        starkinfo: starkinfo,
     })
 }
 

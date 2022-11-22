@@ -6,7 +6,6 @@ use crate::starkinfo::StarkInfo;
 use crate::types::Expression;
 use crate::types::PIL;
 use std::collections::HashMap;
-use winter_math::fields::f64::BaseElement;
 
 #[derive(Debug)]
 pub struct Calculated {
@@ -138,6 +137,68 @@ pub struct Section {
     pub exps_withoutq_n: i32,
     pub exps_withoutq_2ns: i32,
     pub map_total_n: i32,
+}
+
+impl Section {
+    pub fn get(&self, name: &str) -> i32 {
+        match name {
+            "cm1_n" => self.cm1_n,
+            "cm1_2ns" => self.cm1_2ns,
+            "cm2_n" => self.cm2_n,
+            "cm2_2ns" => self.cm2_2ns,
+            "cm3_n" => self.cm3_n,
+            "cm3_2ns" => self.cm3_2ns,
+            "q_2ns" => self.q_2ns,
+            "exps_withq_n" => self.exps_withq_n,
+            "exps_withq_2ns" => self.exps_withq_2ns,
+            "exps_withoutq_n" => self.exps_withoutq_n,
+            "exps_withoutq_2ns" => self.exps_withoutq_2ns,
+            "map_total_n" => self.map_total_n,
+            _ => panic!("Invalid name={} in section", name),
+        }
+    }
+
+    pub fn set(&mut self, name: &str, val: i32) {
+        match name {
+            "cm1_n" => {
+                self.cm1_n = val;
+            }
+            "cm1_2ns" => {
+                self.cm1_2ns = val;
+            }
+            "cm2_n" => {
+                self.cm2_n = val;
+            }
+            "cm2_2ns" => {
+                self.cm2_2ns = val;
+            }
+            "cm3_n" => {
+                self.cm3_n = val;
+            }
+            "cm3_2ns" => {
+                self.cm3_2ns = val;
+            }
+            "q_2ns" => {
+                self.q_2ns = val;
+            }
+            "exps_withq_n" => {
+                self.exps_withq_n = val;
+            }
+            "exps_withq_2ns" => {
+                self.exps_withq_2ns = val;
+            }
+            "exps_withoutq_n" => {
+                self.exps_withoutq_n = val;
+            }
+            "exps_withoutq_2ns" => {
+                self.exps_withoutq_2ns = val;
+            }
+            "map_total_n" => {
+                self.map_total_n = val;
+            }
+            _ => panic!("Invalid name={} in section", name),
+        }
+    }
 }
 
 #[derive(Debug, Default)]
