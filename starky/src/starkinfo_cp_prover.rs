@@ -27,7 +27,7 @@ impl StarkInfo {
         c_exp.idQ = Some(pil.nQ);
         pil.nQ += 1;
 
-        self.c_exp = pil.expressions.len() as i32;
+        self.c_exp = pil.expressions.len();
 
         if E::is_nop(&c_exp) {
             panic!("nop {:?}", format!("{:?}", c_exp));
@@ -41,8 +41,8 @@ impl StarkInfo {
         for i in 0..pil.expressions.len() {
             println!("expressions {:?} {:?}", i, pil.expressions.len());
             if pil.expressions[i].idQ.is_some() {
-                pil_code_gen(ctx, pil, i as i32, false, "")?;
-                pil_code_gen(ctx2ns, pil, i as i32, false, "evalQ")?;
+                pil_code_gen(ctx, pil, i, false, "")?;
+                pil_code_gen(ctx2ns, pil, i, false, "evalQ")?;
             }
         }
 

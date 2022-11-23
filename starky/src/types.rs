@@ -9,8 +9,8 @@ use crate::errors::Result;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Public {
     pub polType: String,
-    pub polId: i32,
-    pub idx: i32,
+    pub polId: usize,
+    pub idx: usize,
     pub id: usize,
     pub name: String,
 }
@@ -32,9 +32,9 @@ pub struct Reference {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Expression {
     pub op: String, // number, cm, add, sub, ...
-    pub deg: i32,
+    pub deg: usize,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<i32>,
+    pub id: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub next: Option<bool>, // None is false, the other would be true. same as others with type Option<bool>
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -46,7 +46,7 @@ pub struct Expression {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub keep2ns: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub idQ: Option<i32>,
+    pub idQ: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub const_: Option<i64>,
 }
@@ -66,8 +66,8 @@ impl PartialEq for Expression {
 impl Expression {
     pub fn new(
         op: String,
-        deg: i32,
-        id: Option<i32>,
+        deg: usize,
+        id: Option<usize>,
         value: Option<String>,
         values: Option<Vec<Expression>>,
     ) -> Self {
@@ -88,55 +88,55 @@ impl Expression {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PolIdentity {
-    pub e: i32,
+    pub e: usize,
     pub fileName: String,
-    pub line: i32,
+    pub line: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PlookupIdentity {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub f: Option<Vec<i32>>,
+    pub f: Option<Vec<usize>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub t: Option<Vec<i32>>,
+    pub t: Option<Vec<usize>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub selF: Option<i32>, //selector
+    pub selF: Option<usize>, //selector
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub selT: Option<i32>,
+    pub selT: Option<usize>,
     pub fileName: String,
-    pub line: i32,
+    pub line: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PermutationIdentity {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub f: Option<Vec<i32>>,
+    pub f: Option<Vec<usize>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub t: Option<Vec<i32>>,
+    pub t: Option<Vec<usize>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub selF: Option<i32>, //selector
+    pub selF: Option<usize>, //selector
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub selT: Option<i32>,
+    pub selT: Option<usize>,
     pub fileName: String,
-    pub line: i32,
+    pub line: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ConnectionIdentity {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub pols: Option<Vec<i32>>,
+    pub pols: Option<Vec<usize>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub connections: Option<Vec<i32>>,
+    pub connections: Option<Vec<usize>>,
     pub fileName: String,
-    pub line: i32,
+    pub line: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PIL {
-    pub nCommitments: i32,
-    pub nQ: i32,
-    pub nIm: i32,
-    pub nConstants: i32,
+    pub nCommitments: usize,
+    pub nQ: usize,
+    pub nIm: usize,
+    pub nConstants: usize,
     pub publics: Vec<Public>,
     pub references: HashMap<String, Reference>,
     pub expressions: Vec<Expression>,
@@ -146,18 +146,18 @@ pub struct PIL {
     pub connectionIdentities: Option<Vec<ConnectionIdentity>>,
 
     #[serde(skip)]
-    pub cm_dims: Vec<i32>,
+    pub cm_dims: Vec<usize>,
     #[serde(skip)]
-    pub q2exp: Vec<i32>,
+    pub q2exp: Vec<usize>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct StarkStruct {
-    pub nBits: i32,
-    pub nBitsExt: i32,
-    pub nQueries: i32,
+    pub nBits: usize,
+    pub nBitsExt: usize,
+    pub nQueries: usize,
     pub verificationHashType: String,
-    pub steps: Vec<HashMap<String, i32>>,
+    pub steps: Vec<HashMap<String, usize>>,
 }
 
 pub fn load_json<T>(filename: &str) -> Result<T>

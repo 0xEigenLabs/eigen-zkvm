@@ -94,7 +94,7 @@ impl Block {
                 Ops::Assign => {
                     let addr = &expr.syms[0];
                     let id = if let Ops::Vari(x) = expr.defs[1].op {
-                        x.to_be().as_int() as usize
+                        x.to_be().as_int() as usize // FIXME out of range
                     } else {
                         panic!("invalid oprand {:?}", expr)
                     };
@@ -152,7 +152,7 @@ impl Block {
                     // defs: [offset, next, N, size] => index = offset + ((1+next)%N) * size
                     let get_val = |i: usize| -> usize {
                         match expr.defs[i].op {
-                            Ops::Vari(x) => x.to_be().as_int() as usize,
+                            Ops::Vari(x) => x.to_be().as_int() as usize, //FIXME out of range
                             _ => {
                                 panic!("invalid oprand {:?}", expr);
                             }
@@ -288,14 +288,14 @@ pub fn compile_code(
     } else {
         1 << (ctx.nbits_ext - ctx.nbits)
     };
-    let next = next as usize;
+    let next = next;
 
     let N = if dom == "n" {
         1 << ctx.nbits
     } else {
         1 << ctx.nbits_ext
     };
-    let N = N as usize;
+    let N = N;
 
     let mut body: Block = Block {
         namespace: "ctx".to_string(),
@@ -356,10 +356,10 @@ fn set_ref(
         ),
         "exp" => {
             if dom == "n" {
-                let pol_id = starkinfo.exps_n[r.id as usize].clone();
+                let pol_id = starkinfo.exps_n[r.id].clone();
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else if dom == "2ns" {
-                let pol_id = starkinfo.exps_2ns[r.id as usize].clone();
+                let pol_id = starkinfo.exps_2ns[r.id].clone();
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
@@ -369,7 +369,7 @@ fn set_ref(
             if dom == "n" {
                 panic!("Accesssing q in domain n");
             } else if dom == "2ns" {
-                let pol_id = starkinfo.qs[r.id as usize];
+                let pol_id = starkinfo.qs[r.id];
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
@@ -452,10 +452,10 @@ fn get_ref(
         }
         "cm" => {
             if dom == "n" {
-                let pol_id = starkinfo.cm_n[r.id as usize];
+                let pol_id = starkinfo.cm_n[r.id];
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else if dom == "2ns" {
-                let pol_id = starkinfo.cm_2ns[r.id as usize];
+                let pol_id = starkinfo.cm_2ns[r.id];
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
@@ -465,7 +465,7 @@ fn get_ref(
             if dom == "n" {
                 panic!("Accesssing q in domain n");
             } else if dom == "2ns" {
-                let pol_id = starkinfo.qs[r.id as usize];
+                let pol_id = starkinfo.qs[r.id];
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
@@ -473,10 +473,10 @@ fn get_ref(
         }
         "exp" => {
             if dom == "n" {
-                let pol_id = starkinfo.exps_n[r.id as usize].clone();
+                let pol_id = starkinfo.exps_n[r.id].clone();
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else if dom == "2ns" {
-                let pol_id = starkinfo.exps_2ns[r.id as usize].clone();
+                let pol_id = starkinfo.exps_2ns[r.id].clone();
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
@@ -536,12 +536,12 @@ fn get_ref(
 fn eval_map(
     ctx: &StarkContext,
     starkinfo: &StarkInfo,
-    pol_id: &i32,
+    pol_id: &usize,
     prime: &bool,
     next: &usize,
     N: &usize,
 ) -> Expr {
-    let p = &starkinfo.var_pol_map[*pol_id as usize];
+    let p = &starkinfo.var_pol_map[*pol_id];
     let offset = Expr::from(F3G::from(p.section_pos));
     let size = Expr::from(F3G::from(starkinfo.map_sectionsN.get(&p.section)));
     let next = Expr::from(F3G::from(*next));

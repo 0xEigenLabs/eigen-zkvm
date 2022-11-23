@@ -39,25 +39,25 @@ impl ExpressionOps {
         Expression::new("neg".to_string(), 0, None, None, Some(vec![a.clone()]))
     }
 
-    pub fn exp(id: i32, next: Option<bool>) -> Expression {
+    pub fn exp(id: usize, next: Option<bool>) -> Expression {
         let mut exp = Expression::new("exp".to_string(), 0, Some(id), None, None);
         exp.next = next;
         exp
     }
 
-    pub fn cm(id: i32, next: Option<bool>) -> Expression {
+    pub fn cm(id: usize, next: Option<bool>) -> Expression {
         let mut exp = Expression::new("cm".to_string(), 0, Some(id), None, None);
         exp.next = next;
         exp
     }
 
-    pub fn const_(id: i32, next: Option<bool>) -> Expression {
+    pub fn const_(id: usize, next: Option<bool>) -> Expression {
         let mut exp = Expression::new("const".to_string(), 0, Some(id), None, None);
         exp.next = next;
         exp
     }
 
-    pub fn q(id: i32, next: Option<bool>) -> Expression {
+    pub fn q(id: usize, next: Option<bool>) -> Expression {
         let mut exp = Expression::new("q".to_string(), 0, Some(id), None, None);
         exp.next = next;
         exp
@@ -80,11 +80,11 @@ impl ExpressionOps {
         Expression::new("number".to_string(), 0, None, Some(n), None)
     }
 
-    pub fn eval(n: i32) -> Expression {
+    pub fn eval(n: usize) -> Expression {
         Expression::new("eval".to_string(), 0, Some(n), None, None)
     }
 
-    pub fn tmp(n: i32) -> Expression {
+    pub fn tmp(n: usize) -> Expression {
         Expression::new("tmp".to_string(), 0, Some(n), None, None)
     }
 

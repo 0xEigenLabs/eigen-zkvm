@@ -23,7 +23,7 @@ pub enum EigenError {
     MerkleTreeError(String),
 
     #[error("degree should be equal, but `{0}` != `{1}`")]
-    MustEqualDegreeError(i32, i32),
+    MustEqualDegreeError(usize, usize),
 
     #[error("expression error, msg `{0}`")]
     ExpressionError(String),

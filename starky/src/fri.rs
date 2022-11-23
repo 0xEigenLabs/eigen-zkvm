@@ -4,11 +4,11 @@ use crate::merklehash_bn128::MerkleTree;
 use crate::transcript_bn128::TranscriptBN128;
 
 type struct FRI {
-    in_nbits: i32,
-    max_deg_nbits: i32,
-    nqueries: i32,
+    in_nbits: usize,
+    max_deg_nbits: usize,
+    nqueries: usize,
     merklehash: MerkleTree,
-    steps: HashMap<String, i32>,
+    steps: HashMap<String, usize>,
 };
 
 impl FRI {

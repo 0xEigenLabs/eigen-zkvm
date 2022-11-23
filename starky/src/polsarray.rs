@@ -25,7 +25,7 @@ pub struct PolsArray {
 pub struct Pol {
     pub name: String,
     pub id: usize,
-    pub idx: Option<i32>,
+    pub idx: Option<usize>,
     pub polDeg: usize,
     pub elementType: Option<String>, // "field, s8, s16, s32, s64, u16, u8"
 }
@@ -46,10 +46,10 @@ impl PolsArray {
         };
 
         let mut def: HashMap<String, HashMap<String, ArrayPol>> = HashMap::new();
-        let mut defArray: Vec<Pol> = vec![Pol::default(); nPols as usize];
-        let mut array: Vec<Vec<BaseElement>> = vec![Vec::new(); nPols as usize];
+        let mut defArray: Vec<Pol> = vec![Pol::default(); nPols];
+        let mut array: Vec<Vec<BaseElement>> = vec![Vec::new(); nPols];
         for i in 0..array.len() {
-            array[i] = vec![BaseElement::default(); nPols as usize];
+            array[i] = vec![BaseElement::default(); nPols];
         }
         println!("reference {:?}", pil.references);
         for (refName, ref_) in pil.references.iter() {
@@ -75,7 +75,7 @@ impl PolsArray {
                         defArray[ref_.id + i] = Pol {
                             name: refName.clone(),
                             id: ref_.id + i,
-                            idx: Some(i as i32),
+                            idx: Some(i),
                             elementType: match &ref_.elementType {
                                 Some(x) => Some(x.clone()),
                                 None => None,
@@ -108,7 +108,7 @@ impl PolsArray {
         }
 
         for i in 0..nPols {
-            if defArray[i as usize].name.len() == 0 {
+            if defArray[i].name.len() == 0 {
                 panic!("Invalid pils sequence");
             }
         }
