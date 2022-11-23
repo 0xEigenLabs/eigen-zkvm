@@ -5,6 +5,7 @@ use crate::poseidon_bn128::{Fr, Poseidon};
 use ff::*;
 use std::collections::VecDeque;
 
+use crate::f3g::F3G;
 use winter_math::fields::f64::BaseElement;
 
 use num_bigint::BigUint;
@@ -28,14 +29,11 @@ impl TranscriptBN128 {
         }
     }
 
-    pub fn get_field(&mut self) -> [BaseElement; 3] {
-        let mut res: [BaseElement; 3] = [
-            self.get_fields1().unwrap(),
-            self.get_fields1().unwrap(),
-            self.get_fields1().unwrap(),
-        ];
-
-        res
+    pub fn get_field(&mut self) -> F3G {
+        let a = self.get_fields1().unwrap();
+        let b = self.get_fields1().unwrap();
+        let c = self.get_fields1().unwrap();
+        F3G::new(a, b, c)
     }
 
     pub fn get_fields1(&mut self) -> Result<BaseElement> {

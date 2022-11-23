@@ -1,10 +1,11 @@
 #![allow(dead_code)]
+use core::ops::{Add, Div, Mul, Neg, Sub};
 use rand_utils::rand_vector;
+use std::hash::{Hash, Hasher};
 use winter_math::fields::f64::BaseElement;
 use winter_math::fields::CubeExtension;
 use winter_math::{FieldElement, StarkField};
-
-use core::ops::{Add, Div, Mul, Neg, Sub};
+use winter_utils::AsBytes;
 
 /// GF(2^3) implementation
 /// Prime: 0xFFFFFFFF00000001
@@ -14,6 +15,13 @@ use core::ops::{Add, Div, Mul, Neg, Sub};
 pub struct F3G {
     cube: CubeExtension<BaseElement>,
     dim: i32,
+}
+
+impl Hash for F3G {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.cube.as_bytes().hash(state);
+        self.dim.hash(state);
+    }
 }
 
 impl F3G {
@@ -39,7 +47,7 @@ impl F3G {
         dim: 3,
     };
 
-    fn as_base_elements(&self) -> Vec<BaseElement> {
+    pub fn as_base_elements(&self) -> Vec<BaseElement> {
         let cc = &[self.cube];
         CubeExtension::<BaseElement>::as_base_elements(cc).to_vec()
     }

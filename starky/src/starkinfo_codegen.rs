@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps;
-
+use crate::f3g::F3G;
 use crate::starkinfo::StarkInfo;
 use crate::types::Expression;
 use crate::types::PIL;
@@ -207,6 +207,15 @@ pub struct PolType {
     pub section_pos: i32,
     pub dim: i32,
     pub exp_id: i32,
+}
+
+#[derive(Debug)]
+pub struct Polynom<'a> {
+    pub buffer: &'a mut Vec<F3G>,
+    pub deg: i32,
+    pub offset: i32,
+    pub size: i32,
+    pub dim: i32,
 }
 
 #[derive(Debug, Clone)]

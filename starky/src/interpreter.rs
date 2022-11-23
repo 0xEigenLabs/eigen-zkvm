@@ -54,7 +54,6 @@ impl Block {
     /// block.eval(&mut ctx, i);
     pub fn eval(&self, ctx: &mut StarkContext, arg_i: usize) -> F3G {
         let mut val_stack: Vec<F3G> = Vec::new();
-        let mut op_stack: Vec<usize> = Vec::new();
 
         let length = self.exprs.len();
 
@@ -231,7 +230,7 @@ impl Block {
                         }
                         "challenge" => {
                             let id = get_val(0);
-                            ctx.challenge[id]
+                            ctx.challenges[id]
                         }
                         "evals" => {
                             let id = get_val(0);
