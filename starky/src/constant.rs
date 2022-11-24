@@ -25,6 +25,7 @@ lazy_static::lazy_static! {
 
     pub static ref SHIFT: F3G = F3G::from(BaseElement::from(49u32));
     pub static ref TWIDDLES: Vec<F3G> = fft::get_twiddles::<BaseElement>(2usize.pow(32)).iter().map( |e| F3G::from(*e) ).collect();
+    pub static ref SHIFT_INV: F3G = F3G::inv(SHIFT.clone());
 }
 
 pub const MIN_OPS_PER_THREAD: usize = 1 << 12;

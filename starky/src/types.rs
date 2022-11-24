@@ -152,12 +152,17 @@ pub struct PIL {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Step {
+    pub nBits: usize,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct StarkStruct {
     pub nBits: usize,
     pub nBitsExt: usize,
     pub nQueries: usize,
     pub verificationHashType: String,
-    pub steps: Vec<HashMap<String, usize>>,
+    pub steps: Vec<Step>,
 }
 
 pub fn load_json<T>(filename: &str) -> Result<T>

@@ -47,6 +47,17 @@ fn get_n_nodes(n_: usize) -> usize {
 }
 
 impl MerkleTree {
+    pub fn new() -> Self {
+        MerkleTree {
+            nodes: Vec::new(),
+            elements: Vec::new(),
+            h: LinearHashBN128::new(),
+            width: 0,
+            height: 0,
+            poseidon: Poseidon::new(),
+        }
+    }
+
     pub fn merkelize(columns: Vec<Vec<BaseElement>>, width: usize, height: usize) -> Result<Self> {
         let leaves_hash = LinearHashBN128::new();
 

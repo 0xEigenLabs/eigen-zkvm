@@ -2,8 +2,8 @@
 use core::ops::{Add, Div, Mul, Neg, Sub};
 use rand_utils::rand_vector;
 use std::hash::{Hash, Hasher};
-use winter_math::fields::f64::BaseElement;
 use winter_math::fields::CubeExtension;
+use winter_math::{fft, fields::f64::BaseElement};
 use winter_math::{FieldElement, StarkField};
 use winter_utils::AsBytes;
 

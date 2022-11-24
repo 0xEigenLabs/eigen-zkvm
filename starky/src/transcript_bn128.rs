@@ -90,24 +90,24 @@ impl TranscriptBN128 {
         self.get_fields253()
     }
 
-    fn get_permutations(&mut self, n: usize, nbits: usize) -> Result<Vec<Fr>> {
+    pub fn get_permutations(&mut self, n: usize, nbits: usize) -> Result<Vec<u64>> {
         let total_bits = n * nbits;
         let NFields = (total_bits - 1) / 253 + 1;
         let mut fields: Vec<BigUint> = Vec::new();
         for i in 0..NFields {
             fields.push(fr_to_biguint(&self.get_fields253()?));
         }
-        let mut res: Vec<Fr> = vec![];
+        let mut res: Vec<u64> = vec![];
         let mut cur_field = 0;
         let mut cur_bit = 0usize;
         let one = BigUint::from(1u32);
         for i in 0..n {
-            let mut a = BigUint::from(0u32);
+            let mut a = 0u64;
             for j in 0..nbits {
                 let shift = &fields[cur_field] >> cur_bit;
                 let bit = shift & &one;
                 if bit == one {
-                    a = a + BigUint::from(1u128 << j);
+                    a = a + 1 << j;
                 }
                 cur_bit += 1;
                 if cur_bit == 253 {
@@ -115,7 +115,7 @@ impl TranscriptBN128 {
                     cur_field += 1;
                 }
             }
-            res.push(biguint_to_fr(&a));
+            res.push(a);
         }
         Ok(res)
     }

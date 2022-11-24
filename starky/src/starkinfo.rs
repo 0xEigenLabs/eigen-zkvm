@@ -100,10 +100,10 @@ impl StarkInfo {
             return Err(EigenError::MustEqualDegreeError(stark_deg, pil_deg));
         }
 
-        if stark_struct.nBitsExt != stark_struct.steps[0]["nBits"] {
+        if stark_struct.nBitsExt != stark_struct.steps[0].nBits {
             return Err(EigenError::MustEqualDegreeError(
                 stark_struct.nBitsExt,
-                stark_struct.steps[0]["nBits"],
+                stark_struct.steps[0].nBits,
             ));
         }
 

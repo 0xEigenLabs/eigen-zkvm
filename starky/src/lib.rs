@@ -17,7 +17,9 @@ mod traits;
 
 mod expressionops;
 mod f3g;
+mod fri;
 mod helper;
+mod interpreter;
 mod stark_gen;
 mod stark_setup;
 mod starkinfo;
@@ -28,8 +30,6 @@ mod starkinfo_cp_ver;
 mod starkinfo_fri_prover;
 mod starkinfo_fri_ver;
 mod starkinfo_map;
-
-mod interpreter;
 mod transcript_bn128;
 
 #[macro_use]

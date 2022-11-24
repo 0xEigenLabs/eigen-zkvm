@@ -3,6 +3,7 @@ use crate::constant::{SHIFT, TWIDDLES};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::Result;
 use crate::f3g::F3G;
+use crate::fri::FRI;
 use crate::interpreter::compile_code;
 use crate::merklehash_bn128::MerkleTree;
 use crate::polsarray::PolsArray;
@@ -14,6 +15,7 @@ use crate::starkinfo_codegen::{Polynom, Segment};
 use crate::transcript_bn128::TranscriptBN128;
 use crate::types::{StarkStruct, PIL};
 use std::collections::HashMap;
+use std::rc::Rc;
 use winter_fri::FriProof;
 use winter_math::fft;
 use winter_math::fields::f64::BaseElement;
@@ -375,17 +377,10 @@ impl<'a> StarkProof<'a> {
             starkinfo.exps_2ns[starkinfo.fri_exp_id],
         );
 
-        let query_pol = |idx| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
-            vec![
-                tree1.get_group_proof(idx).unwrap(),
-                tree2.get_group_proof(idx).unwrap(),
-                tree3.get_group_proof(idx).unwrap(),
-                tree4.get_group_proof(idx).unwrap(),
-                const_tree.get_group_proof(idx).unwrap(),
-            ]
-        };
+        let mut trees = vec![&tree1, &tree2, &tree3, &tree4, const_tree];
+        let mut fri = FRI::new(stark_struct);
 
-        //let friProof = fri.prove(transcript, friPol, queryPol);
+        let friProof = fri.prove(&mut transcript, &friPol, &mut trees);
 
         Ok(ctx)
     }
