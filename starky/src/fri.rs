@@ -4,9 +4,9 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use winter_math::FieldElement;
 use winter_math::StarkField;
-use winter_math::{fields::f64::BaseElement, log2, polynom};
+use winter_math::{fft, fields::f64::BaseElement, log2, polynom};
 
-use crate::constant::{SHIFT, SHIFT_INV, TWIDDLES};
+use crate::constant::{SHIFT, SHIFT_INV};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::Result;
 use crate::merklehash_bn128::MerkleTree;
@@ -59,6 +59,10 @@ impl FRI {
         tree_refs: &mut Vec<&MerkleTree>,
     ) -> Result<FRIProof> {
         let mut pol = pol.clone();
+        let twiddles: Vec<F3G> = fft::get_twiddles::<BaseElement>(self.in_nbits)
+            .iter()
+            .map(|e| F3G::from(*e))
+            .collect();
 
         let mut pol_bits = log2(pol.len()) as usize;
         assert_eq!(1 << pol_bits, pol.len());
@@ -73,12 +77,13 @@ impl FRI {
             let reduction_bits = pol_bits - self.steps[si].nBits;
             let pol2N = 1 << (pol_bits - reduction_bits);
             let nX = pol.len() / pol2N;
+            let inv_twiddles = fft::get_inv_twiddles(nX);
 
             let mut pol2_e = vec![F3G::ZERO; pol2N];
             let special_x = transcript.get_field();
 
             let mut sinv = shift_inv;
-            let wi = F3G::inv(TWIDDLES[pol_bits]);
+            let wi = F3G::inv(twiddles[pol_bits]);
 
             for g in 0..(pol.len() / nX) {
                 if si == 0 {
@@ -89,7 +94,8 @@ impl FRI {
                         ppar[i] = pol[i * pol2N + g];
                     }
 
-                    //let ppar_c = ifft TODO
+                    fft::interpolate_poly(&mut ppar, &inv_twiddles);
+
                     pol_mul_axi(&mut ppar, &F3G::ONE, &sinv);
                     pol2_e[g] = eval_pol(&ppar, &special_x);
                     sinv = sinv * wi;
@@ -167,6 +173,10 @@ impl FRI {
         proof: &FRIProof,
         check_query: fn(&Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>, usize) -> Vec<F3G>,
     ) -> Result<bool> {
+        let twiddles: Vec<F3G> = fft::get_twiddles::<BaseElement>(self.in_nbits)
+            .iter()
+            .map(|e| F3G::from(*e))
+            .collect();
         let tree = MerkleTree::new();
         assert_eq!(proof.queries.len(), self.steps.len()); // the last +1 is ommited
         let mut special_x: Vec<F3G> = vec![];
@@ -197,13 +207,15 @@ impl FRI {
             let proof_item = &proof.queries[si];
             let reduction_bits = pol_bits - self.steps[si].nBits;
             for i in 0..n_queries {
-                let pgroup_e = check_query(&proof_item.polQueries[i], ys[i] as usize);
+                let mut pgroup_e = check_query(&proof_item.polQueries[i], ys[i] as usize);
                 if pgroup_e.len() == 0 {
                     return Ok(false);
                 }
 
-                //let pgroup_c = ifft::(pgroup_e); //TODO
-                let sinv = F3G::inv(shift * (TWIDDLES[pol_bits].exp(ys[i])));
+                let inv_twiddles = fft::get_inv_twiddles(pgroup_e.len());
+                fft::interpolate_poly(&mut pgroup_e, &inv_twiddles);
+
+                let sinv = F3G::inv(shift * (twiddles[pol_bits].exp(ys[i])));
                 let ev = eval_pol(&pgroup_e, &(special_x[si] * sinv));
 
                 if si < self.steps.len() - 1 {
@@ -246,21 +258,20 @@ impl FRI {
             }
         }
 
-        let last_pol_e = &proof.last;
+        let mut last_pol_e = proof.last.clone();
 
         let mut maxDeg = 0usize;
-        if ((pol_bits - (self.in_nbits - self.max_deg_nbits)) < 0) {
+        if (pol_bits - (self.in_nbits - self.max_deg_nbits)) < 0 {
             maxDeg = 0;
         } else {
             maxDeg = 1 << (pol_bits - (self.in_nbits - self.max_deg_nbits));
         }
 
-        //const last_pol_c = ifft(last_pol_e);
-        let lastPol_c = (last_pol_e); // FIXME
-                                      // We don't need to divide by shift as we just need to check for zeros
+        let inv_twiddles = fft::get_inv_twiddles(last_pol_e.len());
+        fft::interpolate_poly(&mut last_pol_e, &inv_twiddles);
 
-        for i in (maxDeg + 1)..lastPol_c.len() {
-            if !lastPol_c[i].is_zero() {
+        for i in (maxDeg + 1)..last_pol_e.len() {
+            if !last_pol_e[i].is_zero() {
                 return Ok(false);
             }
         }

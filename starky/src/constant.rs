@@ -4,7 +4,7 @@ use ff::*;
 
 use crate::f3g::F3G;
 use std::collections::HashMap;
-use winter_math::{fft, fields::f64::BaseElement};
+use winter_math::{fft, fields::f64::BaseElement, FieldElement};
 
 lazy_static::lazy_static! {
     pub static ref OFFSET_2_64: Fr = Fr::from_str("18446744073709551616").unwrap();
@@ -24,7 +24,6 @@ lazy_static::lazy_static! {
     };
 
     pub static ref SHIFT: F3G = F3G::from(BaseElement::from(49u32));
-    pub static ref TWIDDLES: Vec<F3G> = fft::get_twiddles::<BaseElement>(2usize.pow(32)).iter().map( |e| F3G::from(*e) ).collect();
     pub static ref SHIFT_INV: F3G = F3G::inv(SHIFT.clone());
 }
 

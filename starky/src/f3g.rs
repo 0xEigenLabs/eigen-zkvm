@@ -1,12 +1,18 @@
 #![allow(dead_code)]
-use core::ops::{Add, Div, Mul, Neg, Sub};
+use core::mem;
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use rand_utils::rand_vector;
 use std::hash::{Hash, Hasher};
+use std::slice;
 use winter_math::fields::CubeExtension;
 use winter_math::{fft, fields::f64::BaseElement};
 use winter_math::{FieldElement, StarkField};
-use winter_utils::AsBytes;
+use winter_utils::{
+    AsBytes, ByteReader, ByteWriter, Deserializable, DeserializationError, Randomizable,
+    Serializable,
+};
 
+use core::fmt::{Display, Formatter};
 /// GF(2^3) implementation
 /// Prime: 0xFFFFFFFF00000001
 /// Irreducible polynomial: x^3 - x -1
@@ -38,15 +44,6 @@ impl F3G {
         elems[0]
     }
 
-    pub const ZERO: Self = Self {
-        cube: CubeExtension::<BaseElement>::ZERO,
-        dim: 3,
-    };
-    pub const ONE: Self = Self {
-        cube: CubeExtension::<BaseElement>::ONE,
-        dim: 3,
-    };
-
     pub fn as_base_elements(&self) -> Vec<BaseElement> {
         let cc = &[self.cube];
         CubeExtension::<BaseElement>::as_base_elements(cc).to_vec()
@@ -54,19 +51,6 @@ impl F3G {
 
     pub fn double(self) -> Self {
         self + self
-    }
-
-    pub fn inv(self) -> Self {
-        match self.dim {
-            3 => Self {
-                cube: self.cube.inv(),
-                dim: 3,
-            },
-            1 => Self::from(self.to_be().inv()),
-            _ => {
-                panic!("Invalid dim");
-            }
-        }
     }
 
     pub fn mul_scalar(self, b: BaseElement) -> Self {
@@ -192,15 +176,36 @@ impl Add for F3G {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
         match self.dim {
-            3 => Self {
-                cube: self.cube.add(rhs.cube),
-                dim: 3,
-            },
-            1 => Self::from(self.to_be() + rhs.to_be()),
+            3 => {
+                if rhs.dim == 3 {
+                    Self {
+                        cube: self.cube.add(rhs.cube),
+                        dim: 3,
+                    }
+                } else {
+                    let r = self.as_base_elements();
+                    Self::new(r[0] + rhs.to_be(), r[1], r[2])
+                }
+            }
+            1 => {
+                if self.dim == 1 {
+                    Self::from(self.to_be() + rhs.to_be())
+                } else {
+                    let r = rhs.as_base_elements();
+                    Self::new(r[0] + self.to_be(), r[1], r[2])
+                }
+            }
             _ => {
                 panic!("Invalid dim");
             }
         }
+    }
+}
+
+impl AddAssign for F3G {
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs
     }
 }
 
@@ -208,15 +213,36 @@ impl Sub for F3G {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self::Output {
         match self.dim {
-            3 => Self {
-                cube: self.cube.sub(rhs.cube),
-                dim: 3,
-            },
-            1 => Self::from(self.to_be() - rhs.to_be()),
+            3 => {
+                if rhs.dim == 3 {
+                    Self {
+                        cube: self.cube.sub(rhs.cube),
+                        dim: 3,
+                    }
+                } else {
+                    let r = self.as_base_elements();
+                    Self::new(r[0] - rhs.to_be(), r[1], r[2])
+                }
+            }
+            1 => {
+                if rhs.dim == 1 {
+                    Self::from(self.to_be() - rhs.to_be())
+                } else {
+                    let r = rhs.as_base_elements();
+                    Self::new(self.to_be() - r[0], -r[1], -r[2])
+                }
+            }
             _ => {
                 panic!("Invalid dim");
             }
         }
+    }
+}
+
+impl SubAssign for F3G {
+    #[inline]
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs;
     }
 }
 
@@ -224,11 +250,29 @@ impl Mul for F3G {
     type Output = Self;
     fn mul(self, rhs: Self) -> Self::Output {
         match self.dim {
-            3 => Self {
-                cube: self.cube.mul(rhs.cube),
-                dim: 3,
-            },
-            1 => Self::from(self.to_be() * rhs.to_be()),
+            3 => {
+                // 3 * 1
+                if rhs.dim == 1 {
+                    let lhs = rhs.to_be();
+                    let r = self.as_base_elements();
+                    Self::new(lhs * r[0], lhs * r[1], lhs * r[2])
+                } else {
+                    Self {
+                        cube: self.cube.mul(rhs.cube),
+                        dim: 3,
+                    }
+                }
+            }
+            1 => {
+                if rhs.dim == 1 {
+                    Self::from(self.to_be() * rhs.to_be())
+                } else {
+                    //1 * 3
+                    let lhs = self.to_be();
+                    let r = rhs.as_base_elements();
+                    Self::new(lhs * r[0], lhs * r[1], lhs * r[2])
+                }
+            }
             _ => {
                 panic!("Invalid dim");
             }
@@ -236,19 +280,24 @@ impl Mul for F3G {
     }
 }
 
+impl MulAssign for F3G {
+    #[inline]
+    fn mul_assign(&mut self, rhs: Self) {
+        *self = *self * rhs
+    }
+}
+
 impl Div for F3G {
     type Output = Self;
     fn div(self, rhs: Self) -> Self::Output {
-        match self.dim {
-            3 => Self {
-                cube: self.cube.div(rhs.cube),
-                dim: 3,
-            },
-            1 => Self::from(self.to_be() / rhs.to_be()),
-            _ => {
-                panic!("Invalid dim");
-            }
-        }
+        self * (rhs.inv())
+    }
+}
+
+impl DivAssign for F3G {
+    #[inline]
+    fn div_assign(&mut self, rhs: Self) {
+        *self = *self / rhs
     }
 }
 
@@ -289,6 +338,12 @@ impl From<i32> for F3G {
     }
 }
 
+impl From<u32> for F3G {
+    fn from(value: u32) -> Self {
+        Self::from(BaseElement::from(value as u64))
+    }
+}
+
 impl From<usize> for F3G {
     fn from(value: usize) -> Self {
         Self::from(BaseElement::from(value as u64))
@@ -307,11 +362,243 @@ impl From<&usize> for F3G {
     }
 }
 
+impl From<u16> for F3G {
+    /// Converts a 16-bit value into a field element.
+    fn from(value: u16) -> Self {
+        Self::from(value as u64)
+    }
+}
+
+impl From<u8> for F3G {
+    /// Converts an 8-bit value into a field element.
+    fn from(value: u8) -> Self {
+        Self::from(value as u64)
+    }
+}
+
+impl From<[u8; 8]> for F3G {
+    /// Converts the value encoded in an array of 8 bytes into a field element. The bytes are
+    /// assumed to encode the element in the canonical representation in little-endian byte order.
+    /// If the value is greater than or equal to the field modulus, modular reduction is silently
+    /// performed.
+    fn from(bytes: [u8; 8]) -> Self {
+        let value = u64::from_le_bytes(bytes);
+        Self::from(value)
+    }
+}
+
+// FIXME
+impl From<u128> for F3G {
+    /// Converts a 128-bit value into a field element.
+    fn from(x: u128) -> Self {
+        //const R3: u128 = 1 (= 2^192 mod M );// thus we get that mont_red_var((mont_red_var(x) as u128) * R3) becomes
+        //Self(mont_red_var(mont_red_var(x) as u128))  // Variable time implementation
+        //Self(mont_red_cst(mont_red_cst(x) as u128)) // Constant time implementation
+        panic!("Unimplement");
+    }
+}
+
+/// Field modulus = 2^64 - 2^32 + 1
+const M: u64 = 0xFFFFFFFF00000001;
+
+/// 2^128 mod M; this is used for conversion of elements into Montgomery representation.
+const R2: u64 = 0xFFFFFFFE00000001;
+
+/// 2^32 root of unity
+const G: u64 = 1753635133440165772;
+
+/// Number of bytes needed to represent field element
+const ELEMENT_BYTES: usize = core::mem::size_of::<u64>();
+
+impl FieldElement for F3G {
+    type PositiveInteger = u64;
+    type BaseField = Self;
+
+    const ZERO: Self = Self {
+        cube: CubeExtension::<BaseElement>::ZERO,
+        dim: 3,
+    };
+    const ONE: Self = Self {
+        cube: CubeExtension::<BaseElement>::ONE,
+        dim: 3,
+    };
+
+    const ELEMENT_BYTES: usize = ELEMENT_BYTES;
+    const IS_CANONICAL: bool = false;
+
+    fn inv(self) -> Self {
+        match self.dim {
+            3 => Self {
+                cube: self.cube.inv(),
+                dim: 3,
+            },
+            1 => Self::from(self.to_be().inv()),
+            _ => {
+                panic!("Invalid dim");
+            }
+        }
+    }
+
+    fn conjugate(&self) -> Self {
+        panic!("Unimplement");
+    }
+
+    fn elements_as_bytes(elements: &[Self]) -> &[u8] {
+        // TODO: take endianness into account.
+        let p = elements.as_ptr();
+        let len = elements.len() * Self::ELEMENT_BYTES;
+        unsafe { slice::from_raw_parts(p as *const u8, len) }
+    }
+
+    unsafe fn bytes_as_elements(bytes: &[u8]) -> Result<&[Self], DeserializationError> {
+        if bytes.len() % Self::ELEMENT_BYTES != 0 {
+            return Err(DeserializationError::InvalidValue(format!(
+                "number of bytes ({}) does not divide into whole number of field elements",
+                bytes.len(),
+            )));
+        }
+
+        let p = bytes.as_ptr();
+        let len = bytes.len() / Self::ELEMENT_BYTES;
+
+        if (p as usize) % mem::align_of::<u64>() != 0 {
+            return Err(DeserializationError::InvalidValue(
+                "slice memory alignment is not valid for this field element type".to_string(),
+            ));
+        }
+
+        Ok(slice::from_raw_parts(p as *const Self, len))
+    }
+
+    fn as_base_elements(elements: &[Self]) -> &[Self::BaseField] {
+        elements
+    }
+}
+
+// FIXME
+impl Randomizable for F3G {
+    const VALUE_SIZE: usize = Self::ELEMENT_BYTES;
+
+    fn from_random_bytes(bytes: &[u8]) -> Option<Self> {
+        Self::try_from(bytes).ok()
+    }
+}
+
+// FIXME
+impl Display for F3G {
+    fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
+        write!(f, "{}", self.as_int())
+    }
+}
+
+// FIXME
+impl Serializable for F3G {
+    fn write_into<W: ByteWriter>(&self, target: &mut W) {
+        // convert from Montgomery representation into canonical representation
+        target.write_u8_slice(&self.as_int().to_le_bytes());
+    }
+}
+
+// FIXME
+impl Deserializable for F3G {
+    fn read_from<R: ByteReader>(source: &mut R) -> Result<Self, DeserializationError> {
+        let value = source.read_u64()?;
+        if value >= M {
+            return Err(DeserializationError::InvalidValue(format!(
+                "invalid field element: value {} is greater than or equal to the field modulus",
+                value
+            )));
+        }
+        Ok(Self::from(BaseElement::from(value)))
+    }
+}
+
+// FIXME
+impl AsBytes for F3G {
+    fn as_bytes(&self) -> &[u8] {
+        // TODO: take endianness into account
+        let self_ptr: *const F3G = self;
+        unsafe { slice::from_raw_parts(self_ptr as *const u8, ELEMENT_BYTES) }
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for F3G {
+    type Error = DeserializationError;
+
+    /// Converts a slice of bytes into a field element; returns error if the value encoded in bytes
+    /// is not a valid field element. The bytes are assumed to encode the element in the canonical
+    /// representation in little-endian byte order.
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        if bytes.len() < ELEMENT_BYTES {
+            return Err(DeserializationError::InvalidValue(format!(
+                "not enough bytes for a full field element; expected {} bytes, but was {} bytes",
+                ELEMENT_BYTES,
+                bytes.len(),
+            )));
+        }
+        if bytes.len() > ELEMENT_BYTES {
+            return Err(DeserializationError::InvalidValue(format!(
+                "too many bytes for a field element; expected {} bytes, but was {} bytes",
+                ELEMENT_BYTES,
+                bytes.len(),
+            )));
+        }
+        let value = bytes
+            .try_into()
+            .map(u64::from_le_bytes)
+            .map_err(|error| DeserializationError::UnknownError(format!("{}", error)))?;
+        if value >= M {
+            return Err(DeserializationError::InvalidValue(format!(
+                "invalid field element: value {} is greater than or equal to the field modulus",
+                value
+            )));
+        }
+        Ok(Self::from(BaseElement::from(value)))
+    }
+}
+
+impl StarkField for F3G {
+    /// sage: MODULUS = 2^64 - 2^32 + 1 \
+    /// sage: GF(MODULUS).is_prime_field() \
+    /// True \
+    /// sage: GF(MODULUS).order() \
+    /// 18446744069414584321
+    const MODULUS: Self::PositiveInteger = M;
+    const MODULUS_BITS: u32 = 64;
+
+    /// sage: GF(MODULUS).primitive_element() \
+    /// 7
+    const GENERATOR: Self = Self::ONE; //Self::from(7)
+
+    /// sage: is_odd((MODULUS - 1) / 2^32) \
+    /// True
+    const TWO_ADICITY: u32 = 32;
+
+    /// sage: k = (MODULUS - 1) / 2^32 \
+    /// sage: GF(MODULUS).primitive_element()^k \
+    /// 1753635133440165772
+    const TWO_ADIC_ROOT_OF_UNITY: Self = Self::ONE; //Self::from(G);
+
+    fn get_modulus_le_bytes() -> Vec<u8> {
+        M.to_le_bytes().to_vec()
+    }
+
+    #[inline]
+    fn as_int(&self) -> Self::PositiveInteger {
+        if self.dim == 1 {
+            self.to_be().as_int()
+        } else {
+            panic!("Invalid as int");
+        }
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use std::ops::{Add, Mul};
 
     use crate::f3g::F3G;
+    use winter_math::{StarkField, FieldElement};
     use winter_math::fields::f64::BaseElement;
 
     #[test]

@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use crate::constant::{SHIFT, TWIDDLES};
+use crate::constant::SHIFT;
 use crate::digest_bn128::ElementDigest;
 use crate::errors::Result;
 use crate::f3g::F3G;
@@ -89,8 +89,7 @@ impl Default for StarkContext {
 }
 
 impl StarkContext {
-    // TODO change to get_mut
-    pub fn get(&mut self, section: &str) -> &mut Vec<F3G> {
+    pub fn get_mut(&mut self, section: &str) -> &mut Vec<F3G> {
         match section {
             "tmp" => &mut self.tmp,
             "cm1_n" => &mut self.cm1_n,
@@ -130,6 +129,11 @@ impl<'a> StarkProof<'a> {
     ) -> Result<StarkContext> {
         let mut ctx = StarkContext::default();
 
+        let twiddles: Vec<F3G> = fft::get_twiddles::<BaseElement>(stark_struct.nBitsExt)
+            .iter()
+            .map(|e| F3G::from(*e))
+            .collect();
+
         ctx.nbits = stark_struct.nBits;
         ctx.nbits_ext = stark_struct.nBitsExt;
         ctx.N = 1 << stark_struct.nBits;
@@ -157,7 +161,7 @@ impl<'a> StarkProof<'a> {
         let mut xx = F3G::ONE;
         for i in 0..ctx.N {
             ctx.x_n[i] = xx;
-            xx = xx * TWIDDLES[ctx.nbits];
+            xx = xx * twiddles[ctx.nbits];
         }
 
         let extendBits = ctx.nbits_ext - ctx.nbits;
@@ -165,10 +169,10 @@ impl<'a> StarkProof<'a> {
         let mut xx = SHIFT.clone();
         for i in 0..(1 << (ctx.nbits_ext - ctx.nbits)) {
             ctx.x_2ns[i] = xx;
-            xx = xx * TWIDDLES[ctx.nbits_ext];
+            xx = xx * twiddles[ctx.nbits_ext];
         }
 
-        ctx.Zi = Self::build_Zh_Inv(ctx.nbits, extendBits);
+        ctx.Zi = Self::build_Zh_Inv(ctx.nbits, extendBits, &twiddles);
 
         ctx.const_n = const_pols.write_buff();
         ctx.const_2ns = const_tree.write_buff();
@@ -287,21 +291,23 @@ impl<'a> StarkProof<'a> {
         ctx.challenges[6] = transcript.get_field(); // v2
         ctx.challenges[7] = transcript.get_field(); // xi
 
-        // TODO: change to fft::evaluate_poly_with_offset
         let mut LEv = vec![F3G::ZERO; ctx.N];
         let mut LpEv = vec![F3G::ZERO; ctx.N];
         LEv[0] = F3G::from(BaseElement::from(1u64));
         LpEv[0] = F3G::from(BaseElement::from(1u64));
 
         let xis = ctx.challenges[7] / SHIFT.clone();
-        let wxis = (ctx.challenges[7] * TWIDDLES[ctx.nbits]) / SHIFT.clone();
+        let wxis = (ctx.challenges[7] * twiddles[ctx.nbits]) / SHIFT.clone();
 
         for i in 1..ctx.N {
             LEv[i] = LEv[i - 1] * xis;
             LpEv[i] = LpEv[i - 1] * wxis;
         }
 
-        // coeffient to point-value format TODO
+        //ifft
+        let inv_twiddles = fft::get_inv_twiddles(ctx.N);
+        fft::interpolate_poly(&mut LEv, &inv_twiddles);
+        fft::interpolate_poly(&mut LpEv, &inv_twiddles);
 
         ctx.evals = vec![F3G::ZERO; starkinfo.ev_map.len()];
         let N = ctx.N;
@@ -340,7 +346,7 @@ impl<'a> StarkProof<'a> {
         // Calculate xDivXSubXi, xDivXSubWXi
 
         let xi = ctx.challenges[7];
-        let wxi = ctx.challenges[7] * TWIDDLES[ctx.nbits];
+        let wxi = ctx.challenges[7] * twiddles[ctx.nbits];
 
         ctx.xDivXSubXi = vec![BaseElement::ZERO; (ctx.N << extendBits) * 3];
         ctx.xDivXSubWXi = vec![BaseElement::ZERO; (ctx.N << extendBits) * 3];
@@ -350,7 +356,7 @@ impl<'a> StarkProof<'a> {
         for k in 0..(N << extendBits) {
             tmp_den[k] = x - xi;
             tmp_denw[k] = x - wxi;
-            x = x * TWIDDLES[ctx.nbits + extendBits];
+            x = x * twiddles[ctx.nbits + extendBits];
         }
         tmp_den = F3G::batch_inverse(&tmp_den);
         tmp_denw = F3G::batch_inverse(&tmp_denw);
@@ -366,7 +372,7 @@ impl<'a> StarkProof<'a> {
             ctx.xDivXSubWXi[3 * k + 1] = vw[1];
             ctx.xDivXSubWXi[3 * k + 2] = vw[2];
 
-            x = x * TWIDDLES[ctx.nbits + extendBits];
+            x = x * twiddles[ctx.nbits + extendBits];
         }
 
         calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns");
@@ -396,7 +402,11 @@ impl<'a> StarkProof<'a> {
         t.eval(ctx, idx)
     }
 
-    pub fn build_Zh_Inv(nBits: usize, extendBits: usize) -> Box<dyn Fn(usize) -> F3G + 'static> {
+    pub fn build_Zh_Inv(
+        nBits: usize,
+        extendBits: usize,
+        twiddles: &Vec<F3G>,
+    ) -> Box<dyn Fn(usize) -> F3G + 'static> {
         let mut w = F3G::ONE;
         let mut sn = SHIFT.clone();
         for i in 0..nBits {
@@ -405,7 +415,7 @@ impl<'a> StarkProof<'a> {
         let mut ZHInv = vec![];
         for i in 0..(1 << extendBits) {
             ZHInv[i] = -(sn * w - F3G::ONE);
-            w = w * TWIDDLES[extendBits];
+            w = w * twiddles[extendBits];
         }
         Box::new(move |i: usize| ZHInv[i].clone())
     }
@@ -476,7 +486,7 @@ fn calculate_Z(num: Vec<F3G>, den: Vec<F3G>) -> Vec<F3G> {
 fn get_pol_ref<'a>(ctx: &'a mut StarkContext, starkinfo: &StarkInfo, id_pol: usize) -> Polynom<'a> {
     let p = &starkinfo.var_pol_map[id_pol];
     Polynom {
-        buffer: ctx.get(&p.section),
+        buffer: ctx.get_mut(&p.section),
         deg: starkinfo.map_deg.get(&p.section),
         offset: p.section_pos,
         size: starkinfo.map_sectionsN.get(&p.section),
@@ -560,7 +570,7 @@ fn to_matrix(
     section_name: &'static str,
 ) -> Vec<Vec<BaseElement>> {
     let n_pols = starkinfo.map_sectionsN.get(section_name);
-    let p = ctx.get(section_name);
+    let p = ctx.get_mut(section_name);
     let n = p.len() / n_pols; // width
     let mut columns: Vec<Vec<BaseElement>> = vec![Vec::new(); n_pols];
 
@@ -610,5 +620,66 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     for i in (N - next)..N {
         // cLast(ctx, i);
         cFirst.eval(ctx, i);
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use crate::constant::SHIFT;
+    use crate::f3g::F3G;
+    use winter_math::{StarkField, FieldElement};
+    use winter_math::{fft, fields::f64::BaseElement};
+
+    #[test]
+    fn test_fft() {
+        let expected: Vec<BaseElement> = vec![1u32, 2u32, 3u32, 5u32]
+            .iter()
+            .map(|e| BaseElement::from(*e))
+            .collect();
+        let mut points = expected.clone();
+
+        // FFT
+        let twiddles = fft::get_twiddles(4);
+        fft::evaluate_poly(&mut points, &twiddles);
+        //println!("eoff {:?} {:?}", points[0].as_int(), points[1].as_int());
+
+        // IFFT
+        let inv_twiddles = fft::get_inv_twiddles(4);
+        fft::interpolate_poly(&mut points, &inv_twiddles);
+        assert_eq!(expected, points);
+    }
+    #[test]
+    fn test_eval_pol() {
+        let N = 1024;
+        let nbits = 10;
+        let challenges = F3G::new(
+            BaseElement::from(405541716203249735u64),
+            BaseElement::from(16789828314235517595u64),
+            BaseElement::from(3073014978386239810u64),
+        );
+
+        let mut LEv = vec![F3G::ZERO; N];
+        let mut LpEv = vec![F3G::ZERO; N];
+        LEv[0] = F3G::from(BaseElement::from(1u64));
+        LpEv[0] = F3G::from(BaseElement::from(1u64));
+
+        let twiddles: Vec<F3G> = fft::get_twiddles::<BaseElement>(1024)
+            .iter()
+            .map(|e| F3G::from(*e))
+            .collect();
+        let xis = challenges / SHIFT.clone();
+        let wxis = challenges * twiddles[nbits] / SHIFT.clone();
+
+        for i in 1..N {
+            LEv[i] = LEv[i - 1] * xis;
+            LpEv[i] = LpEv[i - 1] * wxis;
+        }
+
+        LEv.iter()
+            .map(|e| {
+                //    println!("lEV: {:?}", e);
+                0
+            })
+            .collect::<Vec<i32>>();
     }
 }
