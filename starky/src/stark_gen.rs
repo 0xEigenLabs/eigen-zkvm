@@ -1,8 +1,9 @@
 #![allow(non_snake_case)]
-use crate::constant::SHIFT;
+use crate::constant::{SHIFT, W};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::Result;
 use crate::f3g::F3G;
+use crate::fri::FRIProof;
 use crate::fri::FRI;
 use crate::interpreter::compile_code;
 use crate::merklehash_bn128::MerkleTree;
@@ -16,7 +17,6 @@ use crate::transcript_bn128::TranscriptBN128;
 use crate::types::{StarkStruct, PIL};
 use std::collections::HashMap;
 use std::rc::Rc;
-use winter_fri::FriProof;
 use winter_math::fft;
 use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
@@ -51,6 +51,14 @@ pub struct StarkContext {
 
     pub exps_n: Vec<F3G>,
     pub exps_2ns: Vec<F3G>,
+
+    pub Z: F3G,
+    pub Zp: F3G,
+    pub tree1: Vec<BaseElement>,
+    pub tree2: Vec<BaseElement>,
+    pub tree3: Vec<BaseElement>,
+    pub tree4: Vec<BaseElement>,
+    pub consts: Vec<BaseElement>,
 }
 
 impl Default for StarkContext {
@@ -84,6 +92,13 @@ impl Default for StarkContext {
             evals: Vec::new(),
             exps_n: Vec::new(),
             exps_2ns: Vec::new(),
+            Z: F3G::ZERO,
+            Zp: F3G::ZERO,
+            tree1: Vec::new(),
+            tree2: Vec::new(),
+            tree3: Vec::new(),
+            tree4: Vec::new(),
+            consts: Vec::new(),
         }
     }
 }
@@ -110,14 +125,17 @@ impl StarkContext {
     }
 }
 
-pub struct StarkProof<'a> {
-    stark_setup: &'a StarkSetup,
-    fri_proof: FriProof,
-    root: [ElementDigest; 4],
-    publics: Vec<Segment>,
+pub struct StarkProof {
+    pub root1: ElementDigest,
+    pub root2: ElementDigest,
+    pub root3: ElementDigest,
+    pub root4: ElementDigest,
+    pub fri_proof: FRIProof,
+    pub evals: Vec<F3G>,
+    pub publics: Vec<F3G>,
 }
 
-impl<'a> StarkProof<'a> {
+impl<'a> StarkProof {
     pub fn stark_gen(
         cm_pols: &PolsArray,
         const_pols: &PolsArray,
@@ -126,13 +144,8 @@ impl<'a> StarkProof<'a> {
         program: &Program,
         pil: &PIL,
         stark_struct: &StarkStruct,
-    ) -> Result<StarkContext> {
+    ) -> Result<StarkProof> {
         let mut ctx = StarkContext::default();
-
-        let twiddles: Vec<F3G> = fft::get_twiddles::<BaseElement>(stark_struct.nBitsExt)
-            .iter()
-            .map(|e| F3G::from(*e))
-            .collect();
 
         ctx.nbits = stark_struct.nBits;
         ctx.nbits_ext = stark_struct.nBitsExt;
@@ -161,7 +174,7 @@ impl<'a> StarkProof<'a> {
         let mut xx = F3G::ONE;
         for i in 0..ctx.N {
             ctx.x_n[i] = xx;
-            xx = xx * twiddles[ctx.nbits];
+            xx = xx * W.0[ctx.nbits];
         }
 
         let extendBits = ctx.nbits_ext - ctx.nbits;
@@ -169,10 +182,10 @@ impl<'a> StarkProof<'a> {
         let mut xx = SHIFT.clone();
         for i in 0..(1 << (ctx.nbits_ext - ctx.nbits)) {
             ctx.x_2ns[i] = xx;
-            xx = xx * twiddles[ctx.nbits_ext];
+            xx = xx * W.0[ctx.nbits_ext];
         }
 
-        ctx.Zi = Self::build_Zh_Inv(ctx.nbits, extendBits, &twiddles);
+        ctx.Zi = Self::build_Zh_Inv(ctx.nbits, extendBits);
 
         ctx.const_n = const_pols.write_buff();
         ctx.const_2ns = const_tree.write_buff();
@@ -297,7 +310,7 @@ impl<'a> StarkProof<'a> {
         LpEv[0] = F3G::from(BaseElement::from(1u64));
 
         let xis = ctx.challenges[7] / SHIFT.clone();
-        let wxis = (ctx.challenges[7] * twiddles[ctx.nbits]) / SHIFT.clone();
+        let wxis = (ctx.challenges[7] * W.0[ctx.nbits]) / SHIFT.clone();
 
         for i in 1..ctx.N {
             LEv[i] = LEv[i - 1] * xis;
@@ -346,7 +359,7 @@ impl<'a> StarkProof<'a> {
         // Calculate xDivXSubXi, xDivXSubWXi
 
         let xi = ctx.challenges[7];
-        let wxi = ctx.challenges[7] * twiddles[ctx.nbits];
+        let wxi = ctx.challenges[7] * W.0[ctx.nbits];
 
         ctx.xDivXSubXi = vec![BaseElement::ZERO; (ctx.N << extendBits) * 3];
         ctx.xDivXSubWXi = vec![BaseElement::ZERO; (ctx.N << extendBits) * 3];
@@ -356,7 +369,7 @@ impl<'a> StarkProof<'a> {
         for k in 0..(N << extendBits) {
             tmp_den[k] = x - xi;
             tmp_denw[k] = x - wxi;
-            x = x * twiddles[ctx.nbits + extendBits];
+            x = x * W.0[ctx.nbits + extendBits];
         }
         tmp_den = F3G::batch_inverse(&tmp_den);
         tmp_denw = F3G::batch_inverse(&tmp_denw);
@@ -372,7 +385,7 @@ impl<'a> StarkProof<'a> {
             ctx.xDivXSubWXi[3 * k + 1] = vw[1];
             ctx.xDivXSubWXi[3 * k + 2] = vw[2];
 
-            x = x * twiddles[ctx.nbits + extendBits];
+            x = x * W.0[ctx.nbits + extendBits];
         }
 
         calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns");
@@ -383,12 +396,29 @@ impl<'a> StarkProof<'a> {
             starkinfo.exps_2ns[starkinfo.fri_exp_id],
         );
 
-        let mut trees = vec![&tree1, &tree2, &tree3, &tree4, const_tree];
+        //let mut trees = vec![&tree1, &tree2, &tree3, &tree4, const_tree];
+        let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
+            vec![
+                tree1.get_group_proof(idx).unwrap(),
+                tree2.get_group_proof(idx).unwrap(),
+                tree3.get_group_proof(idx).unwrap(),
+                tree4.get_group_proof(idx).unwrap(),
+                const_tree.get_group_proof(idx).unwrap(),
+            ]
+        };
         let mut fri = FRI::new(stark_struct);
 
-        let friProof = fri.prove(&mut transcript, &friPol, &mut trees);
+        let friProof = fri.prove(&mut transcript, &friPol, query_pol)?;
 
-        Ok(ctx)
+        Ok(StarkProof {
+            root1: tree1.root(),
+            root2: tree1.root(),
+            root3: tree1.root(),
+            root4: tree1.root(),
+            fri_proof: friProof,
+            evals: ctx.evals.clone(),
+            publics: ctx.publics.clone(),
+        })
     }
 
     pub fn calculate_exp_at_point(
@@ -402,11 +432,7 @@ impl<'a> StarkProof<'a> {
         t.eval(ctx, idx)
     }
 
-    pub fn build_Zh_Inv(
-        nBits: usize,
-        extendBits: usize,
-        twiddles: &Vec<F3G>,
-    ) -> Box<dyn Fn(usize) -> F3G + 'static> {
+    pub fn build_Zh_Inv(nBits: usize, extendBits: usize) -> Box<dyn Fn(usize) -> F3G + 'static> {
         let mut w = F3G::ONE;
         let mut sn = SHIFT.clone();
         for i in 0..nBits {
@@ -415,7 +441,7 @@ impl<'a> StarkProof<'a> {
         let mut ZHInv = vec![];
         for i in 0..(1 << extendBits) {
             ZHInv[i] = -(sn * w - F3G::ONE);
-            w = w * twiddles[extendBits];
+            w = w * W.0[extendBits];
         }
         Box::new(move |i: usize| ZHInv[i].clone())
     }
@@ -627,8 +653,8 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
 pub mod tests {
     use crate::constant::SHIFT;
     use crate::f3g::F3G;
-    use winter_math::{StarkField, FieldElement};
     use winter_math::{fft, fields::f64::BaseElement};
+    use winter_math::{FieldElement, StarkField};
 
     #[test]
     fn test_fft() {
@@ -649,7 +675,7 @@ pub mod tests {
         assert_eq!(expected, points);
     }
     #[test]
-    fn test_eval_pol() {
+    fn test_F_w() {
         let N = 1024;
         let nbits = 10;
         let challenges = F3G::new(
@@ -658,17 +684,34 @@ pub mod tests {
             BaseElement::from(3073014978386239810u64),
         );
 
+        // get root
+        let root = BaseElement::get_root_of_unity(32);
+        println!("root {:?}", root.as_int());
+
+        //let inv_twiddles = winter_math::get_power_series(root, (s/2) );
+        let inv_twiddles: Vec<BaseElement> = fft::get_inv_twiddles(2usize.pow(5));
+
+        inv_twiddles
+            .iter()
+            .map(|e| {
+                println!("inv_twiddles: {:?}", e.as_int());
+                0
+            })
+            .collect::<Vec<i32>>();
+
         let mut LEv = vec![F3G::ZERO; N];
         let mut LpEv = vec![F3G::ZERO; N];
         LEv[0] = F3G::from(BaseElement::from(1u64));
         LpEv[0] = F3G::from(BaseElement::from(1u64));
+        let inv_twiddles = fft::get_inv_twiddles::<BaseElement>(2usize.pow(15));
+        //inv_twiddles.iter().map(|e| {println!("{:?}", e.as_int()); 0}).collect::<Vec<i32>>();
 
-        let twiddles: Vec<F3G> = fft::get_twiddles::<BaseElement>(1024)
+        let inv_twiddles: Vec<F3G> = fft::get_inv_twiddles::<BaseElement>(N)
             .iter()
             .map(|e| F3G::from(*e))
             .collect();
         let xis = challenges / SHIFT.clone();
-        let wxis = challenges * twiddles[nbits] / SHIFT.clone();
+        let wxis = challenges * inv_twiddles[nbits] / SHIFT.clone();
 
         for i in 1..N {
             LEv[i] = LEv[i - 1] * xis;

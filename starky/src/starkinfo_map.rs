@@ -2,7 +2,7 @@
 use crate::errors::Result;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{
-    iterate_code, Context, ContextF, EVIdx, Node, PolType, Section, Segment, Subcode,
+    iterate_code, Context, ContextF, EVIdx, Index, Node, PolType, Section, Segment,
 };
 use crate::types::{Expression, StarkStruct, PIL};
 use std::collections::HashMap;
@@ -198,7 +198,7 @@ impl StarkInfo {
         let N = 1 << stark_struct.nBits;
         let Next = 1 << stark_struct.nBitsExt;
 
-        self.map_offsets = Section {
+        self.map_offsets = Index {
             cm1_n: 0,
             cm2_n: self.map_offsets.cm1_n + N * self.map_sectionsN.cm1_n,
             cm3_n: self.map_offsets.cm2_n + N * self.map_sectionsN.cm2_n,
@@ -215,7 +215,7 @@ impl StarkInfo {
                 + Next * self.map_sectionsN.exps_withoutq_2ns,
         };
 
-        self.map_deg = Section {
+        self.map_deg = Index {
             cm1_n: N,
             cm2_n: N,
             cm3_n: N,
@@ -359,7 +359,7 @@ impl StarkInfo {
 
     fn _set_code_dimensions(
         &mut self,
-        codes: &mut Vec<Subcode>,
+        codes: &mut Vec<Section>,
         tmp_dim: &mut HashMap<usize, usize>,
         dim_x: usize,
     ) {
@@ -474,8 +474,8 @@ impl StarkInfo {
         segment.tmp_used = ctx_f.tmp_used;
     }
 
-    //FIXME: use it as Section's method
-    fn set_section_field(name: &str, sec: &mut Section, value: usize) {
+    //FIXME: use it as Index's method
+    fn set_section_field(name: &str, sec: &mut Index, value: usize) {
         match name {
             "cm1_n" => {
                 sec.cm1_n = value;
@@ -516,7 +516,7 @@ impl StarkInfo {
         }
     }
 
-    fn get_section_field(name: &str, sec: &mut Section) -> usize {
+    fn get_section_field(name: &str, sec: &mut Index) -> usize {
         match name {
             "cm1_n" => sec.cm1_n,
             "cm1_2ns" => sec.cm1_2ns,

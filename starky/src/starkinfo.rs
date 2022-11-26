@@ -2,8 +2,8 @@
 use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps as E;
 use crate::starkinfo_codegen::{
-    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node, PolType,
-    Section, SectionVec, Segment,
+    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Index, IndexVec,
+    Node, PolType, Segment,
 };
 use crate::types::{Expression, Public, StarkStruct, PIL};
 use std::collections::HashMap;
@@ -80,12 +80,12 @@ pub struct StarkInfo {
     pub exps_2ns: Vec<usize>,
     pub qs: Vec<usize>,
 
-    pub map_sections: SectionVec,
-    pub map_sectionsN1: Section,
-    pub map_sectionsN3: Section,
-    pub map_sectionsN: Section,
-    pub map_offsets: Section,
-    pub map_deg: Section,
+    pub map_sections: IndexVec,
+    pub map_sectionsN1: Index,
+    pub map_sectionsN3: Index,
+    pub map_sectionsN: Index,
+    pub map_offsets: Index,
+    pub map_deg: Index,
 
     pub publics: Vec<Public>,
 }
@@ -129,12 +129,12 @@ impl StarkInfo {
             exps_n: Vec::new(),
             exps_2ns: Vec::new(),
             qs: Vec::new(),
-            map_sections: SectionVec::default(),
-            map_sectionsN1: Section::default(),
-            map_sectionsN3: Section::default(),
-            map_sectionsN: Section::default(),
-            map_offsets: Section::default(),
-            map_deg: Section::default(),
+            map_sections: IndexVec::default(),
+            map_sectionsN1: Index::default(),
+            map_sectionsN3: Index::default(),
+            map_sectionsN: Index::default(),
+            map_offsets: Index::default(),
+            map_deg: Index::default(),
 
             publics: Vec::new(),
         };

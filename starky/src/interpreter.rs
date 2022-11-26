@@ -3,7 +3,7 @@ use crate::f3g::F3G;
 use crate::stark_gen::StarkContext;
 use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::Node;
-use crate::starkinfo_codegen::Subcode;
+use crate::starkinfo_codegen::Section;
 use std::fmt;
 use winter_math::{FieldElement, StarkField};
 
@@ -21,7 +21,7 @@ pub enum Ops {
 
 /// example: `ctx.const_n[${r.id} + ((i+1)%${N})*${ctx.starkInfo.nConstants} ]`;
 /// where the r.id, N, ctx.starkInfo.nConstants modified by `${}` are the instant value, ctx.const_n and i are the symble.
-/// the symbol should the fields of the global context, have same name as Section.
+/// the symbol should the fields of the global context, have same name as Index.
 /// so the example would be Expr { op: Refer, syms: [ctx.const_n, i], defs: [Vari, Vari...] }
 #[derive(Clone, Debug)]
 pub struct Expr {
@@ -279,7 +279,7 @@ impl fmt::Display for Block {
 pub fn compile_code(
     ctx: &StarkContext,
     starkinfo: &StarkInfo,
-    code: &Vec<Subcode>,
+    code: &Vec<Section>,
     dom: &str,
     ret: bool,
 ) -> Block {

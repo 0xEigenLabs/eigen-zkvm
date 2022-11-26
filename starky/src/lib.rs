@@ -22,6 +22,7 @@ mod helper;
 mod interpreter;
 mod stark_gen;
 mod stark_setup;
+mod stark_verify;
 mod starkinfo;
 mod starkinfo_Z;
 mod starkinfo_codegen;

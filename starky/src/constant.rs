@@ -25,6 +25,21 @@ lazy_static::lazy_static! {
 
     pub static ref SHIFT: F3G = F3G::from(BaseElement::from(49u32));
     pub static ref SHIFT_INV: F3G = F3G::inv(SHIFT.clone());
+    pub static ref W: (Vec<F3G>, Vec<F3G>) = {
+        let nqr = F3G::from(BaseElement::from(7u32));
+        let rem = 2usize.pow(32) - 1;
+        let s = 32usize;
+        let mut w = vec![F3G::ZERO; s+1];
+        let mut wi = vec![F3G::ZERO; s+1];
+        w[s] = nqr.pow(rem);
+        wi[s] = w[s].inv();
+
+        for n in (0..s).rev() {
+            w[n] = w[n+1].square();
+            wi[n] = wi[n+1].square();
+        }
+        (w, wi)
+    };
 }
 
 pub const MIN_OPS_PER_THREAD: usize = 1 << 12;

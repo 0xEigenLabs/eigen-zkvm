@@ -31,6 +31,9 @@ pub enum EigenError {
     #[error("invalid op, msg `{0}`")]
     InvalidOperator(String),
 
+    #[error("verify FRI proof failed")]
+    FRIVerifierFailed,
+
     #[error("Unknown error, `{0}`")]
     Unknown(String),
 }

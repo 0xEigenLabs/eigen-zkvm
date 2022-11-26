@@ -26,7 +26,7 @@ pub struct Context {
 pub struct ContextC {
     pub exp_id: usize,
     pub tmp_used: usize,
-    pub code: Vec<Subcode>,
+    pub code: Vec<Section>,
 }
 
 #[derive(Debug)]
@@ -74,7 +74,7 @@ impl Node {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct Subcode {
+pub struct Section {
     pub op: String,
     pub dest: Node,
     pub src: Vec<Node>,
@@ -82,14 +82,14 @@ pub struct Subcode {
 
 #[derive(Debug, Default)]
 pub struct Segment {
-    pub first: Vec<Subcode>,
-    pub i: Vec<Subcode>,
-    pub last: Vec<Subcode>,
+    pub first: Vec<Section>,
+    pub i: Vec<Section>,
+    pub last: Vec<Section>,
     pub tmp_used: usize,
 }
 
 impl Segment {
-    pub fn get_code_mut_by_idx(&mut self, i: usize) -> &mut Vec<Subcode> {
+    pub fn get_code_mut_by_idx(&mut self, i: usize) -> &mut Vec<Section> {
         match i {
             0 => &mut self.first,
             1 => &mut self.i,
@@ -108,12 +108,12 @@ pub struct Code {
     pub exp_id: usize,
     pub prime: Option<bool>,
     pub tmp_used: usize,
-    pub code: Vec<Subcode>,
+    pub code: Vec<Section>,
     pub idQ: Option<usize>,
 }
 
 #[derive(Debug, Default)]
-pub struct SectionVec {
+pub struct IndexVec {
     pub cm1_n: Vec<usize>,
     pub cm1_2ns: Vec<usize>,
     pub cm2_n: Vec<usize>,
@@ -128,7 +128,7 @@ pub struct SectionVec {
 }
 
 #[derive(Debug, Default)]
-pub struct Section {
+pub struct Index {
     pub cm1_n: usize,
     pub cm1_2ns: usize,
     pub cm2_n: usize,
@@ -143,7 +143,7 @@ pub struct Section {
     pub map_total_n: usize,
 }
 
-impl Section {
+impl Index {
     pub fn get(&self, name: &str) -> usize {
         match name {
             "cm1_n" => self.cm1_n,
@@ -158,7 +158,7 @@ impl Section {
             "exps_withoutq_n" => self.exps_withoutq_n,
             "exps_withoutq_2ns" => self.exps_withoutq_2ns,
             "map_total_n" => self.map_total_n,
-            _ => panic!("Invalid name={} in section", name),
+            _ => panic!("Invalid name={} in index", name),
         }
     }
 
@@ -200,7 +200,7 @@ impl Section {
             "map_total_n" => {
                 self.map_total_n = val;
             }
-            _ => panic!("Invalid name={} in section", name),
+            _ => panic!("Invalid name={} in index", name),
         }
     }
 }
@@ -308,7 +308,7 @@ pub fn pil_code_gen(
         code_ctx.tmp_used += 1;
 
         let exp_node = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
-        code_ctx.code.push(Subcode {
+        code_ctx.code.push(Section {
             op: "sub".to_string(),
             src: vec![ret_ref.clone(), exp_node],
             dest: rqz.clone(),
@@ -323,7 +323,7 @@ pub fn pil_code_gen(
             prime,
             0,
         );
-        code_ctx.code.push(Subcode {
+        code_ctx.code.push(Section {
             op: "mul".to_string(),
             src: vec![Zi, rqz],
             dest: q,
@@ -341,13 +341,13 @@ pub fn pil_code_gen(
             0,
         );
         let Z = Node::new("Z".to_string(), 0, None, 0, prime, 0);
-        code_ctx.code.push(Subcode {
+        code_ctx.code.push(Section {
             op: "mul".to_string(),
             dest: rqz.clone(),
             src: vec![q, Z],
         });
         let exp_node = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
-        code_ctx.code.push(Subcode {
+        code_ctx.code.push(Section {
             op: "sub".to_string(),
             dest: exp_node,
             src: vec![ret_ref.clone(), rqz],
@@ -360,7 +360,7 @@ pub fn pil_code_gen(
             code_ctx.tmp_used -= 1;
         } else {
             let exp_node = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
-            code_ctx.code.push(Subcode {
+            code_ctx.code.push(Section {
                 op: "copy".to_string(),
                 dest: exp_node,
                 src: vec![ret_ref],
@@ -408,7 +408,7 @@ pub fn eval_exp(
             let b = eval_exp(code_ctx, pil, &(values[1]), prime)?;
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
-            let c = Subcode {
+            let c = Section {
                 op: "add".to_string(),
                 dest: r.clone(),
                 src: vec![a, b],
@@ -421,7 +421,7 @@ pub fn eval_exp(
             let b = eval_exp(code_ctx, pil, &(values[1]), prime)?;
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
-            let c = Subcode {
+            let c = Section {
                 op: "sub".to_string(),
                 dest: r.clone(),
                 src: vec![a, b],
@@ -434,7 +434,7 @@ pub fn eval_exp(
             let b = eval_exp(code_ctx, pil, &values[1], prime)?;
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
-            let c = Subcode {
+            let c = Section {
                 op: "mul".to_string(),
                 dest: r.clone(),
                 src: vec![a, b],
@@ -454,7 +454,7 @@ pub fn eval_exp(
             );
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
-            let c = Subcode {
+            let c = Section {
                 op: "add".to_string(),
                 dest: r.clone(),
                 src: vec![a, b],
@@ -475,7 +475,7 @@ pub fn eval_exp(
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
 
-            let c = Subcode {
+            let c = Section {
                 op: "mul".to_string(),
                 dest: r.clone(),
                 src: vec![a, b],
@@ -490,7 +490,7 @@ pub fn eval_exp(
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
 
-            let c = Subcode {
+            let c = Section {
                 op: "sub".to_string(),
                 dest: r.clone(),
                 src: vec![a, b],
@@ -648,13 +648,13 @@ pub fn build_code(ctx: &mut Context, pil: &mut PIL) -> Segment {
     step_code
 }
 
-pub fn build_linear_code(ctx: &mut Context, pil: &mut PIL, loop_pos: String) -> Vec<Subcode> {
+pub fn build_linear_code(ctx: &mut Context, pil: &mut PIL, loop_pos: String) -> Vec<Section> {
     let exp_and_expprimes = match loop_pos.as_str() {
         "i" | "last" => get_exp_and_expprimes(ctx, pil),
         _ => HashMap::<usize, bool>::new(),
     };
 
-    let mut res: Vec<Subcode> = vec![];
+    let mut res: Vec<Section> = vec![];
     for (i, c) in ctx.code.iter().enumerate() {
         if exp_and_expprimes.get(&(i)).is_some() {
             if ((loop_pos.as_str() == "i") && (!ctx.code[i].prime.is_some()))
@@ -707,7 +707,7 @@ pub fn iterate_code(
 }
 
 fn iterate(
-    code: &mut Vec<Subcode>,
+    code: &mut Vec<Section>,
     f: fn(&mut Node, &mut ContextF, pil: &mut PIL),
     ctx: &mut ContextF,
     pil: &mut PIL,

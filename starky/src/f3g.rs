@@ -117,7 +117,7 @@ impl F3G {
         Self::new(cube[0], cube[1], cube[2])
     }
 
-    pub fn exp(self, e_: u64) -> Self {
+    pub fn exp(self, e_: usize) -> Self {
         let mut e = e_;
         if e == 0 {
             return Self::ONE;
@@ -147,11 +147,14 @@ impl F3G {
         res
     }
 
-    pub fn pow(self, e: u64) -> Self {
+    pub fn pow(self, e: usize) -> Self {
         self.exp(e)
     }
 
     pub fn batch_inverse(elems: &[Self]) -> Vec<Self> {
+        winter_math::batch_inversion(elems)
+
+        /*
         if elems.len() == 0 {
             return vec![];
         }
@@ -169,6 +172,7 @@ impl F3G {
         }
         res[0] = z;
         res
+        */
     }
 }
 
@@ -598,8 +602,8 @@ pub mod tests {
     use std::ops::{Add, Mul};
 
     use crate::f3g::F3G;
-    use winter_math::{StarkField, FieldElement};
     use winter_math::fields::f64::BaseElement;
+    use winter_math::{FieldElement, StarkField};
 
     #[test]
     fn test_f3g_add() {

@@ -6,9 +6,9 @@ use winter_math::FieldElement;
 use winter_math::StarkField;
 use winter_math::{fft, fields::f64::BaseElement, log2, polynom};
 
-use crate::constant::{SHIFT, SHIFT_INV};
+use crate::constant::{SHIFT, SHIFT_INV, W};
 use crate::digest_bn128::ElementDigest;
-use crate::errors::Result;
+use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::merklehash_bn128::MerkleTree;
 use crate::poseidon_bn128::Fr;
 use crate::transcript_bn128::TranscriptBN128;
@@ -56,13 +56,9 @@ impl FRI {
         &mut self,
         transcript: &mut TranscriptBN128,
         pol: &Vec<F3G>,
-        tree_refs: &mut Vec<&MerkleTree>,
+        mut query_pol: impl FnMut(usize) -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>,
     ) -> Result<FRIProof> {
         let mut pol = pol.clone();
-        let twiddles: Vec<F3G> = fft::get_twiddles::<BaseElement>(self.in_nbits)
-            .iter()
-            .map(|e| F3G::from(*e))
-            .collect();
 
         let mut pol_bits = log2(pol.len()) as usize;
         assert_eq!(1 << pol_bits, pol.len());
@@ -83,7 +79,7 @@ impl FRI {
             let special_x = transcript.get_field();
 
             let mut sinv = shift_inv;
-            let wi = F3G::inv(twiddles[pol_bits]);
+            let wi = F3G::inv(W.0[pol_bits]);
 
             for g in 0..(pol.len() / nX) {
                 if si == 0 {
@@ -137,28 +133,15 @@ impl FRI {
         proof.last = last_pol;
 
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
-        let mut tmp_query: Vec<&MerkleTree> = vec![];
-        let mut first = true;
 
         for si in 0..self.steps.len() {
             for ys_ in ys.iter() {
-                if first {
-                    let result = tree_refs
-                        .iter()
-                        .map(|e| e.get_group_proof(*ys_ as usize).unwrap())
-                        .collect::<Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>>();
-                    proof.queries[si].polQueries.push(result);
-                } else {
-                    let result = tmp_query
-                        .iter()
-                        .map(|e| e.get_group_proof(*ys_ as usize).unwrap())
-                        .collect::<Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>>();
-                    proof.queries[si].polQueries.push(result);
-                }
+                proof.queries[si].polQueries.push(query_pol(idx));
             }
             if si < self.steps.len() - 1 {
-                tmp_query = vec![&(tree[si])];
-                first = false;
+                query_pol = |t: &MerkleTree, idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
+                    vec![tree[si].get_group_proof(idx).unwrap()]
+                };
                 for i in 0..ys.len() {
                     ys[i] = ys[i] % (1 << self.steps[si + 1].nBits);
                 }
@@ -171,12 +154,8 @@ impl FRI {
         &self,
         transcript: &mut TranscriptBN128,
         proof: &FRIProof,
-        check_query: fn(&Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>, usize) -> Vec<F3G>,
+        mut check_query: impl FnMut(&Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>, usize) -> Result<Vec<F3G>>,
     ) -> Result<bool> {
-        let twiddles: Vec<F3G> = fft::get_twiddles::<BaseElement>(self.in_nbits)
-            .iter()
-            .map(|e| F3G::from(*e))
-            .collect();
         let tree = MerkleTree::new();
         assert_eq!(proof.queries.len(), self.steps.len()); // the last +1 is ommited
         let mut special_x: Vec<F3G> = vec![];
@@ -207,15 +186,16 @@ impl FRI {
             let proof_item = &proof.queries[si];
             let reduction_bits = pol_bits - self.steps[si].nBits;
             for i in 0..n_queries {
-                let mut pgroup_e = check_query(&proof_item.polQueries[i], ys[i] as usize);
+                let mut pgroup_e = check_query(&proof_item.polQueries[i], ys[i] as usize)?;
                 if pgroup_e.len() == 0 {
                     return Ok(false);
                 }
 
+                // ifft
                 let inv_twiddles = fft::get_inv_twiddles(pgroup_e.len());
                 fft::interpolate_poly(&mut pgroup_e, &inv_twiddles);
 
-                let sinv = F3G::inv(shift * (twiddles[pol_bits].exp(ys[i])));
+                let sinv = F3G::inv(shift * (W.0[pol_bits].exp(ys[i])));
                 let ev = eval_pol(&pgroup_e, &(special_x[si] * sinv));
 
                 if si < self.steps.len() - 1 {
@@ -234,17 +214,19 @@ impl FRI {
                     }
                 }
             }
-            let check_query = |query: &Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>,
-                               idx: usize|
-             -> Vec<F3G> {
-                let res = tree
-                    .verify_group_proof(&proof.queries[si + 1].root, &query[0].1, idx, &query[0].0)
-                    .unwrap();
-                if !res {
-                    return vec![];
-                }
-                return split3(&query[0].0);
-            };
+            check_query =
+                |query: &Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>, idx: usize| -> Result<Vec<F3G>> {
+                    let res = tree.verify_group_proof(
+                        &proof.queries[si + 1].root,
+                        &query[0].1,
+                        idx,
+                        &query[0].0,
+                    )?;
+                    if !res {
+                        return Err(FRIVerifierFailed);
+                    }
+                    Ok(split3(&query[0].0))
+                };
 
             let pol_bits = self.steps[si].nBits;
             for j in 0..reduction_bits {
