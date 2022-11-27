@@ -17,9 +17,12 @@ mod traits;
 
 mod expressionops;
 mod f3g;
+mod fri;
 mod helper;
+mod interpreter;
 mod stark_gen;
 mod stark_setup;
+mod stark_verify;
 mod starkinfo;
 mod starkinfo_Z;
 mod starkinfo_codegen;
@@ -28,8 +31,6 @@ mod starkinfo_cp_ver;
 mod starkinfo_fri_prover;
 mod starkinfo_fri_ver;
 mod starkinfo_map;
-
-mod interpreter;
 mod transcript_bn128;
 
 #[macro_use]
@@ -51,7 +52,7 @@ pub mod tests {
 
     #[test]
     fn test_fft_eval() {
-        let n = 2i32.pow(8) as usize;
+        let n = 2usize.pow(8);
 
         // build a random polynomial
         let mut p: Vec<BaseElement> = rand_vector(n);

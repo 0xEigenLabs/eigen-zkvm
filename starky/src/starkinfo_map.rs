@@ -2,7 +2,7 @@
 use crate::errors::Result;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{
-    iterate_code, Context, ContextF, EVIdx, Node, PolType, Section, Segment, Subcode,
+    iterate_code, Context, ContextF, EVIdx, Index, Node, PolType, Section, Segment,
 };
 use crate::types::{Expression, StarkStruct, PIL};
 use std::collections::HashMap;
@@ -15,49 +15,49 @@ impl StarkInfo {
         stark_struct: &StarkStruct,
         program: &mut Program,
     ) -> Result<()> {
-        let mut add_pol = |pol_type: PolType| -> i32 {
+        let mut add_pol = |pol_type: PolType| -> usize {
             self.var_pol_map.push(pol_type);
-            (self.var_pol_map.len() - 1) as i32
+            self.var_pol_map.len() - 1
         };
 
-        pil.cm_dims = vec![0i32; (self.n_cm1 + self.n_cm2 + self.n_cm3 + self.n_cm4) as usize]; //FIXME
+        pil.cm_dims = vec![0usize; self.n_cm1 + self.n_cm2 + self.n_cm3 + self.n_cm4]; //FIXME
         for i in 0..self.n_cm1 {
             let pp_n = add_pol(PolType {
                 section: "cm1_n".to_string(),
                 dim: 1,
-                exp_id: -1,
-                section_pos: -1,
+                exp_id: 0,
+                section_pos: 0,
             });
             let pp_2ns = add_pol(PolType {
                 section: "cm1_2ns".to_string(),
                 dim: 1,
-                exp_id: -1,
-                section_pos: -1,
+                exp_id: 0,
+                section_pos: 0,
             });
             self.cm_n.push(pp_n.clone());
             self.cm_2ns.push(pp_2ns.clone());
             self.map_sections.cm1_n.push(pp_n);
             self.map_sections.cm1_2ns.push(pp_2ns);
-            pil.cm_dims[i as usize] = 1
+            pil.cm_dims[i] = 1
         }
 
         for (i, pu) in self.pu_ctx.iter().enumerate() {
             let dim = std::cmp::max(
-                Self::get_exp_dim(pil, &pil.expressions[pu.f_exp_id as usize]),
-                Self::get_exp_dim(pil, &pil.expressions[pu.t_exp_id as usize]),
+                Self::get_exp_dim(pil, &pil.expressions[pu.f_exp_id]),
+                Self::get_exp_dim(pil, &pil.expressions[pu.t_exp_id]),
             );
 
             let pph1_n = add_pol(PolType {
                 section: "cm2_n".to_string(),
                 dim: dim,
-                exp_id: -1,
-                section_pos: -1,
+                exp_id: 0,
+                section_pos: 0,
             });
             let pph2_2ns = add_pol(PolType {
                 section: "cm2_2ns".to_string(),
                 dim: dim,
-                exp_id: -1,
-                section_pos: -1,
+                exp_id: 0,
+                section_pos: 0,
             });
 
             self.cm_n.push(pph1_n.clone());
@@ -66,59 +66,59 @@ impl StarkInfo {
             self.map_sections.cm2_n.push(pph1_n);
             self.map_sections.cm2_2ns.push(pph2_2ns);
 
-            pil.cm_dims[self.n_cm1 as usize + i * 2] = dim;
+            pil.cm_dims[self.n_cm1 + i * 2] = dim;
 
             let pph2_n = add_pol(PolType {
                 section: "cm2_n".to_string(),
                 dim: dim,
-                exp_id: -1,
-                section_pos: -1,
+                exp_id: 0,
+                section_pos: 0,
             });
             let pph2_2ns = add_pol(PolType {
                 section: "cm2_2ns".to_string(),
                 dim: dim,
-                exp_id: -1,
-                section_pos: -1,
+                exp_id: 0,
+                section_pos: 0,
             });
 
             self.cm_n.push(pph2_n.clone());
             self.cm_2ns.push(pph2_2ns.clone());
             self.map_sections.cm2_n.push(pph2_n);
             self.map_sections.cm2_2ns.push(pph2_2ns);
-            pil.cm_dims[self.n_cm1 as usize + i * 2 + 1] = dim;
+            pil.cm_dims[self.n_cm1 + i * 2 + 1] = dim;
         }
 
         for i in 0..self.n_cm3 {
             let ppz_n = add_pol(PolType {
                 section: "cm3_n".to_string(),
                 dim: 3,
-                exp_id: -1,
-                section_pos: -1,
+                exp_id: 0,
+                section_pos: 0,
             });
             let ppz_2ns = add_pol(PolType {
                 section: "cm3_2ns".to_string(),
                 dim: 3,
-                exp_id: -1,
-                section_pos: -1,
+                exp_id: 0,
+                section_pos: 0,
             });
             self.cm_n.push(ppz_n.clone());
             self.cm_2ns.push(ppz_2ns.clone());
             self.map_sections.cm3_n.push(ppz_n);
             self.map_sections.cm3_2ns.push(ppz_2ns);
-            pil.cm_dims[(self.n_cm1 + self.n_cm2 + i) as usize] = 3;
+            pil.cm_dims[(self.n_cm1 + self.n_cm2 + i)] = 3;
         }
 
-        let mut q_dims: Vec<i32> = vec![-1i32; pil.expressions.len()]; // FIXME: useless??
-        pil.q2exp = vec![-1i32; pil.expressions.len()]; // OPT
+        let mut q_dims: Vec<usize> = vec![0usize; pil.expressions.len()]; // FIXME: useless??
+        pil.q2exp = vec![0usize; pil.expressions.len()]; // OPT
 
         for (i, e) in pil.expressions.iter().enumerate() {
             if e.idQ.is_some() {
-                q_dims[e.idQ.unwrap() as usize] = Self::get_exp_dim(pil, &pil.expressions[i]);
-                pil.q2exp[e.idQ.unwrap() as usize] = i as i32;
+                q_dims[e.idQ.unwrap()] = Self::get_exp_dim(pil, &pil.expressions[i]);
+                pil.q2exp[e.idQ.unwrap()] = i;
             }
         }
 
-        let mut used_qs = HashMap::<i32, bool>::new();
+        let mut used_qs = HashMap::<usize, bool>::new();
 
         for (i, ev) in self.ev_map.iter().enumerate() {
             if ev.type_.as_str() == "q" {
@@ -129,7 +129,7 @@ impl StarkInfo {
         for i in 0..pil.nQ {
             let mut dim = 0;
             if used_qs[&i] {
-                dim = Self::get_exp_dim(pil, &pil.expressions[pil.q2exp[i as usize] as usize]);
+                dim = Self::get_exp_dim(pil, &pil.expressions[pil.q2exp[i]]);
             } else {
                 dim = 0;
                 //expression_warning(); FIXME
@@ -137,12 +137,12 @@ impl StarkInfo {
             let ppq = add_pol(PolType {
                 section: "q_2ns".to_string(),
                 dim: dim,
-                exp_id: pil.q2exp[i as usize],
-                section_pos: -1,
+                exp_id: pil.q2exp[i],
+                section_pos: 0,
             });
-            self.qs.push(ppq.clone() as i32);
+            self.qs.push(ppq.clone());
             if dim > 0 {
-                self.map_sections.q_2ns.push(ppq as i32);
+                self.map_sections.q_2ns.push(ppq);
             }
         }
 
@@ -152,14 +152,14 @@ impl StarkInfo {
                 let pp_n = add_pol(PolType {
                     section: "exps_withq_n".to_string(),
                     dim: dim,
-                    exp_id: i as i32,
-                    section_pos: -1,
+                    exp_id: i,
+                    section_pos: 0,
                 });
                 let pp_2ns = add_pol(PolType {
                     section: "exps_withq_2ns".to_string(),
                     dim: dim,
-                    exp_id: i as i32,
-                    section_pos: -1,
+                    exp_id: i,
+                    section_pos: 0,
                 });
                 self.map_sections.exps_withq_n.push(pp_n.clone());
                 self.map_sections.exps_withq_2ns.push(pp_2ns.clone());
@@ -170,8 +170,8 @@ impl StarkInfo {
                 let pp_n = add_pol(PolType {
                     section: "exps_withq_n".to_string(),
                     dim: dim,
-                    exp_id: i as i32,
-                    section_pos: -1,
+                    exp_id: i,
+                    section_pos: 0,
                 });
                 self.map_sections.exps_withq_n.push(pp_n.clone());
                 self.exps_n.push(pp_n);
@@ -180,15 +180,15 @@ impl StarkInfo {
                 let pp_2ns = add_pol(PolType {
                     section: "exps_withq_2ns".to_string(),
                     dim: dim,
-                    exp_id: i as i32,
-                    section_pos: -1,
+                    exp_id: i,
+                    section_pos: 0,
                 });
                 self.map_sections.exps_withq_2ns.push(pp_2ns.clone());
-                self.exps_n.push(-1); //null
+                self.exps_n.push(0); //null
                 self.exps_2ns.push(pp_2ns);
             } else {
-                self.exps_n.push(-1); //null
-                self.exps_2ns.push(-1);
+                self.exps_n.push(0); //null
+                self.exps_2ns.push(0);
             }
         }
         println!("exps_n: {:?}", self.exps_n);
@@ -198,7 +198,7 @@ impl StarkInfo {
         let N = 1 << stark_struct.nBits;
         let Next = 1 << stark_struct.nBitsExt;
 
-        self.map_offsets = Section {
+        self.map_offsets = Index {
             cm1_n: 0,
             cm2_n: self.map_offsets.cm1_n + N * self.map_sectionsN.cm1_n,
             cm3_n: self.map_offsets.cm2_n + N * self.map_sectionsN.cm2_n,
@@ -215,7 +215,7 @@ impl StarkInfo {
                 + Next * self.map_sectionsN.exps_withoutq_2ns,
         };
 
-        self.map_deg = Section {
+        self.map_deg = Index {
             cm1_n: N,
             cm2_n: N,
             cm3_n: N,
@@ -227,7 +227,7 @@ impl StarkInfo {
             q_2ns: Next,
             exps_withq_2ns: Next,
             exps_withoutq_2ns: Next,
-            map_total_n: -1,
+            map_total_n: 0,
         };
 
         for i in 0..program.publics_code.len() {
@@ -242,7 +242,7 @@ impl StarkInfo {
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF, pil: &mut PIL| {
             if r.type_.as_str() == "cm" {
-                let p1 = &ctx.starkinfo.var_pol_map[ctx.starkinfo.cm_2ns[r.id as usize] as usize];
+                let p1 = &ctx.starkinfo.var_pol_map[ctx.starkinfo.cm_2ns[r.id]];
                 match p1.section.as_str() {
                     "cm1_2ns" => {
                         r.type_ = "tree1".to_string();
@@ -260,7 +260,7 @@ impl StarkInfo {
                 r.tree_pos = p1.section_pos;
                 r.dim = p1.dim;
             } else if r.type_.as_str() == "q" {
-                let p2 = &ctx.starkinfo.var_pol_map[ctx.starkinfo.qs[r.id as usize] as usize];
+                let p2 = &ctx.starkinfo.var_pol_map[ctx.starkinfo.qs[r.id]];
                 r.type_ = "tree4".to_string();
                 r.tree_pos = p2.section_pos;
                 r.dim = p2.dim;
@@ -269,7 +269,7 @@ impl StarkInfo {
 
         let mut ctx_f = ContextF {
             exp_map: HashMap::new(),
-            tmp_used: -1,
+            tmp_used: 0,
             ev_idx: EVIdx::new(),
             //ev_map: Vec::new(),
             dom: "".to_string(),
@@ -277,9 +277,8 @@ impl StarkInfo {
         }; // FIXME?
         iterate_code(&mut program.verifier_query_code, fix_ref, &mut ctx_f, pil);
 
-        for i in 0..(self.n_publics as usize) {
-            if i < program.publics_code.len() && program.publics_code[i].tmp_used >= 0 {
-                // NOTE: tmp_used = -1, means undefined
+        for i in 0..(self.n_publics) {
+            if i < program.publics_code.len() && program.publics_code[i].is_some() {
                 self.set_code_dimensions(&mut program.publics_code[i], 1);
             }
         }
@@ -295,7 +294,7 @@ impl StarkInfo {
         Ok(())
     }
 
-    fn set_dim(&self, r: &mut Node, dim: i32, tmp_dim: &mut HashMap<i32, i32>) {
+    fn set_dim(&self, r: &mut Node, dim: usize, tmp_dim: &mut HashMap<usize, usize>) {
         match r.type_.as_str() {
             "tmp" => {
                 tmp_dim.insert(r.id, dim);
@@ -310,7 +309,12 @@ impl StarkInfo {
         }
     }
 
-    fn get_dim(&mut self, r: &mut Node, tmp_dim: &mut HashMap<i32, i32>, dim_x: i32) -> i32 {
+    fn get_dim(
+        &mut self,
+        r: &mut Node,
+        tmp_dim: &mut HashMap<usize, usize>,
+        dim_x: usize,
+    ) -> usize {
         let mut d = 0;
         match r.type_.as_str() {
             "tmp" => {
@@ -321,21 +325,17 @@ impl StarkInfo {
             }
 
             "exp" => {
-                d = if self.var_pol_map[self.exps_2ns[r.id as usize] as usize]
-                    .section
-                    .len()
-                    > 0
-                {
-                    self.var_pol_map[self.exps_2ns[r.id as usize] as usize].dim
+                d = if self.var_pol_map[self.exps_2ns[r.id]].section.len() > 0 {
+                    self.var_pol_map[self.exps_2ns[r.id]].dim
                 } else {
-                    self.var_pol_map[self.exps_n[r.id as usize] as usize].dim
+                    self.var_pol_map[self.exps_n[r.id]].dim
                 };
             }
             "cm" => {
-                d = self.var_pol_map[self.cm_2ns[r.id as usize] as usize].dim;
+                d = self.var_pol_map[self.cm_2ns[r.id]].dim;
             }
             "q" => {
-                d = self.var_pol_map[self.qs[r.id as usize] as usize].dim;
+                d = self.var_pol_map[self.qs[r.id]].dim;
             }
             "const" | "number" | "public" | "Zi" => {
                 d = 1;
@@ -359,9 +359,9 @@ impl StarkInfo {
 
     fn _set_code_dimensions(
         &mut self,
-        codes: &mut Vec<Subcode>,
-        tmp_dim: &mut HashMap<i32, i32>,
-        dim_x: i32,
+        codes: &mut Vec<Section>,
+        tmp_dim: &mut HashMap<usize, usize>,
+        dim_x: usize,
     ) {
         for c in codes.iter_mut() {
             let mut new_dim = 0;
@@ -395,8 +395,8 @@ impl StarkInfo {
         }
     }
 
-    fn set_code_dimensions(&mut self, segment: &mut Segment, dim_x: i32) {
-        let mut tmp_dim: HashMap<i32, i32> = HashMap::new();
+    fn set_code_dimensions(&mut self, segment: &mut Segment, dim_x: usize) {
+        let mut tmp_dim: HashMap<usize, usize> = HashMap::new();
 
         self._set_code_dimensions(&mut segment.first, &mut tmp_dim, dim_x);
         self._set_code_dimensions(&mut segment.i, &mut tmp_dim, dim_x);
@@ -417,9 +417,9 @@ impl StarkInfo {
             match r.type_.as_str() {
                 "cm" => {
                     if ctx.dom.as_str() == "n" {
-                        r.p = ctx.starkinfo.cm_n[r.id as usize];
+                        r.p = ctx.starkinfo.cm_n[r.id];
                     } else if ctx.dom.as_str() == "2ns" {
-                        r.p = ctx.starkinfo.cm_2ns[r.id as usize];
+                        r.p = ctx.starkinfo.cm_2ns[r.id];
                     } else {
                         panic!("Invalid domain {}", ctx.dom);
                     }
@@ -429,27 +429,25 @@ impl StarkInfo {
                     if ctx.dom.as_str() == "n" {
                         panic!("Accession q in domain n");
                     } else if ctx.dom.as_str() == "2ns" {
-                        r.p = ctx.starkinfo.qs[r.id as usize];
+                        r.p = ctx.starkinfo.qs[r.id];
                     } else {
                         panic!("Invalid domain {}", ctx.dom);
                     }
                 }
 
                 "exp" => {
-                    if pil.expressions[r.id as usize].idQ.is_some() {
+                    if pil.expressions[r.id].idQ.is_some() {
                         //FIXME ctx has no pil
                         if ctx.dom.as_str() == "n" {
-                            r.p = ctx.starkinfo.exps_n[r.id as usize];
+                            r.p = ctx.starkinfo.exps_n[r.id];
                         } else if ctx.dom.as_str() == "2ns" {
-                            r.p = ctx.starkinfo.exps_2ns[r.id as usize];
+                            r.p = ctx.starkinfo.exps_2ns[r.id];
                         } else {
                             panic!("Invalid domain {}", ctx.dom);
                         }
-                    } else if pil.expressions[r.id as usize].keep.is_some()
-                        && ctx.dom.as_str() == "n"
-                    {
-                        r.p = ctx.starkinfo.exps_n[r.id as usize];
-                    } else if pil.expressions[r.id as usize].keep2ns.is_some() {
+                    } else if pil.expressions[r.id].keep.is_some() && ctx.dom.as_str() == "n" {
+                        r.p = ctx.starkinfo.exps_n[r.id];
+                    } else if pil.expressions[r.id].keep2ns.is_some() {
                         if ctx.dom.as_str() == "n" {
                             panic!("Accession q in domain n");
                         }
@@ -476,8 +474,8 @@ impl StarkInfo {
         segment.tmp_used = ctx_f.tmp_used;
     }
 
-    //FIXME: use it as Section's method
-    fn set_section_field(name: &str, sec: &mut Section, value: i32) {
+    //FIXME: use it as Index's method
+    fn set_section_field(name: &str, sec: &mut Index, value: usize) {
         match name {
             "cm1_n" => {
                 sec.cm1_n = value;
@@ -518,7 +516,7 @@ impl StarkInfo {
         }
     }
 
-    fn get_section_field(name: &str, sec: &mut Section) -> i32 {
+    fn get_section_field(name: &str, sec: &mut Index) -> usize {
         match name {
             "cm1_n" => sec.cm1_n,
             "cm1_2ns" => sec.cm1_2ns,
@@ -576,7 +574,7 @@ impl StarkInfo {
         Ok(())
     }
 
-    pub fn get_exp_dim(pil: &PIL, exp: &Expression) -> i32 {
+    pub fn get_exp_dim(pil: &PIL, exp: &Expression) -> usize {
         match exp.op.as_str() {
             "add" | "sub" | "mul" | "addc" | "mulc" | "neg" => {
                 let mut md = 1;
@@ -589,13 +587,10 @@ impl StarkInfo {
                 }
                 md
             }
-            "cm" => pil.cm_dims[exp.id.unwrap() as usize],
+            "cm" => pil.cm_dims[exp.id.unwrap()],
             "const" => 1,
-            "exp" => Self::get_exp_dim(pil, &pil.expressions[exp.id.unwrap() as usize]),
-            "q" => Self::get_exp_dim(
-                pil,
-                &pil.expressions[pil.q2exp[exp.id.unwrap() as usize] as usize],
-            ),
+            "exp" => Self::get_exp_dim(pil, &pil.expressions[exp.id.unwrap()]),
+            "q" => Self::get_exp_dim(pil, &pil.expressions[pil.q2exp[exp.id.unwrap()]]),
             "number" | "public" => 1,
             "challenge" | "eval" | "xDivXSubXi" | "xDivXSubWXi" => 3,
             "x" => 1,

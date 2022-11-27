@@ -34,14 +34,14 @@ impl StarkInfo {
                 "cm" | "q" | "const" => {
                     if ctx.ev_idx.get(r.type_.as_str(), p, id).is_none() {
                         ctx.ev_idx
-                            .set(r.type_.as_str(), p, id, ctx.starkinfo.ev_map.len() as i32);
+                            .set(r.type_.as_str(), p, id, ctx.starkinfo.ev_map.len());
                         ctx.starkinfo.ev_map.push(Node::new(
                             r.type_.clone(),
                             r.id,
                             None,
-                            -1,
+                            0,
                             r.prime,
-                            -1,
+                            0,
                         ));
                         r.prime = false;
                         r.id = *ctx.ev_idx.get(r.type_.as_str(), p, id).unwrap();

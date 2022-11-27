@@ -54,7 +54,7 @@ impl StarkInfo {
                 panic!("nop {}", format!("{:?}", t_exp));
             }
 
-            let t_exp_id = pil.expressions.len() as i32;
+            let t_exp_id = pil.expressions.len();
             pil.expressions.push(t_exp);
 
             let mut f_exp = E::nop();
@@ -75,7 +75,7 @@ impl StarkInfo {
                 pil.nQ += 1;
             }
 
-            let f_exp_id = pil.expressions.len() as i32;
+            let f_exp_id = pil.expressions.len();
             if E::is_nop(&f_exp) {
                 panic!("nop {}", format!("{:?}", f_exp));
             }
@@ -119,7 +119,7 @@ impl StarkInfo {
                 panic!("Global.L1 must be defined");
             }
 
-            let l1 = E::const_(pil.references[&"Global.L1".to_string()].id as i32, None);
+            let l1 = E::const_(pil.references[&"Global.L1".to_string()].id, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 
@@ -127,7 +127,7 @@ impl StarkInfo {
                 panic!("nop {:?}", format!("{:?}", c1));
             }
 
-            self.pu_ctx[i].c1_id = pil.expressions.len() as i32;
+            self.pu_ctx[i].c1_id = pil.expressions.len();
             pil.expressions.push(c1);
             pil.polIdentities.push(PolIdentity {
                 e: self.pu_ctx[i].c1_id.clone(),
@@ -156,7 +156,7 @@ impl StarkInfo {
                 panic!("nop {:?}", format!("{:?}", num_exp));
             }
 
-            self.pu_ctx[i].num_id = pil.expressions.len() as i32;
+            self.pu_ctx[i].num_id = pil.expressions.len();
             pil.expressions.push(num_exp);
 
             let mut den_exp = E::mul(
@@ -176,7 +176,7 @@ impl StarkInfo {
             den_exp.idQ = Some(pil.nQ);
             pil.nQ += 1;
 
-            self.pu_ctx[i].den_id = pil.expressions.len() as i32;
+            self.pu_ctx[i].den_id = pil.expressions.len();
             den_exp.keep = Some(true);
             if E::is_nop(&den_exp) {
                 panic!("nop {:?}", format!("{:?}", den_exp));
@@ -189,7 +189,7 @@ impl StarkInfo {
 
             let mut c2 = E::sub(&E::mul(&zp, &den), &E::mul(&z, &num));
             c2.deg = 2;
-            self.pu_ctx[i].c2_id = pil.expressions.len() as i32;
+            self.pu_ctx[i].c2_id = pil.expressions.len();
             if E::is_nop(&c2) {
                 panic!("nop {:?}", format!("{:?}", c2));
             }
@@ -225,11 +225,11 @@ impl StarkInfo {
             if pil.references.get(&"Global.L1".to_string()).is_none() {
                 panic!("Global.L1 must be defined");
             }
-            let l1 = E::const_(pil.references[&"Global.L1".to_string()].id as i32, None);
+            let l1 = E::const_(pil.references[&"Global.L1".to_string()].id, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 
-            self.pe_ctx[i].c1_id = pil.expressions.len() as i32;
+            self.pe_ctx[i].c1_id = pil.expressions.len();
             if E::is_nop(&c1) {
                 panic!("nop {:?}", format!("{:?}", c1));
             }
@@ -244,7 +244,7 @@ impl StarkInfo {
             let beta = E::challenge("beta".to_string());
 
             let mut num_exp = E::add(&f, &beta);
-            self.pe_ctx[i].num_id = pil.expressions.len() as i32;
+            self.pe_ctx[i].num_id = pil.expressions.len();
             num_exp.keep = Some(true);
             if E::is_nop(&num_exp) {
                 panic!("nop {:?}", format!("{:?}", num_exp));
@@ -253,7 +253,7 @@ impl StarkInfo {
             pil.expressions.push(num_exp);
 
             let mut den_exp = E::add(&t, &beta);
-            self.pe_ctx[i].den_id = pil.expressions.len() as i32;
+            self.pe_ctx[i].den_id = pil.expressions.len();
             den_exp.keep = Some(true);
             if E::is_nop(&den_exp) {
                 panic!("nop {:?}", format!("{:?}", den_exp));
@@ -266,7 +266,7 @@ impl StarkInfo {
                 &E::mul(&z, &E::exp(self.pe_ctx[i].num_id.clone(), None)),
             );
             c2.deg = 2;
-            self.pe_ctx[i].c2_id = pil.expressions.len() as i32;
+            self.pe_ctx[i].c2_id = pil.expressions.len();
             if E::is_nop(&c2) {
                 panic!("nop {:?}", format!("{:?}", c2));
             }
@@ -300,7 +300,7 @@ impl StarkInfo {
             };
 
             let mut ci_ctx = CICTX::default();
-            ci_ctx.z_id = pil.nCommitments as i32;
+            ci_ctx.z_id = pil.nCommitments;
             pil.nCommitments += 1;
 
             let gamma = E::challenge("gamma".to_string());
@@ -318,14 +318,14 @@ impl StarkInfo {
                 ),
                 &gamma,
             );
-            ci_ctx.num_id = pil.expressions.len() as i32;
+            ci_ctx.num_id = pil.expressions.len();
             num_exp.keep = Some(true);
             if E::is_nop(&num_exp) {
                 panic!("nop {:?}", format!("{:?}", num_exp));
             }
             pil.expressions.push(num_exp);
 
-            ci_ctx.den_id = pil.expressions.len() as i32;
+            ci_ctx.den_id = pil.expressions.len();
             den_exp.keep = Some(true);
             if E::is_nop(&den_exp) {
                 panic!("nop {:?}", format!("{:?}", den_exp));
@@ -363,9 +363,9 @@ impl StarkInfo {
                 if E::is_nop(&num_exp) {
                     panic!("nop {:?}", format!("{:?}", num_exp));
                 }
-                ci_ctx.num_id = pil.expressions.len() as i32;
+                ci_ctx.num_id = pil.expressions.len();
                 pil.expressions.push(num_exp);
-                ci_ctx.den_id = pil.expressions.len() as i32;
+                ci_ctx.den_id = pil.expressions.len();
                 if E::is_nop(&den_exp) {
                     panic!("nop {:?}", format!("{:?}", den_exp));
                 }
@@ -378,11 +378,11 @@ impl StarkInfo {
             if pil.references.get(&"Global.L1".to_string()).is_none() {
                 panic!("Global.L1 must be defined");
             }
-            let l1 = E::const_(pil.references[&"Global.L1".to_string()].id as i32, None);
+            let l1 = E::const_(pil.references[&"Global.L1".to_string()].id, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 
-            ci_ctx.c1_id = pil.expressions.len() as i32;
+            ci_ctx.c1_id = pil.expressions.len();
             if E::is_nop(&c1) {
                 panic!("nop {:?}", format!("{:?}", c1));
             }
@@ -399,7 +399,7 @@ impl StarkInfo {
                 &E::mul(&z, &E::exp(ci_ctx.num_id.clone(), None)),
             );
             c2.deg = 2;
-            ci_ctx.c2_id = pil.expressions.len() as i32;
+            ci_ctx.c2_id = pil.expressions.len();
 
             if E::is_nop(&c2) {
                 panic!("nop {:?}", format!("{:?}", c2));

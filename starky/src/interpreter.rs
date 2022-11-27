@@ -3,9 +3,9 @@ use crate::f3g::F3G;
 use crate::stark_gen::StarkContext;
 use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::Node;
-use crate::starkinfo_codegen::Subcode;
+use crate::starkinfo_codegen::Section;
 use std::fmt;
-use winter_math::StarkField;
+use winter_math::{FieldElement, StarkField};
 
 #[derive(Clone, Debug)]
 pub enum Ops {
@@ -21,7 +21,7 @@ pub enum Ops {
 
 /// example: `ctx.const_n[${r.id} + ((i+1)%${N})*${ctx.starkInfo.nConstants} ]`;
 /// where the r.id, N, ctx.starkInfo.nConstants modified by `${}` are the instant value, ctx.const_n and i are the symble.
-/// the symbol should the fields of the global context, have same name as Section.
+/// the symbol should the fields of the global context, have same name as Index.
 /// so the example would be Expr { op: Refer, syms: [ctx.const_n, i], defs: [Vari, Vari...] }
 #[derive(Clone, Debug)]
 pub struct Expr {
@@ -54,7 +54,6 @@ impl Block {
     /// block.eval(&mut ctx, i);
     pub fn eval(&self, ctx: &mut StarkContext, arg_i: usize) -> F3G {
         let mut val_stack: Vec<F3G> = Vec::new();
-        let mut op_stack: Vec<usize> = Vec::new();
 
         let length = self.exprs.len();
 
@@ -95,7 +94,7 @@ impl Block {
                 Ops::Assign => {
                     let addr = &expr.syms[0];
                     let id = if let Ops::Vari(x) = expr.defs[1].op {
-                        x.to_be().as_int() as usize
+                        x.to_be().as_int() as usize // FIXME out of range
                     } else {
                         panic!("invalid oprand {:?}", expr)
                     };
@@ -153,7 +152,7 @@ impl Block {
                     // defs: [offset, next, N, size] => index = offset + ((1+next)%N) * size
                     let get_val = |i: usize| -> usize {
                         match expr.defs[i].op {
-                            Ops::Vari(x) => x.to_be().as_int() as usize,
+                            Ops::Vari(x) => x.to_be().as_int() as usize, //FIXME out of range
                             _ => {
                                 panic!("invalid oprand {:?}", expr);
                             }
@@ -231,7 +230,7 @@ impl Block {
                         }
                         "challenge" => {
                             let id = get_val(0);
-                            ctx.challenge[id]
+                            ctx.challenges[id]
                         }
                         "evals" => {
                             let id = get_val(0);
@@ -280,7 +279,7 @@ impl fmt::Display for Block {
 pub fn compile_code(
     ctx: &StarkContext,
     starkinfo: &StarkInfo,
-    code: &Vec<Subcode>,
+    code: &Vec<Section>,
     dom: &str,
     ret: bool,
 ) -> Block {
@@ -289,14 +288,14 @@ pub fn compile_code(
     } else {
         1 << (ctx.nbits_ext - ctx.nbits)
     };
-    let next = next as usize;
+    let next = next;
 
     let N = if dom == "n" {
         1 << ctx.nbits
     } else {
         1 << ctx.nbits_ext
     };
-    let N = N as usize;
+    let N = N;
 
     let mut body: Block = Block {
         namespace: "ctx".to_string(),
@@ -357,10 +356,10 @@ fn set_ref(
         ),
         "exp" => {
             if dom == "n" {
-                let pol_id = starkinfo.exps_n[r.id as usize].clone();
+                let pol_id = starkinfo.exps_n[r.id].clone();
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else if dom == "2ns" {
-                let pol_id = starkinfo.exps_2ns[r.id as usize].clone();
+                let pol_id = starkinfo.exps_2ns[r.id].clone();
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
@@ -370,7 +369,7 @@ fn set_ref(
             if dom == "n" {
                 panic!("Accesssing q in domain n");
             } else if dom == "2ns" {
-                let pol_id = starkinfo.qs[r.id as usize];
+                let pol_id = starkinfo.qs[r.id];
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
@@ -453,10 +452,10 @@ fn get_ref(
         }
         "cm" => {
             if dom == "n" {
-                let pol_id = starkinfo.cm_n[r.id as usize];
+                let pol_id = starkinfo.cm_n[r.id];
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else if dom == "2ns" {
-                let pol_id = starkinfo.cm_2ns[r.id as usize];
+                let pol_id = starkinfo.cm_2ns[r.id];
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
@@ -466,7 +465,7 @@ fn get_ref(
             if dom == "n" {
                 panic!("Accesssing q in domain n");
             } else if dom == "2ns" {
-                let pol_id = starkinfo.qs[r.id as usize];
+                let pol_id = starkinfo.qs[r.id];
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
@@ -474,10 +473,10 @@ fn get_ref(
         }
         "exp" => {
             if dom == "n" {
-                let pol_id = starkinfo.exps_n[r.id as usize].clone();
+                let pol_id = starkinfo.exps_n[r.id].clone();
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else if dom == "2ns" {
-                let pol_id = starkinfo.exps_2ns[r.id as usize].clone();
+                let pol_id = starkinfo.exps_2ns[r.id].clone();
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
@@ -537,12 +536,12 @@ fn get_ref(
 fn eval_map(
     ctx: &StarkContext,
     starkinfo: &StarkInfo,
-    pol_id: &i32,
+    pol_id: &usize,
     prime: &bool,
     next: &usize,
     N: &usize,
 ) -> Expr {
-    let p = &starkinfo.var_pol_map[*pol_id as usize];
+    let p = &starkinfo.var_pol_map[*pol_id];
     let offset = Expr::from(F3G::from(p.section_pos));
     let size = Expr::from(F3G::from(starkinfo.map_sectionsN.get(&p.section)));
     let next = Expr::from(F3G::from(*next));

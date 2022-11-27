@@ -51,9 +51,9 @@ impl StarkInfo {
                 _ => panic!("Invalid exp op {}", ev.type_),
             };
             if E::is_nop(&fri_exp) {
-                fri_exp = E::sub(&e, &E::eval(i as i32));
+                fri_exp = E::sub(&e, &E::eval(i));
             } else {
-                fri_exp = E::add(&E::mul(&fri_exp, &vf2), &E::sub(&e, &E::eval(i as i32)));
+                fri_exp = E::add(&E::mul(&fri_exp, &vf2), &E::sub(&e, &E::eval(i)));
             }
 
             if ev.prime {
@@ -82,7 +82,7 @@ impl StarkInfo {
         }
 
         println!("fri_exp {:?}", fri_exp);
-        self.fri_exp_id = pil.expressions.len() as i32;
+        self.fri_exp_id = pil.expressions.len();
         fri_exp.keep2ns = Some(true);
         if E::is_nop(&fri_exp) {
             panic!("nop {:?}", format!("{:?}", fri_exp));
@@ -91,7 +91,7 @@ impl StarkInfo {
 
         println!(
             "pil_code_gen in fri prover {:?}",
-            pil.expressions[self.fri_exp_id as usize]
+            pil.expressions[self.fri_exp_id]
         );
 
         pil_code_gen(ctx, pil, self.fri_exp_id, false, "")?;

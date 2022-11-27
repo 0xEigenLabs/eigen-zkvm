@@ -16,7 +16,7 @@ impl StarkInfo {
         pil_code_gen(ctx, pil, self.fri_exp_id, false, "")?;
 
         let mut code = build_code(ctx, pil);
-        self.n_exps = pil.expressions.len() as i32;
+        self.n_exps = pil.expressions.len();
 
         let mut ctx_f = ContextF {
             exp_map: HashMap::new(),

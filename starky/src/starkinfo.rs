@@ -2,45 +2,45 @@
 use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps as E;
 use crate::starkinfo_codegen::{
-    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Node, PolType,
-    Section, SectionVec, Segment,
+    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Index, IndexVec,
+    Node, PolType, Segment,
 };
 use crate::types::{Expression, Public, StarkStruct, PIL};
 use std::collections::HashMap;
 
 #[derive(Default, Debug)]
 pub struct PUCTX {
-    pub f_exp_id: i32,
-    pub t_exp_id: i32,
-    pub h1_id: i32,
-    pub h2_id: i32,
+    pub f_exp_id: usize,
+    pub t_exp_id: usize,
+    pub h1_id: usize,
+    pub h2_id: usize,
 
-    pub z_id: i32,
-    pub c1_id: i32,
-    pub c2_id: i32,
-    pub num_id: i32,
-    pub den_id: i32,
+    pub z_id: usize,
+    pub c1_id: usize,
+    pub c2_id: usize,
+    pub num_id: usize,
+    pub den_id: usize,
 }
 
 #[derive(Default, Debug)]
 pub struct PECTX {
-    pub f_exp_id: i32,
-    pub t_exp_id: i32,
+    pub f_exp_id: usize,
+    pub t_exp_id: usize,
 
-    pub z_id: i32,
-    pub c1_id: i32,
-    pub c2_id: i32,
-    pub num_id: i32,
-    pub den_id: i32,
+    pub z_id: usize,
+    pub c1_id: usize,
+    pub c2_id: usize,
+    pub num_id: usize,
+    pub den_id: usize,
 }
 
 #[derive(Default, Debug)]
 pub struct CICTX {
-    pub z_id: i32,
-    pub c1_id: i32,
-    pub c2_id: i32,
-    pub num_id: i32,
-    pub den_id: i32,
+    pub z_id: usize,
+    pub c1_id: usize,
+    pub c2_id: usize,
+    pub num_id: usize,
+    pub den_id: usize,
 }
 
 #[derive(Debug, Default)]
@@ -58,52 +58,52 @@ pub struct Program {
 #[derive(Debug, Default)]
 pub struct StarkInfo {
     pub var_pol_map: Vec<PolType>,
-    pub n_cm1: i32,
-    pub n_cm2: i32,
-    pub n_cm3: i32,
-    pub n_cm4: i32,
-    pub n_q: i32,
+    pub n_cm1: usize,
+    pub n_cm2: usize,
+    pub n_cm3: usize,
+    pub n_cm4: usize,
+    pub n_q: usize,
     pub pu_ctx: Vec<PUCTX>,
     pub pe_ctx: Vec<PECTX>,
     pub ci_ctx: Vec<CICTX>,
-    pub n_constants: i32,
-    pub n_publics: i32,
-    pub c_exp: i32,
+    pub n_constants: usize,
+    pub n_publics: usize,
+    pub c_exp: usize,
 
     pub ev_map: Vec<Node>,
-    pub fri_exp_id: i32,
-    pub n_exps: i32,
+    pub fri_exp_id: usize,
+    pub n_exps: usize,
 
-    pub cm_n: Vec<i32>,
-    pub cm_2ns: Vec<i32>,
-    pub exps_n: Vec<i32>,
-    pub exps_2ns: Vec<i32>,
-    pub qs: Vec<i32>,
+    pub cm_n: Vec<usize>,
+    pub cm_2ns: Vec<usize>,
+    pub exps_n: Vec<usize>,
+    pub exps_2ns: Vec<usize>,
+    pub qs: Vec<usize>,
 
-    pub map_sections: SectionVec,
-    pub map_sectionsN1: Section,
-    pub map_sectionsN3: Section,
-    pub map_sectionsN: Section,
-    pub map_offsets: Section,
-    pub map_deg: Section,
+    pub map_sections: IndexVec,
+    pub map_sectionsN1: Index,
+    pub map_sectionsN3: Index,
+    pub map_sectionsN: Index,
+    pub map_offsets: Index,
+    pub map_deg: Index,
 
     pub publics: Vec<Public>,
 }
 
 impl StarkInfo {
     pub fn new(pil: &mut PIL, stark_struct: &StarkStruct) -> Result<StarkInfo> {
-        let pil_deg = pil.references.values().nth(0).unwrap().polDeg as i32;
+        let pil_deg = pil.references.values().nth(0).unwrap().polDeg;
 
-        let stark_deg = 2i32.pow(stark_struct.nBits as u32);
+        let stark_deg = 2usize.pow(stark_struct.nBits as u32);
 
         if stark_deg != pil_deg {
             return Err(EigenError::MustEqualDegreeError(stark_deg, pil_deg));
         }
 
-        if stark_struct.nBitsExt != stark_struct.steps[0]["nBits"] {
+        if stark_struct.nBitsExt != stark_struct.steps[0].nBits {
             return Err(EigenError::MustEqualDegreeError(
                 stark_struct.nBitsExt,
-                stark_struct.steps[0]["nBits"],
+                stark_struct.steps[0].nBits,
             ));
         }
 
@@ -113,7 +113,7 @@ impl StarkInfo {
             pe_ctx: Vec::new(),
             ci_ctx: Vec::new(),
             n_constants: pil.nConstants,
-            n_publics: pil.publics.len() as i32,
+            n_publics: pil.publics.len(),
             n_cm1: pil.nCommitments,
             n_cm2: 0,
             n_cm3: 0,
@@ -129,12 +129,12 @@ impl StarkInfo {
             exps_n: Vec::new(),
             exps_2ns: Vec::new(),
             qs: Vec::new(),
-            map_sections: SectionVec::default(),
-            map_sectionsN1: Section::default(),
-            map_sectionsN3: Section::default(),
-            map_sectionsN: Section::default(),
-            map_offsets: Section::default(),
-            map_deg: Section::default(),
+            map_sections: IndexVec::default(),
+            map_sectionsN1: Index::default(),
+            map_sectionsN3: Index::default(),
+            map_sectionsN: Index::default(),
+            map_offsets: Index::default(),
+            map_deg: Index::default(),
 
             publics: Vec::new(),
         };
@@ -158,7 +158,7 @@ impl StarkInfo {
             tmp_used: 0,
             code: vec![],
             calculated_mark: HashMap::new(),
-            exp_id: -1,
+            exp_id: 0,
         };
         info.generate_pubulic_calculators(&mut ctx, pil, &mut program)?;
         println!("generate_step2");
@@ -177,7 +177,7 @@ impl StarkInfo {
             tmp_used: 0,
             code: vec![],
             calculated_mark: HashMap::new(),
-            exp_id: -1,
+            exp_id: 0,
         };
 
         let mut ctx = Context {
@@ -188,7 +188,7 @@ impl StarkInfo {
             tmp_used: 0,
             code: vec![],
             calculated_mark: HashMap::new(),
-            exp_id: -1,
+            exp_id: 0,
         };
         println!("generate_constraint_polynomial");
 
@@ -204,7 +204,7 @@ impl StarkInfo {
             tmp_used: 0,
             code: vec![],
             calculated_mark: HashMap::new(),
-            exp_id: -1,
+            exp_id: 0,
         };
         println!("generate_constraint_polynomial_verifier");
         info.generate_constraint_polynomial_verifier(&mut ctx, pil, &mut program)?;
@@ -219,7 +219,7 @@ impl StarkInfo {
             tmp_used: 0,
             code: vec![],
             calculated_mark: HashMap::new(),
-            exp_id: -1,
+            exp_id: 0,
         };
         println!("generate_fri_verifier");
         info.generate_fri_verifier(&mut ctx, pil, &mut program)?;
@@ -232,7 +232,7 @@ impl StarkInfo {
             tmp_used: 0,
             code: vec![],
             calculated_mark: HashMap::new(),
-            exp_id: -1,
+            exp_id: 0,
         };
         println!("map");
         info.map(&mut ctx, pil, &stark_struct, &mut program)?;
@@ -312,11 +312,11 @@ impl StarkInfo {
                 t_exp = E::sub(&t_exp, &def_val);
                 t_exp = E::mul(&t_exp, &E::exp(pi.selT.unwrap(), None));
                 t_exp = E::add(&t_exp, &def_val);
-                t_exp.idQ = Some(pil.nQ as i32);
+                t_exp.idQ = Some(pil.nQ);
                 pil.nQ += 1;
             }
 
-            let t_exp_id = pil.expressions.len() as i32;
+            let t_exp_id = pil.expressions.len();
             t_exp.keep = Some(true);
 
             if E::is_nop(&t_exp) {
@@ -334,7 +334,7 @@ impl StarkInfo {
                 }
             }
 
-            let f_exp_id = pil.expressions.len() as i32;
+            let f_exp_id = pil.expressions.len();
             f_exp.keep = Some(true);
             if E::is_nop(&f_exp) {
                 panic!("nop {}", format!("{:?}", f_exp));
