@@ -6,9 +6,11 @@ use crate::starkinfo_codegen::{
     Node, PolType, Segment,
 };
 use crate::types::{Expression, Public, StarkStruct, PIL};
+use serde::Serialize;
 use std::collections::HashMap;
+use std::fmt;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Serialize)]
 pub struct PUCTX {
     pub f_exp_id: usize,
     pub t_exp_id: usize,
@@ -22,7 +24,7 @@ pub struct PUCTX {
     pub den_id: usize,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Serialize)]
 pub struct PECTX {
     pub f_exp_id: usize,
     pub t_exp_id: usize,
@@ -34,7 +36,7 @@ pub struct PECTX {
     pub den_id: usize,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Serialize)]
 pub struct CICTX {
     pub z_id: usize,
     pub c1_id: usize,
@@ -55,7 +57,7 @@ pub struct Program {
     pub verifier_query_code: Segment,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct StarkInfo {
     pub var_pol_map: Vec<PolType>,
     pub n_cm1: usize,
@@ -88,6 +90,13 @@ pub struct StarkInfo {
     pub map_deg: Index,
 
     pub publics: Vec<Public>,
+}
+
+impl fmt::Display for StarkInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let obj = json!(self);
+        write!(f, "{}", serde_json::to_string_pretty(&obj).unwrap())
+    }
 }
 
 impl StarkInfo {
@@ -366,6 +375,7 @@ impl StarkInfo {
         }
 
         program.step2prev = build_code(ctx, pil);
+        //println!("step2prev {}", program.step2prev);
         Ok(())
     }
 }

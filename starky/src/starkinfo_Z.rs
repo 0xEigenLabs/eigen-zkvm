@@ -21,6 +21,7 @@ impl StarkInfo {
         self.generate_connections_Z(ctx, pil)?;
 
         program.step3prev = build_code(ctx, pil);
+        //println!("step3prev {}", program.step3prev);
         Ok(())
     }
 

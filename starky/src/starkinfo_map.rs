@@ -178,12 +178,12 @@ impl StarkInfo {
             } else if e.keep2ns.is_some() {
                 let dim = Self::get_exp_dim(&pil, &pil.expressions[i]);
                 let pp_2ns = add_pol(PolType {
-                    section: "exps_withq_2ns".to_string(),
+                    section: "exps_withoutq_2ns".to_string(),
                     dim: dim,
                     exp_id: i,
                     section_pos: 0,
                 });
-                self.map_sections.exps_withq_2ns.push(pp_2ns.clone());
+                self.map_sections.exps_withoutq_2ns.push(pp_2ns.clone());
                 self.exps_n.push(0); //null
                 self.exps_2ns.push(pp_2ns);
             } else {
@@ -198,22 +198,23 @@ impl StarkInfo {
         let N = 1 << stark_struct.nBits;
         let Next = 1 << stark_struct.nBitsExt;
 
-        self.map_offsets = Index {
-            cm1_n: 0,
-            cm2_n: self.map_offsets.cm1_n + N * self.map_sectionsN.cm1_n,
-            cm3_n: self.map_offsets.cm2_n + N * self.map_sectionsN.cm2_n,
-            exps_withq_n: self.map_offsets.cm3_n + N * self.map_sectionsN.cm3_n,
-            exps_withoutq_n: self.map_offsets.exps_withq_n + N * self.map_sectionsN.exps_withq_n,
-            cm1_2ns: self.map_offsets.exps_withoutq_n + N * self.map_sectionsN.exps_withoutq_n,
-            cm2_2ns: self.map_offsets.cm1_2ns + N * self.map_sectionsN.cm1_2ns,
-            cm3_2ns: self.map_offsets.cm2_2ns + N * self.map_sectionsN.cm2_2ns,
-            q_2ns: self.map_offsets.cm3_2ns + Next * self.map_sectionsN.cm3_2ns,
-            exps_withq_2ns: self.map_offsets.q_2ns + Next * self.map_sectionsN.q_2ns,
-            exps_withoutq_2ns: self.map_offsets.exps_withq_2ns
-                + Next * self.map_sectionsN.exps_withq_2ns,
-            map_total_n: self.map_offsets.exps_withoutq_2ns
-                + Next * self.map_sectionsN.exps_withoutq_2ns,
-        };
+        self.map_offsets = Index::default();
+        self.map_offsets.cm1_n = 0;
+        self.map_offsets.cm2_n = self.map_offsets.cm1_n + N * self.map_sectionsN.cm1_n;
+        self.map_offsets.cm3_n = self.map_offsets.cm2_n + N * self.map_sectionsN.cm2_n;
+        self.map_offsets.exps_withq_n = self.map_offsets.cm3_n + N * self.map_sectionsN.cm3_n;
+        self.map_offsets.exps_withoutq_n =
+            self.map_offsets.exps_withq_n + N * self.map_sectionsN.exps_withq_n;
+        self.map_offsets.cm1_2ns =
+            self.map_offsets.exps_withoutq_n + N * self.map_sectionsN.exps_withoutq_n;
+        self.map_offsets.cm2_2ns = self.map_offsets.cm1_2ns + Next * self.map_sectionsN.cm1_2ns;
+        self.map_offsets.cm3_2ns = self.map_offsets.cm2_2ns + Next * self.map_sectionsN.cm2_2ns;
+        self.map_offsets.q_2ns = self.map_offsets.cm3_2ns + Next * self.map_sectionsN.cm3_2ns;
+        self.map_offsets.exps_withq_2ns = self.map_offsets.q_2ns + Next * self.map_sectionsN.q_2ns;
+        self.map_offsets.exps_withoutq_2ns =
+            self.map_offsets.exps_withq_2ns + Next * self.map_sectionsN.exps_withq_2ns;
+        self.map_offsets.map_total_n =
+            self.map_offsets.exps_withoutq_2ns + Next * self.map_sectionsN.exps_withoutq_2ns;
 
         self.map_deg = Index {
             cm1_n: N,
@@ -271,7 +272,6 @@ impl StarkInfo {
             exp_map: HashMap::new(),
             tmp_used: 0,
             ev_idx: EVIdx::new(),
-            //ev_map: Vec::new(),
             dom: "".to_string(),
             starkinfo: self,
         }; // FIXME?
@@ -493,7 +493,7 @@ impl StarkInfo {
             let mut p = 0;
             for e in 1..=3 {
                 for pp in self.var_pol_map.iter_mut() {
-                    if &pp.section.as_str() == s && pp.dim == e {
+                    if pp.section.as_str() == *s && pp.dim == e {
                         pp.section_pos = p;
                         p += e;
                     }

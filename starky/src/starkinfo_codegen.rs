@@ -121,7 +121,7 @@ pub struct Code {
     pub idQ: Option<usize>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct IndexVec {
     pub cm1_n: Vec<usize>,
     pub cm1_2ns: Vec<usize>,
@@ -136,7 +136,7 @@ pub struct IndexVec {
     pub exps_withoutq_2ns: Vec<usize>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct Index {
     pub cm1_n: usize,
     pub cm1_2ns: usize,
@@ -214,7 +214,7 @@ impl Index {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct PolType {
     pub section: String,
     pub section_pos: usize,
