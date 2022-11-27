@@ -34,6 +34,9 @@ mod starkinfo_map;
 mod transcript_bn128;
 
 #[macro_use]
+extern crate serde_json;
+
+#[macro_use]
 extern crate ff;
 
 #[macro_use]

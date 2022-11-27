@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
 use std::fs::File;
 use std::io::Read;
 
@@ -36,7 +37,7 @@ pub struct Expression {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub next: Option<bool>, // None is false, the other would be true. same as others with type Option<bool>
+    pub next: Option<bool>, // None is false, the other would be true
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -49,6 +50,13 @@ pub struct Expression {
     pub idQ: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub const_: Option<i64>,
+}
+
+impl fmt::Display for Expression {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let obj = json!(self);
+        write!(f, "{}", serde_json::to_string_pretty(&obj).unwrap())
+    }
 }
 
 impl Expression {

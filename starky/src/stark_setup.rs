@@ -138,6 +138,13 @@ pub mod tests {
         const_pol.load("data/fib.const.2").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
-        stark_setup_new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let setup = stark_setup_new(&const_pol, &mut pil, &stark_struct).unwrap();
+        println!("const root: {}", setup.const_tree.root());
+        println!("starkinfo: {:?}", setup.starkinfo);
+        for i in setup.const_tree.elements.iter() {
+            for j in i.iter() {
+                println!("elements[0][0]: {:?}", j.as_int());
+            }
+        }
     }
 }

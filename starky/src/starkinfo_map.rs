@@ -474,67 +474,6 @@ impl StarkInfo {
         segment.tmp_used = ctx_f.tmp_used;
     }
 
-    //FIXME: use it as Index's method
-    fn set_section_field(name: &str, sec: &mut Index, value: usize) {
-        match name {
-            "cm1_n" => {
-                sec.cm1_n = value;
-            }
-            "cm1_2ns" => {
-                sec.cm1_2ns = value;
-            }
-            "cm2_n" => {
-                sec.cm2_n = value;
-            }
-            "cm2_2ns" => {
-                sec.cm2_2ns = value;
-            }
-            "cm3_n" => {
-                sec.cm3_n = value;
-            }
-            "cm3_2ns" => {
-                sec.cm3_2ns = value;
-            }
-            "q_2ns" => {
-                sec.q_2ns = value;
-            }
-            "exps_withq_n" => {
-                sec.exps_withq_2ns = value;
-            }
-            "exps_withq_2ns" => {
-                sec.exps_withq_2ns = value;
-            }
-            "exps_withoutq_n" => {
-                sec.exps_withoutq_n = value;
-            }
-            "exps_withoutq_2ns" => {
-                sec.exps_withoutq_2ns = value;
-            }
-            _ => {
-                panic!("invalid domain {}", name);
-            }
-        }
-    }
-
-    fn get_section_field(name: &str, sec: &mut Index) -> usize {
-        match name {
-            "cm1_n" => sec.cm1_n,
-            "cm1_2ns" => sec.cm1_2ns,
-            "cm2_n" => sec.cm2_n,
-            "cm2_2ns" => sec.cm2_2ns,
-            "cm3_n" => sec.cm3_n,
-            "cm3_2ns" => sec.cm3_2ns,
-            "q_2ns" => sec.q_2ns,
-            "exps_withq_n" => sec.exps_withq_2ns,
-            "exps_withq_2ns" => sec.exps_withq_2ns,
-            "exps_withoutq_n" => sec.exps_withoutq_n,
-            "exps_withoutq_2ns" => sec.exps_withoutq_2ns,
-            _ => {
-                panic!("invalid domain {}", name);
-            }
-        }
-    }
-
     fn map_section(&mut self) -> Result<()> {
         let names: [&'static str; 11] = [
             "cm1_n",
@@ -560,16 +499,14 @@ impl StarkInfo {
                     }
                 }
                 if e == 1 {
-                    Self::set_section_field(s, &mut self.map_sectionsN1, p);
+                    self.map_sectionsN1.set(s, p);
                 }
                 if e == 3 {
-                    Self::set_section_field(s, &mut self.map_sectionsN, p);
+                    self.map_sectionsN.set(s, p);
                 }
             }
-            let t = (Self::get_section_field(s, &mut self.map_sectionsN)
-                - Self::get_section_field(s, &mut self.map_sectionsN1))
-                / 3;
-            Self::set_section_field(s, &mut self.map_sectionsN3, t);
+            let t = (self.map_sectionsN.get(s) - self.map_sectionsN1.get(s)) / 3;
+            self.map_sectionsN3.set(s, t);
         }
         Ok(())
     }

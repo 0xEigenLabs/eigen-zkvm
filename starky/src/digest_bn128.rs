@@ -3,6 +3,7 @@ use crate::helper::fr_to_biguint;
 use crate::poseidon_bn128::Fr;
 use core::slice;
 use ff::*;
+use std::fmt::Display;
 use winter_crypto::Digest;
 use winter_math::StarkField;
 use winter_math::{fields::f64::BaseElement, FieldElement};
@@ -33,6 +34,19 @@ impl ElementDigest {
         let p = digests.as_ptr();
         let len = digests.len() * DIGEST_SIZE;
         unsafe { slice::from_raw_parts(p as *const BaseElement, len) }
+    }
+}
+
+impl Display for ElementDigest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "[{} {} {} {}]",
+            self.0[0].as_int(),
+            self.0[1].as_int(),
+            self.0[2].as_int(),
+            self.0[3].as_int()
+        )
     }
 }
 

@@ -49,6 +49,7 @@ impl StarkInfo {
         code.tmp_used = ctx.tmp_used;
         program.verifier_query_code = code;
 
+        //println!("verifier_query_code: {}", program.verifier_query_code);
         Ok(())
     }
 }

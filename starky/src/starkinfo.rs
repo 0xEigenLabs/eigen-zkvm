@@ -249,6 +249,7 @@ impl StarkInfo {
         program: &mut Program,
     ) -> Result<()> {
         let publics = pil.publics.clone();
+        //println!("generate_pubulic_calculators: publics as input: {:?}", publics);
         for p in publics.iter() {
             if p.polType.as_str() == "imP" {
                 pil_code_gen(ctx, pil, p.polId, false, "")?;
@@ -278,6 +279,7 @@ impl StarkInfo {
 
                 segment.tmp_used = ctx_f.tmp_used;
                 program.publics_code.push(segment);
+                //println!("generate_pubulic_calculators: publics_code: {:?}", program.publics_code);
                 ctx.calculated = Calculated {
                     exps: vec![],
                     exps_prime: vec![],
