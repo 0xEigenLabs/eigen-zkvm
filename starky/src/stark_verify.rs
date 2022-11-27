@@ -60,53 +60,53 @@ pub fn stark_verify(
     }
 
     let fri = FRI::new(stark_struct);
-    let check_query = |query: &Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>,
-                       idx: usize|
-     -> Result<Vec<F3G>> {
-        let tree = MerkleTree::new();
-        let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
-        if !res {
-            return Err(FRIVerifierFailed);
-        }
+    let check_query =
+        |query: &Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>, idx: usize| -> Result<Vec<F3G>> {
+            let tree = MerkleTree::new();
+            let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
+            if !res {
+                return Err(FRIVerifierFailed);
+            }
 
-        let res = tree.verify_group_proof(&proof.root2, &query[1].1, idx, &query[1].0)?;
-        if !res {
-            return Err(FRIVerifierFailed);
-        }
-        let res = tree.verify_group_proof(&proof.root3, &query[2].1, idx, &query[2].0)?;
-        if !res {
-            return Err(FRIVerifierFailed);
-        }
-        let res = tree.verify_group_proof(&proof.root4, &query[3].1, idx, &query[3].0)?;
-        if !res {
-            return Err(FRIVerifierFailed);
-        }
-        let res = tree.verify_group_proof(&const_root, &query[4].1, idx, &query[4].0)?;
-        if !res {
-            return Err(FRIVerifierFailed);
-        }
-        let mut ctx_query = StarkContext::default();
-        ctx_query.tree1 = query[0].0.clone();
-        ctx_query.tree2 = query[1].0.clone();
-        ctx_query.tree3 = query[2].0.clone();
-        ctx_query.tree4 = query[3].0.clone();
-        ctx_query.consts = query[4].0.clone();
+            let res = tree.verify_group_proof(&proof.root2, &query[1].1, idx, &query[1].0)?;
+            if !res {
+                return Err(FRIVerifierFailed);
+            }
+            let res = tree.verify_group_proof(&proof.root3, &query[2].1, idx, &query[2].0)?;
+            if !res {
+                return Err(FRIVerifierFailed);
+            }
+            let res = tree.verify_group_proof(&proof.root4, &query[3].1, idx, &query[3].0)?;
+            if !res {
+                return Err(FRIVerifierFailed);
+            }
+            let res = tree.verify_group_proof(&const_root, &query[4].1, idx, &query[4].0)?;
+            if !res {
+                return Err(FRIVerifierFailed);
+            }
+            let mut ctx_query = StarkContext::default();
+            ctx_query.tree1 = query[0].0.clone();
+            ctx_query.tree2 = query[1].0.clone();
+            ctx_query.tree3 = query[2].0.clone();
+            ctx_query.tree4 = query[3].0.clone();
+            ctx_query.consts = query[4].0.clone();
 
-        ctx_query.evals = ctx.evals.clone();
-        ctx_query.publics = ctx.publics.clone();
-        ctx_query.challenges = ctx.challenges.clone();
+            ctx_query.evals = ctx.evals.clone();
+            ctx_query.publics = ctx.publics.clone();
+            ctx_query.challenges = ctx.challenges.clone();
 
-        let x = SHIFT.clone() * (W.0[ctx.nbits + extendBits].exp(idx));
-        ctx.xDivXSubXi = (x / (x - ctx_query.challenges[7])).as_base_elements();
-        ctx.xDivXSubWXi = (x / (x - (ctx_query.challenges[7] * W.0[ctx.nbits]))).as_base_elements();
+            let x = SHIFT.clone() * (W.0[ctx.nbits + extendBits].exp(idx));
+            ctx_query.xDivXSubXi = (x / (x - ctx_query.challenges[7])).as_base_elements();
+            ctx_query.xDivXSubWXi =
+                (x / (x - (ctx_query.challenges[7] * W.0[ctx.nbits]))).as_base_elements();
 
-        let vals = [execute_code(
-            &mut ctx_query,
-            &mut program.verifier_code.first,
-        )];
+            let vals = [execute_code(
+                &mut ctx_query,
+                &mut program.verifier_code.first,
+            )];
 
-        Ok(vals.to_vec())
-    };
+            Ok(vals.to_vec())
+        };
 
     fri.verify(&mut transcript, &proof.fri_proof, check_query)
 }

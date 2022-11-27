@@ -134,17 +134,22 @@ impl FRI {
 
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
 
-        for si in 0..self.steps.len() {
-            for ys_ in ys.iter() {
-                proof.queries[si].polQueries.push(query_pol(idx));
+        for ys_ in ys.iter() {
+            proof.queries[0].polQueries.push(query_pol(*ys_));
+        }
+
+        for si in 1..self.steps.len() {
+            let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
+                vec![tree[si].get_group_proof(idx).unwrap()]
+            };
+
+            for i in 0..ys.len() {
+                ys[i] = ys[i] % (1 << self.steps[si].nBits);
             }
-            if si < self.steps.len() - 1 {
-                query_pol = |t: &MerkleTree, idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
-                    vec![tree[si].get_group_proof(idx).unwrap()]
-                };
-                for i in 0..ys.len() {
-                    ys[i] = ys[i] % (1 << self.steps[si + 1].nBits);
-                }
+
+            // calculate the next query immediately.
+            for ys_ in ys.iter() {
+                proof.queries[si].polQueries.push(query_pol(*ys_));
             }
         }
         Ok(proof)
@@ -182,13 +187,34 @@ impl FRI {
         let mut pol_bits = self.in_nbits;
         let mut shift = SHIFT.clone();
 
+        let check_query_fn = |si: usize,
+                              query: &Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>,
+                              idx: usize|
+         -> Result<Vec<F3G>> {
+            let res = tree.verify_group_proof(
+                &proof.queries[si + 1].root,
+                &query[0].1,
+                idx,
+                &query[0].0,
+            )?;
+            if !res {
+                return Err(FRIVerifierFailed);
+            }
+            Ok(split3(&query[0].0))
+        };
+
         for si in 0..self.steps.len() {
             let proof_item = &proof.queries[si];
             let reduction_bits = pol_bits - self.steps[si].nBits;
             for i in 0..n_queries {
-                let mut pgroup_e = check_query(&proof_item.polQueries[i], ys[i] as usize)?;
-                if pgroup_e.len() == 0 {
-                    return Ok(false);
+                let mut pgroup_e: Vec<F3G> = vec![];
+                if si == 0 {
+                    pgroup_e = check_query(&proof_item.polQueries[i], ys[i])?;
+                    if pgroup_e.len() == 0 {
+                        return Ok(false);
+                    }
+                } else {
+                    pgroup_e = check_query_fn(si, &proof_item.polQueries[i], ys[i])?;
                 }
 
                 // ifft
@@ -201,21 +227,18 @@ impl FRI {
                 if si < self.steps.len() - 1 {
                     let next_n_groups = 1 << self.steps[si + 1].nBits;
                     let group_idx = ys[i] / next_n_groups;
-                    //FIXME
-                    if !ev.eq(&get3(
-                        &proof.queries[si + 1].polQueries[i][0].0,
-                        group_idx as usize,
-                    )) {
+                    if !ev.eq(&get3(&proof.queries[si + 1].polQueries[i][0].0, group_idx)) {
                         return Ok(false);
                     }
                 } else {
-                    if !ev.eq(&proof.last[ys[i] as usize]) {
+                    if !ev.eq(&proof.last[ys[i]]) {
                         return Ok(false);
                     }
                 }
             }
+            /*
             check_query =
-                |query: &Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>, idx: usize| -> Result<Vec<F3G>> {
+                &|query: &Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>, idx: usize| -> Result<Vec<F3G>> {
                     let res = tree.verify_group_proof(
                         &proof.queries[si + 1].root,
                         &query[0].1,
@@ -227,6 +250,7 @@ impl FRI {
                     }
                     Ok(split3(&query[0].0))
                 };
+            */
 
             let pol_bits = self.steps[si].nBits;
             for j in 0..reduction_bits {
@@ -296,7 +320,7 @@ fn get3(arr: &Vec<BaseElement>, idx: usize) -> F3G {
 
 fn split3(arr: &Vec<BaseElement>) -> Vec<F3G> {
     let mut res: Vec<F3G> = Vec::new();
-    for i in 0..arr.len() {
+    for i in (0..arr.len()).step_by(3) {
         res.push(F3G::new(arr[i], arr[i + 1], arr[i + 2]));
     }
     return res;
