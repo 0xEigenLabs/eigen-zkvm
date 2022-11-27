@@ -134,22 +134,25 @@ impl FRI {
 
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
 
-        for ys_ in ys.iter() {
-            proof.queries[0].polQueries.push(query_pol(*ys_));
-        }
+        let query_pol_fn = |si: usize, idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
+            vec![tree[si].get_group_proof(idx).unwrap()]
+        };
 
-        for si in 1..self.steps.len() {
-            let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
-                vec![tree[si].get_group_proof(idx).unwrap()]
-            };
-
-            for i in 0..ys.len() {
-                ys[i] = ys[i] % (1 << self.steps[si].nBits);
+        for si in 0..self.steps.len() {
+            for ys_ in ys.iter() {
+                if si == 0 {
+                    proof.queries[si].polQueries.push(query_pol(*ys_));
+                } else {
+                    proof.queries[si]
+                        .polQueries
+                        .push(query_pol_fn(si - 1, *ys_));
+                }
             }
 
-            // calculate the next query immediately.
-            for ys_ in ys.iter() {
-                proof.queries[si].polQueries.push(query_pol(*ys_));
+            if si < self.steps.len() - 1 {
+                for i in 0..ys.len() {
+                    ys[i] = ys[i] % (1 << self.steps[si].nBits);
+                }
             }
         }
         Ok(proof)
