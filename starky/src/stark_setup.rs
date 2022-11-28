@@ -54,7 +54,7 @@ pub fn interpolate_in_pil(
 }
 
 #[derive(Default)]
-pub struct StarkSetup {
+pub struct StarkSetupResp {
     pub const_tree: MerkleTree,
     pub const_root: ElementDigest,
     pub starkinfo: StarkInfo,
@@ -67,29 +67,24 @@ pub fn stark_setup_new(
     const_pol: &PolsArray,
     pil: &mut PIL,
     stark_struct: &StarkStruct,
-) -> Result<StarkSetup> {
+) -> Result<StarkSetupResp> {
     let nBits = stark_struct.nBits;
     let nBitsExt = stark_struct.nBitsExt;
 
     let mut p: Vec<Vec<BaseElement>> = vec![Vec::new(); const_pol.nPols];
-    /*
-    println!(
-        "nPols {} n {}, {:?}",
-        const_pol.nPols, const_pol.n, const_pol.array
-    );
-    */
     for i in 0..const_pol.nPols {
         for j in 0..const_pol.n {
             p[i].push(const_pol.array[i][j])
         }
     }
 
+    crate::helper::pretty_print_matrix(&p);
     //extend and merkelize
     let m = interpolate_in_pil(&p, 1 << (nBitsExt - nBits));
-    let const_tree = MerkleTree::merkelize(m, const_pol.n << (nBitsExt - nBits), const_pol.nPols)?;
+    let const_tree = MerkleTree::merkelize(m, const_pol.nPols, const_pol.n << (nBitsExt - nBits))?;
 
     let starkinfo = starkinfo::StarkInfo::new(pil, stark_struct)?;
-    Ok(StarkSetup {
+    Ok(StarkSetupResp {
         const_root: const_tree.root(),
         const_tree: const_tree,
         starkinfo: starkinfo,
@@ -140,11 +135,7 @@ pub mod tests {
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
         let setup = stark_setup_new(&const_pol, &mut pil, &stark_struct).unwrap();
         println!("const root: {}", setup.const_tree.root());
-        println!("starkinfo: {}", setup.starkinfo);
-        for i in setup.const_tree.elements.iter() {
-            for j in i.iter() {
-                println!("elements[0][0]: {:?}", j.as_int());
-            }
-        }
+        //println!("starkinfo: {}", setup.starkinfo);
+        crate::helper::pretty_print_matrix(&setup.const_tree.elements);
     }
 }

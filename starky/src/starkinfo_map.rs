@@ -408,65 +408,61 @@ impl StarkInfo {
             exp_map: HashMap::new(),
             tmp_used: segment.tmp_used,
             ev_idx: EVIdx::new(),
-            //ev_map: Vec::new(),
             dom: dom.to_string(),
             starkinfo: self,
         };
 
-        let fix_ref = |r: &mut Node, ctx: &mut ContextF, pil: &mut PIL| {
-            match r.type_.as_str() {
-                "cm" => {
+        let fix_ref = |r: &mut Node, ctx: &mut ContextF, pil: &mut PIL| match r.type_.as_str() {
+            "cm" => {
+                if ctx.dom.as_str() == "n" {
+                    r.p = ctx.starkinfo.cm_n[r.id];
+                } else if ctx.dom.as_str() == "2ns" {
+                    r.p = ctx.starkinfo.cm_2ns[r.id];
+                } else {
+                    panic!("Invalid domain {}", ctx.dom);
+                }
+            }
+
+            "q" => {
+                if ctx.dom.as_str() == "n" {
+                    panic!("Accession q in domain n");
+                } else if ctx.dom.as_str() == "2ns" {
+                    r.p = ctx.starkinfo.qs[r.id];
+                } else {
+                    panic!("Invalid domain {}", ctx.dom);
+                }
+            }
+
+            "exp" => {
+                if pil.expressions[r.id].idQ.is_some() {
                     if ctx.dom.as_str() == "n" {
-                        r.p = ctx.starkinfo.cm_n[r.id];
+                        r.p = ctx.starkinfo.exps_n[r.id];
                     } else if ctx.dom.as_str() == "2ns" {
-                        r.p = ctx.starkinfo.cm_2ns[r.id];
+                        r.p = ctx.starkinfo.exps_2ns[r.id];
                     } else {
                         panic!("Invalid domain {}", ctx.dom);
                     }
-                }
-
-                "q" => {
+                } else if pil.expressions[r.id].keep.is_some() && ctx.dom.as_str() == "n" {
+                    r.p = ctx.starkinfo.exps_n[r.id];
+                } else if pil.expressions[r.id].keep2ns.is_some() {
                     if ctx.dom.as_str() == "n" {
                         panic!("Accession q in domain n");
-                    } else if ctx.dom.as_str() == "2ns" {
-                        r.p = ctx.starkinfo.qs[r.id];
-                    } else {
-                        panic!("Invalid domain {}", ctx.dom);
                     }
-                }
-
-                "exp" => {
-                    if pil.expressions[r.id].idQ.is_some() {
-                        //FIXME ctx has no pil
-                        if ctx.dom.as_str() == "n" {
-                            r.p = ctx.starkinfo.exps_n[r.id];
-                        } else if ctx.dom.as_str() == "2ns" {
-                            r.p = ctx.starkinfo.exps_2ns[r.id];
-                        } else {
-                            panic!("Invalid domain {}", ctx.dom);
-                        }
-                    } else if pil.expressions[r.id].keep.is_some() && ctx.dom.as_str() == "n" {
-                        r.p = ctx.starkinfo.exps_n[r.id];
-                    } else if pil.expressions[r.id].keep2ns.is_some() {
-                        if ctx.dom.as_str() == "n" {
-                            panic!("Accession q in domain n");
-                        }
-                    } else {
-                        let p = if r.prime { 1 } else { 0 };
-                        if ctx.exp_map.get(&(p, r.id)).is_none() {
-                            ctx.exp_map.insert((p, r.id), ctx.tmp_used);
-                            ctx.tmp_used += 1;
-                        }
-                        r.type_ = "tmp".to_string();
-                        r.exp_id = r.id;
-                        r.id = *ctx.exp_map.get(&(p, r.id)).unwrap();
+                } else {
+                    let p = if r.prime { 1 } else { 0 };
+                    if ctx.exp_map.get(&(p, r.id)).is_none() {
+                        ctx.exp_map.insert((p, r.id), ctx.tmp_used);
+                        ctx.tmp_used += 1;
                     }
+                    r.type_ = "tmp".to_string();
+                    r.exp_id = r.id;
+                    r.id = *ctx.exp_map.get(&(p, r.id)).unwrap();
                 }
-                "const" | "number" | "challenge" | "public" | "tmp" | "Zi" | "xDivXSubXi"
-                | "xDivXSubWXi" | "eval" | "x" => {}
-                _ => {
-                    panic!("Invalid reference type {}", r.type_);
-                }
+            }
+            "const" | "number" | "challenge" | "public" | "tmp" | "Zi" | "xDivXSubXi"
+            | "xDivXSubWXi" | "eval" | "x" => {}
+            _ => {
+                panic!("Invalid reference type {}", r.type_);
             }
         };
 

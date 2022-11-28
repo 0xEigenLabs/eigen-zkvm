@@ -80,40 +80,17 @@ impl MerkleTree {
         for i in (0..height).step_by(n_per_thread_f) {
             let cur_n = std::cmp::min(n_per_thread_f, height - i);
             // get elements from row i to i + cur_n
-            //println!("cur_n {} {}", i, i + cur_n);
             for j in 0..cur_n {
-                batch.append(&mut columns[i + j].clone());
-                /*
-                println!("batch");
-                let ccc: Vec<u32> = batch
-                    .iter()
-                    .map(|e| {
-                        println!("b: {}", e);
-                        1u32
-                    })
-                    .collect();
-                */
-
+                for row in 0..width {
+                    batch.push(columns[row][j].clone());
+                }
                 // TODO: parallel hash
                 let node = leaves_hash.hash_element_array(&batch)?;
-
-                /*
-                let ddd: Vec<_> = node
-                    .0
-                    .iter()
-                    .map(|e| {
-                        print!("hased result: {:?} ", e.as_int());
-                        1u32
-                    })
-                    .collect();
-                println!("");
-                */
                 leaves.push(node);
                 batch = vec![];
             }
         }
 
-        //println!("leaves size {}", leaves.len());
         // merklize level
         let mut tree = MerkleTree {
             nodes: vec![ElementDigest::default(); get_n_nodes(height)],
@@ -156,29 +133,10 @@ impl MerkleTree {
             let cur_n_ops = std::cmp::min(n_ops_per_thread, n_ops - i);
             //println!("p_in={}, cur_n_ops={}", p_in, cur_n_ops);
             let bb = &self.nodes[(p_in + i * 16)..(p_in + (i + cur_n_ops) * 16)];
-            /*
-            println!(
-                ">>>  handle {} to {}",
-                (p_in + i * 16),
-                p_in + (i + cur_n_ops) * 16
-            );
-            */
             let res = self.do_merklize_level(bb, i, n_ops)?;
             for (j, v) in res.iter().enumerate() {
                 let idx = p_out + i * n_ops_per_thread + j;
-                //println!("set {}, {:?}", idx, self.nodes[idx]);
                 self.nodes[idx] = *v;
-
-                /*println!("to: {:?}, which is ", self.nodes[idx]);
-                let ddd: Vec<_> = self.nodes[idx]
-                    .0
-                    .iter()
-                    .map(|e| {
-                        print!("hased result: {:?} ", e.as_int());
-                        1u32
-                    })
-                    .collect();
-                */
             }
         }
         Ok(())
@@ -316,11 +274,11 @@ mod tests {
         let n = 256;
         let idx = 3;
 
-        let mut cols: Vec<Vec<BaseElement>> = vec![Vec::new(); n];
-        for i in 0..n {
-            cols[i] = vec![BaseElement::ZERO; n_pols];
-            for j in 0..n_pols {
-                cols[i][j] = BaseElement::from((i + j * 1000) as u32);
+        let mut cols: Vec<Vec<BaseElement>> = vec![Vec::new(); n_pols];
+        for i in 0..n_pols {
+            cols[i] = vec![BaseElement::ZERO; n];
+            for j in 0..n {
+                cols[i][j] = BaseElement::from((i * 1000 + j) as u32);
             }
         }
 

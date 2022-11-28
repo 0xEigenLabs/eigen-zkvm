@@ -1,6 +1,9 @@
 use crate::poseidon_bn128::Fr;
 use ff::*;
+use num_bigint::BigUint;
+use num_traits::{Num, ToPrimitive};
 use std::ops::Mul;
+use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
 ///exports.getKs = function getKs(Fr, n) {
 ///    const ks = [Fr.k];
@@ -9,13 +12,6 @@ use std::ops::Mul;
 ///    }
 ///    return ks;
 ///}
-use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
-
-use num_bigint::BigUint;
-use num_traits::Num;
-use num_traits::ToPrimitive;
-
 pub fn get_ks(n: usize) -> Vec<BaseElement> {
     let mut ks: Vec<BaseElement> = vec![BaseElement::ZERO; n];
     ks[0] = BaseElement::from(12275445934081160404u64);
@@ -42,4 +38,22 @@ pub fn biguint_to_be(f: &BigUint) -> BaseElement {
 
 pub fn biguint_to_fr(f: &BigUint) -> Fr {
     Fr::from_str(&f.to_string()).unwrap()
+}
+
+pub fn pretty_print_matrix(cols: &Vec<Vec<BaseElement>>) {
+    println!("matrix: cols {}, rows: {}", cols.len(), cols[0].len());
+    for i in 0..cols.len() {
+        println!("cols: {} begin", i);
+        println!("\t cols[{}][0]: {}", i, cols[i][0].as_int());
+        //println!("\t cols[{}][1]: {}", i, cols[i][1].as_int());
+        //println!("\t cols[{}][2]: {}", i, cols[i][2].as_int());
+        //println!("\t cols[...]: {} lines ignored", cols.len() - 5);
+        //println!("\t cols[{}][2]: {}", i, cols[i][cols[i].len() - 2].as_int());
+        println!(
+            "\t cols[{}][row-1]: {}",
+            i,
+            cols[i][cols[i].len() - 1].as_int()
+        );
+        println!("cols: {} end", i);
+    }
 }
