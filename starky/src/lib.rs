@@ -13,7 +13,6 @@ mod digest_bn128;
 pub use digest_bn128::ElementDigest;
 
 mod constant;
-mod traits;
 
 mod expressionops;
 mod f3g;

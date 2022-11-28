@@ -40,20 +40,41 @@ pub fn biguint_to_fr(f: &BigUint) -> Fr {
     Fr::from_str(&f.to_string()).unwrap()
 }
 
-pub fn pretty_print_matrix(cols: &Vec<Vec<BaseElement>>) {
+pub fn pretty_print_matrix<T: FieldElement + StarkField>(cols: &Vec<Vec<T>>) {
     println!("matrix: cols {}, rows: {}", cols.len(), cols[0].len());
-    for i in 0..cols.len() {
-        println!("cols: {} begin", i);
-        println!("\t cols[{}][0]: {}", i, cols[i][0].as_int());
-        //println!("\t cols[{}][1]: {}", i, cols[i][1].as_int());
-        //println!("\t cols[{}][2]: {}", i, cols[i][2].as_int());
-        //println!("\t cols[...]: {} lines ignored", cols.len() - 5);
-        //println!("\t cols[{}][2]: {}", i, cols[i][cols[i].len() - 2].as_int());
-        println!(
-            "\t cols[{}][row-1]: {}",
-            i,
-            cols[i][cols[i].len() - 1].as_int()
-        );
-        println!("cols: {} end", i);
+    let mut iglines = 2;
+    let width = 10;
+    for i in 0..cols[0].len() {
+        print!("\t rows[{:?}]: {:?},", i, cols[0][i].as_int());
+        if cols.len() > 2 {
+            print!("{:?},", cols[1][i].as_int());
+            print!("{:?},", cols[2][i].as_int());
+            iglines += 2;
+        }
+        if iglines < cols.len() {
+            print!(" .{:?}s. ", cols.len() - iglines);
+        }
+        if cols.len() > 2 {
+            print!("{:#?}", cols[cols[i].len() - 2][i].as_int());
+        }
+        println!("{:#?}.", cols[cols.len() - 1][i].as_int());
     }
+}
+
+pub fn pretty_print_array<T: FieldElement + StarkField>(cols: &Vec<T>) {
+    println!("array size: {}", cols.len());
+    let mut iglines = 2;
+    print!("\t [ {:?},", cols[0].as_int());
+    if cols.len() > 2 {
+        print!("{:#?},", cols[1].as_int());
+        print!("{:#?},", cols[2].as_int());
+        iglines += 2;
+    }
+    if iglines < cols.len() {
+        print!(" .{:?}s. ", cols.len() - iglines);
+    }
+    if cols.len() > 2 {
+        print!("{:?}", cols[cols.len() - 2].as_int());
+    }
+    println!("{:?}].", cols[cols.len() - 1].as_int());
 }

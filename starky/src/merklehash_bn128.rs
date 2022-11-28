@@ -6,7 +6,7 @@ use crate::linearhash_bn128::LinearHashBN128;
 use crate::poseidon_bn128::{Fr, Poseidon};
 use ff::Field;
 use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
+use winter_math::{FieldElement, StarkField};
 
 #[derive(Default)]
 pub struct MerkleTree {
@@ -76,16 +76,20 @@ impl MerkleTree {
             n_per_thread_f = MAX_OPS_PER_THREAD;
         }
 
-        //println!("n_per_thread_f: {}, height {}", n_per_thread_f, height);
+        println!("n_per_thread_f: {}, height {}", n_per_thread_f, height);
         for i in (0..height).step_by(n_per_thread_f) {
             let cur_n = std::cmp::min(n_per_thread_f, height - i);
             // get elements from row i to i + cur_n
             for j in 0..cur_n {
-                for row in 0..width {
-                    batch.push(columns[row][j].clone());
-                }
                 // TODO: parallel hash
+                for row in 0..width {
+                    batch.push(columns[row][j]);
+                }
+
+                print!("linearhash_bn128 i {}, ", leaves.len());
+                crate::helper::pretty_print_array(&batch);
                 let node = leaves_hash.hash_element_array(&batch)?;
+                println!("linear hash out: {}", node);
                 leaves.push(node);
                 batch = vec![];
             }
@@ -102,8 +106,9 @@ impl MerkleTree {
         };
 
         // set leaves
-        for (i, leaf) in leaves.iter().enumerate() {
-            tree.nodes[i] = *leaf;
+        println!("leaves.size= {}", leaves.len());
+        for i in 0..leaves.len() {
+            tree.nodes[i] = leaves[i];
         }
 
         let mut n256: usize = height;
@@ -128,15 +133,26 @@ impl MerkleTree {
             n_ops_per_thread = MIN_OPS_PER_THREAD;
         }
 
-        //println!("merkelize_level ops {} n_pt {}", n_ops, n_ops_per_thread);
+        println!(
+            "merkelize_level p_in {} n_ops {}, n_ops_per_thread {}",
+            p_in, n_ops, n_ops_per_thread
+        );
         for i in (0..n_ops).step_by(n_ops_per_thread) {
             let cur_n_ops = std::cmp::min(n_ops_per_thread, n_ops - i);
-            //println!("p_in={}, cur_n_ops={}", p_in, cur_n_ops);
+            println!(
+                "p_in={}, cur_n_ops={}",
+                p_in + i * 16,
+                p_in + (i + cur_n_ops) * 16
+            );
             let bb = &self.nodes[(p_in + i * 16)..(p_in + (i + cur_n_ops) * 16)];
+            for i in 0..16 {
+                println!("bb {}", bb[i]);
+            }
             let res = self.do_merklize_level(bb, i, n_ops)?;
             for (j, v) in res.iter().enumerate() {
                 let idx = p_out + i * n_ops_per_thread + j;
                 self.nodes[idx] = *v;
+                println!("bb out[{}]={}", idx, self.nodes[idx]);
             }
         }
         Ok(())
@@ -145,13 +161,13 @@ impl MerkleTree {
     fn do_merklize_level(
         &self,
         buff_in: &[ElementDigest],
-        st_i: usize,
-        st_n: usize,
+        _st_i: usize,
+        _st_n: usize,
     ) -> Result<Vec<ElementDigest>> {
         println!(
             "merklizing bn128 hash start.... {}/{}, buff size {}",
-            st_i,
-            st_n,
+            _st_i,
+            _st_n,
             buff_in.len()
         );
         let n_ops = buff_in.len() / 16;
@@ -160,7 +176,7 @@ impl MerkleTree {
             let digest: Fr = Fr::zero();
             buff_out64.push(
                 self.h
-                    .inner_hash_digest(&buff_in[(i * 16)..(i * 16 + 16)], &digest)?,
+                    .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &digest)?,
             );
         }
         Ok(buff_out64)
@@ -262,7 +278,6 @@ impl MerkleTree {
 mod tests {
     use crate::merklehash_bn128::MerkleTree;
     use crate::poseidon_bn128::Fr;
-    use crate::traits::FieldMapping;
     use crate::ElementDigest;
     use ff::PrimeField;
     use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
@@ -283,22 +298,8 @@ mod tests {
         }
 
         let tree = MerkleTree::merkelize(cols, n_pols, n).unwrap();
-
         let (v, mp) = tree.get_group_proof(idx).unwrap();
-        println!("get_group_proof: {},\n v = ", idx);
-        v.iter()
-            .map(|e| println!("{:?}", e.as_int()))
-            .collect::<Vec<()>>();
-        println!("mp = ");
-        for (i, p) in mp.iter().enumerate() {
-            println!("next {}", i);
-            p.iter()
-                .map(|e| println!("{:?}", e.to_string()))
-                .collect::<Vec<()>>();
-        }
-
         let root: Fr = tree.root().into();
-        println!("root {:?}", root);
         assert_eq!(
             root,
             Fr::from_str(
