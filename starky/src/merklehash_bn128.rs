@@ -76,7 +76,7 @@ impl MerkleTree {
             n_per_thread_f = MAX_OPS_PER_THREAD;
         }
 
-        println!("n_per_thread_f: {}, height {}", n_per_thread_f, height);
+        //println!("n_per_thread_f: {}, height {}", n_per_thread_f, height);
         for i in (0..height).step_by(n_per_thread_f) {
             let cur_n = std::cmp::min(n_per_thread_f, height - i);
             // get elements from row i to i + cur_n
@@ -86,10 +86,10 @@ impl MerkleTree {
                     batch.push(columns[row][j]);
                 }
 
-                print!("linearhash_bn128 i {}, ", leaves.len());
-                crate::helper::pretty_print_array(&batch);
+                //print!("linearhash_bn128 i {}, ", leaves.len());
+                //crate::helper::pretty_print_array(&batch);
                 let node = leaves_hash.hash_element_array(&batch)?;
-                println!("linear hash out: {}", node);
+                //println!("linear hash out: {}", node);
                 leaves.push(node);
                 batch = vec![];
             }
@@ -106,7 +106,7 @@ impl MerkleTree {
         };
 
         // set leaves
-        println!("leaves.size= {}", leaves.len());
+        //println!("leaves.size= {}", leaves.len());
         for i in 0..leaves.len() {
             tree.nodes[i] = leaves[i];
         }
@@ -133,17 +133,17 @@ impl MerkleTree {
             n_ops_per_thread = MIN_OPS_PER_THREAD;
         }
 
-        println!(
-            "merkelize_level p_in {} n_ops {}, n_ops_per_thread {}",
-            p_in, n_ops, n_ops_per_thread
-        );
+        //println!(
+        //    "merkelize_level p_in {} n_ops {}, n_ops_per_thread {}",
+        //    p_in, n_ops, n_ops_per_thread
+        //);
         for i in (0..n_ops).step_by(n_ops_per_thread) {
             let cur_n_ops = std::cmp::min(n_ops_per_thread, n_ops - i);
-            println!(
-                "p_in={}, cur_n_ops={}",
-                p_in + i * 16,
-                p_in + (i + cur_n_ops) * 16
-            );
+            //println!(
+            //    "p_in={}, cur_n_ops={}",
+            //    p_in + i * 16,
+            //    p_in + (i + cur_n_ops) * 16
+            //);
             let bb = &self.nodes[(p_in + i * 16)..(p_in + (i + cur_n_ops) * 16)];
             let res = self.do_merklize_level(bb, i, n_ops)?;
             for (j, v) in res.iter().enumerate() {
@@ -170,15 +170,15 @@ impl MerkleTree {
         let mut buff_out64: Vec<ElementDigest> = vec![];
         for i in 0..n_ops {
             let digest: Fr = Fr::zero();
-            print!("bb {} of {} ", i, n_ops);
-            for k in 0..16 {
-                println!("bb {}", buff_in[i * 16 + k]);
-            }
+            //print!("bb {} of {} ", i, n_ops);
+            //for k in 0..16 {
+            //    println!("bb {}", buff_in[i * 16 + k]);
+            //}
             buff_out64.push(
                 self.h
                     .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &digest)?,
             );
-            println!("bb out={}", buff_out64[buff_out64.len() - 1]);
+            //println!("bb out={}", buff_out64[buff_out64.len() - 1]);
         }
         Ok(buff_out64)
     }

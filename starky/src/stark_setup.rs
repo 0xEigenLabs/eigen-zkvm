@@ -78,9 +78,6 @@ pub fn stark_setup_new(
         }
     }
 
-    #[cfg(test)]
-    crate::helper::pretty_print_matrix(&p);
-
     //extend and merkelize
     let m = interpolate_in_pil(&p, 1 << (nBitsExt - nBits));
     let const_tree = MerkleTree::merkelize(m, const_pol.nPols, const_pol.n << (nBitsExt - nBits))?;
@@ -139,11 +136,6 @@ pub mod tests {
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
         let setup = stark_setup_new(&const_pol, &mut pil, &stark_struct).unwrap();
         let root: Fr = setup.const_root.into();
-
-        println!("all nodes: 0..128");
-        for i in 0..2045 {
-            println!("{} {}", i, setup.const_tree.nodes[i]);
-        }
 
         let expect_root =
             "4658128321472362347225942316135505030498162093259225938328465623672244875764";
