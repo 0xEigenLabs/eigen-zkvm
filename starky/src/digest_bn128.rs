@@ -91,7 +91,7 @@ impl ElementDigest {
         Fr::from_str(&result.to_string()).unwrap()
     }
 
-    pub fn to_GL(f: &Fr) -> [BaseElement; 4] {
+    fn to_GL(f: &Fr) -> [BaseElement; 4] {
         let mut f = fr_to_biguint(f);
 
         let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();

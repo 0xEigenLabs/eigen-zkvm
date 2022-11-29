@@ -145,14 +145,10 @@ impl MerkleTree {
                 p_in + (i + cur_n_ops) * 16
             );
             let bb = &self.nodes[(p_in + i * 16)..(p_in + (i + cur_n_ops) * 16)];
-            for i in 0..16 {
-                println!("bb {}", bb[i]);
-            }
             let res = self.do_merklize_level(bb, i, n_ops)?;
             for (j, v) in res.iter().enumerate() {
                 let idx = p_out + i * n_ops_per_thread + j;
                 self.nodes[idx] = *v;
-                println!("bb out[{}]={}", idx, self.nodes[idx]);
             }
         }
         Ok(())
@@ -174,10 +170,15 @@ impl MerkleTree {
         let mut buff_out64: Vec<ElementDigest> = vec![];
         for i in 0..n_ops {
             let digest: Fr = Fr::zero();
+            print!("bb {} of {} ", i, n_ops);
+            for k in 0..16 {
+                println!("bb {}", buff_in[i * 16 + k]);
+            }
             buff_out64.push(
                 self.h
                     .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &digest)?,
             );
+            println!("bb out={}", buff_out64[buff_out64.len() - 1]);
         }
         Ok(buff_out64)
     }

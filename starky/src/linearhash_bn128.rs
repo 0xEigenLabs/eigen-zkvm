@@ -69,10 +69,10 @@ impl LinearHashBN128 {
     }
 
     /// convert to BN128 in montgomery
-    pub fn to_bn128_mont(st64: &[BaseElement; 4]) -> [BaseElement; 4] {
-        let bn: Fr = ElementDigest::to_BN128(st64);
+    pub fn to_bn128_mont(st64: [BaseElement; 4]) -> [BaseElement; 4] {
+        let bn: Fr = ElementDigest::new(st64).into();
         let bn_mont = Fr::from_repr(bn.into_raw_repr()).unwrap();
-        ElementDigest::to_GL(&bn_mont)
+        ElementDigest::from(&bn_mont).into()
     }
 
     pub fn hash_node(&self, elems: &[ElementDigest], init_state: &Fr) -> Result<ElementDigest> {
@@ -101,7 +101,7 @@ impl LinearHashBN128 {
             for (i, v) in vals.iter().enumerate() {
                 st64[i] = *v;
             }
-            let gl_mont = Self::to_bn128_mont(&st64);
+            let gl_mont = Self::to_bn128_mont(st64);
             return Ok(ElementDigest::from(gl_mont));
         }
 
@@ -179,5 +179,17 @@ mod tests {
         assert_eq!(result.0[1], BaseElement::from(14080511166848616671u64));
         assert_eq!(result.0[2], BaseElement::from(11411897157942048316u64));
         assert_eq!(result.0[3], BaseElement::from(1802287360671936077u64));
+
+        let input = vec![
+            BaseElement::from(18440682777423237490u64),
+            BaseElement::from(1156220815552880681u64),
+        ];
+
+        let result = lh.hash_element_array(&input).unwrap();
+        println!("out {}", result);
+        assert_eq!(result.0[0], BaseElement::from(12850950522295690944u64));
+        assert_eq!(result.0[1], BaseElement::from(15045028186447136619u64));
+        assert_eq!(result.0[2], BaseElement::from(11701297961637547631u64));
+        assert_eq!(result.0[3], BaseElement::from(875058675367281598u64));
     }
 }
