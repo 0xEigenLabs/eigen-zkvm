@@ -6,7 +6,6 @@ use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
 
 use crate::errors::Result;
-use crate::traits::FieldMapping;
 
 #[derive(Default)]
 pub struct LinearHashBN128 {
@@ -70,25 +69,21 @@ impl LinearHashBN128 {
     }
 
     /// convert to BN128 in montgomery
-    pub fn to_bn128_mont(st64: &[BaseElement; 4]) -> [BaseElement; 4] {
-        let bn: Fr = ElementDigest::to_BN128(st64);
-        let bn_mont = ElementDigest::to_montgomery(&bn);
-        ElementDigest::to_GL(&bn_mont)
+    pub fn to_bn128_mont(st64: [BaseElement; 4]) -> [BaseElement; 4] {
+        let bn: Fr = ElementDigest::new(st64).into();
+        let bn_mont = Fr::from_repr(bn.into_raw_repr()).unwrap();
+        ElementDigest::from(&bn_mont).into()
     }
 
-    pub fn inner_hash_digest(
-        &self,
-        elems: &[ElementDigest],
-        init_state: &Fr,
-    ) -> Result<ElementDigest> {
+    pub fn hash_node(&self, elems: &[ElementDigest], init_state: &Fr) -> Result<ElementDigest> {
         assert_eq!(elems.len(), 16);
         let elems = elems.iter().map(|e| e.clone().into()).collect::<Vec<Fr>>();
         let digest = self.h.hash(&elems, init_state)?;
         Ok(ElementDigest::from(&digest))
     }
 
-    fn inner_hash_block(&self, elems: &[BaseElement], init_state: &Fr) -> Result<Fr> {
-        //println!("inner_hash_block size: {}", elems.len());
+    fn hash_element_block(&self, elems: &[BaseElement], init_state: &Fr) -> Result<Fr> {
+        //println!("hash_element_block size: {}", elems.len());
         let elems = elems
             .chunks(4)
             .map(|e| ElementDigest::to_BN128(e.try_into().unwrap()))
@@ -106,7 +101,7 @@ impl LinearHashBN128 {
             for (i, v) in vals.iter().enumerate() {
                 st64[i] = *v;
             }
-            let gl_mont = Self::to_bn128_mont(&st64);
+            let gl_mont = Self::to_bn128_mont(st64);
             return Ok(ElementDigest::from(gl_mont));
         }
 
@@ -116,14 +111,14 @@ impl LinearHashBN128 {
             in64[p] = *val;
             p += 1;
             if p == 16 * 4 {
-                digest = self.inner_hash_block(&in64[..], &digest)?;
+                digest = self.hash_element_block(&in64[..], &digest)?;
                 p = 0;
             }
             if i % 3 == 2 {
                 in64[p] = BaseElement::ZERO;
                 p += 1;
                 if p == 16 * 4 {
-                    digest = self.inner_hash_block(&in64[..], &digest)?;
+                    digest = self.hash_element_block(&in64[..], &digest)?;
                     p = 0;
                 }
             }
@@ -134,7 +129,7 @@ impl LinearHashBN128 {
                 in64[p] = BaseElement::ZERO;
                 p += 1;
             }
-            digest = self.inner_hash_block(&in64[..(nLast * 4)], &digest)?;
+            digest = self.hash_element_block(&in64[..(nLast * 4)], &digest)?;
         }
         Ok(ElementDigest::from(&digest))
     }
@@ -167,5 +162,34 @@ mod tests {
             st.to_string(),
             "Fr(0x29c2ac38b7b8d18b9c1b575369cb4ab930ef71ebd5e4631b3916360233a29cae)",
         );
+    }
+
+    #[test]
+    fn test_linearhash_corner_case() {
+        let input = vec![
+            BaseElement::from(6188675464075253840u64),
+            BaseElement::from(2608530331018891925u64),
+        ];
+        crate::helper::pretty_print_array(&input);
+
+        let mut lh = LinearHashBN128::new();
+        let result = lh.hash_element_array(&input).unwrap();
+        println!("out {}", result);
+        assert_eq!(result.0[0], BaseElement::from(15714769047018385385u64));
+        assert_eq!(result.0[1], BaseElement::from(14080511166848616671u64));
+        assert_eq!(result.0[2], BaseElement::from(11411897157942048316u64));
+        assert_eq!(result.0[3], BaseElement::from(1802287360671936077u64));
+
+        let input = vec![
+            BaseElement::from(18440682777423237490u64),
+            BaseElement::from(1156220815552880681u64),
+        ];
+
+        let result = lh.hash_element_array(&input).unwrap();
+        println!("out {}", result);
+        assert_eq!(result.0[0], BaseElement::from(12850950522295690944u64));
+        assert_eq!(result.0[1], BaseElement::from(15045028186447136619u64));
+        assert_eq!(result.0[2], BaseElement::from(11701297961637547631u64));
+        assert_eq!(result.0[3], BaseElement::from(875058675367281598u64));
     }
 }

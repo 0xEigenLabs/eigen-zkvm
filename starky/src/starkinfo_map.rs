@@ -178,12 +178,12 @@ impl StarkInfo {
             } else if e.keep2ns.is_some() {
                 let dim = Self::get_exp_dim(&pil, &pil.expressions[i]);
                 let pp_2ns = add_pol(PolType {
-                    section: "exps_withq_2ns".to_string(),
+                    section: "exps_withoutq_2ns".to_string(),
                     dim: dim,
                     exp_id: i,
                     section_pos: 0,
                 });
-                self.map_sections.exps_withq_2ns.push(pp_2ns.clone());
+                self.map_sections.exps_withoutq_2ns.push(pp_2ns.clone());
                 self.exps_n.push(0); //null
                 self.exps_2ns.push(pp_2ns);
             } else {
@@ -198,22 +198,23 @@ impl StarkInfo {
         let N = 1 << stark_struct.nBits;
         let Next = 1 << stark_struct.nBitsExt;
 
-        self.map_offsets = Index {
-            cm1_n: 0,
-            cm2_n: self.map_offsets.cm1_n + N * self.map_sectionsN.cm1_n,
-            cm3_n: self.map_offsets.cm2_n + N * self.map_sectionsN.cm2_n,
-            exps_withq_n: self.map_offsets.cm3_n + N * self.map_sectionsN.cm3_n,
-            exps_withoutq_n: self.map_offsets.exps_withq_n + N * self.map_sectionsN.exps_withq_n,
-            cm1_2ns: self.map_offsets.exps_withoutq_n + N * self.map_sectionsN.exps_withoutq_n,
-            cm2_2ns: self.map_offsets.cm1_2ns + N * self.map_sectionsN.cm1_2ns,
-            cm3_2ns: self.map_offsets.cm2_2ns + N * self.map_sectionsN.cm2_2ns,
-            q_2ns: self.map_offsets.cm3_2ns + Next * self.map_sectionsN.cm3_2ns,
-            exps_withq_2ns: self.map_offsets.q_2ns + Next * self.map_sectionsN.q_2ns,
-            exps_withoutq_2ns: self.map_offsets.exps_withq_2ns
-                + Next * self.map_sectionsN.exps_withq_2ns,
-            map_total_n: self.map_offsets.exps_withoutq_2ns
-                + Next * self.map_sectionsN.exps_withoutq_2ns,
-        };
+        self.map_offsets = Index::default();
+        self.map_offsets.cm1_n = 0;
+        self.map_offsets.cm2_n = self.map_offsets.cm1_n + N * self.map_sectionsN.cm1_n;
+        self.map_offsets.cm3_n = self.map_offsets.cm2_n + N * self.map_sectionsN.cm2_n;
+        self.map_offsets.exps_withq_n = self.map_offsets.cm3_n + N * self.map_sectionsN.cm3_n;
+        self.map_offsets.exps_withoutq_n =
+            self.map_offsets.exps_withq_n + N * self.map_sectionsN.exps_withq_n;
+        self.map_offsets.cm1_2ns =
+            self.map_offsets.exps_withoutq_n + N * self.map_sectionsN.exps_withoutq_n;
+        self.map_offsets.cm2_2ns = self.map_offsets.cm1_2ns + Next * self.map_sectionsN.cm1_2ns;
+        self.map_offsets.cm3_2ns = self.map_offsets.cm2_2ns + Next * self.map_sectionsN.cm2_2ns;
+        self.map_offsets.q_2ns = self.map_offsets.cm3_2ns + Next * self.map_sectionsN.cm3_2ns;
+        self.map_offsets.exps_withq_2ns = self.map_offsets.q_2ns + Next * self.map_sectionsN.q_2ns;
+        self.map_offsets.exps_withoutq_2ns =
+            self.map_offsets.exps_withq_2ns + Next * self.map_sectionsN.exps_withq_2ns;
+        self.map_offsets.map_total_n =
+            self.map_offsets.exps_withoutq_2ns + Next * self.map_sectionsN.exps_withoutq_2ns;
 
         self.map_deg = Index {
             cm1_n: N,
@@ -271,7 +272,6 @@ impl StarkInfo {
             exp_map: HashMap::new(),
             tmp_used: 0,
             ev_idx: EVIdx::new(),
-            //ev_map: Vec::new(),
             dom: "".to_string(),
             starkinfo: self,
         }; // FIXME?
@@ -408,131 +408,66 @@ impl StarkInfo {
             exp_map: HashMap::new(),
             tmp_used: segment.tmp_used,
             ev_idx: EVIdx::new(),
-            //ev_map: Vec::new(),
             dom: dom.to_string(),
             starkinfo: self,
         };
 
-        let fix_ref = |r: &mut Node, ctx: &mut ContextF, pil: &mut PIL| {
-            match r.type_.as_str() {
-                "cm" => {
+        let fix_ref = |r: &mut Node, ctx: &mut ContextF, pil: &mut PIL| match r.type_.as_str() {
+            "cm" => {
+                if ctx.dom.as_str() == "n" {
+                    r.p = ctx.starkinfo.cm_n[r.id];
+                } else if ctx.dom.as_str() == "2ns" {
+                    r.p = ctx.starkinfo.cm_2ns[r.id];
+                } else {
+                    panic!("Invalid domain {}", ctx.dom);
+                }
+            }
+
+            "q" => {
+                if ctx.dom.as_str() == "n" {
+                    panic!("Accession q in domain n");
+                } else if ctx.dom.as_str() == "2ns" {
+                    r.p = ctx.starkinfo.qs[r.id];
+                } else {
+                    panic!("Invalid domain {}", ctx.dom);
+                }
+            }
+
+            "exp" => {
+                if pil.expressions[r.id].idQ.is_some() {
                     if ctx.dom.as_str() == "n" {
-                        r.p = ctx.starkinfo.cm_n[r.id];
+                        r.p = ctx.starkinfo.exps_n[r.id];
                     } else if ctx.dom.as_str() == "2ns" {
-                        r.p = ctx.starkinfo.cm_2ns[r.id];
+                        r.p = ctx.starkinfo.exps_2ns[r.id];
                     } else {
                         panic!("Invalid domain {}", ctx.dom);
                     }
-                }
-
-                "q" => {
+                } else if pil.expressions[r.id].keep.is_some() && ctx.dom.as_str() == "n" {
+                    r.p = ctx.starkinfo.exps_n[r.id];
+                } else if pil.expressions[r.id].keep2ns.is_some() {
                     if ctx.dom.as_str() == "n" {
                         panic!("Accession q in domain n");
-                    } else if ctx.dom.as_str() == "2ns" {
-                        r.p = ctx.starkinfo.qs[r.id];
-                    } else {
-                        panic!("Invalid domain {}", ctx.dom);
                     }
-                }
-
-                "exp" => {
-                    if pil.expressions[r.id].idQ.is_some() {
-                        //FIXME ctx has no pil
-                        if ctx.dom.as_str() == "n" {
-                            r.p = ctx.starkinfo.exps_n[r.id];
-                        } else if ctx.dom.as_str() == "2ns" {
-                            r.p = ctx.starkinfo.exps_2ns[r.id];
-                        } else {
-                            panic!("Invalid domain {}", ctx.dom);
-                        }
-                    } else if pil.expressions[r.id].keep.is_some() && ctx.dom.as_str() == "n" {
-                        r.p = ctx.starkinfo.exps_n[r.id];
-                    } else if pil.expressions[r.id].keep2ns.is_some() {
-                        if ctx.dom.as_str() == "n" {
-                            panic!("Accession q in domain n");
-                        }
-                    } else {
-                        let p = if r.prime { 1 } else { 0 };
-                        if ctx.exp_map.get(&(p, r.id)).is_none() {
-                            ctx.exp_map.insert((p, r.id), ctx.tmp_used);
-                            ctx.tmp_used += 1;
-                        }
-                        r.type_ = "tmp".to_string();
-                        r.exp_id = r.id;
-                        r.id = *ctx.exp_map.get(&(p, r.id)).unwrap();
+                } else {
+                    let p = if r.prime { 1 } else { 0 };
+                    if ctx.exp_map.get(&(p, r.id)).is_none() {
+                        ctx.exp_map.insert((p, r.id), ctx.tmp_used);
+                        ctx.tmp_used += 1;
                     }
+                    r.type_ = "tmp".to_string();
+                    r.exp_id = r.id;
+                    r.id = *ctx.exp_map.get(&(p, r.id)).unwrap();
                 }
-                "const" | "number" | "challenge" | "public" | "tmp" | "Zi" | "xDivXSubXi"
-                | "xDivXSubWXi" | "eval" | "x" => {}
-                _ => {
-                    panic!("Invalid reference type {}", r.type_);
-                }
+            }
+            "const" | "number" | "challenge" | "public" | "tmp" | "Zi" | "xDivXSubXi"
+            | "xDivXSubWXi" | "eval" | "x" => {}
+            _ => {
+                panic!("Invalid reference type {}", r.type_);
             }
         };
 
         iterate_code(segment, fix_ref, &mut ctx_f, pil);
         segment.tmp_used = ctx_f.tmp_used;
-    }
-
-    //FIXME: use it as Index's method
-    fn set_section_field(name: &str, sec: &mut Index, value: usize) {
-        match name {
-            "cm1_n" => {
-                sec.cm1_n = value;
-            }
-            "cm1_2ns" => {
-                sec.cm1_2ns = value;
-            }
-            "cm2_n" => {
-                sec.cm2_n = value;
-            }
-            "cm2_2ns" => {
-                sec.cm2_2ns = value;
-            }
-            "cm3_n" => {
-                sec.cm3_n = value;
-            }
-            "cm3_2ns" => {
-                sec.cm3_2ns = value;
-            }
-            "q_2ns" => {
-                sec.q_2ns = value;
-            }
-            "exps_withq_n" => {
-                sec.exps_withq_2ns = value;
-            }
-            "exps_withq_2ns" => {
-                sec.exps_withq_2ns = value;
-            }
-            "exps_withoutq_n" => {
-                sec.exps_withoutq_n = value;
-            }
-            "exps_withoutq_2ns" => {
-                sec.exps_withoutq_2ns = value;
-            }
-            _ => {
-                panic!("invalid domain {}", name);
-            }
-        }
-    }
-
-    fn get_section_field(name: &str, sec: &mut Index) -> usize {
-        match name {
-            "cm1_n" => sec.cm1_n,
-            "cm1_2ns" => sec.cm1_2ns,
-            "cm2_n" => sec.cm2_n,
-            "cm2_2ns" => sec.cm2_2ns,
-            "cm3_n" => sec.cm3_n,
-            "cm3_2ns" => sec.cm3_2ns,
-            "q_2ns" => sec.q_2ns,
-            "exps_withq_n" => sec.exps_withq_2ns,
-            "exps_withq_2ns" => sec.exps_withq_2ns,
-            "exps_withoutq_n" => sec.exps_withoutq_n,
-            "exps_withoutq_2ns" => sec.exps_withoutq_2ns,
-            _ => {
-                panic!("invalid domain {}", name);
-            }
-        }
     }
 
     fn map_section(&mut self) -> Result<()> {
@@ -554,22 +489,20 @@ impl StarkInfo {
             let mut p = 0;
             for e in 1..=3 {
                 for pp in self.var_pol_map.iter_mut() {
-                    if &pp.section.as_str() == s && pp.dim == e {
+                    if pp.section.as_str() == *s && pp.dim == e {
                         pp.section_pos = p;
                         p += e;
                     }
                 }
                 if e == 1 {
-                    Self::set_section_field(s, &mut self.map_sectionsN1, p);
+                    self.map_sectionsN1.set(s, p);
                 }
                 if e == 3 {
-                    Self::set_section_field(s, &mut self.map_sectionsN, p);
+                    self.map_sectionsN.set(s, p);
                 }
             }
-            let t = (Self::get_section_field(s, &mut self.map_sectionsN)
-                - Self::get_section_field(s, &mut self.map_sectionsN1))
-                / 3;
-            Self::set_section_field(s, &mut self.map_sectionsN3, t);
+            let t = (self.map_sectionsN.get(s) - self.map_sectionsN1.get(s)) / 3;
+            self.map_sectionsN3.set(s, t);
         }
         Ok(())
     }

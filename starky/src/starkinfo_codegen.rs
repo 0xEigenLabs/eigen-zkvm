@@ -5,7 +5,9 @@ use crate::f3g::F3G;
 use crate::starkinfo::StarkInfo;
 use crate::types::Expression;
 use crate::types::PIL;
+use serde::Serialize;
 use std::collections::HashMap;
+use std::fmt;
 
 #[derive(Debug)]
 pub struct Calculated {
@@ -39,7 +41,7 @@ pub struct ContextF<'a> {
     pub starkinfo: &'a mut StarkInfo,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize)]
 pub struct Node {
     pub type_: String,
     pub id: usize,
@@ -73,19 +75,26 @@ impl Node {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize)]
 pub struct Section {
     pub op: String,
     pub dest: Node,
     pub src: Vec<Node>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct Segment {
     pub first: Vec<Section>,
     pub i: Vec<Section>,
     pub last: Vec<Section>,
     pub tmp_used: usize,
+}
+
+impl fmt::Display for Segment {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let obj = json!(self);
+        write!(f, "{}", serde_json::to_string_pretty(&obj).unwrap())
+    }
 }
 
 impl Segment {
@@ -112,7 +121,7 @@ pub struct Code {
     pub idQ: Option<usize>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct IndexVec {
     pub cm1_n: Vec<usize>,
     pub cm1_2ns: Vec<usize>,
@@ -127,7 +136,7 @@ pub struct IndexVec {
     pub exps_withoutq_2ns: Vec<usize>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct Index {
     pub cm1_n: usize,
     pub cm1_2ns: usize,
@@ -205,7 +214,7 @@ impl Index {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct PolType {
     pub section: String,
     pub section_pos: usize,
@@ -271,7 +280,7 @@ pub fn pil_code_gen(
     prime: bool,
     mode: &str,
 ) -> Result<()> {
-    println!("pil_code_gen: {} {}, {:?}", exp_id, prime, mode);
+    //println!("pil_code_gen: {} {}, {:?}", exp_id, prime, mode);
     if mode == "evalQ" && prime {
         pil_code_gen(ctx, pil, exp_id, false, mode)?;
         let exp_in = &pil.expressions[exp_id];
@@ -393,7 +402,7 @@ pub fn eval_exp(
     exp: &Expression,
     prime: bool,
 ) -> Result<Node> {
-    println!("eval, expression {:?}", exp);
+    //println!("eval, expression {:?}", exp);
     if ExpressionOps::is_nop(exp) {
         panic!("exp: {:?}", exp);
     }

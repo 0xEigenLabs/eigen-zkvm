@@ -16,7 +16,6 @@ impl StarkInfo {
         let mut c_exp = E::nop();
         for pi in pil.polIdentities.iter() {
             let e = E::exp(pi.e, None);
-
             if E::is_nop(&c_exp) {
                 c_exp = e;
             } else {
@@ -26,7 +25,10 @@ impl StarkInfo {
 
         c_exp.idQ = Some(pil.nQ);
         pil.nQ += 1;
-
+        //println!(
+        //    "generate_constraint_polynomial: c_exp: {}, pil.nQ: {:?}",
+        //    c_exp, pil.nQ
+        //);
         self.c_exp = pil.expressions.len();
 
         if E::is_nop(&c_exp) {
@@ -34,12 +36,12 @@ impl StarkInfo {
         }
         pil.expressions.push(c_exp);
         println!(
-            "expressions[3] {:?}",
-            serde_json::to_string(&pil.expressions[3])
+            "expressions[3] {}, \nlast: {}",
+            pil.expressions[3],
+            pil.expressions[pil.expressions.len() - 1]
         );
 
         for i in 0..pil.expressions.len() {
-            println!("expressions {:?} {:?}", i, pil.expressions.len());
             if pil.expressions[i].idQ.is_some() {
                 pil_code_gen(ctx, pil, i, false, "")?;
                 pil_code_gen(ctx2ns, pil, i, false, "evalQ")?;
@@ -48,6 +50,10 @@ impl StarkInfo {
 
         program.step4 = build_code(ctx, pil);
         program.step42ns = build_code(ctx2ns, pil);
+        //println!(
+        //    "generate_constraint_polynomial: step4: {:?}, step42ns: {:?}",
+        //    program.step4, program.step42ns
+        //);
         Ok(())
     }
 }

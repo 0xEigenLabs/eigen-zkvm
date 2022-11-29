@@ -13,7 +13,6 @@ mod digest_bn128;
 pub use digest_bn128::ElementDigest;
 
 mod constant;
-mod traits;
 
 mod expressionops;
 mod f3g;
@@ -32,6 +31,9 @@ mod starkinfo_fri_prover;
 mod starkinfo_fri_ver;
 mod starkinfo_map;
 mod transcript_bn128;
+
+#[macro_use]
+extern crate serde_json;
 
 #[macro_use]
 extern crate ff;

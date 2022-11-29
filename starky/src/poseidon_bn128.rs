@@ -1,6 +1,5 @@
 #![allow(clippy::derive_hash_xor_eq, clippy::too_many_arguments)]
 use crate::poseidon_bn128_constants as constants;
-use crate::traits::FieldMapping;
 use ff::*;
 
 use crate::ElementDigest;

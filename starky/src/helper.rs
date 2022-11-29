@@ -1,6 +1,9 @@
 use crate::poseidon_bn128::Fr;
 use ff::*;
+use num_bigint::BigUint;
+use num_traits::{Num, ToPrimitive};
 use std::ops::Mul;
+use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
 ///exports.getKs = function getKs(Fr, n) {
 ///    const ks = [Fr.k];
@@ -9,13 +12,6 @@ use std::ops::Mul;
 ///    }
 ///    return ks;
 ///}
-use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
-
-use num_bigint::BigUint;
-use num_traits::Num;
-use num_traits::ToPrimitive;
-
 pub fn get_ks(n: usize) -> Vec<BaseElement> {
     let mut ks: Vec<BaseElement> = vec![BaseElement::ZERO; n];
     ks[0] = BaseElement::from(12275445934081160404u64);
@@ -42,4 +38,43 @@ pub fn biguint_to_be(f: &BigUint) -> BaseElement {
 
 pub fn biguint_to_fr(f: &BigUint) -> Fr {
     Fr::from_str(&f.to_string()).unwrap()
+}
+
+pub fn pretty_print_matrix<T: FieldElement + StarkField>(cols: &Vec<Vec<T>>) {
+    println!("matrix: cols {}, rows: {}", cols.len(), cols[0].len());
+    let mut iglines = 2;
+    let width = 10;
+    for i in 0..cols[0].len() {
+        print!("\t rows[{:?}]: {:?},", i, cols[0][i].as_int());
+        if cols.len() > 2 {
+            print!("{:?},", cols[1][i].as_int());
+            print!("{:?},", cols[2][i].as_int());
+            iglines += 2;
+        }
+        if iglines < cols.len() {
+            print!(" .{:?}s. ", cols.len() - iglines);
+        }
+        if cols.len() > 2 {
+            print!("{:#?}", cols[cols[i].len() - 2][i].as_int());
+        }
+        println!("{:#?}.", cols[cols.len() - 1][i].as_int());
+    }
+}
+
+pub fn pretty_print_array<T: FieldElement + StarkField>(cols: &Vec<T>) {
+    println!("array size: {}", cols.len());
+    let mut iglines = 2;
+    print!("\t [ {:?},", cols[0].as_int());
+    if cols.len() > 2 {
+        print!("{:#?},", cols[1].as_int());
+        print!("{:#?},", cols[2].as_int());
+        iglines += 2;
+    }
+    if iglines < cols.len() {
+        print!(" .{:?}s. ", cols.len() - iglines);
+    }
+    if cols.len() > 2 {
+        print!("{:?}", cols[cols.len() - 2].as_int());
+    }
+    println!("{:?}].", cols[cols.len() - 1].as_int());
 }

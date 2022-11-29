@@ -10,7 +10,6 @@ use crate::merklehash_bn128::MerkleTree;
 use crate::polsarray::PolsArray;
 use crate::poseidon_bn128::Fr;
 use crate::stark_setup::interpolate_in_pil;
-use crate::stark_setup::StarkSetup;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{Polynom, Segment};
 use crate::transcript_bn128::TranscriptBN128;

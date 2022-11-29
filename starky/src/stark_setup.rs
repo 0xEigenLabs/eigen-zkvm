@@ -54,7 +54,7 @@ pub fn interpolate_in_pil(
 }
 
 #[derive(Default)]
-pub struct StarkSetup {
+pub struct StarkSetupResp {
     pub const_tree: MerkleTree,
     pub const_root: ElementDigest,
     pub starkinfo: StarkInfo,
@@ -67,17 +67,11 @@ pub fn stark_setup_new(
     const_pol: &PolsArray,
     pil: &mut PIL,
     stark_struct: &StarkStruct,
-) -> Result<StarkSetup> {
+) -> Result<StarkSetupResp> {
     let nBits = stark_struct.nBits;
     let nBitsExt = stark_struct.nBitsExt;
 
     let mut p: Vec<Vec<BaseElement>> = vec![Vec::new(); const_pol.nPols];
-    /*
-    println!(
-        "nPols {} n {}, {:?}",
-        const_pol.nPols, const_pol.n, const_pol.array
-    );
-    */
     for i in 0..const_pol.nPols {
         for j in 0..const_pol.n {
             p[i].push(const_pol.array[i][j])
@@ -86,10 +80,10 @@ pub fn stark_setup_new(
 
     //extend and merkelize
     let m = interpolate_in_pil(&p, 1 << (nBitsExt - nBits));
-    let const_tree = MerkleTree::merkelize(m, const_pol.n << (nBitsExt - nBits), const_pol.nPols)?;
+    let const_tree = MerkleTree::merkelize(m, const_pol.nPols, const_pol.n << (nBitsExt - nBits))?;
 
     let starkinfo = starkinfo::StarkInfo::new(pil, stark_struct)?;
-    Ok(StarkSetup {
+    Ok(StarkSetupResp {
         const_root: const_tree.root(),
         const_tree: const_tree,
         starkinfo: starkinfo,
@@ -107,6 +101,8 @@ pub mod tests {
     };
 
     use super::interpolate_in_pil;
+    use crate::poseidon_bn128::Fr;
+    use ff::*;
 
     #[test]
     fn test_interpolate() {
@@ -138,6 +134,12 @@ pub mod tests {
         const_pol.load("data/fib.const.2").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
-        stark_setup_new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let setup = stark_setup_new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let root: Fr = setup.const_root.into();
+
+        let expect_root =
+            "4658128321472362347225942316135505030498162093259225938328465623672244875764";
+        assert_eq!(Fr::from_str(expect_root).unwrap(), root);
+        //crate::helper::pretty_print_matrix(&setup.const_tree.elements);
     }
 }

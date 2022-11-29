@@ -3,6 +3,7 @@ use crate::helper::fr_to_biguint;
 use crate::poseidon_bn128::Fr;
 use core::slice;
 use ff::*;
+use std::fmt::Display;
 use winter_crypto::Digest;
 use winter_math::StarkField;
 use winter_math::{fields::f64::BaseElement, FieldElement};
@@ -11,8 +12,6 @@ use winter_utils::{ByteReader, ByteWriter, Deserializable, DeserializationError,
 use num_bigint::BigUint;
 use num_traits::Num;
 use num_traits::ToPrimitive;
-
-//use std::ops::{AddAssign, MulAssign};
 
 const DIGEST_SIZE: usize = 4;
 
@@ -29,10 +28,23 @@ impl ElementDigest {
         &self.0
     }
 
-    pub fn digests_as_elements(digests: &[Self]) -> &[BaseElement] {
+    pub fn _digests_as_elements(digests: &[Self]) -> &[BaseElement] {
         let p = digests.as_ptr();
         let len = digests.len() * DIGEST_SIZE;
         unsafe { slice::from_raw_parts(p as *const BaseElement, len) }
+    }
+}
+
+impl Display for ElementDigest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "[{} {} {} {}]",
+            self.0[0].as_int(),
+            self.0[1].as_int(),
+            self.0[2].as_int(),
+            self.0[3].as_int()
+        )
     }
 }
 
@@ -60,8 +72,8 @@ impl Into<Fr> for ElementDigest {
     }
 }
 
-impl crate::traits::FieldMapping for ElementDigest {
-    fn to_BN128(e: &[BaseElement; 4]) -> Fr {
+impl ElementDigest {
+    pub fn to_BN128(e: &[BaseElement; 4]) -> Fr {
         let mut result = BigUint::from(e[0].as_int());
 
         let mut added = BigUint::from(e[1].as_int());
@@ -79,40 +91,7 @@ impl crate::traits::FieldMapping for ElementDigest {
         Fr::from_str(&result.to_string()).unwrap()
     }
 
-    /// by js:
-    /// const r = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
-    /// const n64 = Math.floor((bitLength(r - 1n) - 1)/64) +1;
-    /// const f1size = n64*8;
-    /// return BigInt(a) * ( 1n << BigInt(f1size*8)) % r;
-    fn to_montgomery(e: &Fr) -> Fr {
-        // opt: precompute
-        let _2_256 = BigUint::from(1u32) << 256;
-        let se = to_hex(e);
-        let se = se.trim_end_matches('0');
-        let ee: BigUint = match se.len() {
-            0 => BigUint::from(0u32),
-            _ => BigUint::from_str_radix(&se, 16).unwrap(),
-        };
-
-        let r = BigUint::from_str_radix(
-            "21888242871839275222246405745257275088548364400416034343698204186575808495617",
-            10,
-        )
-        .unwrap();
-
-        let ee: BigUint = (&_2_256 * ee) % r;
-        Fr::from_str(&ee.to_string()).unwrap()
-    }
-
     fn to_GL(f: &Fr) -> [BaseElement; 4] {
-        /*
-        let se = to_hex(f);
-        let se = se.trim_end_matches('0');
-        let mut f: BigUint = match se.len() {
-            0 => BigUint::from(0u32),
-            _ => BigUint::from_str_radix(&se, 16).unwrap(),
-        };
-        */
         let mut f = fr_to_biguint(f);
 
         let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();
@@ -187,7 +166,6 @@ impl From<ElementDigest> for [u8; 32] {
 pub mod tests {
     use crate::digest_bn128::ElementDigest;
     use crate::poseidon_bn128::Fr;
-    use crate::traits::FieldMapping;
     use ff::PrimeField;
     use rand_utils::rand_vector;
     use winter_math::fields::f64::BaseElement;
@@ -220,7 +198,7 @@ pub mod tests {
         let f1: Fr = ElementDigest::to_BN128(&b4[..].try_into().unwrap());
 
         // to Montgomery
-        let f1 = ElementDigest::to_montgomery(&f1);
+        let f1 = Fr::from_repr(f1.into_raw_repr()).unwrap();
 
         let e1 = ElementDigest::to_GL(&f1);
         let expected: [BaseElement; 4] = vec![
