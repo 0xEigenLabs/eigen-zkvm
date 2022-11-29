@@ -21,8 +21,8 @@ pub struct MerkleTree {
 impl MerkleTree {
     pub fn write_buff(&self) -> Vec<F3G> {
         let mut buff: Vec<F3G> = vec![];
-        for i in 0..self.width {
-            for j in 0..self.height {
+        for j in 0..self.height {
+            for i in 0..self.width {
                 buff.push(F3G::from(self.elements[j][i]));
             }
         }

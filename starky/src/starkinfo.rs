@@ -100,7 +100,7 @@ impl fmt::Display for StarkInfo {
 }
 
 impl StarkInfo {
-    pub fn new(pil: &mut PIL, stark_struct: &StarkStruct) -> Result<StarkInfo> {
+    pub fn new(pil: &mut PIL, stark_struct: &StarkStruct) -> Result<(StarkInfo, Program)> {
         let pil_deg = pil.references.values().nth(0).unwrap().polDeg;
 
         let stark_deg = 2usize.pow(stark_struct.nBits as u32);
@@ -248,7 +248,7 @@ impl StarkInfo {
 
         info.publics = pil.publics.clone();
 
-        Ok(info)
+        Ok((info, program))
     }
 
     pub fn generate_pubulic_calculators(
