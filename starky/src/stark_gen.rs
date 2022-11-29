@@ -438,7 +438,7 @@ impl<'a> StarkProof {
         for i in 0..nBits {
             sn = sn * sn;
         }
-        let mut ZHInv = vec![];
+        let mut ZHInv = vec![F3G::ZERO; (1<<extendBits)];
         for i in 0..(1 << extendBits) {
             ZHInv[i] = -(sn * w - F3G::ONE);
             w = w * W.0[extendBits];
@@ -653,6 +653,11 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
 pub mod tests {
     use crate::constant::SHIFT;
     use crate::f3g::F3G;
+    use crate::polsarray::{PolKind, PolsArray};
+    use crate::stark_gen::StarkProof;
+    use crate::stark_setup::StarkSetup;
+    use crate::types::load_json;
+    use crate::types::{StarkStruct, PIL};
     use winter_math::{fft, fields::f64::BaseElement};
     use winter_math::{FieldElement, StarkField};
 
@@ -675,54 +680,26 @@ pub mod tests {
         assert_eq!(expected, points);
     }
     #[test]
-    fn test_F_w() {
-        let N = 1024;
-        let nbits = 10;
-        let challenges = F3G::new(
-            BaseElement::from(405541716203249735u64),
-            BaseElement::from(16789828314235517595u64),
-            BaseElement::from(3073014978386239810u64),
-        );
+    fn test_stark_gen() {
+        let mut pil = load_json::<PIL>("data/fib.pil.json.2").unwrap();
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant, 32);
+        const_pol.load("data/fib.const.2").unwrap();
 
-        // get root
-        let root = BaseElement::get_root_of_unity(32);
-        println!("root {:?}", root.as_int());
+        let mut cm_pol = PolsArray::new(&pil, PolKind::Commit, 32);
+        cm_pol.load("data/fib.cm.2");
 
-        //let inv_twiddles = winter_math::get_power_series(root, (s/2) );
-        let inv_twiddles: Vec<BaseElement> = fft::get_inv_twiddles(2usize.pow(5));
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
+        let setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
 
-        inv_twiddles
-            .iter()
-            .map(|e| {
-                println!("inv_twiddles: {:?}", e.as_int());
-                0
-            })
-            .collect::<Vec<i32>>();
-
-        let mut LEv = vec![F3G::ZERO; N];
-        let mut LpEv = vec![F3G::ZERO; N];
-        LEv[0] = F3G::from(BaseElement::from(1u64));
-        LpEv[0] = F3G::from(BaseElement::from(1u64));
-        let inv_twiddles = fft::get_inv_twiddles::<BaseElement>(2usize.pow(15));
-        //inv_twiddles.iter().map(|e| {println!("{:?}", e.as_int()); 0}).collect::<Vec<i32>>();
-
-        let inv_twiddles: Vec<F3G> = fft::get_inv_twiddles::<BaseElement>(N)
-            .iter()
-            .map(|e| F3G::from(*e))
-            .collect();
-        let xis = challenges / SHIFT.clone();
-        let wxis = challenges * inv_twiddles[nbits] / SHIFT.clone();
-
-        for i in 1..N {
-            LEv[i] = LEv[i - 1] * xis;
-            LpEv[i] = LpEv[i - 1] * wxis;
-        }
-
-        LEv.iter()
-            .map(|e| {
-                //    println!("lEV: {:?}", e);
-                0
-            })
-            .collect::<Vec<i32>>();
+        let starkproof = StarkProof::stark_gen(
+            &cm_pol,
+            &const_pol,
+            &setup.const_tree,
+            &setup.starkinfo,
+            &setup.program,
+            &pil,
+            &stark_struct,
+        )
+        .unwrap();
     }
 }

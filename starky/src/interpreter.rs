@@ -305,7 +305,8 @@ pub fn compile_code(
     for i in 0..code.len() {
         let mut src: Vec<Expr> = Vec::new();
         for j in 0..code[i].src.len() {
-            src[j] = get_ref(ctx, starkinfo, &code[i].src[j], &dom, &next, &N);
+            //src[j] = get_ref(ctx, starkinfo, &code[i].src[j], &dom, &next, &N);
+            src.push(get_ref(ctx, starkinfo, &code[i].src[j], &dom, &next, &N));
         }
 
         let exp = match (&code[i].op).as_str() {
