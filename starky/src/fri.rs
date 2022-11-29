@@ -305,15 +305,6 @@ fn getTransposedBuffer(pol: &Vec<F3G>, trasposeBits: usize) -> Vec<Vec<BaseEleme
             res[j][di + 2] = pb[2];
         }
     }
-
-    /*
-    for i in 0..n_pols {
-        columns[i] = vec![BaseElement::ZERO; n];
-        for j in 0..n {
-            columns[i][j] = p[i * n_pols + j].to_be();
-        }
-    }
-    */
     res
 }
 

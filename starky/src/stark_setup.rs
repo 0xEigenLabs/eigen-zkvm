@@ -140,6 +140,6 @@ pub mod tests {
         let expect_root =
             "4658128321472362347225942316135505030498162093259225938328465623672244875764";
         assert_eq!(Fr::from_str(expect_root).unwrap(), root);
-        crate::helper::pretty_print_matrix(&setup.const_tree.elements);
+        //crate::helper::pretty_print_matrix(&setup.const_tree.elements);
     }
 }
