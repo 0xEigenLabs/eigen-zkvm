@@ -41,6 +41,9 @@ pub fn biguint_to_fr(f: &BigUint) -> Fr {
 }
 
 pub fn pretty_print_matrix<T: FieldElement + StarkField>(cols: &Vec<Vec<T>>) {
+    if cols.len() == 0 {
+        return;
+    }
     println!("matrix: cols {}, rows: {}", cols.len(), cols[0].len());
     let mut iglines = 2;
     let width = 10;

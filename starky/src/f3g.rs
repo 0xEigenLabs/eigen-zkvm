@@ -20,7 +20,7 @@ use core::fmt::{Display, Formatter};
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 pub struct F3G {
     cube: CubeExtension<BaseElement>,
-    dim: i32,
+    pub dim: i32,
 }
 
 impl Hash for F3G {
@@ -592,7 +592,7 @@ impl StarkField for F3G {
         if self.dim == 1 {
             self.to_be().as_int()
         } else {
-            panic!("Invalid as int");
+            panic!("Invalid as int: {:?}", *self);
         }
     }
 }

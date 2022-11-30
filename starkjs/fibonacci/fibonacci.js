@@ -38,7 +38,7 @@ const argv = require("yargs")
 const starkStruct = {
   nBits: 5,
   nBitsExt: 6,
-  nQueries: 1,
+  nQueries: 10,
   verificationHashType: "BN128",
   steps: [
     {nBits: 6},

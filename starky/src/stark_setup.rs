@@ -11,6 +11,9 @@ use winter_math::{fft, fields::f64::BaseElement, polynom, FieldElement, StarkFie
 use winter_utils::{iter, transpose_slice};
 
 pub fn interpolate_columns(columns: &Vec<Vec<BaseElement>>) -> Vec<Vec<BaseElement>> {
+    if columns.len() == 0 {
+        return vec![];
+    }
     let width = columns[0].len();
     let inv_twiddles = fft::get_inv_twiddles::<BaseElement>(width);
     let columns = iter!(columns)
@@ -28,6 +31,9 @@ pub fn evaluate_columns_over(
     offset: BaseElement,
     blowup_factor: usize,
 ) -> Vec<Vec<BaseElement>> {
+    if columns.len() == 0 {
+        return vec![];
+    }
     let width = columns[0].len();
     let twiddles = fft::get_twiddles::<BaseElement>(width);
     let columns = iter!(columns)

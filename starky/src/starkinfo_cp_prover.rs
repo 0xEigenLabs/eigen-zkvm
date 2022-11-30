@@ -35,11 +35,6 @@ impl StarkInfo {
             panic!("nop {:?}", format!("{:?}", c_exp));
         }
         pil.expressions.push(c_exp);
-        println!(
-            "expressions[3] {}, \nlast: {}",
-            pil.expressions[3],
-            pil.expressions[pil.expressions.len() - 1]
-        );
 
         for i in 0..pil.expressions.len() {
             if pil.expressions[i].idQ.is_some() {

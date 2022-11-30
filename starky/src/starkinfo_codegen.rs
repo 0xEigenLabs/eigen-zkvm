@@ -49,7 +49,7 @@ pub struct Node {
     pub dim: usize,
     pub prime: bool,
     pub tree_pos: usize,
-    pub p: usize,
+    pub p: usize, // position
     pub exp_id: usize,
 }
 

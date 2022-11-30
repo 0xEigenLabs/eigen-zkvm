@@ -206,6 +206,7 @@ impl PolsArray {
         let mut buff: Vec<F3G> = vec![];
         for i in 0..self.n {
             for j in 0..self.nPols {
+                //println!("write_buff {} {}", buff.len(), self.array[j][i]);
                 buff.push(F3G::from(self.array[j][i]));
             }
         }

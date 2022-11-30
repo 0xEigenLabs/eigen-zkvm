@@ -21,8 +21,9 @@ pub struct MerkleTree {
 impl MerkleTree {
     pub fn write_buff(&self) -> Vec<F3G> {
         let mut buff: Vec<F3G> = vec![];
-        for j in 0..self.height {
-            for i in 0..self.width {
+        for i in 0..self.height {
+            for j in 0..self.width {
+                //println!("const_2ns: {} {}", buff.len(), self.elements[j][i]);
                 buff.push(F3G::from(self.elements[j][i]));
             }
         }
@@ -68,7 +69,10 @@ impl MerkleTree {
         let max_workers = get_max_workers();
 
         let mut n_per_thread_f = (height - 1) / max_workers + 1;
-        let min_pt = MIN_OPS_PER_THREAD / ((width - 1) / (3 * 16) + 1);
+        let mut min_pt = 0;
+        if width > 1 {
+            min_pt = MIN_OPS_PER_THREAD / ((width - 1) / (3 * 16) + 1);
+        }
         if n_per_thread_f < min_pt {
             n_per_thread_f = min_pt;
         }

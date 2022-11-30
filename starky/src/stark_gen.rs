@@ -67,7 +67,7 @@ impl Default for StarkContext {
             nbits_ext: 0,
             N: 0,
             Next: 0,
-            challenges: Vec::new(),
+            challenges: vec![F3G::ZERO; 8],
             tmp: Vec::new(),
             cm1_n: Vec::new(),
             cm2_n: Vec::new(),
@@ -210,6 +210,7 @@ impl<'a> StarkProof {
         let tree1 = extend_and_merkelize(&mut ctx, starkinfo, "cm1_n").unwrap();
         ctx.cm1_2ns = to_array(&tree1.elements);
         let root: Fr = tree1.root().into();
+        println!("tree1 root: {:?}", root);
         transcript.put(&vec![root])?;
 
         ///////////
@@ -217,6 +218,9 @@ impl<'a> StarkProof {
         ///////////
         ctx.challenges[0] = transcript.get_field(); //u
         ctx.challenges[1] = transcript.get_field(); //defVal
+
+        println!("challenges[0] {:?}", ctx.challenges[0]);
+        println!("challenges[1] {:?}", ctx.challenges[1]);
 
         //TODO parallel execution
         calculate_exps(&mut ctx, starkinfo, &program.step2prev, "2ns");
@@ -428,7 +432,9 @@ impl<'a> StarkProof {
     ) -> F3G {
         ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
-        t.eval(ctx, idx)
+        let res = t.eval(ctx, idx);
+        println!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
+        res
     }
 
     pub fn build_Zh_Inv(nBits: usize, extendBits: usize) -> Box<dyn Fn(usize) -> F3G + 'static> {
@@ -547,13 +553,18 @@ pub fn extend_and_merkelize(
 ) -> Result<MerkleTree> {
     let nBitsExt = ctx.nbits_ext;
     let nBits = ctx.nbits;
-    let n_pols = starkinfo.map_sectionsN.get(section_name);
     let columns = to_matrix(ctx, starkinfo, section_name);
-    let n = columns[0].len();
-
+    let mut n = 1 << nBits;
+    let n_pols = columns.len();
+    if n_pols != 0 {
+        n = columns[0].len();
+    }
+    println!("raw:");
+    crate::helper::pretty_print_matrix(&columns);
     let m = interpolate_in_pil(&columns, 1 << (nBitsExt - nBits));
-
-    Ok(MerkleTree::merkelize(m, n << (nBitsExt - nBits), n_pols)?)
+    println!("interpolate:");
+    crate::helper::pretty_print_matrix(&m);
+    Ok(MerkleTree::merkelize(m, n_pols, n << (nBitsExt - nBits))?)
 }
 
 pub fn extend(
@@ -563,7 +574,6 @@ pub fn extend(
 ) -> Result<Vec<F3G>> {
     let nBitsExt = ctx.nbits_ext;
     let nBits = ctx.nbits;
-    let n_pols = starkinfo.map_sectionsN.get(section_name);
     let columns = to_matrix(ctx, starkinfo, section_name);
     let n = columns[0].len();
 
@@ -589,26 +599,41 @@ pub fn merkelize(
     )?)
 }
 
+//FIXME use matrix, not array for cm1***
 fn to_matrix(
     ctx: &mut StarkContext,
     starkinfo: &StarkInfo,
     section_name: &'static str,
 ) -> Vec<Vec<BaseElement>> {
+    println!("section_name: {}", section_name);
     let n_pols = starkinfo.map_sectionsN.get(section_name);
+    if n_pols == 0 {
+        return vec![];
+    }
     let p = ctx.get_mut(section_name);
-    let n = p.len() / n_pols; // width
+    let n = p.len() / n_pols;
+    println!(
+        "ppp: size {}, h {}, w {}, section {}",
+        p.len(),
+        n,
+        n_pols,
+        section_name
+    );
     let mut columns: Vec<Vec<BaseElement>> = vec![Vec::new(); n_pols];
 
     for i in 0..n_pols {
         columns[i] = vec![BaseElement::ZERO; n];
         for j in 0..n {
-            columns[i][j] = p[i * n_pols + j].to_be();
+            columns[i][j] = p[j * n_pols + i].to_be();
         }
     }
     columns
 }
 
 fn to_array(columns: &Vec<Vec<BaseElement>>) -> Vec<F3G> {
+    if columns.len() == 0 {
+        return vec![];
+    }
     let mut res = vec![F3G::ZERO; columns.len() * columns[0].len()];
     let n_pols = columns.len();
     let n = columns[0].len();
@@ -623,9 +648,9 @@ fn to_array(columns: &Vec<Vec<BaseElement>>) -> Vec<F3G> {
 pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
 
-    let cFirst = compile_code(ctx, starkinfo, &seg.first, "n", true);
-    let cI = compile_code(ctx, starkinfo, &seg.first, "n", true);
-    let cLast = compile_code(ctx, starkinfo, &seg.first, "n", true);
+    let cFirst = compile_code(ctx, starkinfo, &seg.first, "n", false);
+    let cI = compile_code(ctx, starkinfo, &seg.first, "n", false);
+    let cLast = compile_code(ctx, starkinfo, &seg.first, "n", false);
 
     let next = if dom == "n" {
         1
@@ -688,7 +713,7 @@ pub mod tests {
         const_pol.load("data/fib.const.2").unwrap();
 
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit, 32);
-        cm_pol.load("data/fib.cm.2");
+        cm_pol.load("data/fib.cm.2").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
         let setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();

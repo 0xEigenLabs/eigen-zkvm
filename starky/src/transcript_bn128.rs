@@ -37,6 +37,11 @@ impl TranscriptBN128 {
     }
 
     pub fn get_fields1(&mut self) -> Result<BaseElement> {
+        print!("out3 ");
+        for i in 0..self.out3.len() {
+            print!("{},", self.out3[i]);
+        }
+        println!("");
         if self.out3.len() > 0 {
             return Ok(self.out3.pop_front().unwrap());
         }
@@ -44,10 +49,11 @@ impl TranscriptBN128 {
         if self.out.len() > 0 {
             let v = self.out.pop_front().unwrap();
             let bv = fr_to_biguint(&v);
+            println!("v {}", bv);
             let mask = BigUint::from(0xFFFFFFFFFFFFFFFFu128);
-            self.out3[0] = biguint_to_be(&(&bv & &mask));
-            self.out3[1] = biguint_to_be(&((&bv >> 64) & &mask));
-            self.out3[2] = biguint_to_be(&((&bv >> 128) & &mask));
+            self.out3.push_back(biguint_to_be(&(&bv & &mask)));
+            self.out3.push_back(biguint_to_be(&((&bv >> 64) & &mask))); //FIXME: optimization
+            self.out3.push_back(biguint_to_be(&((&bv >> 128) & &mask)));
             return self.get_fields1();
         }
         self.update_state()?;
@@ -58,11 +64,11 @@ impl TranscriptBN128 {
         while self.pending.len() < 16 {
             self.pending.push(Fr::zero());
         }
-
         self.out = VecDeque::from(self.poseidon.hash_ex(&self.pending, &self.state, 17)?);
         self.out3 = VecDeque::new();
         self.pending = vec![];
         self.state = self.out[0];
+        println!("state: {}", fr_to_biguint(&self.state));
         Ok(())
     }
 
@@ -75,6 +81,7 @@ impl TranscriptBN128 {
 
     fn add_1(&mut self, e: &Fr) -> Result<()> {
         self.out = VecDeque::new();
+        println!("add_1 to pending: {:?}", fr_to_biguint(e));
         self.pending.push(e.clone());
         if self.pending.len() == 16 {
             self.update_state()?;
