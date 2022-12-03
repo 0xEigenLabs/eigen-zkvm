@@ -418,9 +418,8 @@ mod tests {
         let nPols = 5;
 
         let n = 1 << nBits;
-        let mut buff = vec![F3G::ZERO; (n*nPols)];
-        let mut buffOut = vec![F3G::ZERO; (n*nPols)];
-
+        let mut buff = vec![F3G::ZERO; (n * nPols)];
+        let mut buffOut = vec![F3G::ZERO; (n * nPols)];
 
         println!("Initializing...");
         let mut pols = vec![vec![]; nPols];
@@ -429,7 +428,7 @@ mod tests {
             for j in 0..n {
                 let v = F3G::from(j);
                 pols[i][j] = v;
-                buff[j*nPols + i] = v;
+                buff[j * nPols + i] = v;
             }
         }
         let mut F = FFT::new();
@@ -445,7 +444,7 @@ mod tests {
         println!("check...");
         for i in 0..nPols {
             for j in 0..n {
-                assert_eq!(polsV[i][j], buffOut[j*nPols + i]);
+                assert_eq!(polsV[i][j], buffOut[j * nPols + i]);
             }
         }
     }
