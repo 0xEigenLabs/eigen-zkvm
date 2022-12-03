@@ -1,10 +1,11 @@
-use crate::constant::{SHIFT, W};
+use crate::constant::{MG, SHIFT};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::f3g::F3G;
 use crate::fri::FRI;
 use crate::merklehash_bn128::MerkleTree;
 use crate::poseidon_bn128::Fr;
+use crate::poseidon_bn128::FrRepr;
 use crate::stark_gen::StarkContext;
 use crate::stark_gen::StarkProof;
 use crate::starkinfo::Program;
@@ -13,6 +14,7 @@ use crate::starkinfo_codegen::Segment;
 use crate::starkinfo_codegen::{Node, Section};
 use crate::transcript_bn128::TranscriptBN128;
 use crate::types::StarkStruct;
+use ff::PrimeField;
 use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
 pub fn stark_verify(
@@ -34,6 +36,15 @@ pub fn stark_verify(
     ctx.evals = proof.evals.clone();
     ctx.publics = proof.publics.clone();
 
+    for i in 0..proof.publics.len() {
+        let b = ctx.publics[i]
+            .as_elements()
+            .iter()
+            .map(|e| Fr::from_repr(FrRepr::from(e.as_int())).unwrap())
+            .collect::<Vec<Fr>>();
+        transcript.put(&b);
+    }
+
     transcript.put(&[proof.root1.into()])?;
     ctx.challenges[0] = transcript.get_field(); // u
     ctx.challenges[1] = transcript.get_field(); // defVal
@@ -44,18 +55,37 @@ pub fn stark_verify(
     transcript.put(&[proof.root3.into()])?;
     ctx.challenges[4] = transcript.get_field(); // vc
 
+    ctx.challenges[7] = transcript.get_field(); // xi
+    for i in 0..ctx.evals.len() {
+        let b = ctx.evals[i]
+            .as_elements()
+            .iter()
+            .map(|e| Fr::from_repr(FrRepr::from(e.as_int())).unwrap())
+            .collect::<Vec<Fr>>();
+        transcript.put(&b);
+    }
+
     transcript.put(&[proof.root4.into()])?;
     ctx.challenges[5] = transcript.get_field(); // v1
     ctx.challenges[6] = transcript.get_field(); // v2
-    ctx.challenges[7] = transcript.get_field(); // xi
 
-    //ctx.Z = F.sub(F.exp(ctx.challenges[7], N), 1n);
-    ctx.Z = ctx.challenges[7].exp(7) - F3G::ONE;
-    //ctx.Zp = F.sub(F.exp(F.mul(ctx.challenges[7], F.w[nBits]), N), 1n);
-    ctx.Zp = (ctx.challenges[7] * W.0[ctx.nbits]).pow(ctx.N) - F3G::ONE;
+    let xN = ctx.challenges[7].exp(7);
+    ctx.Z = xN - F3G::ONE;
+    ctx.Zp = (ctx.challenges[7] * MG.0[ctx.nbits]).pow(ctx.N) - F3G::ONE;
 
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);
-    if !res.eq(&F3G::ZERO) {
+
+    let mut xAcc = F3G::ONE;
+    let mut q = F3G::ZERO;
+    for i in 0..starkinfo.q_deg {
+        //q = F.add(q, F.mul(xAcc, ctx.evals[starkInfo.evIdx.cm[0][starkInfo.qs[i]]]));
+        q = q + xAcc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
+        //xAcc = F.mul(xAcc, xN);
+        xAcc = xAcc * xN;
+    }
+    let qZ = q * ctx.Z;
+
+    if !res.eq(&qZ) {
         return Ok(false);
     }
 
@@ -95,10 +125,10 @@ pub fn stark_verify(
             ctx_query.publics = ctx.publics.clone();
             ctx_query.challenges = ctx.challenges.clone();
 
-            let x = SHIFT.clone() * (W.0[ctx.nbits + extendBits].exp(idx));
-            ctx_query.xDivXSubXi = (x / (x - ctx_query.challenges[7])).as_base_elements();
+            let x = SHIFT.clone() * (MG.0[ctx.nbits + extendBits].exp(idx));
+            ctx_query.xDivXSubXi = (x / (x - ctx_query.challenges[7])).as_elements();
             ctx_query.xDivXSubWXi =
-                (x / (x - (ctx_query.challenges[7] * W.0[ctx.nbits]))).as_base_elements();
+                (x / (x - (ctx_query.challenges[7] * MG.0[ctx.nbits]))).as_elements();
 
             let vals = [execute_code(
                 &mut ctx_query,

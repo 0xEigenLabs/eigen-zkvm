@@ -11,8 +11,17 @@ use std::fmt;
 
 #[derive(Debug)]
 pub struct Calculated {
-    pub exps: Vec<bool>,
-    pub exps_prime: Vec<bool>,
+    pub exps: HashMap<usize, bool>,
+    pub exps_prime: HashMap<usize, bool>,
+}
+
+impl Calculated {
+    pub fn new() -> Self {
+        Calculated {
+            exps: HashMap::new(),
+            exps_prime: HashMap::new(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -35,7 +44,6 @@ pub struct ContextC {
 pub struct ContextF<'a> {
     pub exp_map: HashMap<(usize, usize), usize>,
     pub tmp_used: usize,
-    pub ev_idx: EVIdx,
     pub dom: String,
 
     pub starkinfo: &'a mut StarkInfo,
@@ -62,6 +70,7 @@ impl Node {
         prime: bool,
         tree_pos: usize,
     ) -> Self {
+        assert_eq!(type_.len() > 0, true);
         Node {
             type_: type_,
             id: id,
@@ -129,11 +138,11 @@ pub struct IndexVec {
     pub cm2_2ns: Vec<usize>,
     pub cm3_n: Vec<usize>,
     pub cm3_2ns: Vec<usize>,
+    pub cm4_n: Vec<usize>,
+    pub cm4_2ns: Vec<usize>,
+    pub tmpexp_n: Vec<usize>,
     pub q_2ns: Vec<usize>,
-    pub exps_withq_n: Vec<usize>,
-    pub exps_withq_2ns: Vec<usize>,
-    pub exps_withoutq_n: Vec<usize>,
-    pub exps_withoutq_2ns: Vec<usize>,
+    pub f_2ns: Vec<usize>,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -144,12 +153,11 @@ pub struct Index {
     pub cm2_2ns: usize,
     pub cm3_n: usize,
     pub cm3_2ns: usize,
+    pub cm4_n: usize,
+    pub cm4_2ns: usize,
+    pub tmpexp_n: usize,
     pub q_2ns: usize,
-    pub exps_withq_n: usize,
-    pub exps_withq_2ns: usize,
-    pub exps_withoutq_n: usize,
-    pub exps_withoutq_2ns: usize,
-    pub map_total_n: usize,
+    pub f_2ns: usize,
 }
 
 impl Index {
@@ -161,12 +169,11 @@ impl Index {
             "cm2_2ns" => self.cm2_2ns,
             "cm3_n" => self.cm3_n,
             "cm3_2ns" => self.cm3_2ns,
+            "cm4_n" => self.cm4_n,
+            "cm4_2ns" => self.cm4_2ns,
+            "tmpexp_n" => self.tmpexp_n,
             "q_2ns" => self.q_2ns,
-            "exps_withq_n" => self.exps_withq_n,
-            "exps_withq_2ns" => self.exps_withq_2ns,
-            "exps_withoutq_n" => self.exps_withoutq_n,
-            "exps_withoutq_2ns" => self.exps_withoutq_2ns,
-            "map_total_n" => self.map_total_n,
+            "f_2ns" => self.q_2ns,
             _ => panic!("Invalid name={} in index", name),
         }
     }
@@ -191,23 +198,20 @@ impl Index {
             "cm3_2ns" => {
                 self.cm3_2ns = val;
             }
+            "cm4_n" => {
+                self.cm4_n = val;
+            }
+            "cm4_2ns" => {
+                self.cm4_2ns = val;
+            }
             "q_2ns" => {
                 self.q_2ns = val;
             }
-            "exps_withq_n" => {
-                self.exps_withq_n = val;
+            "f_2ns" => {
+                self.f_2ns = val;
             }
-            "exps_withq_2ns" => {
-                self.exps_withq_2ns = val;
-            }
-            "exps_withoutq_n" => {
-                self.exps_withoutq_n = val;
-            }
-            "exps_withoutq_2ns" => {
-                self.exps_withoutq_2ns = val;
-            }
-            "map_total_n" => {
-                self.map_total_n = val;
+            "tmpexp_n" => {
+                self.tmpexp_n = val;
             }
             _ => panic!("Invalid name={} in index", name),
         }
@@ -231,10 +235,9 @@ pub struct Polynom<'a> {
     pub dim: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct EVIdx {
     pub cm: HashMap<(usize, usize), usize>,
-    pub q: HashMap<(usize, usize), usize>,
     pub const_: HashMap<(usize, usize), usize>,
 }
 
@@ -242,7 +245,6 @@ impl EVIdx {
     pub fn new() -> Self {
         EVIdx {
             cm: HashMap::new(),
-            q: HashMap::new(),
             const_: HashMap::new(),
         }
     }
@@ -250,8 +252,6 @@ impl EVIdx {
     pub fn get(&self, type_: &str, p: usize, id: usize) -> Option<&usize> {
         if type_ == "cm" {
             self.cm.get(&(p, id))
-        } else if type_ == "q" {
-            self.q.get(&(p, id))
         } else {
             assert_eq!(type_, "const");
             self.const_.get(&(p, id))
@@ -261,8 +261,6 @@ impl EVIdx {
     pub fn set(&mut self, type_: &str, p: usize, id: usize, idx: usize) {
         if type_ == "cm" {
             self.cm.insert((p, id), idx);
-        } else if type_ == "q" {
-            self.q.insert((p, id), idx);
         } else {
             assert_eq!(type_, "const");
             self.const_.insert((p, id), idx);
@@ -270,7 +268,6 @@ impl EVIdx {
     }
 }
 
-//
 // prime: false by default
 // mode: "" by default
 pub fn pil_code_gen(
@@ -278,115 +275,72 @@ pub fn pil_code_gen(
     pil: &mut PIL,
     exp_id: usize,
     prime: bool,
-    mode: &str,
+    res_type: &str,
+    res_id: usize,
 ) -> Result<()> {
     //println!("pil_code_gen: {} {}, {:?}", exp_id, prime, mode);
-    if mode == "evalQ" && prime {
-        pil_code_gen(ctx, pil, exp_id, false, mode)?;
-        let exp_in = &pil.expressions[exp_id];
-        if exp_in.idQ.is_some() && !exp_in.keep2ns.is_none() {
-            pil_code_gen(ctx, pil, exp_id, true, "")?;
+    let prime_idx = if prime { "expsPrime" } else { "exps" };
+    if ctx.calculated_mark.get(&(prime_idx, exp_id)).is_some() {
+        if res_type.len() > 0 {
+            let idx = ctx
+                .code
+                .iter()
+                .position(|x| (x.exp_id == exp_id) && (x.prime.unwrap() == prime))
+                .unwrap();
+            let mut c = &mut ctx.code[idx];
+            let dest = Node::new(res_type.to_string(), res_id, None, 0, prime, 0);
+            c.code.push(Section {
+                op: "copy".to_string(),
+                dest: dest,
+                src: vec![c.code[c.code.len() - 1].dest.clone()],
+            });
         }
         return Ok(());
     }
 
-    let prime_idx = if prime { "expsPrime" } else { "exps" };
-    if ctx.calculated_mark.get(&(prime_idx, exp_id)).is_some() {
-        return Ok(());
-    }
-
     let exp = pil.expressions[exp_id].clone();
-    calculate_deps(ctx, pil, &exp, prime, exp_id, mode)?;
+    calculate_deps(ctx, pil, &exp, prime, exp_id)?;
 
     let mut code_ctx = ContextC {
         exp_id: exp_id,
         tmp_used: ctx.tmp_used,
         code: Vec::new(),
     };
-
     let exp = pil.expressions[exp_id].clone();
     let ret_ref = eval_exp(&mut code_ctx, pil, &exp, prime)?;
-    if (mode == "evalQ") && (pil.expressions[exp_id].idQ.is_some()) {
-        if prime {
-            return Err(EigenError::InvalidOperator(
-                "EvalQ cannot be prime".to_string(),
-            ));
-        }
-
-        let rqz = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
-        code_ctx.tmp_used += 1;
-
-        let exp_node = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
-        code_ctx.code.push(Section {
-            op: "sub".to_string(),
-            src: vec![ret_ref.clone(), exp_node],
-            dest: rqz.clone(),
-        });
-
-        let Zi = Node::new("Zi".to_string(), 0, None, 0, false, 0);
-        let q = Node::new(
-            "q".to_string(),
-            pil.expressions[exp_id].idQ.unwrap(),
-            None,
-            0,
-            prime,
-            0,
-        );
-        code_ctx.code.push(Section {
-            op: "mul".to_string(),
-            src: vec![Zi, rqz],
-            dest: q,
-        });
-    } else if (mode == "correctQ") && (pil.expressions[exp_id].idQ.is_some()) {
-        let rqz = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
-        code_ctx.tmp_used += 1;
-
-        let q = Node::new(
-            "q".to_string(),
-            pil.expressions[exp_id].idQ.unwrap(),
-            None,
-            0,
-            prime,
-            0,
-        );
-        let Z = Node::new("Z".to_string(), 0, None, 0, prime, 0);
-        code_ctx.code.push(Section {
-            op: "mul".to_string(),
-            dest: rqz.clone(),
-            src: vec![q, Z],
-        });
-        let exp_node = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
-        code_ctx.code.push(Section {
-            op: "sub".to_string(),
-            dest: exp_node,
-            src: vec![ret_ref.clone(), rqz],
-        });
+    if ret_ref.type_.as_str() == "tmp" {
+        let sz = code_ctx.code.len() - 1;
+        code_ctx.code[sz].dest = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
+        code_ctx.tmp_used -= 1;
+        println!("pil_code_gen ctx.tmp_used {}", code_ctx.tmp_used);
     } else {
-        if ret_ref.type_.as_str() == "tmp" {
-            let exp_node = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
-            let size = code_ctx.code.len() - 1;
-            code_ctx.code[size].dest = exp_node;
-            code_ctx.tmp_used -= 1;
-        } else {
-            let exp_node = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
-            code_ctx.code.push(Section {
-                op: "copy".to_string(),
-                dest: exp_node,
-                src: vec![ret_ref],
-            });
+        let exp_node = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
+        code_ctx.code.push(Section {
+            op: "copy".to_string(),
+            dest: exp_node,
+            src: vec![ret_ref],
+        });
+    }
+    if res_type.len() > 0 {
+        if prime {
+            panic!("Prime in retType");
         }
+
+        let dest = Node::new(res_type.to_string(), res_id, None, 0, prime, 0);
+        let src = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
+        code_ctx.code.push(Section {
+            op: "copy".to_string(),
+            dest: dest,
+            src: vec![src],
+        });
     }
 
     ctx.code.push(Code {
         exp_id: exp_id,
         prime: Some(prime),
         code: code_ctx.code,
-        idQ: if pil.expressions[exp_id].idQ.is_some() {
-            pil.expressions[exp_id].idQ
-        } else {
-            None
-        },
         tmp_used: 0,
+        idQ: None,
     });
 
     ctx.calculated_mark.insert((prime_idx, exp_id), true);
@@ -604,26 +558,25 @@ pub fn calculate_deps(
     expr: &Expression,
     prime: bool,
     exp_id: usize,
-    mode: &str,
 ) -> Result<()> {
     if expr.op == "exp" {
+        /*
         let id: usize = if expr.id.is_some() {
             expr.id.unwrap()
         } else {
             0
         };
+        */
+        let id = expr.id.unwrap();
         if prime && expr.next() {
             expression_error(pil, "Double prime".to_string(), exp_id, id)?;
         }
-        pil_code_gen(ctx, pil, id, prime || expr.next(), mode)?;
+        pil_code_gen(ctx, pil, id, prime || expr.next(), "", 0)?;
     }
-    match &expr.values {
-        Some(x) => {
-            for e in x.iter() {
-                calculate_deps(ctx, pil, e, prime, exp_id, mode)?;
-            }
+    if expr.values.is_some() {
+        for e in expr.values.as_ref().unwrap().iter() {
+            calculate_deps(ctx, pil, e, prime, exp_id)?;
         }
-        &None => {}
     }
     Ok(())
 }
@@ -641,16 +594,10 @@ pub fn build_code(ctx: &mut Context, pil: &mut PIL) -> Segment {
         tmp_used: ctx.tmp_used,
     };
 
-    if ctx.calculated.exps.len() < pil.expressions.len() {
-        ctx.calculated.exps.resize(pil.expressions.len(), false);
-        ctx.calculated
-            .exps_prime
-            .resize(pil.expressions.len(), false);
-    }
     for (i, e) in pil.expressions.iter().enumerate() {
         if (!e.keep.is_some()) && e.idQ.is_none() {
-            ctx.calculated.exps[i] = false;
-            ctx.calculated.exps_prime[i] = false;
+            ctx.calculated.exps.insert(i, false);
+            ctx.calculated.exps_prime.insert(i, false);
         }
     }
     ctx.code = vec![];

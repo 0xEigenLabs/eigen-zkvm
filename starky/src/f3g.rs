@@ -38,24 +38,45 @@ impl F3G {
         }
     }
 
+    const ZERO3: Self = Self {
+        cube: CubeExtension::<BaseElement>::ZERO,
+        dim: 3,
+    };
+    const ONE3: Self = Self {
+        cube: CubeExtension::<BaseElement>::ONE,
+        dim: 3,
+    };
+
     pub fn to_be(&self) -> BaseElement {
-        assert_eq!(self.dim, 1);
-        let elems = self.as_base_elements();
-        elems[0]
+        if self.dim != 1 {
+            panic!("to_be {}", *self);
+        }
+        let r = self.as_elements();
+        r[0]
     }
 
-    pub fn as_base_elements(&self) -> Vec<BaseElement> {
+    pub fn as_elements(&self) -> Vec<BaseElement> {
         let cc = &[self.cube];
-        CubeExtension::<BaseElement>::as_base_elements(cc).to_vec()
+        let elems = CubeExtension::<BaseElement>::as_base_elements(cc).to_vec();
+        if self.dim == 3 {
+            elems
+        } else {
+            elems[..1].to_vec()
+        }
     }
 
     pub fn double(self) -> Self {
         self + self
     }
 
-    pub fn mul_scalar(self, b: BaseElement) -> Self {
-        let s = Self::new(b, b, b);
-        self.mul(s)
+    pub fn mul_scalar(self, b: usize) -> Self {
+        let b = BaseElement::from(b as u128);
+        let elems = self.as_elements();
+        if self.dim == 1 {
+            Self::from(elems[0] * b)
+        } else {
+            Self::new(elems[0] * b, elems[1] * b, elems[2] * b)
+        }
     }
 
     pub fn square(self) -> Self {
@@ -78,8 +99,8 @@ impl F3G {
 
     pub fn gt(self, rhs: &Self) -> bool {
         assert_eq!(self.dim, rhs.dim); // FIXME: align with JS
-        let les = self.as_base_elements();
-        let res = rhs.as_base_elements();
+        let les = self.as_elements();
+        let res = rhs.as_elements();
         match self.dim {
             3 => {
                 (les[0].as_int() > res[0].as_int())
@@ -113,8 +134,8 @@ impl F3G {
     }
 
     pub fn random() -> Self {
-        let cube = rand_vector::<BaseElement>(3);
-        Self::new(cube[0], cube[1], cube[2])
+        let cube = rand_vector::<BaseElement>(1);
+        Self::from(cube[0])
     }
 
     pub fn exp(self, e_: usize) -> Self {
@@ -187,7 +208,7 @@ impl Add for F3G {
                         dim: 3,
                     }
                 } else {
-                    let r = self.as_base_elements();
+                    let r = self.as_elements();
                     Self::new(r[0] + rhs.to_be(), r[1], r[2])
                 }
             }
@@ -195,7 +216,7 @@ impl Add for F3G {
                 if self.dim == 1 {
                     Self::from(self.to_be() + rhs.to_be())
                 } else {
-                    let r = rhs.as_base_elements();
+                    let r = rhs.as_elements();
                     Self::new(r[0] + self.to_be(), r[1], r[2])
                 }
             }
@@ -224,7 +245,7 @@ impl Sub for F3G {
                         dim: 3,
                     }
                 } else {
-                    let r = self.as_base_elements();
+                    let r = self.as_elements();
                     Self::new(r[0] - rhs.to_be(), r[1], r[2])
                 }
             }
@@ -232,7 +253,7 @@ impl Sub for F3G {
                 if rhs.dim == 1 {
                     Self::from(self.to_be() - rhs.to_be())
                 } else {
-                    let r = rhs.as_base_elements();
+                    let r = rhs.as_elements();
                     Self::new(self.to_be() - r[0], -r[1], -r[2])
                 }
             }
@@ -258,7 +279,7 @@ impl Mul for F3G {
                 // 3 * 1
                 if rhs.dim == 1 {
                     let lhs = rhs.to_be();
-                    let r = self.as_base_elements();
+                    let r = self.as_elements();
                     Self::new(lhs * r[0], lhs * r[1], lhs * r[2])
                 } else {
                     Self {
@@ -273,7 +294,7 @@ impl Mul for F3G {
                 } else {
                     //1 * 3
                     let lhs = self.to_be();
-                    let r = rhs.as_base_elements();
+                    let r = rhs.as_elements();
                     Self::new(lhs * r[0], lhs * r[1], lhs * r[2])
                 }
             }
@@ -420,11 +441,11 @@ impl FieldElement for F3G {
 
     const ZERO: Self = Self {
         cube: CubeExtension::<BaseElement>::ZERO,
-        dim: 3,
+        dim: 1,
     };
     const ONE: Self = Self {
         cube: CubeExtension::<BaseElement>::ONE,
-        dim: 3,
+        dim: 1,
     };
 
     const ELEMENT_BYTES: usize = ELEMENT_BYTES;
@@ -491,7 +512,18 @@ impl Randomizable for F3G {
 // FIXME
 impl Display for F3G {
     fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
-        write!(f, "{}", self.as_int())
+        let elems = self.as_elements();
+        if self.dim == 1 {
+            write!(f, "{}", elems[0].as_int())
+        } else {
+            write!(
+                f,
+                "[{},{},{}]",
+                elems[0].as_int(),
+                elems[1].as_int(),
+                elems[2].as_int()
+            )
+        }
     }
 }
 
@@ -589,11 +621,14 @@ impl StarkField for F3G {
 
     #[inline]
     fn as_int(&self) -> Self::PositiveInteger {
+        /*
         if self.dim == 1 {
             self.to_be().as_int()
         } else {
             panic!("Invalid as int: {:?}", *self);
         }
+        */
+        self.as_elements()[0].as_int()
     }
 }
 
@@ -608,7 +643,7 @@ pub mod tests {
     #[test]
     fn test_f3g_add() {
         let f1 = F3G::new(
-            BaseElement::from(1u32),
+            BaseElement::ONE,
             BaseElement::from(2u32),
             BaseElement::from(3u32),
         );
@@ -621,16 +656,16 @@ pub mod tests {
     #[test]
     fn test_f3g_comparison() {
         let e1 = F3G::new(
-            BaseElement::from(1u32),
+            BaseElement::ONE,
             BaseElement::from(2u32),
             BaseElement::from(3u32),
         );
 
-        let elems = e1.as_base_elements();
-        assert_eq!(elems[0], BaseElement::from(1u32));
+        let elems = e1.as_elements();
+        assert_eq!(elems[0], BaseElement::ONE);
 
         let e11 = F3G::new(
-            BaseElement::from(1u32),
+            BaseElement::ONE,
             BaseElement::from(2u32),
             BaseElement::from(3u32),
         );
@@ -665,13 +700,13 @@ pub mod tests {
     #[test]
     fn test_f3g_batch_inverse() {
         let a = F3G::new(
-            BaseElement::from(1u32),
+            BaseElement::ONE,
             BaseElement::from(2u32),
             BaseElement::from(3u32),
         );
 
         let b = a.inv();
         let c = a.mul(b);
-        assert_eq!(c.eq(&F3G::ONE), true);
+        assert_eq!(c.eq(&F3G::ONE3), true);
     }
 }

@@ -6,7 +6,7 @@ use winter_math::FieldElement;
 use winter_math::StarkField;
 use winter_math::{fft, fields::f64::BaseElement, log2, polynom};
 
-use crate::constant::{SHIFT, SHIFT_INV, W};
+use crate::constant::{MG, SHIFT, SHIFT_INV};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::merklehash_bn128::MerkleTree;
@@ -79,7 +79,7 @@ impl FRI {
             let special_x = transcript.get_field();
 
             let mut sinv = shift_inv;
-            let wi = F3G::inv(W.0[pol_bits]);
+            let wi = F3G::inv(MG.0[pol_bits]);
 
             for g in 0..(pol.len() / nX) {
                 if si == 0 {
@@ -109,7 +109,7 @@ impl FRI {
             } else {
                 let mut pp: Vec<Fr> = vec![];
                 for e in pol2_e.iter() {
-                    let elems = e.as_base_elements();
+                    let elems = e.as_elements();
                     pp.push(Fr::from_str(&elems[0].as_int().to_string()).unwrap());
                     pp.push(Fr::from_str(&elems[1].as_int().to_string()).unwrap());
                     pp.push(Fr::from_str(&elems[2].as_int().to_string()).unwrap());
@@ -176,7 +176,7 @@ impl FRI {
             } else {
                 let mut pp: Vec<Fr> = vec![];
                 for e in proof.last.iter() {
-                    let elems = e.as_base_elements();
+                    let elems = e.as_elements();
                     pp.push(Fr::from_str(&elems[0].as_int().to_string()).unwrap());
                     pp.push(Fr::from_str(&elems[1].as_int().to_string()).unwrap());
                     pp.push(Fr::from_str(&elems[2].as_int().to_string()).unwrap());
@@ -224,7 +224,7 @@ impl FRI {
                 let inv_twiddles = fft::get_inv_twiddles(pgroup_e.len());
                 fft::interpolate_poly(&mut pgroup_e, &inv_twiddles);
 
-                let sinv = F3G::inv(shift * (W.0[pol_bits].exp(ys[i])));
+                let sinv = F3G::inv(shift * (MG.0[pol_bits].exp(ys[i])));
                 let ev = eval_pol(&pgroup_e, &(special_x[si] * sinv));
 
                 if si < self.steps.len() - 1 {
@@ -299,7 +299,7 @@ fn getTransposedBuffer(pol: &Vec<F3G>, trasposeBits: usize) -> Vec<Vec<BaseEleme
         for i in 0..w {
             let di = i * 3;
             let fi = j * h + i;
-            let pb = pol[fi].as_base_elements();
+            let pb = pol[fi].as_elements();
             res[j][di] = pb[0];
             res[j][di + 1] = pb[1];
             res[j][di + 2] = pb[2];

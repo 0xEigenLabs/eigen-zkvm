@@ -13,9 +13,11 @@ mod digest_bn128;
 pub use digest_bn128::ElementDigest;
 
 mod constant;
-
 mod expressionops;
 mod f3g;
+mod fft;
+mod fft_p;
+mod fft_worker;
 mod fri;
 mod helper;
 mod interpreter;

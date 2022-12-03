@@ -21,6 +21,31 @@ pub fn get_ks(n: usize) -> Vec<BaseElement> {
     ks
 }
 
+pub fn log2_any(V: usize) -> usize {
+    let mut V = V;
+    (if (V & 0xFFFF0000) != 0 {
+        V &= 0xFFFF0000;
+        16
+    } else {
+        0
+    }) | (if (V & 0xFF00FF00) != 0 {
+        V &= 0xFF00FF00;
+        8
+    } else {
+        0
+    }) | (if (V & 0xF0F0F0F0) != 0 {
+        V &= 0xF0F0F0F0;
+        4
+    } else {
+        0
+    }) | (if (V & 0xCCCCCCCC) != 0 {
+        V &= 0xCCCCCCCC;
+        2
+    } else {
+        0
+    }) | (if (V & 0xAAAAAAAA) != 0 { 1 } else { 0 })
+}
+
 pub fn fr_to_biguint(f: &Fr) -> BigUint {
     let se = to_hex(f);
     let se = se.trim_end_matches('0');
@@ -80,4 +105,25 @@ pub fn pretty_print_array<T: FieldElement + StarkField>(cols: &Vec<T>) {
         print!("{:?}", cols[cols.len() - 2].as_int());
     }
     println!("{:?}].", cols[cols.len() - 1].as_int());
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::helper::log2_any;
+
+    // https://users.rust-lang.org/t/logarithm-of-integers/8506/4
+    const fn num_bits<T>() -> usize {
+        std::mem::size_of::<T>() * 8
+    }
+    fn log_2(x: usize) -> usize {
+        assert!(x > 0);
+        num_bits::<usize>() as usize - x.leading_zeros() as usize - 1
+    }
+
+    #[test]
+    fn test_log2() {
+        for i in 1..100 {
+            assert_eq!(log2_any(i), log_2(i));
+        }
+    }
 }

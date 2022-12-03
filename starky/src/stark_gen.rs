@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use crate::constant::{SHIFT, W};
+use crate::constant::{MG, SHIFT};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::Result;
 use crate::f3g::F3G;
@@ -9,11 +9,13 @@ use crate::interpreter::compile_code;
 use crate::merklehash_bn128::MerkleTree;
 use crate::polsarray::PolsArray;
 use crate::poseidon_bn128::Fr;
+use crate::poseidon_bn128::FrRepr;
 use crate::stark_setup::interpolate_in_pil;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{Polynom, Segment};
 use crate::transcript_bn128::TranscriptBN128;
 use crate::types::{StarkStruct, PIL};
+use ff::*;
 use std::collections::HashMap;
 use std::rc::Rc;
 use winter_math::fft;
@@ -30,14 +32,14 @@ pub struct StarkContext {
     pub cm1_n: Vec<F3G>,
     pub cm2_n: Vec<F3G>,
     pub cm3_n: Vec<F3G>,
-    pub exps_withq_n: Vec<F3G>,
-    pub exps_withoutq_n: Vec<F3G>,
+    pub cm4_n: Vec<F3G>,
+    pub tmpexp_n: Vec<F3G>,
     pub cm1_2ns: Vec<F3G>,
     pub cm2_2ns: Vec<F3G>,
     pub cm3_2ns: Vec<F3G>,
+    pub cm4_2ns: Vec<F3G>,
     pub q_2ns: Vec<F3G>,
-    pub exps_withq_2ns: Vec<F3G>,
-    pub exps_withoutq_2ns: Vec<F3G>,
+    pub f_2ns: Vec<F3G>,
     pub x_n: Vec<F3G>,
     pub x_2ns: Vec<F3G>,
     pub Zi: Box<dyn Fn(usize) -> F3G>,
@@ -72,14 +74,14 @@ impl Default for StarkContext {
             cm1_n: Vec::new(),
             cm2_n: Vec::new(),
             cm3_n: Vec::new(),
-            exps_withq_n: Vec::new(),
-            exps_withoutq_n: Vec::new(),
+            cm4_n: Vec::new(),
+            tmpexp_n: Vec::new(),
             cm1_2ns: Vec::new(),
             cm2_2ns: Vec::new(),
             cm3_2ns: Vec::new(),
+            cm4_2ns: Vec::new(),
             q_2ns: Vec::new(),
-            exps_withq_2ns: Vec::new(),
-            exps_withoutq_2ns: Vec::new(),
+            f_2ns: Vec::new(),
             x_n: Vec::new(),
             x_2ns: Vec::new(),
             Zi: Box::new(|i: usize| F3G::ZERO),
@@ -111,12 +113,13 @@ impl StarkContext {
             "cm2_n" => &mut self.cm2_n,
             "cm2_2ns" => &mut self.cm2_2ns,
             "cm3_n" => &mut self.cm3_n,
+            "cm4_n" => &mut self.cm3_n,
             "cm3_2ns" => &mut self.cm3_2ns,
             "q_2ns" => &mut self.q_2ns,
+            "f_2ns" => &mut self.f_2ns,
             "exps_n" => &mut self.exps_n,
             "exps_2ns" => &mut self.exps_2ns,
-            "exps_withq_n" => &mut self.exps_withq_n,
-            "exps_withq_2ns" => &mut self.exps_withq_2ns,
+            "tmpexp_n" => &mut self.tmpexp_n,
             _ => {
                 panic!("invalid symbol {:?}", section);
             }
@@ -157,23 +160,22 @@ impl<'a> StarkProof {
         ctx.cm1_n = cm_pols.write_buff();
         ctx.cm2_n = vec![F3G::ZERO; (starkinfo.map_sectionsN.cm2_n) * ctx.N];
         ctx.cm3_n = vec![F3G::ZERO; (starkinfo.map_sectionsN.cm3_n) * ctx.N];
-        ctx.exps_withq_n = vec![F3G::ZERO; (starkinfo.map_sectionsN.exps_withq_n) * ctx.N];
-        ctx.exps_withoutq_n = vec![F3G::ZERO; (starkinfo.map_sectionsN.exps_withoutq_n) * ctx.N];
+        ctx.tmpexp_n = vec![F3G::ZERO; (starkinfo.map_sectionsN.tmpexp_n) * ctx.N];
 
-        ctx.cm1_2ns = vec![F3G::ZERO; (starkinfo.map_sectionsN.cm1_n) * ctx.Next];
-        ctx.cm2_2ns = vec![F3G::ZERO; (starkinfo.map_sectionsN.cm2_n) * ctx.Next];
-        ctx.cm3_2ns = vec![F3G::ZERO; (starkinfo.map_sectionsN.cm3_n) * ctx.Next];
+        ctx.cm1_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm1_n * ctx.Next];
+        ctx.cm2_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm2_n * ctx.Next];
+        ctx.cm3_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm3_n * ctx.Next];
+        ctx.cm4_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm4_n * ctx.Next];
 
-        ctx.q_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.q_2ns * ctx.Next];
-        ctx.exps_withq_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.exps_withq_2ns * ctx.Next];
-        ctx.exps_withoutq_2ns =
-            vec![F3G::ZERO; starkinfo.map_sectionsN.exps_withoutq_2ns * ctx.Next];
+        ctx.q_2ns = vec![F3G::ZERO; starkinfo.q_dim * ctx.Next];
+        ctx.f_2ns = vec![F3G::ZERO; 3 * ctx.Next];
 
         ctx.x_n = vec![F3G::ZERO; ctx.N];
         let mut xx = F3G::ONE;
+        let w_nbits = MG.0[ctx.nbits];
         for i in 0..ctx.N {
             ctx.x_n[i] = xx;
-            xx = xx * W.0[ctx.nbits];
+            xx = xx * w_nbits;
         }
 
         let extendBits = ctx.nbits_ext - ctx.nbits;
@@ -181,10 +183,10 @@ impl<'a> StarkProof {
         let mut xx = SHIFT.clone();
         for i in 0..(1 << (ctx.nbits_ext - ctx.nbits)) {
             ctx.x_2ns[i] = xx;
-            xx = xx * W.0[ctx.nbits_ext];
+            xx = xx * MG.0[ctx.nbits_ext];
         }
-
         ctx.Zi = Self::build_Zh_Inv(ctx.nbits, extendBits);
+        println!("Zi(1) {}", (ctx.Zi)(1));
 
         ctx.const_n = const_pols.write_buff();
         ctx.const_2ns = const_tree.write_buff();
@@ -206,28 +208,38 @@ impl<'a> StarkProof {
         }
 
         let mut transcript = TranscriptBN128::new();
+
+        for i in 0..starkinfo.publics.len() {
+            let b = ctx.publics[i]
+                .as_elements()
+                .iter()
+                .map(|e| Fr::from_repr(FrRepr::from(e.as_int())).unwrap())
+                .collect::<Vec<Fr>>();
+            transcript.put(&b);
+        }
+
         println!("Merkeling 1....");
         let tree1 = extend_and_merkelize(&mut ctx, starkinfo, "cm1_n").unwrap();
         ctx.cm1_2ns = to_array(&tree1.elements);
         let root: Fr = tree1.root().into();
         println!("tree1 root: {:?}", root);
+        println!("tree1[0] {}", ctx.cm1_2ns[0]);
         transcript.put(&vec![root])?;
-
         ///////////
         // 2.- Caluculate plookups h1 and h2
         ///////////
         ctx.challenges[0] = transcript.get_field(); //u
         ctx.challenges[1] = transcript.get_field(); //defVal
 
-        println!("challenges[0] {:?}", ctx.challenges[0]);
-        println!("challenges[1] {:?}", ctx.challenges[1]);
+        println!("challenges[0] {}", ctx.challenges[0]);
+        println!("challenges[1] {}", ctx.challenges[1]);
 
         //TODO parallel execution
         calculate_exps(&mut ctx, starkinfo, &program.step2prev, "2ns");
 
         for pu in starkinfo.pu_ctx.iter() {
-            let f_pol = get_pol(&mut ctx, starkinfo, starkinfo.exps_n[pu.f_exp_id]);
-            let t_pol = get_pol(&mut ctx, starkinfo, starkinfo.exps_n[pu.t_exp_id]);
+            let f_pol = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pu.f_tmpexp_id]);
+            let t_pol = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pu.t_tmpexp_id]);
             let (h1, h2) = calculate_H1H2(f_pol, t_pol);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], h1);
             n_cm += 1;
@@ -240,19 +252,25 @@ impl<'a> StarkProof {
         ctx.cm2_2ns = to_array(&tree2.elements);
         let root: Fr = tree2.root().into();
         transcript.put(&vec![root])?;
+        println!("tree2 root: {:?}", root);
+        if ctx.cm2_2ns.len() > 0 {
+            println!("tree2[0] {}", ctx.cm2_2ns[0]);
+        }
 
         ///////////
         // 3.- Compute Z polynomials
         ///////////
         ctx.challenges[2] = transcript.get_field(); // gamma
         ctx.challenges[3] = transcript.get_field(); // betta
+        println!("challenges[2] {}", ctx.challenges[2]);
+        println!("challenges[3] {}", ctx.challenges[3]);
 
         calculate_exps(&mut ctx, starkinfo, &program.step3prev, "n");
 
         for (i, pu) in starkinfo.pu_ctx.iter().enumerate() {
             println!("Calculating z for plookup {}", i);
-            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exps_n[pu.num_id]);
-            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exps_n[pu.den_id]);
+            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pu.num_tmpexp_id]);
+            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pu.den_tmpexp_id]);
             let z = calculate_Z(pNum, pDen);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], z);
             n_cm += 1;
@@ -260,20 +278,22 @@ impl<'a> StarkProof {
 
         for (i, pe) in starkinfo.pe_ctx.iter().enumerate() {
             println!("Calculating z for permutation {}", i);
-            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exps_n[pe.num_id]);
-            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exps_n[pe.den_id]);
+            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pe.num_tmpexp_id]);
+            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pe.den_tmpexp_id]);
             let z = calculate_Z(pNum, pDen);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], z);
             n_cm += 1;
         }
         for (i, ci) in starkinfo.ci_ctx.iter().enumerate() {
             println!("Calculating z for connection {}", i);
-            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exps_n[ci.num_id]);
-            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exps_n[ci.den_id]);
+            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[ci.num_tmpexp_id]);
+            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[ci.den_tmpexp_id]);
             let z = calculate_Z(pNum, pDen);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], z);
             n_cm += 1;
         }
+
+        calculate_exps(&mut ctx, starkinfo, &program.step3, "n");
 
         println!("Merkelizing 3....");
 
@@ -283,28 +303,80 @@ impl<'a> StarkProof {
         let root: Fr = tree3.root().into();
         transcript.put(&vec![root])?;
 
+        println!("tree3 root: {:?}", root);
+        if ctx.cm3_2ns.len() > 0 {
+            println!("tree3[0] {}", ctx.cm3_2ns[0]);
+        }
         ///////////
         // 4. Compute C Polynomial
         ///////////
         ctx.challenges[4] = transcript.get_field(); // vc
-
-        calculate_exps(&mut ctx, starkinfo, &program.step4, "n");
-
-        //await extend(ctx.exps_withq_n, ctx.exps_withq_2ns, starkInfo.mapSectionsN.exps_withq_n, ctx.nBits, ctx.nBitsExt);
-        ctx.exps_withq_2ns = extend(&mut ctx, starkinfo, "exps_withq_n").unwrap();
+        println!("challenges[4] {}", ctx.challenges[4]);
 
         calculate_exps(&mut ctx, starkinfo, &program.step42ns, "2ns");
 
+        let qq1_len = 1 << (crate::helper::log2_any(ctx.q_2ns.len()) + 1);
+        let mut qq1 = ctx
+            .q_2ns
+            .iter()
+            .map(|e| e.to_be())
+            .collect::<Vec<BaseElement>>();
+
+        // extend to qq1_len
+        //let twiddles = fft::get_twiddles(qq1_len);
+        //fft::evaluate_poly(&mut qq1, &twiddles);
+        while qq1.len() < qq1_len {
+            qq1.push(BaseElement::ZERO);
+        }
+
+        let mut qq2 = vec![F3G::ZERO; starkinfo.q_dim * ctx.Next * starkinfo.q_deg];
+        println!(
+            "qq1.len {} vs {},qq1[0] {}, qq2.len {}, ctx.N = {}",
+            qq1.len(),
+            qq1_len,
+            qq1[0],
+            qq2.len(),
+            ctx.N
+        );
+        //FFT
+        let inv_twiddles = fft::get_inv_twiddles(qq1_len);
+        fft::interpolate_poly(&mut qq1, &inv_twiddles);
+        println!(
+            "qq1.len {},qq1[0] {}, qq2.len {}",
+            qq1.len(),
+            qq1[0],
+            qq2.len()
+        );
+
+        let qq1 = qq1.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>();
+
+        let mut curS = F3G::ONE;
+        //const shiftIn = F.exp(F.inv(F.shift), N);
+        let shiftIn = (F3G::inv(SHIFT.clone())).exp(ctx.N);
+        for p in 0..starkinfo.q_deg {
+            for i in 0..ctx.N {
+                for k in 0..starkinfo.q_dim {
+                    //qq2.setElement(i*starkInfo.qDim*starkInfo.qDeg + starkInfo.qDim*p + k, F.mul(qq1.getElement(p*N*starkInfo.qDim + i*starkInfo.qDim + k), curS));
+                    qq2[i * starkinfo.q_dim * starkinfo.q_deg + starkinfo.q_dim * p + k] =
+                        qq1[p * ctx.N * starkinfo.q_dim + i * starkinfo.q_dim + k] * curS;
+                }
+            }
+            curS = curS * shiftIn;
+        }
+
+        //await fft(qq2, starkInfo.qDim * starkInfo.qDeg, ctx.nBitsExt, ctx.cm4_2ns);
+        let twiddles = fft::get_twiddles(ctx.Next);
+        fft::evaluate_poly(&mut qq2, &twiddles);
+        ctx.cm4_2ns = qq2;
+
         println!("Merkelizing 4....");
-        let tree4 = merkelize(&mut ctx, starkinfo, "q_2ns").unwrap();
+        let tree4 = merkelize(&mut ctx, starkinfo, "cm4_2ns").unwrap();
         let root: Fr = tree4.root().into();
         transcript.put(&vec![root])?;
 
         ///////////
         // 5. Compute FRI Polynomial
         ///////////
-        ctx.challenges[5] = transcript.get_field(); // v1
-        ctx.challenges[6] = transcript.get_field(); // v2
         ctx.challenges[7] = transcript.get_field(); // xi
 
         let mut LEv = vec![F3G::ZERO; ctx.N];
@@ -313,7 +385,7 @@ impl<'a> StarkProof {
         LpEv[0] = F3G::from(BaseElement::from(1u64));
 
         let xis = ctx.challenges[7] / SHIFT.clone();
-        let wxis = (ctx.challenges[7] * W.0[ctx.nbits]) / SHIFT.clone();
+        let wxis = (ctx.challenges[7] * MG.0[ctx.nbits]) / SHIFT.clone();
 
         for i in 1..ctx.N {
             LEv[i] = LEv[i - 1] * xis;
@@ -337,7 +409,6 @@ impl<'a> StarkProof {
                     dim: 1,
                 },
                 "cm" => get_pol_ref(&mut ctx, starkinfo, starkinfo.cm_2ns[ev.id]),
-                "q" => get_pol_ref(&mut ctx, starkinfo, starkinfo.qs[ev.id]),
                 _ => {
                     panic!("Invalid ev type: {}", ev.type_);
                 }
@@ -359,10 +430,22 @@ impl<'a> StarkProof {
             ctx.evals[i] = acc;
         }
 
+        for i in 0..ctx.evals.len() {
+            let b = ctx.evals[i]
+                .as_elements()
+                .iter()
+                .map(|e| Fr::from_repr(FrRepr::from(e.as_int())).unwrap())
+                .collect::<Vec<Fr>>();
+            transcript.put(&b);
+        }
+
+        ctx.challenges[5] = transcript.get_field(); // v1
+        ctx.challenges[6] = transcript.get_field(); // v2
+
         // Calculate xDivXSubXi, xDivXSubWXi
 
         let xi = ctx.challenges[7];
-        let wxi = ctx.challenges[7] * W.0[ctx.nbits];
+        let wxi = ctx.challenges[7] * MG.0[ctx.nbits];
 
         ctx.xDivXSubXi = vec![BaseElement::ZERO; (ctx.N << extendBits) * 3];
         ctx.xDivXSubWXi = vec![BaseElement::ZERO; (ctx.N << extendBits) * 3];
@@ -372,32 +455,35 @@ impl<'a> StarkProof {
         for k in 0..(N << extendBits) {
             tmp_den[k] = x - xi;
             tmp_denw[k] = x - wxi;
-            x = x * W.0[ctx.nbits + extendBits];
+            x = x * MG.0[ctx.nbits + extendBits];
         }
         tmp_den = F3G::batch_inverse(&tmp_den);
         tmp_denw = F3G::batch_inverse(&tmp_denw);
         x = SHIFT.clone();
         for k in 0..(N << extendBits) {
-            let v = (tmp_den[k] * x).as_base_elements();
+            let v = (tmp_den[k] * x).as_elements();
             ctx.xDivXSubXi[3 * k] = v[0];
             ctx.xDivXSubXi[3 * k + 1] = v[1];
             ctx.xDivXSubXi[3 * k + 2] = v[2];
 
-            let vw = (tmp_denw[k] * x).as_base_elements();
+            let vw = (tmp_denw[k] * x).as_elements();
             ctx.xDivXSubWXi[3 * k] = vw[0];
             ctx.xDivXSubWXi[3 * k + 1] = vw[1];
             ctx.xDivXSubWXi[3 * k + 2] = vw[2];
 
-            x = x * W.0[ctx.nbits + extendBits];
+            x = x * MG.0[ctx.nbits + extendBits];
         }
 
         calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns");
 
-        let friPol = get_pol(
-            &mut ctx,
-            starkinfo,
-            starkinfo.exps_2ns[starkinfo.fri_exp_id],
-        );
+        let mut friPol = vec![F3G::ZERO; 3 & ctx.nbits_ext];
+        for i in 0..(N << extendBits) {
+            friPol[i] = F3G::new(
+                ctx.f_2ns[i * 3].to_be(),
+                ctx.f_2ns[i * 3 + 1].to_be(),
+                ctx.f_2ns[i * 3 + 2].to_be(),
+            );
+        }
 
         //let mut trees = vec![&tree1, &tree2, &tree3, &tree4, const_tree];
         let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
@@ -433,7 +519,7 @@ impl<'a> StarkProof {
         ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
         let res = t.eval(ctx, idx);
-        println!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
+        //println!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
         res
     }
 
@@ -444,11 +530,12 @@ impl<'a> StarkProof {
             sn = sn * sn;
         }
         let mut ZHInv = vec![F3G::ZERO; 1 << extendBits];
+        println!("extendBits: {}", 1 << extendBits);
         for i in 0..(1 << extendBits) {
-            ZHInv[i] = -(sn * w - F3G::ONE);
-            w = w * W.0[extendBits];
+            ZHInv[i] = F3G::inv(sn * w - F3G::ONE);
+            w = w * MG.0[extendBits];
         }
-        Box::new(move |i: usize| ZHInv[i].clone())
+        Box::new(move |i: usize| ZHInv[i % ZHInv.len()].clone())
     }
 }
 
@@ -461,7 +548,7 @@ fn set_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: &usize, pol: V
         }
     } else if p.dim == 3 {
         for i in 0..p.deg {
-            let elems = pol[i].as_base_elements();
+            let elems = pol[i].as_elements();
             p.buffer[(p.offset + i * p.size)] = elems[0].into();
             p.buffer[(p.offset + i * p.size) + 1] = elems[1].into();
             p.buffer[(p.offset + i * p.size) + 2] = elems[2].into();
@@ -639,7 +726,7 @@ fn to_array(columns: &Vec<Vec<BaseElement>>) -> Vec<F3G> {
     let n = columns[0].len();
     for i in 0..n_pols {
         for j in 0..n {
-            res[i * n_pols + j] = columns[i][j].into();
+            res[j * n_pols + i] = columns[i][j].into();
         }
     }
     res
@@ -648,9 +735,15 @@ fn to_array(columns: &Vec<Vec<BaseElement>>) -> Vec<F3G> {
 pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
 
-    let cFirst = compile_code(ctx, starkinfo, &seg.first, "n", false);
-    let cI = compile_code(ctx, starkinfo, &seg.first, "n", false);
-    let cLast = compile_code(ctx, starkinfo, &seg.first, "n", false);
+    let cFirst = compile_code(ctx, starkinfo, &seg.first, dom, false);
+
+    println!("compile_code ctx.first {}", cFirst);
+
+    let cI = compile_code(ctx, starkinfo, &seg.first, dom, false);
+    //println!("compile_code ctx.i {}", cI);
+
+    let cLast = compile_code(ctx, starkinfo, &seg.first, dom, false);
+    //println!("compile_code ctx.last {}", cLast);
 
     let next = if dom == "n" {
         1
@@ -658,9 +751,14 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
         1 << (ctx.nbits_ext - ctx.nbits)
     };
     let N = if dom == "n" { ctx.N } else { ctx.Next };
-
+    println!("next {}, N {}", next, N);
     for i in 0..next {
         cFirst.eval(ctx, i);
+        println!("ctx.q_2ns[3*i] {} ", ctx.q_2ns[3 * i]);
+
+        for i in 0..ctx.tmp.len() {
+            println!("tmp@{} {}", i, ctx.tmp[i]);
+        }
     }
 
     for i in next..(N - next) {
@@ -717,7 +815,6 @@ pub mod tests {
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
         let setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
-
         let starkproof = StarkProof::stark_gen(
             &cm_pol,
             &const_pol,

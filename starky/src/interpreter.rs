@@ -14,7 +14,7 @@ pub enum Ops {
     Sub,       // sub and push the result into stack
     Mul,       // mul and push the result into stack
     Copy_,     // push instant value into stack
-    Assign,    // assign value from mem into an address. *op = val
+    Write,     // assign value from mem into an address. *op = val
     Refer, // refer to a variable in memory, the index must be of format: offset + ((i+next)%N) * size.
     Ret,   // must return
 }
@@ -52,7 +52,7 @@ impl fmt::Display for Expr {
             Ops::Vari(x) => {
                 write!(f, "{}", x)
             }
-            Ops::Assign => {
+            Ops::Write => {
                 write!(f, "write ({})", self.defs[0])
             }
             _ => {
@@ -122,7 +122,7 @@ impl Block {
                         Ops::Vari(x) => x,
                         _ => get_value(ctx, &expr.defs[1], arg_i),
                     };
-                    val_stack.push(lhs - rhs);
+                    val_stack.push(lhs * rhs);
                 }
                 Ops::Sub => {
                     let lhs = match expr.defs[0].op {
@@ -133,7 +133,7 @@ impl Block {
                         Ops::Vari(x) => x,
                         _ => get_value(ctx, &expr.defs[1], arg_i),
                     };
-                    val_stack.push(lhs * rhs);
+                    val_stack.push(lhs - rhs);
                 }
                 Ops::Copy_ => {
                     let x = if let Ops::Vari(x) = expr.defs[0].op {
@@ -144,7 +144,7 @@ impl Block {
                     };
                     val_stack.push(x);
                 }
-                Ops::Assign => {
+                Ops::Write => {
                     let next_expr = &expr.defs[0];
                     let id = get_i(next_expr, arg_i);
                     let addr = &next_expr.syms[0];
@@ -154,8 +154,7 @@ impl Block {
                     if val.dim == 1 || addr.as_str() == "tmp" {
                         val_addr[id] = val;
                     } else {
-                        let vals = val.as_base_elements();
-                        //println!("11111111111111111111113d {:?} ", vals);
+                        let vals = val.as_elements();
                         val_addr[id] = F3G::from(vals[0]);
                         val_addr[id + 1] = F3G::from(vals[1]);
                         val_addr[id + 2] = F3G::from(vals[2]);
@@ -212,28 +211,28 @@ pub fn compile_code(
         exprs: Vec::new(),
     };
 
-    for i in 0..code.len() {
+    for j in 0..code.len() {
         //println!("compile: {:?}", code[i]);
         let mut src: Vec<Expr> = Vec::new();
-        for j in 0..code[i].src.len() {
-            src.push(get_ref(ctx, starkinfo, &code[i].src[j], &dom, next, N));
+        for k in 0..code[j].src.len() {
+            src.push(get_ref(ctx, starkinfo, &code[j].src[k], dom, next, N));
         }
 
-        let exp = match (&code[i].op).as_str() {
+        let exp = match (&code[j].op).as_str() {
             "add" => Expr::new(Ops::Add, Vec::new(), (&src[0..2]).to_vec()),
             "sub" => Expr::new(Ops::Sub, Vec::new(), (&src[0..2]).to_vec()),
             "mul" => Expr::new(Ops::Mul, Vec::new(), (&src[0..2]).to_vec()),
             "copy" => Expr::new(Ops::Copy_, Vec::new(), (&src[0..1]).to_vec()),
             _ => {
-                panic!("Invalid op {:?}", code[i])
+                panic!("Invalid op {:?}", code[j])
             }
         };
-        set_ref(ctx, starkinfo, &code[i].dest, exp, dom, next, N, &mut body);
+        set_ref(ctx, starkinfo, &code[j].dest, exp, dom, next, N, &mut body);
     }
     if ret {
         let sz = code.len() - 1;
         body.exprs
-            .push(get_ref(ctx, starkinfo, &code[sz].dest, &dom, next, N));
+            .push(get_ref(ctx, starkinfo, &code[sz].dest, dom, next, N));
         body.exprs.push(Expr::new(Ops::Ret, vec![], vec![]));
     }
     body
@@ -297,9 +296,21 @@ fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
             let id = get_i(expr, arg_i);
             ctx.cm3_2ns[id]
         }
+        "cm4_n" => {
+            let id = get_i(expr, arg_i);
+            ctx.cm4_n[id]
+        }
+        "cm4_2ns" => {
+            let id = get_i(expr, arg_i);
+            ctx.cm4_2ns[id]
+        }
         "q_2ns" => {
             let id = get_i(expr, arg_i);
             ctx.q_2ns[id]
+        }
+        "f_2ns" => {
+            let id = get_i(expr, arg_i);
+            ctx.f_2ns[id]
         }
         "exps_n" => {
             let id = get_i(expr, arg_i);
@@ -317,14 +328,14 @@ fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
             let id = get_i(expr, arg_i);
             ctx.const_2ns[id]
         }
-        "exps_withq_n" => {
-            let id = get_i(expr, arg_i);
-            ctx.exps_withq_n[id]
-        }
-        "exps_withq_2ns" => {
-            let id = get_i(expr, arg_i);
-            ctx.exps_withq_2ns[id]
-        }
+        //"exps_withq_n" => {
+        //    let id = get_i(expr, arg_i);
+        //    ctx.exps_withq_n[id]
+        //}
+        //"exps_withq_2ns" => {
+        //    let id = get_i(expr, arg_i);
+        //    ctx.exps_withq_2ns[id]
+        //}
         "publics" => {
             let id = get_i(expr, arg_i);
             ctx.publics[id]
@@ -372,28 +383,63 @@ fn set_ref(
     N: usize,
     body: &mut Block,
 ) {
+    println!("set_ref: r {:?}  dom {} val {}", r, dom, val);
     let e_dst = match r.type_.as_str() {
         "tmp" => Expr::new(
             Ops::Refer,
             vec!["tmp".to_string()],
             get_index(r.id, 0, N, 0),
         ),
-        "exp" => {
+        "q" => {
             if dom == "n" {
-                let pol_id = starkinfo.exps_n[r.id].clone();
+                panic!("Accesssing q in domain n");
+            } else if dom == "2ns" {
+                if starkinfo.q_dim == 3 {
+                    Expr::new(
+                        Ops::Refer,
+                        vec!["q_2ns".to_string(), "3".to_string()],
+                        get_index(r.id, 0, N, 3),
+                    )
+                } else if starkinfo.q_dim == 1 {
+                    Expr::new(
+                        Ops::Refer,
+                        vec!["q_2ns".to_string()],
+                        get_index(r.id, 0, N, 1),
+                    )
+                } else {
+                    panic!("Invalid dom");
+                }
+            } else {
+                panic!("Invalid dom");
+            }
+        }
+        "f" => {
+            if dom == "n" {
+                panic!("Accesssing q in domain n");
+            } else if dom == "2ns" {
+                Expr::new(
+                    Ops::Refer,
+                    vec!["f_2ns".to_string(), "3".to_string()],
+                    get_index(r.id, 0, N, 3),
+                )
+            } else {
+                panic!("Invalid dom");
+            }
+        }
+        "cm" => {
+            if dom == "n" {
+                let pol_id = starkinfo.cm_n[r.id].clone();
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else if dom == "2ns" {
-                let pol_id = starkinfo.exps_2ns[r.id].clone();
+                let pol_id = starkinfo.cm_2ns[r.id].clone();
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
             }
         }
-        "q" => {
+        "tmpExp" => {
             if dom == "n" {
-                panic!("Accesssing q in domain n");
-            } else if dom == "2ns" {
-                let pol_id = starkinfo.qs[r.id];
+                let pol_id = starkinfo.tmpexp_n[r.id].clone();
                 eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
             } else {
                 panic!("Invalid dom");
@@ -404,7 +450,7 @@ fn set_ref(
         }
     };
     body.exprs.push(val);
-    body.exprs.push(Expr::new(Ops::Assign, vec![], vec![e_dst]));
+    body.exprs.push(Expr::new(Ops::Write, vec![], vec![e_dst]));
 }
 
 fn get_ref(
@@ -415,6 +461,7 @@ fn get_ref(
     next: usize,
     N: usize,
 ) -> Expr {
+    println!("get_ref: r {:?}  dom {} ", r, dom);
     match r.type_.as_str() {
         "tmp" => Expr::new(
             Ops::Refer,
@@ -465,28 +512,6 @@ fn get_ref(
                 panic!("Invalid dom");
             }
         }
-        "q" => {
-            if dom == "n" {
-                panic!("Accesssing q in domain n");
-            } else if dom == "2ns" {
-                let pol_id = starkinfo.qs[r.id];
-                eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
-            } else {
-                panic!("Invalid dom");
-            }
-        }
-        "exp" => {
-            if dom == "n" {
-                let pol_id = starkinfo.exps_n[r.id].clone();
-                eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
-            } else if dom == "2ns" {
-                let pol_id = starkinfo.exps_2ns[r.id].clone();
-                eval_map(ctx, starkinfo, &pol_id, &r.prime, &next, &N)
-            } else {
-                panic!("Invalid dom");
-            }
-        }
-
         "number" => Expr::new(
             Ops::Vari(F3G::from(r.value.clone().unwrap().parse::<u64>().unwrap())),
             vec![],
