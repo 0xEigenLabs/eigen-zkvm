@@ -454,7 +454,8 @@ impl<'a> StarkProof {
 
         calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns");
 
-        let mut friPol = vec![F3G::ZERO; 3 & ctx.nbits_ext];
+        let mut friPol = vec![F3G::ZERO; (N << extendBits)];
+println!("friPol {} {}", friPol.len(), N << extendBits);
         for i in 0..(N << extendBits) {
             friPol[i] = F3G::new(
                 ctx.f_2ns[i * 3].to_be(),
@@ -462,6 +463,7 @@ impl<'a> StarkProof {
                 ctx.f_2ns[i * 3 + 2].to_be(),
             );
         }
+println!("friPol {} {}", friPol.len(), N << extendBits);
 
         //let mut trees = vec![&tree1, &tree2, &tree3, &tree4, const_tree];
         let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
@@ -713,10 +715,8 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     println!("compile_code ctx.first {}", cFirst);
 
     let cI = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    //println!("compile_code ctx.i {}", cI);
 
     let cLast = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    //println!("compile_code ctx.last {}", cLast);
 
     let next = if dom == "n" {
         1

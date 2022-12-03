@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use winter_math::FieldElement;
 use winter_math::StarkField;
-use winter_math::{fft, fields::f64::BaseElement, log2, polynom};
-
+use winter_math::fields::f64::BaseElement;
+use crate::helper::log2_any;
 use crate::constant::{MG, SHIFT, SHIFT_INV};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
@@ -13,6 +13,7 @@ use crate::merklehash_bn128::MerkleTree;
 use crate::poseidon_bn128::Fr;
 use crate::transcript_bn128::TranscriptBN128;
 use crate::types::{StarkStruct, Step};
+use crate::fft::FFT;
 
 pub struct FRI {
     pub in_nbits: usize,
@@ -59,8 +60,9 @@ impl FRI {
         mut query_pol: impl FnMut(usize) -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>,
     ) -> Result<FRIProof> {
         let mut pol = pol.clone();
-
-        let mut pol_bits = log2(pol.len()) as usize;
+        let mut standard_fft = FFT::new();
+        let mut pol_bits = log2_any(pol.len()) as usize;
+      println!("fri prove {} {}", pol.len(), 1<<pol_bits);
         assert_eq!(1 << pol_bits, pol.len());
         assert_eq!(pol_bits, self.in_nbits);
 
@@ -73,7 +75,6 @@ impl FRI {
             let reduction_bits = pol_bits - self.steps[si].nBits;
             let pol2N = 1 << (pol_bits - reduction_bits);
             let nX = pol.len() / pol2N;
-            let inv_twiddles = fft::get_inv_twiddles(nX);
 
             let mut pol2_e = vec![F3G::ZERO; pol2N];
             let special_x = transcript.get_field();
@@ -90,18 +91,17 @@ impl FRI {
                         ppar[i] = pol[i * pol2N + g];
                     }
 
-                    fft::interpolate_poly(&mut ppar, &inv_twiddles);
-
-                    pol_mul_axi(&mut ppar, &F3G::ONE, &sinv);
+                    let mut ppar_c = standard_fft.ifft(&ppar);
+                    pol_mul_axi(&mut ppar_c, &F3G::ONE, &sinv);
                     pol2_e[g] = eval_pol(&ppar, &special_x);
                     sinv = sinv * wi;
                 }
             }
+            println!("pol2_e 0={}, 1={}", pol2_e[0], pol2_e[1]);
 
             if si < self.steps.len() - 1 {
                 let n_groups = 1 << self.steps[si + 1].nBits;
                 let group_size = (1 << self.steps[si].nBits) / n_groups;
-
                 let pol2_etb = getTransposedBuffer(&pol2_e, self.steps[si + 1].nBits);
                 tree.push(MerkleTree::merkelize(pol2_etb, 3 * group_size, n_groups)?);
                 proof.queries[si + 1].root = tree[si].root();
@@ -165,6 +165,7 @@ impl FRI {
         mut check_query: impl FnMut(&Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>, usize) -> Result<Vec<F3G>>,
     ) -> Result<bool> {
         let tree = MerkleTree::new();
+        let mut standard_fft = FFT::new();
         assert_eq!(proof.queries.len(), self.steps.len()); // the last +1 is ommited
         let mut special_x: Vec<F3G> = vec![];
         for si in 0..self.steps.len() {
@@ -220,12 +221,9 @@ impl FRI {
                     pgroup_e = check_query_fn(si, &proof_item.polQueries[i], ys[i])?;
                 }
 
-                // ifft
-                let inv_twiddles = fft::get_inv_twiddles(pgroup_e.len());
-                fft::interpolate_poly(&mut pgroup_e, &inv_twiddles);
-
+                let pgroup_c = standard_fft.ifft(&pgroup_e);
                 let sinv = F3G::inv(shift * (MG.0[pol_bits].exp(ys[i])));
-                let ev = eval_pol(&pgroup_e, &(special_x[si] * sinv));
+                let ev = eval_pol(&pgroup_c, &(special_x[si] * sinv));
 
                 if si < self.steps.len() - 1 {
                     let next_n_groups = 1 << self.steps[si + 1].nBits;
@@ -276,11 +274,10 @@ impl FRI {
             maxDeg = 1 << (pol_bits - (self.in_nbits - self.max_deg_nbits));
         }
 
-        let inv_twiddles = fft::get_inv_twiddles(last_pol_e.len());
-        fft::interpolate_poly(&mut last_pol_e, &inv_twiddles);
+        let lastPol_c = standard_fft.ifft(&last_pol_e);
 
-        for i in (maxDeg + 1)..last_pol_e.len() {
-            if !last_pol_e[i].is_zero() {
+        for i in (maxDeg + 1)..lastPol_c.len() {
+            if !lastPol_c[i].is_zero() {
                 return Ok(false);
             }
         }

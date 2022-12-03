@@ -213,7 +213,7 @@ impl Add for F3G {
                 }
             }
             1 => {
-                if self.dim == 1 {
+                if rhs.dim == 1 {
                     Self::from(self.to_be() + rhs.to_be())
                 } else {
                     let r = rhs.as_elements();
