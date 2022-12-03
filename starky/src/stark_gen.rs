@@ -3,6 +3,8 @@ use crate::constant::{MG, SHIFT};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::Result;
 use crate::f3g::F3G;
+use crate::fft::FFT;
+use crate::fft_p::{fft, ifft, interpolate};
 use crate::fri::FRIProof;
 use crate::fri::FRI;
 use crate::interpreter::compile_code;
@@ -18,7 +20,6 @@ use crate::types::{StarkStruct, PIL};
 use ff::*;
 use std::collections::HashMap;
 use std::rc::Rc;
-use winter_math::fft;
 use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
 
@@ -113,8 +114,9 @@ impl StarkContext {
             "cm2_n" => &mut self.cm2_n,
             "cm2_2ns" => &mut self.cm2_2ns,
             "cm3_n" => &mut self.cm3_n,
-            "cm4_n" => &mut self.cm3_n,
+            "cm4_n" => &mut self.cm4_n,
             "cm3_2ns" => &mut self.cm3_2ns,
+            "cm4_2ns" => &mut self.cm4_2ns,
             "q_2ns" => &mut self.q_2ns,
             "f_2ns" => &mut self.f_2ns,
             "exps_n" => &mut self.exps_n,
@@ -149,6 +151,7 @@ impl<'a> StarkProof {
     ) -> Result<StarkProof> {
         let mut ctx = StarkContext::default();
 
+        let mut standard_fft = FFT::new();
         ctx.nbits = stark_struct.nBits;
         ctx.nbits_ext = stark_struct.nBitsExt;
         ctx.N = 1 << stark_struct.nBits;
@@ -315,40 +318,9 @@ impl<'a> StarkProof {
 
         calculate_exps(&mut ctx, starkinfo, &program.step42ns, "2ns");
 
-        let qq1_len = 1 << (crate::helper::log2_any(ctx.q_2ns.len()) + 1);
-        let mut qq1 = ctx
-            .q_2ns
-            .iter()
-            .map(|e| e.to_be())
-            .collect::<Vec<BaseElement>>();
-
-        // extend to qq1_len
-        //let twiddles = fft::get_twiddles(qq1_len);
-        //fft::evaluate_poly(&mut qq1, &twiddles);
-        while qq1.len() < qq1_len {
-            qq1.push(BaseElement::ZERO);
-        }
-
+        let mut qq1 = vec![F3G::ZERO; ctx.q_2ns.len()];
         let mut qq2 = vec![F3G::ZERO; starkinfo.q_dim * ctx.Next * starkinfo.q_deg];
-        println!(
-            "qq1.len {} vs {},qq1[0] {}, qq2.len {}, ctx.N = {}",
-            qq1.len(),
-            qq1_len,
-            qq1[0],
-            qq2.len(),
-            ctx.N
-        );
-        //FFT
-        let inv_twiddles = fft::get_inv_twiddles(qq1_len);
-        fft::interpolate_poly(&mut qq1, &inv_twiddles);
-        println!(
-            "qq1.len {},qq1[0] {}, qq2.len {}",
-            qq1.len(),
-            qq1[0],
-            qq2.len()
-        );
-
-        let qq1 = qq1.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>();
+        ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
 
         let mut curS = F3G::ONE;
         //const shiftIn = F.exp(F.inv(F.shift), N);
@@ -365,14 +337,22 @@ impl<'a> StarkProof {
         }
 
         //await fft(qq2, starkInfo.qDim * starkInfo.qDeg, ctx.nBitsExt, ctx.cm4_2ns);
-        let twiddles = fft::get_twiddles(ctx.Next);
-        fft::evaluate_poly(&mut qq2, &twiddles);
-        ctx.cm4_2ns = qq2;
+        fft(
+            &qq2,
+            starkinfo.q_dim * starkinfo.q_deg,
+            ctx.nbits_ext,
+            &mut ctx.cm4_2ns,
+        );
 
         println!("Merkelizing 4....");
         let tree4 = merkelize(&mut ctx, starkinfo, "cm4_2ns").unwrap();
         let root: Fr = tree4.root().into();
         transcript.put(&vec![root])?;
+
+        println!("tree4 root: {:?}", root);
+        if ctx.cm4_2ns.len() > 0 {
+            println!("tree3[0] {}", ctx.cm4_2ns[0]);
+        }
 
         ///////////
         // 5. Compute FRI Polynomial
@@ -392,10 +372,8 @@ impl<'a> StarkProof {
             LpEv[i] = LpEv[i - 1] * wxis;
         }
 
-        //ifft
-        let inv_twiddles = fft::get_inv_twiddles(ctx.N);
-        fft::interpolate_poly(&mut LEv, &inv_twiddles);
-        fft::interpolate_poly(&mut LpEv, &inv_twiddles);
+        let LEv = standard_fft.ifft(&LEv);
+        let LpEv = standard_fft.ifft(&LpEv);
 
         ctx.evals = vec![F3G::ZERO; starkinfo.ev_map.len()];
         let N = ctx.N;
@@ -674,16 +652,11 @@ pub fn merkelize(
     section_name: &'static str,
 ) -> Result<MerkleTree> {
     let nBitsExt = ctx.nbits_ext;
-    let nBits = ctx.nbits;
     let n_pols = starkinfo.map_sectionsN.get(section_name);
     let columns = to_matrix(ctx, starkinfo, section_name);
     let n = columns[0].len();
-
-    Ok(MerkleTree::merkelize(
-        columns,
-        n << (nBitsExt - nBits),
-        n_pols,
-    )?)
+    assert_eq!(columns.len(), n_pols);
+    Ok(MerkleTree::merkelize(columns, n_pols, 1 << nBitsExt)?)
 }
 
 //FIXME use matrix, not array for cm1***

@@ -116,9 +116,6 @@ pub fn _fft(buffSrc: &Vec<F3G>, nPols: usize, nBits: usize, buffDst: &mut Vec<F3
     let mut bIn: &mut Vec<F3G>;
     let mut bOut: &mut Vec<F3G>;
 
-    //const pool = workerpool.pool(__dirname + '/fft_worker.js');
-    //let pool = rayon::ThreadPoolBuilder::new().num_threads(get_max_workers()).build().unwrap();
-
     let idealNBlocks = get_max_workers() * blocksPerThread;
     let mut blockBits = log2_any(n * nPols / idealNBlocks);
     if (blockBits < minBlockBits) {
@@ -156,17 +153,6 @@ pub fn _fft(buffSrc: &Vec<F3G>, nPols: usize, nBits: usize, buffDst: &mut Vec<F3
     rayon::scope(|s| {
         for i in (0..nBits).step_by(blockBits) {
             let sInc = min(blockBits, nBits - i);
-
-            //for (j=0; j<nBlocks; j++) {
-            //    const bb = bIn.slice(j*blockSize*nPols, (j+1)*blockSize*nPols);
-            //    promisesFFT.push(pool.exec("fft_block", [bb, j*blockSize, nPols, nBits, i+sInc, blockBits, sInc]));
-
-            //    // results[j] = await fft_block(bb, j*blockSize, nPols, nBits, i+sInc, blockBits, sInc);
-            //}
-            //const results = await Promise.all(promisesFFT);
-            //for (let i=0; i<results.length; i++) {
-            //    bIn.set(results[i], i*blockSize*nPols)
-            //}
             bIn.par_chunks_mut(blockSize * nPols)
                 .enumerate()
                 .for_each(|(j, bb)| {
@@ -268,19 +254,6 @@ pub fn interpolate(
     for i in (0..nBits).step_by(blockBits) {
         println!("Layer ifft {}", i);
         let sInc = min(blockBits, nBits - i);
-        //const promisesFFT = [];
-
-        // let results = [];
-        //for (j=0; j<nBlocks; j++) {
-        //    const bb = bIn.slice(j*blockSize*nPols, (j+1)*blockSize*nPols);
-        //    promisesFFT.push(pool.exec("fft_block", [bb, j*blockSize, nPols, nBits, i+sInc, blockBits, sInc]));
-
-        //    // results[j] = await fft_block(bb, j*blockSize, nPols, nBits, i+sInc, blockBits, sInc);
-        //}
-        //const results = await Promise.all(promisesFFT);
-        //for (let i=0; i<results.length; i++) {
-        //    bIn.set(results[i], i*blockSize*nPols)
-        //}
         bIn.par_chunks_mut(blockSize * nPols)
             .enumerate()
             .for_each(|(j, bb)| {
@@ -303,20 +276,6 @@ pub fn interpolate(
     for i in (0..nBitsExt).step_by(blockBitsExt) {
         println!("Layer fft {}", i);
         let sInc = min(blockBitsExt, nBitsExt - i);
-        //const promisesFFT = [];
-
-        //// let results = [];
-        //for (j=0; j<nBlocksExt; j++) {
-        //    const bb = bIn.slice(j*blockSizeExt*nPols, (j+1)*blockSizeExt*nPols);
-        //    promisesFFT.push(pool.exec("fft_block", [bb, j*blockSizeExt, nPols, nBitsExt, i+sInc, blockBitsExt, sInc]));
-
-        //    // results[j] = await fft_block(bb, j*blockSizeExt, nPols, nBitsExt, i+sInc, blockBitsExt, sInc);
-        //}
-        //const results = await Promise.all(promisesFFT);
-        //for (let i=0; i<results.length; i++) {
-        //    bIn.set(results[i], i*blockSizeExt*nPols)
-        //}
-
         bIn.par_chunks_mut(blockSizeExt * nPols)
             .enumerate()
             .for_each(|(j, bb)| {
