@@ -225,19 +225,17 @@ impl<'a> StarkProof {
                 .iter()
                 .map(|e| Fr::from_repr(FrRepr::from(e.as_int())).unwrap())
                 .collect::<Vec<Fr>>();
-            transcript.put(&b);
+            transcript.put(&b)?;
         }
 
         println!("Merkeling 1....");
         let tree1 = extend_and_merkelize(&mut ctx, starkinfo, "cm1_n").unwrap();
         ctx.cm1_2ns = to_array(&tree1.elements);
         let root: Fr = tree1.root().into();
-        println!("tree1 root: {:?}", root);
+        println!("tree1 root: {:?}", crate::helper::fr_to_biguint(&root));
         println!("tree1[0] {}", ctx.cm1_2ns[0]);
         transcript.put(&vec![root])?;
-        ///////////
         // 2.- Caluculate plookups h1 and h2
-        ///////////
         ctx.challenges[0] = transcript.get_field(); //u
         ctx.challenges[1] = transcript.get_field(); //defVal
 
@@ -262,14 +260,12 @@ impl<'a> StarkProof {
         ctx.cm2_2ns = to_array(&tree2.elements);
         let root: Fr = tree2.root().into();
         transcript.put(&vec![root])?;
-        println!("tree2 root: {:?}", root);
+        println!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
         if ctx.cm2_2ns.len() > 0 {
             println!("tree2[0] {}", ctx.cm2_2ns[0]);
         }
 
-        ///////////
         // 3.- Compute Z polynomials
-        ///////////
         ctx.challenges[2] = transcript.get_field(); // gamma
         ctx.challenges[3] = transcript.get_field(); // betta
         println!("challenges[2] {}", ctx.challenges[2]);
@@ -313,13 +309,11 @@ impl<'a> StarkProof {
         let root: Fr = tree3.root().into();
         transcript.put(&vec![root])?;
 
-        println!("tree3 root: {:?}", root);
+        println!("tree3 root: {:?}", crate::helper::fr_to_biguint(&root));
         if ctx.cm3_2ns.len() > 0 {
             println!("tree3[0] {}", ctx.cm3_2ns[0]);
         }
-        ///////////
         // 4. Compute C Polynomial
-        ///////////
         ctx.challenges[4] = transcript.get_field(); // vc
         println!("challenges[4] {}", ctx.challenges[4]);
 
@@ -330,12 +324,10 @@ impl<'a> StarkProof {
         ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
 
         let mut curS = F3G::ONE;
-        //const shiftIn = F.exp(F.inv(F.shift), N);
         let shiftIn = (F3G::inv(SHIFT.clone())).exp(ctx.N);
         for p in 0..starkinfo.q_deg {
             for i in 0..ctx.N {
                 for k in 0..starkinfo.q_dim {
-                    //qq2.setElement(i*starkInfo.qDim*starkInfo.qDeg + starkInfo.qDim*p + k, F.mul(qq1.getElement(p*N*starkInfo.qDim + i*starkInfo.qDim + k), curS));
                     qq2[i * starkinfo.q_dim * starkinfo.q_deg + starkinfo.q_dim * p + k] =
                         qq1[p * ctx.N * starkinfo.q_dim + i * starkinfo.q_dim + k] * curS;
                 }
@@ -343,7 +335,6 @@ impl<'a> StarkProof {
             curS = curS * shiftIn;
         }
 
-        //await fft(qq2, starkInfo.qDim * starkInfo.qDeg, ctx.nBitsExt, ctx.cm4_2ns);
         fft(
             &qq2,
             starkinfo.q_dim * starkinfo.q_deg,
@@ -356,7 +347,7 @@ impl<'a> StarkProof {
         let root: Fr = tree4.root().into();
         transcript.put(&vec![root])?;
 
-        println!("tree4 root: {:?}", root);
+        println!("tree4 root: {:?}", crate::helper::fr_to_biguint(&root));
         if ctx.cm4_2ns.len() > 0 {
             println!("tree3[0] {}", ctx.cm4_2ns[0]);
         }
@@ -421,14 +412,13 @@ impl<'a> StarkProof {
                 .iter()
                 .map(|e| Fr::from_repr(FrRepr::from(e.as_int())).unwrap())
                 .collect::<Vec<Fr>>();
-            transcript.put(&b);
+            transcript.put(&b)?;
         }
 
         ctx.challenges[5] = transcript.get_field(); // v1
         ctx.challenges[6] = transcript.get_field(); // v2
 
         // Calculate xDivXSubXi, xDivXSubWXi
-
         let xi = ctx.challenges[7];
         let wxi = ctx.challenges[7] * MG.0[ctx.nbits];
 
@@ -476,7 +466,6 @@ impl<'a> StarkProof {
         println!("friPol {} {}", friPol.len(), N << extendBits);
 
         let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
-            println!("{:?} {:?}", tree1.width, tree2.width);
             vec![
                 tree1.get_group_proof(idx).unwrap(),
                 tree2.get_group_proof(idx).unwrap(),
@@ -488,12 +477,26 @@ impl<'a> StarkProof {
         let mut fri = FRI::new(stark_struct);
 
         let friProof = fri.prove(&mut transcript, &friPol, query_pol)?;
+        //println!("tree1 nodes");
+        //for i in 0..tree1.nodes.len() {
+        //  println!("{}", tree1.nodes[i]);
+        //}
+        //for i in 0..tree2.nodes.len() {
+        //  println!("{}", tree2.nodes[i]);
+        //}
+        //for i in 0..tree3.nodes.len() {
+        //  println!("{}", tree3.nodes[i]);
+        //}
+        //for i in 0..tree4.nodes.len() {
+        //  println!("{}", tree4.nodes[i]);
+        //}
+        //println!("end nodes");
 
         Ok(StarkProof {
             root1: tree1.root(),
-            root2: tree1.root(),
-            root3: tree1.root(),
-            root4: tree1.root(),
+            root2: tree2.root(),
+            root3: tree3.root(),
+            root4: tree4.root(),
             fri_proof: friProof,
             evals: ctx.evals.clone(),
             publics: ctx.publics.clone(),
@@ -761,31 +764,12 @@ pub mod tests {
     use crate::polsarray::{PolKind, PolsArray};
     use crate::stark_gen::StarkProof;
     use crate::stark_setup::StarkSetup;
+    use crate::stark_verify::stark_verify;
     use crate::starkinfo::StarkInfo;
-    use winter_math::{fft, fields::f64::BaseElement};
-    use winter_math::{FieldElement, StarkField};
-
     use crate::types::load_json;
     use crate::types::{StarkStruct, PIL};
-
-    #[test]
-    fn test_fft() {
-        let expected: Vec<BaseElement> = vec![1u32, 2u32, 3u32, 5u32]
-            .iter()
-            .map(|e| BaseElement::from(*e))
-            .collect();
-        let mut points = expected.clone();
-
-        // FFT
-        let twiddles = fft::get_twiddles(4);
-        fft::evaluate_poly(&mut points, &twiddles);
-        //println!("eoff {:?} {:?}", points[0].as_int(), points[1].as_int());
-
-        // IFFT
-        let inv_twiddles = fft::get_inv_twiddles(4);
-        fft::interpolate_poly(&mut points, &inv_twiddles);
-        assert_eq!(expected, points);
-    }
+    use winter_math::fields::f64::BaseElement;
+    use winter_math::{FieldElement, StarkField};
 
     #[test]
     fn test_stark_gen() {
@@ -797,7 +781,7 @@ pub mod tests {
         cm_pol.load("data/fib.cm.2").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
-        let setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let mut setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
         let starkproof = StarkProof::stark_gen(
             &cm_pol,
             &const_pol,
@@ -808,5 +792,17 @@ pub mod tests {
             &stark_struct,
         )
         .unwrap();
+
+        println!("verify the proof...");
+
+        let result = stark_verify(
+            &starkproof,
+            &setup.const_root,
+            &setup.starkinfo,
+            &stark_struct,
+            &mut setup.program,
+        )
+        .unwrap();
+        assert_eq!(result, true);
     }
 }

@@ -17,10 +17,11 @@ use crate::types::StarkStruct;
 use ff::PrimeField;
 use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
+//FIXME it doesn't make sense to ask for a mutable program
 pub fn stark_verify(
     proof: &StarkProof,
     const_root: &ElementDigest,
-    starkinfo: &mut StarkInfo,
+    starkinfo: &StarkInfo,
     stark_struct: &StarkStruct,
     program: &mut Program,
 ) -> Result<bool> {
@@ -42,7 +43,7 @@ pub fn stark_verify(
             .iter()
             .map(|e| Fr::from_repr(FrRepr::from(e.as_int())).unwrap())
             .collect::<Vec<Fr>>();
-        transcript.put(&b);
+        transcript.put(&b)?;
     }
 
     transcript.put(&[proof.root1.into()])?;
@@ -55,6 +56,7 @@ pub fn stark_verify(
     transcript.put(&[proof.root3.into()])?;
     ctx.challenges[4] = transcript.get_field(); // vc
 
+    transcript.put(&[proof.root4.into()])?;
     ctx.challenges[7] = transcript.get_field(); // xi
     for i in 0..ctx.evals.len() {
         let b = ctx.evals[i]
@@ -62,14 +64,14 @@ pub fn stark_verify(
             .iter()
             .map(|e| Fr::from_repr(FrRepr::from(e.as_int())).unwrap())
             .collect::<Vec<Fr>>();
-        transcript.put(&b);
+        transcript.put(&b)?;
     }
 
-    transcript.put(&[proof.root4.into()])?;
     ctx.challenges[5] = transcript.get_field(); // v1
     ctx.challenges[6] = transcript.get_field(); // v2
 
-    let xN = ctx.challenges[7].exp(7);
+    let xN = ctx.challenges[7].exp(ctx.N);
+    println!("xN {}", xN);
     ctx.Z = xN - F3G::ONE;
     ctx.Zp = (ctx.challenges[7] * MG.0[ctx.nbits]).pow(ctx.N) - F3G::ONE;
 
@@ -78,10 +80,11 @@ pub fn stark_verify(
     let mut xAcc = F3G::ONE;
     let mut q = F3G::ZERO;
     for i in 0..starkinfo.q_deg {
-        //q = F.add(q, F.mul(xAcc, ctx.evals[starkInfo.evIdx.cm[0][starkInfo.qs[i]]]));
+        //println!("ctx.eval[{}->{}]={}", starkinfo.qs[i], starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap(), 11);
         q = q + xAcc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
-        //xAcc = F.mul(xAcc, xN);
+        //println!("q={}", q);
         xAcc = xAcc * xN;
+        //println!("xAcc={}", xAcc);
     }
     let qZ = q * ctx.Z;
 
@@ -142,7 +145,7 @@ pub fn stark_verify(
 }
 
 fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
-    let mut tmp: Vec<F3G> = vec![];
+    let mut tmp: Vec<F3G> = vec![F3G::ZERO; 100]; // FIXME setup a reasonable size
 
     let extract_val = |arr: &Vec<BaseElement>, pos: usize, dim: usize| -> F3G {
         if dim == 1 {
@@ -159,6 +162,24 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
         match r.type_.as_str() {
             "tmp" => tmp[r.id],
             "tree1" => extract_val(&ctx.tree1, r.tree_pos, r.dim),
+            "tree2" => extract_val(&ctx.tree1, r.tree_pos, r.dim),
+            "tree3" => extract_val(&ctx.tree1, r.tree_pos, r.dim),
+            "tree4" => extract_val(&ctx.tree1, r.tree_pos, r.dim),
+            "const" => ctx.consts[r.id].into(),
+            "eval" => ctx.evals[r.id],
+            "number" => F3G::from(r.value.clone().unwrap().parse::<u64>().unwrap()),
+            "public" => ctx.publics[r.id],
+            "challenge" => ctx.challenges[r.id],
+            "xDivXSubXi" => F3G::new(ctx.xDivXSubXi[0], ctx.xDivXSubXi[1], ctx.xDivXSubXi[2]),
+            "xDivXSubWXi" => F3G::new(ctx.xDivXSubWXi[0], ctx.xDivXSubWXi[1], ctx.xDivXSubWXi[2]),
+            "x" => ctx.challenges[7],
+            "Z" => {
+                if r.prime {
+                    ctx.Zp
+                } else {
+                    ctx.Z
+                }
+            }
             _ => panic!("Invalid reference type, get: {}", r.type_),
         }
     };

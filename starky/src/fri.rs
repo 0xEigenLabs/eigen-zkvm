@@ -11,6 +11,7 @@ use crate::transcript_bn128::TranscriptBN128;
 use crate::types::{StarkStruct, Step};
 use ff::*;
 use std::collections::HashMap;
+use std::fmt;
 use std::rc::Rc;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
@@ -25,8 +26,33 @@ pub struct FRI {
 
 #[derive(Default, Clone)]
 pub struct ProofOne {
-    pub polQueries: Vec<Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>>,
+    pub pol_queries: Vec<Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>>,
     pub root: ElementDigest,
+}
+
+impl fmt::Display for ProofOne {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "root {}\n", self.root)?;
+        write!(f, "pol_queries size {}\n", self.pol_queries.len())?;
+        for (i, pq) in self.pol_queries.iter().enumerate() {
+            write!(f, "\t pq {}\n", i)?;
+            for (j, qq) in pq.iter().enumerate() {
+                write!(f, "\t\tleaf: ")?;
+                for qqq in qq.0.iter() {
+                    write!(f, "{},", qqq)?;
+                }
+                write!(f, "\n\t\tnode:")?;
+                for qqq in qq.1.iter() {
+                    write!(f, "\t\t[\n")?;
+                    for t in qqq.iter() {
+                        write!(f, "\t\t\t Fr {}\n", crate::helper::fr_to_biguint(t))?;
+                    }
+                    write!(f, "\t\t]\n")?;
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 #[derive(Clone)]
@@ -109,8 +135,12 @@ impl FRI {
                 tree.push(MerkleTree::merkelize(pol2_etb, 3 * group_size, n_groups)?);
                 proof.queries[si + 1].root = tree[si].root();
                 let rrr: Fr = proof.queries[si + 1].root.into();
-                println!("proof.queries {}={}", si + 1, rrr);
-                transcript.put(&vec![tree[si].root().into()]);
+                println!(
+                    "proof.queries {}={}",
+                    si + 1,
+                    crate::helper::fr_to_biguint(&rrr)
+                );
+                transcript.put(&vec![tree[si].root().into()])?;
             } else {
                 println!("last {}", pol2_e.len());
                 for e in pol2_e.iter() {
@@ -120,8 +150,7 @@ impl FRI {
                         Fr::from_repr(FrRepr::from(elems[1].as_int())).unwrap(),
                         Fr::from_repr(FrRepr::from(elems[2].as_int())).unwrap(),
                     ];
-                    println!("{}", e);
-                    transcript.put(&v);
+                    transcript.put(&v)?;
                 }
             }
 
@@ -143,19 +172,21 @@ impl FRI {
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
 
         let query_pol_fn = |si: usize, idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
+            println!("query_pol_fn: si:{}, idx:{}", si, idx);
             vec![tree[si].get_group_proof(idx).unwrap()]
         };
 
         for si in 0..self.steps.len() {
             for ys_ in ys.iter() {
                 if si == 0 {
-                    proof.queries[si].polQueries.push(query_pol(*ys_));
+                    proof.queries[si].pol_queries.push(query_pol(*ys_));
                 } else {
                     proof.queries[si]
-                        .polQueries
+                        .pol_queries
                         .push(query_pol_fn(si - 1, *ys_));
                 }
             }
+            println!("prove_query_pol: {} {}", si, proof.queries[si]);
 
             if si < self.steps.len() - 1 {
                 for i in 0..ys.len() {
@@ -181,7 +212,7 @@ impl FRI {
             if si < self.steps.len() - 1 {
                 let n_groups = 1 << self.steps[si + 1].nBits;
                 let group_size = (1 << self.steps[si].nBits) / n_groups;
-                transcript.put(&vec![proof.queries[si + 1].root.into()]);
+                transcript.put(&vec![proof.queries[si + 1].root.into()])?;
             } else {
                 let mut pp: Vec<Fr> = vec![];
                 for e in proof.last.iter() {
@@ -190,13 +221,14 @@ impl FRI {
                     pp.push(Fr::from_str(&elems[1].as_int().to_string()).unwrap());
                     pp.push(Fr::from_str(&elems[2].as_int().to_string()).unwrap());
                 }
-                transcript.put(&pp);
+                transcript.put(&pp)?;
             }
         }
 
         let n_queries = self.n_queries;
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
         let mut pol_bits = self.in_nbits;
+        println!("ys: {:?}, pol_bits {}", ys, self.in_nbits);
         let mut shift = SHIFT.clone();
 
         let check_query_fn = |si: usize,
@@ -217,49 +249,50 @@ impl FRI {
 
         for si in 0..self.steps.len() {
             let proof_item = &proof.queries[si];
+            println!("si: {}, queries: {}", si, proof_item);
             let reduction_bits = pol_bits - self.steps[si].nBits;
+            println!("si {} reduction_bits {}", si, reduction_bits);
             for i in 0..n_queries {
-                let mut pgroup_e: Vec<F3G> = vec![];
-                if si == 0 {
-                    pgroup_e = check_query(&proof_item.polQueries[i], ys[i])?;
-                    if pgroup_e.len() == 0 {
-                        return Ok(false);
+                let pgroup_e: Vec<F3G> = match si {
+                    0 => {
+                        let pgroup_e = check_query(&proof_item.pol_queries[i], ys[i])?;
+                        if pgroup_e.len() == 0 {
+                            return Ok(false);
+                        }
+                        pgroup_e
                     }
-                } else {
-                    pgroup_e = check_query_fn(si, &proof_item.polQueries[i], ys[i])?;
-                }
+                    _ => check_query_fn(si, &proof_item.pol_queries[i], ys[i])?,
+                };
+
+                println!("pgroup_e");
+                crate::helper::pretty_print_array(&pgroup_e);
 
                 let pgroup_c = standard_fft.ifft(&pgroup_e);
+
+                println!("pgroup_c");
+                crate::helper::pretty_print_array(&pgroup_c);
+
                 let sinv = F3G::inv(shift * (MG.0[pol_bits].exp(ys[i])));
+
+                println!("sinv {}, special_x[{}]={}", sinv, si, special_x[si]);
+
                 let ev = eval_pol(&pgroup_c, &(special_x[si] * sinv));
+                println!("ev {}", ev);
 
                 if si < self.steps.len() - 1 {
                     let next_n_groups = 1 << self.steps[si + 1].nBits;
                     let group_idx = ys[i] / next_n_groups;
-                    if !ev.eq(&get3(&proof.queries[si + 1].polQueries[i][0].0, group_idx)) {
+                    if !ev.eq(&get3(&proof.queries[si + 1].pol_queries[i][0].0, group_idx)) {
+                        panic!("2");
                         return Ok(false);
                     }
                 } else {
                     if !ev.eq(&proof.last[ys[i]]) {
+                        panic!("3");
                         return Ok(false);
                     }
                 }
             }
-            /*
-            check_query =
-                &|query: &Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>, idx: usize| -> Result<Vec<F3G>> {
-                    let res = tree.verify_group_proof(
-                        &proof.queries[si + 1].root,
-                        &query[0].1,
-                        idx,
-                        &query[0].0,
-                    )?;
-                    if !res {
-                        return Err(FRIVerifierFailed);
-                    }
-                    Ok(split3(&query[0].0))
-                };
-            */
 
             let pol_bits = self.steps[si].nBits;
             for j in 0..reduction_bits {
@@ -294,7 +327,6 @@ impl FRI {
     }
 }
 
-// TODO optmiize
 fn getTransposedBuffer(pol: &Vec<F3G>, trasposeBits: usize) -> Vec<Vec<BaseElement>> {
     let n = pol.len();
     let w = 1 << trasposeBits;
@@ -312,6 +344,7 @@ fn getTransposedBuffer(pol: &Vec<F3G>, trasposeBits: usize) -> Vec<Vec<BaseEleme
             res[i][di + 2] = pb[2];
         }
     }
+    // TODO optmiize
     let mut resn: Vec<Vec<BaseElement>> = vec![Vec::new(); h * 3];
     for i in 0..(3 * h) {
         resn[i] = vec![BaseElement::ZERO; w];
