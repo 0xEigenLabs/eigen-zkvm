@@ -455,7 +455,10 @@ impl<'a> StarkProof {
         calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns");
 
         let mut friPol = vec![F3G::ZERO; (N << extendBits)];
-println!("friPol {} {}", friPol.len(), N << extendBits);
+        println!("friPol {} {}", friPol.len(), N << extendBits);
+
+        println!("ctx.f_2ns");
+        crate::helper::pretty_print_array(&ctx.f_2ns);
         for i in 0..(N << extendBits) {
             friPol[i] = F3G::new(
                 ctx.f_2ns[i * 3].to_be(),
@@ -463,7 +466,7 @@ println!("friPol {} {}", friPol.len(), N << extendBits);
                 ctx.f_2ns[i * 3 + 2].to_be(),
             );
         }
-println!("friPol {} {}", friPol.len(), N << extendBits);
+        println!("friPol {} {}", friPol.len(), N << extendBits);
 
         //let mut trees = vec![&tree1, &tree2, &tree3, &tree4, const_tree];
         let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {

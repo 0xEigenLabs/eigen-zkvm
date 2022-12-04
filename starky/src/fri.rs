@@ -1,19 +1,19 @@
-use crate::f3g::F3G;
-use ff::*;
-use std::collections::HashMap;
-use std::rc::Rc;
-use winter_math::FieldElement;
-use winter_math::StarkField;
-use winter_math::fields::f64::BaseElement;
-use crate::helper::log2_any;
 use crate::constant::{MG, SHIFT, SHIFT_INV};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
+use crate::f3g::F3G;
+use crate::fft::FFT;
+use crate::helper::log2_any;
 use crate::merklehash_bn128::MerkleTree;
 use crate::poseidon_bn128::Fr;
 use crate::transcript_bn128::TranscriptBN128;
 use crate::types::{StarkStruct, Step};
-use crate::fft::FFT;
+use ff::*;
+use std::collections::HashMap;
+use std::rc::Rc;
+use winter_math::fields::f64::BaseElement;
+use winter_math::FieldElement;
+use winter_math::StarkField;
 
 pub struct FRI {
     pub in_nbits: usize,
@@ -62,7 +62,7 @@ impl FRI {
         let mut pol = pol.clone();
         let mut standard_fft = FFT::new();
         let mut pol_bits = log2_any(pol.len()) as usize;
-      println!("fri prove {} {}", pol.len(), 1<<pol_bits);
+        println!("fri prove {} {}", pol.len(), 1 << pol_bits);
         assert_eq!(1 << pol_bits, pol.len());
         assert_eq!(pol_bits, self.in_nbits);
 
@@ -81,6 +81,8 @@ impl FRI {
 
             let mut sinv = shift_inv;
             let wi = F3G::inv(MG.0[pol_bits]);
+            println!("nX {} {} {}", nX, pol2N, special_x);
+            crate::helper::pretty_print_array(&pol);
 
             for g in 0..(pol.len() / nX) {
                 if si == 0 {

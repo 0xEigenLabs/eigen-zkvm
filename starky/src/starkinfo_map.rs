@@ -171,9 +171,9 @@ impl StarkInfo {
 
             self.cm_n.push(ppz_n);
             self.cm_2ns.push(ppz_2ns);
-            self.map_sections.cm3_n.push(ppz_n);
-            self.map_sections.cm3_2ns.push(ppz_2ns);
-            pil.cm_dims[(self.n_cm1 + self.n_cm2 + i)] = self.q_dim;
+            self.map_sections.cm4_n.push(ppz_n);
+            self.map_sections.cm4_2ns.push(ppz_2ns);
+            pil.cm_dims[(self.n_cm1 + self.n_cm2 + self.n_cm3 + i)] = self.q_dim;
         }
 
         let ppq_2ns = add_pol(PolType {
@@ -207,7 +207,7 @@ impl StarkInfo {
         self.map_offsets.cm4_2ns = self.map_offsets.cm3_2ns + Next * self.map_sectionsN.cm3_2ns;
         self.map_offsets.q_2ns = self.map_offsets.cm4_2ns + Next * self.map_sectionsN.cm4_2ns;
         self.map_offsets.f_2ns = self.map_offsets.q_2ns + Next * self.map_sectionsN.q_2ns;
-
+        self.map_total_n = self.map_offsets.f_2ns + Next * self.map_sectionsN.f_2ns;
         self.map_deg = Index {
             cm1_n: N,
             cm2_n: N,
@@ -221,6 +221,14 @@ impl StarkInfo {
             q_2ns: Next,
             f_2ns: Next,
         };
+        println!(
+            "map_offsets: {:?} {:?} {:?} {:?} {:?}",
+            self.map_offsets,
+            self.map_deg,
+            self.map_sections,
+            self.map_sectionsN,
+            self.map_sectionsN1
+        );
 
         for i in 0..program.publics_code.len() {
             self.fix_prover_code(&mut program.publics_code[i], "n", pil);
@@ -263,7 +271,7 @@ impl StarkInfo {
             tmp_used: 0,
             dom: "".to_string(),
             starkinfo: self,
-        }; // FIXME?
+        };
         iterate_code(&mut program.verifier_query_code, fix_ref, &mut ctx_f, pil);
 
         for i in 0..(self.n_publics) {
@@ -277,7 +285,7 @@ impl StarkInfo {
         self.set_code_dimensions(&mut program.step3, 1);
         self.set_code_dimensions(&mut program.step42ns, 1);
         self.set_code_dimensions(&mut program.step52ns, 1);
-        self.set_code_dimensions(&mut program.verifier_code, 1);
+        self.set_code_dimensions(&mut program.verifier_code, 3);
         self.set_code_dimensions(&mut program.verifier_query_code, 1);
 
         Ok(())
@@ -462,6 +470,7 @@ impl StarkInfo {
                 }
             }
             let t = (self.map_sectionsN.get(s) - self.map_sectionsN1.get(s)) / 3;
+            println!("map_sectionN3 set {} = {}", s, t);
             self.map_sectionsN3.set(s, t);
         }
         Ok(())

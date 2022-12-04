@@ -110,6 +110,7 @@ pub struct StarkInfo {
     pub map_sectionsN: Index,
     pub map_offsets: Index,
     pub map_deg: Index,
+    pub map_total_n: usize,
 
     pub publics: Vec<Public>,
     pub ev_idx: EVIdx,
@@ -156,7 +157,6 @@ impl StarkInfo {
             ev_map: Vec::new(),
             fri_exp_id: 0,
             n_exps: 0,
-
             q_deg: 0,
             q_dim: 0,
             im_exps: HashMap::new(),
@@ -165,7 +165,6 @@ impl StarkInfo {
             qs: Vec::new(),
             exps_2ns: Vec::new(),
             exps_n: Vec::new(),
-
             cm_n: Vec::new(),
             cm_2ns: Vec::new(),
             tmpexp_n: Vec::new(),
@@ -177,7 +176,7 @@ impl StarkInfo {
             map_sectionsN: Index::default(),
             map_offsets: Index::default(),
             map_deg: Index::default(),
-
+            map_total_n: 0,
             publics: Vec::new(),
             ev_idx: EVIdx::new(),
         };
