@@ -121,6 +121,11 @@ impl StarkContext {
             "f_2ns" => &mut self.f_2ns,
             "exps_n" => &mut self.exps_n,
             "exps_2ns" => &mut self.exps_2ns,
+            "const_n" => &mut self.const_n,
+            "const_2ns" => &mut self.const_2ns,
+            "evals" => &mut self.evals,
+            "publics" => &mut self.publics,
+            "challenge" => &mut self.challenges,
             "tmpexp_n" => &mut self.tmpexp_n,
             _ => {
                 panic!("invalid symbol {:?}", section);

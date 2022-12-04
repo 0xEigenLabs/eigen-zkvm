@@ -110,9 +110,7 @@ impl Block {
                 Ops::Add => {
                     let lhs = match expr.defs[0].op {
                         Ops::Vari(x) => x,
-                        _ => {
-                            get_value(ctx, &expr.defs[0], arg_i) // FIXME dim may be 3
-                        }
+                        _ => get_value(ctx, &expr.defs[0], arg_i),
                     };
                     let rhs = match expr.defs[1].op {
                         Ops::Vari(x) => x,
@@ -173,22 +171,8 @@ impl Block {
                     // push value into stack
                     let addr = &expr.syms[0];
                     let mut dim = 1;
-                    if expr.syms.len() == 2 {
-                        // handle dim
-                        dim = expr.syms[1].parse::<usize>().unwrap();
-                    }
-                    let x = match dim {
-                        3 => F3G::new(
-                            get_value(ctx, expr, arg_i).to_be(),
-                            get_value(ctx, expr, arg_i + 1).to_be(),
-                            get_value(ctx, expr, arg_i + 2).to_be(),
-                        ),
-                        1 => get_value(ctx, expr, arg_i),
-                        _ => {
-                            panic!("Invalid dim");
-                        }
-                    };
-                    println!("eval_refer {}@{}={} dim={},", addr, arg_i, x, dim);
+                    let x = get_value(ctx, expr, arg_i);
+                    //println!("eval_refer {}@{}={} dim={},", addr, arg_i, x, dim);
                     val_stack.push(x);
                 }
                 _ => {
@@ -300,8 +284,32 @@ fn get_i(expr: &Expr, arg_i: usize) -> usize {
 
 fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
     let addr = &expr.syms[0];
+    let dim = match expr.syms.len() {
+        2 => expr.syms[1].parse::<usize>().unwrap(),
+        _ => 1,
+    };
+    // TODO
 
     match addr.as_str() {
+        "tmp" |
+            "cm1_n" | "cm1_2ns" |
+            "cm2_n" | "cm2_2ns" |
+            "cm3_n" | "cm3_2ns" |
+            "cm4_n" | "cm4_2ns" |
+            "q_2ns" |
+            "f_2ns" |
+            "publics" |
+            "challenge" |
+            "exps_n" | "exps_2ns" |
+            "const_n" | "const_2ns" |
+            "evals" |
+            "xDivXSubXi" | "xDivXSubWXi" |
+            "x_n" | "x_2ns" => {
+                let id = get_i(expr, arg_i);
+                let ctx_section = ctx.get_mut(addr.as_str());
+                ctx_section[id]
+            },
+        /*
         "tmp" => {
             let id = get_i(expr, arg_i);
             ctx.tmp[id]
@@ -392,6 +400,7 @@ fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
         }
         "x_n" => ctx.x_n[arg_i],
         "x_2ns" => ctx.x_2ns[arg_i],
+        */
         "Zi" => (ctx.Zi)(arg_i),
         _ => {
             panic!("invalid symbol {:?}", addr);
