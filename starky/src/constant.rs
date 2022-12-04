@@ -25,7 +25,7 @@ lazy_static::lazy_static! {
 
     pub static ref SHIFT: F3G = F3G::from(BaseElement::from(49u32));
     pub static ref SHIFT_INV: F3G = F3G::inv(SHIFT.clone());
-    pub static ref W: (Vec<F3G>, Vec<F3G>) = {
+    pub static ref MG: (Vec<F3G>, Vec<F3G>) = {
         let nqr = F3G::from(BaseElement::from(7u32));
         let rem = 2usize.pow(32) - 1;
         let s = 32usize;

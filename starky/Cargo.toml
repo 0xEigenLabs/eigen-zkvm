@@ -8,20 +8,10 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.33"
 
-winterfell = { version="0.4", default-features = false, features = ["concurrent"] }
-winter-prover = { version="0.4", default-features = false, features = ["concurrent"] }
-winter-fri = { version="0.4", default-features = false, features = ["concurrent"] }
 winter-utils = { version = "0.4", package = "winter-utils", default-features = false, features = ["concurrent"] }
 rand-utils = { version = "0.4", package = "winter-rand-utils" }
 winter-math = { version = "0.4" , features = ["concurrent"] }
 winter-crypto = { version = "0.4" , features = ["concurrent"] }
-
-#winterfell    = { path = "../../winterfell/winterfell", default-features = false, features = ["concurrent"] }
-#winter-prover = { path = "../../winterfell/prover", default-features = false, features = ["concurrent"] }
-#winter-utils  = { path = "../../winterfell/utils/core", package = "winter-utils", default-features = false, features = ["concurrent"] }
-#rand-utils    = { path = "../../winterfell/utils/rand", package = "winter-rand-utils" }
-#winter-math   = { path = "../../winterfell/math", features = ["concurrent"] }
-#winter-crypto   = { path = "../../winterfell/crypto", features = ["concurrent"] }
 
 num-bigint = "0.4"
 num-traits = "0.2"
@@ -36,9 +26,8 @@ ff = {package="ff_ce" , version="0.11", features = ["derive"]}
 rand = "0.4"
 lazy_static = "1.0"
 
-# threading
-crossbeam-channel = "0.5.6"
-crossbeam-utils = "0.8"
+## threading
+rayon = { version = "1.5"}
 num_cpus = "1.0"
 
 # error

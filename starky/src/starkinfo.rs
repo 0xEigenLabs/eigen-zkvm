@@ -22,6 +22,11 @@ pub struct PUCTX {
     pub c2_id: usize,
     pub num_id: usize,
     pub den_id: usize,
+
+    pub f_tmpexp_id: usize,
+    pub t_tmpexp_id: usize,
+    pub num_tmpexp_id: usize,
+    pub den_tmpexp_id: usize,
 }
 
 #[derive(Default, Debug, Serialize)]
@@ -34,6 +39,9 @@ pub struct PECTX {
     pub c2_id: usize,
     pub num_id: usize,
     pub den_id: usize,
+
+    pub num_tmpexp_id: usize,
+    pub den_tmpexp_id: usize,
 }
 
 #[derive(Default, Debug, Serialize)]
@@ -43,6 +51,9 @@ pub struct CICTX {
     pub c2_id: usize,
     pub num_id: usize,
     pub den_id: usize,
+
+    pub num_tmpexp_id: usize,
+    pub den_tmpexp_id: usize,
 }
 
 #[derive(Debug, Default)]
@@ -50,7 +61,7 @@ pub struct Program {
     pub publics_code: Vec<Segment>,
     pub step2prev: Segment,
     pub step3prev: Segment,
-    pub step4: Segment,
+    pub step3: Segment,
     pub step42ns: Segment,
     pub step52ns: Segment,
     pub verifier_code: Segment,
@@ -70,7 +81,18 @@ pub struct StarkInfo {
     pub ci_ctx: Vec<CICTX>,
     pub n_constants: usize,
     pub n_publics: usize,
+    pub n_tmpexps: usize,
     pub c_exp: usize,
+
+    pub im_exps: HashMap<usize, bool>,
+    pub q_deg: usize,
+    pub q_dim: usize,
+    pub im_exps_list: Vec<usize>,
+    pub im_exp2cm: HashMap<usize, usize>,
+
+    pub qs: Vec<usize>,
+    pub exps_2ns: Vec<usize>,
+    pub exps_n: Vec<usize>,
 
     pub ev_map: Vec<Node>,
     pub fri_exp_id: usize,
@@ -78,9 +100,9 @@ pub struct StarkInfo {
 
     pub cm_n: Vec<usize>,
     pub cm_2ns: Vec<usize>,
-    pub exps_n: Vec<usize>,
-    pub exps_2ns: Vec<usize>,
-    pub qs: Vec<usize>,
+    pub tmpexp_n: Vec<usize>,
+    pub q_2ns: Vec<usize>,
+    pub f_2ns: Vec<usize>,
 
     pub map_sections: IndexVec,
     pub map_sectionsN1: Index,
@@ -88,8 +110,10 @@ pub struct StarkInfo {
     pub map_sectionsN: Index,
     pub map_offsets: Index,
     pub map_deg: Index,
+    pub map_total_n: usize,
 
     pub publics: Vec<Public>,
+    pub ev_idx: EVIdx,
 }
 
 impl fmt::Display for StarkInfo {
@@ -100,7 +124,7 @@ impl fmt::Display for StarkInfo {
 }
 
 impl StarkInfo {
-    pub fn new(pil: &mut PIL, stark_struct: &StarkStruct) -> Result<StarkInfo> {
+    pub fn new(pil: &mut PIL, stark_struct: &StarkStruct) -> Result<(StarkInfo, Program)> {
         let pil_deg = pil.references.values().nth(0).unwrap().polDeg;
 
         let stark_deg = 2usize.pow(stark_struct.nBits as u32);
@@ -123,6 +147,7 @@ impl StarkInfo {
             ci_ctx: Vec::new(),
             n_constants: pil.nConstants,
             n_publics: pil.publics.len(),
+            n_tmpexps: 0,
             n_cm1: pil.nCommitments,
             n_cm2: 0,
             n_cm3: 0,
@@ -132,27 +157,35 @@ impl StarkInfo {
             ev_map: Vec::new(),
             fri_exp_id: 0,
             n_exps: 0,
-
+            q_deg: 0,
+            q_dim: 0,
+            im_exps: HashMap::new(),
+            im_exps_list: Vec::new(),
+            im_exp2cm: HashMap::new(),
+            qs: Vec::new(),
+            exps_2ns: Vec::new(),
+            exps_n: Vec::new(),
             cm_n: Vec::new(),
             cm_2ns: Vec::new(),
-            exps_n: Vec::new(),
-            exps_2ns: Vec::new(),
-            qs: Vec::new(),
+            tmpexp_n: Vec::new(),
+            q_2ns: Vec::new(),
+            f_2ns: Vec::new(),
             map_sections: IndexVec::default(),
             map_sectionsN1: Index::default(),
             map_sectionsN3: Index::default(),
             map_sectionsN: Index::default(),
             map_offsets: Index::default(),
             map_deg: Index::default(),
-
+            map_total_n: 0,
             publics: Vec::new(),
+            ev_idx: EVIdx::new(),
         };
 
         let mut program = Program {
             publics_code: vec![],
             step2prev: Segment::default(),
             step3prev: Segment::default(),
-            step4: Segment::default(),
+            step3: Segment::default(),
             step42ns: Segment::default(),
             step52ns: Segment::default(),
             verifier_code: Segment::default(),
@@ -160,10 +193,7 @@ impl StarkInfo {
         };
 
         let mut ctx = Context {
-            calculated: Calculated {
-                exps: vec![],
-                exps_prime: vec![],
-            },
+            calculated: Calculated::new(),
             tmp_used: 0,
             code: vec![],
             calculated_mark: HashMap::new(),
@@ -172,17 +202,12 @@ impl StarkInfo {
         info.generate_pubulic_calculators(&mut ctx, pil, &mut program)?;
         println!("generate_step2");
         info.generate_step2(&mut ctx, pil, &mut program)?; // H1, H2
-        info.n_cm2 = pil.nCommitments - info.n_cm1;
 
         println!("generate_step3");
         info.generate_step3(&mut ctx, pil, &mut program)?; // Z Polynonmial and LC of the permutation checks
-        info.n_cm3 = pil.nCommitments - info.n_cm1 - info.n_cm2;
 
         let mut ctx2ns = Context {
-            calculated: Calculated {
-                exps: Vec::new(),
-                exps_prime: Vec::new(),
-            },
+            calculated: Calculated::new(),
             tmp_used: 0,
             code: vec![],
             calculated_mark: HashMap::new(),
@@ -190,10 +215,7 @@ impl StarkInfo {
         };
 
         let mut ctx = Context {
-            calculated: Calculated {
-                exps: vec![],
-                exps_prime: vec![],
-            },
+            calculated: Calculated::new(),
             tmp_used: 0,
             code: vec![],
             calculated_mark: HashMap::new(),
@@ -201,14 +223,18 @@ impl StarkInfo {
         };
         println!("generate_constraint_polynomial");
 
-        info.generate_constraint_polynomial(&mut ctx, &mut ctx2ns, pil, &mut program)?;
-        info.n_cm4 = pil.nCommitments - info.n_cm1 - info.n_cm2 - info.n_cm3;
-        info.n_q = pil.nQ;
+        info.generate_constraint_polynomial(
+            &mut ctx,
+            &mut ctx2ns,
+            pil,
+            stark_struct,
+            &mut program,
+        )?;
 
         let mut ctx = Context {
             calculated: Calculated {
-                exps: vec![],
-                exps_prime: vec![],
+                exps: info.im_exps.clone(),
+                exps_prime: info.im_exps.clone(),
             },
             tmp_used: 0,
             code: vec![],
@@ -222,8 +248,8 @@ impl StarkInfo {
 
         let mut ctx = Context {
             calculated: Calculated {
-                exps: vec![],
-                exps_prime: vec![],
+                exps: info.im_exps.clone(),
+                exps_prime: info.im_exps.clone(),
             },
             tmp_used: 0,
             code: vec![],
@@ -235,8 +261,8 @@ impl StarkInfo {
 
         let mut ctx = Context {
             calculated: Calculated {
-                exps: vec![],
-                exps_prime: vec![],
+                exps: info.im_exps.clone(),
+                exps_prime: info.im_exps.clone(),
             },
             tmp_used: 0,
             code: vec![],
@@ -248,7 +274,7 @@ impl StarkInfo {
 
         info.publics = pil.publics.clone();
 
-        Ok(info)
+        Ok((info, program))
     }
 
     pub fn generate_pubulic_calculators(
@@ -261,13 +287,12 @@ impl StarkInfo {
         //println!("generate_pubulic_calculators: publics as input: {:?}", publics);
         for p in publics.iter() {
             if p.polType.as_str() == "imP" {
-                pil_code_gen(ctx, pil, p.polId, false, "")?;
+                pil_code_gen(ctx, pil, p.polId, false, "", 0)?;
                 let mut segment = build_code(ctx, pil);
 
                 let mut ctx_f = ContextF {
                     exp_map: HashMap::new(),
                     tmp_used: segment.tmp_used,
-                    ev_idx: EVIdx::new(),
                     dom: "".to_string(),
                     starkinfo: self,
                 };
@@ -288,11 +313,11 @@ impl StarkInfo {
 
                 segment.tmp_used = ctx_f.tmp_used;
                 program.publics_code.push(segment);
-                //println!("generate_pubulic_calculators: publics_code: {:?}", program.publics_code);
-                ctx.calculated = Calculated {
-                    exps: vec![],
-                    exps_prime: vec![],
-                };
+                //println!("generate_pubulic_calculators: publics_code: {}", program.publics_code.len());
+                //for pp in program.publics_code.iter() {
+                //    println!("{}", pp);
+                //}
+                ctx.calculated = Calculated::new();
             }
         }
         Ok(())
@@ -353,8 +378,13 @@ impl StarkInfo {
 
             pil.expressions.push(f_exp);
 
-            pil_code_gen(ctx, pil, f_exp_id.clone(), false, "")?;
-            pil_code_gen(ctx, pil, t_exp_id.clone(), false, "")?;
+            let f_tmpexp_id = self.n_tmpexps;
+            pil_code_gen(ctx, pil, f_exp_id.clone(), false, "tmpExp", self.n_tmpexps)?;
+            self.n_tmpexps += 1;
+
+            let t_tmpexp_id = self.n_tmpexps;
+            pil_code_gen(ctx, pil, t_exp_id.clone(), false, "tmpExp", self.n_tmpexps)?;
+            self.n_tmpexps += 1;
 
             let h1_id = pil.nCommitments;
             pil.nCommitments += 1;
@@ -371,11 +401,18 @@ impl StarkInfo {
                 c2_id: 0,
                 num_id: 0,
                 den_id: 0,
+                f_tmpexp_id,
+                t_tmpexp_id,
+                num_tmpexp_id: 0,
+                den_tmpexp_id: 0,
             });
         }
 
         program.step2prev = build_code(ctx, pil);
-        //println!("step2prev {}", program.step2prev);
+        println!("step2prev {}", program.step2prev);
+        ctx.calculated = Calculated::new();
+        self.n_cm2 = pil.nCommitments - self.n_cm1;
+        println!("n_cm2 {}", self.n_cm2);
         Ok(())
     }
 }

@@ -1,7 +1,7 @@
 use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::starkinfo::{Program, StarkInfo};
-use crate::starkinfo_codegen::{build_code, pil_code_gen, Context};
+use crate::starkinfo_codegen::{build_code, pil_code_gen, Context, Node};
 use crate::types::PIL;
 
 impl StarkInfo {
@@ -20,14 +20,6 @@ impl StarkInfo {
                 fri_exp = E::cm(i, None);
             } else {
                 fri_exp = E::add(&E::mul(&vf1, &fri_exp), &E::cm(i, None));
-            }
-        }
-
-        for i in 0..pil.nQ {
-            if E::is_nop(&fri_exp) {
-                fri_exp = E::q(i, None);
-            } else {
-                fri_exp = E::add(&E::mul(&vf1, &fri_exp), &E::q(i, None));
             }
         }
 
@@ -64,18 +56,22 @@ impl StarkInfo {
         //println!("fri1exp {}", fri1_exp);
         //println!("fri2exp {}", fri2_exp);
 
-        fri1_exp = E::mul(&fri1_exp, &E::xDivXSubXi());
         if !E::is_nop(&fri_exp) {
-            fri_exp = E::add(&E::mul(&vf1, &fri_exp), &fri1_exp);
-        } else {
-            fri_exp = fri1_exp;
+            fri1_exp = E::mul(&fri1_exp, &E::xDivXSubXi());
+            if !E::is_nop(&fri_exp) {
+                fri_exp = E::add(&E::mul(&vf1, &fri_exp), &fri1_exp);
+            } else {
+                fri_exp = fri1_exp;
+            }
         }
 
-        fri2_exp = E::mul(&fri2_exp, &E::xDivXSubWXi());
-        if !E::is_nop(&fri_exp) {
-            fri_exp = E::add(&E::mul(&vf1, &fri_exp), &fri2_exp);
-        } else {
-            fri_exp = fri2_exp;
+        if !E::is_nop(&fri2_exp) {
+            fri2_exp = E::mul(&fri2_exp, &E::xDivXSubWXi());
+            if !E::is_nop(&fri_exp) {
+                fri_exp = E::add(&E::mul(&vf1, &fri_exp), &fri2_exp);
+            } else {
+                fri_exp = fri2_exp;
+            }
         }
 
         //println!("fri_exp {}", fri_exp);
@@ -86,7 +82,12 @@ impl StarkInfo {
         }
         pil.expressions.push(fri_exp);
 
-        pil_code_gen(ctx, pil, self.fri_exp_id, false, "")?;
+        pil_code_gen(ctx, pil, self.fri_exp_id, false, "f", 0)?;
+        let sz = ctx.code.len() - 1;
+        let mut code = &mut ctx.code[sz].code;
+        let sz = code.len() - 1;
+        code[sz].dest = Node::new("f".to_string(), 0, None, 0, false, 0);
+
         program.step52ns = build_code(ctx, pil);
         //println!("step52ns:{}", program.step52ns);
         Ok(())

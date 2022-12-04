@@ -2,7 +2,7 @@
 use crate::errors::Result;
 use crate::merklehash_bn128::MerkleTree;
 use crate::polsarray::PolsArray;
-use crate::starkinfo::{self, StarkInfo};
+use crate::starkinfo::{self, Program, StarkInfo};
 use crate::types::{StarkStruct, PIL};
 use crate::ElementDigest;
 
@@ -11,6 +11,9 @@ use winter_math::{fft, fields::f64::BaseElement, polynom, FieldElement, StarkFie
 use winter_utils::{iter, transpose_slice};
 
 pub fn interpolate_columns(columns: &Vec<Vec<BaseElement>>) -> Vec<Vec<BaseElement>> {
+    if columns.len() == 0 {
+        return vec![];
+    }
     let width = columns[0].len();
     let inv_twiddles = fft::get_inv_twiddles::<BaseElement>(width);
     let columns = iter!(columns)
@@ -28,6 +31,9 @@ pub fn evaluate_columns_over(
     offset: BaseElement,
     blowup_factor: usize,
 ) -> Vec<Vec<BaseElement>> {
+    if columns.len() == 0 {
+        return vec![];
+    }
     let width = columns[0].len();
     let twiddles = fft::get_twiddles::<BaseElement>(width);
     let columns = iter!(columns)
@@ -54,46 +60,51 @@ pub fn interpolate_in_pil(
 }
 
 #[derive(Default)]
-pub struct StarkSetupResp {
+pub struct StarkSetup {
     pub const_tree: MerkleTree,
     pub const_root: ElementDigest,
     pub starkinfo: StarkInfo,
+    pub program: Program,
 }
 
 /// STARK SETUP
 ///
 ///  calculate the trace polynomial over extended field, return the new polynomial's coefficient.
-pub fn stark_setup_new(
-    const_pol: &PolsArray,
-    pil: &mut PIL,
-    stark_struct: &StarkStruct,
-) -> Result<StarkSetupResp> {
-    let nBits = stark_struct.nBits;
-    let nBitsExt = stark_struct.nBitsExt;
+impl StarkSetup {
+    pub fn new(
+        const_pol: &PolsArray,
+        pil: &mut PIL,
+        stark_struct: &StarkStruct,
+    ) -> Result<StarkSetup> {
+        let nBits = stark_struct.nBits;
+        let nBitsExt = stark_struct.nBitsExt;
 
-    let mut p: Vec<Vec<BaseElement>> = vec![Vec::new(); const_pol.nPols];
-    for i in 0..const_pol.nPols {
-        for j in 0..const_pol.n {
-            p[i].push(const_pol.array[i][j])
+        let mut p: Vec<Vec<BaseElement>> = vec![Vec::new(); const_pol.nPols];
+        for i in 0..const_pol.nPols {
+            for j in 0..const_pol.n {
+                p[i].push(const_pol.array[i][j])
+            }
         }
+
+        //extend and merkelize
+        let m = interpolate_in_pil(&p, 1 << (nBitsExt - nBits));
+        let const_tree =
+            MerkleTree::merkelize(m, const_pol.nPols, const_pol.n << (nBitsExt - nBits))?;
+
+        let starkinfo = starkinfo::StarkInfo::new(pil, stark_struct)?;
+        Ok(StarkSetup {
+            const_root: const_tree.root(),
+            const_tree: const_tree,
+            starkinfo: starkinfo.0,
+            program: starkinfo.1,
+        })
     }
-
-    //extend and merkelize
-    let m = interpolate_in_pil(&p, 1 << (nBitsExt - nBits));
-    let const_tree = MerkleTree::merkelize(m, const_pol.nPols, const_pol.n << (nBitsExt - nBits))?;
-
-    let starkinfo = starkinfo::StarkInfo::new(pil, stark_struct)?;
-    Ok(StarkSetupResp {
-        const_root: const_tree.root(),
-        const_tree: const_tree,
-        starkinfo: starkinfo,
-    })
 }
 
 #[cfg(test)]
 pub mod tests {
     use crate::polsarray::{PolKind, PolsArray};
-    use crate::stark_setup::stark_setup_new;
+    use crate::stark_setup::StarkSetup;
     use crate::types::{load_json, StarkStruct, PIL};
     use winter_math::fft::{self, get_inv_twiddles};
     use winter_math::{
@@ -134,7 +145,7 @@ pub mod tests {
         const_pol.load("data/fib.const.2").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
-        let setup = stark_setup_new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
         let root: Fr = setup.const_root.into();
 
         let expect_root =

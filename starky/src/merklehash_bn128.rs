@@ -21,8 +21,9 @@ pub struct MerkleTree {
 impl MerkleTree {
     pub fn write_buff(&self) -> Vec<F3G> {
         let mut buff: Vec<F3G> = vec![];
-        for i in 0..self.width {
-            for j in 0..self.height {
+        for i in 0..self.height {
+            for j in 0..self.width {
+                //println!("const_2ns: {} {}", buff.len(), self.elements[j][i]);
                 buff.push(F3G::from(self.elements[j][i]));
             }
         }
@@ -68,7 +69,10 @@ impl MerkleTree {
         let max_workers = get_max_workers();
 
         let mut n_per_thread_f = (height - 1) / max_workers + 1;
-        let min_pt = MIN_OPS_PER_THREAD / ((width - 1) / (3 * 16) + 1);
+        let mut min_pt = 0;
+        if width > 1 {
+            min_pt = MIN_OPS_PER_THREAD / ((width - 1) / (3 * 16) + 1);
+        }
         if n_per_thread_f < min_pt {
             n_per_thread_f = min_pt;
         }
@@ -184,7 +188,7 @@ impl MerkleTree {
     }
 
     pub fn get_element(&self, idx: usize, sub_idx: usize) -> BaseElement {
-        self.elements[idx][sub_idx]
+        self.elements[sub_idx][idx]
     }
 
     fn merkle_gen_merkle_proof(&self, idx: usize, offset: usize, n: usize) -> Vec<Vec<Fr>> {
@@ -208,7 +212,7 @@ impl MerkleTree {
     }
 
     pub fn get_group_proof(&self, idx: usize) -> Result<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
-        if idx >= self.width {
+        if idx >= self.height {
             return Err(EigenError::MerkleTreeError(
                 "access invalid node".to_string(),
             ));

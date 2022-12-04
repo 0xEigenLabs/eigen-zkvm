@@ -5,7 +5,7 @@ use crate::f3g::F3G;
 use crate::helper::get_ks;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo::{CICTX, PECTX};
-use crate::starkinfo_codegen::{build_code, pil_code_gen, Context};
+use crate::starkinfo_codegen::{build_code, pil_code_gen, Calculated, Context};
 use crate::types::{PolIdentity, PIL};
 
 impl StarkInfo {
@@ -21,7 +21,8 @@ impl StarkInfo {
         self.generate_connections_Z(ctx, pil)?;
 
         program.step3prev = build_code(ctx, pil);
-        //println!("step3prev {}", program.step3prev);
+        println!("step3prev {}", program.step3prev);
+        ctx.calculated = Calculated::new();
         Ok(())
     }
 
@@ -83,9 +84,6 @@ impl StarkInfo {
 
             pil.expressions.push(f_exp);
 
-            pil_code_gen(ctx, pil, f_exp_id.clone(), false, "")?;
-            pil_code_gen(ctx, pil, t_exp_id.clone(), false, "")?;
-
             self.pe_ctx.push(PECTX {
                 f_exp_id,
                 t_exp_id,
@@ -94,6 +92,8 @@ impl StarkInfo {
                 den_id: 0,
                 num_id: 0,
                 z_id: 0,
+                den_tmpexp_id: 0,
+                num_tmpexp_id: 0,
             });
         }
         Ok(())
@@ -202,8 +202,25 @@ impl StarkInfo {
                 line: 0,
                 fileName: "".to_string(),
             });
-            pil_code_gen(ctx, pil, self.pu_ctx[i].num_id.clone(), false, "")?;
-            pil_code_gen(ctx, pil, self.pu_ctx[i].den_id.clone(), false, "")?;
+            self.pu_ctx[i].num_tmpexp_id = self.n_tmpexps;
+            pil_code_gen(
+                ctx,
+                pil,
+                self.pu_ctx[i].num_id.clone(),
+                false,
+                "tmpExp",
+                self.n_tmpexps,
+            )?;
+            self.n_tmpexps += 1;
+            pil_code_gen(
+                ctx,
+                pil,
+                self.pu_ctx[i].den_id.clone(),
+                false,
+                "tmpExp",
+                self.n_tmpexps,
+            )?;
+            self.n_tmpexps += 1;
         }
         Ok(())
     }
@@ -278,8 +295,27 @@ impl StarkInfo {
                 fileName: "".to_string(),
             });
 
-            pil_code_gen(ctx, pil, self.pe_ctx[i].num_id.clone(), false, "")?;
-            pil_code_gen(ctx, pil, self.pe_ctx[i].den_id.clone(), false, "")?;
+            self.pe_ctx[i].num_tmpexp_id = self.n_tmpexps;
+            pil_code_gen(
+                ctx,
+                pil,
+                self.pe_ctx[i].num_id.clone(),
+                false,
+                "tmpExp",
+                self.n_tmpexps,
+            )?;
+            self.n_tmpexps += 1;
+
+            self.pe_ctx[i].num_tmpexp_id = self.n_tmpexps;
+            pil_code_gen(
+                ctx,
+                pil,
+                self.pe_ctx[i].den_id.clone(),
+                false,
+                "tmpExp",
+                self.n_tmpexps,
+            )?;
+            self.n_tmpexps += 1;
         }
         Ok(())
     }
@@ -413,8 +449,26 @@ impl StarkInfo {
                 fileName: "".to_string(),
             });
 
-            pil_code_gen(ctx, pil, ci_ctx.num_id.clone(), false, "")?;
-            pil_code_gen(ctx, pil, ci_ctx.den_id.clone(), false, "")?;
+            ci_ctx.num_tmpexp_id = self.n_tmpexps;
+            pil_code_gen(
+                ctx,
+                pil,
+                ci_ctx.num_id.clone(),
+                false,
+                "tmpExp",
+                self.n_tmpexps,
+            )?;
+            self.n_tmpexps += 1;
+            ci_ctx.den_tmpexp_id = self.n_tmpexps;
+            pil_code_gen(
+                ctx,
+                pil,
+                ci_ctx.den_id.clone(),
+                false,
+                "tmpExp",
+                self.n_tmpexps,
+            )?;
+            self.n_tmpexps += 1;
             self.ci_ctx.push(ci_ctx);
         }
         Ok(())
