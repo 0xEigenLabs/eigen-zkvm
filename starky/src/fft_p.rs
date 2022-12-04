@@ -85,10 +85,10 @@ pub fn interpolatePrepare(buff: &mut Vec<F3G>, nPols: usize, nBits: usize, nBits
     let maxCorrected = maxNPerThread / nPols;
     let minCorrected = minNPerThread / nPols;
 
-    if (nPerThreadF > maxCorrected) {
+    if nPerThreadF > maxCorrected {
         nPerThreadF = maxCorrected
     };
-    if (nPerThreadF < minCorrected) {
+    if nPerThreadF < minCorrected {
         nPerThreadF = minCorrected
     };
 
@@ -100,7 +100,7 @@ pub fn interpolatePrepare(buff: &mut Vec<F3G>, nPols: usize, nBits: usize, nBits
             .for_each(|(i, bb)| {
                 let start = invN * (SHIFT.clone().exp(i)); //F.mul(invN, F.exp(F.shift, i));
                 let inc = SHIFT.clone();
-                interpolatePrepareBlock(bb, nPols, start, inc, i / nPerThreadF, (n / nPerThreadF));
+                interpolatePrepareBlock(bb, nPols, start, inc, i / nPerThreadF, n / nPerThreadF);
             });
     });
 }
@@ -118,10 +118,10 @@ pub fn _fft(buffSrc: &Vec<F3G>, nPols: usize, nBits: usize, buffDst: &mut Vec<F3
 
     let idealNBlocks = get_max_workers() * blocksPerThread;
     let mut blockBits = log2_any(n * nPols / idealNBlocks);
-    if (blockBits < minBlockBits) {
+    if blockBits < minBlockBits {
         blockBits = minBlockBits
     };
-    if (blockBits > maxBlockBits) {
+    if blockBits > maxBlockBits {
         blockBits = maxBlockBits
     };
     blockBits = min(nBits, blockBits);
@@ -129,13 +129,13 @@ pub fn _fft(buffSrc: &Vec<F3G>, nPols: usize, nBits: usize, buffDst: &mut Vec<F3
     let nBlocks = n / blockSize;
 
     let mut nTrasposes = 0;
-    if (nBits == blockBits) {
+    if nBits == blockBits {
         nTrasposes = 0;
     } else {
         nTrasposes = ((nBits - 1) / blockBits) + 1;
     }
 
-    if (nTrasposes & 1 > 0) {
+    if nTrasposes & 1 > 0 {
         bOut = &mut tmpBuff;
         bIn = outBuff;
     } else {
@@ -143,7 +143,7 @@ pub fn _fft(buffSrc: &Vec<F3G>, nPols: usize, nBits: usize, buffDst: &mut Vec<F3
         bIn = &mut tmpBuff;
     }
 
-    if (inverse) {
+    if inverse {
         invBitReverse(bOut, buffSrc, nPols, nBits);
     } else {
         bitReverse(bOut, buffSrc, nPols, nBits);
@@ -159,7 +159,7 @@ pub fn _fft(buffSrc: &Vec<F3G>, nPols: usize, nBits: usize, buffDst: &mut Vec<F3
                     fft_block(bb, j * blockSize, nPols, nBits, i + sInc, blockBits, sInc);
                 });
 
-            if (sInc < nBits) {
+            if sInc < nBits {
                 // Do not transpose if it's the same
                 transpose(&mut bOut, &bIn, nPols, nBits, sInc);
                 (bIn, bOut) = (bOut, bIn);
@@ -198,34 +198,34 @@ pub fn interpolate(
     let mut nTrasposes = 0;
 
     let mut blockBits = log2_any(n * nPols / idealNBlocks);
-    if (blockBits < minBlockBits) {
+    if blockBits < minBlockBits {
         blockBits = minBlockBits
     };
-    if (blockBits > maxBlockBits) {
+    if blockBits > maxBlockBits {
         blockBits = maxBlockBits
     };
     blockBits = min(nBits, blockBits);
     let blockSize = 1 << blockBits;
     let nBlocks = n / blockSize;
 
-    if (blockBits < nBits) {
+    if blockBits < nBits {
         nTrasposes += ((nBits - 1) / blockBits) + 1;
     }
 
     nTrasposes += 1; // The middle convertion
 
     let mut blockBitsExt = log2_any(nExt * nPols / idealNBlocks);
-    if (blockBitsExt < minBlockBits) {
+    if blockBitsExt < minBlockBits {
         blockBitsExt = minBlockBits
     };
-    if (blockBitsExt > maxBlockBits) {
+    if blockBitsExt > maxBlockBits {
         blockBitsExt = maxBlockBits
     };
     blockBitsExt = min(nBitsExt, blockBitsExt);
     let blockSizeExt = 1 << blockBitsExt;
     let nBlocksExt = nExt / blockSizeExt;
 
-    if (blockBitsExt < nBitsExt) {
+    if blockBitsExt < nBitsExt {
         nTrasposes += (nBitsExt - 1) / blockBitsExt + 1;
     }
 
@@ -260,7 +260,7 @@ pub fn interpolate(
                 fft_block(bb, j * blockSize, nPols, nBits, i + sInc, blockBits, sInc);
             });
 
-        if (sInc < nBits) {
+        if sInc < nBits {
             // Do not transpose if it's the same
             transpose(bOut, bIn, nPols, nBits, sInc);
             (bIn, bOut) = (bOut, bIn);

@@ -188,7 +188,7 @@ impl MerkleTree {
     }
 
     pub fn get_element(&self, idx: usize, sub_idx: usize) -> BaseElement {
-        self.elements[idx][sub_idx]
+        self.elements[sub_idx][idx]
     }
 
     fn merkle_gen_merkle_proof(&self, idx: usize, offset: usize, n: usize) -> Vec<Vec<Fr>> {
@@ -212,7 +212,7 @@ impl MerkleTree {
     }
 
     pub fn get_group_proof(&self, idx: usize) -> Result<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
-        if idx >= self.width {
+        if idx >= self.height {
             return Err(EigenError::MerkleTreeError(
                 "access invalid node".to_string(),
             ));

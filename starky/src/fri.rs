@@ -6,6 +6,7 @@ use crate::fft::FFT;
 use crate::helper::log2_any;
 use crate::merklehash_bn128::MerkleTree;
 use crate::poseidon_bn128::Fr;
+use crate::poseidon_bn128::FrRepr;
 use crate::transcript_bn128::TranscriptBN128;
 use crate::types::{StarkStruct, Step};
 use ff::*;
@@ -94,8 +95,8 @@ impl FRI {
                     }
 
                     let mut ppar_c = standard_fft.ifft(&ppar);
-                    pol_mul_axi(&mut ppar_c, &F3G::ONE, &sinv);
-                    pol2_e[g] = eval_pol(&ppar, &special_x);
+                    pol_mul_axi(&mut ppar_c, F3G::ONE, &sinv);
+                    pol2_e[g] = eval_pol(&ppar_c, &special_x);
                     sinv = sinv * wi;
                 }
             }
@@ -107,16 +108,21 @@ impl FRI {
                 let pol2_etb = getTransposedBuffer(&pol2_e, self.steps[si + 1].nBits);
                 tree.push(MerkleTree::merkelize(pol2_etb, 3 * group_size, n_groups)?);
                 proof.queries[si + 1].root = tree[si].root();
+                let rrr: Fr = proof.queries[si + 1].root.into();
+                println!("proof.queries {}={}", si + 1, rrr);
                 transcript.put(&vec![tree[si].root().into()]);
             } else {
-                let mut pp: Vec<Fr> = vec![];
+                println!("last {}", pol2_e.len());
                 for e in pol2_e.iter() {
                     let elems = e.as_elements();
-                    pp.push(Fr::from_str(&elems[0].as_int().to_string()).unwrap());
-                    pp.push(Fr::from_str(&elems[1].as_int().to_string()).unwrap());
-                    pp.push(Fr::from_str(&elems[2].as_int().to_string()).unwrap());
+                    let v = vec![
+                        Fr::from_repr(FrRepr::from(elems[0].as_int())).unwrap(),
+                        Fr::from_repr(FrRepr::from(elems[1].as_int())).unwrap(),
+                        Fr::from_repr(FrRepr::from(elems[2].as_int())).unwrap(),
+                    ];
+                    println!("{}", e);
+                    transcript.put(&v);
                 }
-                transcript.put(&pp);
             }
 
             pol = pol2_e;
@@ -153,7 +159,7 @@ impl FRI {
 
             if si < self.steps.len() - 1 {
                 for i in 0..ys.len() {
-                    ys[i] = ys[i] % (1 << self.steps[si].nBits);
+                    ys[i] = ys[i] % (1 << self.steps[si + 1].nBits);
                 }
             }
         }
@@ -288,23 +294,32 @@ impl FRI {
     }
 }
 
+// TODO optmiize
 fn getTransposedBuffer(pol: &Vec<F3G>, trasposeBits: usize) -> Vec<Vec<BaseElement>> {
     let n = pol.len();
     let w = 1 << trasposeBits;
     let h = n / w;
-    let mut res: Vec<Vec<BaseElement>> = vec![Vec::new(); h];
-    for j in 0..h {
-        res[j] = vec![BaseElement::ZERO; w * 3];
-        for i in 0..w {
-            let di = i * 3;
-            let fi = j * h + i;
+    let mut res: Vec<Vec<BaseElement>> = vec![Vec::new(); w];
+    for i in 0..w {
+        res[i] = vec![BaseElement::ZERO; h * 3];
+        for j in 0..h {
+            let di = j * 3;
+            let fi = j * w + i;
             let pb = pol[fi].as_elements();
-            res[j][di] = pb[0];
-            res[j][di + 1] = pb[1];
-            res[j][di + 2] = pb[2];
+            assert_eq!(pol[fi].dim, 3);
+            res[i][di] = pb[0];
+            res[i][di + 1] = pb[1];
+            res[i][di + 2] = pb[2];
         }
     }
-    res
+    let mut resn: Vec<Vec<BaseElement>> = vec![Vec::new(); h * 3];
+    for i in 0..(3 * h) {
+        resn[i] = vec![BaseElement::ZERO; w];
+        for j in 0..w {
+            resn[i][j] = res[j][i];
+        }
+    }
+    resn
 }
 
 fn get3(arr: &Vec<BaseElement>, idx: usize) -> F3G {
@@ -319,14 +334,15 @@ fn split3(arr: &Vec<BaseElement>) -> Vec<F3G> {
     return res;
 }
 
-fn pol_mul_axi(p: &mut Vec<F3G>, init: &F3G, acc: &F3G) {
-    let mut r = *init;
+fn pol_mul_axi(p: &mut Vec<F3G>, init: F3G, acc: &F3G) {
+    let mut r = init;
     for i in 0..p.len() {
-        p[i] = p[i] * r;
-        r = r * *acc;
+        p[i] *= r;
+        r *= *acc;
     }
 }
 
+// TODO: use winter_math
 fn eval_pol(p: &Vec<F3G>, x: &F3G) -> F3G {
     if p.len() == 0 {
         return F3G::ZERO;
@@ -336,4 +352,24 @@ fn eval_pol(p: &Vec<F3G>, x: &F3G) -> F3G {
         res = res * *x + p[i];
     }
     res
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::f3g::F3G;
+    use crate::fri::eval_pol;
+    use winter_math::polynom;
+    use winter_math::StarkField;
+
+    #[test]
+    fn test_eval_pol() {
+        let p = vec![1, 2, 3, 4]
+            .iter()
+            .map(|e| F3G::from(e))
+            .collect::<Vec<F3G>>();
+        let xi = F3G::from(10);
+
+        let expected = polynom::eval(&p, xi);
+        assert_eq!(eval_pol(&p, &xi), expected);
+    }
 }

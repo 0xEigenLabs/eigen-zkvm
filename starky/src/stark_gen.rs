@@ -127,6 +127,8 @@ impl StarkContext {
             "publics" => &mut self.publics,
             "challenge" => &mut self.challenges,
             "tmpexp_n" => &mut self.tmpexp_n,
+            "x_n" => &mut self.x_n,
+            "x_2ns" => &mut self.x_2ns,
             _ => {
                 panic!("invalid symbol {:?}", section);
             }
@@ -459,7 +461,7 @@ impl<'a> StarkProof {
 
         calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns");
 
-        let mut friPol = vec![F3G::ZERO; (N << extendBits)];
+        let mut friPol = vec![F3G::ZERO; N << extendBits];
         println!("friPol {} {}", friPol.len(), N << extendBits);
 
         println!("ctx.f_2ns");
@@ -473,8 +475,8 @@ impl<'a> StarkProof {
         }
         println!("friPol {} {}", friPol.len(), N << extendBits);
 
-        //let mut trees = vec![&tree1, &tree2, &tree3, &tree4, const_tree];
         let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
+            println!("{:?} {:?}", tree1.width, tree2.width);
             vec![
                 tree1.get_group_proof(idx).unwrap(),
                 tree2.get_group_proof(idx).unwrap(),

@@ -100,6 +100,7 @@ impl TranscriptBN128 {
         for i in 0..NFields {
             fields.push(fr_to_biguint(&self.get_fields253()?));
         }
+        println!("get_permutations: {:?}", fields);
         let mut res: Vec<usize> = vec![];
         let mut cur_field = 0;
         let mut cur_bit = 0usize;
@@ -110,7 +111,7 @@ impl TranscriptBN128 {
                 let shift = &fields[cur_field] >> cur_bit;
                 let bit = shift & &one;
                 if bit == one {
-                    a = a + 1 << j;
+                    a = a + (1 << j);
                 }
                 cur_bit += 1;
                 if cur_bit == 253 {

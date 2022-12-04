@@ -284,105 +284,29 @@ fn get_i(expr: &Expr, arg_i: usize) -> usize {
 
 fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
     let addr = &expr.syms[0];
-    let dim = match expr.syms.len() {
-        2 => expr.syms[1].parse::<usize>().unwrap(),
-        _ => 1,
-    };
-    // TODO
 
     match addr.as_str() {
-        "tmp" |
-            "cm1_n" | "cm1_2ns" |
-            "cm2_n" | "cm2_2ns" |
-            "cm3_n" | "cm3_2ns" |
-            "cm4_n" | "cm4_2ns" |
-            "q_2ns" |
-            "f_2ns" |
-            "publics" |
-            "challenge" |
-            "exps_n" | "exps_2ns" |
-            "const_n" | "const_2ns" |
-            "evals" |
-            "xDivXSubXi" | "xDivXSubWXi" |
-            "x_n" | "x_2ns" => {
-                let id = get_i(expr, arg_i);
-                let ctx_section = ctx.get_mut(addr.as_str());
-                ctx_section[id]
-            },
-        /*
-        "tmp" => {
+        "tmp" | "cm1_n" | "cm1_2ns" | "cm2_n" | "cm2_2ns" | "cm3_n" | "cm3_2ns" | "cm4_n"
+        | "cm4_2ns" | "q_2ns" | "f_2ns" | "publics" | "challenge" | "exps_n" | "exps_2ns"
+        | "const_n" | "const_2ns" | "evals" | "x_n" | "x_2ns" => {
             let id = get_i(expr, arg_i);
-            ctx.tmp[id]
-        }
-        "cm1_n" => {
-            let id = get_i(expr, arg_i);
-            ctx.cm1_n[id]
-        }
-        "cm1_2ns" => {
-            let id = get_i(expr, arg_i);
-            ctx.cm1_2ns[id]
-        }
-        "cm2_n" => {
-            let id = get_i(expr, arg_i);
-            ctx.cm2_n[id]
-        }
-        "cm2_2ns" => {
-            let id = get_i(expr, arg_i);
-            ctx.cm2_2ns[id]
-        }
-        "cm3_n" => {
-            let id = get_i(expr, arg_i);
-            ctx.cm3_n[id]
-        }
-        "cm3_2ns" => {
-            let id = get_i(expr, arg_i);
-            ctx.cm3_2ns[id]
-        }
-        "cm4_n" => {
-            let id = get_i(expr, arg_i);
-            ctx.cm4_n[id]
-        }
-        "cm4_2ns" => {
-            let id = get_i(expr, arg_i);
-            ctx.cm4_2ns[id]
-        }
-        "q_2ns" => {
-            let id = get_i(expr, arg_i);
-            ctx.q_2ns[id]
-        }
-        "f_2ns" => {
-            let id = get_i(expr, arg_i);
-            ctx.f_2ns[id]
-        }
-        "exps_n" => {
-            let id = get_i(expr, arg_i);
-            ctx.exps_n[id]
-        }
-        "exps_2ns" => {
-            let id = get_i(expr, arg_i);
-            ctx.exps_2ns[id]
-        }
-        "const_n" => {
-            let id = get_i(expr, arg_i);
-            ctx.const_n[id]
-        }
-        "const_2ns" => {
-            let id = get_i(expr, arg_i);
-            ctx.const_2ns[id]
-        }
-        "publics" => {
-            let id = get_i(expr, arg_i);
-            ctx.publics[id]
-        }
-        "challenge" => {
-            let id = get_i(expr, arg_i);
-            ctx.challenges[id]
-        }
-        "evals" => {
-            let id = get_i(expr, arg_i);
-            ctx.evals[id]
+            let ctx_section = ctx.get_mut(addr.as_str()); // OPT: readonly ctx
+            let dim = match expr.syms.len() {
+                2 => expr.syms[1].parse::<usize>().unwrap(),
+                _ => 1,
+            };
+            match dim {
+                3 => F3G::new(
+                    ctx_section[id].to_be(),
+                    ctx_section[id + 1].to_be(),
+                    ctx_section[id + 2].to_be(),
+                ),
+                1 => ctx_section[id],
+                _ => panic!("Invalid dim"),
+            }
         }
         "xDivXSubXi" => {
+            // FIXME: change to F3G
             let id = get_i(expr, arg_i);
             F3G::new(
                 ctx.xDivXSubXi[id],
@@ -398,9 +322,6 @@ fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
                 ctx.xDivXSubWXi[id + 2],
             )
         }
-        "x_n" => ctx.x_n[arg_i],
-        "x_2ns" => ctx.x_2ns[arg_i],
-        */
         "Zi" => (ctx.Zi)(arg_i),
         _ => {
             panic!("invalid symbol {:?}", addr);

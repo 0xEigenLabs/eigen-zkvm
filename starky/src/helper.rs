@@ -70,41 +70,41 @@ pub fn pretty_print_matrix<T: FieldElement + StarkField>(cols: &Vec<Vec<T>>) {
         return;
     }
     println!("matrix: cols {}, rows: {}", cols.len(), cols[0].len());
-    let mut iglines = 2;
     let width = 10;
     for i in 0..cols[0].len() {
-        print!("\t rows[{:?}]: {:?},", i, cols[0][i].as_int());
+        let mut iglines = 2;
+        print!("\t rows[{}]: {}, ", i, cols[0][i]);
         if cols.len() > 2 {
-            print!("{:?},", cols[1][i].as_int());
-            print!("{:?},", cols[2][i].as_int());
+            print!("{}, ", cols[1][i]);
+            print!("{}, ", cols[2][i]);
             iglines += 2;
         }
         if iglines < cols.len() {
-            print!(" .{:?}s. ", cols.len() - iglines);
+            print!(" ...{:?}s... ", cols.len() - iglines);
         }
         if cols.len() > 2 {
-            print!("{:#?}", cols[cols[i].len() - 2][i].as_int());
+            print!("{}, ", cols[cols.len() - 2][i]);
         }
-        println!("{:#?}.", cols[cols.len() - 1][i].as_int());
+        println!("{}.", cols[cols.len() - 1][i]);
     }
 }
 
 pub fn pretty_print_array<T: FieldElement + StarkField>(cols: &Vec<T>) {
     println!("array size: {}", cols.len());
     let mut iglines = 2;
-    print!("\t [ {:?},", cols[0].as_int());
+    print!("\t [ {}, ", cols[0]);
     if cols.len() > 2 {
-        print!("{:#?},", cols[1].as_int());
-        print!("{:#?},", cols[2].as_int());
+        print!("{}, ", cols[1]);
+        print!("{}, ", cols[2]);
         iglines += 2;
     }
     if iglines < cols.len() {
-        print!(" .{:?}s. ", cols.len() - iglines);
+        print!(" ...{}s... ", cols.len() - iglines);
     }
     if cols.len() > 2 {
-        print!("{:?}", cols[cols.len() - 2].as_int());
+        print!("{}, ", cols[cols.len() - 2]);
     }
-    println!("{:?}].", cols[cols.len() - 1].as_int());
+    println!("{}].", cols[cols.len() - 1]);
 }
 
 #[cfg(test)]
