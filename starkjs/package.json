@@ -14,7 +14,7 @@
     "pilcom": "^0.0.18",
     "tmp-promise": "3.0.3",
     "json-bigint": "^1.0.0",
-    "pil-stark": "0.0.26"
+    "pil-stark": "0.0.39"
   },
   "files": [
     "index.js",

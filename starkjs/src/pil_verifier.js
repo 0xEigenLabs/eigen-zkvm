@@ -3,11 +3,10 @@ const { assert } = require("chai");
 const fs = require("fs");
 const ejs = require("ejs");
 const { FGL, starkSetup, starkGen, starkVerify } = require("pil-stark");
-const { interpolate } = require("./fft_p.js");
-//const buildMerkleHashGL = require("../node_modules/pil-stark/src/merklehash_p.js");
-const starkInfoGen = require("./starkinfo.js");
-const { proof2zkin } = require("./proof2zkin.js");
-const buildMerklehashBN128 = require("./merklehash_bn128_p.js");
+const { interpolate } = require("../node_modules/pil-stark//src/fft_p.js");
+const starkInfoGen = require("../node_modules/pil-stark/src/starkinfo.js");
+const { proof2zkin } = require("../node_modules/pil-stark/src/proof2zkin.js");
+const buildMerklehashBN128 = require("../node_modules/pil-stark/src/merklehash_bn128_p.js");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true, storeAsString: true });
 
 const {elapse} = require("./utils");
@@ -112,6 +111,7 @@ module.exports = {
     return verKey
   },
 
+  // TODO: call starky by RPC
   async proveAndVerify(pil, constPols, cmPols, starkStruct) {
     let timer = []
     elapse("proveAndVerify/start", timer);
@@ -125,7 +125,8 @@ module.exports = {
     return proof;
   },
 
-  async pil2circom(pil, constRoot, starkStruct) {
+  async pil2circom(pil, constRoot, starkStruct, options) {
+    options = options || {};
     const starkInfo = starkInfoGen(pil, starkStruct);
 
     this.setDimensions(starkInfo.verifierCode.first);
@@ -143,7 +144,8 @@ module.exports = {
       starkInfo: starkInfo,
       starkStruct: starkStruct,
       constRoot: constRoot,
-      pil: pil
+      pil: pil,
+      options: options
     };
 
     return ejs.render(template ,  obj);

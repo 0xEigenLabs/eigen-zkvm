@@ -1,6 +1,5 @@
 # SM
-State Machine based zkVM prototype abstracted from [zkevm-proverjs](https://github.com/0xPolygonHermez/zkevm-proverjs/tree/main/pil).
-We're reimplementing the pil-stark by Rust.
+State Machine zkVM prototype abstracted from [zkevm-proverjs](https://github.com/0xPolygonHermez/zkevm-proverjs/tree/main/pil).
 
 # Example
 

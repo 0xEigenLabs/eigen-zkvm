@@ -1,4 +1,3 @@
-const { FGL } = require("pil-stark");
 const {pil_verifier, utils} = require("../../starkjs/index.js");
 const path = require("path");
 const fs = require("fs");
