@@ -5,7 +5,7 @@ cargo build --release
 
 CIRCUIT=circuit
 CUR_DIR=$(cd $(dirname $0);pwd)
-POWER=20
+POWER=22
 export RUST_BACKTRACE=1
 ZKIT="${CUR_DIR}/../target/release/zkit"
 WORKSPACE=/tmp/${CIRCUIT}

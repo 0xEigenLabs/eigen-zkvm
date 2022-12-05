@@ -1,9 +1,10 @@
 # starky
-Rusty [starkjs](../starkjs) as a service using PIL as the frontend.
+
+Generates a STARK proof from a State Machine written in PIL Language. Rusty Polygon Hermez [pil-stark](https://github.com/0xPolygonHermez/pil-stark).
 
 # Example
 
-
+[starkjs](../starkjs)
 
 # Design
 

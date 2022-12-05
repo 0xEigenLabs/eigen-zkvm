@@ -33,7 +33,7 @@ For power in range 20 to 26, you can download directly from [universal-setup hub
 [test_aggregation.sh](./test/test_aggregation.sh)
 
 * Hybrid proof system
-[Fibonacci](./starkjs)
+[starky](./starky)
 
 ## Applications
 * [zk-zkRollup](https://github.com/0xEigenLabs/zk-zkrollup)
