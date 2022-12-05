@@ -188,7 +188,7 @@ impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ns: {}\n", self.namespace)?;
         for i in 0..self.exprs.len() {
-            write!(f, "\t {}\n", self.exprs[i]);
+            write!(f, "\t {}\n", self.exprs[i])?;
         }
         Ok(())
     }
@@ -269,7 +269,7 @@ fn get_i(expr: &Expr, arg_i: usize) -> usize {
     let get_val = |i: usize| -> usize {
         match expr.defs[i].op {
             // reference to instant value
-            Ops::Vari(x) => x.to_be().as_int() as usize, //u128->usize, FIXME out of range
+            Ops::Vari(x) => x.to_be().as_int() as usize, //u64->usize
             _ => {
                 panic!("Invalid Vari: {}", expr);
             }

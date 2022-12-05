@@ -6,7 +6,7 @@ use crate::starkinfo::{self, Program, StarkInfo};
 use crate::types::{StarkStruct, PIL};
 use crate::ElementDigest;
 
-use winter_math::{fft, fields::f64::BaseElement, polynom, FieldElement, StarkField};
+use winter_math::{fft, fields::f64::BaseElement, FieldElement, StarkField};
 
 use winter_utils::{iter, transpose_slice};
 
@@ -107,9 +107,7 @@ pub mod tests {
     use crate::stark_setup::StarkSetup;
     use crate::types::{load_json, StarkStruct, PIL};
     use winter_math::fft::{self, get_inv_twiddles};
-    use winter_math::{
-        fields::f64::BaseElement, get_power_series, log2, polynom, FieldElement, StarkField,
-    };
+    use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
     use super::interpolate_in_pil;
     use crate::poseidon_bn128::Fr;

@@ -93,8 +93,6 @@ pub fn interpolatePrepare(buff: &mut Vec<F3G>, nPols: usize, nBits: usize, nBits
     };
 
     rayon::scope(|s| {
-        //const curN = Math.min(nPerThreadF, n-i);
-        //const bb = buff.slice(i*nPols, (i+curN)*nPols);
         buff.par_chunks_mut(nPerThreadF * nPols)
             .enumerate()
             .for_each(|(i, bb)| {
@@ -319,8 +317,8 @@ mod tests {
         let extBits = 1;
 
         let n = 1 << nBits;
-        let mut buff1 = vec![F3G::ZERO; (n * nPols)];
-        let mut buff2 = vec![F3G::ZERO; (n * nPols * (1 << extBits))];
+        let mut buff1 = vec![F3G::ZERO; n * nPols];
+        let mut buff2 = vec![F3G::ZERO; n * nPols * (1 << extBits)];
 
         println!("Initializing...");
         for i in 0..nPols {
@@ -340,8 +338,8 @@ mod tests {
         let nPols = 2;
 
         let n = 1 << nBits;
-        let mut buff = vec![F3G::ZERO; (n * nPols)];
-        let mut buffOut = vec![F3G::ZERO; (n * nPols)];
+        let mut buff = vec![F3G::ZERO; n * nPols];
+        let mut buffOut = vec![F3G::ZERO; n * nPols];
 
         let mut F = FFT::new();
         println!("Initializing...");
@@ -377,8 +375,8 @@ mod tests {
         let nPols = 5;
 
         let n = 1 << nBits;
-        let mut buff = vec![F3G::ZERO; (n * nPols)];
-        let mut buffOut = vec![F3G::ZERO; (n * nPols)];
+        let mut buff = vec![F3G::ZERO; n * nPols];
+        let mut buffOut = vec![F3G::ZERO; n * nPols];
 
         println!("Initializing...");
         let mut pols = vec![vec![]; nPols];

@@ -45,7 +45,6 @@ impl TranscriptBN128 {
         if self.out.len() > 0 {
             let v = self.out.pop_front().unwrap();
             let bv = fr_to_biguint(&v);
-            println!("v {}", bv);
             let mask = BigUint::from(0xFFFFFFFFFFFFFFFFu128);
             self.out3.push_back(biguint_to_be(&(&bv & &mask)));
             self.out3.push_back(biguint_to_be(&((&bv >> 64) & &mask))); //FIXME: optimization
@@ -64,7 +63,6 @@ impl TranscriptBN128 {
         self.out3 = VecDeque::new();
         self.pending = vec![];
         self.state = self.out[0];
-        println!("state: {}", fr_to_biguint(&self.state));
         Ok(())
     }
 

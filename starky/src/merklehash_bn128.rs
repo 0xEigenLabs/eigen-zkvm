@@ -200,12 +200,11 @@ impl MerkleTree {
         let mut sibs: Vec<Fr> = vec![];
 
         for i in 0..16 {
-            let buff8 = self.nodes[offset + (si + i)].into();
-            sibs.push(buff8);
+            let sib = self.nodes[offset + (si + i)].into();
+            sibs.push(sib);
         }
 
         let next_n = (n - 1) / 16 + 1;
-
         let mut result = vec![sibs];
         result.append(&mut self.merkle_gen_merkle_proof(next_idx, offset + next_n * 16, next_n));
         result
@@ -315,5 +314,27 @@ mod tests {
 
         let root = tree.root();
         assert_eq!(tree.verify_group_proof(&root, &mp, idx, &v).unwrap(), true);
+    }
+
+    #[test]
+    fn test_merklehash_small() {
+        let N = 256;
+        let idx = 3;
+        let nPols = 9;
+        let mut pols: Vec<Vec<BaseElement>> = vec![Vec::new(); nPols];
+        for i in 0..N {
+            for j in 0..nPols {
+                pols[j].push(BaseElement::from((i + j * 1000) as u32));
+            }
+        }
+
+        let tree = MerkleTree::merkelize(pols, nPols, N).unwrap();
+        let (groupElements, mp) = tree.get_group_proof(idx).unwrap();
+        let root = tree.root();
+        assert_eq!(
+            tree.verify_group_proof(&root, &mp, idx, &groupElements)
+                .unwrap(),
+            true
+        );
     }
 }

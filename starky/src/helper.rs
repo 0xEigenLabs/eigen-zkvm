@@ -47,12 +47,11 @@ pub fn log2_any(V: usize) -> usize {
 }
 
 pub fn fr_to_biguint(f: &Fr) -> BigUint {
-    let se = to_hex(f);
-    let se = se.trim_end_matches('0');
-    match se.len() {
-        0 => BigUint::from(0u32),
-        _ => BigUint::from_str_radix(&se, 16).unwrap(),
-    }
+    let repr = f.into_repr();
+    let required_length = repr.as_ref().len() * 8;
+    let mut buf: Vec<u8> = Vec::with_capacity(required_length);
+    repr.write_be(&mut buf).unwrap();
+    BigUint::from_bytes_be(&buf)
 }
 
 pub fn biguint_to_be(f: &BigUint) -> BaseElement {

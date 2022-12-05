@@ -39,7 +39,7 @@ impl Display for ElementDigest {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "[{} {} {} {}]",
+            "{}n\n{}n\n{}n\n{}n",
             self.0[0].as_int(),
             self.0[1].as_int(),
             self.0[2].as_int(),
@@ -64,10 +64,10 @@ impl From<&Fr> for ElementDigest {
 impl Into<Fr> for ElementDigest {
     fn into(self) -> Fr {
         let mut result = Fr::zero();
-        result.0 .0[0] = self.0[0].as_int().into();
-        result.0 .0[1] = self.0[1].as_int().into();
-        result.0 .0[2] = self.0[2].as_int().into();
-        result.0 .0[3] = self.0[3].as_int().into();
+        result.0 .0[0] = self.0[0].as_int() as u64;
+        result.0 .0[1] = self.0[1].as_int() as u64;
+        result.0 .0[2] = self.0[2].as_int() as u64;
+        result.0 .0[3] = self.0[3].as_int() as u64;
         result
     }
 }
