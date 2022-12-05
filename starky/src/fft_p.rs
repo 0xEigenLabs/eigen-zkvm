@@ -1,6 +1,6 @@
 use crate::f3g::F3G;
 //use crate::fft;
-use crate::constant::{get_max_workers, MG, SHIFT};
+use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MG, MIN_OPS_PER_THREAD, SHIFT};
 use crate::fft_worker::{fft_block, interpolatePrepareBlock};
 use crate::helper::log2_any;
 use core::cmp::min;
@@ -79,11 +79,9 @@ pub fn invBitReverse(buffDst: &mut Vec<F3G>, buffSrc: &Vec<F3G>, nPols: usize, n
 pub fn interpolatePrepare(buff: &mut Vec<F3G>, nPols: usize, nBits: usize, nBitsExt: usize) {
     let n = 1 << nBits;
     let invN = F3G::inv(F3G::from(n)); //F.inv(BigInt(n));
-    let maxNPerThread = 1 << 18;
-    let minNPerThread = 1 << 12;
     let mut nPerThreadF = (n - 1) / get_max_workers() + 1;
-    let maxCorrected = maxNPerThread / nPols;
-    let minCorrected = minNPerThread / nPols;
+    let maxCorrected = MIN_OPS_PER_THREAD / nPols;
+    let minCorrected = MAX_OPS_PER_THREAD / nPols;
 
     if nPerThreadF > maxCorrected {
         nPerThreadF = maxCorrected

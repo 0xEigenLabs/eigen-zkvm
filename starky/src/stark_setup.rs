@@ -10,6 +10,7 @@ use winter_math::{fft, fields::f64::BaseElement, FieldElement, StarkField};
 
 use winter_utils::{iter, transpose_slice};
 
+// TODO: change to fft_p
 pub fn interpolate_columns(columns: &Vec<Vec<BaseElement>>) -> Vec<Vec<BaseElement>> {
     if columns.len() == 0 {
         return vec![];
@@ -26,6 +27,7 @@ pub fn interpolate_columns(columns: &Vec<Vec<BaseElement>>) -> Vec<Vec<BaseEleme
     columns
 }
 
+// TODO: change to fft_p
 pub fn evaluate_columns_over(
     columns: &Vec<Vec<BaseElement>>,
     offset: BaseElement,
@@ -42,7 +44,7 @@ pub fn evaluate_columns_over(
     columns
 }
 
-/// Interpolate on D_lde
+/// Interpolate on D_lde, TODO: change to fft_p
 /// 1. Interpret each register trace as evaluations of some polynomial f(x)
 /// 2. Interpolate f(x) over a trace domain D_trace
 /// 3. Evaluate f(x) over a larger evaluation domain D_lde
