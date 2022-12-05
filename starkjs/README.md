@@ -1,14 +1,12 @@
 # starkjs
 
-**IMPORTANT** This is deprecated from eigen-zkit, please use [starky](../starky).
-Implement Stark by JS, and generate Circom verifier. The repo is modified from [pil-stark](https://github.com/0xPolygonHermez/pil-stark/tree/main/src), and is re-implemented by Rust [here](../starky).
-
+PIL compiler and Circom transpiler. The stark prover is [starky](../starky).
 
 ## Run Fibonacci
 ### Generate Stark verifier
 
 ```
-node fibonacci/fibonacci.js -w circuits
+npm run demo
 ```
 
 ### Compile verifier and generate snark proof
