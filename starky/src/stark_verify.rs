@@ -15,6 +15,7 @@ use crate::starkinfo_codegen::{Node, Section};
 use crate::transcript_bn128::TranscriptBN128;
 use crate::types::StarkStruct;
 use ff::PrimeField;
+use std::collections::HashMap;
 use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
 //FIXME it doesn't make sense to ask for a mutable program
@@ -129,42 +130,50 @@ pub fn stark_verify(
             ctx_query.challenges = ctx.challenges.clone();
 
             let x = SHIFT.clone() * (MG.0[ctx.nbits + extendBits].exp(idx));
+            println!(
+                "idx: {}, x: {}, challenges[7] {}",
+                idx, x, ctx_query.challenges[7]
+            );
             ctx_query.xDivXSubXi = (x / (x - ctx_query.challenges[7])).as_elements();
             ctx_query.xDivXSubWXi =
                 (x / (x - (ctx_query.challenges[7] * MG.0[ctx.nbits]))).as_elements();
 
-            let vals = [execute_code(
+            println!("verifier_code{}", program.verifier_query_code);
+            let vals = vec![execute_code(
                 &mut ctx_query,
-                &mut program.verifier_code.first,
+                &mut program.verifier_query_code.first,
             )];
+            println!("vals:");
+            crate::helper::pretty_print_array(&vals);
 
-            Ok(vals.to_vec())
+            Ok(vals)
         };
 
     fri.verify(&mut transcript, &proof.fri_proof, check_query)
 }
 
 fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
-    let mut tmp: Vec<F3G> = vec![F3G::ZERO; 100]; // FIXME setup a reasonable size
+    let mut tmp: HashMap<usize, F3G> = HashMap::new();
 
     let extract_val = |arr: &Vec<BaseElement>, pos: usize, dim: usize| -> F3G {
-        if dim == 1 {
-            F3G::from(arr[pos])
-        } else if dim == 3 {
-            let r = &arr[pos..pos + 3];
-            F3G::new(r[0], r[1], r[2])
-        } else {
-            panic!("Invalid dimension");
+        match dim {
+            1 => F3G::from(arr[pos]),
+            3 => {
+                let r = &arr[pos..(pos + 3)];
+                F3G::new(r[0], r[1], r[2])
+            }
+            _ => panic!("Invalid dimension"),
         }
     };
 
-    let get_ref = |r: &Node, tmp: &Vec<F3G>| -> F3G {
-        match r.type_.as_str() {
-            "tmp" => tmp[r.id],
+    let get_ref = |r: &Node, tmp: &HashMap<usize, F3G>| -> F3G {
+        let t = match r.type_.as_str() {
+            //"tmp" => if tmp.get(&r.id).is_some() {tmp[&r.id]} else {F3G::ZERO},
+            "tmp" => *tmp.get(&r.id).unwrap(),
             "tree1" => extract_val(&ctx.tree1, r.tree_pos, r.dim),
-            "tree2" => extract_val(&ctx.tree1, r.tree_pos, r.dim),
-            "tree3" => extract_val(&ctx.tree1, r.tree_pos, r.dim),
-            "tree4" => extract_val(&ctx.tree1, r.tree_pos, r.dim),
+            "tree2" => extract_val(&ctx.tree2, r.tree_pos, r.dim),
+            "tree3" => extract_val(&ctx.tree3, r.tree_pos, r.dim),
+            "tree4" => extract_val(&ctx.tree4, r.tree_pos, r.dim),
             "const" => ctx.consts[r.id].into(),
             "eval" => ctx.evals[r.id],
             "number" => F3G::from(r.value.clone().unwrap().parse::<u64>().unwrap()),
@@ -181,12 +190,15 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
                 }
             }
             _ => panic!("Invalid reference type, get: {}", r.type_),
-        }
+        };
+        println!("verfify get ref {}", t);
+        t
     };
 
-    let set_ref = |r: &mut Node, val: F3G, tmp: &mut Vec<F3G>| match r.type_.as_str() {
+    let set_ref = |r: &mut Node, val: F3G, tmp: &mut HashMap<usize, F3G>| match r.type_.as_str() {
         "tmp" => {
-            tmp[r.id] = val;
+            println!("verfify set ref {} {}", r.id, val);
+            tmp.insert(r.id, val);
         }
         _ => {
             panic!("Invalid reference type set: {}", r.type_);

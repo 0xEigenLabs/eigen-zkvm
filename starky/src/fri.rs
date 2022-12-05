@@ -235,12 +235,8 @@ impl FRI {
                               query: &Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>,
                               idx: usize|
          -> Result<Vec<F3G>> {
-            let res = tree.verify_group_proof(
-                &proof.queries[si + 1].root,
-                &query[0].1,
-                idx,
-                &query[0].0,
-            )?;
+            let res =
+                tree.verify_group_proof(&proof.queries[si].root, &query[0].1, idx, &query[0].0)?;
             if !res {
                 return Err(FRIVerifierFailed);
             }
