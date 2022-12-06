@@ -48,7 +48,7 @@ impl FFT {
         }
         let res = self._fft(p, bits, 0, 1);
         let twoinvm = F3G::inv(F3G::ONE.mul_scalar(m));
-        println!("twoinvm {}", twoinvm);
+        //println!("twoinvm {}", twoinvm);
         let mut resn = vec![F3G::ZERO; m];
         for i in 0..m {
             resn[i] = res[(m - i) % m] * twoinvm;

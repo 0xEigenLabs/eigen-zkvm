@@ -323,32 +323,23 @@ impl FRI {
     }
 }
 
-fn getTransposedBuffer(pol: &Vec<F3G>, trasposeBits: usize) -> Vec<Vec<BaseElement>> {
+fn getTransposedBuffer(pol: &Vec<F3G>, trasposeBits: usize) -> Vec<F3G> {
     let n = pol.len();
     let w = 1 << trasposeBits;
     let h = n / w;
-    let mut res: Vec<Vec<BaseElement>> = vec![Vec::new(); w];
+    let mut res: Vec<F3G> = vec![F3G::ZERO; n * 3];
     for i in 0..w {
-        res[i] = vec![BaseElement::ZERO; h * 3];
         for j in 0..h {
-            let di = j * 3;
+            let di = i * h * 3 + j * 3;
             let fi = j * w + i;
             let pb = pol[fi].as_elements();
             assert_eq!(pol[fi].dim, 3);
-            res[i][di] = pb[0];
-            res[i][di + 1] = pb[1];
-            res[i][di + 2] = pb[2];
+            res[di] = F3G::from(pb[0]);
+            res[di + 1] = F3G::from(pb[1]);
+            res[di + 2] = F3G::from(pb[2]);
         }
     }
-    // TODO optmiize
-    let mut resn: Vec<Vec<BaseElement>> = vec![Vec::new(); h * 3];
-    for i in 0..(3 * h) {
-        resn[i] = vec![BaseElement::ZERO; w];
-        for j in 0..w {
-            resn[i][j] = res[j][i];
-        }
-    }
-    resn
+    res
 }
 
 fn get3(arr: &Vec<BaseElement>, idx: usize) -> F3G {

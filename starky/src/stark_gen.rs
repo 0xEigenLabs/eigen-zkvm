@@ -12,7 +12,7 @@ use crate::merklehash_bn128::MerkleTree;
 use crate::polsarray::PolsArray;
 use crate::poseidon_bn128::Fr;
 use crate::poseidon_bn128::FrRepr;
-use crate::stark_setup::interpolate_in_pil;
+//use crate::stark_setup::interpolate_in_pil;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{Polynom, Segment};
 use crate::transcript_bn128::TranscriptBN128;
@@ -199,7 +199,7 @@ impl<'a> StarkProof {
         println!("Zi(1) {}", (ctx.Zi)(1));
 
         ctx.const_n = const_pols.write_buff();
-        ctx.const_2ns = const_tree.write_buff();
+        ctx.const_2ns = const_tree.elements.clone();
 
         ctx.publics = vec![F3G::ZERO; starkinfo.publics.len()];
         for (i, pe) in starkinfo.publics.iter().enumerate() {
@@ -230,7 +230,8 @@ impl<'a> StarkProof {
 
         println!("Merkeling 1....");
         let tree1 = extend_and_merkelize(&mut ctx, starkinfo, "cm1_n").unwrap();
-        ctx.cm1_2ns = to_array(&tree1.elements);
+        //ctx.cm1_2ns = to_array(&tree1.elements);
+        ctx.cm1_2ns = tree1.elements.clone();
         let root: Fr = tree1.root().into();
         println!("tree1 root: {:?}", crate::helper::fr_to_biguint(&root));
         println!("tree1[0] {}", ctx.cm1_2ns[0]);
@@ -257,7 +258,8 @@ impl<'a> StarkProof {
 
         println!("Merkeling 2....");
         let tree2 = extend_and_merkelize(&mut ctx, starkinfo, "cm2_n").unwrap();
-        ctx.cm2_2ns = to_array(&tree2.elements);
+        //ctx.cm2_2ns = to_array(&tree2.elements);
+        ctx.cm2_2ns = tree2.elements.clone(); //TODO move, not clone
         let root: Fr = tree2.root().into();
         transcript.put(&vec![root])?;
         println!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
@@ -304,7 +306,8 @@ impl<'a> StarkProof {
         println!("Merkelizing 3....");
 
         let tree3 = extend_and_merkelize(&mut ctx, starkinfo, "cm3_n").unwrap();
-        ctx.cm3_2ns = to_array(&tree3.elements);
+        //ctx.cm3_2ns = to_array(&tree3.elements);
+        ctx.cm3_2ns = tree3.elements.clone();
 
         let root: Fr = tree3.root().into();
         transcript.put(&vec![root])?;
@@ -633,32 +636,18 @@ pub fn extend_and_merkelize(
 ) -> Result<MerkleTree> {
     let nBitsExt = ctx.nbits_ext;
     let nBits = ctx.nbits;
-    let columns = to_matrix(ctx, starkinfo, section_name);
-    let mut n = 1 << nBits;
-    let n_pols = columns.len();
-    if n_pols != 0 {
-        n = columns[0].len();
-    }
-    println!("raw:");
-    crate::helper::pretty_print_matrix(&columns);
-    let m = interpolate_in_pil(&columns, 1 << (nBitsExt - nBits));
-    println!("interpolate:");
-    crate::helper::pretty_print_matrix(&m);
-    Ok(MerkleTree::merkelize(m, n_pols, n << (nBitsExt - nBits))?)
-}
-
-pub fn extend(
-    ctx: &mut StarkContext,
-    starkinfo: &StarkInfo,
-    section_name: &'static str,
-) -> Result<Vec<F3G>> {
-    let nBitsExt = ctx.nbits_ext;
-    let nBits = ctx.nbits;
-    let columns = to_matrix(ctx, starkinfo, section_name);
-    let n = columns[0].len();
-
-    let m = interpolate_in_pil(&columns, 1 << (nBitsExt - nBits));
-    Ok(to_array(&m))
+    let n_pols = starkinfo.map_sectionsN.get(section_name);
+    let mut result = vec![F3G::ZERO; (1 << nBitsExt) * n_pols];
+    let p = ctx.get_mut(section_name);
+    println!(
+        "p.len {} nBits {} nBitsExt {} n_pols {}",
+        p.len(),
+        nBits,
+        nBitsExt,
+        n_pols
+    );
+    interpolate(p, n_pols, nBits, &mut result, nBitsExt);
+    Ok(MerkleTree::merkelize(result, n_pols, 1 << nBitsExt)?)
 }
 
 pub fn merkelize(
@@ -668,56 +657,8 @@ pub fn merkelize(
 ) -> Result<MerkleTree> {
     let nBitsExt = ctx.nbits_ext;
     let n_pols = starkinfo.map_sectionsN.get(section_name);
-    let columns = to_matrix(ctx, starkinfo, section_name);
-    let n = columns[0].len();
-    assert_eq!(columns.len(), n_pols);
-    Ok(MerkleTree::merkelize(columns, n_pols, 1 << nBitsExt)?)
-}
-
-//FIXME use matrix, not array for cm1***
-fn to_matrix(
-    ctx: &mut StarkContext,
-    starkinfo: &StarkInfo,
-    section_name: &'static str,
-) -> Vec<Vec<BaseElement>> {
-    println!("section_name: {}", section_name);
-    let n_pols = starkinfo.map_sectionsN.get(section_name);
-    if n_pols == 0 {
-        return vec![];
-    }
-    let p = ctx.get_mut(section_name);
-    let n = p.len() / n_pols;
-    println!(
-        "ppp: size {}, h {}, w {}, section {}",
-        p.len(),
-        n,
-        n_pols,
-        section_name
-    );
-    let mut columns: Vec<Vec<BaseElement>> = vec![Vec::new(); n_pols];
-
-    for i in 0..n_pols {
-        columns[i] = vec![BaseElement::ZERO; n];
-        for j in 0..n {
-            columns[i][j] = p[j * n_pols + i].to_be();
-        }
-    }
-    columns
-}
-
-fn to_array(columns: &Vec<Vec<BaseElement>>) -> Vec<F3G> {
-    if columns.len() == 0 {
-        return vec![];
-    }
-    let mut res = vec![F3G::ZERO; columns.len() * columns[0].len()];
-    let n_pols = columns.len();
-    let n = columns[0].len();
-    for i in 0..n_pols {
-        for j in 0..n {
-            res[j * n_pols + i] = columns[i][j].into();
-        }
-    }
-    res
+    let p = ctx.get_mut(section_name).clone();
+    Ok(MerkleTree::merkelize(p, n_pols, 1 << nBitsExt)?)
 }
 
 pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {

@@ -179,6 +179,9 @@ pub fn interpolate(
     buffDst: &mut Vec<F3G>,
     nBitsExt: usize,
 ) {
+    if buffSrc.len() == 0 {
+        return;
+    }
     let n = 1 << nBits;
     let nExt = 1 << nBitsExt;
     let mut tmpBuff: Vec<F3G> = vec![F3G::ZERO; nExt * nPols]; //new BigBuffer(n*nPols);
@@ -328,6 +331,8 @@ mod tests {
 
         println!("interpolate...");
         interpolate(&buff1, nPols, nBits, &mut buff2, nBits + extBits);
+
+        //TODO check the result
     }
 
     #[test]
