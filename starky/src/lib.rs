@@ -7,16 +7,16 @@ mod poseidon_bn128_constants;
 
 pub mod poseidon_bn128;
 
-mod merklehash_bn128;
+pub mod merklehash_bn128;
 
 mod digest_bn128;
 pub use digest_bn128::ElementDigest;
 
 mod constant;
 mod expressionops;
-mod f3g;
+pub mod f3g;
 mod fft;
-mod fft_p;
+pub mod fft_p;
 mod fft_worker;
 mod fri;
 mod helper;
