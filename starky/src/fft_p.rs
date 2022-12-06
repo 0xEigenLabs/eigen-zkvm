@@ -94,7 +94,7 @@ pub fn interpolatePrepare(buff: &mut Vec<F3G>, nPols: usize, nBits: usize, nBits
         buff.par_chunks_mut(nPerThreadF * nPols)
             .enumerate()
             .for_each(|(i, bb)| {
-                let start = invN * (SHIFT.clone().exp(i)); //F.mul(invN, F.exp(F.shift, i));
+                let start = invN * (SHIFT.clone().exp(i));
                 let inc = SHIFT.clone();
                 interpolatePrepareBlock(bb, nPols, start, inc, i / nPerThreadF, n / nPerThreadF);
             });
