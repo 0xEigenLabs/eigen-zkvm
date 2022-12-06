@@ -28,7 +28,8 @@ fn run_merklehash(size: &(usize, usize)) {
 
 fn merklehash_group_bench(c: &mut Criterion) {
     let mut group = c.benchmark_group("merklehash");
-    for data in [(16, 10), (16, 20)].iter() {
+    group.sample_size(10);
+    for data in [(18, 10), (20, 10), (24, 10), (24, 100), (24, 600)].iter() {
         group.bench_with_input(
             BenchmarkId::new(
                 "merkelize",
