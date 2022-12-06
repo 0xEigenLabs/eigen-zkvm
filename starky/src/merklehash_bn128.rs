@@ -5,6 +5,7 @@ use crate::f3g::F3G;
 use crate::linearhash_bn128::LinearHashBN128;
 use crate::poseidon_bn128::{Fr, Poseidon};
 use ff::Field;
+use rayon::prelude::*;
 use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
 
@@ -49,8 +50,6 @@ impl MerkleTree {
     pub fn merkelize(buff: Vec<F3G>, width: usize, height: usize) -> Result<Self> {
         let leaves_hash = LinearHashBN128::new();
 
-        let mut leaves: Vec<crate::ElementDigest> = vec![];
-
         //println!("width {}, height {}, {:?}", width, height, buff);
         let max_workers = get_max_workers();
 
@@ -66,21 +65,46 @@ impl MerkleTree {
             n_per_thread_f = MAX_OPS_PER_THREAD;
         }
 
-        //println!("n_per_thread_f: {}, height {}", n_per_thread_f, height);
-        // TODO: parallel hash
-        for i in (0..height).step_by(n_per_thread_f) {
-            let cur_n = std::cmp::min(n_per_thread_f, height - i);
-            // get elements from row i to i + cur_n
-            for j in 0..cur_n {
-                let mut batch = &buff[(j * width)..((j + 1) * width)];
-                let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
-                //print!("bb i {} width {}, ",i, width);
-                //crate::helper::pretty_print_array(&batch);
-                let node = leaves_hash.hash_element_array(&batch)?;
-                //println!("bb out: {}", node);
-                leaves.push(node);
-            }
+        println!("n_per_thread_f: {}, height {}", n_per_thread_f, height);
+        let mut leaves: Vec<(usize, Vec<ElementDigest>)> = vec![(0, Vec::new()); height];
+        if buff.len() > 0 {
+            rayon::scope(|s| {
+                buff.par_chunks(n_per_thread_f * width)
+                    .enumerate()
+                    .map(|(i, bb)| {
+                        let cur_n = bb.len() / width;
+                        let mut leaves: Vec<ElementDigest> = vec![ElementDigest::default(); cur_n];
+                        for j in 0..cur_n {
+                            let batch = &bb[(j * width)..((j + 1) * width)];
+                            let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
+                            //println!("index i {} j {}", i, j);
+                            leaves[j] = leaves_hash.hash_element_array(&batch).unwrap();
+                        }
+                        (i, leaves)
+                    })
+                    .collect_into_vec(&mut leaves);
+            });
         }
+
+        /*
+                let mut leaves: Vec<ElementDigest> = Vec::new();
+                for i in (0..height).step_by(n_per_thread_f) {
+                    let cur_n = std::cmp::min(n_per_thread_f, height - i);
+                    // get elements from row i to i + cur_n
+                    for j in 0..cur_n {
+                        let mut batch = &buff[(j * width)..((j + 1) * width)];
+                        let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
+                        //print!("bb i {} width {}, ",i, width);
+                        //crate::helper::pretty_print_array(&batch);
+                        let node = leaves_hash.hash_element_array(&batch)?;
+                        //println!("bb out: {}", node);
+                        leaves.push(node);
+                    }
+                }
+                for i in 0..leaves.len() {
+                    tree.nodes[i] = leaves[i];
+                }
+        */
 
         // merklize level
         let mut tree = MerkleTree {
@@ -92,10 +116,11 @@ impl MerkleTree {
             poseidon: Poseidon::new(),
         };
 
-        // set leaves
-        //println!("leaves.size= {}", leaves.len());
-        for i in 0..leaves.len() {
-            tree.nodes[i] = leaves[i];
+        //println!("len {}, height {}, leave size {}", tree.nodes.len(), height, leaves.len());
+        for leaf in leaves.iter() {
+            for (i, e) in leaf.1.iter().enumerate() {
+                tree.nodes[leaf.0 * width + i] = *e;
+            }
         }
 
         let mut n256: usize = height;
@@ -120,10 +145,26 @@ impl MerkleTree {
             n_ops_per_thread = MIN_OPS_PER_THREAD;
         }
 
-        //println!(
-        //    "merkelize_level p_in {} n_ops {}, n_ops_per_thread {}",
-        //    p_in, n_ops, n_ops_per_thread
-        //);
+        let buff = &self.nodes[p_in..(p_in + n_ops * 16)];
+        let mut leaves: Vec<(usize, Vec<ElementDigest>)> = vec![(0, Vec::new()); n_ops];
+        rayon::scope(|s| {
+            buff.par_chunks(16 * n_ops_per_thread)
+                .enumerate()
+                .map(|(i, bb)| {
+                    let res = self.do_merklize_level(bb, i, n_ops).unwrap();
+                    (i, res)
+                })
+                .collect_into_vec(&mut leaves);
+        });
+
+        for leaf in leaves.iter() {
+            for (i, e) in leaf.1.iter().enumerate() {
+                let idx = p_out + leaf.0 * n_ops_per_thread + i;
+                self.nodes[idx] = *e;
+            }
+        }
+
+        /*
         for i in (0..n_ops).step_by(n_ops_per_thread) {
             let cur_n_ops = std::cmp::min(n_ops_per_thread, n_ops - i);
             //println!(
@@ -137,7 +178,7 @@ impl MerkleTree {
                 let idx = p_out + i * n_ops_per_thread + j;
                 self.nodes[idx] = *v;
             }
-        }
+        }*/
         Ok(())
     }
 
@@ -309,7 +350,6 @@ mod tests {
         for i in 0..N {
             for j in 0..nPols {
                 pols[i * nPols + j] = F3G::from((i + j * 1000) as u32);
-                //buff.setElement(j*nPols + i, v);
             }
         }
 
@@ -322,4 +362,49 @@ mod tests {
             true
         );
     }
+
+    #[test]
+    fn test_merklehash_not_power_of_2() {
+        let N = 33;
+        let idx = 32;
+        let nPols = 6;
+        let mut pols: Vec<F3G> = vec![F3G::ZERO; nPols * N];
+        for i in 0..N {
+            for j in 0..nPols {
+                pols[i * nPols + j] = F3G::from((i + j * 1000) as u32);
+            }
+        }
+
+        let tree = MerkleTree::merkelize(pols, nPols, N).unwrap();
+        let (groupElements, mp) = tree.get_group_proof(idx).unwrap();
+        let root = tree.root();
+        assert_eq!(
+            tree.verify_group_proof(&root, &mp, idx, &groupElements)
+                .unwrap(),
+            true
+        );
+    }
+
+    #[test]
+    fn test_merklehash_big() {
+        let N = 1 << 16;
+        let idx = 32;
+        let nPols = 6;
+        let mut pols: Vec<F3G> = vec![F3G::ZERO; nPols * N];
+        for i in 0..N {
+            for j in 0..nPols {
+                pols[i * nPols + j] = F3G::from((i + j * 1000) as u32);
+            }
+        }
+
+        let tree = MerkleTree::merkelize(pols, nPols, N).unwrap();
+        let (groupElements, mp) = tree.get_group_proof(idx).unwrap();
+        let root = tree.root();
+        assert_eq!(
+            tree.verify_group_proof(&root, &mp, idx, &groupElements)
+                .unwrap(),
+            true
+        );
+    }
+    //TODO save and restore to file
 }
