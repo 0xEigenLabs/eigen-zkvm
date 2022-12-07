@@ -64,25 +64,24 @@ impl MerkleTree {
         if n_per_thread_f > MAX_OPS_PER_THREAD {
             n_per_thread_f = MAX_OPS_PER_THREAD;
         }
-
+        let mut nodes = vec![ElementDigest::default(); get_n_nodes(height)];
         println!("n_per_thread_f: {}, height {}", n_per_thread_f, height);
-        let mut leaves: Vec<(usize, Vec<ElementDigest>)> = vec![(0, Vec::new()); height];
+        //let mut leaves: Vec<(usize, Vec<ElementDigest>)> = vec![(0, Vec::new()); height];
         if buff.len() > 0 {
             rayon::scope(|s| {
-                buff.par_chunks(n_per_thread_f * width)
+                nodes.par_chunks_mut(n_per_thread_f)
+                    .zip(buff.par_chunks(n_per_thread_f))
                     .enumerate()
-                    .map(|(i, bb)| {
+                    .for_each(|(i, (out, bb))| {
                         let cur_n = bb.len() / width;
-                        let mut leaves: Vec<ElementDigest> = vec![ElementDigest::default(); cur_n];
+                        //let mut leaves: Vec<ElementDigest> = vec![ElementDigest::default(); cur_n];
                         println!("linearhash block i {}", i);
                         for j in 0..cur_n {
                             let batch = &bb[(j * width)..((j + 1) * width)];
                             let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
-                            leaves[j] = leaves_hash.hash_element_array(&batch).unwrap();
+                            out[j] = leaves_hash.hash_element_array(&batch).unwrap();
                         }
-                        (i, leaves)
-                    })
-                    .collect_into_vec(&mut leaves);
+                    });
             });
         }
 
@@ -108,7 +107,7 @@ impl MerkleTree {
 
         // merklize level
         let mut tree = MerkleTree {
-            nodes: vec![ElementDigest::default(); get_n_nodes(height)],
+            nodes: nodes,
             elements: buff,
             h: leaves_hash,
             width: width,
@@ -117,11 +116,12 @@ impl MerkleTree {
         };
 
         //println!("len {}, height {}, leave size {}", tree.nodes.len(), height, leaves.len());
+        /*
         for leaf in leaves.iter() {
             for (i, e) in leaf.1.iter().enumerate() {
                 tree.nodes[leaf.0 * width + i] = *e;
             }
-        }
+        }*/
 
         let mut n256: usize = height;
         let mut next_n256: usize = (n256 - 1) / 16 + 1;
