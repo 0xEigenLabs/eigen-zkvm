@@ -74,8 +74,8 @@ impl MerkleTree {
                     .map(|(i, bb)| {
                         let cur_n = bb.len() / width;
                         let mut leaves: Vec<ElementDigest> = vec![ElementDigest::default(); cur_n];
+                        println!("linearhash block i {}", i);
                         for j in 0..cur_n {
-                            println!("block i {} j {}", i, j);
                             let batch = &bb[(j * width)..((j + 1) * width)];
                             let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
                             leaves[j] = leaves_hash.hash_element_array(&batch).unwrap();
