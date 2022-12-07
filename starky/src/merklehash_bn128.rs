@@ -78,8 +78,9 @@ impl MerkleTree {
                         for j in 0..cur_n {
                             let batch = &bb[(j * width)..((j + 1) * width)];
                             //let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
-                            let mut batch_be: Vec<BaseElement> = vec![BaseElement::ZERO; batch.len()];
-                            (&mut batch_be, batch).into_par_iter().for_each (|(out, l)| {
+                            let mut batch_be: Vec<BaseElement> =
+                                vec![BaseElement::ZERO; batch.len()];
+                            (&mut batch_be, batch).into_par_iter().for_each(|(out, l)| {
                                 *out = (*l).to_be();
                             });
                             out[j] = leaves_hash.hash_element_array(&batch_be).unwrap();
@@ -139,7 +140,7 @@ impl MerkleTree {
         for leaf in leaves.iter() {
             let idx = p_out + leaf.0 * n_ops_per_thread;
             let out = &mut self.nodes[idx..(idx + leaf.1.len())];
-            (out, &leaf.1).into_par_iter().for_each (|(out, l)| {
+            (out, &leaf.1).into_par_iter().for_each(|(out, l)| {
                 *out = *l;
             });
         }
