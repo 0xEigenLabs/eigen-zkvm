@@ -9,7 +9,7 @@ use winter_math::{FieldElement, StarkField};
 fn run_merklehash(pols: Vec<F3G>) {
     let N = 1 << 24;
     let idx = 32;
-    let nPols = 600;
+    let nPols = 15;
 
     /*
     let mut pols: Vec<F3G> = vec![F3G::ZERO; nPols * N];
@@ -41,7 +41,7 @@ fn merklehash_group_bench(c: &mut Criterion) {
     let mut group = c.benchmark_group("merklehash");
 
     let N = 1 << 24;
-    let nPols = 600;
+    let nPols = 15;
     let mut pols: Vec<F3G> = vec![F3G::ZERO; nPols * N];
 
     rayon::scope(|s| {
@@ -52,9 +52,10 @@ fn merklehash_group_bench(c: &mut Criterion) {
         });
     });
     group.sample_size(10);
-    for data in [pols].iter() {
+    group.sampling_mode(SamplingMode::Flat);
+    for data in [&pols].iter() {
         group.bench_with_input(
-            BenchmarkId::new("merkelize", format!("height=2^{}, n_pols={}", 24, 600)),
+            BenchmarkId::new("merkelize", format!("height*nPols={}", pols.len())),
             data,
             |b, s| {
                 b.iter(|| run_merklehash(s.to_vec()));
