@@ -69,7 +69,7 @@ impl MerkleTree {
         let mut leaves: Vec<(usize, Vec<ElementDigest>)> = vec![(0, Vec::new()); height];
         if buff.len() > 0 {
             rayon::scope(|s| {
-                buff.par_chunks(n_per_thread_f * width)
+                buff.par_chunks(n_per_thread_f)
                     .enumerate()
                     .map(|(i, bb)| {
                         let cur_n = bb.len() / width;
