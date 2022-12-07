@@ -69,13 +69,14 @@ impl MerkleTree {
         //let mut leaves: Vec<(usize, Vec<ElementDigest>)> = vec![(0, Vec::new()); height];
         if buff.len() > 0 {
             rayon::scope(|s| {
-                nodes.par_chunks_mut(n_per_thread_f)
-                    .zip(buff.par_chunks(n_per_thread_f))
+                nodes
+                    .par_chunks_mut(n_per_thread_f)
+                    .zip(buff.par_chunks(n_per_thread_f * width))
                     .enumerate()
                     .for_each(|(i, (out, bb))| {
                         let cur_n = bb.len() / width;
                         //let mut leaves: Vec<ElementDigest> = vec![ElementDigest::default(); cur_n];
-                        println!("linearhash block i {}", i);
+                        println!("linearhash block i {} {}", i, bb[0].to_be().as_int());
                         for j in 0..cur_n {
                             let batch = &bb[(j * width)..((j + 1) * width)];
                             let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
