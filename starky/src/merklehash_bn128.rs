@@ -148,6 +148,7 @@ impl MerkleTree {
 
         let buff = &self.nodes[p_in..(p_in + n_ops * 16)];
         let mut leaves: Vec<(usize, Vec<ElementDigest>)> = vec![(0, Vec::new()); n_ops];
+        println!("merklize level: hash {} to {}", p_in, p_out);
         rayon::scope(|s| {
             buff.par_chunks(16 * n_ops_per_thread)
                 .enumerate()
@@ -158,11 +159,13 @@ impl MerkleTree {
                 .collect_into_vec(&mut leaves);
         });
 
+        println!("merklize level: copy {} to {}", p_in, p_out);
         for leaf in leaves.iter() {
-            for (i, e) in leaf.1.iter().enumerate() {
-                let idx = p_out + leaf.0 * n_ops_per_thread + i;
-                self.nodes[idx] = *e;
-            }
+            let idx = p_out + leaf.0 * n_ops_per_thread;
+            let out = &mut self.nodes[idx..(idx + leaf.1.len())];
+            (out, &leaf.1).into_par_iter().for_each (|(out, l)| {
+                *out = *l;
+            });
         }
 
         /*

@@ -47,7 +47,7 @@ fn merklehash_group_bench(c: &mut Criterion) {
     rayon::scope(|s| {
         pols.par_chunks_mut(N).enumerate().for_each(|(i, bb)| {
             for j in 0..N {
-                bb[j] = F3G::from((j + i * N))
+                bb[j] = F3G::from(j + i * N)
             }
         });
     });
