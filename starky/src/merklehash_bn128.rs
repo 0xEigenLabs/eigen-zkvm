@@ -69,15 +69,15 @@ impl MerkleTree {
         let mut leaves: Vec<(usize, Vec<ElementDigest>)> = vec![(0, Vec::new()); height];
         if buff.len() > 0 {
             rayon::scope(|s| {
-                buff.par_chunks(n_per_thread_f)
+                buff.par_chunks(n_per_thread_f * width)
                     .enumerate()
                     .map(|(i, bb)| {
                         let cur_n = bb.len() / width;
                         let mut leaves: Vec<ElementDigest> = vec![ElementDigest::default(); cur_n];
                         for j in 0..cur_n {
+                            println!("block i {} j {}", i, j);
                             let batch = &bb[(j * width)..((j + 1) * width)];
                             let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
-                            //println!("index i {} j {}", i, j);
                             leaves[j] = leaves_hash.hash_element_array(&batch).unwrap();
                         }
                         (i, leaves)
