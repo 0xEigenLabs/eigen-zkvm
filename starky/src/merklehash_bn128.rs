@@ -66,7 +66,6 @@ impl MerkleTree {
         }
         let mut nodes = vec![ElementDigest::default(); get_n_nodes(height)];
         println!("n_per_thread_f: {}, height {}", n_per_thread_f, height);
-        //let mut leaves: Vec<(usize, Vec<ElementDigest>)> = vec![(0, Vec::new()); height];
         if buff.len() > 0 {
             rayon::scope(|s| {
                 nodes
@@ -75,36 +74,19 @@ impl MerkleTree {
                     .enumerate()
                     .for_each(|(i, (out, bb))| {
                         let cur_n = bb.len() / width;
-                        //let mut leaves: Vec<ElementDigest> = vec![ElementDigest::default(); cur_n];
                         println!("linearhash block i {} {}", i, bb[0].to_be().as_int());
                         for j in 0..cur_n {
                             let batch = &bb[(j * width)..((j + 1) * width)];
-                            let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
-                            out[j] = leaves_hash.hash_element_array(&batch).unwrap();
+                            //let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
+                            let mut batch_be: Vec<BaseElement> = vec![BaseElement::ZERO; batch.len()];
+                            (&mut batch_be, batch).into_par_iter().for_each (|(out, l)| {
+                                *out = (*l).to_be();
+                            });
+                            out[j] = leaves_hash.hash_element_array(&batch_be).unwrap();
                         }
                     });
             });
         }
-
-        /*
-                let mut leaves: Vec<ElementDigest> = Vec::new();
-                for i in (0..height).step_by(n_per_thread_f) {
-                    let cur_n = std::cmp::min(n_per_thread_f, height - i);
-                    // get elements from row i to i + cur_n
-                    for j in 0..cur_n {
-                        let mut batch = &buff[(j * width)..((j + 1) * width)];
-                        let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
-                        //print!("bb i {} width {}, ",i, width);
-                        //crate::helper::pretty_print_array(&batch);
-                        let node = leaves_hash.hash_element_array(&batch)?;
-                        //println!("bb out: {}", node);
-                        leaves.push(node);
-                    }
-                }
-                for i in 0..leaves.len() {
-                    tree.nodes[i] = leaves[i];
-                }
-        */
 
         // merklize level
         let mut tree = MerkleTree {
@@ -117,12 +99,6 @@ impl MerkleTree {
         };
 
         //println!("len {}, height {}, leave size {}", tree.nodes.len(), height, leaves.len());
-        /*
-        for leaf in leaves.iter() {
-            for (i, e) in leaf.1.iter().enumerate() {
-                tree.nodes[leaf.0 * width + i] = *e;
-            }
-        }*/
 
         let mut n256: usize = height;
         let mut next_n256: usize = (n256 - 1) / 16 + 1;
@@ -167,22 +143,6 @@ impl MerkleTree {
                 *out = *l;
             });
         }
-
-        /*
-        for i in (0..n_ops).step_by(n_ops_per_thread) {
-            let cur_n_ops = std::cmp::min(n_ops_per_thread, n_ops - i);
-            //println!(
-            //    "p_in={}, cur_n_ops={}",
-            //    p_in + i * 16,
-            //    p_in + (i + cur_n_ops) * 16
-            //);
-            let bb = &self.nodes[(p_in + i * 16)..(p_in + (i + cur_n_ops) * 16)];
-            let res = self.do_merklize_level(bb, i, n_ops)?;
-            for (j, v) in res.iter().enumerate() {
-                let idx = p_out + i * n_ops_per_thread + j;
-                self.nodes[idx] = *v;
-            }
-        }*/
         Ok(())
     }
 

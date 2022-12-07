@@ -1,6 +1,4 @@
-use criterion::BenchmarkId;
-use criterion::Criterion;
-use criterion::{criterion_group, criterion_main};
+use criterion::*;
 use rayon::prelude::*;
 use starky::f3g::F3G;
 use starky::merklehash_bn128::MerkleTree;
