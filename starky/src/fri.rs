@@ -261,12 +261,12 @@ impl FRI {
                 };
 
                 //println!("pgroup_e");
-                crate::helper::pretty_print_array(&pgroup_e);
+                //crate::helper::pretty_print_array(&pgroup_e);
 
                 let pgroup_c = standard_fft.ifft(&pgroup_e);
 
                 //println!("pgroup_c");
-                crate::helper::pretty_print_array(&pgroup_c);
+                //crate::helper::pretty_print_array(&pgroup_c);
 
                 let sinv = F3G::inv(shift * (MG.0[pol_bits].exp(ys[i])));
 
@@ -316,7 +316,6 @@ impl FRI {
                 return Ok(false);
             }
         }
-
         Ok(true)
     }
 }

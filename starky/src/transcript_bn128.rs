@@ -44,7 +44,9 @@ impl TranscriptBN128 {
 
         if self.out.len() > 0 {
             let v = self.out.pop_front().unwrap();
+            println!("get_fields1 out3 v={}", v);
             let bv = fr_to_biguint(&v);
+            println!("get_fields1 out3 {}", bv);
             let mask = BigUint::from(0xFFFFFFFFFFFFFFFFu128);
             self.out3.push_back(biguint_to_be(&(&bv & &mask)));
             self.out3.push_back(biguint_to_be(&((&bv >> 64) & &mask))); //FIXME: optimization
@@ -59,6 +61,14 @@ impl TranscriptBN128 {
         while self.pending.len() < 16 {
             self.pending.push(Fr::zero());
         }
+        for i in self.pending.iter() {
+            println!("update_state: {}", crate::helper::fr_to_biguint(i));
+            println!(
+                "update_state: MONT {}",
+                Fr::from_repr(i.into_raw_repr()).unwrap()
+            );
+        }
+        println!("self.state: {}", crate::helper::fr_to_biguint(&self.state));
         self.out = VecDeque::from(self.poseidon.hash_ex(&self.pending, &self.state, 17)?);
         self.out3 = VecDeque::new();
         self.pending = vec![];

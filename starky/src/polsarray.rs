@@ -39,7 +39,7 @@ pub enum PolKind {
 pub type ArrayPol = (bool, Vec<usize>);
 
 impl PolsArray {
-    pub fn new(pil: &PIL, kind: PolKind, defSize: usize) -> Self {
+    pub fn new(pil: &PIL, kind: PolKind) -> Self {
         let nPols = match kind {
             PolKind::Commit => pil.nCommitments,
             PolKind::Constant => pil.nConstants,
@@ -222,11 +222,11 @@ pub mod tests {
     #[test]
     fn test_load_polsarray() {
         let pil = types::load_json::<PIL>("data/fib.pil.json").unwrap();
-        let mut cp = PolsArray::new(&pil, PolKind::Constant, 32);
+        let mut cp = PolsArray::new(&pil, PolKind::Constant);
         cp.load("data/fib.const").unwrap();
         cp.save("data/fib.const.cp").unwrap();
 
-        let mut cmp = PolsArray::new(&pil, PolKind::Commit, 32);
+        let mut cmp = PolsArray::new(&pil, PolKind::Commit);
         cmp.load("data/fib.exec").unwrap();
         cmp.save("data/fib.exec.cp").unwrap();
     }

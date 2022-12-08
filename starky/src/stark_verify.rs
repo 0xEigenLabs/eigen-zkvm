@@ -76,18 +76,25 @@ pub fn stark_verify(
     ctx.Z = xN - F3G::ONE;
     ctx.Zp = (ctx.challenges[7] * MG.0[ctx.nbits]).pow(ctx.N) - F3G::ONE;
 
+    println!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);
 
     let mut xAcc = F3G::ONE;
     let mut q = F3G::ZERO;
     for i in 0..starkinfo.q_deg {
-        //println!("ctx.eval[{}->{}]={}", starkinfo.qs[i], starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap(), 11);
+        println!(
+            "ctx.eval[{}->{}]={}",
+            starkinfo.qs[i],
+            starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap(),
+            11
+        );
         q = q + xAcc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
-        //println!("q={}", q);
+        println!("q={}", q);
         xAcc = xAcc * xN;
-        //println!("xAcc={}", xAcc);
+        println!("xAcc={}", xAcc);
     }
     let qZ = q * ctx.Z;
+    println!("qZ {} {}, res = {}", q, ctx.Z, res);
 
     if !res.eq(&qZ) {
         return Ok(false);
@@ -138,7 +145,6 @@ pub fn stark_verify(
             ctx_query.xDivXSubWXi =
                 (x / (x - (ctx_query.challenges[7] * MG.0[ctx.nbits]))).as_elements();
 
-            println!("verifier_code{}", program.verifier_query_code);
             let vals = vec![execute_code(
                 &mut ctx_query,
                 &mut program.verifier_query_code.first,
@@ -218,6 +224,7 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
             _ => panic!("Invalid op: {}", code[i].op),
         };
 
+        println!("set_ref: {} {:?}", i, code[i].dest);
         set_ref(&mut code[i].dest, res, &mut tmp);
     }
     let sz = code.len() - 1;

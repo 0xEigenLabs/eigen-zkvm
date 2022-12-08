@@ -1,0 +1,10 @@
+namespace Permutation(%N);
+
+    pol commit a, b;
+    pol commit c, d;
+    pol commit selC, selD;
+
+//    a is b;
+//    selC {c} is selD {d};
+    selC {c, c} is selD {d, d};
+

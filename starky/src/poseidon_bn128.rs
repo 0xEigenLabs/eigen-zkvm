@@ -3,6 +3,7 @@ use crate::poseidon_bn128_constants as constants;
 use ff::*;
 
 use crate::ElementDigest;
+use rayon::prelude::*;
 use winter_crypto::Hasher;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
@@ -141,6 +142,22 @@ impl Poseidon {
             self.sbox(n_rounds_f, n_rounds_p, &mut state, i);
             state = self.mix(&state, &self.constants.m[t - 2]);
         }
+        /*
+        let pow5 = |x| -> Fr {
+            let aux = x;
+            x.square();
+            x.square();
+            x.mul_assign(&aux);
+        }; //. F.mul(a, F.square(F.square(a, a)));
+        // https://github.com/iden3/circomlibjs/blob/main/src/poseidon_opt.js#L71
+        for r in 0..(n_rounds_f/2-1) {
+            state.par_iter_mut().map(|e| { pow5(e); });
+            state.par_iter_mut().enumerate().map((i, a) { a.add_assign(C[(r +1)* t +i]); });
+            state.par_iter_mut().map((_, i) =>
+                state.reduce((acc, a, j) => F.add(acc, F.mul(M[j][i], a)), F.zero)
+            );
+        }
+        */
 
         Ok((&state[0..out]).to_vec())
     }

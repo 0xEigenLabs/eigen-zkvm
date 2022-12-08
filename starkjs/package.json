@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "demo": "mkdir -p circuits && node fibonacci/fibonacci.js -w circuits"
+    "demo": "mkdir -p circuits && node fibonacci/fibonacci.js -w circuits",
+    "pc": "mkdir -p circuits && node permutation/permutation.js -w circuits"
   },
   "author": "",
   "license": "Apache-2.0",

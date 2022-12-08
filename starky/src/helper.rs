@@ -64,30 +64,6 @@ pub fn biguint_to_fr(f: &BigUint) -> Fr {
     Fr::from_str(&f.to_string()).unwrap()
 }
 
-pub fn pretty_print_matrix<T: FieldElement + StarkField>(cols: &Vec<Vec<T>>) {
-    if cols.len() == 0 {
-        return;
-    }
-    println!("matrix: cols {}, rows: {}", cols.len(), cols[0].len());
-    let width = 10;
-    for i in 0..cols[0].len() {
-        let mut iglines = 2;
-        print!("\t rows[{}]: {}, ", i, cols[0][i]);
-        if cols.len() > 2 {
-            print!("{}, ", cols[1][i]);
-            print!("{}, ", cols[2][i]);
-            iglines += 2;
-        }
-        if iglines < cols.len() {
-            print!(" ...{:?}s... ", cols.len() - iglines);
-        }
-        if cols.len() > 2 {
-            print!("{}, ", cols[cols.len() - 2][i]);
-        }
-        println!("{}.", cols[cols.len() - 1][i]);
-    }
-}
-
 pub fn pretty_print_array<T: FieldElement + StarkField>(cols: &Vec<T>) {
     println!("array size: {}", cols.len());
     let mut iglines = 2;

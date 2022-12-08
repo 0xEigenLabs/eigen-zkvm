@@ -2,12 +2,16 @@
 
 PIL compiler and Circom transpiler. The stark prover is [starky](../starky).
 
-## Run Fibonacci
-### Generate Stark verifier
+## Run Example
+### Generate Polynomial
 
 ```
-npm run demo
+npm run pc
 ```
+
+### Generate the Stark proof's circuits
+
+TODO
 
 ### Compile verifier and generate snark proof
 ```

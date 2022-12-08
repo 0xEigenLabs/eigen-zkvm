@@ -22,7 +22,7 @@ impl StarkInfo {
 
         let mut ctx_f = ContextF {
             exp_map: HashMap::new(),
-            tmp_used: 0,
+            tmp_used: code.tmp_used,
             dom: "".to_string(),
             starkinfo: self,
         };
@@ -38,14 +38,35 @@ impl StarkInfo {
                         let idx = idx.unwrap();
                         r.type_ = "cm".to_string();
                         r.id = ctx.starkinfo.im_exp2cm[&ctx.starkinfo.im_exps_list[idx]];
+
+                        // go to cm branch, TODO
+                        if ctx.starkinfo.ev_idx.get(r.type_.as_str(), p, id).is_none() {
+                            ctx.starkinfo.ev_idx.set(
+                                r.type_.as_str(),
+                                p,
+                                id,
+                                ctx.starkinfo.ev_map.len(),
+                            );
+                            ctx.starkinfo.ev_map.push(Node::new(
+                                r.type_.clone(),
+                                r.id,
+                                None,
+                                0,
+                                r.prime,
+                                0,
+                            ));
+                        }
+                        r.prime = false; // NOTE: js: delete r.prime
+                        r.id = *ctx.starkinfo.ev_idx.get(r.type_.as_str(), p, id).unwrap();
+                        r.type_ = "eval".to_string();
                     } else {
                         let p = if r.prime { 1 } else { 0 };
                         if ctx.exp_map.get(&(p, id)).is_none() {
                             ctx.exp_map.insert((p, id), ctx.tmp_used);
                             ctx.tmp_used += 1;
                         }
-                        r.prime = false;
                         r.type_ = "tmp".to_string();
+                        r.exp_id = r.id;
                         r.id = *ctx.exp_map.get(&(p, id)).unwrap();
                     }
                 }
@@ -94,7 +115,7 @@ impl StarkInfo {
         //println!("ev_idx: {:?}", ctx_f.starkinfo.ev_idx);
         //println!("ev_map: {:?}", ctx_f.starkinfo.ev_map);
         //println!("cp ver code.tmp_used {}", code.tmp_used);
-        //println!("cp ver code {}", code);
+        println!("cp ver code {}", code);
         program.verifier_code = code;
         Ok(())
     }

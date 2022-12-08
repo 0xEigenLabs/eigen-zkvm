@@ -206,7 +206,7 @@ impl StarkInfo {
             pil_code_gen(
                 ctx,
                 pil,
-                self.pu_ctx[i].num_id.clone(),
+                self.pu_ctx[i].num_id,
                 false,
                 "tmpExp",
                 self.n_tmpexps,
@@ -215,7 +215,7 @@ impl StarkInfo {
             pil_code_gen(
                 ctx,
                 pil,
-                self.pu_ctx[i].den_id.clone(),
+                self.pu_ctx[i].den_id,
                 false,
                 "tmpExp",
                 self.n_tmpexps,
@@ -306,7 +306,7 @@ impl StarkInfo {
             )?;
             self.n_tmpexps += 1;
 
-            self.pe_ctx[i].num_tmpexp_id = self.n_tmpexps;
+            self.pe_ctx[i].den_tmpexp_id = self.n_tmpexps;
             pil_code_gen(
                 ctx,
                 pil,
