@@ -7,9 +7,7 @@ use crate::polsarray::PolsArray;
 use crate::starkinfo::{self, Program, StarkInfo};
 use crate::types::{StarkStruct, PIL};
 use crate::ElementDigest;
-
 use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
-
 use winter_utils::{iter, transpose_slice};
 
 #[derive(Default)]
@@ -76,14 +74,13 @@ pub mod tests {
     use winter_math::fft::{self, get_inv_twiddles};
     use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
-    //use super::interpolate_in_pil;
     use crate::poseidon_bn128::Fr;
     use ff::*;
 
     #[test]
     fn test_stark_setup() {
         let mut pil = load_json::<PIL>("data/fib.pil.json.2").unwrap();
-        let mut const_pol = PolsArray::new(&pil, PolKind::Constant, 32);
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/fib.const.2").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
@@ -93,6 +90,5 @@ pub mod tests {
         let expect_root =
             "4658128321472362347225942316135505030498162093259225938328465623672244875764";
         assert_eq!(Fr::from_str(expect_root).unwrap(), root);
-        //crate::helper::pretty_print_matrix(&setup.const_tree.elements);
     }
 }

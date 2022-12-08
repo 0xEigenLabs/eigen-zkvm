@@ -196,7 +196,7 @@ impl<'a> StarkProof {
             xx = xx * MG.0[ctx.nbits_ext];
         }
         ctx.Zi = Self::build_Zh_Inv(ctx.nbits, extendBits);
-        println!("Zi(1) {}", (ctx.Zi)(1));
+        //println!("Zi(1) {}", (ctx.Zi)(1));
 
         ctx.const_n = const_pols.write_buff();
         ctx.const_2ns = const_tree.elements.clone();
@@ -286,9 +286,11 @@ impl<'a> StarkProof {
 
         for (i, pe) in starkinfo.pe_ctx.iter().enumerate() {
             println!("Calculating z for permutation {}", i);
+            //println!("pe {} {}", starkinfo.tmpexp_n[pe.num_tmpexp_id], starkinfo.tmpexp_n[pe.den_tmpexp_id]);
             let pNum = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pe.num_tmpexp_id]);
             let pDen = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pe.den_tmpexp_id]);
             let z = calculate_Z(pNum, pDen);
+            //println!("n_cm {} {}", n_cm, starkinfo.cm_n[n_cm]);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], z);
             n_cm += 1;
         }
@@ -324,19 +326,28 @@ impl<'a> StarkProof {
 
         let mut qq1 = vec![F3G::ZERO; ctx.q_2ns.len()];
         let mut qq2 = vec![F3G::ZERO; starkinfo.q_dim * ctx.Next * starkinfo.q_deg];
+        println!(
+            "qq2 len {} * {} * {}",
+            starkinfo.q_dim, ctx.Next, starkinfo.q_deg
+        );
         ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
+        crate::helper::pretty_print_array(&ctx.q_2ns);
+        println!("qq1");
+        crate::helper::pretty_print_array(&qq1);
 
-        let mut curS = F3G::ONE;
-        let shiftIn = (F3G::inv(SHIFT.clone())).exp(ctx.N);
+        let mut cur_s = F3G::ONE;
+        let shift_in = (F3G::inv(SHIFT.clone())).exp(ctx.N);
         for p in 0..starkinfo.q_deg {
             for i in 0..ctx.N {
                 for k in 0..starkinfo.q_dim {
                     qq2[i * starkinfo.q_dim * starkinfo.q_deg + starkinfo.q_dim * p + k] =
-                        qq1[p * ctx.N * starkinfo.q_dim + i * starkinfo.q_dim + k] * curS;
+                        qq1[p * ctx.N * starkinfo.q_dim + i * starkinfo.q_dim + k] * cur_s;
                 }
             }
-            curS = curS * shiftIn;
+            cur_s = cur_s * shift_in;
         }
+        println!("qq2");
+        crate::helper::pretty_print_array(&qq2);
 
         fft(
             &qq2,
@@ -352,13 +363,14 @@ impl<'a> StarkProof {
 
         println!("tree4 root: {:?}", crate::helper::fr_to_biguint(&root));
         if ctx.cm4_2ns.len() > 0 {
-            println!("tree3[0] {}", ctx.cm4_2ns[0]);
+            println!("tree4[0] {}", ctx.cm4_2ns[0]);
         }
 
         ///////////
         // 5. Compute FRI Polynomial
         ///////////
         ctx.challenges[7] = transcript.get_field(); // xi
+        println!("ctx.challenges[7] {}", ctx.challenges[7]);
 
         let mut LEv = vec![F3G::ZERO; ctx.N];
         let mut LpEv = vec![F3G::ZERO; ctx.N];
@@ -538,6 +550,13 @@ impl<'a> StarkProof {
 fn set_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: &usize, pol: Vec<F3G>) {
     let id_pol = *id_pol;
     let p = get_pol_ref(ctx, starkinfo, id_pol);
+    println!(
+        "set_pol {:?} {} {} {}",
+        p.deg,
+        p.size,
+        p.dim,
+        p.buffer.len()
+    );
     if p.dim == 1 {
         for i in 0..p.deg {
             p.buffer[(p.offset + i * p.size)] = pol[i];
@@ -545,9 +564,15 @@ fn set_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: &usize, pol: V
     } else if p.dim == 3 {
         for i in 0..p.deg {
             let elems = pol[i].as_elements();
-            p.buffer[(p.offset + i * p.size)] = elems[0].into();
-            p.buffer[(p.offset + i * p.size) + 1] = elems[1].into();
-            p.buffer[(p.offset + i * p.size) + 2] = elems[2].into();
+            if elems.len() > 1 {
+                p.buffer[p.offset + i * p.size] = elems[0].into();
+                p.buffer[p.offset + i * p.size + 1] = elems[1].into();
+                p.buffer[p.offset + i * p.size + 2] = elems[2].into();
+            } else {
+                p.buffer[p.offset + i * p.size] = elems[0].into();
+                p.buffer[p.offset + i * p.size + 1] = F3G::ZERO;
+                p.buffer[p.offset + i * p.size + 2] = F3G::ZERO;
+            }
         }
     } else {
         panic!("Invalid dim {}", p.dim);
@@ -585,15 +610,20 @@ fn calculate_H1H2(f: Vec<F3G>, t: Vec<F3G>) -> (Vec<F3G>, Vec<F3G>) {
 fn calculate_Z(num: Vec<F3G>, den: Vec<F3G>) -> Vec<F3G> {
     let N = num.len();
     assert_eq!(N, den.len());
+    println!("calculate_Z");
+    crate::helper::pretty_print_array(&num);
+    crate::helper::pretty_print_array(&den);
     let den_inv = F3G::batch_inverse(&den);
     let mut z = vec![F3G::ZERO; N];
     z[0] = F3G::ONE;
     for i in 1..N {
         z[i] = z[i - 1] * (num[i - 1] * den_inv[i - 1]);
     }
+    crate::helper::pretty_print_array(&z);
 
     let check_val = z[N - 1] * (num[N - 1] * den_inv[N - 1]);
-    assert_eq!(check_val.eq(&F3G::ONE), true);
+    println!("zzz {}", check_val);
+    assert_eq!(check_val.eq(&F3G::ONE3), true);
     z
 }
 
@@ -658,6 +688,8 @@ pub fn merkelize(
     let nBitsExt = ctx.nbits_ext;
     let n_pols = starkinfo.map_sectionsN.get(section_name);
     let p = ctx.get_mut(section_name).clone();
+    println!("merkelize: {} {}", section_name, nBitsExt);
+    crate::helper::pretty_print_array(&p);
     Ok(MerkleTree::merkelize(p, n_pols, 1 << nBitsExt)?)
 }
 
@@ -682,7 +714,6 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     for i in 0..next {
         cFirst.eval(ctx, i);
         println!("ctx.q_2ns[3*i] {} ", ctx.q_2ns[3 * i]);
-
         for i in 0..ctx.tmp.len() {
             println!("tmp@{} {}", i, ctx.tmp[i]);
         }
@@ -715,11 +746,46 @@ pub mod tests {
     #[test]
     fn test_stark_gen() {
         let mut pil = load_json::<PIL>("data/fib.pil.json.2").unwrap();
-        let mut const_pol = PolsArray::new(&pil, PolKind::Constant, 32);
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/fib.const.2").unwrap();
 
-        let mut cm_pol = PolsArray::new(&pil, PolKind::Commit, 32);
+        let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
         cm_pol.load("data/fib.cm.2").unwrap();
+
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
+        let mut setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let starkproof = StarkProof::stark_gen(
+            &cm_pol,
+            &const_pol,
+            &setup.const_tree,
+            &setup.starkinfo,
+            &setup.program,
+            &pil,
+            &stark_struct,
+        )
+        .unwrap();
+
+        println!("verify the proof...");
+
+        let result = stark_verify(
+            &starkproof,
+            &setup.const_root,
+            &setup.starkinfo,
+            &stark_struct,
+            &mut setup.program,
+        )
+        .unwrap();
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn test_stark_permutation() {
+        let mut pil = load_json::<PIL>("data/pe.pil.json").unwrap();
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
+        const_pol.load("data/pe.const").unwrap();
+
+        let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
+        cm_pol.load("data/pe.cm").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
         let mut setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();

@@ -69,7 +69,7 @@ impl StarkInfo {
             pil.cm_dims[self.n_cm1 + i * 2] = dim;
 
             let ppf_n = add_pol(PolType {
-                section: "tmpExp_n".to_string(),
+                section: "tmpexp_n".to_string(),
                 dim: dim,
                 exp_id: 0,
                 section_pos: 0,
@@ -78,7 +78,7 @@ impl StarkInfo {
             self.map_sections.tmpexp_n.push(ppf_n);
 
             let ppt_n = add_pol(PolType {
-                section: "tmpExp_n".to_string(),
+                section: "tmpexp_n".to_string(),
                 dim: dim,
                 exp_id: 0,
                 section_pos: 0,
@@ -108,7 +108,7 @@ impl StarkInfo {
             pil.cm_dims[(self.n_cm1 + self.n_cm2 + i)] = 3;
 
             let ppNum_n = add_pol(PolType {
-                section: "tmpExp_n".to_string(),
+                section: "tmpexp_n".to_string(),
                 dim: 3,
                 exp_id: 0,
                 section_pos: 0,
@@ -118,7 +118,7 @@ impl StarkInfo {
             self.map_sections.tmpexp_n.push(ppNum_n);
 
             let ppDen_n = add_pol(PolType {
-                section: "tmpExp_n".to_string(),
+                section: "tmpexp_n".to_string(),
                 dim: 3,
                 exp_id: 0,
                 section_pos: 0,

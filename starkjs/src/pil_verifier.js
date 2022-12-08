@@ -35,6 +35,10 @@ module.exports = {
     let cmPols = newCommitPolsArray(pil);
     await builder.execute(cmPols, input);
     elapse("execute", timer);
+    if (typeof fileCachePil !== 'undefined') {
+      constPols.saveToFile("/tmp/pe.const")
+      cmPols.saveToFile("/tmp/pe.cm")
+    }
 
     // verify the input and trace constraints
     const res = await verifyPil(FGL, pil, cmPols, constPols);

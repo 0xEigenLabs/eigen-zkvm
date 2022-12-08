@@ -38,11 +38,11 @@ impl F3G {
         }
     }
 
-    const ZERO3: Self = Self {
+    pub const ZERO3: Self = Self {
         cube: CubeExtension::<BaseElement>::ZERO,
         dim: 3,
     };
-    const ONE3: Self = Self {
+    pub const ONE3: Self = Self {
         cube: CubeExtension::<BaseElement>::ONE,
         dim: 3,
     };
