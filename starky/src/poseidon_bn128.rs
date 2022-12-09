@@ -1,4 +1,5 @@
 #![allow(clippy::derive_hash_xor_eq, clippy::too_many_arguments)]
+use crate::constant::POSEIDON_BN128_CONSTANTS;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::poseidon_bn128_constants as constants;
 use crate::ElementDigest;
@@ -14,11 +15,12 @@ use winter_math::FieldElement;
 pub struct Constants {
     pub c: Vec<Vec<Fr>>,
     pub m: Vec<Vec<Vec<Fr>>>,
+    pub p: Vec<Vec<Vec<Fr>>>,
+    pub s: Vec<Vec<Fr>>,
     pub n_rounds_f: usize,
     pub n_rounds_p: Vec<usize>,
 }
 
-/// TODO: implement singleton instance
 pub fn load_constants() -> Constants {
     let (c_str, m_str) = constants::constants();
     let mut c: Vec<Vec<Fr>> = Vec::new();
@@ -46,6 +48,8 @@ pub fn load_constants() -> Constants {
     Constants {
         c,
         m,
+        p: Vec::new(),
+        s: Vec::new(),
         n_rounds_f: 8,
         n_rounds_p: vec![
             56, 57, 56, 60, 60, 63, 64, 63, 60, 66, 60, 65, 70, 60, 64, 68,
@@ -53,9 +57,7 @@ pub fn load_constants() -> Constants {
     }
 }
 
-pub struct Poseidon {
-    constants: Constants,
-}
+pub struct Poseidon;
 
 impl Default for Poseidon {
     fn default() -> Self {
@@ -65,9 +67,7 @@ impl Default for Poseidon {
 
 impl Poseidon {
     pub fn new() -> Poseidon {
-        Poseidon {
-            constants: load_constants(),
-        }
+        Self {}
     }
     pub fn ark(&self, state: &mut Vec<Fr>, c: &[Fr], it: usize) {
         for i in 0..state.len() {
@@ -118,25 +118,25 @@ impl Poseidon {
     }
 
     fn hash_inner(&self, inp: &Vec<Fr>, init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
-        if inp.is_empty() || inp.len() > self.constants.n_rounds_p.len() {
+        if inp.is_empty() || inp.len() > POSEIDON_BN128_CONSTANTS.n_rounds_p.len() {
             return Err(format!(
                 "Wrong inputs length {} > {}",
                 inp.len(),
-                self.constants.n_rounds_p.len()
+                POSEIDON_BN128_CONSTANTS.n_rounds_p.len()
             ));
         }
 
         let t = inp.len() + 1;
-        let n_rounds_f = self.constants.n_rounds_f;
-        let n_rounds_p = self.constants.n_rounds_p[t - 2];
+        let n_rounds_f = POSEIDON_BN128_CONSTANTS.n_rounds_f;
+        let n_rounds_p = POSEIDON_BN128_CONSTANTS.n_rounds_p[t - 2];
 
         let mut state = vec![init_state.clone(); t];
         state[1..].clone_from_slice(&inp);
 
         for i in 0..(n_rounds_f + n_rounds_p) {
-            self.ark(&mut state, &self.constants.c[t - 2], i * t);
+            self.ark(&mut state, &POSEIDON_BN128_CONSTANTS.c[t - 2], i * t);
             self.sbox(n_rounds_f, n_rounds_p, &mut state, i);
-            state = self.mix(&state, &self.constants.m[t - 2]);
+            state = self.mix(&state, &POSEIDON_BN128_CONSTANTS.m[t - 2]);
         }
         Ok((&state[0..out]).to_vec())
     }
