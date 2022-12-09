@@ -21,29 +21,29 @@ pub fn get_ks(n: usize) -> Vec<BaseElement> {
     ks
 }
 
-pub fn log2_any(V: usize) -> usize {
-    let mut V = V;
-    (if (V & 0xFFFF0000) != 0 {
-        V &= 0xFFFF0000;
+pub fn log2_any(val: usize) -> usize {
+    let mut val = val;
+    (if (val & 0xFFFF0000) != 0 {
+        val &= 0xFFFF0000;
         16
     } else {
         0
-    }) | (if (V & 0xFF00FF00) != 0 {
-        V &= 0xFF00FF00;
+    }) | (if (val & 0xFF00FF00) != 0 {
+        val &= 0xFF00FF00;
         8
     } else {
         0
-    }) | (if (V & 0xF0F0F0F0) != 0 {
-        V &= 0xF0F0F0F0;
+    }) | (if (val & 0xF0F0F0F0) != 0 {
+        val &= 0xF0F0F0F0;
         4
     } else {
         0
-    }) | (if (V & 0xCCCCCCCC) != 0 {
-        V &= 0xCCCCCCCC;
+    }) | (if (val & 0xCCCCCCCC) != 0 {
+        val &= 0xCCCCCCCC;
         2
     } else {
         0
-    }) | (if (V & 0xAAAAAAAA) != 0 { 1 } else { 0 })
+    }) | (if (val & 0xAAAAAAAA) != 0 { 1 } else { 0 })
 }
 
 pub fn fr_to_biguint(f: &Fr) -> BigUint {

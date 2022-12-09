@@ -1,10 +1,10 @@
+#![allow(deprecated)]
 #![allow(clippy::derive_hash_xor_eq, clippy::too_many_arguments)]
 use crate::constant::POSEIDON_BN128_CONSTANTS;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::poseidon_bn128_constants as constants;
 use crate::ElementDigest;
 use ff::*;
-use winter_crypto::Hasher;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
 
@@ -57,6 +57,7 @@ pub fn load_constants() -> Constants {
     }
 }
 
+#[deprecated(since="0.1.0", note="please use `poseidon_bn128_opt::Poseidon` instead")]
 pub struct Poseidon;
 
 impl Default for Poseidon {
@@ -142,61 +143,10 @@ impl Poseidon {
     }
 }
 
-/// hasher element over BN128
-impl Hasher for Poseidon {
-    type Digest = ElementDigest;
-
-    fn hash(bytes: &[u8]) -> Self::Digest {
-        let hasher = Poseidon::new();
-        let elems: &[BaseElement] = unsafe { BaseElement::bytes_as_elements(bytes).unwrap() };
-        debug_assert_eq!(elems.len(), 16 * 4);
-        let elems: Vec<Fr> = elems
-            .chunks(4)
-            .map(|e| ElementDigest::to_BN128(e.try_into().unwrap()))
-            .collect();
-        let init_state = Fr::zero();
-        let digest = hasher.hash(&elems, &init_state).unwrap();
-        Self::Digest::from(&digest)
-    }
-
-    /// Returns a hash of two digests. This method is intended for use in construction of
-    /// Merkle trees.
-    fn merge(values: &[Self::Digest; 2]) -> Self::Digest {
-        let hasher = Poseidon::new();
-        let inp = vec![values[0].into(), values[1].into()];
-        let init_state = Fr::zero();
-        Self::Digest::from(&hasher.hash(&inp, &init_state).unwrap())
-    }
-
-    /// Returns hash(`seed` || `value`). This method is intended for use in PRNG and PoW contexts.
-    fn merge_with_int(_seed: Self::Digest, _value: u64) -> Self::Digest {
-        panic!("Unimplemented method");
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::field_bn128::{Fr, FrRepr};
-
-    #[test]
-    fn test_ff() {
-        let a = Fr::from_repr(FrRepr::from(2)).unwrap();
-        assert_eq!(
-            "0000000000000000000000000000000000000000000000000000000000000002",
-            to_hex(&a)
-        );
-
-        let b: Fr = Fr::from_str(
-            "21888242871839275222246405745257275088548364400416034343698204186575808495619",
-        )
-        .unwrap();
-        assert_eq!(
-            "0000000000000000000000000000000000000000000000000000000000000002",
-            to_hex(&b)
-        );
-        assert_eq!(&a, &b);
-    }
+    use crate::poseidon_bn128::*;
 
     #[test]
     fn test_load_constants() {

@@ -4,7 +4,7 @@ use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::linearhash_bn128::LinearHashBN128;
-use crate::poseidon_bn128::Poseidon;
+use crate::poseidon_bn128_opt::Poseidon;
 use ff::Field;
 use rayon::prelude::*;
 use winter_math::fields::f64::BaseElement;
@@ -320,10 +320,10 @@ mod tests {
         }
 
         let tree = MerkleTree::merkelize(pols, nPols, N).unwrap();
-        let (groupElements, mp) = tree.get_group_proof(idx).unwrap();
+        let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
         assert_eq!(
-            tree.verify_group_proof(&root, &mp, idx, &groupElements)
+            tree.verify_group_proof(&root, &mp, idx, &group_elements)
                 .unwrap(),
             true
         );
@@ -342,10 +342,10 @@ mod tests {
         }
 
         let tree = MerkleTree::merkelize(pols, nPols, N).unwrap();
-        let (groupElements, mp) = tree.get_group_proof(idx).unwrap();
+        let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
         assert_eq!(
-            tree.verify_group_proof(&root, &mp, idx, &groupElements)
+            tree.verify_group_proof(&root, &mp, idx, &group_elements)
                 .unwrap(),
             true
         );
@@ -364,10 +364,10 @@ mod tests {
         }
 
         let tree = MerkleTree::merkelize(pols, nPols, N).unwrap();
-        let (groupElements, mp) = tree.get_group_proof(idx).unwrap();
+        let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
         assert_eq!(
-            tree.verify_group_proof(&root, &mp, idx, &groupElements)
+            tree.verify_group_proof(&root, &mp, idx, &group_elements)
                 .unwrap(),
             true
         );
