@@ -5,6 +5,7 @@ pub mod types;
 pub mod linearhash_bn128;
 mod poseidon_bn128_constants;
 
+mod field_bn128;
 pub mod poseidon_bn128;
 
 pub mod merklehash_bn128;

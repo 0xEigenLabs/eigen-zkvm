@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
+use crate::field_bn128::Fr;
 use crate::helper::fr_to_biguint;
-use crate::poseidon_bn128::Fr;
 use core::slice;
 use ff::*;
 use std::fmt::Display;
@@ -165,7 +165,7 @@ impl From<ElementDigest> for [u8; 32] {
 #[cfg(test)]
 pub mod tests {
     use crate::digest_bn128::ElementDigest;
-    use crate::poseidon_bn128::Fr;
+    use crate::field_bn128::Fr;
     use ff::PrimeField;
     use rand_utils::rand_vector;
     use winter_math::fields::f64::BaseElement;

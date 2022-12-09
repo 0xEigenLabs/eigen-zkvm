@@ -2,8 +2,9 @@ use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
+use crate::field_bn128::{Fr, FrRepr};
 use crate::linearhash_bn128::LinearHashBN128;
-use crate::poseidon_bn128::{Fr, Poseidon};
+use crate::poseidon_bn128::Poseidon;
 use ff::Field;
 use rayon::prelude::*;
 use winter_math::fields::f64::BaseElement;
@@ -271,8 +272,8 @@ impl MerkleTree {
 #[cfg(test)]
 mod tests {
     use crate::f3g::F3G;
+    use crate::field_bn128::Fr;
     use crate::merklehash_bn128::MerkleTree;
-    use crate::poseidon_bn128::Fr;
     use crate::ElementDigest;
     use ff::PrimeField;
     use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};

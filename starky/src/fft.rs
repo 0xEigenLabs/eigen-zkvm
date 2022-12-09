@@ -103,15 +103,15 @@ mod tests {
             .iter()
             .map(|e| F3G::from(*e))
             .collect();
-        let A = f.fft(&a);
-        A.iter()
+        let aa = f.fft(&a);
+        aa.iter()
             .map(|e| {
                 println!("{}", e);
                 0
             })
             .collect::<Vec<i32>>();
 
-        let ac = f.ifft(&A);
+        let ac = f.ifft(&aa);
         for i in 0..a.len() {
             assert_eq!(a[i], ac[i]);
         }
@@ -124,8 +124,8 @@ mod tests {
         for i in 0..64 {
             a.push(F3G::random());
         }
-        let A = f.fft(&a);
-        let ac = f.ifft(&A);
+        let aa = f.fft(&a);
+        let ac = f.ifft(&aa);
         for i in 0..a.len() {
             assert_eq!(a[i], ac[i]);
         }

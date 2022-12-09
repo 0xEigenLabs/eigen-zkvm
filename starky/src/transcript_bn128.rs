@@ -1,7 +1,8 @@
 #![allow(non_snake_case)]
 use crate::errors::Result;
+use crate::field_bn128::{Fr, FrRepr};
 use crate::helper::{biguint_to_be, biguint_to_fr, fr_to_biguint};
-use crate::poseidon_bn128::{Fr, Poseidon};
+use crate::poseidon_bn128::Poseidon;
 use ff::*;
 use std::collections::VecDeque;
 

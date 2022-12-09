@@ -1,8 +1,7 @@
 #![allow(non_snake_case)]
-use crate::poseidon_bn128::Fr;
-use ff::*;
-
 use crate::f3g::F3G;
+use crate::field_bn128::Fr;
+use ff::*;
 use std::collections::HashMap;
 use winter_math::{fft, fields::f64::BaseElement, FieldElement};
 

@@ -2,10 +2,9 @@ use crate::constant::{MG, SHIFT};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::f3g::F3G;
+use crate::field_bn128::{Fr, FrRepr};
 use crate::fri::FRI;
 use crate::merklehash_bn128::MerkleTree;
-use crate::poseidon_bn128::Fr;
-use crate::poseidon_bn128::FrRepr;
 use crate::stark_gen::StarkContext;
 use crate::stark_gen::StarkProof;
 use crate::starkinfo::Program;
@@ -71,15 +70,15 @@ pub fn stark_verify(
     ctx.challenges[5] = transcript.get_field(); // v1
     ctx.challenges[6] = transcript.get_field(); // v2
 
-    let xN = ctx.challenges[7].exp(ctx.N);
-    println!("xN {}", xN);
-    ctx.Z = xN - F3G::ONE;
+    let x_n = ctx.challenges[7].exp(ctx.N);
+    println!("x_n {}", x_n);
+    ctx.Z = x_n - F3G::ONE;
     ctx.Zp = (ctx.challenges[7] * MG.0[ctx.nbits]).pow(ctx.N) - F3G::ONE;
 
     println!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);
 
-    let mut xAcc = F3G::ONE;
+    let mut x_acc = F3G::ONE;
     let mut q = F3G::ZERO;
     for i in 0..starkinfo.q_deg {
         println!(
@@ -88,15 +87,15 @@ pub fn stark_verify(
             starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap(),
             11
         );
-        q = q + xAcc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
+        q = q + x_acc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
         println!("q={}", q);
-        xAcc = xAcc * xN;
-        println!("xAcc={}", xAcc);
+        x_acc = x_acc * x_n;
+        println!("x_acc={}", x_acc);
     }
-    let qZ = q * ctx.Z;
-    println!("qZ {} {}, res = {}", q, ctx.Z, res);
+    let q_z = q * ctx.Z;
+    println!("q_z {} {}, res = {}", q, ctx.Z, res);
 
-    if !res.eq(&qZ) {
+    if !res.eq(&q_z) {
         return Ok(false);
     }
 

@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
-use crate::poseidon_bn128::{Fr, Poseidon};
+use crate::field_bn128::Fr;
+use crate::poseidon_bn128::Poseidon;
 use crate::ElementDigest;
 use ff::*;
 use winter_math::fields::f64::BaseElement;
@@ -137,8 +138,9 @@ impl LinearHashBN128 {
 
 #[cfg(test)]
 mod tests {
+    use crate::field_bn128::Fr;
     use crate::linearhash_bn128::LinearHashBN128;
-    use crate::poseidon_bn128::{Fr, Poseidon};
+    use crate::poseidon_bn128::Poseidon;
     use ff::*;
     use winter_math::fields::f64::BaseElement;
     use winter_math::StarkField;

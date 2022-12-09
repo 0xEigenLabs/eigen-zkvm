@@ -1,4 +1,4 @@
-use crate::poseidon_bn128::Fr;
+use crate::field_bn128::{Fr, FrRepr};
 use ff::*;
 use num_bigint::BigUint;
 use num_traits::{Num, ToPrimitive};

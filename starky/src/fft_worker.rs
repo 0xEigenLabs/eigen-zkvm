@@ -2,7 +2,7 @@ use crate::constant::MG;
 use crate::f3g::F3G;
 use winter_math::FieldElement;
 
-pub fn interpolatePrepareBlock(
+pub fn interpolate_prepare_block(
     buff: &mut [F3G],
     width: usize,
     start: F3G,

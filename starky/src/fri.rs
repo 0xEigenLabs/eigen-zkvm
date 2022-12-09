@@ -3,10 +3,9 @@ use crate::digest_bn128::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::f3g::F3G;
 use crate::fft::FFT;
+use crate::field_bn128::{Fr, FrRepr};
 use crate::helper::log2_any;
 use crate::merklehash_bn128::MerkleTree;
-use crate::poseidon_bn128::Fr;
-use crate::poseidon_bn128::FrRepr;
 use crate::transcript_bn128::TranscriptBN128;
 use crate::types::{StarkStruct, Step};
 use ff::*;
@@ -131,7 +130,7 @@ impl FRI {
             if si < self.steps.len() - 1 {
                 let n_groups = 1 << self.steps[si + 1].nBits;
                 let group_size = (1 << self.steps[si].nBits) / n_groups;
-                let pol2_etb = getTransposedBuffer(&pol2_e, self.steps[si + 1].nBits);
+                let pol2_etb = get_transposed_buffer(&pol2_e, self.steps[si + 1].nBits);
                 tree.push(MerkleTree::merkelize(pol2_etb, 3 * group_size, n_groups)?);
                 proof.queries[si + 1].root = tree[si].root();
                 let rrr: Fr = proof.queries[si + 1].root.into();
@@ -302,17 +301,17 @@ impl FRI {
 
         let mut last_pol_e = proof.last.clone();
 
-        let mut maxDeg = 0usize;
+        let mut max_deg = 0usize;
         if (pol_bits - (self.in_nbits - self.max_deg_nbits)) < 0 {
-            maxDeg = 0;
+            max_deg = 0;
         } else {
-            maxDeg = 1 << (pol_bits - (self.in_nbits - self.max_deg_nbits));
+            max_deg = 1 << (pol_bits - (self.in_nbits - self.max_deg_nbits));
         }
 
-        let lastPol_c = standard_fft.ifft(&last_pol_e);
+        let last_pol_c = standard_fft.ifft(&last_pol_e);
 
-        for i in (maxDeg + 1)..lastPol_c.len() {
-            if !lastPol_c[i].is_zero() {
+        for i in (max_deg + 1)..last_pol_c.len() {
+            if !last_pol_c[i].is_zero() {
                 return Ok(false);
             }
         }
@@ -320,9 +319,9 @@ impl FRI {
     }
 }
 
-fn getTransposedBuffer(pol: &Vec<F3G>, trasposeBits: usize) -> Vec<F3G> {
+fn get_transposed_buffer(pol: &Vec<F3G>, transpose_bits: usize) -> Vec<F3G> {
     let n = pol.len();
-    let w = 1 << trasposeBits;
+    let w = 1 << transpose_bits;
     let h = n / w;
     let mut res: Vec<F3G> = vec![F3G::ZERO; n * 3];
     for i in 0..w {

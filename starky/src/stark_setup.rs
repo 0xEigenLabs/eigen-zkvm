@@ -74,7 +74,7 @@ pub mod tests {
     use winter_math::fft::{self, get_inv_twiddles};
     use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
-    use crate::poseidon_bn128::Fr;
+    use crate::field_bn128::Fr;
     use ff::*;
 
     #[test]

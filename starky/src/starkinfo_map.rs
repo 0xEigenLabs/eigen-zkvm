@@ -2,7 +2,7 @@
 use crate::errors::Result;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{
-    iterate_code, Context, ContextF, EVIdx, Index, Node, PolType, Section, Segment,
+    iterate_code, Context, ContextF, Index, Node, PolType, Section, Segment,
 };
 use crate::types::{Expression, StarkStruct, PIL};
 use std::collections::HashMap;

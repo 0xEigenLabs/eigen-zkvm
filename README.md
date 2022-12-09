@@ -1,6 +1,6 @@
-# EigenZKit
+# eigen-zkvm
 
-EigenZKit is a hybrid proof system toolkits, allowing the developers to write Zero-knowledge applications, proving with the hybrid proof system to achieve no trusted setup, constant on-chain proof size and low gas cost, and finally generating the solidity verifier.
+eigen-zkvm is a zkVM on hybrid proof system, allowing the developers to write Zero-knowledge applications, proving with the hybrid proof system to achieve no trusted setup, constant on-chain proof size and low gas cost, and finally generating the solidity verifier.
 
 * [x] Transpile R1CS to PlonK prove system, with aggregation proof;
 
@@ -12,12 +12,11 @@ EigenZKit is a hybrid proof system toolkits, allowing the developers to write Ze
 
 * [x] Hybrid Proof system on Plonk and FRI.
 
-* [] Stark VM with recursive proof
+* [] State Machine based VM
 
 ## How hybrid proof system works
 
 ![mixed-proof-system](./docs/mixed-proof-system.png)
-
 
 ## Tutorial
 * Generate universal setup key
