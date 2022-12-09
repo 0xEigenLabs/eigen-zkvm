@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 use crate::field_bn128::Fr;
-use crate::poseidon_bn128::Poseidon;
+use crate::poseidon_bn128_opt::Poseidon;
 use crate::ElementDigest;
 use ff::*;
 use winter_math::fields::f64::BaseElement;
@@ -140,7 +140,7 @@ impl LinearHashBN128 {
 mod tests {
     use crate::field_bn128::Fr;
     use crate::linearhash_bn128::LinearHashBN128;
-    use crate::poseidon_bn128::Poseidon;
+    use crate::poseidon_bn128_opt::Poseidon;
     use ff::*;
     use winter_math::fields::f64::BaseElement;
     use winter_math::StarkField;
@@ -174,7 +174,7 @@ mod tests {
         ];
         crate::helper::pretty_print_array(&input);
 
-        let mut lh = LinearHashBN128::new();
+        let lh = LinearHashBN128::new();
         let result = lh.hash_element_array(&input).unwrap();
         println!("out {}", result);
         assert_eq!(result.0[0], BaseElement::from(15714769047018385385u64));
