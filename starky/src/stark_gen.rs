@@ -17,7 +17,6 @@ use crate::transcript_bn128::TranscriptBN128;
 use crate::types::{StarkStruct, PIL};
 use ff::*;
 use std::collections::HashMap;
-use std::rc::Rc;
 use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
 
@@ -260,16 +259,16 @@ impl<'a> StarkProof {
         ctx.cm2_2ns = tree2.elements.clone(); //TODO move, not clone
         let root: Fr = tree2.root().into();
         transcript.put(&vec![root])?;
-        println!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
-        if ctx.cm2_2ns.len() > 0 {
-            println!("tree2[0] {}", ctx.cm2_2ns[0]);
-        }
+        //println!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
+        //if ctx.cm2_2ns.len() > 0 {
+        //    println!("tree2[0] {}", ctx.cm2_2ns[0]);
+        //}
 
         // 3.- Compute Z polynomials
         ctx.challenges[2] = transcript.get_field(); // gamma
         ctx.challenges[3] = transcript.get_field(); // betta
-        println!("challenges[2] {}", ctx.challenges[2]);
-        println!("challenges[3] {}", ctx.challenges[3]);
+                                                    //println!("challenges[2] {}", ctx.challenges[2]);
+                                                    //println!("challenges[3] {}", ctx.challenges[3]);
 
         calculate_exps(&mut ctx, starkinfo, &program.step3prev, "n");
 
@@ -312,26 +311,26 @@ impl<'a> StarkProof {
         let root: Fr = tree3.root().into();
         transcript.put(&vec![root])?;
 
-        println!("tree3 root: {:?}", crate::helper::fr_to_biguint(&root));
-        if ctx.cm3_2ns.len() > 0 {
-            println!("tree3[0] {}", ctx.cm3_2ns[0]);
-        }
+        //println!("tree3 root: {:?}", crate::helper::fr_to_biguint(&root));
+        //if ctx.cm3_2ns.len() > 0 {
+        //    println!("tree3[0] {}", ctx.cm3_2ns[0]);
+        //}
         // 4. Compute C Polynomial
         ctx.challenges[4] = transcript.get_field(); // vc
-        println!("challenges[4] {}", ctx.challenges[4]);
+                                                    //println!("challenges[4] {}", ctx.challenges[4]);
 
         calculate_exps(&mut ctx, starkinfo, &program.step42ns, "2ns");
 
         let mut qq1 = vec![F3G::ZERO; ctx.q_2ns.len()];
         let mut qq2 = vec![F3G::ZERO; starkinfo.q_dim * ctx.Next * starkinfo.q_deg];
-        println!(
-            "qq2 len {} * {} * {}",
-            starkinfo.q_dim, ctx.Next, starkinfo.q_deg
-        );
+        //println!(
+        //    "qq2 len {} * {} * {}",
+        //    starkinfo.q_dim, ctx.Next, starkinfo.q_deg
+        //);
         ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
-        crate::helper::pretty_print_array(&ctx.q_2ns);
-        println!("qq1");
-        crate::helper::pretty_print_array(&qq1);
+        //crate::helper::pretty_print_array(&ctx.q_2ns);
+        //println!("qq1");
+        //crate::helper::pretty_print_array(&qq1);
 
         let mut cur_s = F3G::ONE;
         let shift_in = (F3G::inv(SHIFT.clone())).exp(ctx.N);
@@ -344,8 +343,8 @@ impl<'a> StarkProof {
             }
             cur_s = cur_s * shift_in;
         }
-        println!("qq2");
-        crate::helper::pretty_print_array(&qq2);
+        //println!("qq2");
+        //crate::helper::pretty_print_array(&qq2);
 
         fft(
             &qq2,
@@ -465,10 +464,9 @@ impl<'a> StarkProof {
         calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns");
 
         let mut friPol = vec![F3G::ZERO; N << extendBits];
-        println!("friPol {} {}", friPol.len(), N << extendBits);
-
-        println!("ctx.f_2ns");
-        crate::helper::pretty_print_array(&ctx.f_2ns);
+        //println!("friPol {} {}", friPol.len(), N << extendBits);
+        //println!("ctx.f_2ns");
+        //crate::helper::pretty_print_array(&ctx.f_2ns);
         for i in 0..(N << extendBits) {
             friPol[i] = F3G::new(
                 ctx.f_2ns[i * 3].to_be(),
@@ -608,19 +606,14 @@ fn calculate_H1H2(f: Vec<F3G>, t: Vec<F3G>) -> (Vec<F3G>, Vec<F3G>) {
 fn calculate_Z(num: Vec<F3G>, den: Vec<F3G>) -> Vec<F3G> {
     let N = num.len();
     assert_eq!(N, den.len());
-    println!("calculate_Z");
-    crate::helper::pretty_print_array(&num);
-    crate::helper::pretty_print_array(&den);
     let den_inv = F3G::batch_inverse(&den);
     let mut z = vec![F3G::ZERO; N];
     z[0] = F3G::ONE;
     for i in 1..N {
         z[i] = z[i - 1] * (num[i - 1] * den_inv[i - 1]);
     }
-    crate::helper::pretty_print_array(&z);
 
     let check_val = z[N - 1] * (num[N - 1] * den_inv[N - 1]);
-    println!("zzz {}", check_val);
     assert_eq!(check_val.eq(&F3G::ONE3), true);
     z
 }
@@ -686,8 +679,8 @@ pub fn merkelize(
     let nBitsExt = ctx.nbits_ext;
     let n_pols = starkinfo.map_sectionsN.get(section_name);
     let p = ctx.get_mut(section_name).clone();
-    println!("merkelize: {} {}", section_name, nBitsExt);
-    crate::helper::pretty_print_array(&p);
+    //println!("merkelize: {} {}", section_name, nBitsExt);
+    //crate::helper::pretty_print_array(&p);
     Ok(MerkleTree::merkelize(p, n_pols, 1 << nBitsExt)?)
 }
 

@@ -5,7 +5,7 @@ use crate::poseidon_bn128::{load_constants, Constants};
 use crate::poseidon_bn128_opt::load_constants as load_constants_opt;
 use ff::*;
 use std::collections::HashMap;
-use winter_math::{fft, fields::f64::BaseElement, FieldElement};
+use winter_math::{fields::f64::BaseElement, FieldElement};
 
 lazy_static::lazy_static! {
     pub static ref OFFSET_2_64: Fr = Fr::from_str("18446744073709551616").unwrap();

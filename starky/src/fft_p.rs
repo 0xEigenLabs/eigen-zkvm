@@ -1,6 +1,5 @@
+use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD, SHIFT};
 use crate::f3g::F3G;
-//use crate::fft;
-use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MG, MIN_OPS_PER_THREAD, SHIFT};
 use crate::fft_worker::{fft_block, interpolate_prepare_block};
 use crate::helper::log2_any;
 use core::cmp::min;
@@ -38,7 +37,7 @@ pub fn transpose(
     }
 }
 
-pub fn bitReverse(buffdst: &mut Vec<F3G>, buffsrc: &Vec<F3G>, n_pols: usize, nbits: usize) {
+pub fn bit_reverse(buffdst: &mut Vec<F3G>, buffsrc: &Vec<F3G>, n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
     for i in 0..n {
         let ri = BR(i, nbits);
@@ -64,39 +63,46 @@ pub fn interpolate_bit_reverse(
     }
 }
 
-pub fn invBitReverse(buffdst: &mut Vec<F3G>, buffsrc: &Vec<F3G>, n_pols: usize, nbits: usize) {
+pub fn inv_bit_reverse(buffdst: &mut Vec<F3G>, buffsrc: &Vec<F3G>, n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
-    let nInv = F3G::inv(F3G::from(n));
+    let n_inv = F3G::inv(F3G::from(n));
     for i in 0..n {
         let ri = BR(i, nbits);
         let rii = (n - ri) % n;
         for p in 0..n_pols {
-            buffdst[i * n_pols + p] = buffsrc[rii * n_pols + p] * nInv;
+            buffdst[i * n_pols + p] = buffsrc[rii * n_pols + p] * n_inv;
         }
     }
 }
 
-pub fn interpolatePrepare(buff: &mut Vec<F3G>, n_pols: usize, nbits: usize, nbitsExt: usize) {
+pub fn interpolate_prepare(buff: &mut Vec<F3G>, n_pols: usize, nbits: usize, nbitsext: usize) {
     let n = 1 << nbits;
-    let invN = F3G::inv(F3G::from(n));
-    let mut nPerThreadF = (n - 1) / get_max_workers() + 1;
-    let maxCorrected = MIN_OPS_PER_THREAD / n_pols;
-    let minCorrected = MAX_OPS_PER_THREAD / n_pols;
+    let inv_n = F3G::inv(F3G::from(n));
+    let mut n_per_thread_f = (n - 1) / get_max_workers() + 1;
+    let max_corrected = MIN_OPS_PER_THREAD / n_pols;
+    let min_corrected = MAX_OPS_PER_THREAD / n_pols;
 
-    if nPerThreadF > maxCorrected {
-        nPerThreadF = maxCorrected
+    if n_per_thread_f > max_corrected {
+        n_per_thread_f = max_corrected
     };
-    if nPerThreadF < minCorrected {
-        nPerThreadF = minCorrected
+    if n_per_thread_f < min_corrected {
+        n_per_thread_f = min_corrected
     };
 
     rayon::scope(|s| {
-        buff.par_chunks_mut(nPerThreadF * n_pols)
+        buff.par_chunks_mut(n_per_thread_f * n_pols)
             .enumerate()
             .for_each(|(i, bb)| {
-                let start = invN * (SHIFT.clone().exp(i));
+                let start = inv_n * (SHIFT.clone().exp(i));
                 let inc = SHIFT.clone();
-                interpolate_prepare_block(bb, n_pols, start, inc, i / nPerThreadF, n / nPerThreadF);
+                interpolate_prepare_block(
+                    bb,
+                    n_pols,
+                    start,
+                    inc,
+                    i / n_per_thread_f,
+                    n / n_per_thread_f,
+                );
             });
     });
 }
@@ -108,63 +114,71 @@ pub fn _fft(
     buffdst: &mut Vec<F3G>,
     inverse: bool,
 ) {
-    let maxBlockBits = 16;
-    let minBlockBits = 12;
-    let blocksPerThread = 8;
+    let maxblockbits = 16;
+    let minblockbits = 12;
+    let blocks_per_thread = 8;
     let n = 1 << nbits;
     let mut tmpbuff: Vec<F3G> = vec![F3G::ZERO; n * n_pols]; //new BigBuffer(n*n_pols);
     let outbuff = buffdst;
 
-    let mut bIn: &mut Vec<F3G>;
+    let mut bin: &mut Vec<F3G>;
     let mut bout: &mut Vec<F3G>;
 
-    let idealNBlocks = get_max_workers() * blocksPerThread;
-    let mut blockBits = log2_any(n * n_pols / idealNBlocks);
-    if blockBits < minBlockBits {
-        blockBits = minBlockBits
+    let ideal_n_blocks = get_max_workers() * blocks_per_thread;
+    let mut blockbits = log2_any(n * n_pols / ideal_n_blocks);
+    if blockbits < minblockbits {
+        blockbits = minblockbits
     };
-    if blockBits > maxBlockBits {
-        blockBits = maxBlockBits
+    if blockbits > maxblockbits {
+        blockbits = maxblockbits
     };
-    blockBits = min(nbits, blockBits);
-    let blockSize = 1 << blockBits;
-    let nBlocks = n / blockSize;
+    blockbits = min(nbits, blockbits);
+    let blocksize = 1 << blockbits;
+    let n_blocks = n / blocksize;
 
-    let mut nTrasposes = 0;
-    if nbits == blockBits {
-        nTrasposes = 0;
+    let mut n_transposes = 0;
+    if nbits == blockbits {
+        n_transposes = 0;
     } else {
-        nTrasposes = ((nbits - 1) / blockBits) + 1;
+        n_transposes = ((nbits - 1) / blockbits) + 1;
     }
 
-    if nTrasposes & 1 > 0 {
+    if n_transposes & 1 > 0 {
         bout = &mut tmpbuff;
-        bIn = outbuff;
+        bin = outbuff;
     } else {
         bout = outbuff;
-        bIn = &mut tmpbuff;
+        bin = &mut tmpbuff;
     }
 
     if inverse {
-        invBitReverse(bout, buffsrc, n_pols, nbits);
+        inv_bit_reverse(bout, buffsrc, n_pols, nbits);
     } else {
-        bitReverse(bout, buffsrc, n_pols, nbits);
+        bit_reverse(bout, buffsrc, n_pols, nbits);
     }
-    (bIn, bout) = (bout, bIn);
+    (bin, bout) = (bout, bin);
 
     rayon::scope(|s| {
-        for i in (0..nbits).step_by(blockBits) {
-            let sInc = min(blockBits, nbits - i);
-            bIn.par_chunks_mut(blockSize * n_pols)
+        for i in (0..nbits).step_by(blockbits) {
+            let s_inc = min(blockbits, nbits - i);
+            bin.par_chunks_mut(blocksize * n_pols)
                 .enumerate()
                 .for_each(|(j, bb)| {
-                    fft_block(bb, j * blockSize, n_pols, nbits, i + sInc, blockBits, sInc);
+                    fft_block(
+                        bb,
+                        j * blocksize,
+                        n_pols,
+                        nbits,
+                        i + s_inc,
+                        blockbits,
+                        s_inc,
+                    );
                 });
 
-            if sInc < nbits {
+            if s_inc < nbits {
                 // Do not transpose if it's the same
-                transpose(&mut bout, &bIn, n_pols, nbits, sInc);
-                (bIn, bout) = (bout, bIn);
+                transpose(&mut bout, &bin, n_pols, nbits, s_inc);
+                (bin, bout) = (bout, bin);
             }
         }
     });
@@ -183,122 +197,130 @@ pub fn interpolate(
     n_pols: usize,
     nbits: usize,
     buffdst: &mut Vec<F3G>,
-    nbitsExt: usize,
+    nbitsext: usize,
 ) {
     if buffsrc.len() == 0 {
         return;
     }
     let n = 1 << nbits;
-    let nExt = 1 << nbitsExt;
-    let mut tmpbuff: Vec<F3G> = vec![F3G::ZERO; nExt * n_pols]; //new BigBuffer(n*n_pols);
+    let n_ext = 1 << nbitsext;
+    let mut tmpbuff: Vec<F3G> = vec![F3G::ZERO; n_ext * n_pols]; //new BigBuffer(n*n_pols);
     let outbuff = buffdst;
 
-    let mut bIn: &mut Vec<F3G>;
+    let mut bin: &mut Vec<F3G>;
     let mut bout: &mut Vec<F3G>;
 
-    let maxBlockBits = 16;
-    let minBlockBits = 12;
-    let blocksPerThread = 8;
-    let idealNBlocks = get_max_workers() * blocksPerThread;
-    let mut nTrasposes = 0;
+    let maxblockbits = 16;
+    let minblockbits = 12;
+    let blocks_per_thread = 8;
+    let ideal_n_blocks = get_max_workers() * blocks_per_thread;
+    let mut n_transposes = 0;
 
-    let mut blockBits = log2_any(n * n_pols / idealNBlocks);
-    if blockBits < minBlockBits {
-        blockBits = minBlockBits
+    let mut blockbits = log2_any(n * n_pols / ideal_n_blocks);
+    if blockbits < minblockbits {
+        blockbits = minblockbits
     };
-    if blockBits > maxBlockBits {
-        blockBits = maxBlockBits
+    if blockbits > maxblockbits {
+        blockbits = maxblockbits
     };
-    blockBits = min(nbits, blockBits);
-    let blockSize = 1 << blockBits;
-    let nBlocks = n / blockSize;
+    blockbits = min(nbits, blockbits);
+    let blocksize = 1 << blockbits;
+    let n_blocks = n / blocksize;
 
-    if blockBits < nbits {
-        nTrasposes += ((nbits - 1) / blockBits) + 1;
+    if blockbits < nbits {
+        n_transposes += ((nbits - 1) / blockbits) + 1;
     }
 
-    nTrasposes += 1; // The middle convertion
+    n_transposes += 1; // The middle convertion
 
-    let mut blockBitsExt = log2_any(nExt * n_pols / idealNBlocks);
-    if blockBitsExt < minBlockBits {
-        blockBitsExt = minBlockBits
+    let mut blockbitsext = log2_any(n_ext * n_pols / ideal_n_blocks);
+    if blockbitsext < minblockbits {
+        blockbitsext = minblockbits
     };
-    if blockBitsExt > maxBlockBits {
-        blockBitsExt = maxBlockBits
+    if blockbitsext > maxblockbits {
+        blockbitsext = maxblockbits
     };
-    blockBitsExt = min(nbitsExt, blockBitsExt);
-    let blockSizeExt = 1 << blockBitsExt;
-    let nBlocksExt = nExt / blockSizeExt;
+    blockbitsext = min(nbitsext, blockbitsext);
+    let blocksizeext = 1 << blockbitsext;
+    //let n_blocksExt = n_ext / blocksizeext;
 
-    if blockBitsExt < nbitsExt {
-        nTrasposes += (nbitsExt - 1) / blockBitsExt + 1;
+    if blockbitsext < nbitsext {
+        n_transposes += (nbitsext - 1) / blockbitsext + 1;
     }
 
-    if nTrasposes & 1 > 0 {
+    if n_transposes & 1 > 0 {
         bout = &mut tmpbuff;
-        bIn = outbuff;
+        bin = outbuff;
     } else {
         bout = outbuff;
-        bIn = &mut tmpbuff;
+        bin = &mut tmpbuff;
     }
 
-    println!("len: in {} out {}", bIn.len(), bout.len());
+    println!("len: in {} out {}", bin.len(), bout.len());
     println!("Interpolating reverse....");
     interpolate_bit_reverse(bout, buffsrc, n_pols, nbits);
-    (bIn, bout) = (bout, bIn);
+    (bin, bout) = (bout, bin);
     println!(
-        "after bitversrse len: in {} out {}, nBlocks {} blockSize {}, nbits {} blockBits {}",
-        bIn.len(),
+        "after bitversrse len: in {} out {}, n_blocks {} blocksize {}, nbits {} blockbits {}",
+        bin.len(),
         bout.len(),
-        nBlocks,
-        blockSize,
+        n_blocks,
+        blocksize,
         nbits,
-        blockBits
+        blockbits
     );
 
-    for i in (0..nbits).step_by(blockBits) {
+    for i in (0..nbits).step_by(blockbits) {
         println!("Layer ifft {}", i);
-        let sInc = min(blockBits, nbits - i);
-        bIn.par_chunks_mut(blockSize * n_pols)
-            .enumerate()
-            .for_each(|(j, bb)| {
-                fft_block(bb, j * blockSize, n_pols, nbits, i + sInc, blockBits, sInc);
-            });
-
-        if sInc < nbits {
-            // Do not transpose if it's the same
-            transpose(bout, bIn, n_pols, nbits, sInc);
-            (bIn, bout) = (bout, bIn);
-        }
-    }
-
-    println!("Interpolating prepare....");
-    interpolatePrepare(bIn, n_pols, nbits, nbitsExt);
-    println!("Bit reverse....");
-    bitReverse(bout, bIn, n_pols, nbitsExt);
-    (bIn, bout) = (bout, bIn);
-
-    for i in (0..nbitsExt).step_by(blockBitsExt) {
-        println!("Layer fft {}", i);
-        let sInc = min(blockBitsExt, nbitsExt - i);
-        bIn.par_chunks_mut(blockSizeExt * n_pols)
+        let s_inc = min(blockbits, nbits - i);
+        bin.par_chunks_mut(blocksize * n_pols)
             .enumerate()
             .for_each(|(j, bb)| {
                 fft_block(
                     bb,
-                    j * blockSizeExt,
+                    j * blocksize,
                     n_pols,
-                    nbitsExt,
-                    i + sInc,
-                    blockBitsExt,
-                    sInc,
+                    nbits,
+                    i + s_inc,
+                    blockbits,
+                    s_inc,
                 );
             });
 
-        if sInc < nbitsExt {
+        if s_inc < nbits {
             // Do not transpose if it's the same
-            transpose(bout, bIn, n_pols, nbitsExt, sInc);
-            (bIn, bout) = (bout, bIn);
+            transpose(bout, bin, n_pols, nbits, s_inc);
+            (bin, bout) = (bout, bin);
+        }
+    }
+
+    println!("Interpolating prepare....");
+    interpolate_prepare(bin, n_pols, nbits, nbitsext);
+    println!("Bit reverse....");
+    bit_reverse(bout, bin, n_pols, nbitsext);
+    (bin, bout) = (bout, bin);
+
+    for i in (0..nbitsext).step_by(blockbitsext) {
+        println!("Layer fft {}", i);
+        let s_inc = min(blockbitsext, nbitsext - i);
+        bin.par_chunks_mut(blocksizeext * n_pols)
+            .enumerate()
+            .for_each(|(j, bb)| {
+                fft_block(
+                    bb,
+                    j * blocksizeext,
+                    n_pols,
+                    nbitsext,
+                    i + s_inc,
+                    blockbitsext,
+                    s_inc,
+                );
+            });
+
+        if s_inc < nbitsext {
+            // Do not transpose if it's the same
+            transpose(bout, bin, n_pols, nbitsext, s_inc);
+            (bin, bout) = (bout, bin);
         }
     }
     println!("interpolation terminated");

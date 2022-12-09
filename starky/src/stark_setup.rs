@@ -7,8 +7,7 @@ use crate::polsarray::PolsArray;
 use crate::starkinfo::{self, Program, StarkInfo};
 use crate::types::{StarkStruct, PIL};
 use crate::ElementDigest;
-use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
-use winter_utils::{iter, transpose_slice};
+use winter_math::{fields::f64::BaseElement, FieldElement};
 
 #[derive(Default)]
 pub struct StarkSetup {
@@ -71,8 +70,6 @@ pub mod tests {
     use crate::polsarray::{PolKind, PolsArray};
     use crate::stark_setup::StarkSetup;
     use crate::types::{load_json, StarkStruct, PIL};
-    use winter_math::fft::{self, get_inv_twiddles};
-    use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
     use crate::field_bn128::Fr;
     use ff::*;

@@ -9,7 +9,6 @@ use crate::stark_gen::StarkContext;
 use crate::stark_gen::StarkProof;
 use crate::starkinfo::Program;
 use crate::starkinfo::StarkInfo;
-use crate::starkinfo_codegen::Segment;
 use crate::starkinfo_codegen::{Node, Section};
 use crate::transcript_bn128::TranscriptBN128;
 use crate::types::StarkStruct;
@@ -29,7 +28,7 @@ pub fn stark_verify(
 
     let mut ctx = StarkContext::default();
 
-    let extendBits = stark_struct.nBitsExt - stark_struct.nBits;
+    let extend_bits = stark_struct.nBitsExt - stark_struct.nBits;
 
     ctx.N = 1 << stark_struct.nBits;
     ctx.nbits = stark_struct.nBits;
@@ -135,7 +134,7 @@ pub fn stark_verify(
             ctx_query.publics = ctx.publics.clone();
             ctx_query.challenges = ctx.challenges.clone();
 
-            let x = SHIFT.clone() * (MG.0[ctx.nbits + extendBits].exp(idx));
+            let x = SHIFT.clone() * (MG.0[ctx.nbits + extend_bits].exp(idx));
             println!(
                 "idx: {}, x: {}, challenges[7] {}",
                 idx, x, ctx_query.challenges[7]

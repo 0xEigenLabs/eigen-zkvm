@@ -2,7 +2,7 @@ use crate::constant::POSEIDON_BN128_CONSTANTS_OPT;
 use crate::field_bn128::Fr;
 use crate::poseidon_bn128::Constants;
 use crate::poseidon_bn128_constants_opt as constants;
-use ff::{from_hex, Field, PrimeField};
+use ff::{from_hex, Field};
 use rayon::prelude::*;
 
 pub fn load_constants() -> Constants {
@@ -133,15 +133,15 @@ impl Poseidon {
             //);
             let sz = state.len();
             let mut tmp_state = vec![Fr::zero(); t];
-            for i in 0..sz {
+            tmp_state.par_iter_mut().enumerate().for_each(|(i, out)| {
                 let mut acc = Fr::zero();
                 for j in 0..sz {
                     let mut tmp = M[j][i];
                     tmp.mul_assign(&state[j]);
                     acc.add_assign(&tmp);
                 }
-                tmp_state[i] = acc;
-            }
+                *out = acc;
+            });
             state = tmp_state;
         }
 
@@ -152,15 +152,15 @@ impl Poseidon {
 
         let sz = state.len();
         let mut tmp_state = vec![Fr::zero(); t];
-        for i in 0..sz {
+        tmp_state.par_iter_mut().enumerate().for_each(|(i, out)| {
             let mut acc = Fr::zero();
             for j in 0..sz {
                 let mut tmp = P[j][i];
                 tmp.mul_assign(&state[j]);
                 acc.add_assign(&tmp);
             }
-            tmp_state[i] = acc;
-        }
+            *out = acc;
+        });
         state = tmp_state;
 
         for r in 0..n_rounds_p {
@@ -192,30 +192,30 @@ impl Poseidon {
 
             let sz = state.len();
             let mut tmp_state = vec![Fr::zero(); t];
-            for i in 0..sz {
+            tmp_state.par_iter_mut().enumerate().for_each(|(i, out)| {
                 let mut acc = Fr::zero();
                 for j in 0..sz {
                     let mut tmp = M[j][i];
                     tmp.mul_assign(&state[j]);
                     acc.add_assign(&tmp);
                 }
-                tmp_state[i] = acc;
-            }
+                *out = acc;
+            });
             state = tmp_state;
         }
 
         state.par_iter_mut().for_each(|e| Self::pow5(e));
         let sz = state.len();
         let mut tmp_state = vec![Fr::zero(); t];
-        for i in 0..sz {
+        tmp_state.par_iter_mut().enumerate().for_each(|(i, out)| {
             let mut acc = Fr::zero();
             for j in 0..sz {
                 let mut tmp = M[j][i];
                 tmp.mul_assign(&state[j]);
                 acc.add_assign(&tmp);
             }
-            tmp_state[i] = acc;
-        }
+            *out = acc;
+        });
         state = tmp_state;
 
         Ok((&state[0..out]).to_vec())

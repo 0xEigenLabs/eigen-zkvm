@@ -60,9 +60,6 @@ impl fmt::Display for Expr {
             Ops::Write => {
                 write!(f, "write ({})", self.defs[0])
             }
-            _ => {
-                panic!("Invalid op");
-            }
         }
     }
 }
@@ -155,7 +152,7 @@ impl Block {
                     let addr = &next_expr.syms[0];
                     let val = val_stack.pop().unwrap(); // get the value from stack
 
-                    let mut val_addr = ctx.get_mut(addr.as_str());
+                    let val_addr = ctx.get_mut(addr.as_str());
                     if val.dim == 1 || addr.as_str() == "tmp" {
                         // TODO: need double confirm the condition
                         val_addr[id] = val;

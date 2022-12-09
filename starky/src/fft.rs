@@ -1,4 +1,4 @@
-use crate::constant::{MG, SHIFT};
+use crate::constant::MG;
 use crate::f3g::F3G;
 use crate::helper::log2_any;
 use winter_math::FieldElement;
@@ -104,13 +104,6 @@ mod tests {
             .map(|e| F3G::from(*e))
             .collect();
         let aa = f.fft(&a);
-        aa.iter()
-            .map(|e| {
-                println!("{}", e);
-                0
-            })
-            .collect::<Vec<i32>>();
-
         let ac = f.ifft(&aa);
         for i in 0..a.len() {
             assert_eq!(a[i], ac[i]);

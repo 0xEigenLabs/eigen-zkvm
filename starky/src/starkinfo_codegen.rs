@@ -1,4 +1,4 @@
-#![allow(non_snake_case)]
+#![allow(dead_code)]
 use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps;
 use crate::f3g::F3G;

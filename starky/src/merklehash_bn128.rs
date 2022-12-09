@@ -2,13 +2,13 @@ use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
-use crate::field_bn128::{Fr, FrRepr};
+use crate::field_bn128::Fr;
 use crate::linearhash_bn128::LinearHashBN128;
 use crate::poseidon_bn128_opt::Poseidon;
 use ff::Field;
 use rayon::prelude::*;
 use winter_math::fields::f64::BaseElement;
-use winter_math::{FieldElement, StarkField};
+use winter_math::FieldElement;
 
 #[derive(Default)]
 pub struct MerkleTree {
@@ -75,7 +75,7 @@ impl MerkleTree {
                     .enumerate()
                     .for_each(|(i, (out, bb))| {
                         let cur_n = bb.len() / width;
-                        println!("linearhash block i {} {}", i, bb[0].to_be().as_int());
+                        println!("linearhash block i {}, cur_n {}", i, cur_n);
                         for j in 0..cur_n {
                             let batch = &bb[(j * width)..((j + 1) * width)];
                             //let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
@@ -288,7 +288,7 @@ mod tests {
         let mut cols: Vec<F3G> = vec![F3G::ZERO; n_pols * n];
         for i in 0..n {
             for j in 0..n_pols {
-                cols[i * n_pols + j] = F3G::from((i + j * 1000));
+                cols[i * n_pols + j] = F3G::from(i + j * 1000);
             }
         }
 
@@ -309,17 +309,17 @@ mod tests {
 
     #[test]
     fn test_merklehash_small() {
-        let N = 256;
+        let n = 256;
         let idx = 3;
-        let nPols = 9;
-        let mut pols: Vec<F3G> = vec![F3G::ZERO; nPols * N];
-        for i in 0..N {
-            for j in 0..nPols {
-                pols[i * nPols + j] = F3G::from((i + j * 1000) as u32);
+        let n_pols = 9;
+        let mut pols: Vec<F3G> = vec![F3G::ZERO; n_pols * n];
+        for i in 0..n {
+            for j in 0..n_pols {
+                pols[i * n_pols + j] = F3G::from((i + j * 1000) as u32);
             }
         }
 
-        let tree = MerkleTree::merkelize(pols, nPols, N).unwrap();
+        let tree = MerkleTree::merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
         assert_eq!(
@@ -331,17 +331,17 @@ mod tests {
 
     #[test]
     fn test_merklehash_not_power_of_2() {
-        let N = 33;
+        let n = 33;
         let idx = 32;
-        let nPols = 6;
-        let mut pols: Vec<F3G> = vec![F3G::ZERO; nPols * N];
-        for i in 0..N {
-            for j in 0..nPols {
-                pols[i * nPols + j] = F3G::from((i + j * 1000) as u32);
+        let n_pols = 6;
+        let mut pols: Vec<F3G> = vec![F3G::ZERO; n_pols * n];
+        for i in 0..n {
+            for j in 0..n_pols {
+                pols[i * n_pols + j] = F3G::from((i + j * 1000) as u32);
             }
         }
 
-        let tree = MerkleTree::merkelize(pols, nPols, N).unwrap();
+        let tree = MerkleTree::merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
         assert_eq!(
@@ -353,17 +353,17 @@ mod tests {
 
     #[test]
     fn test_merklehash_big() {
-        let N = 1 << 16;
+        let n = 1 << 16;
         let idx = 32;
-        let nPols = 6;
-        let mut pols: Vec<F3G> = vec![F3G::ZERO; nPols * N];
-        for i in 0..N {
-            for j in 0..nPols {
-                pols[i * nPols + j] = F3G::from((i + j * 1000) as u32);
+        let n_pols = 6;
+        let mut pols: Vec<F3G> = vec![F3G::ZERO; n_pols * n];
+        for i in 0..n {
+            for j in 0..n_pols {
+                pols[i * n_pols + j] = F3G::from((i + j * 1000) as u32);
             }
         }
 
-        let tree = MerkleTree::merkelize(pols, nPols, N).unwrap();
+        let tree = MerkleTree::merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
         assert_eq!(

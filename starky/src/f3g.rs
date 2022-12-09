@@ -4,8 +4,8 @@ use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAss
 use rand_utils::rand_vector;
 use std::hash::{Hash, Hasher};
 use std::slice;
+use winter_math::fields::f64::BaseElement;
 use winter_math::fields::CubeExtension;
-use winter_math::{fft, fields::f64::BaseElement};
 use winter_math::{FieldElement, StarkField};
 use winter_utils::{
     AsBytes, ByteReader, ByteWriter, Deserializable, DeserializationError, Randomizable,

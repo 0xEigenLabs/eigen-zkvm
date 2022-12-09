@@ -84,7 +84,7 @@ impl StarkInfo {
 
         pil_code_gen(ctx, pil, self.fri_exp_id, false, "f", 0)?;
         let sz = ctx.code.len() - 1;
-        let mut code = &mut ctx.code[sz].code;
+        let code = &mut ctx.code[sz].code;
         let sz = code.len() - 1;
         code[sz].dest = Node::new("f".to_string(), 0, None, 0, false, 0);
 

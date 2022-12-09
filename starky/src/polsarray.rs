@@ -218,7 +218,6 @@ impl PolsArray {
 pub mod tests {
     use crate::polsarray::{PolKind, PolsArray};
     use crate::types::{self, PIL};
-    use std::collections::HashMap;
     #[test]
     fn test_load_polsarray() {
         let pil = types::load_json::<PIL>("data/fib.pil.json").unwrap();

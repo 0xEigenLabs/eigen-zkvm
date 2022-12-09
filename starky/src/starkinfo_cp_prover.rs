@@ -1,6 +1,5 @@
 use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
-use crate::f3g::F3G;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::Section;
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Context, Node};
@@ -235,7 +234,7 @@ pub fn calculate_im_pols(
 ) -> Result<(Option<HashMap<usize, bool>>, i32)> {
     println!("calculate_im_pols: {} {}", _exp, max_deg);
 
-    let mut im_expressions: HashMap<usize, bool> = HashMap::new();
+    let im_expressions: HashMap<usize, bool> = HashMap::new();
     let mut abs_max = max_deg;
 
     let (re, rd) = _calculate_im_pols(pil, _exp, &Some(im_expressions), max_deg, max_deg);

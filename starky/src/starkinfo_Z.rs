@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
-use crate::f3g::F3G;
 use crate::helper::get_ks;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo::{CICTX, PECTX};

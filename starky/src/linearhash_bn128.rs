@@ -138,7 +138,6 @@ impl LinearHashBN128 {
 
 #[cfg(test)]
 mod tests {
-    use crate::field_bn128::Fr;
     use crate::linearhash_bn128::LinearHashBN128;
     use crate::poseidon_bn128_opt::Poseidon;
     use ff::*;

@@ -9,9 +9,7 @@ use crate::merklehash_bn128::MerkleTree;
 use crate::transcript_bn128::TranscriptBN128;
 use crate::types::{StarkStruct, Step};
 use ff::*;
-use std::collections::HashMap;
 use std::fmt;
-use std::rc::Rc;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
 use winter_math::StarkField;
@@ -99,24 +97,24 @@ impl FRI {
         let mut proof: FRIProof = FRIProof::new(self.steps.len());
         for si in 0..self.steps.len() {
             let reduction_bits = pol_bits - self.steps[si].nBits;
-            let pol2N = 1 << (pol_bits - reduction_bits);
-            let nX = pol.len() / pol2N;
+            let pol2_n = 1 << (pol_bits - reduction_bits);
+            let n_x = pol.len() / pol2_n;
 
-            let mut pol2_e = vec![F3G::ZERO; pol2N];
+            let mut pol2_e = vec![F3G::ZERO; pol2_n];
             let special_x = transcript.get_field();
 
             let mut sinv = shift_inv;
             let wi = F3G::inv(MG.0[pol_bits]);
-            //println!("nX {} {} {}", nX, pol2N, special_x);
+            //println!("n_x {} {} {}", n_x, pol2_n, special_x);
             crate::helper::pretty_print_array(&pol);
 
-            for g in 0..(pol.len() / nX) {
+            for g in 0..(pol.len() / n_x) {
                 if si == 0 {
                     pol2_e[g] = pol[g];
                 } else {
-                    let mut ppar = vec![F3G::ZERO; nX];
-                    for i in 0..nX {
-                        ppar[i] = pol[i * pol2N + g];
+                    let mut ppar = vec![F3G::ZERO; n_x];
+                    for i in 0..n_x {
+                        ppar[i] = pol[i * pol2_n + g];
                     }
 
                     let mut ppar_c = standard_fft.ifft(&ppar);
@@ -303,6 +301,7 @@ impl FRI {
 
         let mut max_deg = 0usize;
         if (pol_bits - (self.in_nbits - self.max_deg_nbits)) < 0 {
+            // FIXME usless due to type limit
             max_deg = 0;
         } else {
             max_deg = 1 << (pol_bits - (self.in_nbits - self.max_deg_nbits));
