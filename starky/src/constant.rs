@@ -2,6 +2,7 @@
 use crate::f3g::F3G;
 use crate::field_bn128::Fr;
 use crate::poseidon_bn128::{load_constants, Constants};
+use crate::poseidon_bn128_opt::load_constants as load_constants_opt;
 use ff::*;
 use std::collections::HashMap;
 use winter_math::{fft, fields::f64::BaseElement, FieldElement};
@@ -41,7 +42,9 @@ lazy_static::lazy_static! {
         (w, wi)
     };
 
-    //pub static ref POSEIDON_BN128_OPT_TABLE: HashMap<String, > = {};
+    pub static ref POSEIDON_BN128_OPT_TABLE: Constants = {
+        load_constants_opt()
+    };
     pub static ref POSEIDON_BN128_CONSTANTS: Constants = {
         load_constants()
     };
