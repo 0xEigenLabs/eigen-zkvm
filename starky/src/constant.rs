@@ -42,7 +42,7 @@ lazy_static::lazy_static! {
         (w, wi)
     };
 
-    pub static ref POSEIDON_BN128_OPT_TABLE: Constants = {
+    pub static ref POSEIDON_BN128_CONSTANTS_OPT: Constants = {
         load_constants_opt()
     };
     pub static ref POSEIDON_BN128_CONSTANTS: Constants = {

@@ -2,6 +2,7 @@ use crate::field_bn128::Fr;
 use crate::poseidon_bn128::Constants;
 use crate::poseidon_bn128_constants_opt as constants;
 use ff::from_hex;
+use crate::constant::POSEIDON_BN128_CONSTANTS_OPT;
 
 pub fn load_constants() -> Constants {
     let (c_str, m_str, p_str, s_str) = constants::constants();
@@ -61,6 +62,21 @@ pub fn load_constants() -> Constants {
         n_rounds_p: vec![
             56, 57, 56, 60, 60, 63, 64, 63, 60, 66, 60, 65, 70, 60, 64, 68,
         ],
+    }
+}
+
+pub struct Poseidon;
+
+impl Default for Poseidon {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+
+impl Poseidon {
+    pub fn new() -> Poseidon {
+        Self {}
     }
 }
 
