@@ -50,11 +50,13 @@ Merkelization calculates the Merkel proof of a polynomial, where the leaf nodes 
 
 [Code](../starkjs/src/merklehash_bn128_p.js#L47)
 
-MerkleHash performance:
+MerkleHash performance(128core, 1T RAM):
 
 |height|n_pols| starky(s)|pil-stark(s)|
 |---|---|---|---|
-|2^24|10|10.84| 333.77|
+|2^24|10|17.84| 383.77|
+|2^24|100| 158.12| -|
+|2^24|600| 891.11| -|
 
 * Polynomial evaluation
 

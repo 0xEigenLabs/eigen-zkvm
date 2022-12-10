@@ -7,7 +7,7 @@ use winter_math::FieldElement;
 fn run_merklehash(pols: Vec<F3G>) {
     let n = 1 << 24;
     let idx = 32;
-    let n_pols = 20;
+    let n_pols = 600;
 
     let now = std::time::Instant::now();
     let tree = MerkleTree::merkelize(pols, n_pols, n).unwrap();
@@ -25,7 +25,7 @@ fn merklehash_group_bench(c: &mut Criterion) {
     let mut group = c.benchmark_group("merklehash");
 
     let n = 1 << 24;
-    let n_pols = 20;
+    let n_pols = 600;
     let mut pols: Vec<F3G> = vec![F3G::ZERO; n_pols * n];
 
     rayon::scope(|_s| {

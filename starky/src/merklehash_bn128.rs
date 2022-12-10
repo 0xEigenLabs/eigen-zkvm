@@ -160,19 +160,16 @@ impl MerkleTree {
             buff_in.len()
         );
         let n_ops = buff_in.len() / 16;
-        let mut buff_out64: Vec<ElementDigest> = vec![];
-        for i in 0..n_ops {
-            let digest: Fr = Fr::zero();
-            //print!("bb {} of {} ", i, n_ops);
-            //for k in 0..16 {
-            //    println!("bb {}", buff_in[i * 16 + k]);
-            //}
-            buff_out64.push(
-                self.h
-                    .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &digest)?,
-            );
-            //println!("bb out={}", buff_out64[buff_out64.len() - 1]);
-        }
+        let mut buff_out64: Vec<ElementDigest> = vec![ElementDigest::default(); n_ops];
+        buff_out64
+            .par_iter_mut()
+            .zip((0..n_ops).into_iter())
+            .for_each(|(out, i)| {
+                *out = self
+                    .h
+                    .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &Fr::zero())
+                    .unwrap();
+            });
         Ok(buff_out64)
     }
 
