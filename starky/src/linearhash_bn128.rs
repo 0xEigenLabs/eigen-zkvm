@@ -30,7 +30,6 @@ impl LinearHashBN128 {
 
         for col in columns.iter() {
             for elem in col.iter() {
-                // NOTE: BaseElement to Fr
                 let mut e = Fr::from_str(&elem.as_int().to_string()).unwrap();
                 if accN == 1 {
                     e.mul_assign(&OFFSET_2_64);
@@ -93,7 +92,7 @@ impl LinearHashBN128 {
         Ok(self.h.hash(&elems, init_state)?)
     }
 
-    pub fn hash_element_array(&self, vals: &Vec<BaseElement>) -> Result<ElementDigest> {
+    pub fn hash_element_array(&self, vals: &[BaseElement]) -> Result<ElementDigest> {
         let mut st64 = [BaseElement::ZERO; 4];
         let mut in64: [BaseElement; 64] = [BaseElement::ZERO; 64];
         let mut digest: Fr = Fr::zero();
@@ -107,7 +106,6 @@ impl LinearHashBN128 {
         }
 
         let mut p = 0;
-
         for (i, val) in vals.iter().enumerate() {
             in64[p] = *val;
             p += 1;

@@ -273,7 +273,6 @@ impl StarkInfo {
         info.map(&mut ctx, pil, &stark_struct, &mut program)?;
 
         info.publics = pil.publics.clone();
-
         Ok((info, program))
     }
 
