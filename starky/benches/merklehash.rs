@@ -9,22 +9,6 @@ fn run_merklehash(pols: Vec<F3G>) {
     let idx = 32;
     let n_pols = 20;
 
-    /*
-    let mut pols: Vec<F3G> = vec![F3G::ZERO; n_pols *n];
-    for i in 0..n{
-        for j in 0..n_pols {
-            pols[i * n_pols + j] = F3G::from((i + j * 1000));
-        }
-    }
-    rayon::scope(|s| {
-        pols.par_chunks_mut(n).enumerate().for_each(|(i, bb)| {
-            for j in 0..n{
-                bb[j] = F3G::from((i + j * 1000))
-            }
-        });
-    });
-    */
-
     let now = std::time::Instant::now();
     let tree = MerkleTree::merkelize(pols, n_pols, n).unwrap();
     println!("time cost: {}", now.elapsed().as_secs());
