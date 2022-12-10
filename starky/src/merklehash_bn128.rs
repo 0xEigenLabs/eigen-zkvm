@@ -8,6 +8,7 @@ use crate::linearhash_bn128::LinearHashBN128;
 use crate::poseidon_bn128_opt::Poseidon;
 use ff::Field;
 use rayon::prelude::*;
+use std::time::Instant;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
 
@@ -76,16 +77,16 @@ impl MerkleTree {
             n_per_thread_f = MAX_OPS_PER_THREAD;
         }
         let mut nodes = vec![ElementDigest::default(); get_n_nodes(height)];
-        println!("n_per_thread_f: {}, height {}", n_per_thread_f, height);
+        let now = Instant::now();
+        //println!("n_per_thread_f: {}, height {}", n_per_thread_f, height);
         if buff.len() > 0 {
             rayon::scope(|_s| {
                 nodes
                     .par_chunks_mut(n_per_thread_f)
                     .zip(buff.par_chunks(n_per_thread_f * width))
-                    .enumerate()
-                    .for_each(|(i, (out, bb))| {
+                    .for_each(|(out, bb)| {
                         let cur_n = bb.len() / width;
-                        println!("linearhash pols i {}, cur_n {}", i, cur_n);
+                        //println!("linearhash pols i {}, cur_n {}", i, cur_n);
                         out.par_iter_mut()
                             .zip((0..cur_n).into_iter())
                             .for_each(|(row_out, j)| {
@@ -95,6 +96,7 @@ impl MerkleTree {
                     });
             });
         }
+        println!("linearhash time cost: {}", now.elapsed().as_secs_f64());
 
         // merklize level
         let mut tree = MerkleTree {
@@ -114,7 +116,13 @@ impl MerkleTree {
         let mut p_out: usize = p_in + next_n256 * 16;
         while n256 > 1 {
             //println!("p_in {}, next_n256 {}, p_out {}", p_in, next_n256, p_out);
+            let now = Instant::now();
             tree.merklize_level(p_in, next_n256, p_out)?;
+            println!(
+                "merklize_level {} time cost: {}",
+                next_n256,
+                now.elapsed().as_secs_f64()
+            );
             n256 = next_n256;
             next_n256 = (n256 - 1) / 16 + 1;
             p_in = p_out;
@@ -131,26 +139,24 @@ impl MerkleTree {
         }
 
         let buff = &self.nodes[p_in..(p_in + n_ops * 16)];
-        let mut leaves: Vec<(usize, Vec<ElementDigest>)> = vec![(0, Vec::new()); n_ops];
-        println!("merklize level: hash {} to {}", p_in, p_out);
-        rayon::scope(|_s| {
-            buff.par_chunks(16 * n_ops_per_thread)
-                .enumerate()
-                .map(|(i, bb)| {
-                    let res = self.do_merklize_level(bb, i, n_ops).unwrap();
-                    (i, res)
-                })
-                .collect_into_vec(&mut leaves);
-        });
+        //println!("merklize level: hash {} to {}", p_in, p_out);
+        let nodes = buff
+            .par_chunks(16 * n_ops_per_thread)
+            .enumerate()
+            .map(|(i, bb)| self.do_merklize_level(bb, i, n_ops).unwrap())
+            .reduce(
+                || Vec::<ElementDigest>::new(),
+                |mut a: Vec<ElementDigest>, mut b: Vec<ElementDigest>| {
+                    a.append(&mut b);
+                    a
+                },
+            );
 
-        println!("merklize level: copy {} to {}", p_in, p_out);
-        for leaf in leaves.iter() {
-            let idx = p_out + leaf.0 * n_ops_per_thread;
-            let out = &mut self.nodes[idx..(idx + leaf.1.len())];
-            (out, &leaf.1).into_par_iter().for_each(|(out, l)| {
-                *out = *l;
-            });
-        }
+        //println!("merklize level: copy {} to {}", p_in, p_out);
+        let out = &mut self.nodes[p_out..(p_out + n_ops)];
+        out.par_iter_mut()
+            .zip(nodes)
+            .for_each(|(nout, nin)| *nout = nin);
         Ok(())
     }
 

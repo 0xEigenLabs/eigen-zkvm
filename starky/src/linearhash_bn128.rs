@@ -1,12 +1,12 @@
 #![allow(non_snake_case)]
+use crate::errors::Result;
 use crate::field_bn128::Fr;
 use crate::poseidon_bn128_opt::Poseidon;
 use crate::ElementDigest;
 use ff::*;
+use rayon::prelude::*;
 use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
-
-use crate::errors::Result;
 
 #[derive(Default)]
 pub struct LinearHashBN128 {
@@ -77,18 +77,16 @@ impl LinearHashBN128 {
 
     pub fn hash_node(&self, elems: &[ElementDigest], init_state: &Fr) -> Result<ElementDigest> {
         assert_eq!(elems.len(), 16);
-        let elems = elems.iter().map(|e| e.clone().into()).collect::<Vec<Fr>>();
+        let elems = elems.par_iter().map(|e| (*e).into()).collect::<Vec<Fr>>();
         let digest = self.h.hash(&elems, init_state)?;
         Ok(ElementDigest::from(&digest))
     }
 
     fn hash_element_block(&self, elems: &[BaseElement], init_state: &Fr) -> Result<Fr> {
-        //println!("hash_element_block size: {}", elems.len());
         let elems = elems
-            .chunks(4)
+            .par_chunks(4)
             .map(|e| ElementDigest::to_BN128(e.try_into().unwrap()))
             .collect::<Vec<Fr>>();
-        //println!("\nelem.length {:?}, {:?}", elems.len(), elems);
         Ok(self.h.hash(&elems, init_state)?)
     }
 
