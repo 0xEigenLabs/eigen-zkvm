@@ -77,7 +77,7 @@ impl MerkleTree {
                     .for_each(|(i, (out, bb))| {
                         let cur_n = bb.len() / width;
                         println!("linearhash block i {}, cur_n {}", i, cur_n);
-                        out.iter_mut()
+                        out.par_iter_mut()
                             .zip((0..cur_n).into_iter())
                             .for_each(|(row_out, j)| {
                                 let batch = &bb[(j * width)..((j + 1) * width)];
