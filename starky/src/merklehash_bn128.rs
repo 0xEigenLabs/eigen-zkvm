@@ -85,7 +85,7 @@ impl MerkleTree {
                     .enumerate()
                     .for_each(|(i, (out, bb))| {
                         let cur_n = bb.len() / width;
-                        println!("linearhash block i {}, cur_n {}", i, cur_n);
+                        println!("linearhash pols i {}, cur_n {}", i, cur_n);
                         out.par_iter_mut()
                             .zip((0..cur_n).into_iter())
                             .for_each(|(row_out, j)| {
@@ -180,7 +180,6 @@ impl MerkleTree {
         Ok(buff_out64)
     }
 
-    // TODO: unify BaseElement and BaseElement
     pub fn get_element(&self, idx: usize, sub_idx: usize) -> BaseElement {
         self.elements[self.width * idx + sub_idx]
     }

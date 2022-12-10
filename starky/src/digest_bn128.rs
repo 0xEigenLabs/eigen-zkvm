@@ -108,7 +108,7 @@ impl ElementDigest {
 
 impl Default for ElementDigest {
     fn default() -> Self {
-        ElementDigest([BaseElement::default(); DIGEST_SIZE])
+        ElementDigest([BaseElement::ZERO; DIGEST_SIZE])
     }
 }
 
