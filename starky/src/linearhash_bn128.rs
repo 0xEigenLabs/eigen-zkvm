@@ -30,7 +30,6 @@ impl LinearHashBN128 {
 
         for col in columns.iter() {
             for elem in col.iter() {
-                // NOTE: BaseElement to Fr
                 let mut e = Fr::from_str(&elem.as_int().to_string()).unwrap();
                 if accN == 1 {
                     e.mul_assign(&OFFSET_2_64);
