@@ -75,21 +75,13 @@ impl MerkleTree {
                     .zip(buff.par_chunks(n_per_thread_f * width))
                     .enumerate()
                     .for_each(|(i, (out, bb))| {
-                        s.spawn(move |_| {
-                            let cur_n = bb.len() / width;
-                            println!("linearhash block i {}, cur_n {}", i, cur_n);
-                            for j in 0..cur_n {
-                                let batch = &bb[(j * width)..((j + 1) * width)];
-                                //let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
-                                let mut batch_be: Vec<BaseElement> =
-                                    vec![BaseElement::ZERO; batch.len()];
-                                (&mut batch_be, batch).into_par_iter().for_each(|(out, l)| {
-                                    *out = (*l).to_be();
-                                });
-                                let leaves_hash = LinearHashBN128::new();
-                                out[j] = leaves_hash.hash_element_array(&batch_be).unwrap();
-                            }
-                        });
+                        let cur_n = bb.len() / width;
+                        println!("linearhash block i {}, cur_n {}", i, cur_n);
+                        for j in 0..cur_n {
+                            let batch = &bb[(j * width)..((j + 1) * width)];
+                            let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
+                            out[j] = leaves_hash.hash_element_array(&batch).unwrap();
+                        }
                     });
             });
         }

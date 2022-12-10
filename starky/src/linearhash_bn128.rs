@@ -107,7 +107,6 @@ impl LinearHashBN128 {
         }
 
         let mut p = 0;
-
         for (i, val) in vals.iter().enumerate() {
             in64[p] = *val;
             p += 1;
