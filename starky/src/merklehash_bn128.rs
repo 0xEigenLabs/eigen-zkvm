@@ -13,7 +13,7 @@ use winter_math::FieldElement;
 
 #[derive(Default)]
 pub struct MerkleTree {
-    pub elements: Vec<F3G>,
+    pub elements: Vec<BaseElement>,
     pub width: usize,
     pub height: usize,
     pub nodes: Vec<ElementDigest>,
@@ -49,7 +49,16 @@ impl MerkleTree {
         }
     }
 
-    pub fn merkelize(buff: Vec<F3G>, width: usize, height: usize) -> Result<Self> {
+    pub fn to_f3g(&self, p_be: &mut Vec<F3G>) {
+        assert_eq!(p_be.len(), self.elements.len());
+        p_be.par_iter_mut()
+            .zip(&self.elements)
+            .for_each(|(be_out, f3g_in)| {
+                *be_out = F3G::from(*f3g_in);
+            });
+    }
+
+    pub fn merkelize(buff: Vec<BaseElement>, width: usize, height: usize) -> Result<Self> {
         let leaves_hash = LinearHashBN128::new();
 
         //println!("width {}, height {}, {:?}", width, height, buff);
@@ -81,9 +90,7 @@ impl MerkleTree {
                             .zip((0..cur_n).into_iter())
                             .for_each(|(row_out, j)| {
                                 let batch = &bb[(j * width)..((j + 1) * width)];
-                                let batch: Vec<BaseElement> =
-                                    batch.par_iter().map(|e| e.to_be()).collect();
-                                *row_out = leaves_hash.hash_element_array(&batch).unwrap();
+                                *row_out = leaves_hash.hash_element_array(batch).unwrap();
                             });
                     });
             });
@@ -173,9 +180,9 @@ impl MerkleTree {
         Ok(buff_out64)
     }
 
-    // TODO: unify BaseElement and F3G
+    // TODO: unify BaseElement and BaseElement
     pub fn get_element(&self, idx: usize, sub_idx: usize) -> BaseElement {
-        self.elements[self.width * idx + sub_idx].to_be()
+        self.elements[self.width * idx + sub_idx]
     }
 
     fn merkle_gen_merkle_proof(&self, idx: usize, offset: usize, n: usize) -> Vec<Vec<Fr>> {
@@ -267,10 +274,10 @@ impl MerkleTree {
 
 #[cfg(test)]
 mod tests {
-    use crate::f3g::F3G;
     use crate::field_bn128::Fr;
     use crate::merklehash_bn128::MerkleTree;
     use ff::PrimeField;
+    use winter_math::fields::f64::BaseElement;
     use winter_math::FieldElement;
 
     #[test]
@@ -280,10 +287,10 @@ mod tests {
         let idx = 3;
         let n_pols = 9;
 
-        let mut cols: Vec<F3G> = vec![F3G::ZERO; n_pols * n];
+        let mut cols: Vec<BaseElement> = vec![BaseElement::ZERO; n_pols * n];
         for i in 0..n {
             for j in 0..n_pols {
-                cols[i * n_pols + j] = F3G::from(i + j * 1000);
+                cols[i * n_pols + j] = BaseElement::from((i + j * 1000) as u64);
             }
         }
 
@@ -307,10 +314,10 @@ mod tests {
         let n = 256;
         let idx = 3;
         let n_pols = 9;
-        let mut pols: Vec<F3G> = vec![F3G::ZERO; n_pols * n];
+        let mut pols: Vec<BaseElement> = vec![BaseElement::ZERO; n_pols * n];
         for i in 0..n {
             for j in 0..n_pols {
-                pols[i * n_pols + j] = F3G::from((i + j * 1000) as u32);
+                pols[i * n_pols + j] = BaseElement::from((i + j * 1000) as u32);
             }
         }
 
@@ -329,10 +336,10 @@ mod tests {
         let n = 33;
         let idx = 32;
         let n_pols = 6;
-        let mut pols: Vec<F3G> = vec![F3G::ZERO; n_pols * n];
+        let mut pols: Vec<BaseElement> = vec![BaseElement::ZERO; n_pols * n];
         for i in 0..n {
             for j in 0..n_pols {
-                pols[i * n_pols + j] = F3G::from((i + j * 1000) as u32);
+                pols[i * n_pols + j] = BaseElement::from((i + j * 1000) as u32);
             }
         }
 
@@ -351,10 +358,10 @@ mod tests {
         let n = 1 << 16;
         let idx = 32;
         let n_pols = 6;
-        let mut pols: Vec<F3G> = vec![F3G::ZERO; n_pols * n];
+        let mut pols: Vec<BaseElement> = vec![BaseElement::ZERO; n_pols * n];
         for i in 0..n {
             for j in 0..n_pols {
-                pols[i * n_pols + j] = F3G::from((i + j * 1000) as u32);
+                pols[i * n_pols + j] = BaseElement::from((i + j * 1000) as u32);
             }
         }
 

@@ -1,13 +1,13 @@
 use criterion::*;
 use rayon::prelude::*;
-use starky::f3g::F3G;
 use starky::merklehash_bn128::MerkleTree;
+use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
 
-fn run_merklehash(pols: Vec<F3G>) {
+fn run_merklehash(pols: Vec<BaseElement>) {
     let n = 1 << 24;
     let idx = 32;
-    let n_pols = 600;
+    let n_pols = 20;
 
     let now = std::time::Instant::now();
     let tree = MerkleTree::merkelize(pols, n_pols, n).unwrap();
@@ -25,13 +25,13 @@ fn merklehash_group_bench(c: &mut Criterion) {
     let mut group = c.benchmark_group("merklehash");
 
     let n = 1 << 24;
-    let n_pols = 600;
-    let mut pols: Vec<F3G> = vec![F3G::ZERO; n_pols * n];
+    let n_pols = 20;
+    let mut pols: Vec<BaseElement> = vec![BaseElement::ZERO; n_pols * n];
 
     rayon::scope(|_s| {
         pols.par_chunks_mut(n).enumerate().for_each(|(i, bb)| {
             for j in 0..n {
-                bb[j] = F3G::from(j + i * n)
+                bb[j] = BaseElement::from((j + i * n) as u64)
             }
         });
     });

@@ -16,6 +16,7 @@ use crate::starkinfo_codegen::{Polynom, Segment};
 use crate::transcript_bn128::TranscriptBN128;
 use crate::types::{StarkStruct, PIL};
 use ff::*;
+use rayon::prelude::*;
 use std::collections::HashMap;
 use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
@@ -173,6 +174,7 @@ impl<'a> StarkProof {
         ctx.cm2_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm2_n * ctx.Next];
         ctx.cm3_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm3_n * ctx.Next];
         ctx.cm4_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm4_n * ctx.Next];
+        ctx.const_2ns = vec![F3G::ZERO; const_tree.elements.len()];
 
         ctx.q_2ns = vec![F3G::ZERO; starkinfo.q_dim * ctx.Next];
         ctx.f_2ns = vec![F3G::ZERO; 3 * ctx.Next];
@@ -196,7 +198,7 @@ impl<'a> StarkProof {
         //println!("Zi(1) {}", (ctx.Zi)(1));
 
         ctx.const_n = const_pols.write_buff();
-        ctx.const_2ns = const_tree.elements.clone();
+        const_tree.to_f3g(&mut ctx.const_2ns);
 
         ctx.publics = vec![F3G::ZERO; starkinfo.publics.len()];
         for (i, pe) in starkinfo.publics.iter().enumerate() {
@@ -227,8 +229,7 @@ impl<'a> StarkProof {
 
         println!("Merkeling 1....");
         let tree1 = extend_and_merkelize(&mut ctx, starkinfo, "cm1_n").unwrap();
-        //ctx.cm1_2ns = to_array(&tree1.elements);
-        ctx.cm1_2ns = tree1.elements.clone();
+        tree1.to_f3g(&mut ctx.cm1_2ns);
         let root: Fr = tree1.root().into();
         println!("tree1 root: {:?}", crate::helper::fr_to_biguint(&root));
         println!("tree1[0] {}", ctx.cm1_2ns[0]);
@@ -255,8 +256,7 @@ impl<'a> StarkProof {
 
         println!("Merkeling 2....");
         let tree2 = extend_and_merkelize(&mut ctx, starkinfo, "cm2_n").unwrap();
-        //ctx.cm2_2ns = to_array(&tree2.elements);
-        ctx.cm2_2ns = tree2.elements.clone(); //TODO move, not clone
+        tree2.to_f3g(&mut ctx.cm2_2ns);
         let root: Fr = tree2.root().into();
         transcript.put(&vec![root])?;
         //println!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
@@ -305,8 +305,7 @@ impl<'a> StarkProof {
         println!("Merkelizing 3....");
 
         let tree3 = extend_and_merkelize(&mut ctx, starkinfo, "cm3_n").unwrap();
-        //ctx.cm3_2ns = to_array(&tree3.elements);
-        ctx.cm3_2ns = tree3.elements.clone();
+        tree3.to_f3g(&mut ctx.cm3_2ns);
 
         let root: Fr = tree3.root().into();
         transcript.put(&vec![root])?;
@@ -668,7 +667,13 @@ pub fn extend_and_merkelize(
         n_pols
     );
     interpolate(p, n_pols, nBits, &mut result, nBitsExt);
-    Ok(MerkleTree::merkelize(result, n_pols, 1 << nBitsExt)?)
+    let mut p_be = vec![BaseElement::ZERO; result.len()];
+    p_be.par_iter_mut()
+        .zip(result)
+        .for_each(|(be_out, f3g_in)| {
+            *be_out = f3g_in.to_be();
+        });
+    Ok(MerkleTree::merkelize(p_be, n_pols, 1 << nBitsExt)?)
 }
 
 pub fn merkelize(
@@ -681,7 +686,11 @@ pub fn merkelize(
     let p = ctx.get_mut(section_name).clone();
     //println!("merkelize: {} {}", section_name, nBitsExt);
     //crate::helper::pretty_print_array(&p);
-    Ok(MerkleTree::merkelize(p, n_pols, 1 << nBitsExt)?)
+    let mut p_be = vec![BaseElement::ZERO; p.len()];
+    p_be.par_iter_mut().zip(p).for_each(|(be_out, f3g_in)| {
+        *be_out = f3g_in.to_be();
+    });
+    Ok(MerkleTree::merkelize(p_be, n_pols, 1 << nBitsExt)?)
 }
 
 pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {

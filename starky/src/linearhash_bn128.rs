@@ -93,7 +93,7 @@ impl LinearHashBN128 {
         Ok(self.h.hash(&elems, init_state)?)
     }
 
-    pub fn hash_element_array(&self, vals: &Vec<BaseElement>) -> Result<ElementDigest> {
+    pub fn hash_element_array(&self, vals: &[BaseElement]) -> Result<ElementDigest> {
         let mut st64 = [BaseElement::ZERO; 4];
         let mut in64: [BaseElement; 64] = [BaseElement::ZERO; 64];
         let mut digest: Fr = Fr::zero();

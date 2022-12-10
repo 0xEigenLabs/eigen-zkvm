@@ -11,7 +11,6 @@ anyhow = "1.0.33"
 winter-utils = { version = "0.4", package = "winter-utils", default-features = false, features = ["concurrent"] }
 rand-utils = { version = "0.4", package = "winter-rand-utils" }
 winter-math = { version = "0.4" , features = ["concurrent"] }
-winter-crypto = { version = "0.4" , features = ["concurrent"] }
 
 num-bigint = "0.4"
 num-traits = "0.2"

@@ -4,10 +4,8 @@ use crate::helper::fr_to_biguint;
 use core::slice;
 use ff::*;
 use std::fmt::Display;
-use winter_crypto::Digest;
 use winter_math::StarkField;
 use winter_math::{fields::f64::BaseElement, FieldElement};
-use winter_utils::{ByteReader, ByteWriter, Deserializable, DeserializationError, Serializable};
 
 use num_bigint::BigUint;
 use num_traits::Num;
@@ -108,39 +106,9 @@ impl ElementDigest {
     }
 }
 
-impl Digest for ElementDigest {
-    fn as_bytes(&self) -> [u8; 32] {
-        let mut result = [0; 32];
-        result[..8].copy_from_slice(&self.0[0].as_int().to_le_bytes());
-        result[8..16].copy_from_slice(&self.0[1].as_int().to_le_bytes());
-        result[16..24].copy_from_slice(&self.0[2].as_int().to_le_bytes());
-        result[24..].copy_from_slice(&self.0[3].as_int().to_le_bytes());
-
-        result
-    }
-}
-
 impl Default for ElementDigest {
     fn default() -> Self {
         ElementDigest([BaseElement::default(); DIGEST_SIZE])
-    }
-}
-
-impl Serializable for ElementDigest {
-    fn write_into<W: ByteWriter>(&self, target: &mut W) {
-        target.write_u8_slice(&self.as_bytes());
-    }
-}
-
-impl Deserializable for ElementDigest {
-    fn read_from<R: ByteReader>(source: &mut R) -> Result<Self, DeserializationError> {
-        let e1 = BaseElement::new(source.read_u64()?);
-        let e2 = BaseElement::new(source.read_u64()?);
-        let e3 = BaseElement::new(source.read_u64()?);
-        let e4 = BaseElement::new(source.read_u64()?);
-        // TODO: check if the field elements are valid?
-
-        Ok(Self([e1, e2, e3, e4]))
     }
 }
 
@@ -153,12 +121,6 @@ impl From<[BaseElement; DIGEST_SIZE]> for ElementDigest {
 impl From<ElementDigest> for [BaseElement; DIGEST_SIZE] {
     fn from(value: ElementDigest) -> Self {
         value.0
-    }
-}
-
-impl From<ElementDigest> for [u8; 32] {
-    fn from(value: ElementDigest) -> Self {
-        value.as_bytes()
     }
 }
 

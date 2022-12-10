@@ -7,6 +7,7 @@ use crate::polsarray::PolsArray;
 use crate::starkinfo::{self, Program, StarkInfo};
 use crate::types::{StarkStruct, PIL};
 use crate::ElementDigest;
+use rayon::prelude::*;
 use winter_math::{fields::f64::BaseElement, FieldElement};
 
 #[derive(Default)]
@@ -39,18 +40,26 @@ impl StarkSetup {
 
         let const_buff = const_pol.write_buff();
         //extend and merkelize
-        let mut constPolsArrayE = vec![F3G::ZERO; (1 << nBitsExt) * pil.nConstants];
+        let mut const_pols_array_e = vec![F3G::ZERO; (1 << nBitsExt) * pil.nConstants];
+        let mut const_pols_array_e_be = vec![BaseElement::ZERO; (1 << nBitsExt) * pil.nConstants];
 
         interpolate(
             &const_buff,
             pil.nConstants,
             nBits,
-            &mut constPolsArrayE,
+            &mut const_pols_array_e,
             nBitsExt,
         );
 
+        const_pols_array_e_be
+            .par_iter_mut()
+            .zip(const_pols_array_e)
+            .for_each(|(be_out, f3g_in)| {
+                *be_out = f3g_in.to_be();
+            });
+
         let const_tree = MerkleTree::merkelize(
-            constPolsArrayE,
+            const_pols_array_e_be,
             const_pol.nPols,
             const_pol.n << (nBitsExt - nBits),
         )?;

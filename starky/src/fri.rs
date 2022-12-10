@@ -318,20 +318,20 @@ impl FRI {
     }
 }
 
-fn get_transposed_buffer(pol: &Vec<F3G>, transpose_bits: usize) -> Vec<F3G> {
+fn get_transposed_buffer(pol: &Vec<F3G>, transpose_bits: usize) -> Vec<BaseElement> {
     let n = pol.len();
     let w = 1 << transpose_bits;
     let h = n / w;
-    let mut res: Vec<F3G> = vec![F3G::ZERO; n * 3];
+    let mut res: Vec<BaseElement> = vec![BaseElement::ZERO; n * 3];
     for i in 0..w {
         for j in 0..h {
             let di = i * h * 3 + j * 3;
             let fi = j * w + i;
             let pb = pol[fi].as_elements();
             assert_eq!(pol[fi].dim, 3);
-            res[di] = F3G::from(pb[0]);
-            res[di + 1] = F3G::from(pb[1]);
-            res[di + 2] = F3G::from(pb[2]);
+            res[di] = pb[0];
+            res[di + 1] = pb[1];
+            res[di + 2] = pb[2];
         }
     }
     res
