@@ -82,16 +82,9 @@ impl MerkleTree {
                             .for_each(|(row_out, j)| {
                                 let batch = &bb[(j * width)..((j + 1) * width)];
                                 let batch: Vec<BaseElement> =
-                                    batch.iter().map(|e| e.to_be()).collect();
+                                    batch.par_iter().map(|e| e.to_be()).collect();
                                 *row_out = leaves_hash.hash_element_array(&batch).unwrap();
                             });
-                        /*
-                        for j in 0..cur_n {
-                            let batch = &bb[(j * width)..((j + 1) * width)];
-                            let batch: Vec<BaseElement> = batch.iter().map(|e| e.to_be()).collect();
-                            out[j] = leaves_hash.hash_element_array(&batch).unwrap();
-                        }
-                        */
                     });
             });
         }

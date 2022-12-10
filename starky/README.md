@@ -52,11 +52,9 @@ Merkelization calculates the Merkel proof of a polynomial, where the leaf nodes 
 
 MerkleHash performance:
 
-|height|n_pols|eigen-zkit(s)|pil-stark(s)|
+|height|n_pols| starky(s)|pil-stark(s)|
 |---|---|---|---|
-|2^18|10|10.12| 30.19|
-|2^20|10|12.51| 31.94|
-|2^24|10|174.84| 333.77|
+|2^24|10|10.84| 333.77|
 
 * Polynomial evaluation
 
