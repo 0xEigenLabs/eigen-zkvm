@@ -2,7 +2,7 @@ use criterion::*;
 use rayon::prelude::*;
 use starky::f3g::F3G;
 use starky::merklehash_bn128::MerkleTree;
-use winter_math::{FieldElement, StarkField};
+use winter_math::FieldElement;
 
 fn run_merklehash(pols: Vec<F3G>) {
     let n = 1 << 24;
@@ -44,7 +44,7 @@ fn merklehash_group_bench(c: &mut Criterion) {
     let n_pols = 20;
     let mut pols: Vec<F3G> = vec![F3G::ZERO; n_pols * n];
 
-    rayon::scope(|s| {
+    rayon::scope(|_s| {
         pols.par_chunks_mut(n).enumerate().for_each(|(i, bb)| {
             for j in 0..n {
                 bb[j] = F3G::from(j + i * n)

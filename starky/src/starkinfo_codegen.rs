@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, non_snake_case)]
 use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps;
 use crate::f3g::F3G;
@@ -287,7 +287,7 @@ pub fn pil_code_gen(
                 .iter()
                 .position(|x| (x.exp_id == exp_id) && (x.prime.unwrap() == prime))
                 .unwrap();
-            let mut c = &mut ctx.code[idx];
+            let c = &mut ctx.code[idx];
             let dest = Node::new(res_type.to_string(), res_id, None, 0, prime, 0);
             c.code.push(Section {
                 op: "copy".to_string(),
@@ -581,7 +581,7 @@ pub fn calculate_deps(
     Ok(())
 }
 
-pub fn expression_error(pil: &PIL, strerr: String, e1: usize, e2: usize) -> Result<()> {
+pub fn expression_error(_pil: &PIL, strerr: String, _e1: usize, _e2: usize) -> Result<()> {
     //TODO
     Err(EigenError::ExpressionError(strerr))
 }
@@ -611,7 +611,7 @@ pub fn build_linear_code(ctx: &mut Context, pil: &mut PIL, loop_pos: String) -> 
     };
 
     let mut res: Vec<Section> = vec![];
-    for (i, c) in ctx.code.iter().enumerate() {
+    for (i, _c) in ctx.code.iter().enumerate() {
         if exp_and_expprimes.get(&(i)).is_some() {
             if ((loop_pos.as_str() == "i") && (!ctx.code[i].prime.is_some()))
                 || (loop_pos.as_str() == "last")
@@ -629,7 +629,7 @@ pub fn build_linear_code(ctx: &mut Context, pil: &mut PIL, loop_pos: String) -> 
 //FIXME where is the exp_id from
 fn get_exp_and_expprimes(ctx: &mut Context, pil: &mut PIL) -> HashMap<usize, bool> {
     let mut calc_exps = HashMap::<usize, usize>::new();
-    for (i, c) in ctx.code.iter().enumerate() {
+    for (i, _c) in ctx.code.iter().enumerate() {
         if (pil.expressions[ctx.code[i].exp_id].idQ.is_some())
             || pil.expressions[ctx.code[i].exp_id].keep.is_some()
             || pil.expressions[ctx.code[i].exp_id].keep2ns.is_some()

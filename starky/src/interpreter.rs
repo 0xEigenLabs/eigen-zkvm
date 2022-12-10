@@ -166,14 +166,8 @@ impl Block {
                 }
                 Ops::Refer => {
                     // push value into stack
-                    let addr = &expr.syms[0];
-                    let mut dim = 1;
                     let x = get_value(ctx, expr, arg_i);
-                    //println!("eval_refer {}@{}={} dim={},", addr, arg_i, x, dim);
                     val_stack.push(x);
-                }
-                _ => {
-                    panic!("Invalid op in block");
                 }
             }
         }
@@ -522,7 +516,7 @@ fn get_ref(
 }
 
 fn eval_map(
-    ctx: &StarkContext,
+    _ctx: &StarkContext,
     starkinfo: &StarkInfo,
     pol_id: usize,
     prime: bool,

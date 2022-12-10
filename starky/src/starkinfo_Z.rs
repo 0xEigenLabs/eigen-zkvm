@@ -1,4 +1,4 @@
-#![allow(non_snake_case)]
+#![allow(non_snake_case, dead_code)]
 use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::helper::get_ks;
@@ -25,7 +25,7 @@ impl StarkInfo {
         Ok(())
     }
 
-    pub fn generate_permutation_LC(&mut self, ctx: &mut Context, pil: &mut PIL) -> Result<()> {
+    pub fn generate_permutation_LC(&mut self, _ctx: &mut Context, pil: &mut PIL) -> Result<()> {
         let ppi = match &pil.permutationIdentities {
             Some(x) => x.clone(),
             _ => Vec::new(),
@@ -230,7 +230,7 @@ impl StarkInfo {
             _ => Vec::new(),
         };
 
-        for (i, pi) in ppi.iter().enumerate() {
+        for (i, _pi) in ppi.iter().enumerate() {
             self.pe_ctx[i].z_id = pil.nCommitments;
             pil.nCommitments += 1;
 

@@ -190,7 +190,6 @@ impl PolsArray {
             }
         }
         if p > 0 {
-            let pb: &[u64] = &buff[..p];
             let buff8: &[u8] = unsafe {
                 std::slice::from_raw_parts(
                     buff.as_ptr() as *const u8,

@@ -297,7 +297,7 @@ impl StarkInfo {
                     starkinfo: self,
                 };
 
-                let fix_ref = |r: &mut Node, ctx: &mut ContextF, pil: &mut PIL| {
+                let fix_ref = |r: &mut Node, ctx: &mut ContextF, _pil: &mut PIL| {
                     let p = if r.prime { 1 } else { 0 };
                     if r.type_.as_str() == "exp" {
                         if ctx.exp_map.get(&(p, r.id)).is_none() {

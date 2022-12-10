@@ -44,7 +44,7 @@ impl StarkInfo {
         if im_exps.is_some() {
             self.im_exps = im_exps.unwrap();
         }
-        let m = self.im_exps.keys();
+        //let m = self.im_exps.keys();
 
         for k in self.im_exps.keys() {
             self.im_exps_list.push(*k);
@@ -101,7 +101,7 @@ impl StarkInfo {
         pil_code_gen(ctx2ns, pil, self.c_exp, false, "", 0)?;
 
         let sz = ctx2ns.code.len() - 1;
-        let mut code = &mut ctx2ns.code[sz].code;
+        let code = &mut ctx2ns.code[sz].code;
 
         let sz = code.len() - 1;
         code.push(Section {
@@ -140,6 +140,7 @@ fn _calculate_im_pols(
     //println!("_calculate_im_pols: {}", exp.op);
     if vec!["add", "sub", "addc", "mulc", "neg"].contains(&exp.op.as_str()) {
         let mut md = 0;
+        #[allow(unused_assignments)]
         let mut d: i32 = 0;
         let mut im_e: Option<HashMap<usize, bool>> = im_expressions.clone();
         let values: &Vec<Expression> = exp.values.as_ref().unwrap();
@@ -170,9 +171,8 @@ fn _calculate_im_pols(
         }
         for l in 0..=max_deg {
             let r = max_deg - l;
-            let (mut e1, mut d1) =
-                _calculate_im_pols(pil, &(values[0]), im_expressions, l, abs_max);
-            let (mut e2, mut d2) = _calculate_im_pols(pil, &(values[1]), &e1, r, abs_max);
+            let (e1, d1) = _calculate_im_pols(pil, &(values[0]), im_expressions, l, abs_max);
+            let (e2, d2) = _calculate_im_pols(pil, &(values[1]), &e1, r, abs_max);
             if e2.is_some() {
                 if eb.is_none() {
                     eb = e2;
@@ -235,7 +235,7 @@ pub fn calculate_im_pols(
     println!("calculate_im_pols: {} {}", _exp, max_deg);
 
     let im_expressions: HashMap<usize, bool> = HashMap::new();
-    let mut abs_max = max_deg;
+    //let abs_max = max_deg;
 
     let (re, rd) = _calculate_im_pols(pil, _exp, &Some(im_expressions), max_deg, max_deg);
 

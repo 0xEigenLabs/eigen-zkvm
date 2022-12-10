@@ -145,7 +145,7 @@ impl Poseidon {
 
 #[cfg(test)]
 mod tests {
-    use crate::field_bn128::{Fr, FrRepr};
+    use crate::field_bn128::Fr;
     use crate::poseidon_bn128::*;
 
     #[test]

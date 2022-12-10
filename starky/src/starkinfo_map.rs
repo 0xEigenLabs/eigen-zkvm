@@ -10,7 +10,7 @@ use std::collections::HashMap;
 impl StarkInfo {
     pub fn map(
         &mut self,
-        ctx: &mut Context,
+        _ctx: &mut Context,
         pil: &mut PIL,
         stark_struct: &StarkStruct,
         program: &mut Program,
@@ -241,7 +241,7 @@ impl StarkInfo {
         self.fix_prover_code(&mut program.step52ns, "2ns", pil);
         self.fix_prover_code(&mut program.verifier_query_code, "2ns", pil);
 
-        let fix_ref = |r: &mut Node, ctx: &mut ContextF, pil: &mut PIL| {
+        let fix_ref = |r: &mut Node, ctx: &mut ContextF, _pil: &mut PIL| {
             if r.type_.as_str() == "cm" {
                 let p1 = &ctx.starkinfo.var_pol_map[ctx.starkinfo.cm_2ns[r.id]];
                 match p1.section.as_str() {
@@ -312,6 +312,7 @@ impl StarkInfo {
         tmp_dim: &mut HashMap<usize, usize>,
         dim_x: usize,
     ) -> usize {
+        #[allow(unused_assignments)]
         let mut d = 0;
         match r.type_.as_str() {
             "tmp" => {
@@ -361,6 +362,7 @@ impl StarkInfo {
         dim_x: usize,
     ) {
         for c in codes.iter_mut() {
+            #[allow(unused_assignments)]
             let mut new_dim = 0;
             match c.op.as_str() {
                 "add" => {
@@ -408,7 +410,7 @@ impl StarkInfo {
             starkinfo: self,
         };
 
-        let fix_ref = |r: &mut Node, ctx: &mut ContextF, pil: &mut PIL| match r.type_.as_str() {
+        let fix_ref = |r: &mut Node, ctx: &mut ContextF, _pil: &mut PIL| match r.type_.as_str() {
             "cm" => {
                 if ctx.dom.as_str() == "n" {
                     r.p = ctx.starkinfo.cm_n[r.id];

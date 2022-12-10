@@ -1,3 +1,4 @@
+#![allow(dead_code, non_snake_case)]
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD, SHIFT};
 use crate::f3g::F3G;
 use crate::fft_worker::{fft_block, interpolate_prepare_block};
@@ -75,7 +76,7 @@ pub fn inv_bit_reverse(buffdst: &mut Vec<F3G>, buffsrc: &Vec<F3G>, n_pols: usize
     }
 }
 
-pub fn interpolate_prepare(buff: &mut Vec<F3G>, n_pols: usize, nbits: usize, nbitsext: usize) {
+pub fn interpolate_prepare(buff: &mut Vec<F3G>, n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
     let inv_n = F3G::inv(F3G::from(n));
     let mut n_per_thread_f = (n - 1) / get_max_workers() + 1;
@@ -89,7 +90,7 @@ pub fn interpolate_prepare(buff: &mut Vec<F3G>, n_pols: usize, nbits: usize, nbi
         n_per_thread_f = min_corrected
     };
 
-    rayon::scope(|s| {
+    rayon::scope(|_s| {
         buff.par_chunks_mut(n_per_thread_f * n_pols)
             .enumerate()
             .for_each(|(i, bb)| {
@@ -134,8 +135,9 @@ pub fn _fft(
     };
     blockbits = min(nbits, blockbits);
     let blocksize = 1 << blockbits;
-    let n_blocks = n / blocksize;
+    //let n_blocks = n / blocksize;
 
+    #[allow(unused_assignments)]
     let mut n_transposes = 0;
     if nbits == blockbits {
         n_transposes = 0;
@@ -158,7 +160,7 @@ pub fn _fft(
     }
     (bin, bout) = (bout, bin);
 
-    rayon::scope(|s| {
+    rayon::scope(|_s| {
         for i in (0..nbits).step_by(blockbits) {
             let s_inc = min(blockbits, nbits - i);
             bin.par_chunks_mut(blocksize * n_pols)
@@ -295,7 +297,7 @@ pub fn interpolate(
     }
 
     println!("Interpolating prepare....");
-    interpolate_prepare(bin, n_pols, nbits, nbitsext);
+    interpolate_prepare(bin, n_pols, nbits);
     println!("Bit reverse....");
     bit_reverse(bout, bin, n_pols, nbitsext);
     (bin, bout) = (bout, bin);

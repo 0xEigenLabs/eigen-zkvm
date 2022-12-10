@@ -83,6 +83,7 @@ fn _fft_block(
         );
     }
 
+    #[allow(unused_assignments)]
     let mut w = F3G::ZERO;
     if s > blockbits {
         let width = 1 << (s - layers);

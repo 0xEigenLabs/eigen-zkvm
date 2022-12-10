@@ -106,7 +106,7 @@ impl TranscriptBN128 {
         let total_bits = n * nbits;
         let n_fields = (total_bits - 1) / 253 + 1;
         let mut fields: Vec<BigUint> = Vec::new();
-        for i in 0..n_fields {
+        for _i in 0..n_fields {
             fields.push(fr_to_biguint(&self.get_fields253()?));
         }
         //println!("get_permutations: {:?}", fields);
@@ -114,7 +114,7 @@ impl TranscriptBN128 {
         let mut cur_field = 0;
         let mut cur_bit = 0usize;
         let one = BigUint::from(1u32);
-        for i in 0..n {
+        for _i in 0..n {
             let mut a = 0usize;
             for j in 0..nbits {
                 let shift = &fields[cur_field] >> cur_bit;

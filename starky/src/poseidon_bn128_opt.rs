@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use crate::constant::POSEIDON_BN128_CONSTANTS_OPT;
 use crate::field_bn128::Fr;
 use crate::poseidon_bn128::Constants;
@@ -224,9 +225,9 @@ impl Poseidon {
 
 #[cfg(test)]
 mod tests {
-    use crate::field_bn128::{Fr, FrRepr};
+    use crate::field_bn128::Fr;
     use crate::poseidon_bn128_opt::*;
-    use ff::{from_hex, to_hex, Field, PrimeField};
+    use ff::{Field, PrimeField};
 
     #[test]
     fn test_poseidon_opt_hash() {

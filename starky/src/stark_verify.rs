@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::constant::{MG, SHIFT};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};

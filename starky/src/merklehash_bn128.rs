@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::{EigenError, Result};
@@ -68,7 +69,7 @@ impl MerkleTree {
         let mut nodes = vec![ElementDigest::default(); get_n_nodes(height)];
         println!("n_per_thread_f: {}, height {}", n_per_thread_f, height);
         if buff.len() > 0 {
-            rayon::scope(|s| {
+            rayon::scope(|_s| {
                 nodes
                     .par_chunks_mut(n_per_thread_f)
                     .zip(buff.par_chunks(n_per_thread_f * width))
@@ -127,7 +128,7 @@ impl MerkleTree {
         let buff = &self.nodes[p_in..(p_in + n_ops * 16)];
         let mut leaves: Vec<(usize, Vec<ElementDigest>)> = vec![(0, Vec::new()); n_ops];
         println!("merklize level: hash {} to {}", p_in, p_out);
-        rayon::scope(|s| {
+        rayon::scope(|_s| {
             buff.par_chunks(16 * n_ops_per_thread)
                 .enumerate()
                 .map(|(i, bb)| {
@@ -227,7 +228,7 @@ impl MerkleTree {
         if mp.len() == offset {
             return Ok(value.clone());
         }
-        let cur_idx = idx & 0xF;
+        //let cur_idx = idx & 0xF;
         let next_idx = idx >> 4;
         let mut vals: Vec<Fr> = vec![];
         for i in 0..16 {
@@ -274,9 +275,8 @@ mod tests {
     use crate::f3g::F3G;
     use crate::field_bn128::Fr;
     use crate::merklehash_bn128::MerkleTree;
-    use crate::ElementDigest;
     use ff::PrimeField;
-    use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
+    use winter_math::FieldElement;
 
     #[test]
     fn test_merklehash() {

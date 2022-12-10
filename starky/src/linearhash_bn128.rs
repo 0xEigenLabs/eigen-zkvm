@@ -139,10 +139,7 @@ impl LinearHashBN128 {
 #[cfg(test)]
 mod tests {
     use crate::linearhash_bn128::LinearHashBN128;
-    use crate::poseidon_bn128_opt::Poseidon;
-    use ff::*;
     use winter_math::fields::f64::BaseElement;
-    use winter_math::StarkField;
 
     #[test]
     fn test_linearhash_bn128() {

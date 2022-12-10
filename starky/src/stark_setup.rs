@@ -1,4 +1,4 @@
-#![allow(non_snake_case)]
+#![allow(non_snake_case, dead_code)]
 use crate::errors::Result;
 use crate::f3g::F3G;
 use crate::fft_p::interpolate;

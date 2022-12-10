@@ -33,7 +33,7 @@ impl fmt::Display for ProofOne {
         write!(f, "pol_queries size {}\n", self.pol_queries.len())?;
         for (i, pq) in self.pol_queries.iter().enumerate() {
             write!(f, "\t pq {}\n", i)?;
-            for (j, qq) in pq.iter().enumerate() {
+            for (_j, qq) in pq.iter().enumerate() {
                 write!(f, "\t\tleaf: ")?;
                 for qqq in qq.0.iter() {
                     write!(f, "{},", qqq)?;
@@ -131,7 +131,7 @@ impl FRI {
                 let pol2_etb = get_transposed_buffer(&pol2_e, self.steps[si + 1].nBits);
                 tree.push(MerkleTree::merkelize(pol2_etb, 3 * group_size, n_groups)?);
                 proof.queries[si + 1].root = tree[si].root();
-                let rrr: Fr = proof.queries[si + 1].root.into();
+                //let rrr: Fr = proof.queries[si + 1].root.into();
                 //println!(
                 //    "proof.queries {}={}",
                 //    si + 1,
@@ -154,7 +154,7 @@ impl FRI {
             pol = pol2_e;
             pol_bits -= reduction_bits;
 
-            for j in 0..reduction_bits {
+            for _j in 0..reduction_bits {
                 shift_inv = shift_inv * shift_inv;
                 shift = shift * shift;
             }
@@ -207,8 +207,8 @@ impl FRI {
         for si in 0..self.steps.len() {
             special_x.push(transcript.get_field());
             if si < self.steps.len() - 1 {
-                let n_groups = 1 << self.steps[si + 1].nBits;
-                let group_size = (1 << self.steps[si].nBits) / n_groups;
+                //let n_groups = 1 << self.steps[si + 1].nBits;
+                //let group_size = (1 << self.steps[si].nBits) / n_groups;
                 transcript.put(&vec![proof.queries[si + 1].root.into()])?;
             } else {
                 let mut pp: Vec<Fr> = vec![];
@@ -224,7 +224,7 @@ impl FRI {
 
         let n_queries = self.n_queries;
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
-        let mut pol_bits = self.in_nbits;
+        let pol_bits = self.in_nbits;
         //println!("ys: {:?}, pol_bits {}", ys, self.in_nbits);
         let mut shift = SHIFT.clone();
 
@@ -285,8 +285,8 @@ impl FRI {
                 }
             }
 
-            let pol_bits = self.steps[si].nBits;
-            for j in 0..reduction_bits {
+            //let pol_bits = self.steps[si].nBits;
+            for _j in 0..reduction_bits {
                 shift = shift * shift;
             }
 
@@ -297,11 +297,11 @@ impl FRI {
             }
         }
 
-        let mut last_pol_e = proof.last.clone();
+        let last_pol_e = proof.last.clone();
 
+        #[allow(unused_assignments)]
         let mut max_deg = 0usize;
-        if (pol_bits - (self.in_nbits - self.max_deg_nbits)) < 0 {
-            // FIXME usless due to type limit
+        if pol_bits < (self.in_nbits - self.max_deg_nbits) {
             max_deg = 0;
         } else {
             max_deg = 1 << (pol_bits - (self.in_nbits - self.max_deg_nbits));
@@ -374,7 +374,6 @@ mod tests {
     use crate::f3g::F3G;
     use crate::fri::eval_pol;
     use winter_math::polynom;
-    use winter_math::StarkField;
 
     #[test]
     fn test_eval_pol() {

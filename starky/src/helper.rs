@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::field_bn128::{Fr, FrRepr};
+use crate::field_bn128::Fr;
 use ff::*;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;

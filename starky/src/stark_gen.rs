@@ -1,4 +1,4 @@
-#![allow(non_snake_case)]
+#![allow(non_snake_case, dead_code)]
 use crate::constant::{MG, SHIFT};
 use crate::digest_bn128::ElementDigest;
 use crate::errors::Result;
@@ -82,7 +82,7 @@ impl Default for StarkContext {
             f_2ns: Vec::new(),
             x_n: Vec::new(),
             x_2ns: Vec::new(),
-            Zi: Box::new(|i: usize| F3G::ZERO),
+            Zi: Box::new(|_: usize| F3G::ZERO),
             const_n: Vec::new(),
             const_2ns: Vec::new(),
             publics: Vec::new(),
@@ -150,7 +150,7 @@ impl<'a> StarkProof {
         const_tree: &MerkleTree,
         starkinfo: &'a StarkInfo,
         program: &Program,
-        pil: &PIL,
+        _pil: &PIL,
         stark_struct: &StarkStruct,
     ) -> Result<StarkProof> {
         let mut ctx = StarkContext::default();
@@ -530,7 +530,7 @@ impl<'a> StarkProof {
     pub fn build_Zh_Inv(nBits: usize, extendBits: usize) -> Box<dyn Fn(usize) -> F3G + 'static> {
         let mut w = F3G::ONE;
         let mut sn = SHIFT.clone();
-        for i in 0..nBits {
+        for _i in 0..nBits {
             sn = sn * sn;
         }
         let mut ZHInv = vec![F3G::ZERO; 1 << extendBits];
@@ -584,7 +584,7 @@ fn calculate_H1H2(f: Vec<F3G>, t: Vec<F3G>) -> (Vec<F3G>, Vec<F3G>) {
         s.push((*e, i));
     }
 
-    for (i, e) in f.iter().enumerate() {
+    for (_i, e) in f.iter().enumerate() {
         let idx = idx_t.get(e);
         if idx.is_none() {
             panic!("Number not included: {:?}", e);
@@ -687,13 +687,13 @@ pub fn merkelize(
 pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
 
-    let cFirst = compile_code(ctx, starkinfo, &seg.first, dom, false);
+    let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
 
-    println!("compile_code ctx.first {}", cFirst);
+    println!("compile_code ctx.first {}", c_first);
 
-    let cI = compile_code(ctx, starkinfo, &seg.first, dom, false);
+    let _c_i = compile_code(ctx, starkinfo, &seg.first, dom, false);
 
-    let cLast = compile_code(ctx, starkinfo, &seg.first, dom, false);
+    let _c_last = compile_code(ctx, starkinfo, &seg.first, dom, false);
 
     let next = if dom == "n" {
         1
@@ -703,7 +703,7 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     let N = if dom == "n" { ctx.N } else { ctx.Next };
     println!("next {}, N {}", next, N);
     for i in 0..next {
-        cFirst.eval(ctx, i);
+        c_first.eval(ctx, i);
         println!("ctx.q_2ns[3*i] {} ", ctx.q_2ns[3 * i]);
         for i in 0..ctx.tmp.len() {
             println!("tmp@{} {}", i, ctx.tmp[i]);
@@ -711,28 +711,23 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     }
 
     for i in next..(N - next) {
-        // cI(ctx, i);
-        cFirst.eval(ctx, i);
+        // c_i(ctx, i);
+        c_first.eval(ctx, i);
     }
     for i in (N - next)..N {
-        // cLast(ctx, i);
-        cFirst.eval(ctx, i);
+        // c_last(ctx, i);
+        c_first.eval(ctx, i);
     }
 }
 
 #[cfg(test)]
 pub mod tests {
-    use crate::constant::SHIFT;
-    use crate::f3g::F3G;
     use crate::polsarray::{PolKind, PolsArray};
     use crate::stark_gen::StarkProof;
     use crate::stark_setup::StarkSetup;
     use crate::stark_verify::stark_verify;
-    use crate::starkinfo::StarkInfo;
     use crate::types::load_json;
     use crate::types::{StarkStruct, PIL};
-    use winter_math::fields::f64::BaseElement;
-    use winter_math::{FieldElement, StarkField};
 
     #[test]
     fn test_stark_gen() {

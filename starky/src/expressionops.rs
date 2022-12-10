@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, non_snake_case)]
 use crate::constant::CHALLENGE_MAP;
 use crate::types::Expression;
 

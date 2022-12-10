@@ -1,4 +1,4 @@
-#![allow(non_snake_case)]
+#![allow(non_snake_case, dead_code)]
 use crate::field_bn128::Fr;
 use crate::helper::fr_to_biguint;
 use core::slice;

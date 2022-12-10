@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::constant::MG;
 use crate::f3g::F3G;
 use crate::helper::log2_any;
@@ -19,7 +20,7 @@ impl FFT {
 
     fn set_roots(&mut self, s: usize) {
         let mut i = s;
-        while i >= 0 && !(i > self.roots.len() && self.roots[i].len() > 0) {
+        while !(i > self.roots.len() && self.roots[i].len() > 0) {
             let mut r = F3G::ONE;
             let nroots = 1 << i;
             self.roots[i] = vec![F3G::ZERO; nroots];
@@ -114,7 +115,7 @@ mod tests {
     fn test_random_fft() {
         let mut f = FFT::new();
         let mut a: Vec<F3G> = Vec::new();
-        for i in 0..64 {
+        for _i in 0..64 {
             a.push(F3G::random());
         }
         let aa = f.fft(&a);

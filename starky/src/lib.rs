@@ -40,10 +40,8 @@ mod transcript_bn128;
 #[macro_use]
 extern crate serde_json;
 
-#[macro_use]
 extern crate ff;
 
-#[macro_use]
 extern crate lazy_static;
 
 #[cfg(test)]

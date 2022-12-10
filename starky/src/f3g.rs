@@ -415,7 +415,7 @@ impl From<[u8; 8]> for F3G {
 // FIXME
 impl From<u128> for F3G {
     /// Converts a 128-bit value into a field element.
-    fn from(x: u128) -> Self {
+    fn from(_: u128) -> Self {
         //const R3: u128 = 1 (= 2^192 mod M );// thus we get that mont_red_var((mont_red_var(x) as u128) * R3) becomes
         //Self(mont_red_var(mont_red_var(x) as u128))  // Variable time implementation
         //Self(mont_red_cst(mont_red_cst(x) as u128)) // Constant time implementation
@@ -638,7 +638,7 @@ pub mod tests {
 
     use crate::f3g::F3G;
     use winter_math::fields::f64::BaseElement;
-    use winter_math::{FieldElement, StarkField};
+    use winter_math::FieldElement;
 
     #[test]
     fn test_f3g_add() {
