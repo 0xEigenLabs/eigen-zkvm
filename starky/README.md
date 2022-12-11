@@ -87,3 +87,13 @@ Rust: the others
 ### HW acceleration
 * Poseidon Hash on GPU/Multicore for 256bits scalar field
 * FFT on GPU/MultiCore for polynomial execution
+
+## Profiling
+
+```
+cargo bench --bench merklehash -- --profile-time=5
+```
+
+* https://www.jibbow.com/posts/criterion-flamegraphs/
+
+

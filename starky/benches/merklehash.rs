@@ -3,11 +3,12 @@ use rayon::prelude::*;
 use starky::merklehash_bn128::MerkleTree;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
+mod perf;
 
 fn run_merklehash(pols: Vec<BaseElement>) {
     let n = 1 << 24;
     let idx = 32;
-    let n_pols = 20;
+    let n_pols = 10;
 
     let now = std::time::Instant::now();
     let tree = MerkleTree::merkelize(pols, n_pols, n).unwrap();
@@ -25,7 +26,7 @@ fn merklehash_group_bench(c: &mut Criterion) {
     let mut group = c.benchmark_group("merklehash");
 
     let n = 1 << 24;
-    let n_pols = 20;
+    let n_pols = 10;
     let mut pols: Vec<BaseElement> = vec![BaseElement::ZERO; n_pols * n];
 
     rayon::scope(|_s| {
@@ -49,5 +50,9 @@ fn merklehash_group_bench(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, merklehash_group_bench);
+criterion_group! {
+    name = benches;
+    config = Criterion::default().with_profiler(perf::FlamegraphProfiler::new(100));
+    targets = merklehash_group_bench
+}
 criterion_main!(benches);
