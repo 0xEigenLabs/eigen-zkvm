@@ -130,6 +130,7 @@ impl MerkleTree {
         Ok(tree)
     }
 
+    #[inline]
     pub fn merklize_level(&mut self, p_in: usize, n_ops: usize, p_out: usize) -> Result<()> {
         let mut n_ops_per_thread = (n_ops - 1) / get_max_workers() + 1;
         if n_ops_per_thread < MIN_OPS_PER_THREAD {
