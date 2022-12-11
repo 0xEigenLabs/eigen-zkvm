@@ -101,13 +101,13 @@ impl LinearHashBN128 {
         vals.par_chunks(3)
             .zip(tmp_buf.par_iter_mut())
             .for_each(|(ein, eout)| {
-                //println!("ein size {}", ein.len());
+                // padding zero to 4
                 let mut ein_4 = [BaseElement::ZERO; 4];
                 ein_4[..ein.len()].copy_from_slice(ein);
                 *eout = ElementDigest::to_bn128(&ein_4);
             });
 
-        // hash
+        // hash on each 16
         for i in (0..tmp_buf.len()).step_by(16) {
             let in_sz = std::cmp::min(16, tmp_buf.len() - i);
             digest = self.h.hash(&tmp_buf[i..(i + in_sz)].to_vec(), &digest)?;
