@@ -362,7 +362,7 @@ mod tests {
     fn test_merklehash_big() {
         let n = 1 << 16;
         let idx = 32;
-        let n_pols = 6;
+        let n_pols = 50;
         let mut pols: Vec<BaseElement> = vec![BaseElement::ZERO; n_pols * n];
         for i in 0..n {
             for j in 0..n_pols {

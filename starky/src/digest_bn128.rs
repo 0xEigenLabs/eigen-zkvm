@@ -72,7 +72,7 @@ impl Into<Fr> for ElementDigest {
 
 impl ElementDigest {
     #[inline(always)]
-    pub fn to_BN128(e: &[BaseElement; 4]) -> Fr {
+    pub fn to_bn128(e: &[BaseElement; 4]) -> Fr {
         let mut buf: Vec<u8> = vec![0u8; 32];
         // To be optimized: BaseElement doesn't return bytes with specific endian.
         buf[0..8].copy_from_slice(&e[0].as_int().to_le_bytes());
@@ -86,7 +86,7 @@ impl ElementDigest {
         Fr::from_repr(repr).unwrap()
     }
 
-    fn to_GL(f: &Fr) -> [BaseElement; 4] {
+    fn to_gl(f: &Fr) -> [BaseElement; 4] {
         let mut f = fr_to_biguint(f);
 
         let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();
@@ -154,12 +154,12 @@ pub mod tests {
             .iter()
             .map(|e| BaseElement::from(e.clone()))
             .collect();
-        let f1: Fr = ElementDigest::to_BN128(&b4[..].try_into().unwrap());
+        let f1: Fr = ElementDigest::to_bn128(&b4[..].try_into().unwrap());
 
         // to Montgomery
         let f1 = Fr::from_repr(f1.into_raw_repr()).unwrap();
 
-        let e1 = ElementDigest::to_GL(&f1);
+        let e1 = ElementDigest::to_gl(&f1);
         let expected: [BaseElement; 4] = vec![
             10593660675180540444u64,
             2538813791642109216,

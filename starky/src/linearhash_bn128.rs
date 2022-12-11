@@ -84,28 +84,10 @@ impl LinearHashBN128 {
         Ok(ElementDigest::from(&digest))
     }
 
-    #[inline(always)]
-    fn hash_element_block(
-        &self,
-        elems: &[BaseElement],
-        init_state: &Fr,
-        output: &mut Vec<Fr>,
-    ) -> Result<Fr> {
-        elems
-            .par_chunks(4)
-            .zip(output.par_iter_mut())
-            .for_each(|(ein, eout)| {
-                *eout = ElementDigest::to_BN128(ein.try_into().unwrap());
-            });
-        Ok(self.h.hash(output, init_state)?)
-    }
-
     pub fn hash_element_array(&self, vals: &[BaseElement]) -> Result<ElementDigest> {
         let mut st64 = [BaseElement::ZERO; 4];
-        let mut in64: [BaseElement; 64] = [BaseElement::ZERO; 64];
         let mut digest: Fr = Fr::zero();
         //println!("hash_element_array size: {}", vals.len());
-        let mut out64 = vec![Fr::zero(); 16];
         if vals.len() <= 4 {
             for (i, v) in vals.iter().enumerate() {
                 st64[i] = *v;
@@ -114,35 +96,23 @@ impl LinearHashBN128 {
             return Ok(ElementDigest::from(gl_mont));
         }
 
-        let mut p = 0;
-        for (i, val) in vals.iter().enumerate() {
-            in64[p] = *val;
-            p += 1;
-            if p == 16 * 4 {
-                digest = self.hash_element_block(&in64[..], &digest, &mut out64)?;
-                p = 0;
-            }
-            if i % 3 == 2 {
-                in64[p] = BaseElement::ZERO;
-                p += 1;
-                if p == 16 * 4 {
-                    digest = self.hash_element_block(&in64[..], &digest, &mut out64)?;
-                    p = 0;
-                }
-            }
+        // group into 3 * 4
+        let mut tmp_buf = vec![Fr::zero(); (vals.len() - 1) / 3 + 1];
+        vals.par_chunks(3)
+            .zip(tmp_buf.par_iter_mut())
+            .for_each(|(ein, eout)| {
+                //println!("ein size {}", ein.len());
+                let mut ein_4 = [BaseElement::ZERO; 4];
+                ein_4[..ein.len()].copy_from_slice(ein);
+                *eout = ElementDigest::to_bn128(&ein_4);
+            });
+
+        // hash
+        for i in (0..tmp_buf.len()).step_by(16) {
+            let in_sz = std::cmp::min(16, tmp_buf.len() - i);
+            digest = self.h.hash(&tmp_buf[i..(i + in_sz)].to_vec(), &digest)?;
         }
-        if p > 0 {
-            let n_last = (p - 1) / 4 + 1;
-            while p < n_last * 4 {
-                in64[p] = BaseElement::ZERO;
-                p += 1;
-            }
-            digest = self.hash_element_block(
-                &in64[..(n_last * 4)],
-                &digest,
-                &mut out64[..n_last].to_vec(),
-            )?;
-        }
+
         Ok(ElementDigest::from(&digest))
     }
 }
