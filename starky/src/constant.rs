@@ -51,7 +51,7 @@ lazy_static::lazy_static! {
 }
 
 pub const MIN_OPS_PER_THREAD: usize = 1 << 12;
-pub const MAX_OPS_PER_THREAD: usize = 1 << 16;
+pub const MAX_OPS_PER_THREAD: usize = 1 << 18;
 
 pub fn get_max_workers() -> usize {
     num_cpus::get() - 1

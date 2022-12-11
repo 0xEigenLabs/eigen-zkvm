@@ -4,7 +4,6 @@ use crate::field_bn128::Fr;
 use crate::poseidon_bn128::Constants;
 use crate::poseidon_bn128_constants_opt as constants;
 use ff::{from_hex, Field};
-use rayon::prelude::*;
 
 pub fn load_constants() -> Constants {
     let (c_str, m_str, p_str, s_str) = constants::constants();
@@ -120,13 +119,13 @@ impl Poseidon {
         let mut state = vec![init_state.clone(); t];
         state[1..].clone_from_slice(&inp);
         state
-            .par_iter_mut()
+            .iter_mut()
             .enumerate()
             .for_each(|(i, a)| a.add_assign(&C[i]));
 
         for r in 0..(n_rounds_f / 2 - 1) {
-            state.par_iter_mut().for_each(|e| Self::pow5(e));
-            state.par_iter_mut().enumerate().for_each(|(i, a)| {
+            state.iter_mut().for_each(|e| Self::pow5(e));
+            state.iter_mut().enumerate().for_each(|(i, a)| {
                 a.add_assign(&C[(r + 1) * t + i]);
             });
 
@@ -134,7 +133,7 @@ impl Poseidon {
             //    state.reduce((acc, a, j) => F.add(acc, F.mul(M[j][i], a)), F.zero)
             //);
             let sz = state.len();
-            tmp_state.par_iter_mut().enumerate().for_each(|(i, out)| {
+            tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
                 let mut acc = Fr::zero();
                 for j in 0..sz {
                     let mut tmp = M[j][i];
@@ -148,13 +147,13 @@ impl Poseidon {
             }
         }
 
-        state.par_iter_mut().for_each(|e| Self::pow5(e));
-        state.par_iter_mut().enumerate().for_each(|(i, a)| {
+        state.iter_mut().for_each(|e| Self::pow5(e));
+        state.iter_mut().enumerate().for_each(|(i, a)| {
             a.add_assign(&C[(n_rounds_f / 2 - 1 + 1) * t + i]);
         }); //opt
 
         let sz = state.len();
-        tmp_state.par_iter_mut().enumerate().for_each(|(i, out)| {
+        tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
             let mut acc = Fr::zero();
             for j in 0..sz {
                 let mut tmp = P[j][i];
@@ -189,13 +188,13 @@ impl Poseidon {
         }
 
         for r in 0..(n_rounds_f / 2 - 1) {
-            state.par_iter_mut().for_each(|e| Self::pow5(e));
-            state.par_iter_mut().enumerate().for_each(|(i, a)| {
+            state.iter_mut().for_each(|e| Self::pow5(e));
+            state.iter_mut().enumerate().for_each(|(i, a)| {
                 a.add_assign(&C[(n_rounds_f / 2 + 1) * t + n_rounds_p + r * t + i]);
             });
 
             let sz = state.len();
-            tmp_state.par_iter_mut().enumerate().for_each(|(i, out)| {
+            tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
                 let mut acc = Fr::zero();
                 for j in 0..sz {
                     let mut tmp = M[j][i];
@@ -209,9 +208,9 @@ impl Poseidon {
             }
         }
 
-        state.par_iter_mut().for_each(|e| Self::pow5(e));
+        state.iter_mut().for_each(|e| Self::pow5(e));
         let sz = state.len();
-        tmp_state.par_iter_mut().enumerate().for_each(|(i, out)| {
+        tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
             let mut acc = Fr::zero();
             for j in 0..sz {
                 let mut tmp = M[j][i];

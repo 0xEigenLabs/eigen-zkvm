@@ -86,8 +86,8 @@ impl MerkleTree {
                 .for_each(|(out, bb)| {
                     let cur_n = bb.len() / width;
                     //println!("linearhash pols i {}, cur_n {}", i, cur_n);
-                    out.par_iter_mut()
-                        .zip((0..cur_n).into_par_iter())
+                    out.iter_mut()
+                        .zip((0..cur_n).into_iter())
                         .for_each(|(row_out, j)| {
                             let batch = &bb[(j * width)..((j + 1) * width)];
                             *row_out = leaves_hash.hash_element_array(batch).unwrap();
@@ -130,8 +130,9 @@ impl MerkleTree {
         Ok(tree)
     }
 
+    #[inline]
     pub fn merklize_level(&mut self, p_in: usize, n_ops: usize, p_out: usize) -> Result<()> {
-        let mut n_ops_per_thread = (n_ops - 1) / get_max_workers() + 1;
+        let mut n_ops_per_thread = (n_ops - 1) / (get_max_workers() * 16) + 1;
         if n_ops_per_thread < MIN_OPS_PER_THREAD {
             n_ops_per_thread = MIN_OPS_PER_THREAD;
         }
@@ -152,7 +153,7 @@ impl MerkleTree {
 
         //println!("merklize level: copy {} to {}", p_in, p_out);
         let out = &mut self.nodes[p_out..(p_out + n_ops)];
-        out.par_iter_mut()
+        out.iter_mut()
             .zip(nodes)
             .for_each(|(nout, nin)| *nout = nin);
         Ok(())
@@ -164,16 +165,16 @@ impl MerkleTree {
         _st_i: usize,
         _st_n: usize,
     ) -> Result<Vec<ElementDigest>> {
-        println!(
-            "merklizing bn128 hash start.... {}/{}, buff size {}",
-            _st_i,
-            _st_n,
-            buff_in.len()
-        );
+        //println!(
+        //    "merklizing bn128 hash start.... {}/{}, buff size {}",
+        //    _st_i,
+        //    _st_n,
+        //    buff_in.len()
+        //);
         let n_ops = buff_in.len() / 16;
         let mut buff_out64: Vec<ElementDigest> = vec![ElementDigest::default(); n_ops];
         buff_out64
-            .par_iter_mut()
+            .iter_mut()
             .zip((0..n_ops).into_iter())
             .for_each(|(out, i)| {
                 *out = self

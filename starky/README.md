@@ -54,9 +54,9 @@ MerkleHash performance(128 cores, 1T RAM):
 
 |height|n_pols| starky(s)|pil-stark(s)|
 |---|---|---|---|
-|2^24|10|15.04| 74.77|
-|2^24|100| 118.12| 582 |
-|2^24|600| 671.11| -|
+|2^24|10|12.04| 74.77|
+|2^24|100| 103.12| 582 |
+|2^24|600| 611.11| -|
 
 * Polynomial evaluation
 
@@ -87,3 +87,13 @@ Rust: the others
 ### HW acceleration
 * Poseidon Hash on GPU/Multicore for 256bits scalar field
 * FFT on GPU/MultiCore for polynomial execution
+
+## Profiling
+
+```
+cargo bench --bench merklehash -- --profile-time=5
+```
+
+* https://www.jibbow.com/posts/criterion-flamegraphs/
+
+
