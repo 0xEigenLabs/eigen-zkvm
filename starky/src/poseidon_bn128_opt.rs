@@ -115,6 +115,7 @@ impl Poseidon {
         let S = &POSEIDON_BN128_CONSTANTS_OPT.s[t - 2];
         let M = &POSEIDON_BN128_CONSTANTS_OPT.m[t - 2];
         let P = &POSEIDON_BN128_CONSTANTS_OPT.p[t - 2];
+        let mut tmp_state = vec![Fr::zero(); t];
 
         let mut state = vec![init_state.clone(); t];
         state[1..].clone_from_slice(&inp);
@@ -133,7 +134,6 @@ impl Poseidon {
             //    state.reduce((acc, a, j) => F.add(acc, F.mul(M[j][i], a)), F.zero)
             //);
             let sz = state.len();
-            let mut tmp_state = vec![Fr::zero(); t];
             tmp_state.par_iter_mut().enumerate().for_each(|(i, out)| {
                 let mut acc = Fr::zero();
                 for j in 0..sz {
@@ -143,7 +143,9 @@ impl Poseidon {
                 }
                 *out = acc;
             });
-            state = tmp_state;
+            for (i, v) in tmp_state.iter().enumerate() {
+                state[i] = *v;
+            }
         }
 
         state.par_iter_mut().for_each(|e| Self::pow5(e));
@@ -152,7 +154,6 @@ impl Poseidon {
         }); //opt
 
         let sz = state.len();
-        let mut tmp_state = vec![Fr::zero(); t];
         tmp_state.par_iter_mut().enumerate().for_each(|(i, out)| {
             let mut acc = Fr::zero();
             for j in 0..sz {
@@ -162,7 +163,9 @@ impl Poseidon {
             }
             *out = acc;
         });
-        state = tmp_state;
+        for (i, v) in tmp_state.iter().enumerate() {
+            state[i] = *v;
+        }
 
         for r in 0..n_rounds_p {
             Self::pow5(&mut state[0]);
@@ -192,7 +195,6 @@ impl Poseidon {
             });
 
             let sz = state.len();
-            let mut tmp_state = vec![Fr::zero(); t];
             tmp_state.par_iter_mut().enumerate().for_each(|(i, out)| {
                 let mut acc = Fr::zero();
                 for j in 0..sz {
@@ -202,12 +204,13 @@ impl Poseidon {
                 }
                 *out = acc;
             });
-            state = tmp_state;
+            for (i, v) in tmp_state.iter().enumerate() {
+                state[i] = *v;
+            }
         }
 
         state.par_iter_mut().for_each(|e| Self::pow5(e));
         let sz = state.len();
-        let mut tmp_state = vec![Fr::zero(); t];
         tmp_state.par_iter_mut().enumerate().for_each(|(i, out)| {
             let mut acc = Fr::zero();
             for j in 0..sz {

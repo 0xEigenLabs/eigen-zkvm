@@ -80,21 +80,19 @@ impl MerkleTree {
         let now = Instant::now();
         //println!("n_per_thread_f: {}, height {}", n_per_thread_f, height);
         if buff.len() > 0 {
-            rayon::scope(|_s| {
-                nodes
-                    .par_chunks_mut(n_per_thread_f)
-                    .zip(buff.par_chunks(n_per_thread_f * width))
-                    .for_each(|(out, bb)| {
-                        let cur_n = bb.len() / width;
-                        //println!("linearhash pols i {}, cur_n {}", i, cur_n);
-                        out.par_iter_mut()
-                            .zip((0..cur_n).into_iter())
-                            .for_each(|(row_out, j)| {
-                                let batch = &bb[(j * width)..((j + 1) * width)];
-                                *row_out = leaves_hash.hash_element_array(batch).unwrap();
-                            });
-                    });
-            });
+            nodes
+                .par_chunks_mut(n_per_thread_f)
+                .zip(buff.par_chunks(n_per_thread_f * width))
+                .for_each(|(out, bb)| {
+                    let cur_n = bb.len() / width;
+                    //println!("linearhash pols i {}, cur_n {}", i, cur_n);
+                    out.par_iter_mut()
+                        .zip((0..cur_n).into_par_iter())
+                        .for_each(|(row_out, j)| {
+                            let batch = &bb[(j * width)..((j + 1) * width)];
+                            *row_out = leaves_hash.hash_element_array(batch).unwrap();
+                        });
+                });
         }
         println!("linearhash time cost: {}", now.elapsed().as_secs_f64());
 
