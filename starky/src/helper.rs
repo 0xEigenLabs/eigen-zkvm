@@ -22,6 +22,7 @@ pub fn get_ks(n: usize) -> Vec<BaseElement> {
     ks
 }
 
+#[inline(always)]
 pub fn log2_any(val: usize) -> usize {
     let mut val = val;
     (if (val & 0xFFFF0000) != 0 {
@@ -47,6 +48,7 @@ pub fn log2_any(val: usize) -> usize {
     }) | (if (val & 0xAAAAAAAA) != 0 { 1 } else { 0 })
 }
 
+#[inline(always)]
 pub fn fr_to_biguint(f: &Fr) -> BigUint {
     let repr = f.into_repr();
     let required_length = repr.as_ref().len() * 8;
@@ -55,12 +57,14 @@ pub fn fr_to_biguint(f: &Fr) -> BigUint {
     BigUint::from_bytes_be(&buf)
 }
 
+#[inline(always)]
 pub fn biguint_to_be(f: &BigUint) -> BaseElement {
     let module = BigUint::from(0xFFFFFFFF00000001u64);
     let f = f % module;
     BaseElement::from(f.to_u64().unwrap())
 }
 
+#[inline(always)]
 pub fn biguint_to_fr(f: &BigUint) -> Fr {
     Fr::from_str(&f.to_string()).unwrap()
 }

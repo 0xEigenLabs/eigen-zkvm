@@ -1,5 +1,5 @@
 #![allow(non_snake_case, dead_code)]
-use crate::field_bn128::Fr;
+use crate::field_bn128::{Fr, FrRepr};
 use crate::helper::fr_to_biguint;
 use core::slice;
 use ff::*;
@@ -71,22 +71,19 @@ impl Into<Fr> for ElementDigest {
 }
 
 impl ElementDigest {
+    #[inline(always)]
     pub fn to_BN128(e: &[BaseElement; 4]) -> Fr {
-        let mut result = BigUint::from(e[0].as_int());
-
-        let mut added = BigUint::from(e[1].as_int());
-        added = added << 64;
-        result += added;
-
-        let mut added = BigUint::from(e[2].as_int());
-        added = added << 128;
-        result += added;
-
-        let mut added = BigUint::from(e[3].as_int());
-        added = added << 192;
-        result += added;
-
-        Fr::from_str(&result.to_string()).unwrap()
+        let mut buf: Vec<u8> = vec![0u8; 32];
+        // To be optimized: BaseElement doesn't return bytes with specific endian.
+        buf[0..8].copy_from_slice(&e[0].as_int().to_le_bytes());
+        buf[8..16].copy_from_slice(&e[1].as_int().to_le_bytes());
+        buf[16..24].copy_from_slice(&e[2].as_int().to_le_bytes());
+        buf[24..32].copy_from_slice(&e[3].as_int().to_le_bytes());
+        let mut repr = FrRepr::default();
+        let required_length = repr.as_ref().len() * 8;
+        buf.resize(required_length, 0);
+        repr.read_le(&buf[..]).unwrap();
+        Fr::from_repr(repr).unwrap()
     }
 
     fn to_GL(f: &Fr) -> [BaseElement; 4] {

@@ -69,12 +69,14 @@ impl LinearHashBN128 {
     }
 
     /// convert to BN128 in montgomery
+    #[inline(always)]
     pub fn to_bn128_mont(st64: [BaseElement; 4]) -> [BaseElement; 4] {
         let bn: Fr = ElementDigest::new(st64).into();
         let bn_mont = Fr::from_repr(bn.into_raw_repr()).unwrap();
         ElementDigest::from(&bn_mont).into()
     }
 
+    #[inline(always)]
     pub fn hash_node(&self, elems: &[ElementDigest], init_state: &Fr) -> Result<ElementDigest> {
         assert_eq!(elems.len(), 16);
         let elems = elems.par_iter().map(|e| (*e).into()).collect::<Vec<Fr>>();
@@ -82,12 +84,20 @@ impl LinearHashBN128 {
         Ok(ElementDigest::from(&digest))
     }
 
-    fn hash_element_block(&self, elems: &[BaseElement], init_state: &Fr) -> Result<Fr> {
-        let elems = elems
+    #[inline(always)]
+    fn hash_element_block(
+        &self,
+        elems: &[BaseElement],
+        init_state: &Fr,
+        output: &mut Vec<Fr>,
+    ) -> Result<Fr> {
+        elems
             .par_chunks(4)
-            .map(|e| ElementDigest::to_BN128(e.try_into().unwrap()))
-            .collect::<Vec<Fr>>();
-        Ok(self.h.hash(&elems, init_state)?)
+            .zip(output.par_iter_mut())
+            .for_each(|(ein, eout)| {
+                *eout = ElementDigest::to_BN128(ein.try_into().unwrap());
+            });
+        Ok(self.h.hash(output, init_state)?)
     }
 
     pub fn hash_element_array(&self, vals: &[BaseElement]) -> Result<ElementDigest> {
@@ -95,6 +105,7 @@ impl LinearHashBN128 {
         let mut in64: [BaseElement; 64] = [BaseElement::ZERO; 64];
         let mut digest: Fr = Fr::zero();
         //println!("hash_element_array size: {}", vals.len());
+        let mut out64 = vec![Fr::zero(); 16];
         if vals.len() <= 4 {
             for (i, v) in vals.iter().enumerate() {
                 st64[i] = *v;
@@ -108,25 +119,29 @@ impl LinearHashBN128 {
             in64[p] = *val;
             p += 1;
             if p == 16 * 4 {
-                digest = self.hash_element_block(&in64[..], &digest)?;
+                digest = self.hash_element_block(&in64[..], &digest, &mut out64)?;
                 p = 0;
             }
             if i % 3 == 2 {
                 in64[p] = BaseElement::ZERO;
                 p += 1;
                 if p == 16 * 4 {
-                    digest = self.hash_element_block(&in64[..], &digest)?;
+                    digest = self.hash_element_block(&in64[..], &digest, &mut out64)?;
                     p = 0;
                 }
             }
         }
         if p > 0 {
-            let nLast = (p - 1) / 4 + 1;
-            while p < nLast * 4 {
+            let n_last = (p - 1) / 4 + 1;
+            while p < n_last * 4 {
                 in64[p] = BaseElement::ZERO;
                 p += 1;
             }
-            digest = self.hash_element_block(&in64[..(nLast * 4)], &digest)?;
+            digest = self.hash_element_block(
+                &in64[..(n_last * 4)],
+                &digest,
+                &mut out64[..n_last].to_vec(),
+            )?;
         }
         Ok(ElementDigest::from(&digest))
     }

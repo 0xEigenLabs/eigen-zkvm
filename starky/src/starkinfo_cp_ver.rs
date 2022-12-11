@@ -113,7 +113,7 @@ impl StarkInfo {
         //println!("ev_idx: {:?}", ctx_f.starkinfo.ev_idx);
         //println!("ev_map: {:?}", ctx_f.starkinfo.ev_map);
         //println!("cp ver code.tmp_used {}", code.tmp_used);
-        println!("cp ver code {}", code);
+        //println!("cp ver code {}", code);
         program.verifier_code = code;
         Ok(())
     }
