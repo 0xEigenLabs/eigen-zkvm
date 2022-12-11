@@ -4,7 +4,6 @@ use crate::field_bn128::Fr;
 use crate::poseidon_bn128::Constants;
 use crate::poseidon_bn128_constants_opt as constants;
 use ff::{from_hex, Field};
-//use rayon::prelude::*;
 
 pub fn load_constants() -> Constants {
     let (c_str, m_str, p_str, s_str) = constants::constants();

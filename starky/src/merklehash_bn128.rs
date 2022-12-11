@@ -86,8 +86,8 @@ impl MerkleTree {
                 .for_each(|(out, bb)| {
                     let cur_n = bb.len() / width;
                     //println!("linearhash pols i {}, cur_n {}", i, cur_n);
-                    out.par_iter_mut()
-                        .zip((0..cur_n).into_par_iter())
+                    out.iter_mut()
+                        .zip((0..cur_n).into_iter())
                         .for_each(|(row_out, j)| {
                             let batch = &bb[(j * width)..((j + 1) * width)];
                             *row_out = leaves_hash.hash_element_array(batch).unwrap();
@@ -152,7 +152,7 @@ impl MerkleTree {
 
         //println!("merklize level: copy {} to {}", p_in, p_out);
         let out = &mut self.nodes[p_out..(p_out + n_ops)];
-        out.par_iter_mut()
+        out.iter_mut()
             .zip(nodes)
             .for_each(|(nout, nin)| *nout = nin);
         Ok(())
@@ -173,7 +173,7 @@ impl MerkleTree {
         let n_ops = buff_in.len() / 16;
         let mut buff_out64: Vec<ElementDigest> = vec![ElementDigest::default(); n_ops];
         buff_out64
-            .par_iter_mut()
+            .iter_mut()
             .zip((0..n_ops).into_iter())
             .for_each(|(out, i)| {
                 *out = self

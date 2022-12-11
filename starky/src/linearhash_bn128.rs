@@ -4,7 +4,7 @@ use crate::field_bn128::Fr;
 use crate::poseidon_bn128_opt::Poseidon;
 use crate::ElementDigest;
 use ff::*;
-use rayon::prelude::*;
+//use rayon::prelude::*;
 use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
 
@@ -79,7 +79,7 @@ impl LinearHashBN128 {
     #[inline(always)]
     pub fn hash_node(&self, elems: &[ElementDigest], init_state: &Fr) -> Result<ElementDigest> {
         assert_eq!(elems.len(), 16);
-        let elems = elems.par_iter().map(|e| (*e).into()).collect::<Vec<Fr>>();
+        let elems = elems.iter().map(|e| (*e).into()).collect::<Vec<Fr>>();
         let digest = self.h.hash(&elems, init_state)?;
         Ok(ElementDigest::from(&digest))
     }
@@ -98,8 +98,8 @@ impl LinearHashBN128 {
 
         // group into 3 * 4
         let mut tmp_buf = vec![Fr::zero(); (vals.len() - 1) / 3 + 1];
-        vals.par_chunks(3)
-            .zip(tmp_buf.par_iter_mut())
+        vals.chunks(3)
+            .zip(tmp_buf.iter_mut())
             .for_each(|(ein, eout)| {
                 // padding zero to 4
                 let mut ein_4 = [BaseElement::ZERO; 4];
