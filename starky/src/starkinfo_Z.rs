@@ -2,8 +2,8 @@
 use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::helper::get_ks;
+use crate::starkinfo::PUCTX;
 use crate::starkinfo::{Program, StarkInfo};
-use crate::starkinfo::{CICTX, PECTX};
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Calculated, Context};
 use crate::types::{PolIdentity, PIL};
 
@@ -83,7 +83,9 @@ impl StarkInfo {
 
             pil.expressions.push(f_exp);
 
-            self.pe_ctx.push(PECTX {
+            self.pe_ctx.push(PUCTX {
+                h1_id: 0,
+                h2_id: 0,
                 f_exp_id,
                 t_exp_id,
                 c1_id: 0,
@@ -201,25 +203,8 @@ impl StarkInfo {
                 line: 0,
                 fileName: "".to_string(),
             });
-            self.pu_ctx[i].num_tmpexp_id = self.n_tmpexps;
-            pil_code_gen(
-                ctx,
-                pil,
-                self.pu_ctx[i].num_id,
-                false,
-                "tmpExp",
-                self.n_tmpexps,
-            )?;
-            self.n_tmpexps += 1;
-            pil_code_gen(
-                ctx,
-                pil,
-                self.pu_ctx[i].den_id,
-                false,
-                "tmpExp",
-                self.n_tmpexps,
-            )?;
-            self.n_tmpexps += 1;
+            pil_code_gen(ctx, pil, self.pu_ctx[i].num_id, false, "", 0)?;
+            pil_code_gen(ctx, pil, self.pu_ctx[i].den_id, false, "", 0)?;
         }
         Ok(())
     }
@@ -294,27 +279,9 @@ impl StarkInfo {
                 fileName: "".to_string(),
             });
 
-            self.pe_ctx[i].num_tmpexp_id = self.n_tmpexps;
-            pil_code_gen(
-                ctx,
-                pil,
-                self.pe_ctx[i].num_id.clone(),
-                false,
-                "tmpExp",
-                self.n_tmpexps,
-            )?;
-            self.n_tmpexps += 1;
+            pil_code_gen(ctx, pil, self.pe_ctx[i].num_id.clone(), false, "", 0)?;
 
-            self.pe_ctx[i].den_tmpexp_id = self.n_tmpexps;
-            pil_code_gen(
-                ctx,
-                pil,
-                self.pe_ctx[i].den_id.clone(),
-                false,
-                "tmpExp",
-                self.n_tmpexps,
-            )?;
-            self.n_tmpexps += 1;
+            pil_code_gen(ctx, pil, self.pe_ctx[i].den_id.clone(), false, "", 0)?;
         }
         Ok(())
     }
@@ -335,7 +302,7 @@ impl StarkInfo {
                 _ => panic!("ci.connections is empty"),
             };
 
-            let mut ci_ctx = CICTX::default();
+            let mut ci_ctx = PUCTX::default();
             ci_ctx.z_id = pil.nCommitments;
             pil.nCommitments += 1;
 
@@ -448,26 +415,8 @@ impl StarkInfo {
                 fileName: "".to_string(),
             });
 
-            ci_ctx.num_tmpexp_id = self.n_tmpexps;
-            pil_code_gen(
-                ctx,
-                pil,
-                ci_ctx.num_id.clone(),
-                false,
-                "tmpExp",
-                self.n_tmpexps,
-            )?;
-            self.n_tmpexps += 1;
-            ci_ctx.den_tmpexp_id = self.n_tmpexps;
-            pil_code_gen(
-                ctx,
-                pil,
-                ci_ctx.den_id.clone(),
-                false,
-                "tmpExp",
-                self.n_tmpexps,
-            )?;
-            self.n_tmpexps += 1;
+            pil_code_gen(ctx, pil, ci_ctx.num_id.clone(), false, "", 0)?;
+            pil_code_gen(ctx, pil, ci_ctx.den_id.clone(), false, "", 0)?;
             self.ci_ctx.push(ci_ctx);
         }
         Ok(())

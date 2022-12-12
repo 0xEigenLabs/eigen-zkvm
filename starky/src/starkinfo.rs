@@ -23,35 +23,6 @@ pub struct PUCTX {
     pub num_id: usize,
     pub den_id: usize,
 
-    pub f_tmpexp_id: usize,
-    pub t_tmpexp_id: usize,
-    pub num_tmpexp_id: usize,
-    pub den_tmpexp_id: usize,
-}
-
-#[derive(Default, Debug, Serialize)]
-pub struct PECTX {
-    pub f_exp_id: usize,
-    pub t_exp_id: usize,
-
-    pub z_id: usize,
-    pub c1_id: usize,
-    pub c2_id: usize,
-    pub num_id: usize,
-    pub den_id: usize,
-
-    pub num_tmpexp_id: usize,
-    pub den_tmpexp_id: usize,
-}
-
-#[derive(Default, Debug, Serialize)]
-pub struct CICTX {
-    pub z_id: usize,
-    pub c1_id: usize,
-    pub c2_id: usize,
-    pub num_id: usize,
-    pub den_id: usize,
-
     pub num_tmpexp_id: usize,
     pub den_tmpexp_id: usize,
 }
@@ -77,11 +48,10 @@ pub struct StarkInfo {
     pub n_cm4: usize,
     pub n_q: usize,
     pub pu_ctx: Vec<PUCTX>,
-    pub pe_ctx: Vec<PECTX>,
-    pub ci_ctx: Vec<CICTX>,
+    pub pe_ctx: Vec<PUCTX>,
+    pub ci_ctx: Vec<PUCTX>,
     pub n_constants: usize,
     pub n_publics: usize,
-    pub n_tmpexps: usize,
     pub c_exp: usize,
 
     pub im_exps: HashMap<usize, bool>,
@@ -111,6 +81,7 @@ pub struct StarkInfo {
     pub map_offsets: Index,
     pub map_deg: Index,
     pub map_total_n: usize,
+    pub exp2pol: HashMap<usize, usize>,
 
     pub publics: Vec<Public>,
     pub ev_idx: EVIdx,
@@ -147,7 +118,7 @@ impl StarkInfo {
             ci_ctx: Vec::new(),
             n_constants: pil.nConstants,
             n_publics: pil.publics.len(),
-            n_tmpexps: 0,
+            exp2pol: HashMap::new(),
             n_cm1: pil.nCommitments,
             n_cm2: 0,
             n_cm3: 0,
@@ -293,6 +264,7 @@ impl StarkInfo {
                     exp_map: HashMap::new(),
                     tmp_used: segment.tmp_used,
                     dom: "".to_string(),
+                    tmpexps: &mut HashMap::new(),
                     starkinfo: self,
                 };
 
@@ -377,13 +349,8 @@ impl StarkInfo {
 
             pil.expressions.push(f_exp);
 
-            let f_tmpexp_id = self.n_tmpexps;
-            pil_code_gen(ctx, pil, f_exp_id.clone(), false, "tmpExp", self.n_tmpexps)?;
-            self.n_tmpexps += 1;
-
-            let t_tmpexp_id = self.n_tmpexps;
-            pil_code_gen(ctx, pil, t_exp_id.clone(), false, "tmpExp", self.n_tmpexps)?;
-            self.n_tmpexps += 1;
+            pil_code_gen(ctx, pil, f_exp_id.clone(), false, "", 0)?;
+            pil_code_gen(ctx, pil, t_exp_id.clone(), false, "", 0)?;
 
             let h1_id = pil.nCommitments;
             pil.nCommitments += 1;
@@ -400,8 +367,6 @@ impl StarkInfo {
                 c2_id: 0,
                 num_id: 0,
                 den_id: 0,
-                f_tmpexp_id,
-                t_tmpexp_id,
                 num_tmpexp_id: 0,
                 den_tmpexp_id: 0,
             });

@@ -45,7 +45,7 @@ pub struct ContextF<'a> {
     pub exp_map: HashMap<(usize, usize), usize>,
     pub tmp_used: usize,
     pub dom: String,
-
+    pub tmpexps: &'a mut HashMap<usize, usize>,
     pub starkinfo: &'a mut StarkInfo,
 }
 

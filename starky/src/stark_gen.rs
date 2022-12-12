@@ -245,8 +245,8 @@ impl<'a> StarkProof {
         calculate_exps(&mut ctx, starkinfo, &program.step2prev, "2ns");
 
         for pu in starkinfo.pu_ctx.iter() {
-            let f_pol = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pu.f_tmpexp_id]);
-            let t_pol = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pu.t_tmpexp_id]);
+            let f_pol = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.f_exp_id]);
+            let t_pol = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.t_exp_id]);
             let (h1, h2) = calculate_H1H2(f_pol, t_pol);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], h1);
             n_cm += 1;
@@ -274,8 +274,8 @@ impl<'a> StarkProof {
 
         for (i, pu) in starkinfo.pu_ctx.iter().enumerate() {
             println!("Calculating z for plookup {}", i);
-            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pu.num_tmpexp_id]);
-            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pu.den_tmpexp_id]);
+            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.num_id]);
+            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.den_id]);
             let z = calculate_Z(pNum, pDen);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], z);
             n_cm += 1;
@@ -283,9 +283,9 @@ impl<'a> StarkProof {
 
         for (i, pe) in starkinfo.pe_ctx.iter().enumerate() {
             println!("Calculating z for permutation {}", i);
-            //println!("pe {} {}", starkinfo.tmpexp_n[pe.num_tmpexp_id], starkinfo.tmpexp_n[pe.den_tmpexp_id]);
-            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pe.num_tmpexp_id]);
-            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[pe.den_tmpexp_id]);
+            //println!("pe {} {}", starkinfo.tmpexp_n[pe.num_id], starkinfo.tmpexp_n[pe.den_id]);
+            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.num_id]);
+            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.den_id]);
             let z = calculate_Z(pNum, pDen);
             //println!("n_cm {} {}", n_cm, starkinfo.cm_n[n_cm]);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], z);
@@ -293,8 +293,8 @@ impl<'a> StarkProof {
         }
         for (i, ci) in starkinfo.ci_ctx.iter().enumerate() {
             println!("Calculating z for connection {}", i);
-            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[ci.num_tmpexp_id]);
-            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.tmpexp_n[ci.den_tmpexp_id]);
+            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&ci.num_id]);
+            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&ci.den_id]);
             let z = calculate_Z(pNum, pDen);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], z);
             n_cm += 1;

@@ -22,6 +22,7 @@ impl StarkInfo {
             exp_map: HashMap::new(),
             tmp_used: code.tmp_used,
             dom: "".to_string(),
+            tmpexps: &mut HashMap::new(),
             starkinfo: self,
         };
         //println!("cp ver code.tmp_used begin {}", code.tmp_used);
