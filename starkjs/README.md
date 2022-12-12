@@ -19,6 +19,10 @@ will generate the PIL json, Commitment Polynomial file and Constant Polynomial f
     -m ../starky/data/pe.cm
 ```
 
+### Generate Circom file
+
+TODO
+
 ### Compile verifier and generate snark proof
 ```
 cd ../test
