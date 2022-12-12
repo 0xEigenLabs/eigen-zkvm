@@ -43,5 +43,6 @@ pub fn prove(
     )
     .unwrap();
     assert_eq!(result, true);
+    println!("verify the proof successfully");
     Ok(())
 }
