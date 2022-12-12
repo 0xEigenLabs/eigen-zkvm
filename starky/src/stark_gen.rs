@@ -283,7 +283,6 @@ impl<'a> StarkProof {
 
         for (i, pe) in starkinfo.pe_ctx.iter().enumerate() {
             println!("Calculating z for permutation {}", i);
-            //println!("pe {} {}", starkinfo.tmpexp_n[pe.num_id], starkinfo.tmpexp_n[pe.den_id]);
             let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.num_id]);
             let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.den_id]);
             let z = calculate_Z(pNum, pDen);

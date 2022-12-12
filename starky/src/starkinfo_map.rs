@@ -71,7 +71,7 @@ impl StarkInfo {
             self.map_sections.cm2_2ns.push(pph2_2ns);
 
             pil.cm_dims[self.n_cm1 + i * 2] = dim;
-            if !im_exps_none(&self.pu_ctx[i].f_exp_id) {
+            if im_exps_none(&self.pu_ctx[i].f_exp_id) {
                 if tmpexps.get(&self.pu_ctx[i].f_exp_id).is_none() {
                     tmpexps.insert(self.pu_ctx[i].f_exp_id, self.tmpexp_n.len());
                     let ppf_n = add_pol(PolType {
@@ -86,7 +86,7 @@ impl StarkInfo {
                 }
             }
 
-            if !im_exps_none(&self.pu_ctx[i].t_exp_id) {
+            if im_exps_none(&self.pu_ctx[i].t_exp_id) {
                 if tmpexps.get(&self.pu_ctx[i].t_exp_id).is_none() {
                     tmpexps.insert(self.pu_ctx[i].t_exp_id, self.tmpexp_n.len());
                     let ppt_n = add_pol(PolType {
@@ -130,7 +130,7 @@ impl StarkInfo {
             self.map_sections.cm3_2ns.push(ppz_2ns);
             pil.cm_dims[(self.n_cm1 + self.n_cm2 + i)] = 3;
 
-            if !im_exps_none(&o.num_id) {
+            if im_exps_none(&o.num_id) {
                 if tmpexps.get(&o.num_id).is_none() {
                     tmpexps.insert(o.num_id, self.tmpexp_n.len());
                     let pp_num_n = add_pol(PolType {
@@ -146,7 +146,7 @@ impl StarkInfo {
                 }
             }
 
-            if !im_exps_none(&o.den_id) {
+            if im_exps_none(&o.den_id) {
                 if tmpexps.get(&o.den_id).is_none() {
                     tmpexps.insert(o.den_id, self.tmpexp_n.len());
                     let pp_den_n = add_pol(PolType {
