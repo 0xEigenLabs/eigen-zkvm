@@ -8,10 +8,16 @@ PIL compiler and Circom transpiler. The stark prover is [starky](../starky).
 ```
 npm run pc
 ```
+will generate the PIL json, Commitment Polynomial file and Constant Polynomial file.
 
 ### Generate the Stark proof's circuits
 
-TODO
+```
+../target/debug/zkit stark_prove -s ../starky/data/starkStruct.json.2 \
+    -p ../starky/data/pe.pil.json \
+    -o ../starky/data/pe.const \
+    -m ../starky/data/pe.cm
+```
 
 ### Compile verifier and generate snark proof
 ```

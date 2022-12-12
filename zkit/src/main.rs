@@ -1,16 +1,17 @@
 extern crate clap;
 use clap::Clap;
-use std::time::SystemTime;
-use zklib::api::{
+use plonky::api::{
     aggregation_prove, aggregation_verify, export_aggregation_verification_key,
     export_verification_key, generate_aggregation_verifier, generate_verifier, prove, setup,
     verify,
 };
+use std::time::Instant;
 
 mod compilation_user;
 mod execution_user;
 mod input_user;
 mod parser_user;
+mod stark;
 mod type_analysis_user;
 
 /// Align with https://github.com/iden3/circom/blob/master/circom/Cargo.toml#L3
@@ -164,6 +165,18 @@ struct GenerateAggregationVerifierOpt {
 }
 
 #[derive(Debug, Clap)]
+struct StarkProveOpt {
+    #[clap(short = "s", long = "stark_stuct", default_value = "stark_struct.json")]
+    stark_struct: String,
+    #[clap(short = "p", long = "piljson", default_value = "pil.json")]
+    piljson: String,
+    #[clap(short = "o", long = "const_pols", default_value = "pols.const")]
+    const_pols: String,
+    #[clap(short = "m", long = "cm_pols", default_value = "pols.cm")]
+    cm_pols: String,
+}
+
+#[derive(Debug, Clap)]
 enum Command {
     #[clap(name = "setup")]
     Setup(SetupOpt),
@@ -186,6 +199,9 @@ enum Command {
     AggregationVerify(AggregationVerifyOpt),
     #[clap(name = "generate_aggregation_verifier")]
     GenerateAggregationVerifier(GenerateAggregationVerifierOpt),
+
+    #[clap(name = "stark_prove")]
+    StarkProve(StarkProveOpt),
 }
 
 #[derive(Debug, Clap)]
@@ -254,7 +270,7 @@ pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
 
 fn main() {
     let args = Cli::parse();
-    let start = SystemTime::now();
+    let start = Instant::now();
     let _ = match args.command {
         Command::Setup(args) => setup(args.power, &args.srs_monomial_form),
         Command::Compile(args) => compile(args).map_err(|_| anyhow::anyhow!("compile error")),
@@ -291,10 +307,13 @@ fn main() {
         Command::GenerateAggregationVerifier(args) => {
             generate_aggregation_verifier(&args.old_vk, &args.new_vk, args.num_inputs, &args.sol)
         }
+
+        Command::StarkProve(args) => stark::prove(
+            &args.stark_struct,
+            &args.piljson,
+            &args.const_pols,
+            &args.cm_pols,
+        ),
     };
-    let end = SystemTime::now();
-    println!(
-        "time cost: {}",
-        end.duration_since(start).unwrap().as_secs()
-    );
+    println!("time cost: {}", start.elapsed().as_secs_f64());
 }

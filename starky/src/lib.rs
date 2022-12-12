@@ -5,7 +5,7 @@ pub mod types;
 pub mod linearhash_bn128;
 
 mod field_bn128;
-pub mod poseidon_bn128;
+mod poseidon_bn128;
 mod poseidon_bn128_constants;
 mod poseidon_bn128_constants_opt;
 pub mod poseidon_bn128_opt;
@@ -24,10 +24,10 @@ mod fft_worker;
 mod fri;
 mod helper;
 mod interpreter;
-mod stark_gen;
-mod stark_setup;
-mod stark_verify;
-mod starkinfo;
+pub mod stark_gen;
+pub mod stark_setup;
+pub mod stark_verify;
+pub mod starkinfo;
 mod starkinfo_Z;
 mod starkinfo_codegen;
 mod starkinfo_cp_prover;
@@ -43,34 +43,3 @@ extern crate serde_json;
 extern crate ff;
 
 extern crate lazy_static;
-
-#[cfg(test)]
-pub mod tests {
-    use rand_utils::rand_vector;
-    use winter_math::fft::evaluate_poly;
-    use winter_math::fft::get_twiddles;
-    use winter_math::fields::f128::BaseElement;
-    use winter_math::get_power_series;
-    use winter_math::log2;
-    use winter_math::polynom;
-    use winter_math::StarkField;
-
-    #[test]
-    fn test_fft_eval() {
-        let n = 2usize.pow(8);
-
-        // build a random polynomial
-        let mut p: Vec<BaseElement> = rand_vector(n);
-
-        // evaluate the polynomial over the domain using regular polynomial evaluation
-        let g = BaseElement::get_root_of_unity(log2(n));
-        let domain = get_power_series(g, n);
-        let expected = polynom::eval_many(&p, &domain);
-
-        // evaluate the polynomial over the domain using FFT-based evaluation
-        let twiddles = get_twiddles::<BaseElement>(p.len());
-        evaluate_poly(&mut p, &twiddles);
-
-        assert_eq!(expected, p);
-    }
-}

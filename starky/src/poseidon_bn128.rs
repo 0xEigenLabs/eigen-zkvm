@@ -1,4 +1,4 @@
-#![allow(deprecated)]
+#![allow(deprecated, dead_code)]
 #![allow(clippy::derive_hash_xor_eq, clippy::too_many_arguments)]
 use crate::constant::POSEIDON_BN128_CONSTANTS;
 use crate::field_bn128::Fr;
