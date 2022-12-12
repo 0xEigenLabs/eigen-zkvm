@@ -375,10 +375,10 @@ fn set_ref(
         }
         "cm" => {
             if dom == "n" {
-                let pol_id = starkinfo.cm_n[r.id].clone();
+                let pol_id = starkinfo.cm_n[r.id];
                 eval_map(ctx, starkinfo, pol_id, r.prime, next, modulas)
             } else if dom == "2ns" {
-                let pol_id = starkinfo.cm_2ns[r.id].clone();
+                let pol_id = starkinfo.cm_2ns[r.id];
                 eval_map(ctx, starkinfo, pol_id, r.prime, next, modulas)
             } else {
                 panic!("Invalid dom");
@@ -386,7 +386,7 @@ fn set_ref(
         }
         "tmpExp" => {
             if dom == "n" {
-                let pol_id = starkinfo.tmpexp_n[r.id].clone();
+                let pol_id = starkinfo.tmpexp_n[r.id];
                 eval_map(ctx, starkinfo, pol_id, r.prime, next, modulas)
             } else {
                 panic!("Invalid dom");
@@ -454,6 +454,14 @@ fn get_ref(
                 eval_map(ctx, starkinfo, pol_id, r.prime, next, modulas)
             } else if dom == "2ns" {
                 let pol_id = starkinfo.cm_2ns[r.id];
+                eval_map(ctx, starkinfo, pol_id, r.prime, next, modulas)
+            } else {
+                panic!("Invalid dom");
+            }
+        }
+        "tmpExp" => {
+            if dom == "n" {
+                let pol_id = starkinfo.tmpexp_n[r.id];
                 eval_map(ctx, starkinfo, pol_id, r.prime, next, modulas)
             } else {
                 panic!("Invalid dom");
