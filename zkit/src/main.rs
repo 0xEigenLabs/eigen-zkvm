@@ -168,11 +168,11 @@ struct GenerateAggregationVerifierOpt {
 struct StarkProveOpt {
     #[clap(short = "s", long = "stark_stuct", default_value = "stark_struct.json")]
     stark_struct: String,
-    #[clap(short = "pil", long = "piljson", default_value = "pil.json")]
+    #[clap(short = "p", long = "piljson", default_value = "pil.json")]
     piljson: String,
-    #[clap(short = "cp", long = "const_pols", default_value = "pols.const")]
+    #[clap(short = "o", long = "const_pols", default_value = "pols.const")]
     const_pols: String,
-    #[clap(short = "cm", long = "cm_pols", default_value = "pols.cm")]
+    #[clap(short = "m", long = "cm_pols", default_value = "pols.cm")]
     cm_pols: String,
 }
 
