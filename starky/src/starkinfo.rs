@@ -11,20 +11,16 @@ use std::collections::HashMap;
 use std::fmt;
 
 #[derive(Default, Debug, Serialize)]
-pub struct PUCTX {
+pub struct PCCTX {
     pub f_exp_id: usize,
     pub t_exp_id: usize,
     pub h1_id: usize,
     pub h2_id: usize,
-
     pub z_id: usize,
     pub c1_id: usize,
     pub c2_id: usize,
     pub num_id: usize,
     pub den_id: usize,
-
-    pub num_tmpexp_id: usize,
-    pub den_tmpexp_id: usize,
 }
 
 #[derive(Debug, Default)]
@@ -47,9 +43,9 @@ pub struct StarkInfo {
     pub n_cm3: usize,
     pub n_cm4: usize,
     pub n_q: usize,
-    pub pu_ctx: Vec<PUCTX>,
-    pub pe_ctx: Vec<PUCTX>,
-    pub ci_ctx: Vec<PUCTX>,
+    pub pu_ctx: Vec<PCCTX>,
+    pub pe_ctx: Vec<PCCTX>,
+    pub ci_ctx: Vec<PCCTX>,
     pub n_constants: usize,
     pub n_publics: usize,
     pub c_exp: usize,
@@ -171,11 +167,14 @@ impl StarkInfo {
             exp_id: 0,
         };
         info.generate_pubulic_calculators(&mut ctx, pil, &mut program)?;
-        println!("generate_step2");
-        info.generate_step2(&mut ctx, pil, &mut program)?; // H1, H2
 
-        println!("generate_step3");
-        info.generate_step3(&mut ctx, pil, &mut program)?; // Z Polynonmial and LC of the permutation checks
+        let mut ctx = Context {
+            calculated: Calculated::new(),
+            tmp_used: 0,
+            code: vec![],
+            calculated_mark: HashMap::new(),
+            exp_id: 0,
+        };
 
         let mut ctx2ns = Context {
             calculated: Calculated::new(),
@@ -185,15 +184,13 @@ impl StarkInfo {
             exp_id: 0,
         };
 
-        let mut ctx = Context {
-            calculated: Calculated::new(),
-            tmp_used: 0,
-            code: vec![],
-            calculated_mark: HashMap::new(),
-            exp_id: 0,
-        };
-        println!("generate_constraint_polynomial");
+        println!("generate_step2");
+        info.generate_step2(&mut ctx, pil, &mut program)?; // H1, H2
 
+        println!("generate_step3");
+        info.generate_step3(&mut ctx, pil, &mut program)?; // Z Polynonmial and LC of the permutation checks
+
+        println!("generate_constraint_polynomial");
         info.generate_constraint_polynomial(
             &mut ctx,
             &mut ctx2ns,
@@ -301,6 +298,7 @@ impl StarkInfo {
         program: &mut Program,
     ) -> Result<()> {
         let ppi = pil.plookupIdentities.clone();
+        println!("generate_step2: [{:?}]", ppi);
         for pi in ppi.iter() {
             let u = E::challenge("u".to_string());
             let def_val = E::challenge("defVal".to_string());
@@ -340,24 +338,31 @@ impl StarkInfo {
                     f_exp = E::add(&E::mul(&f_exp, &u), &e);
                 }
             }
+            if pi.selF.is_some() {
+                f_exp = E::sub(&f_exp, &E::exp(t_exp_id, None));
+                f_exp = E::mul(&f_exp, &E::exp(pi.selF.unwrap(), None));
+                f_exp = E::add(&f_exp, &E::exp(t_exp_id, None));
+
+                f_exp.idQ = Some(pil.nQ);
+                pil.nQ += 1;
+            }
 
             let f_exp_id = pil.expressions.len();
             f_exp.keep = Some(true);
             if E::is_nop(&f_exp) {
                 panic!("nop {}", format!("{:?}", f_exp));
             }
-
             pil.expressions.push(f_exp);
 
-            pil_code_gen(ctx, pil, f_exp_id.clone(), false, "", 0)?;
-            pil_code_gen(ctx, pil, t_exp_id.clone(), false, "", 0)?;
+            pil_code_gen(ctx, pil, f_exp_id, false, "", 0)?;
+            pil_code_gen(ctx, pil, t_exp_id, false, "", 0)?;
 
             let h1_id = pil.nCommitments;
             pil.nCommitments += 1;
             let h2_id = pil.nCommitments;
             pil.nCommitments += 1;
 
-            self.pu_ctx.push(PUCTX {
+            self.pu_ctx.push(PCCTX {
                 f_exp_id,
                 t_exp_id,
                 h1_id,
@@ -367,12 +372,11 @@ impl StarkInfo {
                 c2_id: 0,
                 num_id: 0,
                 den_id: 0,
-                num_tmpexp_id: 0,
-                den_tmpexp_id: 0,
             });
         }
 
         program.step2prev = build_code(ctx, pil);
+        println!("pu_ctx {:?}", self.pu_ctx);
         println!("step2prev {}", program.step2prev);
         ctx.calculated = Calculated::new();
         self.n_cm2 = pil.nCommitments - self.n_cm1;

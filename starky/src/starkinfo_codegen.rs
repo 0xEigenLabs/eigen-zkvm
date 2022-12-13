@@ -269,7 +269,8 @@ impl EVIdx {
 }
 
 // prime: false by default
-// mode: "" by default
+// res_type: "" by default
+// res_id: 0 by default
 pub fn pil_code_gen(
     ctx: &mut Context,
     pil: &mut PIL,
@@ -278,7 +279,10 @@ pub fn pil_code_gen(
     res_type: &str,
     res_id: usize,
 ) -> Result<()> {
-    //println!("pil_code_gen: {} {}, {:?}", exp_id, prime, mode);
+    println!(
+        "pil_code_gen: {} {}, {} {}",
+        exp_id, prime, res_type, res_id
+    );
     let prime_idx = if prime { "expsPrime" } else { "exps" };
     if ctx.calculated_mark.get(&(prime_idx, exp_id)).is_some() {
         if res_type.len() > 0 {
@@ -312,7 +316,6 @@ pub fn pil_code_gen(
         let sz = code_ctx.code.len() - 1;
         code_ctx.code[sz].dest = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
         code_ctx.tmp_used -= 1;
-        println!("pil_code_gen ctx.tmp_used {}", code_ctx.tmp_used);
     } else {
         let exp_node = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
         code_ctx.code.push(Section {
@@ -356,7 +359,7 @@ pub fn eval_exp(
     exp: &Expression,
     prime: bool,
 ) -> Result<Node> {
-    //println!("eval, expression {:?}", exp);
+    println!("eval, expression {}", exp);
     if ExpressionOps::is_nop(exp) {
         panic!("exp: {:?}", exp);
     }
@@ -560,13 +563,6 @@ pub fn calculate_deps(
     exp_id: usize,
 ) -> Result<()> {
     if expr.op == "exp" {
-        /*
-        let id: usize = if expr.id.is_some() {
-            expr.id.unwrap()
-        } else {
-            0
-        };
-        */
         let id = expr.id.unwrap();
         if prime && expr.next() {
             expression_error(pil, "Double prime".to_string(), exp_id, id)?;
@@ -611,7 +607,7 @@ pub fn build_linear_code(ctx: &mut Context, pil: &mut PIL, loop_pos: String) -> 
     };
 
     let mut res: Vec<Section> = vec![];
-    for (i, _c) in ctx.code.iter().enumerate() {
+    for i in 0..ctx.code.len() {
         if exp_and_expprimes.get(&(i)).is_some() {
             if ((loop_pos.as_str() == "i") && (!ctx.code[i].prime.is_some()))
                 || (loop_pos.as_str() == "last")
@@ -629,7 +625,7 @@ pub fn build_linear_code(ctx: &mut Context, pil: &mut PIL, loop_pos: String) -> 
 //FIXME where is the exp_id from
 fn get_exp_and_expprimes(ctx: &mut Context, pil: &mut PIL) -> HashMap<usize, bool> {
     let mut calc_exps = HashMap::<usize, usize>::new();
-    for (i, _c) in ctx.code.iter().enumerate() {
+    for i in 0..ctx.code.len() {
         if (pil.expressions[ctx.code[i].exp_id].idQ.is_some())
             || pil.expressions[ctx.code[i].exp_id].keep.is_some()
             || pil.expressions[ctx.code[i].exp_id].keep2ns.is_some()

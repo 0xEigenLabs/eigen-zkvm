@@ -71,8 +71,17 @@ impl LinearHashBN128 {
     /// convert to BN128 in montgomery
     #[inline(always)]
     pub fn to_bn128_mont(st64: [BaseElement; 4]) -> [BaseElement; 4] {
+        println!(
+            "to_bn128_mont {} {} {} {}",
+            st64[0], st64[1], st64[2], st64[3]
+        );
         let bn: Fr = ElementDigest::new(st64).into();
-        let bn_mont = Fr::from_repr(bn.into_raw_repr()).unwrap();
+        println!("fr {}", crate::helper::fr_to_biguint(&bn));
+        // FIXME
+        let bn_mont = match Fr::from_repr(bn.into_raw_repr()) {
+            Ok(x) => x,
+            _ => Fr(bn.into_raw_repr()),
+        };
         ElementDigest::from(&bn_mont).into()
     }
 
@@ -149,7 +158,7 @@ mod tests {
             BaseElement::from(6188675464075253840u64),
             BaseElement::from(2608530331018891925u64),
         ];
-        crate::helper::pretty_print_array(&input);
+        //crate::helper::pretty_print_array(&input);
 
         let lh = LinearHashBN128::new();
         let result = lh.hash_element_array(&input).unwrap();

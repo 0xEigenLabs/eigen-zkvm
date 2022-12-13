@@ -2,7 +2,7 @@
 use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::helper::get_ks;
-use crate::starkinfo::PUCTX;
+use crate::starkinfo::PCCTX;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Calculated, Context};
 use crate::types::{PolIdentity, PIL};
@@ -83,7 +83,7 @@ impl StarkInfo {
 
             pil.expressions.push(f_exp);
 
-            self.pe_ctx.push(PUCTX {
+            self.pe_ctx.push(PCCTX {
                 h1_id: 0,
                 h2_id: 0,
                 f_exp_id,
@@ -93,13 +93,12 @@ impl StarkInfo {
                 den_id: 0,
                 num_id: 0,
                 z_id: 0,
-                den_tmpexp_id: 0,
-                num_tmpexp_id: 0,
             });
         }
         Ok(())
     }
 
+    // paper: https://eprint.iacr.org/2020/315.pdf
     pub fn generate_plonk_Z(&mut self, ctx: &mut Context, pil: &mut PIL) -> Result<()> {
         let pui = pil.plookupIdentities.clone();
         for (i, _pu) in pui.iter().enumerate() {
@@ -140,6 +139,7 @@ impl StarkInfo {
             let gamma = E::challenge("gamma".to_string());
             let beta = E::challenge("beta".to_string());
 
+            // F(\beta, \gamma)
             let mut num_exp = E::mul(
                 &E::mul(
                     &E::add(&f, &gamma),
@@ -161,6 +161,7 @@ impl StarkInfo {
             self.pu_ctx[i].num_id = pil.expressions.len();
             pil.expressions.push(num_exp);
 
+            // G(\beta, \gamma)
             let mut den_exp = E::mul(
                 &E::mul(
                     &E::add(&f, &gamma),
@@ -302,7 +303,7 @@ impl StarkInfo {
                 _ => panic!("ci.connections is empty"),
             };
 
-            let mut ci_ctx = PUCTX::default();
+            let mut ci_ctx = PCCTX::default();
             ci_ctx.z_id = pil.nCommitments;
             pil.nCommitments += 1;
 
