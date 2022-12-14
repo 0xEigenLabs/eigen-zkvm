@@ -359,7 +359,7 @@ pub fn eval_exp(
     exp: &Expression,
     prime: bool,
 ) -> Result<Node> {
-    println!("eval, expression {}", exp);
+    //println!("eval, expression {}", exp);
     if ExpressionOps::is_nop(exp) {
         panic!("exp: {:?}", exp);
     }
