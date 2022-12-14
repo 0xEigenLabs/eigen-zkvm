@@ -56,7 +56,7 @@ MerkleHash performance(128 cores, 1T RAM):
 |---|---|---|---|
 |2^24|10|11.04| 74.77|
 |2^24|100| 85.12| 582 |
-|2^24|600| 611.11| -|
+|2^24|600| 482 | -|
 
 
 Comparison with CPP prover:
