@@ -376,11 +376,11 @@ impl StarkInfo {
         }
 
         program.step2prev = build_code(ctx, pil);
-        println!("pu_ctx {:?}", self.pu_ctx);
-        println!("step2prev {}", program.step2prev);
+        //println!("pu_ctx {:?}", self.pu_ctx);
+        //println!("step2prev {}", program.step2prev);
         ctx.calculated = Calculated::new();
         self.n_cm2 = pil.nCommitments - self.n_cm1;
-        println!("n_cm2 {}", self.n_cm2);
+        //println!("n_cm2 {}", self.n_cm2);
         Ok(())
     }
 }

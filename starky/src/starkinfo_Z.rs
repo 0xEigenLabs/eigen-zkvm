@@ -30,6 +30,7 @@ impl StarkInfo {
             Some(x) => x.clone(),
             _ => Vec::new(),
         };
+        println!("generate_permutation_LC size: {}", ppi.len());
         for pi in ppi.iter() {
             let mut t_exp = E::nop();
             let u = E::challenge("u".to_string());
@@ -101,18 +102,17 @@ impl StarkInfo {
     // paper: https://eprint.iacr.org/2020/315.pdf
     pub fn generate_plonk_Z(&mut self, ctx: &mut Context, pil: &mut PIL) -> Result<()> {
         let pui = pil.plookupIdentities.clone();
+        println!("generate_plonk_Z size: {}", pui.len());
         for (i, _pu) in pui.iter().enumerate() {
             self.pu_ctx[i].z_id = pil.nCommitments;
             pil.nCommitments += 1;
 
             let h1 = E::cm(self.pu_ctx[i].h1_id, None);
             let h2 = E::cm(self.pu_ctx[i].h2_id, None);
-
             let h1p = E::cm(self.pu_ctx[i].h1_id, Some(true));
             let f = E::cm(self.pu_ctx[i].f_exp_id, None);
             let t = E::cm(self.pu_ctx[i].t_exp_id, None);
             let tp = E::cm(self.pu_ctx[i].t_exp_id, Some(true));
-
             let z = E::cm(self.pu_ctx[i].z_id, None);
             let zp = E::cm(self.pu_ctx[i].z_id, Some(true));
 
@@ -124,14 +124,10 @@ impl StarkInfo {
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 
-            if E::is_nop(&c1) {
-                panic!("nop {:?}", format!("{:?}", c1));
-            }
-
             self.pu_ctx[i].c1_id = pil.expressions.len();
             pil.expressions.push(c1);
             pil.polIdentities.push(PolIdentity {
-                e: self.pu_ctx[i].c1_id.clone(),
+                e: self.pu_ctx[i].c1_id,
                 line: 0,
                 fileName: "".to_string(),
             });
@@ -152,23 +148,17 @@ impl StarkInfo {
             );
 
             num_exp.idQ = Some(pil.nQ);
-
             pil.nQ += 1;
-            if E::is_nop(&num_exp) {
-                panic!("nop {:?}", format!("{:?}", num_exp));
-            }
-
+            num_exp.keep = Some(true);
             self.pu_ctx[i].num_id = pil.expressions.len();
+            //println!("num_exp: {} {}", i, num_exp);
             pil.expressions.push(num_exp);
 
             // G(\beta, \gamma)
             let mut den_exp = E::mul(
-                &E::mul(
-                    &E::add(&f, &gamma),
-                    &E::add(
-                        &E::add(&h1, &E::mul(&h2, &beta)),
-                        &E::mul(&gamma, &E::add(&E::number("1".to_string()), &beta)),
-                    ),
+                &E::add(
+                    &E::add(&h1, &E::mul(&h2, &beta)),
+                    &E::mul(&gamma, &E::add(&E::number("1".to_string()), &beta)),
                 ),
                 &E::add(
                     &E::add(&h2, &E::mul(&h1p, &beta)),
@@ -178,13 +168,9 @@ impl StarkInfo {
 
             den_exp.idQ = Some(pil.nQ);
             pil.nQ += 1;
-
             self.pu_ctx[i].den_id = pil.expressions.len();
             den_exp.keep = Some(true);
-            if E::is_nop(&den_exp) {
-                panic!("nop {:?}", format!("{:?}", den_exp));
-            }
-
+            //println!("den_exp: {} {}", i, den_exp);
             pil.expressions.push(den_exp);
 
             let num = E::exp(self.pu_ctx[i].num_id, None);
@@ -193,10 +179,6 @@ impl StarkInfo {
             let mut c2 = E::sub(&E::mul(&zp, &den), &E::mul(&z, &num));
             c2.deg = 2;
             self.pu_ctx[i].c2_id = pil.expressions.len();
-            if E::is_nop(&c2) {
-                panic!("nop {:?}", format!("{:?}", c2));
-            }
-
             pil.expressions.push(c2);
 
             pil.polIdentities.push(PolIdentity {
@@ -215,6 +197,7 @@ impl StarkInfo {
             Some(x) => x.clone(),
             _ => Vec::new(),
         };
+        println!("generate_permutation_Z size: {}", ppi.len());
 
         for (i, _pi) in ppi.iter().enumerate() {
             self.pe_ctx[i].z_id = pil.nCommitments;
@@ -292,6 +275,7 @@ impl StarkInfo {
             Some(x) => x.clone(),
             _ => Vec::new(),
         };
+        println!("generate_connections_Z size: {}", cii.len());
 
         for ci in cii.iter() {
             let ci_pols = match &ci.pols {

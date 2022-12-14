@@ -54,9 +54,18 @@ MerkleHash performance(128 cores, 1T RAM):
 
 |height|n_pols| starky(s)|pil-stark(s)|
 |---|---|---|---|
-|2^24|10|12.04| 74.77|
+|2^24|10|11.04| 74.77|
 |2^24|100| 103.12| 582 |
 |2^24|600| 611.11| -|
+
+
+Comaprison with C++ prover:
+
+|height|n_pols| starky(s)|pilstark(s)|
+|---|---|---|---|
+|2^24|12|11.1 | 8.24507 |
+|2^24|79| 66.01 |49.9154 |
+
 
 * Polynomial evaluation
 
