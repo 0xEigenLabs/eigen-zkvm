@@ -231,15 +231,15 @@ impl<'a> StarkProof {
         let tree1 = extend_and_merkelize(&mut ctx, starkinfo, "cm1_n").unwrap();
         tree1.to_f3g(&mut ctx.cm1_2ns);
         let root: Fr = tree1.root().into();
-        println!("tree1 root: {:?}", crate::helper::fr_to_biguint(&root));
-        println!("tree1[0] {}", ctx.cm1_2ns[0]);
+        //println!("tree1 root: {:?}", crate::helper::fr_to_biguint(&root));
+        //println!("tree1[0] {}", ctx.cm1_2ns[0]);
         transcript.put(&vec![root])?;
         // 2.- Caluculate plookups h1 and h2
         ctx.challenges[0] = transcript.get_field(); //u
         ctx.challenges[1] = transcript.get_field(); //defVal
 
-        println!("challenges[0] {}", ctx.challenges[0]);
-        println!("challenges[1] {}", ctx.challenges[1]);
+        //println!("challenges[0] {}", ctx.challenges[0]);
+        //println!("challenges[1] {}", ctx.challenges[1]);
 
         //TODO parallel execution
         calculate_exps(&mut ctx, starkinfo, &program.step2prev, "n");
@@ -259,10 +259,10 @@ impl<'a> StarkProof {
         tree2.to_f3g(&mut ctx.cm2_2ns);
         let root: Fr = tree2.root().into();
         transcript.put(&vec![root])?;
-        println!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
-        if ctx.cm2_2ns.len() > 0 {
-            println!("tree2[0] {}", ctx.cm2_2ns[0]);
-        }
+        //println!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
+        //if ctx.cm2_2ns.len() > 0 {
+        //    println!("tree2[0] {}", ctx.cm2_2ns[0]);
+        //}
 
         // 3.- Compute Z polynomials
         ctx.challenges[2] = transcript.get_field(); // gamma
@@ -309,10 +309,10 @@ impl<'a> StarkProof {
         let root: Fr = tree3.root().into();
         transcript.put(&vec![root])?;
 
-        println!("tree3 root: {:?}", crate::helper::fr_to_biguint(&root));
-        if ctx.cm3_2ns.len() > 0 {
-            println!("tree3[0] {}", ctx.cm3_2ns[0]);
-        }
+        //println!("tree3 root: {:?}", crate::helper::fr_to_biguint(&root));
+        //if ctx.cm3_2ns.len() > 0 {
+        //    println!("tree3[0] {}", ctx.cm3_2ns[0]);
+        //}
         // 4. Compute C Polynomial
         ctx.challenges[4] = transcript.get_field(); // vc
                                                     //println!("challenges[4] {}", ctx.challenges[4]);
@@ -356,16 +356,16 @@ impl<'a> StarkProof {
         let root: Fr = tree4.root().into();
         transcript.put(&vec![root])?;
 
-        println!("tree4 root: {:?}", crate::helper::fr_to_biguint(&root));
-        if ctx.cm4_2ns.len() > 0 {
-            println!("tree4[0] {}", ctx.cm4_2ns[0]);
-        }
+        //println!("tree4 root: {:?}", crate::helper::fr_to_biguint(&root));
+        //if ctx.cm4_2ns.len() > 0 {
+        //    println!("tree4[0] {}", ctx.cm4_2ns[0]);
+        //}
 
         ///////////
         // 5. Compute FRI Polynomial
         ///////////
         ctx.challenges[7] = transcript.get_field(); // xi
-        println!("ctx.challenges[7] {}", ctx.challenges[7]);
+        //println!("ctx.challenges[7] {}", ctx.challenges[7]);
 
         let mut LEv = vec![F3G::ZERO; ctx.N];
         let mut LpEv = vec![F3G::ZERO; ctx.N];
@@ -471,7 +471,7 @@ impl<'a> StarkProof {
                 ctx.f_2ns[i * 3 + 2].to_be(),
             );
         }
-        println!("friPol {} {}", friPol.len(), N << extendBits);
+        //println!("friPol {} {}", friPol.len(), N << extendBits);
 
         let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
             vec![
@@ -531,7 +531,7 @@ impl<'a> StarkProof {
             sn = sn * sn;
         }
         let mut ZHInv = vec![F3G::ZERO; 1 << extendBits];
-        println!("extendBits: {}", 1 << extendBits);
+        //println!("extendBits: {}", 1 << extendBits);
         for i in 0..(1 << extendBits) {
             ZHInv[i] = F3G::inv(sn * w - F3G::ONE);
             w = w * MG.0[extendBits];
@@ -543,13 +543,13 @@ impl<'a> StarkProof {
 fn set_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: &usize, pol: Vec<F3G>) {
     let id_pol = *id_pol;
     let p = get_pol_ref(ctx, starkinfo, id_pol);
-    println!(
-        "set_pol {:?} {} {} {}",
-        p.deg,
-        p.size,
-        p.dim,
-        p.buffer.len()
-    );
+    //println!(
+    //    "set_pol {:?} {} {} {}",
+    //    p.deg,
+    //    p.size,
+    //    p.dim,
+    //    p.buffer.len()
+    //);
     if p.dim == 1 {
         for i in 0..p.deg {
             p.buffer[(p.offset + i * p.size)] = pol[i];
@@ -657,14 +657,14 @@ pub fn extend_and_merkelize(
     let n_pols = starkinfo.map_sectionsN.get(section_name);
     let mut result = vec![F3G::ZERO; (1 << nBitsExt) * n_pols];
     let p = ctx.get_mut(section_name);
-    println!(
-        "extend_and_merkelize: p.len {} nBits {} nBitsExt {} n_pols {}",
-        p.len(),
-        nBits,
-        nBitsExt,
-        n_pols
-    );
-    crate::helper::pretty_print_array(&p);
+    //println!(
+    //    "extend_and_merkelize: p.len {} nBits {} nBitsExt {} n_pols {}",
+    //    p.len(),
+    //    nBits,
+    //    nBitsExt,
+    //    n_pols
+    //);
+    //crate::helper::pretty_print_array(&p);
     interpolate(p, n_pols, nBits, &mut result, nBitsExt);
     let mut p_be = vec![BaseElement::ZERO; result.len()];
     p_be.par_iter_mut()
@@ -672,7 +672,7 @@ pub fn extend_and_merkelize(
         .for_each(|(be_out, f3g_in)| {
             *be_out = f3g_in.to_be();
         });
-    crate::helper::pretty_print_array(&p_be);
+    //crate::helper::pretty_print_array(&p_be);
     Ok(MerkleTree::merkelize(p_be, n_pols, 1 << nBitsExt)?)
 }
 
@@ -708,10 +708,10 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     let N = if dom == "n" { ctx.N } else { ctx.Next };
     for i in 0..next {
         c_first.eval(ctx, i);
-        println!("ctx.q_2ns[3*i] {} ", ctx.q_2ns[3 * i]);
-        for i in 0..ctx.tmp.len() {
-            println!("tmp@{} {}", i, ctx.tmp[i]);
-        }
+        //println!("ctx.q_2ns[3*i] {} ", ctx.q_2ns[3 * i]);
+        //for i in 0..ctx.tmp.len() {
+        //    println!("tmp@{} {}", i, ctx.tmp[i]);
+        //}
     }
 
     for i in next..(N - next) {
