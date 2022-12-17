@@ -242,7 +242,7 @@ impl<'a> StarkProof {
         println!("challenges[1] {}", ctx.challenges[1]);
 
         //TODO parallel execution
-        calculate_exps(&mut ctx, starkinfo, &program.step2prev, "2ns");
+        calculate_exps(&mut ctx, starkinfo, &program.step2prev, "n");
 
         for pu in starkinfo.pu_ctx.iter() {
             let f_pol = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.f_exp_id]);
@@ -259,10 +259,10 @@ impl<'a> StarkProof {
         tree2.to_f3g(&mut ctx.cm2_2ns);
         let root: Fr = tree2.root().into();
         transcript.put(&vec![root])?;
-        //println!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
-        //if ctx.cm2_2ns.len() > 0 {
-        //    println!("tree2[0] {}", ctx.cm2_2ns[0]);
-        //}
+        println!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
+        if ctx.cm2_2ns.len() > 0 {
+            println!("tree2[0] {}", ctx.cm2_2ns[0]);
+        }
 
         // 3.- Compute Z polynomials
         ctx.challenges[2] = transcript.get_field(); // gamma
@@ -309,10 +309,10 @@ impl<'a> StarkProof {
         let root: Fr = tree3.root().into();
         transcript.put(&vec![root])?;
 
-        //println!("tree3 root: {:?}", crate::helper::fr_to_biguint(&root));
-        //if ctx.cm3_2ns.len() > 0 {
-        //    println!("tree3[0] {}", ctx.cm3_2ns[0]);
-        //}
+        println!("tree3 root: {:?}", crate::helper::fr_to_biguint(&root));
+        if ctx.cm3_2ns.len() > 0 {
+            println!("tree3[0] {}", ctx.cm3_2ns[0]);
+        }
         // 4. Compute C Polynomial
         ctx.challenges[4] = transcript.get_field(); // vc
                                                     //println!("challenges[4] {}", ctx.challenges[4]);
@@ -458,7 +458,6 @@ impl<'a> StarkProof {
 
             x = x * MG.0[ctx.nbits + extendBits];
         }
-
         calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns");
 
         let mut friPol = vec![F3G::ZERO; N << extendBits];
@@ -659,12 +658,13 @@ pub fn extend_and_merkelize(
     let mut result = vec![F3G::ZERO; (1 << nBitsExt) * n_pols];
     let p = ctx.get_mut(section_name);
     println!(
-        "p.len {} nBits {} nBitsExt {} n_pols {}",
+        "extend_and_merkelize: p.len {} nBits {} nBitsExt {} n_pols {}",
         p.len(),
         nBits,
         nBitsExt,
         n_pols
     );
+    crate::helper::pretty_print_array(&p);
     interpolate(p, n_pols, nBits, &mut result, nBitsExt);
     let mut p_be = vec![BaseElement::ZERO; result.len()];
     p_be.par_iter_mut()
@@ -672,6 +672,7 @@ pub fn extend_and_merkelize(
         .for_each(|(be_out, f3g_in)| {
             *be_out = f3g_in.to_be();
         });
+    crate::helper::pretty_print_array(&p_be);
     Ok(MerkleTree::merkelize(p_be, n_pols, 1 << nBitsExt)?)
 }
 
@@ -694,13 +695,9 @@ pub fn merkelize(
 
 pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
-
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
-
-    println!("compile_code ctx.first {}", c_first);
-
+    //println!("compile_code ctx.first {}", c_first);
     let _c_i = compile_code(ctx, starkinfo, &seg.first, dom, false);
-
     let _c_last = compile_code(ctx, starkinfo, &seg.first, dom, false);
 
     let next = if dom == "n" {
@@ -709,7 +706,6 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
         1 << (ctx.nbits_ext - ctx.nbits)
     };
     let N = if dom == "n" { ctx.N } else { ctx.Next };
-    println!("next {}, N {}", next, N);
     for i in 0..next {
         c_first.eval(ctx, i);
         println!("ctx.q_2ns[3*i] {} ", ctx.q_2ns[3 * i]);

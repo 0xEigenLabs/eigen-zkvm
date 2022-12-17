@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 use crate::errors::Result;
-use crate::field_bn128::Fr;
+use crate::field_bn128::{Fr, FrRepr};
 use crate::poseidon_bn128_opt::Poseidon;
 use crate::ElementDigest;
 use ff::*;
@@ -71,16 +71,21 @@ impl LinearHashBN128 {
     /// convert to BN128 in montgomery
     #[inline(always)]
     pub fn to_bn128_mont(st64: [BaseElement; 4]) -> [BaseElement; 4] {
-        //println!(
-        //    "to_bn128_mont {} {} {} {}",
-        //    st64[0], st64[1], st64[2], st64[3]
-        //);
         let bn: Fr = ElementDigest::new(st64).into();
-        //println!("fr {}", crate::helper::fr_to_biguint(&bn));
-        // FIXME
         let bn_mont = match Fr::from_repr(bn.into_raw_repr()) {
             Ok(x) => x,
-            _ => Fr(bn.into_raw_repr()),
+            _ => {
+                //cornor case: x > MODULUS
+                let mut r = Fr(bn.into_raw_repr());
+                const R2: FrRepr = FrRepr([
+                    1997599621687373223u64,
+                    6052339484930628067u64,
+                    10108755138030829701u64,
+                    150537098327114917u64,
+                ]);
+                r.mul_assign(&Fr(R2));
+                r
+            }
         };
         ElementDigest::from(&bn_mont).into()
     }

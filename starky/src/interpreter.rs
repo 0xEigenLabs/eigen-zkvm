@@ -216,7 +216,7 @@ pub fn compile_code(
         let mut src: Vec<Expr> = Vec::new();
         for k in 0..code[j].src.len() {
             src.push(get_ref(ctx, starkinfo, &code[j].src[k], dom, next, modulas));
-            println!("get_ref_src: {}", src[src.len() - 1]);
+            //println!("get_ref_src: {}", src[src.len() - 1]);
         }
 
         let exp = match (&code[j].op).as_str() {
@@ -279,7 +279,7 @@ fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
     match addr.as_str() {
         "tmp" | "cm1_n" | "cm1_2ns" | "cm2_n" | "cm2_2ns" | "cm3_n" | "cm3_2ns" | "cm4_n"
         | "cm4_2ns" | "q_2ns" | "f_2ns" | "publics" | "challenge" | "exps_n" | "exps_2ns"
-        | "const_n" | "const_2ns" | "evals" | "x_n" | "x_2ns" => {
+        | "const_n" | "const_2ns" | "evals" | "x_n" | "x_2ns" | "tmpexp_n" => {
             let id = get_i(expr, arg_i);
             let ctx_section = ctx.get_mut(addr.as_str()); // OPT: readonly ctx
             let dim = match expr.syms.len() {
@@ -532,7 +532,7 @@ fn eval_map(
     modulas: usize,
 ) -> Expr {
     let p = &starkinfo.var_pol_map[pol_id];
-    println!("eval_map: {:?}", p);
+    //println!("eval_map: {:?}", p);
     let offset = Expr::from(F3G::from(p.section_pos));
     let size = Expr::from(F3G::from(starkinfo.map_sectionsN.get(&p.section)));
     let next = Expr::from(F3G::from(next));

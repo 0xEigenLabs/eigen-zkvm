@@ -16,16 +16,16 @@ impl StarkInfo {
         stark_struct: &StarkStruct,
         program: &mut Program,
     ) -> Result<()> {
-        //println!("generate_constraint_polynomial ctx begin: {:?}", ctx);
+        //println!("generate_constraint_polynomial ctx begin: {} {:?}",pil, ctx);
 
         let vc = E::challenge("vc".to_string());
         let mut c_exp = E::nop();
         for pi in pil.polIdentities.iter() {
             let e = E::exp(pi.e, None);
-            if E::is_nop(&c_exp) {
-                c_exp = e;
-            } else {
+            if !E::is_nop(&c_exp) {
                 c_exp = E::add(&E::mul(&vc, &c_exp), &e);
+            } else {
+                c_exp = e;
             }
         }
         let (im_exps, q_deg) = calculate_im_pols(
@@ -43,20 +43,23 @@ impl StarkInfo {
         if im_exps.is_some() {
             self.im_exps = im_exps.unwrap();
         }
+        //println!("im_exps: {:?} q_deg {}", self.im_exps, self.q_deg);
 
         for k in self.im_exps.keys() {
             self.im_exps_list.push(*k);
         }
+        // NOTE: sort im_exps_list due to map is not ordered
+        self.im_exps_list.sort();
+
         self.im_exp2cm = HashMap::new();
         for i in 0..self.im_exps_list.len() {
             self.im_exp2cm
                 .insert(self.im_exps_list[i], pil.nCommitments);
             pil.nCommitments += 1;
 
-            let mut value = pil.expressions[self.im_exps_list[i]].clone();
-            value.op = "cm".to_string();
-            value.id = Some(pil.nCommitments - 1);
-            let e = Expression::new("sub".to_string(), 0, None, None, Some(vec![value]));
+            let lhs = pil.expressions[self.im_exps_list[i]].clone();
+            let rhs = Expression::new("cm".to_string(), 0, Some(pil.nCommitments - 1), None, None);
+            let e = Expression::new("sub".to_string(), 0, None, None, Some(vec![lhs, rhs]));
             if !E::is_nop(&c_exp) {
                 c_exp = E::add(&E::mul(&vc, &c_exp), &e);
             } else {
@@ -90,11 +93,10 @@ impl StarkInfo {
         //);
 
         for (k, v) in self.im_exps.iter() {
-            ctx2ns.calculated.exps.insert(*k, *v);
+            ctx2ns.calculated.insert(("exps", *k), *v);
+            ctx2ns.calculated.insert(("expsPrime", *k), *v);
         }
-        for (k, v) in self.im_exps.iter() {
-            ctx2ns.calculated.exps_prime.insert(*k, *v);
-        }
+        //println!("ctx2ns: {} {:?}", pil, ctx2ns);
         pil_code_gen(ctx2ns, pil, self.c_exp, false, "", 0)?;
 
         let sz = ctx2ns.code.len() - 1;

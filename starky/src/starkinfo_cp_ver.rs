@@ -29,7 +29,6 @@ impl StarkInfo {
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF, _pil: &mut PIL| {
             let p = if r.prime { 1 } else { 0 };
-            let id = r.id;
             match r.type_.as_str() {
                 "exp" => {
                     let idx = ctx.starkinfo.im_exps_list.iter().position(|&s| s == r.id);
@@ -39,11 +38,16 @@ impl StarkInfo {
                         r.id = ctx.starkinfo.im_exp2cm[&ctx.starkinfo.im_exps_list[idx]];
 
                         // go to cm branch, TODO
-                        if ctx.starkinfo.ev_idx.get(r.type_.as_str(), p, id).is_none() {
+                        if ctx
+                            .starkinfo
+                            .ev_idx
+                            .get(r.type_.as_str(), p, r.id)
+                            .is_none()
+                        {
                             ctx.starkinfo.ev_idx.set(
                                 r.type_.as_str(),
                                 p,
-                                id,
+                                r.id,
                                 ctx.starkinfo.ev_map.len(),
                             );
                             ctx.starkinfo.ev_map.push(Node::new(
@@ -56,25 +60,30 @@ impl StarkInfo {
                             ));
                         }
                         r.prime = false; // NOTE: js: delete r.prime
-                        r.id = *ctx.starkinfo.ev_idx.get(r.type_.as_str(), p, id).unwrap();
+                        r.id = *ctx.starkinfo.ev_idx.get(r.type_.as_str(), p, r.id).unwrap();
                         r.type_ = "eval".to_string();
                     } else {
                         let p = if r.prime { 1 } else { 0 };
-                        if ctx.exp_map.get(&(p, id)).is_none() {
-                            ctx.exp_map.insert((p, id), ctx.tmp_used);
+                        if ctx.exp_map.get(&(p, r.id)).is_none() {
+                            ctx.exp_map.insert((p, r.id), ctx.tmp_used);
                             ctx.tmp_used += 1;
                         }
                         r.type_ = "tmp".to_string();
                         r.exp_id = r.id;
-                        r.id = *ctx.exp_map.get(&(p, id)).unwrap();
+                        r.id = *ctx.exp_map.get(&(p, r.id)).unwrap();
                     }
                 }
                 "cm" | "const" => {
-                    if ctx.starkinfo.ev_idx.get(r.type_.as_str(), p, id).is_none() {
+                    if ctx
+                        .starkinfo
+                        .ev_idx
+                        .get(r.type_.as_str(), p, r.id)
+                        .is_none()
+                    {
                         ctx.starkinfo.ev_idx.set(
                             r.type_.as_str(),
                             p,
-                            id,
+                            r.id,
                             ctx.starkinfo.ev_map.len(),
                         );
                         ctx.starkinfo.ev_map.push(Node::new(
@@ -87,7 +96,7 @@ impl StarkInfo {
                         ));
                     }
                     r.prime = false; // NOTE: js: delete r.prime
-                    r.id = *ctx.starkinfo.ev_idx.get(r.type_.as_str(), p, id).unwrap();
+                    r.id = *ctx.starkinfo.ev_idx.get(r.type_.as_str(), p, r.id).unwrap();
                     r.type_ = "eval".to_string();
                 }
                 "number" | "challenge" | "public" | "tmp" | "Z" | "x" | "eval" => {}

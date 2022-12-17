@@ -4,7 +4,7 @@ use crate::expressionops::ExpressionOps as E;
 use crate::helper::get_ks;
 use crate::starkinfo::PCCTX;
 use crate::starkinfo::{Program, StarkInfo};
-use crate::starkinfo_codegen::{build_code, pil_code_gen, Calculated, Context};
+use crate::starkinfo_codegen::{build_code, pil_code_gen, Context};
 use crate::types::{PolIdentity, PIL};
 
 impl StarkInfo {
@@ -21,7 +21,7 @@ impl StarkInfo {
 
         program.step3prev = build_code(ctx, pil);
         //println!("step3prev {}", program.step3prev);
-        ctx.calculated = Calculated::new();
+        ctx.calculated.clear();
         Ok(())
     }
 
@@ -101,20 +101,20 @@ impl StarkInfo {
 
     // paper: https://eprint.iacr.org/2020/315.pdf
     pub fn generate_plonk_Z(&mut self, ctx: &mut Context, pil: &mut PIL) -> Result<()> {
-        let pui = pil.plookupIdentities.clone();
         //println!("generate_plonk_Z size: {}", pui.len());
-        for (i, _pu) in pui.iter().enumerate() {
-            self.pu_ctx[i].z_id = pil.nCommitments;
+        for i in 0..pil.plookupIdentities.len() {
+            let pu_ctx = &mut self.pu_ctx[i];
+            pu_ctx.z_id = pil.nCommitments;
             pil.nCommitments += 1;
 
-            let h1 = E::cm(self.pu_ctx[i].h1_id, None);
-            let h2 = E::cm(self.pu_ctx[i].h2_id, None);
-            let h1p = E::cm(self.pu_ctx[i].h1_id, Some(true));
-            let f = E::exp(self.pu_ctx[i].f_exp_id, None);
-            let t = E::exp(self.pu_ctx[i].t_exp_id, None);
-            let tp = E::exp(self.pu_ctx[i].t_exp_id, Some(true));
-            let z = E::cm(self.pu_ctx[i].z_id, None);
-            let zp = E::cm(self.pu_ctx[i].z_id, Some(true));
+            let h1 = E::cm(pu_ctx.h1_id, None);
+            let h2 = E::cm(pu_ctx.h2_id, None);
+            let h1p = E::cm(pu_ctx.h1_id, Some(true));
+            let f = E::exp(pu_ctx.f_exp_id, None);
+            let t = E::exp(pu_ctx.t_exp_id, None);
+            let tp = E::exp(pu_ctx.t_exp_id, Some(true));
+            let z = E::cm(pu_ctx.z_id, None);
+            let zp = E::cm(pu_ctx.z_id, Some(true));
 
             if pil.references.get(&"Global.L1".to_string()).is_none() {
                 panic!("Global.L1 must be defined");
@@ -124,10 +124,10 @@ impl StarkInfo {
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 
-            self.pu_ctx[i].c1_id = pil.expressions.len();
+            pu_ctx.c1_id = pil.expressions.len();
             pil.expressions.push(c1);
             pil.polIdentities.push(PolIdentity {
-                e: self.pu_ctx[i].c1_id,
+                e: pu_ctx.c1_id,
                 line: 0,
                 fileName: "".to_string(),
             });
@@ -150,7 +150,7 @@ impl StarkInfo {
             num_exp.idQ = Some(pil.nQ);
             pil.nQ += 1;
             num_exp.keep = Some(true);
-            self.pu_ctx[i].num_id = pil.expressions.len();
+            pu_ctx.num_id = pil.expressions.len();
             //println!("num_exp: {} {}", i, num_exp);
             pil.expressions.push(num_exp);
 
@@ -168,26 +168,26 @@ impl StarkInfo {
 
             den_exp.idQ = Some(pil.nQ);
             pil.nQ += 1;
-            self.pu_ctx[i].den_id = pil.expressions.len();
+            pu_ctx.den_id = pil.expressions.len();
             den_exp.keep = Some(true);
             //println!("den_exp: {} {}", i, den_exp);
             pil.expressions.push(den_exp);
 
-            let num = E::exp(self.pu_ctx[i].num_id, None);
-            let den = E::exp(self.pu_ctx[i].den_id, None);
+            let num = E::exp(pu_ctx.num_id, None);
+            let den = E::exp(pu_ctx.den_id, None);
 
             let mut c2 = E::sub(&E::mul(&zp, &den), &E::mul(&z, &num));
             c2.deg = 2;
-            self.pu_ctx[i].c2_id = pil.expressions.len();
+            pu_ctx.c2_id = pil.expressions.len();
             pil.expressions.push(c2);
 
             pil.polIdentities.push(PolIdentity {
-                e: self.pu_ctx[i].c2_id.clone(),
+                e: pu_ctx.c2_id,
                 line: 0,
                 fileName: "".to_string(),
             });
-            pil_code_gen(ctx, pil, self.pu_ctx[i].num_id, false, "", 0)?;
-            pil_code_gen(ctx, pil, self.pu_ctx[i].den_id, false, "", 0)?;
+            pil_code_gen(ctx, pil, pu_ctx.num_id, false, "", 0)?;
+            pil_code_gen(ctx, pil, pu_ctx.den_id, false, "", 0)?;
         }
         Ok(())
     }

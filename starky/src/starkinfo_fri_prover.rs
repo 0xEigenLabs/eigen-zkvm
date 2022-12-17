@@ -26,12 +26,11 @@ impl StarkInfo {
         //println!("fri_exp {}", fri_exp);
         let mut fri1_exp = E::nop();
         let mut fri2_exp = E::nop();
-        //let xi = E::challenge("xi".to_string());
-
+        //println!("ev_map: {}", serde_json::to_string_pretty(&self.ev_map).unwrap());
         for (i, ev) in self.ev_map.iter().enumerate() {
             let mut fri_exp = match ev.prime {
                 true => fri2_exp.clone(),
-                _ => fri1_exp.clone(),
+                false => fri1_exp.clone(),
             };
             let ev_id = ev.id;
             let e = match ev.type_.as_str() {
@@ -40,10 +39,10 @@ impl StarkInfo {
                 "const" => E::const_(ev_id, None),
                 _ => panic!("Invalid exp op {}", ev.type_),
             };
-            if E::is_nop(&fri_exp) {
-                fri_exp = E::sub(&e, &E::eval(i));
-            } else {
+            if !E::is_nop(&fri_exp) {
                 fri_exp = E::add(&E::mul(&fri_exp, &vf2), &E::sub(&e, &E::eval(i)));
+            } else {
+                fri_exp = E::sub(&e, &E::eval(i));
             }
 
             if ev.prime {

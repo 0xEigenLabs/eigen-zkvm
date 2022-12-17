@@ -2,8 +2,8 @@
 use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps as E;
 use crate::starkinfo_codegen::{
-    build_code, iterate_code, pil_code_gen, Calculated, Context, ContextF, EVIdx, Index, IndexVec,
-    Node, PolType, Segment,
+    build_code, iterate_code, pil_code_gen, Context, ContextF, EVIdx, Index, IndexVec, Node,
+    PolType, Segment,
 };
 use crate::types::{Expression, Public, StarkStruct, PIL};
 use serde::Serialize;
@@ -115,7 +115,7 @@ impl StarkInfo {
             n_constants: pil.nConstants,
             n_publics: pil.publics.len(),
             exp2pol: HashMap::new(),
-            n_cm1: pil.nCommitments,
+            n_cm1: 0,
             n_cm2: 0,
             n_cm3: 0,
             n_cm4: 0,
@@ -159,28 +159,20 @@ impl StarkInfo {
             verifier_query_code: Segment::default(),
         };
 
-        let mut ctx = Context {
-            calculated: Calculated::new(),
-            tmp_used: 0,
-            code: vec![],
-            calculated_mark: HashMap::new(),
-            exp_id: 0,
-        };
-        info.generate_pubulic_calculators(&mut ctx, pil, &mut program)?;
+        info.generate_pubulic_calculators(pil, &mut program)?;
+        info.n_cm1 = pil.nCommitments;
 
         let mut ctx = Context {
-            calculated: Calculated::new(),
             tmp_used: 0,
             code: vec![],
-            calculated_mark: HashMap::new(),
+            calculated: HashMap::new(),
             exp_id: 0,
         };
 
         let mut ctx2ns = Context {
-            calculated: Calculated::new(),
             tmp_used: 0,
             code: vec![],
-            calculated_mark: HashMap::new(),
+            calculated: HashMap::new(),
             exp_id: 0,
         };
 
@@ -200,45 +192,32 @@ impl StarkInfo {
         )?;
 
         let mut ctx = Context {
-            calculated: Calculated {
-                exps: info.im_exps.clone(),
-                exps_prime: info.im_exps.clone(),
-            },
             tmp_used: 0,
             code: vec![],
-            calculated_mark: HashMap::new(),
+            calculated: HashMap::new(),
             exp_id: 0,
         };
+        for (k, v) in info.im_exps.iter() {
+            ctx.calculated.insert(("exps", *k), *v);
+            ctx.calculated.insert(("expsPrime", *k), *v);
+        }
+
         println!("generate_constraint_polynomial_verifier");
         info.generate_constraint_polynomial_verifier(&mut ctx, pil, &mut program)?;
         println!("generate_fri_polynomial");
         info.generate_fri_polynomial(&mut ctx2ns, pil, &mut program)?;
 
         let mut ctx = Context {
-            calculated: Calculated {
-                exps: info.im_exps.clone(),
-                exps_prime: info.im_exps.clone(),
-            },
             tmp_used: 0,
             code: vec![],
-            calculated_mark: HashMap::new(),
+            calculated: HashMap::new(),
             exp_id: 0,
         };
         println!("generate_fri_verifier");
         info.generate_fri_verifier(&mut ctx, pil, &mut program)?;
 
-        let mut ctx = Context {
-            calculated: Calculated {
-                exps: info.im_exps.clone(),
-                exps_prime: info.im_exps.clone(),
-            },
-            tmp_used: 0,
-            code: vec![],
-            calculated_mark: HashMap::new(),
-            exp_id: 0,
-        };
         println!("map");
-        info.map(&mut ctx, pil, &stark_struct, &mut program)?;
+        info.map(pil, &stark_struct, &mut program)?;
 
         info.publics = pil.publics.clone();
         Ok((info, program))
@@ -246,7 +225,6 @@ impl StarkInfo {
 
     pub fn generate_pubulic_calculators(
         &mut self,
-        ctx: &mut Context,
         pil: &mut PIL,
         program: &mut Program,
     ) -> Result<()> {
@@ -254,8 +232,14 @@ impl StarkInfo {
         //println!("generate_pubulic_calculators: publics as input: {:?}", publics);
         for p in publics.iter() {
             if p.polType.as_str() == "imP" {
-                pil_code_gen(ctx, pil, p.polId, false, "", 0)?;
-                let mut segment = build_code(ctx, pil);
+                let mut ctx = Context {
+                    tmp_used: 0,
+                    code: vec![],
+                    calculated: HashMap::new(),
+                    exp_id: 0,
+                };
+                pil_code_gen(&mut ctx, pil, p.polId, false, "", 0)?;
+                let mut segment = build_code(&mut ctx, pil);
 
                 let mut ctx_f = ContextF {
                     exp_map: HashMap::new(),
@@ -285,7 +269,7 @@ impl StarkInfo {
                 //for pp in program.publics_code.iter() {
                 //    println!("{}", pp);
                 //}
-                ctx.calculated = Calculated::new();
+                ctx.calculated.clear(); // TODO: useless
             }
         }
         Ok(())
@@ -323,10 +307,6 @@ impl StarkInfo {
 
             let t_exp_id = pil.expressions.len();
             t_exp.keep = Some(true);
-
-            if E::is_nop(&t_exp) {
-                panic!("nop {}", format!("{:?}", t_exp));
-            }
             pil.expressions.push(t_exp);
 
             let mut f_exp = E::nop();
@@ -349,9 +329,6 @@ impl StarkInfo {
 
             let f_exp_id = pil.expressions.len();
             f_exp.keep = Some(true);
-            if E::is_nop(&f_exp) {
-                panic!("nop {}", format!("{:?}", f_exp));
-            }
             pil.expressions.push(f_exp);
 
             pil_code_gen(ctx, pil, f_exp_id, false, "", 0)?;
@@ -378,7 +355,7 @@ impl StarkInfo {
         program.step2prev = build_code(ctx, pil);
         //println!("pu_ctx {:?}", self.pu_ctx);
         //println!("step2prev {}", program.step2prev);
-        ctx.calculated = Calculated::new();
+        ctx.calculated.clear();
         self.n_cm2 = pil.nCommitments - self.n_cm1;
         //println!("n_cm2 {}", self.n_cm2);
         Ok(())
