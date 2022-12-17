@@ -16,19 +16,18 @@ impl StarkInfo {
         stark_struct: &StarkStruct,
         program: &mut Program,
     ) -> Result<()> {
-        //println!("generate_constraint_polynomial ctx begin: {:?}", ctx);
+        //println!("generate_constraint_polynomial ctx begin: {} {:?}",pil, ctx);
 
         let vc = E::challenge("vc".to_string());
         let mut c_exp = E::nop();
         for pi in pil.polIdentities.iter() {
             let e = E::exp(pi.e, None);
-            if E::is_nop(&c_exp) {
-                c_exp = e;
-            } else {
+            if !E::is_nop(&c_exp) {
                 c_exp = E::add(&E::mul(&vc, &c_exp), &e);
+            } else {
+                c_exp = e;
             }
         }
-        //println!("c_exp init {}", c_exp);
         let (im_exps, q_deg) = calculate_im_pols(
             pil,
             &c_exp,
@@ -38,27 +37,29 @@ impl StarkInfo {
         if q_deg > 0 {
             self.q_deg = q_deg as usize;
         }
-        println!("q_deg: {}", self.q_deg);
+        //println!("q_deg: {}", self.q_deg);
 
         self.im_exps = HashMap::new();
         if im_exps.is_some() {
             self.im_exps = im_exps.unwrap();
         }
-        //let m = self.im_exps.keys();
+        //println!("im_exps: {:?} q_deg {}", self.im_exps, self.q_deg);
 
         for k in self.im_exps.keys() {
             self.im_exps_list.push(*k);
         }
+        // NOTE: sort im_exps_list due to map is not ordered
+        self.im_exps_list.sort();
+
         self.im_exp2cm = HashMap::new();
         for i in 0..self.im_exps_list.len() {
             self.im_exp2cm
                 .insert(self.im_exps_list[i], pil.nCommitments);
             pil.nCommitments += 1;
 
-            let mut value = pil.expressions[self.im_exps_list[i]].clone();
-            value.op = "cm".to_string();
-            value.id = Some(pil.nCommitments - 1);
-            let e = Expression::new("sub".to_string(), 0, None, None, Some(vec![value]));
+            let lhs = pil.expressions[self.im_exps_list[i]].clone();
+            let rhs = Expression::new("cm".to_string(), 0, Some(pil.nCommitments - 1), None, None);
+            let e = Expression::new("sub".to_string(), 0, None, None, Some(vec![lhs, rhs]));
             if !E::is_nop(&c_exp) {
                 c_exp = E::add(&E::mul(&vc, &c_exp), &e);
             } else {
@@ -82,7 +83,6 @@ impl StarkInfo {
         }
 
         for i in 0..self.im_exps_list.len() {
-            // pilCodeGen(ctx, res.imExpsList[i]);
             pil_code_gen(ctx, pil, self.im_exps_list[i], false, "", 0)?;
         }
 
@@ -93,11 +93,10 @@ impl StarkInfo {
         //);
 
         for (k, v) in self.im_exps.iter() {
-            ctx2ns.calculated.exps.insert(*k, *v);
+            ctx2ns.calculated.insert(("exps", *k), *v);
+            ctx2ns.calculated.insert(("expsPrime", *k), *v);
         }
-        for (k, v) in self.im_exps.iter() {
-            ctx2ns.calculated.exps_prime.insert(*k, *v);
-        }
+        //println!("ctx2ns: {} {:?}", pil, ctx2ns);
         pil_code_gen(ctx2ns, pil, self.c_exp, false, "", 0)?;
 
         let sz = ctx2ns.code.len() - 1;
@@ -130,10 +129,10 @@ fn _calculate_im_pols(
     max_deg: usize,
     abs_max: usize,
 ) -> (Option<HashMap<usize, bool>>, i32) {
-    println!(
-        "im_expressions: {:?}, exp: {}, max_deg {}",
-        im_expressions, exp, max_deg
-    );
+    //println!(
+    //    "im_expressions: {:?}, exp: {}, max_deg {}",
+    //    im_expressions, exp, max_deg
+    //);
     if im_expressions.is_none() {
         return (None, -1);
     }
@@ -232,15 +231,11 @@ pub fn calculate_im_pols(
     _exp: &Expression,
     max_deg: usize,
 ) -> Result<(Option<HashMap<usize, bool>>, i32)> {
-    println!("calculate_im_pols: {} {}", _exp, max_deg);
+    //println!("calculate_im_pols: {} {}", _exp, max_deg);
 
     let im_expressions: HashMap<usize, bool> = HashMap::new();
-    //let abs_max = max_deg;
-
     let (re, rd) = _calculate_im_pols(pil, _exp, &Some(im_expressions), max_deg, max_deg);
 
-    //console.log(`maxDeg: ${maxDeg}, nIm: ${Object.keys(re).length}, d: ${rd}`);
-
-    println!("calculate_im_pols: return {:?} {}", re, rd - 1);
+    //println!("maxDeg: {}, nIm: {}, d: {}", max_deg, re.as_ref().unwrap().len(), rd);
     Ok((re, rd - 1))
 }

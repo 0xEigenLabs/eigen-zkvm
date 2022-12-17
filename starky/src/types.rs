@@ -159,6 +159,13 @@ pub struct PIL {
     pub q2exp: Vec<usize>,
 }
 
+impl fmt::Display for PIL {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let obj = json!(self);
+        write!(f, "{}", serde_json::to_string_pretty(&obj).unwrap())
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Step {
     pub nBits: usize,

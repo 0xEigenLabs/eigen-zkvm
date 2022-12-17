@@ -10,27 +10,12 @@ use std::collections::HashMap;
 use std::fmt;
 
 #[derive(Debug)]
-pub struct Calculated {
-    pub exps: HashMap<usize, bool>,
-    pub exps_prime: HashMap<usize, bool>,
-}
-
-impl Calculated {
-    pub fn new() -> Self {
-        Calculated {
-            exps: HashMap::new(),
-            exps_prime: HashMap::new(),
-        }
-    }
-}
-
-#[derive(Debug)]
 pub struct Context {
     pub exp_id: usize,
     pub tmp_used: usize,
     pub code: Vec<Code>,
-    pub calculated: Calculated,
-    pub calculated_mark: HashMap<(&'static str, usize), bool>,
+    //pub calculated: Calculated,
+    pub calculated: HashMap<(&'static str, usize), bool>,
 }
 
 #[derive(Debug)]
@@ -47,6 +32,15 @@ pub struct ContextF<'a> {
     pub dom: String,
     pub tmpexps: &'a mut HashMap<usize, usize>,
     pub starkinfo: &'a mut StarkInfo,
+}
+
+#[derive(Debug)]
+pub struct Code {
+    pub exp_id: usize,
+    pub prime: bool,
+    pub tmp_used: usize,
+    pub code: Vec<Section>,
+    pub idQ: Option<usize>,
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -84,6 +78,7 @@ impl Node {
     }
 }
 
+/// Subcode
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct Section {
     pub op: String,
@@ -119,15 +114,6 @@ impl Segment {
     pub fn is_some(&self) -> bool {
         self.first.len() > 0 || self.i.len() > 0 || self.last.len() > 0
     }
-}
-
-#[derive(Debug)]
-pub struct Code {
-    pub exp_id: usize,
-    pub prime: Option<bool>,
-    pub tmp_used: usize,
-    pub code: Vec<Section>,
-    pub idQ: Option<usize>,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -269,7 +255,8 @@ impl EVIdx {
 }
 
 // prime: false by default
-// mode: "" by default
+// res_type: "" by default
+// res_id: 0 by default
 pub fn pil_code_gen(
     ctx: &mut Context,
     pil: &mut PIL,
@@ -278,14 +265,17 @@ pub fn pil_code_gen(
     res_type: &str,
     res_id: usize,
 ) -> Result<()> {
-    //println!("pil_code_gen: {} {}, {:?}", exp_id, prime, mode);
+    //println!(
+    //    "pil_code_gen: {} {}, {} {}",
+    //    exp_id, prime, res_type, res_id
+    //);
     let prime_idx = if prime { "expsPrime" } else { "exps" };
-    if ctx.calculated_mark.get(&(prime_idx, exp_id)).is_some() {
+    if ctx.calculated.get(&(prime_idx, exp_id)).is_some() {
         if res_type.len() > 0 {
             let idx = ctx
                 .code
                 .iter()
-                .position(|x| (x.exp_id == exp_id) && (x.prime.unwrap() == prime))
+                .position(|x| (x.exp_id == exp_id) && (x.prime == prime))
                 .unwrap();
             let c = &mut ctx.code[idx];
             let dest = Node::new(res_type.to_string(), res_id, None, 0, prime, 0);
@@ -312,7 +302,6 @@ pub fn pil_code_gen(
         let sz = code_ctx.code.len() - 1;
         code_ctx.code[sz].dest = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
         code_ctx.tmp_used -= 1;
-        println!("pil_code_gen ctx.tmp_used {}", code_ctx.tmp_used);
     } else {
         let exp_node = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
         code_ctx.code.push(Section {
@@ -337,16 +326,17 @@ pub fn pil_code_gen(
 
     ctx.code.push(Code {
         exp_id: exp_id,
-        prime: Some(prime),
+        prime: prime,
         code: code_ctx.code,
         tmp_used: 0,
         idQ: None,
     });
 
-    ctx.calculated_mark.insert((prime_idx, exp_id), true);
+    ctx.calculated.insert((prime_idx, exp_id), true);
     if code_ctx.tmp_used > ctx.tmp_used {
         ctx.tmp_used = code_ctx.tmp_used;
     }
+    //println!("ctx.calculated: {:?}", ctx.calculated);
     Ok(())
 }
 
@@ -356,7 +346,7 @@ pub fn eval_exp(
     exp: &Expression,
     prime: bool,
 ) -> Result<Node> {
-    //println!("eval, expression {:?}", exp);
+    //println!("eval, expression {}", exp);
     if ExpressionOps::is_nop(exp) {
         panic!("exp: {:?}", exp);
     }
@@ -559,14 +549,8 @@ pub fn calculate_deps(
     prime: bool,
     exp_id: usize,
 ) -> Result<()> {
+    //println!("calculate_deps: {}", expr);
     if expr.op == "exp" {
-        /*
-        let id: usize = if expr.id.is_some() {
-            expr.id.unwrap()
-        } else {
-            0
-        };
-        */
         let id = expr.id.unwrap();
         if prime && expr.next() {
             expression_error(pil, "Double prime".to_string(), exp_id, id)?;
@@ -587,35 +571,35 @@ pub fn expression_error(_pil: &PIL, strerr: String, _e1: usize, _e2: usize) -> R
 }
 
 pub fn build_code(ctx: &mut Context, pil: &mut PIL) -> Segment {
-    let step_code = Segment {
-        first: build_linear_code(ctx, pil, "first".to_string()),
-        i: build_linear_code(ctx, pil, "i".to_string()),
-        last: build_linear_code(ctx, pil, "last".to_string()),
+    let seg = Segment {
+        first: build_linear_code(ctx, pil, "first"),
+        i: build_linear_code(ctx, pil, "i"),
+        last: build_linear_code(ctx, pil, "last"),
         tmp_used: ctx.tmp_used,
     };
 
+    // FIXME: deprecated
     for (i, e) in pil.expressions.iter().enumerate() {
         if (!e.keep.is_some()) && e.idQ.is_none() {
-            ctx.calculated.exps.insert(i, false);
-            ctx.calculated.exps_prime.insert(i, false);
+            ctx.calculated.insert(("exps", i), false);
+            ctx.calculated.insert(("expsPrime", i), false);
         }
     }
     ctx.code = vec![];
-    step_code
+    seg
 }
 
-pub fn build_linear_code(ctx: &mut Context, pil: &mut PIL, loop_pos: String) -> Vec<Section> {
-    let exp_and_expprimes = match loop_pos.as_str() {
+pub fn build_linear_code(ctx: &mut Context, pil: &PIL, loop_pos: &str) -> Vec<Section> {
+    let exp_and_expprimes = match loop_pos {
         "i" | "last" => get_exp_and_expprimes(ctx, pil),
         _ => HashMap::<usize, bool>::new(),
     };
 
     let mut res: Vec<Section> = vec![];
-    for (i, _c) in ctx.code.iter().enumerate() {
-        if exp_and_expprimes.get(&(i)).is_some() {
-            if ((loop_pos.as_str() == "i") && (!ctx.code[i].prime.is_some()))
-                || (loop_pos.as_str() == "last")
-            {
+    for i in 0..ctx.code.len() {
+        let ep = exp_and_expprimes.get(&i);
+        if ep.is_some() && (*ep.unwrap()) {
+            if ((loop_pos == "i") && (!ctx.code[i].prime)) || (loop_pos == "last") {
                 continue;
             }
         }
@@ -627,15 +611,14 @@ pub fn build_linear_code(ctx: &mut Context, pil: &mut PIL, loop_pos: String) -> 
 }
 
 //FIXME where is the exp_id from
-fn get_exp_and_expprimes(ctx: &mut Context, pil: &mut PIL) -> HashMap<usize, bool> {
+fn get_exp_and_expprimes(ctx: &mut Context, pil: &PIL) -> HashMap<usize, bool> {
     let mut calc_exps = HashMap::<usize, usize>::new();
-    for (i, _c) in ctx.code.iter().enumerate() {
+    for i in 0..ctx.code.len() {
         if (pil.expressions[ctx.code[i].exp_id].idQ.is_some())
             || pil.expressions[ctx.code[i].exp_id].keep.is_some()
             || pil.expressions[ctx.code[i].exp_id].keep2ns.is_some()
         {
-            let mask = if ctx.code[i].prime.is_some() { 2 } else { 1 };
-
+            let mask = if ctx.code[i].prime { 2 } else { 1 };
             let val = match calc_exps.get(&ctx.code[i].exp_id) {
                 Some(x) => *x,
                 _ => 0,
@@ -657,21 +640,15 @@ pub fn iterate_code(
     ctx: &mut ContextF,
     pil: &mut PIL,
 ) {
-    iterate(&mut code.first, f, ctx, pil);
-    iterate(&mut code.i, f, ctx, pil);
-    iterate(&mut code.last, f, ctx, pil);
-}
-
-fn iterate(
-    code: &mut Vec<Section>,
-    f: fn(&mut Node, &mut ContextF, pil: &mut PIL),
-    ctx: &mut ContextF,
-    pil: &mut PIL,
-) {
-    for c in code.iter_mut() {
-        for s in c.src.iter_mut() {
-            f(s, ctx, pil);
+    let mut iterate = |sec: &mut Vec<Section>, f: fn(&mut Node, &mut ContextF, pil: &mut PIL)| {
+        for c in sec.iter_mut() {
+            for s in c.src.iter_mut() {
+                f(s, ctx, pil);
+            }
+            f(&mut c.dest, ctx, pil);
         }
-        f(&mut c.dest, ctx, pil);
-    }
+    };
+    iterate(&mut code.first, f);
+    iterate(&mut code.i, f);
+    iterate(&mut code.last, f);
 }

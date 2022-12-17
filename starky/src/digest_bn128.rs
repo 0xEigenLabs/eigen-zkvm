@@ -86,19 +86,16 @@ impl ElementDigest {
         Fr::from_repr(repr).unwrap()
     }
 
+    // for debug only
     fn to_gl(f: &Fr) -> [BaseElement; 4] {
         let mut f = fr_to_biguint(f);
-
         let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();
-
         let mut result = [BaseElement::ZERO; 4];
-
         for i in 0..4 {
             let t = &f & &mask;
             result[i] = BaseElement::from(t.to_u64().unwrap());
             f = &f >> 64;
         }
-
         result
     }
 }

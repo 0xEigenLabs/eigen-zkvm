@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 use crate::errors::Result;
-use crate::field_bn128::Fr;
+use crate::field_bn128::{Fr, FrRepr};
 use crate::poseidon_bn128_opt::Poseidon;
 use crate::ElementDigest;
 use ff::*;
@@ -72,7 +72,21 @@ impl LinearHashBN128 {
     #[inline(always)]
     pub fn to_bn128_mont(st64: [BaseElement; 4]) -> [BaseElement; 4] {
         let bn: Fr = ElementDigest::new(st64).into();
-        let bn_mont = Fr::from_repr(bn.into_raw_repr()).unwrap();
+        let bn_mont = match Fr::from_repr(bn.into_raw_repr()) {
+            Ok(x) => x,
+            _ => {
+                //cornor case: x > MODULUS
+                let mut r = Fr(bn.into_raw_repr());
+                const R2: FrRepr = FrRepr([
+                    1997599621687373223u64,
+                    6052339484930628067u64,
+                    10108755138030829701u64,
+                    150537098327114917u64,
+                ]);
+                r.mul_assign(&Fr(R2));
+                r
+            }
+        };
         ElementDigest::from(&bn_mont).into()
     }
 
@@ -149,7 +163,7 @@ mod tests {
             BaseElement::from(6188675464075253840u64),
             BaseElement::from(2608530331018891925u64),
         ];
-        crate::helper::pretty_print_array(&input);
+        //crate::helper::pretty_print_array(&input);
 
         let lh = LinearHashBN128::new();
         let result = lh.hash_element_array(&input).unwrap();
