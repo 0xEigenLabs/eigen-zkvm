@@ -265,10 +265,10 @@ pub fn pil_code_gen(
     res_type: &str,
     res_id: usize,
 ) -> Result<()> {
-    println!(
-        "pil_code_gen: {} {}, {} {}",
-        exp_id, prime, res_type, res_id
-    );
+    //println!(
+    //    "pil_code_gen: {} {}, {} {}",
+    //    exp_id, prime, res_type, res_id
+    //);
     let prime_idx = if prime { "expsPrime" } else { "exps" };
     if ctx.calculated.get(&(prime_idx, exp_id)).is_some() {
         if res_type.len() > 0 {
@@ -648,10 +648,7 @@ pub fn iterate_code(
             f(&mut c.dest, ctx, pil);
         }
     };
-    println!("iterateCode first");
     iterate(&mut code.first, f);
-    println!("iterateCode i");
     iterate(&mut code.i, f);
-    println!("iterateCode last");
     iterate(&mut code.last, f);
 }

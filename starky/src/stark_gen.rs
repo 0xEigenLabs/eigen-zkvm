@@ -365,7 +365,7 @@ impl<'a> StarkProof {
         // 5. Compute FRI Polynomial
         ///////////
         ctx.challenges[7] = transcript.get_field(); // xi
-        //println!("ctx.challenges[7] {}", ctx.challenges[7]);
+                                                    //println!("ctx.challenges[7] {}", ctx.challenges[7]);
 
         let mut LEv = vec![F3G::ZERO; ctx.N];
         let mut LpEv = vec![F3G::ZERO; ctx.N];
@@ -792,6 +792,37 @@ pub mod tests {
 
         println!("verify the proof...");
 
+        let result = stark_verify(
+            &starkproof,
+            &setup.const_root,
+            &setup.starkinfo,
+            &stark_struct,
+            &mut setup.program,
+        )
+        .unwrap();
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn test_stark_plookup() {
+        let mut pil = load_json::<PIL>("data/plookup.pil.json").unwrap();
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
+        const_pol.load("data/plookup.const").unwrap();
+        let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
+        cm_pol.load("data/plookup.cm").unwrap();
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
+        let mut setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let starkproof = StarkProof::stark_gen(
+            &cm_pol,
+            &const_pol,
+            &setup.const_tree,
+            &setup.starkinfo,
+            &setup.program,
+            &pil,
+            &stark_struct,
+        )
+        .unwrap();
+        println!("verify the proof...");
         let result = stark_verify(
             &starkproof,
             &setup.const_root,

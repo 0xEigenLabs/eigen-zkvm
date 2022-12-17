@@ -25,7 +25,7 @@ module.exports = {
     } else {
       pil = await compile(FGL, pilFile, null, pilConfig);
       if (typeof fileCachePil !== "undefined") {
-        await fs.promises.writeFile(fileCachePil, JSON.stringify(pil, null, 1) + "\n", "utf8");
+        await fs.promises.writeFile(fileCachePil + "pil.json", JSON.stringify(pil, null, 1) + "\n", "utf8");
       }
     }
 
@@ -36,8 +36,8 @@ module.exports = {
     await builder.execute(cmPols, input);
     elapse("execute", timer);
     if (typeof fileCachePil !== 'undefined') {
-      constPols.saveToFile("/tmp/pe.const")
-      cmPols.saveToFile("/tmp/pe.cm")
+      constPols.saveToFile(fileCachePil + ".const")
+      cmPols.saveToFile(fileCachePil + ".cm")
     }
 
     // verify the input and trace constraints
