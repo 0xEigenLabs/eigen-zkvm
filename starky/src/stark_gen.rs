@@ -188,9 +188,9 @@ impl<'a> StarkProof {
         }
 
         let extendBits = ctx.nbits_ext - ctx.nbits;
-        ctx.x_2ns = vec![F3G::ZERO; ctx.N];
+        ctx.x_2ns = vec![F3G::ZERO; ctx.N << extendBits];
         let mut xx = SHIFT.clone();
-        for i in 0..(1 << (ctx.nbits_ext - ctx.nbits)) {
+        for i in 0..(ctx.N << (ctx.nbits_ext - ctx.nbits)) {
             ctx.x_2ns[i] = xx;
             xx = xx * MG.0[ctx.nbits_ext];
         }
@@ -231,8 +231,8 @@ impl<'a> StarkProof {
         let tree1 = extend_and_merkelize(&mut ctx, starkinfo, "cm1_n").unwrap();
         tree1.to_f3g(&mut ctx.cm1_2ns);
         let root: Fr = tree1.root().into();
-        //println!("tree1 root: {:?}", crate::helper::fr_to_biguint(&root));
-        //println!("tree1[0] {}", ctx.cm1_2ns[0]);
+        println!("tree1 root: {:?}", crate::helper::fr_to_biguint(&root));
+        println!("tree1[0] {}", ctx.cm1_2ns[0]);
         transcript.put(&vec![root])?;
         // 2.- Caluculate plookups h1 and h2
         ctx.challenges[0] = transcript.get_field(); //u
@@ -259,10 +259,10 @@ impl<'a> StarkProof {
         tree2.to_f3g(&mut ctx.cm2_2ns);
         let root: Fr = tree2.root().into();
         transcript.put(&vec![root])?;
-        //println!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
-        //if ctx.cm2_2ns.len() > 0 {
-        //    println!("tree2[0] {}", ctx.cm2_2ns[0]);
-        //}
+        println!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
+        if ctx.cm2_2ns.len() > 0 {
+            println!("tree2[0] {}", ctx.cm2_2ns[0]);
+        }
 
         // 3.- Compute Z polynomials
         ctx.challenges[2] = transcript.get_field(); // gamma
@@ -309,10 +309,10 @@ impl<'a> StarkProof {
         let root: Fr = tree3.root().into();
         transcript.put(&vec![root])?;
 
-        //println!("tree3 root: {:?}", crate::helper::fr_to_biguint(&root));
-        //if ctx.cm3_2ns.len() > 0 {
-        //    println!("tree3[0] {}", ctx.cm3_2ns[0]);
-        //}
+        println!("tree3 root: {:?}", crate::helper::fr_to_biguint(&root));
+        if ctx.cm3_2ns.len() > 0 {
+            println!("tree3[0] {}", ctx.cm3_2ns[0]);
+        }
         // 4. Compute C Polynomial
         ctx.challenges[4] = transcript.get_field(); // vc
                                                     //println!("challenges[4] {}", ctx.challenges[4]);
@@ -356,10 +356,10 @@ impl<'a> StarkProof {
         let root: Fr = tree4.root().into();
         transcript.put(&vec![root])?;
 
-        //println!("tree4 root: {:?}", crate::helper::fr_to_biguint(&root));
-        //if ctx.cm4_2ns.len() > 0 {
-        //    println!("tree4[0] {}", ctx.cm4_2ns[0]);
-        //}
+        println!("tree4 root: {:?}", crate::helper::fr_to_biguint(&root));
+        if ctx.cm4_2ns.len() > 0 {
+            println!("tree4[0] {}", ctx.cm4_2ns[0]);
+        }
 
         ///////////
         // 5. Compute FRI Polynomial

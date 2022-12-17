@@ -286,6 +286,7 @@ fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
                 2 => expr.syms[1].parse::<usize>().unwrap(),
                 _ => 1,
             };
+            //println!("get_value {} {} {}", addr, ctx_section.len(), id);
             match dim {
                 3 => F3G::new(
                     ctx_section[id].to_be(),

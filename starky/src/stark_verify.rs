@@ -71,29 +71,19 @@ pub fn stark_verify(
     ctx.challenges[6] = transcript.get_field(); // v2
 
     let x_n = ctx.challenges[7].exp(ctx.N);
-    println!("x_n {}", x_n);
     ctx.Z = x_n - F3G::ONE;
     ctx.Zp = (ctx.challenges[7] * MG.0[ctx.nbits]).pow(ctx.N) - F3G::ONE;
 
-    println!("verifier_code {}", program.verifier_code);
+    //println!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);
 
     let mut x_acc = F3G::ONE;
     let mut q = F3G::ZERO;
     for i in 0..starkinfo.q_deg {
-        println!(
-            "ctx.eval[{}->{}]={}",
-            starkinfo.qs[i],
-            starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap(),
-            11
-        );
         q = q + x_acc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
-        println!("q={}", q);
         x_acc = x_acc * x_n;
-        println!("x_acc={}", x_acc);
     }
     let q_z = q * ctx.Z;
-    println!("q_z {} {}, res = {}", q, ctx.Z, res);
 
     if !res.eq(&q_z) {
         return Ok(false);
@@ -136,10 +126,6 @@ pub fn stark_verify(
             ctx_query.challenges = ctx.challenges.clone();
 
             let x = SHIFT.clone() * (MG.0[ctx.nbits + extend_bits].exp(idx));
-            println!(
-                "idx: {}, x: {}, challenges[7] {}",
-                idx, x, ctx_query.challenges[7]
-            );
             ctx_query.xDivXSubXi = (x / (x - ctx_query.challenges[7])).as_elements();
             ctx_query.xDivXSubWXi =
                 (x / (x - (ctx_query.challenges[7] * MG.0[ctx.nbits]))).as_elements();
@@ -148,7 +134,6 @@ pub fn stark_verify(
                 &mut ctx_query,
                 &mut program.verifier_query_code.first,
             )];
-            println!("vals:");
             crate::helper::pretty_print_array(&vals);
 
             Ok(vals)
@@ -196,13 +181,13 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
             }
             _ => panic!("Invalid reference type, get: {}", r.type_),
         };
-        println!("verfify get ref {}", t);
+        //println!("verfify get ref {}", t);
         t
     };
 
     let set_ref = |r: &mut Node, val: F3G, tmp: &mut HashMap<usize, F3G>| match r.type_.as_str() {
         "tmp" => {
-            println!("verfify set ref {} {}", r.id, val);
+            //println!("verfify set ref {} {}", r.id, val);
             tmp.insert(r.id, val);
         }
         _ => {
