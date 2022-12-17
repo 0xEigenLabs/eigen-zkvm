@@ -735,14 +735,14 @@ pub mod tests {
 
     #[test]
     fn test_stark_gen() {
-        let mut pil = load_json::<PIL>("data/fib.pil.json.2").unwrap();
+        let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
-        const_pol.load("data/fib.const.2").unwrap();
+        const_pol.load("data/fib.const").unwrap();
 
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
-        cm_pol.load("data/fib.cm.2").unwrap();
+        cm_pol.load("data/fib.cm").unwrap();
 
-        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
         let mut setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
         let starkproof = StarkProof::stark_gen(
             &cm_pol,
@@ -777,7 +777,7 @@ pub mod tests {
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
         cm_pol.load("data/pe.cm").unwrap();
 
-        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
         let mut setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
         let starkproof = StarkProof::stark_gen(
             &cm_pol,
@@ -810,7 +810,7 @@ pub mod tests {
         const_pol.load("data/plookup.const").unwrap();
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
         cm_pol.load("data/plookup.cm").unwrap();
-        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.2").unwrap();
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
         let mut setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
         let starkproof = StarkProof::stark_gen(
             &cm_pol,
