@@ -1,6 +1,8 @@
 # SM
 State Machine zkVM prototype abstracted from [zkevm-proverjs](https://github.com/0xPolygonHermez/zkevm-proverjs/tree/main/pil).
 
+Just for cross check. if violating the licence, will delete anytime.
+
 # Example
 
 ```

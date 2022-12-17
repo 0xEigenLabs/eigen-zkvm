@@ -42,15 +42,11 @@ To be specific, the main calculation in step 4 is `extendAndMerkelize` over 256b
 
 Extending is the process of generating a new polynomial from the old polynomial with point-value representation, by multiplying the x-axis of the points with 2^(nExtBits - nBits) then interpolate on the new points.
 
-[Code](../starkjs/src/fft_p.js#L212).
-
 * Merkelization
 
 Merkelization calculates the Merkel proof of a polynomial, where the leaf nodes of the Merkel Tree is the points generating the polynomial. The hash function is Linearhash on 256bits scalar field, and Linearhash is built on linear Poseidon hash with arbitrary length message as input under fixed-size=12 MDS.
 
-[Code](../starkjs/src/merklehash_bn128_p.js#L47)
-
-MerkleHash performance(128 cores, 1T RAM):
+>* MerkleHash performance(128 cores, 1T RAM):
 
 |height|n_pols| starky(s)|pil-stark JS(s)|
 |---|---|---|---|
@@ -59,7 +55,7 @@ MerkleHash performance(128 cores, 1T RAM):
 |2^24|600| 482 | -|
 
 
-Comparison with CPP prover:
+>* Comparison with CPP prover:
 
 |height|n_pols| starky(s)|pil-stark CPP(s)|
 |---|---|---|---|
@@ -83,19 +79,22 @@ for (let k=0; k<2^nExtBits; k++) {
 
 Because the nExtBits reaches up to 24 so this step would be very slow, especially when the `starkInfo.evMap.length` is bigger than 2^16 in SM.
 
-[Code](https://github.com/0xPolygonHermez/pil-stark/blob/main/src/stark_gen.js#L245)
-
 ## Optimization
 
-### Rewrite pil-stark by Rust
+* reimpl pil-stark by Rust
+* hardware acceleration
 
-JS: buildConstants, execute
+### Progress
 
-Rust: the others
-
-### HW acceleration
-* Poseidon Hash on GPU/Multicore for 256bits scalar field
-* FFT on GPU/MultiCore for polynomial execution
+- [x] Fully PIL syntax support
+- [x] Parallel Merklehash and Cooley–Tukey FFT by Rayon
+- [x] Codegen (arithmetization)
+- [] Verification hash type
+> - [x] BN128
+> - [] GL(F64)
+- [] Parallel reduce for polynomial evaluation
+- [] Recursive FRI
+- [] Poseidon Hash on GPU/Multicore for BN128
 
 ## Profiling
 
