@@ -51,13 +51,11 @@ impl PolsArray {
         for i in 0..array.len() {
             array[i] = vec![BaseElement::default(); nPols];
         }
-        println!("reference {:?}", pil.references);
         for (refName, ref_) in pil.references.iter() {
             if (ref_.type_ == "cmP" && kind == PolKind::Commit)
                 || (ref_.type_ == "constP" && kind == PolKind::Constant)
             {
                 let name_vec: Vec<&str> = refName.split('.').collect();
-                println!("name_vec {:?}", name_vec);
                 let nameSpace = name_vec[0].to_string();
                 let namePols = name_vec[1].to_string();
 
@@ -132,7 +130,7 @@ impl PolsArray {
         let mut j = 0;
         let mut k = 0;
         while k < totalSize {
-            println!(
+            log::info!(
                 "loading {:?}.. {:?} of {}",
                 fileName,
                 k / 1024 / 1024,
@@ -140,9 +138,12 @@ impl PolsArray {
             );
             let mut n = std::cmp::min(buff8.len() / 8, totalSize - k);
             let rs = f.read(&mut buff8[..(n * 8)])?;
-            println!(
+            log::info!(
                 "read size: read size = {}, n = {}, k = {}, totalSize = {}",
-                rs, n, k, totalSize
+                rs,
+                n,
+                k,
+                totalSize
             );
             let buff: &[u64] = unsafe {
                 std::slice::from_raw_parts(
@@ -205,7 +206,6 @@ impl PolsArray {
         let mut buff: Vec<F3G> = vec![];
         for i in 0..self.n {
             for j in 0..self.nPols {
-                //println!("write_buff {} {}", buff.len(), self.array[j][i]);
                 buff.push(F3G::from(self.array[j][i]));
             }
         }

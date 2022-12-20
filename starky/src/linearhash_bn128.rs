@@ -101,7 +101,6 @@ impl LinearHashBN128 {
     pub fn hash_element_array(&self, vals: &[BaseElement]) -> Result<ElementDigest> {
         let mut st64 = [BaseElement::ZERO; 4];
         let mut digest: Fr = Fr::zero();
-        //println!("hash_element_array size: {}", vals.len());
         if vals.len() <= 4 {
             for (i, v) in vals.iter().enumerate() {
                 st64[i] = *v;
@@ -167,7 +166,7 @@ mod tests {
 
         let lh = LinearHashBN128::new();
         let result = lh.hash_element_array(&input).unwrap();
-        println!("out {}", result);
+        log::debug!("out {}", result);
         assert_eq!(result.0[0], BaseElement::from(15714769047018385385u64));
         assert_eq!(result.0[1], BaseElement::from(14080511166848616671u64));
         assert_eq!(result.0[2], BaseElement::from(11411897157942048316u64));
@@ -179,7 +178,7 @@ mod tests {
         ];
 
         let result = lh.hash_element_array(&input).unwrap();
-        println!("out {}", result);
+        log::debug!("out {}", result);
         assert_eq!(result.0[0], BaseElement::from(12850950522295690944u64));
         assert_eq!(result.0[1], BaseElement::from(15045028186447136619u64));
         assert_eq!(result.0[2], BaseElement::from(11701297961637547631u64));

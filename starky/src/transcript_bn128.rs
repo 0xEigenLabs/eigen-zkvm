@@ -39,15 +39,15 @@ impl TranscriptBN128 {
 
     pub fn get_fields1(&mut self) -> Result<BaseElement> {
         if self.out3.len() > 0 {
-            println!("get_fields1 {},", self.out3[0]);
+            log::debug!("get_fields1 {},", self.out3[0]);
             return Ok(self.out3.pop_front().unwrap());
         }
 
         if self.out.len() > 0 {
             let v = self.out.pop_front().unwrap();
-            //println!("get_fields1 out3 v={}", v);
+            log::debug!("get_fields1 out3 v={}", v);
             let bv = fr_to_biguint(&v);
-            //println!("get_fields1 out3 {}", bv);
+            log::debug!("get_fields1 out3 {}", bv);
             let mask = BigUint::from(0xFFFFFFFFFFFFFFFFu128);
             self.out3.push_back(biguint_to_be(&(&bv & &mask)));
             self.out3.push_back(biguint_to_be(&((&bv >> 64) & &mask))); //FIXME: optimization
@@ -62,14 +62,6 @@ impl TranscriptBN128 {
         while self.pending.len() < 16 {
             self.pending.push(Fr::zero());
         }
-        //for i in self.pending.iter() {
-        //    println!("update_state: {}", crate::helper::fr_to_biguint(i));
-        //    println!(
-        //        "update_state: MONT {}",
-        //        Fr::from_repr(i.into_raw_repr()).unwrap()
-        //    );
-        //}
-        //println!("self.state: {}", crate::helper::fr_to_biguint(&self.state));
         self.out = VecDeque::from(self.poseidon.hash_ex(&self.pending, &self.state, 17)?);
         self.out3 = VecDeque::new();
         self.pending = vec![];
@@ -86,7 +78,7 @@ impl TranscriptBN128 {
 
     fn add_1(&mut self, e: &Fr) -> Result<()> {
         self.out = VecDeque::new();
-        //println!("add_1 to pending: {:?}", fr_to_biguint(e));
+        log::debug!("add_1 to pending: {:?}", fr_to_biguint(e));
         self.pending.push(e.clone());
         if self.pending.len() == 16 {
             self.update_state()?;
@@ -109,7 +101,7 @@ impl TranscriptBN128 {
         for _i in 0..n_fields {
             fields.push(fr_to_biguint(&self.get_fields253()?));
         }
-        //println!("get_permutations: {:?}", fields);
+        log::debug!("get_permutations: {:?}", fields);
         let mut res: Vec<usize> = vec![];
         let mut cur_field = 0;
         let mut cur_bit = 0usize;

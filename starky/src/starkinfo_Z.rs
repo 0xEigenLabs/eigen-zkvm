@@ -20,7 +20,7 @@ impl StarkInfo {
         self.generate_connections_Z(ctx, pil)?;
 
         program.step3prev = build_code(ctx, pil);
-        //println!("step3prev {}", program.step3prev);
+        //log::debug!("step3prev {}", program.step3prev);
         ctx.calculated.clear();
         Ok(())
     }
@@ -30,7 +30,7 @@ impl StarkInfo {
             Some(x) => x.clone(),
             _ => Vec::new(),
         };
-        //println!("generate_permutation_LC size: {}", ppi.len());
+        log::debug!("generate_permutation_LC size: {}", ppi.len());
         for pi in ppi.iter() {
             let mut t_exp = E::nop();
             let u = E::challenge("u".to_string());
@@ -101,7 +101,6 @@ impl StarkInfo {
 
     // paper: https://eprint.iacr.org/2020/315.pdf
     pub fn generate_plonk_Z(&mut self, ctx: &mut Context, pil: &mut PIL) -> Result<()> {
-        //println!("generate_plonk_Z size: {}", pui.len());
         for i in 0..pil.plookupIdentities.len() {
             let pu_ctx = &mut self.pu_ctx[i];
             pu_ctx.z_id = pil.nCommitments;
@@ -151,7 +150,7 @@ impl StarkInfo {
             pil.nQ += 1;
             num_exp.keep = Some(true);
             pu_ctx.num_id = pil.expressions.len();
-            //println!("num_exp: {} {}", i, num_exp);
+            log::debug!("num_exp: {} {}", i, num_exp);
             pil.expressions.push(num_exp);
 
             // G(\beta, \gamma)
@@ -170,7 +169,7 @@ impl StarkInfo {
             pil.nQ += 1;
             pu_ctx.den_id = pil.expressions.len();
             den_exp.keep = Some(true);
-            //println!("den_exp: {} {}", i, den_exp);
+            log::debug!("den_exp: {} {}", i, den_exp);
             pil.expressions.push(den_exp);
 
             let num = E::exp(pu_ctx.num_id, None);
@@ -197,7 +196,7 @@ impl StarkInfo {
             Some(x) => x.clone(),
             _ => Vec::new(),
         };
-        //println!("generate_permutation_Z size: {}", ppi.len());
+        log::debug!("generate_permutation_Z size: {}", ppi.len());
 
         for (i, _pi) in ppi.iter().enumerate() {
             self.pe_ctx[i].z_id = pil.nCommitments;
@@ -275,7 +274,7 @@ impl StarkInfo {
             Some(x) => x.clone(),
             _ => Vec::new(),
         };
-        //println!("generate_connections_Z size: {}", cii.len());
+        log::debug!("generate_connections_Z size: {}", cii.len());
 
         for ci in cii.iter() {
             let ci_pols = match &ci.pols {

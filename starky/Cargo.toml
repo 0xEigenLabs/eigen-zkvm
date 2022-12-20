@@ -29,12 +29,15 @@ lazy_static = "1.0"
 rayon = { version = "1.5"}
 num_cpus = "1.0"
 
-# error
+# error and log
 thiserror="1.0"
+log = "0.4.0"
+env_logger = "0.10"
 
 [dev-dependencies]
 criterion = "0.4"
 pprof = { version = "0.3", features = ["flamegraph"] }
+env_logger = "0.10"
 
 [[bench]]
 name = "merklehash"

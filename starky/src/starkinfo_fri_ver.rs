@@ -16,7 +16,7 @@ impl StarkInfo {
         self.n_exps = pil.expressions.len();
         program.verifier_query_code = code;
 
-        //println!("verifier_query_code: {}", program.verifier_query_code);
+        //log::debug!("verifier_query_code: {}", program.verifier_query_code);
         Ok(())
     }
 }

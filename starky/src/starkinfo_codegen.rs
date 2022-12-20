@@ -265,10 +265,13 @@ pub fn pil_code_gen(
     res_type: &str,
     res_id: usize,
 ) -> Result<()> {
-    //println!(
-    //    "pil_code_gen: {} {}, {} {}",
-    //    exp_id, prime, res_type, res_id
-    //);
+    log::debug!(
+        "pil_code_gen: {} {}, {} {}",
+        exp_id,
+        prime,
+        res_type,
+        res_id
+    );
     let prime_idx = if prime { "expsPrime" } else { "exps" };
     if ctx.calculated.get(&(prime_idx, exp_id)).is_some() {
         if res_type.len() > 0 {
@@ -336,7 +339,7 @@ pub fn pil_code_gen(
     if code_ctx.tmp_used > ctx.tmp_used {
         ctx.tmp_used = code_ctx.tmp_used;
     }
-    //println!("ctx.calculated: {:?}", ctx.calculated);
+    log::debug!("ctx.calculated: {:?}", ctx.calculated);
     Ok(())
 }
 
@@ -346,7 +349,7 @@ pub fn eval_exp(
     exp: &Expression,
     prime: bool,
 ) -> Result<Node> {
-    //println!("eval, expression {}", exp);
+    log::debug!("eval, expression {}", exp);
     if ExpressionOps::is_nop(exp) {
         panic!("exp: {:?}", exp);
     }
@@ -549,7 +552,7 @@ pub fn calculate_deps(
     prime: bool,
     exp_id: usize,
 ) -> Result<()> {
-    //println!("calculate_deps: {}", expr);
+    log::debug!("calculate_deps: {}", expr);
     if expr.op == "exp" {
         let id = expr.id.unwrap();
         if prime && expr.next() {

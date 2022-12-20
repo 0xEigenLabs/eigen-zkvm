@@ -22,12 +22,12 @@ pub struct FRI {
 }
 
 #[derive(Default, Clone)]
-pub struct ProofOne {
+pub struct Query {
     pub pol_queries: Vec<Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>>,
     pub root: ElementDigest,
 }
 
-impl fmt::Display for ProofOne {
+impl fmt::Display for Query {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "root {}\n", self.root)?;
         write!(f, "pol_queries size {}\n", self.pol_queries.len())?;
@@ -54,14 +54,14 @@ impl fmt::Display for ProofOne {
 
 #[derive(Clone)]
 pub struct FRIProof {
-    pub queries: Vec<ProofOne>,
+    pub queries: Vec<Query>,
     pub last: Vec<F3G>,
 }
 
 impl FRIProof {
     pub fn new(qs: usize) -> Self {
         FRIProof {
-            queries: vec![ProofOne::default(); qs],
+            queries: vec![Query::default(); qs],
             last: Vec::new(),
         }
     }
@@ -86,7 +86,7 @@ impl FRI {
         let mut pol = pol.clone();
         let mut standard_fft = FFT::new();
         let mut pol_bits = log2_any(pol.len()) as usize;
-        //println!("fri prove {} {}", pol.len(), 1 << pol_bits);
+        log::debug!("fri prove {} {}", pol.len(), 1 << pol_bits);
         assert_eq!(1 << pol_bits, pol.len());
         assert_eq!(pol_bits, self.in_nbits);
 
@@ -105,8 +105,8 @@ impl FRI {
 
             let mut sinv = shift_inv;
             let wi = F3G::inv(MG.0[pol_bits]);
-            //println!("n_x {} {} {}", n_x, pol2_n, special_x);
-            crate::helper::pretty_print_array(&pol);
+            log::debug!("n_x {} {} {}", n_x, pol2_n, special_x);
+            //crate::helper::pretty_print_array(&pol);
 
             for g in 0..(pol.len() / n_x) {
                 if si == 0 {
@@ -123,7 +123,7 @@ impl FRI {
                     sinv = sinv * wi;
                 }
             }
-            //println!("pol2_e 0={}, 1={}", pol2_e[0], pol2_e[1]);
+            log::debug!("pol2_e 0={}, 1={}", pol2_e[0], pol2_e[1]);
 
             if si < self.steps.len() - 1 {
                 let n_groups = 1 << self.steps[si + 1].nBits;
@@ -131,15 +131,9 @@ impl FRI {
                 let pol2_etb = get_transposed_buffer(&pol2_e, self.steps[si + 1].nBits);
                 tree.push(MerkleTree::merkelize(pol2_etb, 3 * group_size, n_groups)?);
                 proof.queries[si + 1].root = tree[si].root();
-                //let rrr: Fr = proof.queries[si + 1].root.into();
-                //println!(
-                //    "proof.queries {}={}",
-                //    si + 1,
-                //    crate::helper::fr_to_biguint(&rrr)
-                //);
                 transcript.put(&vec![tree[si].root().into()])?;
             } else {
-                //println!("last {}", pol2_e.len());
+                log::debug!("last {}", pol2_e.len());
                 for e in pol2_e.iter() {
                     let elems = e.as_elements();
                     let v = vec![
@@ -169,7 +163,7 @@ impl FRI {
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
 
         let query_pol_fn = |si: usize, idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
-            //println!("query_pol_fn: si:{}, idx:{}", si, idx);
+            log::debug!("query_pol_fn: si:{}, idx:{}", si, idx);
             vec![tree[si].get_group_proof(idx).unwrap()]
         };
 
@@ -183,7 +177,7 @@ impl FRI {
                         .push(query_pol_fn(si - 1, *ys_));
                 }
             }
-            //println!("prove_query_pol: {} {}", si, proof.queries[si]);
+            log::debug!("prove_query_pol: {} {}", si, proof.queries[si]);
 
             if si < self.steps.len() - 1 {
                 for i in 0..ys.len() {
@@ -225,7 +219,7 @@ impl FRI {
         let n_queries = self.n_queries;
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
         let pol_bits = self.in_nbits;
-        //println!("ys: {:?}, pol_bits {}", ys, self.in_nbits);
+        log::debug!("ys: {:?}, pol_bits {}", ys, self.in_nbits);
         let mut shift = SHIFT.clone();
 
         let check_query_fn = |si: usize,
@@ -242,9 +236,9 @@ impl FRI {
 
         for si in 0..self.steps.len() {
             let proof_item = &proof.queries[si];
-            //println!("si: {}, queries: {}", si, proof_item);
+            log::debug!("si: {}, queries: {}", si, proof_item);
             let reduction_bits = pol_bits - self.steps[si].nBits;
-            //println!("si {} reduction_bits {}", si, reduction_bits);
+            log::debug!("si {} reduction_bits {}", si, reduction_bits);
             for i in 0..n_queries {
                 let pgroup_e: Vec<F3G> = match si {
                     0 => {
@@ -257,20 +251,13 @@ impl FRI {
                     _ => check_query_fn(si, &proof_item.pol_queries[i], ys[i])?,
                 };
 
-                //println!("pgroup_e");
-                //crate::helper::pretty_print_array(&pgroup_e);
-
                 let pgroup_c = standard_fft.ifft(&pgroup_e);
-
-                //println!("pgroup_c");
-                //crate::helper::pretty_print_array(&pgroup_c);
-
                 let sinv = F3G::inv(shift * (MG.0[pol_bits].exp(ys[i])));
 
-                //println!("sinv {}, special_x[{}]={}", sinv, si, special_x[si]);
+                log::debug!("sinv {}, special_x[{}]={}", sinv, si, special_x[si]);
 
                 let ev = eval_pol(&pgroup_c, &(special_x[si] * sinv));
-                //println!("ev {}", ev);
+                log::debug!("ev {}", ev);
 
                 if si < self.steps.len() - 1 {
                     let next_n_groups = 1 << self.steps[si + 1].nBits;
@@ -357,7 +344,6 @@ fn pol_mul_axi(p: &mut Vec<F3G>, init: F3G, acc: &F3G) {
     }
 }
 
-// TODO: use winter_math
 fn eval_pol(p: &Vec<F3G>, x: &F3G) -> F3G {
     if p.len() == 0 {
         return F3G::ZERO;

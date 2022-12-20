@@ -10,7 +10,7 @@ pub fn interpolate_prepare_block(
     st_i: usize,
     st_n: usize,
 ) {
-    println!("linear interpolatePrepare start....{}/{}", st_i, st_n);
+    log::info!("linear interpolatePrepare start....{}/{}", st_i, st_n);
     let heigth = buff.len() / width;
     let mut w = start;
     for i in 0..heigth {
@@ -19,7 +19,7 @@ pub fn interpolate_prepare_block(
         }
         w = w * inc;
     }
-    println!("linear interpolatePrepare end.... {}/{}", st_i, st_n);
+    log::info!("linear interpolatePrepare end.... {}/{}", st_i, st_n);
 }
 
 fn _fft_block(
@@ -32,7 +32,7 @@ fn _fft_block(
     blockbits: usize,
     layers: usize,
 ) {
-    //println!("fft_block rel_pos:{} start_pos:{} shift: {} blockbits: {} layers: {}", rel_pos, start_pos, s, blockbits, layers);
+    //log::debug!("fft_block rel_pos:{} start_pos:{} shift: {} blockbits: {} layers: {}", rel_pos, start_pos, s, blockbits, layers);
     let n = 1 << nbits;
     let m = 1 << blockbits;
     let md2 = m >> 1;
@@ -116,9 +116,9 @@ pub fn fft_block(
     blockbits: usize,
     layers: usize,
 ) {
-    println!("start block {} {}", s, start_pos);
+    log::info!("start block {} {}", s, start_pos);
     _fft_block(
         buff, start_pos, start_pos, n_pols, nbits, s, blockbits, layers,
     );
-    println!("end block {} {}", s, start_pos);
+    log::info!("end block {} {}", s, start_pos);
 }

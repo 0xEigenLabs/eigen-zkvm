@@ -176,13 +176,13 @@ impl StarkInfo {
             exp_id: 0,
         };
 
-        println!("generate_step2");
+        log::info!("generate_step2");
         info.generate_step2(&mut ctx, pil, &mut program)?; // H1, H2
 
-        println!("generate_step3");
+        log::info!("generate_step3");
         info.generate_step3(&mut ctx, pil, &mut program)?; // Z Polynonmial and LC of the permutation checks
 
-        println!("generate_constraint_polynomial");
+        log::info!("generate_constraint_polynomial");
         info.generate_constraint_polynomial(
             &mut ctx,
             &mut ctx2ns,
@@ -202,9 +202,9 @@ impl StarkInfo {
             ctx.calculated.insert(("expsPrime", *k), *v);
         }
 
-        println!("generate_constraint_polynomial_verifier");
+        log::info!("generate_constraint_polynomial_verifier");
         info.generate_constraint_polynomial_verifier(&mut ctx, pil, &mut program)?;
-        println!("generate_fri_polynomial");
+        log::info!("generate_fri_polynomial");
         info.generate_fri_polynomial(&mut ctx2ns, pil, &mut program)?;
 
         let mut ctx = Context {
@@ -213,10 +213,10 @@ impl StarkInfo {
             calculated: HashMap::new(),
             exp_id: 0,
         };
-        println!("generate_fri_verifier");
+        log::info!("generate_fri_verifier");
         info.generate_fri_verifier(&mut ctx, pil, &mut program)?;
 
-        println!("map");
+        log::info!("map");
         info.map(pil, &stark_struct, &mut program)?;
 
         info.publics = pil.publics.clone();
@@ -229,7 +229,10 @@ impl StarkInfo {
         program: &mut Program,
     ) -> Result<()> {
         let publics = pil.publics.clone();
-        //println!("generate_pubulic_calculators: publics as input: {:?}", publics);
+        log::debug!(
+            "generate_pubulic_calculators: publics as input: {:?}",
+            publics
+        );
         for p in publics.iter() {
             if p.polType.as_str() == "imP" {
                 let mut ctx = Context {
@@ -265,9 +268,8 @@ impl StarkInfo {
 
                 segment.tmp_used = ctx_f.tmp_used;
                 program.publics_code.push(segment);
-                //println!("generate_pubulic_calculators: publics_code: {}", program.publics_code.len());
-                //for pp in program.publics_code.iter() {
-                //    println!("{}", pp);
+                //log::debug!("generate_pubulic_calculators: publics_code: {}", program.publics_code.len());
+                //    log::debug!("{}", pp);
                 //}
                 ctx.calculated.clear(); // TODO: useless
             }
@@ -282,7 +284,7 @@ impl StarkInfo {
         program: &mut Program,
     ) -> Result<()> {
         let ppi = pil.plookupIdentities.clone();
-        println!("generate_step2: [{:?}]", ppi);
+        log::debug!("generate_step2: [{:?}]", ppi);
         for pi in ppi.iter() {
             let u = E::challenge("u".to_string());
             let def_val = E::challenge("defVal".to_string());
@@ -353,11 +355,11 @@ impl StarkInfo {
         }
 
         program.step2prev = build_code(ctx, pil);
-        //println!("pu_ctx {:?}", self.pu_ctx);
-        //println!("step2prev {}", program.step2prev);
+        log::debug!("pu_ctx {:?}", self.pu_ctx);
+        log::debug!("step2prev {}", program.step2prev);
         ctx.calculated.clear();
         self.n_cm2 = pil.nCommitments - self.n_cm1;
-        //println!("n_cm2 {}", self.n_cm2);
+        log::debug!("n_cm2 {}", self.n_cm2);
         Ok(())
     }
 }

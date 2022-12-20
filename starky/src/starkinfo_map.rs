@@ -42,7 +42,7 @@ impl StarkInfo {
             pil.cm_dims[i] = 1
         }
 
-        //println!("pu: {:?}", self.pu_ctx);
+        log::debug!("pu: {:?}", self.pu_ctx);
         for (i, pu) in self.pu_ctx.iter().enumerate() {
             let dim = std::cmp::max(
                 Self::get_exp_dim(pil, &pil.expressions[pu.f_exp_id]),
@@ -202,7 +202,7 @@ impl StarkInfo {
             self.map_sections.cm3_2ns.push(ppz_2ns);
             pil.cm_dims[(self.n_cm1 + self.n_cm2 + i)] = dim;
             self.exp2pol.insert(self.im_exps_list[i], ppz_n);
-            //println!("5 exp2pol {:?}", self.exp2pol)
+            log::debug!("5 exp2pol {:?}", self.exp2pol)
         }
 
         self.q_dim = Self::get_exp_dim(pil, &pil.expressions[self.c_exp]);
@@ -245,7 +245,7 @@ impl StarkInfo {
         });
         self.f_2ns.push(ppf_2ns);
 
-        //println!("cm_dims: {:?}", pil.cm_dims);
+        log::debug!("cm_dims: {:?}", pil.cm_dims);
         self.map_section()?;
         let N = 1 << stark_struct.nBits;
         let Next = 1 << stark_struct.nBitsExt;
@@ -276,16 +276,14 @@ impl StarkInfo {
             q_2ns: Next,
             f_2ns: Next,
         };
-        //println!(
-        //    "map_offsets: {:?} {:?} {:?} {:?} {:?}",
-        //    self.map_offsets,
-        //    self.map_deg,
-        //    self.map_sections,
-        //    self.map_sectionsN,
-        //    self.map_sectionsN1
-        //);
-        //
-        //
+        log::debug!(
+            "map_offsets: {:?} {:?} {:?} {:?} {:?}",
+            self.map_offsets,
+            self.map_deg,
+            self.map_sections,
+            self.map_sectionsN,
+            self.map_sectionsN1
+        );
 
         for i in 0..program.publics_code.len() {
             self.fix_prover_code(&mut program.publics_code[i], "n", pil, &mut tmpexps);
@@ -468,7 +466,7 @@ impl StarkInfo {
         pil: &mut PIL,
         tmpexps: &mut HashMap<usize, usize>,
     ) {
-        println!("fix_prover_code: {} {} {:?}", segment, dom, self.tmpexp_n);
+        log::debug!("fix_prover_code: {} {} {:?}", segment, dom, self.tmpexp_n);
         let mut ctx_f = ContextF {
             exp_map: HashMap::new(),
             tmp_used: segment.tmp_used,
@@ -480,10 +478,6 @@ impl StarkInfo {
         let fix_ref = |r: &mut Node, ctx: &mut ContextF, pil: &mut PIL| {
             match r.type_.as_str() {
                 "cm" => {
-                    println!(
-                        "update p: {} dom {}, cm_n {:?}, cm_2ns: {:?}",
-                        r.id, ctx.dom, ctx.starkinfo.cm_n, ctx.starkinfo.cm_2ns
-                    );
                     if ctx.dom.as_str() == "n" {
                         r.p = ctx.starkinfo.cm_n[r.id];
                     } else if ctx.dom.as_str() == "2ns" {
@@ -495,18 +489,15 @@ impl StarkInfo {
 
                 "exp" => {
                     let idx = ctx.starkinfo.im_exps_list.iter().position(|&x| x == r.id);
-                    //println!("idx: {:?}", idx);
                     if idx.is_some() {
                         let idx = idx.unwrap();
                         r.type_ = "cm".to_string();
                         r.id = ctx.starkinfo.im_exp2cm[&ctx.starkinfo.im_exps_list[idx]];
                     } else if ctx.tmpexps.get(&r.id).is_some() && ctx.dom == "n" {
-                        //println!("tmpExp: dom {:?}", ctx.dom);
                         r.type_ = "tmpExp".to_string();
                         r.dim = Self::get_exp_dim(pil, &pil.expressions[r.id]);
                         r.id = ctx.tmpexps[&r.id];
                     } else {
-                        //println!("to tmp {:?}", r);
                         let p = if r.prime { 1 } else { 0 };
                         if ctx.exp_map.get(&(p, r.id)).is_none() {
                             ctx.exp_map.insert((p, r.id), ctx.tmp_used);
@@ -523,9 +514,12 @@ impl StarkInfo {
                     panic!("Invalid reference type {}", r.type_);
                 }
             };
-            println!(
+            log::debug!(
                 "node: {:?}, im_exps_list {:?} dom {} tmpexps: {:?}",
-                r, ctx.starkinfo.im_exps_list, ctx.dom, ctx.tmpexps
+                r,
+                ctx.starkinfo.im_exps_list,
+                ctx.dom,
+                ctx.tmpexps
             );
         };
 
@@ -556,7 +550,7 @@ impl StarkInfo {
                 }
             }
             let t = (self.map_sectionsN.get(s) - self.map_sectionsN1.get(s)) / 3;
-            //println!("map_sectionN3 set {} = {}", s, t);
+            log::debug!("map_sectionN3 set {} = {}", s, t);
             self.map_sectionsN3.set(s, t);
         }
         Ok(())

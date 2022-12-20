@@ -11,12 +11,12 @@ impl StarkInfo {
         pil: &mut PIL,
         program: &mut Program,
     ) -> Result<()> {
-        //println!("cp ver begin ctx {:?}, c_exp: {}", ctx, self.c_exp);
+        log::debug!("cp ver begin ctx {:?}, c_exp: {}", ctx, self.c_exp);
         pil_code_gen(ctx, pil, self.c_exp, false, "", 0)?;
 
-        //println!("cp ver buildcode ctx begin {:?}", ctx);
+        log::debug!("cp ver buildcode ctx begin {:?}", ctx);
         let mut code = build_code(ctx, pil);
-        //println!("cp ver buildcode {}", code);
+        log::debug!("cp ver buildcode {}", code);
 
         let mut ctx_f = ContextF {
             exp_map: HashMap::new(),
@@ -25,7 +25,7 @@ impl StarkInfo {
             tmpexps: &mut HashMap::new(),
             starkinfo: self,
         };
-        //println!("cp ver code.tmp_used begin {}", code.tmp_used);
+        log::debug!("cp ver code.tmp_used begin {}", code.tmp_used);
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF, _pil: &mut PIL| {
             let p = if r.prime { 1 } else { 0 };
@@ -102,12 +102,12 @@ impl StarkInfo {
                 "number" | "challenge" | "public" | "tmp" | "Z" | "x" | "eval" => {}
                 _ => panic!("Invalid reference type: {:?}", r),
             };
-            //println!("ev_map: {:?}", ctx.starkinfo.ev_map);
+            log::debug!("ev_map: {:?}", ctx.starkinfo.ev_map);
         };
 
         iterate_code(&mut code, fix_ref, &mut ctx_f, pil);
 
-        //println!("q_deg: {}", ctx_f.starkinfo.q_deg);
+        log::debug!("q_deg: {}", ctx_f.starkinfo.q_deg);
         for i in 0..ctx_f.starkinfo.q_deg {
             ctx_f.starkinfo.ev_idx.set(
                 "cm",
@@ -120,10 +120,10 @@ impl StarkInfo {
         }
 
         code.tmp_used = ctx_f.tmp_used;
-        //println!("ev_idx: {:?}", ctx_f.starkinfo.ev_idx);
-        //println!("ev_map: {:?}", ctx_f.starkinfo.ev_map);
-        //println!("cp ver code.tmp_used {}", code.tmp_used);
-        //println!("cp ver code {}", code);
+        //log::debug!("ev_idx: {:?}", ctx_f.starkinfo.ev_idx);
+        //log::debug!("ev_map: {:?}", ctx_f.starkinfo.ev_map);
+        //log::debug!("cp ver code.tmp_used {}", code.tmp_used);
+        //log::debug!("cp ver code {}", code);
         program.verifier_code = code;
         Ok(())
     }

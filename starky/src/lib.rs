@@ -40,6 +40,7 @@ mod transcript_bn128;
 #[macro_use]
 extern crate serde_json;
 
+extern crate env_logger;
 extern crate ff;
-
 extern crate lazy_static;
+extern crate log;

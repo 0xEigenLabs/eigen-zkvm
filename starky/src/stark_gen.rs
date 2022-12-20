@@ -195,7 +195,7 @@ impl<'a> StarkProof {
             xx = xx * MG.0[ctx.nbits_ext];
         }
         ctx.Zi = Self::build_Zh_Inv(ctx.nbits, extendBits);
-        //println!("Zi(1) {}", (ctx.Zi)(1));
+        log::debug!("Zi(1) {}", (ctx.Zi)(1));
 
         ctx.const_n = const_pols.write_buff();
         const_tree.to_f3g(&mut ctx.const_2ns);
@@ -227,19 +227,19 @@ impl<'a> StarkProof {
             transcript.put(&b)?;
         }
 
-        println!("Merkeling 1....");
+        log::info!("Merkeling 1....");
         let tree1 = extend_and_merkelize(&mut ctx, starkinfo, "cm1_n").unwrap();
         tree1.to_f3g(&mut ctx.cm1_2ns);
         let root: Fr = tree1.root().into();
-        println!("tree1 root: {:?}", crate::helper::fr_to_biguint(&root));
-        println!("tree1[0] {}", ctx.cm1_2ns[0]);
+        log::info!("tree1 root: {:?}", crate::helper::fr_to_biguint(&root));
+        log::info!("tree1[0] {}", ctx.cm1_2ns[0]);
         transcript.put(&vec![root])?;
         // 2.- Caluculate plookups h1 and h2
         ctx.challenges[0] = transcript.get_field(); //u
         ctx.challenges[1] = transcript.get_field(); //defVal
 
-        //println!("challenges[0] {}", ctx.challenges[0]);
-        //println!("challenges[1] {}", ctx.challenges[1]);
+        log::debug!("challenges[0] {}", ctx.challenges[0]);
+        log::debug!("challenges[1] {}", ctx.challenges[1]);
 
         //TODO parallel execution
         calculate_exps(&mut ctx, starkinfo, &program.step2prev, "n");
@@ -254,26 +254,26 @@ impl<'a> StarkProof {
             n_cm += 1;
         }
 
-        println!("Merkeling 2....");
+        log::info!("Merkeling 2....");
         let tree2 = extend_and_merkelize(&mut ctx, starkinfo, "cm2_n").unwrap();
         tree2.to_f3g(&mut ctx.cm2_2ns);
         let root: Fr = tree2.root().into();
         transcript.put(&vec![root])?;
-        println!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
+        log::info!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
         if ctx.cm2_2ns.len() > 0 {
-            println!("tree2[0] {}", ctx.cm2_2ns[0]);
+            log::info!("tree2[0] {}", ctx.cm2_2ns[0]);
         }
 
         // 3.- Compute Z polynomials
         ctx.challenges[2] = transcript.get_field(); // gamma
         ctx.challenges[3] = transcript.get_field(); // betta
-                                                    //println!("challenges[2] {}", ctx.challenges[2]);
-                                                    //println!("challenges[3] {}", ctx.challenges[3]);
+        log::debug!("challenges[2] {}", ctx.challenges[2]);
+        log::debug!("challenges[3] {}", ctx.challenges[3]);
 
         calculate_exps(&mut ctx, starkinfo, &program.step3prev, "n");
 
         for (i, pu) in starkinfo.pu_ctx.iter().enumerate() {
-            println!("Calculating z for plookup {}", i);
+            log::info!("Calculating z for plookup {}", i);
             let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.num_id]);
             let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.den_id]);
             let z = calculate_Z(pNum, pDen);
@@ -282,16 +282,16 @@ impl<'a> StarkProof {
         }
 
         for (i, pe) in starkinfo.pe_ctx.iter().enumerate() {
-            println!("Calculating z for permutation {}", i);
+            log::info!("Calculating z for permutation {}", i);
             let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.num_id]);
             let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.den_id]);
             let z = calculate_Z(pNum, pDen);
-            //println!("n_cm {} {}", n_cm, starkinfo.cm_n[n_cm]);
+            log::debug!("n_cm {} {}", n_cm, starkinfo.cm_n[n_cm]);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], z);
             n_cm += 1;
         }
         for (i, ci) in starkinfo.ci_ctx.iter().enumerate() {
-            println!("Calculating z for connection {}", i);
+            log::info!("Calculating z for connection {}", i);
             let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&ci.num_id]);
             let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&ci.den_id]);
             let z = calculate_Z(pNum, pDen);
@@ -301,7 +301,7 @@ impl<'a> StarkProof {
 
         calculate_exps(&mut ctx, starkinfo, &program.step3, "n");
 
-        println!("Merkelizing 3....");
+        log::info!("Merkelizing 3....");
 
         let tree3 = extend_and_merkelize(&mut ctx, starkinfo, "cm3_n").unwrap();
         tree3.to_f3g(&mut ctx.cm3_2ns);
@@ -309,25 +309,27 @@ impl<'a> StarkProof {
         let root: Fr = tree3.root().into();
         transcript.put(&vec![root])?;
 
-        println!("tree3 root: {:?}", crate::helper::fr_to_biguint(&root));
+        log::info!("tree3 root: {:?}", crate::helper::fr_to_biguint(&root));
         if ctx.cm3_2ns.len() > 0 {
-            println!("tree3[0] {}", ctx.cm3_2ns[0]);
+            log::info!("tree3[0] {}", ctx.cm3_2ns[0]);
         }
         // 4. Compute C Polynomial
         ctx.challenges[4] = transcript.get_field(); // vc
-                                                    //println!("challenges[4] {}", ctx.challenges[4]);
+        log::debug!("challenges[4] {}", ctx.challenges[4]);
 
         calculate_exps(&mut ctx, starkinfo, &program.step42ns, "2ns");
 
         let mut qq1 = vec![F3G::ZERO; ctx.q_2ns.len()];
         let mut qq2 = vec![F3G::ZERO; starkinfo.q_dim * ctx.Next * starkinfo.q_deg];
-        //println!(
-        //    "qq2 len {} * {} * {}",
-        //    starkinfo.q_dim, ctx.Next, starkinfo.q_deg
-        //);
+        log::debug!(
+            "qq2 len {} * {} * {}",
+            starkinfo.q_dim,
+            ctx.Next,
+            starkinfo.q_deg
+        );
         ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
         //crate::helper::pretty_print_array(&ctx.q_2ns);
-        //println!("qq1");
+        log::debug!("qq1");
         //crate::helper::pretty_print_array(&qq1);
 
         let mut cur_s = F3G::ONE;
@@ -341,7 +343,7 @@ impl<'a> StarkProof {
             }
             cur_s = cur_s * shift_in;
         }
-        //println!("qq2");
+        log::debug!("qq2");
         //crate::helper::pretty_print_array(&qq2);
 
         fft(
@@ -351,21 +353,21 @@ impl<'a> StarkProof {
             &mut ctx.cm4_2ns,
         );
 
-        println!("Merkelizing 4....");
+        log::info!("Merkelizing 4....");
         let tree4 = merkelize(&mut ctx, starkinfo, "cm4_2ns").unwrap();
         let root: Fr = tree4.root().into();
         transcript.put(&vec![root])?;
 
-        println!("tree4 root: {:?}", crate::helper::fr_to_biguint(&root));
+        log::info!("tree4 root: {:?}", crate::helper::fr_to_biguint(&root));
         if ctx.cm4_2ns.len() > 0 {
-            println!("tree4[0] {}", ctx.cm4_2ns[0]);
+            log::info!("tree4[0] {}", ctx.cm4_2ns[0]);
         }
 
         ///////////
         // 5. Compute FRI Polynomial
         ///////////
         ctx.challenges[7] = transcript.get_field(); // xi
-                                                    //println!("ctx.challenges[7] {}", ctx.challenges[7]);
+        log::debug!("ctx.challenges[7] {}", ctx.challenges[7]);
 
         let mut LEv = vec![F3G::ZERO; ctx.N];
         let mut LpEv = vec![F3G::ZERO; ctx.N];
@@ -461,8 +463,8 @@ impl<'a> StarkProof {
         calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns");
 
         let mut friPol = vec![F3G::ZERO; N << extendBits];
-        //println!("friPol {} {}", friPol.len(), N << extendBits);
-        //println!("ctx.f_2ns");
+        log::debug!("friPol {} {}", friPol.len(), N << extendBits);
+        log::debug!("ctx.f_2ns");
         //crate::helper::pretty_print_array(&ctx.f_2ns);
         for i in 0..(N << extendBits) {
             friPol[i] = F3G::new(
@@ -471,7 +473,7 @@ impl<'a> StarkProof {
                 ctx.f_2ns[i * 3 + 2].to_be(),
             );
         }
-        //println!("friPol {} {}", friPol.len(), N << extendBits);
+        log::debug!("friPol {} {}", friPol.len(), N << extendBits);
 
         let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
             vec![
@@ -485,20 +487,20 @@ impl<'a> StarkProof {
         let mut fri = FRI::new(stark_struct);
 
         let friProof = fri.prove(&mut transcript, &friPol, query_pol)?;
-        //println!("tree1 nodes");
+        log::debug!("tree1 nodes");
         //for i in 0..tree1.nodes.len() {
-        //  println!("{}", tree1.nodes[i]);
+        //  log::info!("{}", tree1.nodes[i]);
         //}
         //for i in 0..tree2.nodes.len() {
-        //  println!("{}", tree2.nodes[i]);
+        //  log::info!("{}", tree2.nodes[i]);
         //}
         //for i in 0..tree3.nodes.len() {
-        //  println!("{}", tree3.nodes[i]);
+        //  log::info!("{}", tree3.nodes[i]);
         //}
         //for i in 0..tree4.nodes.len() {
-        //  println!("{}", tree4.nodes[i]);
+        //  log::info!("{}", tree4.nodes[i]);
         //}
-        //println!("end nodes");
+        log::debug!("end nodes");
 
         Ok(StarkProof {
             root1: tree1.root(),
@@ -520,7 +522,7 @@ impl<'a> StarkProof {
         ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
         let res = t.eval(ctx, idx);
-        //println!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
+        log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
         res
     }
 
@@ -531,7 +533,7 @@ impl<'a> StarkProof {
             sn = sn * sn;
         }
         let mut ZHInv = vec![F3G::ZERO; 1 << extendBits];
-        //println!("extendBits: {}", 1 << extendBits);
+        log::debug!("extendBits: {}", 1 << extendBits);
         for i in 0..(1 << extendBits) {
             ZHInv[i] = F3G::inv(sn * w - F3G::ONE);
             w = w * MG.0[extendBits];
@@ -543,13 +545,13 @@ impl<'a> StarkProof {
 fn set_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: &usize, pol: Vec<F3G>) {
     let id_pol = *id_pol;
     let p = get_pol_ref(ctx, starkinfo, id_pol);
-    //println!(
-    //    "set_pol {:?} {} {} {}",
-    //    p.deg,
-    //    p.size,
-    //    p.dim,
-    //    p.buffer.len()
-    //);
+    log::debug!(
+        "set_pol {:?} {} {} {}",
+        p.deg,
+        p.size,
+        p.dim,
+        p.buffer.len()
+    );
     if p.dim == 1 {
         for i in 0..p.deg {
             p.buffer[(p.offset + i * p.size)] = pol[i];
@@ -657,13 +659,13 @@ pub fn extend_and_merkelize(
     let n_pols = starkinfo.map_sectionsN.get(section_name);
     let mut result = vec![F3G::ZERO; (1 << nBitsExt) * n_pols];
     let p = ctx.get_mut(section_name);
-    //println!(
-    //    "extend_and_merkelize: p.len {} nBits {} nBitsExt {} n_pols {}",
-    //    p.len(),
-    //    nBits,
-    //    nBitsExt,
-    //    n_pols
-    //);
+    log::debug!(
+        "extend_and_merkelize: p.len {} nBits {} nBitsExt {} n_pols {}",
+        p.len(),
+        nBits,
+        nBitsExt,
+        n_pols
+    );
     //crate::helper::pretty_print_array(&p);
     interpolate(p, n_pols, nBits, &mut result, nBitsExt);
     let mut p_be = vec![BaseElement::ZERO; result.len()];
@@ -684,7 +686,7 @@ pub fn merkelize(
     let nBitsExt = ctx.nbits_ext;
     let n_pols = starkinfo.map_sectionsN.get(section_name);
     let p = ctx.get_mut(section_name).clone();
-    //println!("merkelize: {} {}", section_name, nBitsExt);
+    log::debug!("merkelize: {} {}", section_name, nBitsExt);
     //crate::helper::pretty_print_array(&p);
     let mut p_be = vec![BaseElement::ZERO; p.len()];
     p_be.par_iter_mut().zip(p).for_each(|(be_out, f3g_in)| {
@@ -696,7 +698,7 @@ pub fn merkelize(
 pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    //println!("compile_code ctx.first {}", c_first);
+    log::debug!("compile_code ctx.first {}", c_first);
     let _c_i = compile_code(ctx, starkinfo, &seg.first, dom, false);
     let _c_last = compile_code(ctx, starkinfo, &seg.first, dom, false);
 
@@ -708,9 +710,9 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     let N = if dom == "n" { ctx.N } else { ctx.Next };
     for i in 0..next {
         c_first.eval(ctx, i);
-        //println!("ctx.q_2ns[3*i] {} ", ctx.q_2ns[3 * i]);
+        log::debug!("ctx.q_2ns[3*i] {} ", ctx.q_2ns[3 * i]);
         //for i in 0..ctx.tmp.len() {
-        //    println!("tmp@{} {}", i, ctx.tmp[i]);
+        //    log::info!("tmp@{} {}", i, ctx.tmp[i]);
         //}
     }
 
@@ -755,7 +757,7 @@ pub mod tests {
         )
         .unwrap();
 
-        println!("verify the proof...");
+        log::info!("verify the proof...");
 
         let result = stark_verify(
             &starkproof,
@@ -790,7 +792,7 @@ pub mod tests {
         )
         .unwrap();
 
-        println!("verify the proof...");
+        log::info!("verify the proof...");
 
         let result = stark_verify(
             &starkproof,
@@ -822,7 +824,39 @@ pub mod tests {
             &stark_struct,
         )
         .unwrap();
-        println!("verify the proof...");
+        log::info!("verify the proof...");
+        let result = stark_verify(
+            &starkproof,
+            &setup.const_root,
+            &setup.starkinfo,
+            &stark_struct,
+            &mut setup.program,
+        )
+        .unwrap();
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_stark_connection() {
+        let mut pil = load_json::<PIL>("data/connection.pil.json").unwrap();
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
+        const_pol.load("data/connection.const").unwrap();
+        let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
+        cm_pol.load("data/connection.cm").unwrap();
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
+        let mut setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let starkproof = StarkProof::stark_gen(
+            &cm_pol,
+            &const_pol,
+            &setup.const_tree,
+            &setup.starkinfo,
+            &setup.program,
+            &pil,
+            &stark_struct,
+        )
+        .unwrap();
+        log::info!("verify the proof...");
         let result = stark_verify(
             &starkproof,
             &setup.const_root,
