@@ -86,7 +86,6 @@ impl StarkInfo {
             self.map_sections.cm2_n.push(pph2_n);
             self.map_sections.cm2_2ns.push(pph2_2ns);
             pil.cm_dims[self.n_cm1 + i * 2 + 1] = dim;
-            //println!("cm_dims:1111 {:?}", pil.cm_dims);
 
             if im_exps_none(&pu.f_exp_id) {
                 if tmpexps.get(&pu.f_exp_id).is_none() {
@@ -100,7 +99,6 @@ impl StarkInfo {
                     self.tmpexp_n.push(ppf_n.clone());
                     self.map_sections.tmpexp_n.push(ppf_n);
                     self.exp2pol.insert(pu.f_exp_id, ppf_n);
-                    //println!("1 exp2pol {:?} {}", self.exp2pol, self.pu_ctx[i].f_exp_id)
                 }
             }
 
@@ -116,7 +114,6 @@ impl StarkInfo {
                     self.tmpexp_n.push(ppt_n.clone());
                     self.map_sections.tmpexp_n.push(ppt_n);
                     self.exp2pol.insert(pu.t_exp_id, ppt_n);
-                    //println!("2 exp2pol {:?}", self.exp2pol)
                 }
             }
         }
@@ -162,7 +159,6 @@ impl StarkInfo {
                     self.tmpexp_n.push(pp_num_n);
                     self.map_sections.tmpexp_n.push(pp_num_n);
                     self.exp2pol.insert(o.num_id, pp_num_n);
-                    //println!("3 exp2pol {:?}", self.exp2pol)
                 }
             }
 
@@ -179,7 +175,6 @@ impl StarkInfo {
                     self.tmpexp_n.push(pp_den_n);
                     self.map_sections.tmpexp_n.push(pp_den_n);
                     self.exp2pol.insert(o.den_id, pp_den_n);
-                    //println!("4 exp2pol {:?}", self.exp2pol)
                 }
             }
         }
@@ -259,7 +254,8 @@ impl StarkInfo {
         self.map_offsets.cm1_n = 0;
         self.map_offsets.cm2_n = self.map_offsets.cm1_n + N * self.map_sectionsN.cm1_n;
         self.map_offsets.cm3_n = self.map_offsets.cm2_n + N * self.map_sectionsN.cm2_n;
-        self.map_offsets.tmpexp_n = self.map_offsets.cm3_n + N * self.map_sectionsN.cm3_n;
+        self.map_offsets.cm4_n = self.map_offsets.cm3_n + N * self.map_sectionsN.cm3_n;
+        self.map_offsets.tmpexp_n = self.map_offsets.cm4_n + N * self.map_sectionsN.cm4_n;
         self.map_offsets.cm1_2ns = self.map_offsets.tmpexp_n + N * self.map_sectionsN.tmpexp_n;
         self.map_offsets.cm2_2ns = self.map_offsets.cm1_2ns + Next * self.map_sectionsN.cm1_2ns;
         self.map_offsets.cm3_2ns = self.map_offsets.cm2_2ns + Next * self.map_sectionsN.cm2_2ns;
@@ -296,15 +292,10 @@ impl StarkInfo {
         }
 
         self.fix_prover_code(&mut program.step2prev, "n", pil, &mut tmpexps);
-        //println!("111 0 {}", serde_json::to_string_pretty(&program.step2prev.i).unwrap());
         self.fix_prover_code(&mut program.step3prev, "n", pil, &mut tmpexps);
-        println!("111 1");
         self.fix_prover_code(&mut program.step3, "n", pil, &mut tmpexps);
-        println!("111 2");
         self.fix_prover_code(&mut program.step42ns, "2ns", pil, &mut tmpexps);
-        println!("111 3");
         self.fix_prover_code(&mut program.step52ns, "2ns", pil, &mut tmpexps);
-        println!("111 4");
         self.fix_prover_code(&mut program.verifier_query_code, "2ns", pil, &mut tmpexps);
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF, _pil: &mut PIL| {

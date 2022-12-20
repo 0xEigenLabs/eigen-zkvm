@@ -74,24 +74,36 @@ pub fn stark_verify(
     ctx.Z = x_n - F3G::ONE;
     ctx.Zp = (ctx.challenges[7] * MG.0[ctx.nbits]).pow(ctx.N) - F3G::ONE;
 
+    println!("xN: {} {} {}", x_n, ctx.Z, ctx.Zp);
     //println!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);
 
     let mut x_acc = F3G::ONE;
     let mut q = F3G::ZERO;
+    println!("q_deg: {}", starkinfo.q_deg);
     for i in 0..starkinfo.q_deg {
+        println!(
+            "q: {}, qs[{}]={}, x_acc {}, evals {}",
+            q,
+            i,
+            starkinfo.qs[i],
+            x_acc,
+            ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()]
+        );
         q = q + x_acc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
         x_acc = x_acc * x_n;
     }
     let q_z = q * ctx.Z;
 
     if !res.eq(&q_z) {
+        println!("q_z not equal {} {}", res, q_z);
         return Ok(false);
     }
 
     let fri = FRI::new(stark_struct);
     let check_query =
         |query: &Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>, idx: usize| -> Result<Vec<F3G>> {
+            println!("Query: {}", idx);
             let tree = MerkleTree::new();
             let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
             if !res {
@@ -158,7 +170,6 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
 
     let get_ref = |r: &Node, tmp: &HashMap<usize, F3G>| -> F3G {
         let t = match r.type_.as_str() {
-            //"tmp" => if tmp.get(&r.id).is_some() {tmp[&r.id]} else {F3G::ZERO},
             "tmp" => *tmp.get(&r.id).unwrap(),
             "tree1" => extract_val(&ctx.tree1, r.tree_pos, r.dim),
             "tree2" => extract_val(&ctx.tree2, r.tree_pos, r.dim),
@@ -181,13 +192,13 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
             }
             _ => panic!("Invalid reference type, get: {}", r.type_),
         };
-        //println!("verfify get ref {}", t);
+        println!("verify get ref {}", t);
         t
     };
 
     let set_ref = |r: &mut Node, val: F3G, tmp: &mut HashMap<usize, F3G>| match r.type_.as_str() {
         "tmp" => {
-            //println!("verfify set ref {} {}", r.id, val);
+            println!("verify set ref {} {}", r.id, val);
             tmp.insert(r.id, val);
         }
         _ => {
@@ -207,8 +218,6 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
             "copy" => src[0],
             _ => panic!("Invalid op: {}", code[i].op),
         };
-
-        println!("set_ref: {} {:?}", i, code[i].dest);
         set_ref(&mut code[i].dest, res, &mut tmp);
     }
     let sz = code.len() - 1;

@@ -39,7 +39,7 @@ impl TranscriptBN128 {
 
     pub fn get_fields1(&mut self) -> Result<BaseElement> {
         if self.out3.len() > 0 {
-            //println!("get_fields1 {},", self.out3[0]);
+            println!("get_fields1 {},", self.out3[0]);
             return Ok(self.out3.pop_front().unwrap());
         }
 
