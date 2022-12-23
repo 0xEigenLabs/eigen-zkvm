@@ -34,6 +34,9 @@ pub enum EigenError {
     #[error("verify FRI proof failed")]
     FRIVerifierFailed,
 
+    #[error("Fr::from_expr error")]
+    PFDecodeError(#[from] ff::PrimeFieldDecodingError),
+
     #[error("Unknown error, `{0}`")]
     Unknown(String),
 }

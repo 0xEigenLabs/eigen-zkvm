@@ -5,6 +5,7 @@ use crate::poseidon_bn128_opt::Poseidon;
 use crate::ElementDigest;
 use ff::*;
 //use rayon::prelude::*;
+use crate::constant::{OFFSET_2_128, OFFSET_2_64};
 use winter_math::fields::f64::BaseElement;
 use winter_math::{FieldElement, StarkField};
 
@@ -13,14 +14,11 @@ pub struct LinearHashBN128 {
     h: Poseidon,
 }
 
-use crate::constant::*;
-
 impl LinearHashBN128 {
     pub fn new() -> Self {
         LinearHashBN128 { h: Poseidon::new() }
     }
 
-    /// used for hash leaves only, converting element from GL to BN128
     pub fn hash_element_matrix(&self, columns: &Vec<Vec<BaseElement>>) -> Result<Fr> {
         let mut st = Fr::zero();
         let mut vals3: Vec<Fr> = vec![];
@@ -30,7 +28,7 @@ impl LinearHashBN128 {
 
         for col in columns.iter() {
             for elem in col.iter() {
-                let mut e = Fr::from_str(&elem.as_int().to_string()).unwrap();
+                let mut e = Fr::from_repr(FrRepr::from(elem.as_int()))?;
                 if accN == 1 {
                     e.mul_assign(&OFFSET_2_64);
                 } else if accN == 2 {
@@ -136,7 +134,7 @@ mod tests {
     use winter_math::fields::f64::BaseElement;
 
     #[test]
-    fn test_linearhash_bn128() {
+    fn test_linearhash_matrix_bn128() {
         let inputs: Vec<_> = (0..100).collect::<Vec<u64>>();
         let inputs: Vec<Vec<BaseElement>> = inputs
             .iter()

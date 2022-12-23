@@ -23,13 +23,13 @@ impl StarkInfo {
             }
         }
 
-        log::debug!("fri_exp {}", fri_exp);
+        //log::debug!("fri_exp {}", fri_exp);
         let mut fri1_exp = E::nop();
         let mut fri2_exp = E::nop();
-        log::debug!(
-            "ev_map: {}",
-            serde_json::to_string_pretty(&self.ev_map).unwrap()
-        );
+        //log::debug!(
+        //    "ev_map: {}",
+        //    serde_json::to_string_pretty(&self.ev_map).unwrap()
+        //);
         for (i, ev) in self.ev_map.iter().enumerate() {
             let mut fri_exp = match ev.prime {
                 true => fri2_exp.clone(),
@@ -55,8 +55,8 @@ impl StarkInfo {
             }
         }
 
-        log::debug!("fri1exp {}", fri1_exp);
-        log::debug!("fri2exp {}", fri2_exp);
+        //log::debug!("fri1exp {}", fri1_exp);
+        //log::debug!("fri2exp {}", fri2_exp);
 
         if !E::is_nop(&fri_exp) {
             fri1_exp = E::mul(&fri1_exp, &E::xDivXSubXi());
@@ -76,7 +76,7 @@ impl StarkInfo {
             }
         }
 
-        log::debug!("fri_exp {}", fri_exp);
+        //log::debug!("fri_exp {}", fri_exp);
         self.fri_exp_id = pil.expressions.len();
         fri_exp.keep2ns = Some(true);
         if E::is_nop(&fri_exp) {

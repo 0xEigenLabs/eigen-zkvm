@@ -96,10 +96,10 @@ pub fn stark_verify(
             log::info!("Query: {}", idx);
             let tree = MerkleTree::new();
             let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
+            //panic!("111");
             if !res {
                 return Err(FRIVerifierFailed);
             }
-
             let res = tree.verify_group_proof(&proof.root2, &query[1].1, idx, &query[1].0)?;
             if !res {
                 return Err(FRIVerifierFailed);

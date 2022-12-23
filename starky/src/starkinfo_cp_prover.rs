@@ -16,11 +16,11 @@ impl StarkInfo {
         stark_struct: &StarkStruct,
         program: &mut Program,
     ) -> Result<()> {
-        log::debug!(
-            "generate_constraint_polynomial ctx begin: {} {:?}",
-            pil,
-            ctx
-        );
+        //log::debug!(
+        //    "generate_constraint_polynomial ctx begin: {} {:?}",
+        //    pil,
+        //    ctx
+        //);
 
         let vc = E::challenge("vc".to_string());
         let mut c_exp = E::nop();
@@ -47,7 +47,7 @@ impl StarkInfo {
         if im_exps.is_some() {
             self.im_exps = im_exps.unwrap();
         }
-        log::debug!("im_exps: {:?} q_deg {}", self.im_exps, self.q_deg);
+        //log::debug!("im_exps: {:?} q_deg {}", self.im_exps, self.q_deg);
 
         for k in self.im_exps.keys() {
             self.im_exps_list.push(*k);
@@ -71,10 +71,10 @@ impl StarkInfo {
             }
         }
 
-        log::debug!(
-            "generate_constraint_polynomial: c_exp: {}, pil.nQ: {:?}, im_exp2cm: {:?}, im_exps_list :{:?}",
-            c_exp, pil.nQ, self.im_exp2cm, self.im_exps_list
-        );
+        //log::debug!(
+        //    "generate_constraint_polynomial: c_exp: {}, pil.nQ: {:?}, im_exp2cm: {:?}, im_exps_list :{:?}",
+        //    c_exp, pil.nQ, self.im_exp2cm, self.im_exps_list
+        //);
         self.c_exp = pil.expressions.len();
         pil.expressions.push(c_exp);
 
@@ -234,16 +234,16 @@ pub fn calculate_im_pols(
     _exp: &Expression,
     max_deg: usize,
 ) -> Result<(Option<HashMap<usize, bool>>, i32)> {
-    log::debug!("calculate_im_pols: {} {}", _exp, max_deg);
+    //log::debug!("calculate_im_pols: {} {}", _exp, max_deg);
 
     let im_expressions: HashMap<usize, bool> = HashMap::new();
     let (re, rd) = _calculate_im_pols(pil, _exp, &Some(im_expressions), max_deg, max_deg);
 
-    log::debug!(
-        "maxDeg: {}, nIm: {}, d: {}",
-        max_deg,
-        re.as_ref().unwrap().len(),
-        rd
-    );
+    //log::debug!(
+    //    "maxDeg: {}, nIm: {}, d: {}",
+    //    max_deg,
+    //    re.as_ref().unwrap().len(),
+    //    rd
+    //);
     Ok((re, rd - 1))
 }

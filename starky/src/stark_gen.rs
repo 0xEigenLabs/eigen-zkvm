@@ -367,7 +367,7 @@ impl<'a> StarkProof {
         // 5. Compute FRI Polynomial
         ///////////
         ctx.challenges[7] = transcript.get_field(); // xi
-        log::debug!("ctx.challenges[7] {}", ctx.challenges[7]);
+                                                    //log::debug!("ctx.challenges[7] {}", ctx.challenges[7]);
 
         let mut LEv = vec![F3G::ZERO; ctx.N];
         let mut LpEv = vec![F3G::ZERO; ctx.N];
@@ -463,9 +463,6 @@ impl<'a> StarkProof {
         calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns");
 
         let mut friPol = vec![F3G::ZERO; N << extendBits];
-        log::debug!("friPol {} {}", friPol.len(), N << extendBits);
-        log::debug!("ctx.f_2ns");
-        //crate::helper::pretty_print_array(&ctx.f_2ns);
         for i in 0..(N << extendBits) {
             friPol[i] = F3G::new(
                 ctx.f_2ns[i * 3].to_be(),
@@ -473,7 +470,7 @@ impl<'a> StarkProof {
                 ctx.f_2ns[i * 3 + 2].to_be(),
             );
         }
-        log::debug!("friPol {} {}", friPol.len(), N << extendBits);
+        //log::debug!("friPol {} {}", friPol.len(), N << extendBits);
 
         let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
             vec![
@@ -487,7 +484,7 @@ impl<'a> StarkProof {
         let mut fri = FRI::new(stark_struct);
 
         let friProof = fri.prove(&mut transcript, &friPol, query_pol)?;
-        log::debug!("tree1 nodes");
+        //log::debug!("tree1 nodes");
         //for i in 0..tree1.nodes.len() {
         //  log::info!("{}", tree1.nodes[i]);
         //}
@@ -500,7 +497,7 @@ impl<'a> StarkProof {
         //for i in 0..tree4.nodes.len() {
         //  log::info!("{}", tree4.nodes[i]);
         //}
-        log::debug!("end nodes");
+        //log::debug!("end nodes");
 
         Ok(StarkProof {
             root1: tree1.root(),
@@ -522,7 +519,7 @@ impl<'a> StarkProof {
         ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
         let res = t.eval(ctx, idx);
-        log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
+        //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
         res
     }
 
@@ -533,7 +530,7 @@ impl<'a> StarkProof {
             sn = sn * sn;
         }
         let mut ZHInv = vec![F3G::ZERO; 1 << extendBits];
-        log::debug!("extendBits: {}", 1 << extendBits);
+        //log::debug!("extendBits: {}", 1 << extendBits);
         for i in 0..(1 << extendBits) {
             ZHInv[i] = F3G::inv(sn * w - F3G::ONE);
             w = w * MG.0[extendBits];
@@ -545,13 +542,13 @@ impl<'a> StarkProof {
 fn set_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: &usize, pol: Vec<F3G>) {
     let id_pol = *id_pol;
     let p = get_pol_ref(ctx, starkinfo, id_pol);
-    log::debug!(
-        "set_pol {:?} {} {} {}",
-        p.deg,
-        p.size,
-        p.dim,
-        p.buffer.len()
-    );
+    //log::debug!(
+    //    "set_pol {:?} {} {} {}",
+    //    p.deg,
+    //    p.size,
+    //    p.dim,
+    //    p.buffer.len()
+    //);
     if p.dim == 1 {
         for i in 0..p.deg {
             p.buffer[(p.offset + i * p.size)] = pol[i];
@@ -659,13 +656,13 @@ pub fn extend_and_merkelize(
     let n_pols = starkinfo.map_sectionsN.get(section_name);
     let mut result = vec![F3G::ZERO; (1 << nBitsExt) * n_pols];
     let p = ctx.get_mut(section_name);
-    log::debug!(
-        "extend_and_merkelize: p.len {} nBits {} nBitsExt {} n_pols {}",
-        p.len(),
-        nBits,
-        nBitsExt,
-        n_pols
-    );
+    //log::debug!(
+    //    "extend_and_merkelize: p.len {} nBits {} nBitsExt {} n_pols {}",
+    //    p.len(),
+    //    nBits,
+    //    nBitsExt,
+    //    n_pols
+    //);
     //crate::helper::pretty_print_array(&p);
     interpolate(p, n_pols, nBits, &mut result, nBitsExt);
     let mut p_be = vec![BaseElement::ZERO; result.len()];
@@ -686,7 +683,7 @@ pub fn merkelize(
     let nBitsExt = ctx.nbits_ext;
     let n_pols = starkinfo.map_sectionsN.get(section_name);
     let p = ctx.get_mut(section_name).clone();
-    log::debug!("merkelize: {} {}", section_name, nBitsExt);
+    //log::debug!("merkelize: {} {}", section_name, nBitsExt);
     //crate::helper::pretty_print_array(&p);
     let mut p_be = vec![BaseElement::ZERO; p.len()];
     p_be.par_iter_mut().zip(p).for_each(|(be_out, f3g_in)| {
@@ -698,7 +695,7 @@ pub fn merkelize(
 pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    log::debug!("compile_code ctx.first {}", c_first);
+    //log::debug!("compile_code ctx.first {}", c_first);
     let _c_i = compile_code(ctx, starkinfo, &seg.first, dom, false);
     let _c_last = compile_code(ctx, starkinfo, &seg.first, dom, false);
 
@@ -710,7 +707,7 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     let N = if dom == "n" { ctx.N } else { ctx.Next };
     for i in 0..next {
         c_first.eval(ctx, i);
-        log::debug!("ctx.q_2ns[3*i] {} ", ctx.q_2ns[3 * i]);
+        //log::debug!("ctx.q_2ns[3*i] {} ", ctx.q_2ns[3 * i]);
         //for i in 0..ctx.tmp.len() {
         //    log::info!("tmp@{} {}", i, ctx.tmp[i]);
         //}
@@ -807,6 +804,7 @@ pub mod tests {
 
     #[test]
     fn test_stark_plookup() {
+        env_logger::init();
         let mut pil = load_json::<PIL>("data/plookup.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/plookup.const").unwrap();
@@ -837,7 +835,6 @@ pub mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_stark_connection() {
         let mut pil = load_json::<PIL>("data/connection.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);

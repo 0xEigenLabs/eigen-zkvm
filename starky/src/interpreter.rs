@@ -94,7 +94,7 @@ impl Block {
         let mut i = 0usize;
         while i < length {
             let expr = &self.exprs[i];
-            log::debug!("op@{} is {}", i, expr);
+            //log::debug!("op@{} is {}", i, expr);
             i += 1;
             match expr.op {
                 Ops::Ret => {
@@ -214,7 +214,7 @@ pub fn compile_code(
         let mut src: Vec<Expr> = Vec::new();
         for k in 0..code[j].src.len() {
             src.push(get_ref(ctx, starkinfo, &code[j].src[k], dom, next, modulas));
-            log::debug!("get_ref_src: {}", src[src.len() - 1]);
+            //log::debug!("get_ref_src: {}", src[src.len() - 1]);
         }
 
         let exp = match (&code[j].op).as_str() {
@@ -284,7 +284,7 @@ fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
                 2 => expr.syms[1].parse::<usize>().unwrap(),
                 _ => 1,
             };
-            log::debug!("get_value {} {} {}", addr, ctx_section.len(), id);
+            //log::debug!("get_value {} {} {}", addr, ctx_section.len(), id);
             match dim {
                 3 => F3G::new(
                     ctx_section[id].to_be(),
@@ -329,7 +329,7 @@ fn set_ref(
     modulas: usize,
     body: &mut Block,
 ) {
-    log::debug!("set_ref: r {:?}  dom {} val {}", r, dom, val);
+    //log::debug!("set_ref: r {:?}  dom {} val {}", r, dom, val);
     let e_dst = match r.type_.as_str() {
         "tmp" => Expr::new(
             Ops::Refer,
@@ -407,7 +407,7 @@ fn get_ref(
     next: usize,
     modulas: usize,
 ) -> Expr {
-    log::debug!("get_ref: r {:?}  dom {} ", r, dom);
+    //log::debug!("get_ref: r {:?}  dom {} ", r, dom);
     match r.type_.as_str() {
         "tmp" => Expr::new(
             Ops::Refer,
@@ -531,7 +531,7 @@ fn eval_map(
     modulas: usize,
 ) -> Expr {
     let p = &starkinfo.var_pol_map[pol_id];
-    log::debug!("eval_map: {:?}", p);
+    //log::debug!("eval_map: {:?}", p);
     let offset = Expr::from(F3G::from(p.section_pos));
     let size = Expr::from(F3G::from(starkinfo.map_sectionsN.get(&p.section)));
     let next = Expr::from(F3G::from(next));
