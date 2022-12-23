@@ -835,6 +835,7 @@ pub mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_stark_connection() {
         let mut pil = load_json::<PIL>("data/connection.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
