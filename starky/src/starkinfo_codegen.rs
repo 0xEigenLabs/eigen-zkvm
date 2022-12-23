@@ -349,7 +349,7 @@ pub fn eval_exp(
     exp: &Expression,
     prime: bool,
 ) -> Result<Node> {
-    log::debug!("eval, expression {}", exp);
+    //log::debug!("eval, expression {}", exp);
     if ExpressionOps::is_nop(exp) {
         panic!("exp: {:?}", exp);
     }
@@ -552,7 +552,7 @@ pub fn calculate_deps(
     prime: bool,
     exp_id: usize,
 ) -> Result<()> {
-    log::debug!("calculate_deps: {}", expr);
+    //log::debug!("calculate_deps: {}", expr);
     if expr.op == "exp" {
         let id = expr.id.unwrap();
         if prime && expr.next() {
