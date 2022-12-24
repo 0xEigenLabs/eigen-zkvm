@@ -16,19 +16,21 @@ impl LinearHash {
         LinearHash { h: Poseidon::new() }
     }
 
-    pub fn hash(
+    pub fn hash_element_matrix(
         &self,
-        columns: &Vec<Vec<BaseElement>>,
+        vals: &Vec<Vec<BaseElement>>,
         batch_size: usize,
     ) -> Result<ElementDigest> {
         let mut flatvals: Vec<BaseElement> = vec![];
-
-        for col in columns.iter() {
+        for col in vals.iter() {
             for elem in col.iter() {
                 flatvals.push(*elem);
             }
         }
+        self.hash(&flatvals, batch_size)
+    }
 
+    pub fn hash(&self, flatvals: &[BaseElement], batch_size: usize) -> Result<ElementDigest> {
         let mut bs = batch_size;
         if bs == 0 {
             bs = core::cmp::max(8, (flatvals.len() + 3) / 4);
@@ -46,7 +48,7 @@ impl LinearHash {
         let mut hashes: Vec<BaseElement> = vec![BaseElement::ZERO; hsz * 4];
         // NOTE flatsvals.len <= hashes.len
         hashes
-            .chunks_mut(hsz)
+            .chunks_mut(4)
             .zip(flatvals.chunks(bs))
             .for_each(|(outs, inps)| {
                 let hv: [BaseElement; 4] = self._hash(inps).unwrap().into();
@@ -115,7 +117,7 @@ mod tests {
             })
             .collect::<Vec<Vec<BaseElement>>>();
 
-        let res = lh.hash(&raw_inputs, 0).unwrap();
+        let res = lh.hash_element_matrix(&raw_inputs, 0).unwrap();
         let expected = ElementDigest::from([
             BaseElement::from(17618903473682537397u64),
             BaseElement::from(11844743283521766961u64),
@@ -142,7 +144,7 @@ mod tests {
             })
             .collect::<Vec<Vec<BaseElement>>>();
 
-        let res = lh.hash(&raw_inputs, 0).unwrap();
+        let res = lh.hash_element_matrix(&raw_inputs, 0).unwrap();
         let expected = ElementDigest::from([
             BaseElement::from(1u32),
             BaseElement::from(2u32),

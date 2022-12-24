@@ -13,8 +13,8 @@ pub mod poseidon_bn128_opt;
 mod poseidon_constants_opt;
 pub mod poseidon_opt;
 
+pub mod merklehash;
 pub mod merklehash_bn128;
-//pub mod merklehash;
 
 mod digest_bn128;
 pub use digest_bn128::ElementDigest;
