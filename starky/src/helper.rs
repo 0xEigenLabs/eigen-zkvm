@@ -75,18 +75,17 @@ pub fn pretty_print_array<T: FieldElement + StarkField>(cols: &Vec<T>) {
     if cols.len() > 0 {
         print!("\t [ {}, ", cols[0]);
     }
-    if cols.len() > 2 {
+    if cols.len() > 1 {
         print!("{}, ", cols[1]);
-        print!("{}, ", cols[2]);
         iglines += 2;
     }
     if iglines < cols.len() {
         print!(" ...{}s... ", cols.len() - iglines);
     }
-    if cols.len() > 2 {
+    if cols.len() > 3 {
         print!("{}, ", cols[cols.len() - 2]);
     }
-    if cols.len() > 0 {
+    if cols.len() > 2 {
         println!("{}].", cols[cols.len() - 1]);
     }
 }

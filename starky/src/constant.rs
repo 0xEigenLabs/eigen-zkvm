@@ -48,6 +48,9 @@ lazy_static::lazy_static! {
     pub static ref POSEIDON_BN128_CONSTANTS: Constants = {
         load_constants()
     };
+    pub static ref POSEIDON_CONSTANTS_OPT: crate::poseidon_opt::Constants = {
+        crate::poseidon_opt::load_constants()
+    };
 }
 
 pub const MIN_OPS_PER_THREAD: usize = 1 << 12;

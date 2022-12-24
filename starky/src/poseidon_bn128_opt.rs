@@ -142,9 +142,12 @@ impl Poseidon {
                 }
                 *out = acc;
             });
-            for (i, v) in tmp_state.iter().enumerate() {
-                state[i] = *v;
-            }
+            state
+                .iter_mut()
+                .zip(tmp_state.iter())
+                .for_each(|(out, inp)| {
+                    *out = *inp;
+                });
         }
 
         state.iter_mut().for_each(|e| Self::pow5(e));
@@ -162,9 +165,12 @@ impl Poseidon {
             }
             *out = acc;
         });
-        for (i, v) in tmp_state.iter().enumerate() {
-            state[i] = *v;
-        }
+        state
+            .iter_mut()
+            .zip(tmp_state.iter())
+            .for_each(|(out, inp)| {
+                *out = *inp;
+            });
 
         for r in 0..n_rounds_p {
             Self::pow5(&mut state[0]);
@@ -203,9 +209,12 @@ impl Poseidon {
                 }
                 *out = acc;
             });
-            for (i, v) in tmp_state.iter().enumerate() {
-                state[i] = *v;
-            }
+            state
+                .iter_mut()
+                .zip(tmp_state.iter())
+                .for_each(|(out, inp)| {
+                    *out = *inp;
+                });
         }
 
         state.iter_mut().for_each(|e| Self::pow5(e));
@@ -232,9 +241,8 @@ mod tests {
     use ff::{Field, PrimeField};
 
     #[test]
-    fn test_poseidon_opt_hash() {
+    fn test_poseidon_bn128_opt_hash() {
         let poseidon = Poseidon::new();
-
         let b0: Fr = Fr::from_str("0").unwrap();
         let b1: Fr = Fr::from_str("1").unwrap();
         let b2: Fr = Fr::from_str("2").unwrap();

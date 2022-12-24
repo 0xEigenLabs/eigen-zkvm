@@ -2,6 +2,7 @@ pub mod errors;
 pub mod polsarray;
 pub mod types;
 
+pub mod linearhash;
 pub mod linearhash_bn128;
 
 mod field_bn128;
@@ -9,8 +10,11 @@ mod poseidon_bn128;
 mod poseidon_bn128_constants;
 mod poseidon_bn128_constants_opt;
 pub mod poseidon_bn128_opt;
+mod poseidon_constants_opt;
+pub mod poseidon_opt;
 
 pub mod merklehash_bn128;
+//pub mod merklehash;
 
 mod digest_bn128;
 pub use digest_bn128::ElementDigest;
