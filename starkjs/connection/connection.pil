@@ -1,0 +1,9 @@
+
+
+namespace Connection(%N);
+    pol constant S1, S2, S3;
+    pol commit a,b,c;
+
+    {a, b, c} connect {S1, S2, S3};
+
+
