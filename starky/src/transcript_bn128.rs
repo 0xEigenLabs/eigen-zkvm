@@ -1,15 +1,15 @@
 #![allow(dead_code)]
+use crate::digest::ElementDigest;
 use crate::errors::Result;
+use crate::f3g::F3G;
 use crate::field_bn128::Fr;
 use crate::helper::{biguint_to_be, fr_to_biguint};
 use crate::poseidon_bn128_opt::Poseidon;
+use crate::traits::Transcript;
 use ff::*;
-use std::collections::VecDeque;
-
-use crate::f3g::F3G;
-use winter_math::fields::f64::BaseElement;
-
 use num_bigint::BigUint;
+use std::collections::VecDeque;
+use winter_math::fields::f64::BaseElement;
 
 pub struct TranscriptBN128 {
     state: Fr,
@@ -20,7 +20,37 @@ pub struct TranscriptBN128 {
 }
 
 impl TranscriptBN128 {
-    pub fn new() -> Self {
+    fn update_state(&mut self) -> Result<()> {
+        while self.pending.len() < 16 {
+            self.pending.push(Fr::zero());
+        }
+        self.out = VecDeque::from(self.poseidon.hash_ex(&self.pending, &self.state, 17)?);
+        self.out3 = VecDeque::new();
+        self.pending = vec![];
+        self.state = self.out[0];
+        Ok(())
+    }
+    fn add_1(&mut self, e: &Fr) -> Result<()> {
+        self.out = VecDeque::new();
+        log::debug!("add_1 to pending: {:?}", fr_to_biguint(e));
+        self.pending.push(e.clone());
+        if self.pending.len() == 16 {
+            self.update_state()?;
+        }
+        Ok(())
+    }
+
+    fn get_fields253(&mut self) -> Result<Fr> {
+        if self.out.len() > 0 {
+            return Ok(self.out.pop_front().unwrap());
+        }
+        self.update_state()?;
+        self.get_fields253()
+    }
+}
+
+impl Transcript for TranscriptBN128 {
+    fn new() -> Self {
         Self {
             state: Fr::zero(),
             poseidon: Poseidon::new(),
@@ -30,14 +60,14 @@ impl TranscriptBN128 {
         }
     }
 
-    pub fn get_field(&mut self) -> F3G {
+    fn get_field(&mut self) -> F3G {
         let a = self.get_fields1().unwrap();
         let b = self.get_fields1().unwrap();
         let c = self.get_fields1().unwrap();
         F3G::new(a, b, c)
     }
 
-    pub fn get_fields1(&mut self) -> Result<BaseElement> {
+    fn get_fields1(&mut self) -> Result<BaseElement> {
         if self.out3.len() > 0 {
             log::debug!("get_fields1 {},", self.out3[0]);
             return Ok(self.out3.pop_front().unwrap());
@@ -58,43 +88,15 @@ impl TranscriptBN128 {
         self.get_fields1()
     }
 
-    fn update_state(&mut self) -> Result<()> {
-        while self.pending.len() < 16 {
-            self.pending.push(Fr::zero());
-        }
-        self.out = VecDeque::from(self.poseidon.hash_ex(&self.pending, &self.state, 17)?);
-        self.out3 = VecDeque::new();
-        self.pending = vec![];
-        self.state = self.out[0];
-        Ok(())
-    }
-
-    pub fn put(&mut self, es: &[Fr]) -> Result<()> {
+    fn put(&mut self, es: &[ElementDigest]) -> Result<()> {
         for e in es.iter() {
-            self.add_1(e)?;
+            let e: Fr = (*e).into();
+            self.add_1(&e)?;
         }
         Ok(())
     }
 
-    fn add_1(&mut self, e: &Fr) -> Result<()> {
-        self.out = VecDeque::new();
-        log::debug!("add_1 to pending: {:?}", fr_to_biguint(e));
-        self.pending.push(e.clone());
-        if self.pending.len() == 16 {
-            self.update_state()?;
-        }
-        Ok(())
-    }
-
-    fn get_fields253(&mut self) -> Result<Fr> {
-        if self.out.len() > 0 {
-            return Ok(self.out.pop_front().unwrap());
-        }
-        self.update_state()?;
-        self.get_fields253()
-    }
-
-    pub fn get_permutations(&mut self, n: usize, nbits: usize) -> Result<Vec<usize>> {
+    fn get_permutations(&mut self, n: usize, nbits: usize) -> Result<Vec<usize>> {
         let total_bits = n * nbits;
         let n_fields = (total_bits - 1) / 253 + 1;
         let mut fields: Vec<BigUint> = Vec::new();

@@ -96,7 +96,7 @@ impl LinearHash {
 
 #[cfg(test)]
 mod tests {
-    use crate::digest_bn128::ElementDigest;
+    use crate::digest::ElementDigest;
     use crate::linearhash::LinearHash;
     use winter_math::fields::f64::BaseElement;
 

@@ -1,17 +1,18 @@
 #![allow(dead_code)]
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
-use crate::digest_bn128::ElementDigest;
+use crate::digest::ElementDigest;
 use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
 use crate::linearhash::LinearHash;
 use crate::poseidon_opt::Poseidon;
+use crate::traits::MerkleTree;
 use rayon::prelude::*;
 use std::time::Instant;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
 
 #[derive(Default)]
-pub struct MerkleTree {
+pub struct MerkleTreeGL {
     pub elements: Vec<BaseElement>,
     pub width: usize,
     pub height: usize,
@@ -36,96 +37,28 @@ fn get_n_nodes(n_: usize) -> usize {
     acc
 }
 
-impl MerkleTree {
-    pub fn new() -> Self {
-        MerkleTree {
-            nodes: Vec::new(),
-            elements: Vec::new(),
-            h: LinearHash::new(),
-            width: 0,
-            height: 0,
-            poseidon: Poseidon::new(),
+impl MerkleTreeGL {
+    fn merkle_gen_merkle_proof(
+        &self,
+        idx: usize,
+        offset: usize,
+        n: usize,
+    ) -> Vec<Vec<BaseElement>> {
+        if n <= 1 {
+            return vec![];
         }
-    }
+        let next_idx = idx >> 1;
+        let si = idx ^ 1;
+        let sib = self.nodes[offset + si].as_elements().to_vec();
 
-    pub fn to_f3g(&self, p_be: &mut Vec<F3G>) {
-        assert_eq!(p_be.len(), self.elements.len());
-        p_be.par_iter_mut()
-            .zip(&self.elements)
-            .for_each(|(be_out, f3g_in)| {
-                *be_out = F3G::from(*f3g_in);
-            });
-    }
-
-    pub fn merkelize(buff: Vec<BaseElement>, width: usize, height: usize) -> Result<Self> {
-        let leaves_hash = LinearHash::new();
-
-        let max_workers = get_max_workers();
-
-        let mut n_per_thread_f = (height - 1) / max_workers + 1;
-
-        let div = core::cmp::max(width / 8, 1);
-        let max_corrected = MAX_OPS_PER_THREAD / div;
-        let min_corrected = MIN_OPS_PER_THREAD / div;
-
-        if n_per_thread_f > max_corrected {
-            n_per_thread_f = max_corrected;
-        }
-        if n_per_thread_f < min_corrected {
-            n_per_thread_f = min_corrected;
-        }
-
-        let mut nodes = vec![ElementDigest::default(); get_n_nodes(height)];
-        let now = Instant::now();
-        if buff.len() > 0 {
-            nodes
-                .par_chunks_mut(n_per_thread_f)
-                .zip(buff.par_chunks(n_per_thread_f * width))
-                .for_each(|(out, bb)| {
-                    let cur_n = bb.len() / width;
-                    out.iter_mut()
-                        .zip((0..cur_n).into_iter())
-                        .for_each(|(row_out, j)| {
-                            let batch = &bb[(j * width)..((j + 1) * width)];
-                            *row_out = leaves_hash.hash(batch, 0).unwrap();
-                        });
-                });
-        }
-        log::info!("linearhash time cost: {}", now.elapsed().as_secs_f64());
-
-        // merklize level
-        let mut tree = MerkleTree {
-            nodes: nodes,
-            elements: buff,
-            h: leaves_hash,
-            width: width,
-            height: height,
-            poseidon: Poseidon::new(),
-        };
-
-        let mut n64: usize = height;
-        let mut next_n64: usize = (n64 - 1) / 2 + 1;
-        let mut p_in: usize = 0;
-        let mut p_out: usize = p_in + next_n64 * 2;
-        while n64 > 1 {
-            let now = Instant::now();
-            tree.merklize_level(p_in, next_n64, p_out)?;
-            log::info!(
-                "merklize_level {} time cost: {}",
-                next_n64,
-                now.elapsed().as_secs_f64()
-            );
-            n64 = next_n64;
-            next_n64 = (n64 - 1) / 2 + 1;
-            p_in = p_out;
-            p_out = p_in + next_n64 * 2;
-        }
-
-        Ok(tree)
+        let next_n = (n - 1) / 2 + 1;
+        let mut result = vec![sib];
+        result.append(&mut self.merkle_gen_merkle_proof(next_idx, offset + next_n * 2, next_n));
+        result
     }
 
     #[inline]
-    pub fn merklize_level(&mut self, p_in: usize, n_ops: usize, p_out: usize) -> Result<()> {
+    fn merklize_level(&mut self, p_in: usize, n_ops: usize, p_out: usize) -> Result<()> {
         let mut n_ops_per_thread = (n_ops - 1) / (get_max_workers() * 2) + 1;
         if n_ops_per_thread < MIN_OPS_PER_THREAD {
             n_ops_per_thread = MIN_OPS_PER_THREAD;
@@ -179,44 +112,6 @@ impl MerkleTree {
         Ok(buff_out64)
     }
 
-    pub fn get_element(&self, idx: usize, sub_idx: usize) -> BaseElement {
-        self.elements[self.width * idx + sub_idx]
-    }
-
-    fn merkle_gen_merkle_proof(
-        &self,
-        idx: usize,
-        offset: usize,
-        n: usize,
-    ) -> Vec<Vec<BaseElement>> {
-        if n <= 1 {
-            return vec![];
-        }
-        let next_idx = idx >> 1;
-        let si = idx ^ 1;
-        let sib = self.nodes[offset + si].as_elements().to_vec();
-
-        let next_n = (n - 1) / 2 + 1;
-        let mut result = vec![sib];
-        result.append(&mut self.merkle_gen_merkle_proof(next_idx, offset + next_n * 2, next_n));
-        result
-    }
-
-    pub fn get_group_proof(&self, idx: usize) -> Result<(Vec<BaseElement>, Vec<Vec<BaseElement>>)> {
-        if idx >= self.height {
-            return Err(EigenError::MerkleTreeError(
-                "access invalid node".to_string(),
-            ));
-        }
-
-        let mut v = vec![BaseElement::ZERO; self.width];
-        for i in 0..self.width {
-            v[i] = self.get_element(idx, i);
-        }
-        let mp = self.merkle_gen_merkle_proof(idx, 0, self.height);
-        Ok((v, mp))
-    }
-
     fn merkle_calculate_root_from_proof(
         &self,
         mp: &Vec<Vec<BaseElement>>,
@@ -224,9 +119,6 @@ impl MerkleTree {
         value: &ElementDigest,
         offset: usize,
     ) -> Result<ElementDigest> {
-        for i in mp.iter() {
-            crate::helper::pretty_print_array(i);
-        }
         if mp.len() == offset {
             return Ok(value.clone());
         }
@@ -253,7 +145,7 @@ impl MerkleTree {
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
-    pub fn calculate_root_from_group_proof(
+    fn calculate_root_from_group_proof(
         &self,
         mp: &Vec<Vec<BaseElement>>,
         idx: usize,
@@ -262,12 +154,120 @@ impl MerkleTree {
         let h = self.h.hash(vals, 0)?;
         self.merkle_calculate_root_from_proof(mp, idx, &h, 0)
     }
+}
 
-    pub fn eq_root(&self, r1: &ElementDigest, r2: &ElementDigest) -> bool {
+impl MerkleTree for MerkleTreeGL {
+    type BaseField = BaseElement;
+
+    fn new() -> Self {
+        Self {
+            nodes: Vec::new(),
+            elements: Vec::new(),
+            h: LinearHash::new(),
+            width: 0,
+            height: 0,
+            poseidon: Poseidon::new(),
+        }
+    }
+
+    fn element_size(&self) -> usize {
+        return self.elements.len();
+    }
+
+    fn to_f3g(&self, p_be: &mut Vec<F3G>) {
+        assert_eq!(p_be.len(), self.elements.len());
+        p_be.par_iter_mut()
+            .zip(&self.elements)
+            .for_each(|(be_out, f3g_in)| {
+                *be_out = F3G::from(*f3g_in);
+            });
+    }
+
+    fn merkelize(&mut self, buff: Vec<BaseElement>, width: usize, height: usize) -> Result<()> {
+        let max_workers = get_max_workers();
+
+        let mut n_per_thread_f = (height - 1) / max_workers + 1;
+
+        let div = core::cmp::max(width / 8, 1);
+        let max_corrected = MAX_OPS_PER_THREAD / div;
+        let min_corrected = MIN_OPS_PER_THREAD / div;
+
+        if n_per_thread_f > max_corrected {
+            n_per_thread_f = max_corrected;
+        }
+        if n_per_thread_f < min_corrected {
+            n_per_thread_f = min_corrected;
+        }
+
+        let mut nodes = vec![ElementDigest::default(); get_n_nodes(height)];
+        let now = Instant::now();
+        if buff.len() > 0 {
+            nodes
+                .par_chunks_mut(n_per_thread_f)
+                .zip(buff.par_chunks(n_per_thread_f * width))
+                .for_each(|(out, bb)| {
+                    let cur_n = bb.len() / width;
+                    out.iter_mut()
+                        .zip((0..cur_n).into_iter())
+                        .for_each(|(row_out, j)| {
+                            let batch = &bb[(j * width)..((j + 1) * width)];
+                            *row_out = self.h.hash(batch, 0).unwrap();
+                        });
+                });
+        }
+        log::info!("linearhash time cost: {}", now.elapsed().as_secs_f64());
+
+        // merklize level
+        self.nodes = nodes;
+        self.elements = buff;
+        self.width = width;
+        self.height = height;
+
+        let mut n64: usize = height;
+        let mut next_n64: usize = (n64 - 1) / 2 + 1;
+        let mut p_in: usize = 0;
+        let mut p_out: usize = p_in + next_n64 * 2;
+        while n64 > 1 {
+            let now = Instant::now();
+            self.merklize_level(p_in, next_n64, p_out)?;
+            log::info!(
+                "merklize_level {} time cost: {}",
+                next_n64,
+                now.elapsed().as_secs_f64()
+            );
+            n64 = next_n64;
+            next_n64 = (n64 - 1) / 2 + 1;
+            p_in = p_out;
+            p_out = p_in + next_n64 * 2;
+        }
+
+        Ok(())
+    }
+
+    fn get_element(&self, idx: usize, sub_idx: usize) -> BaseElement {
+        self.elements[self.width * idx + sub_idx]
+    }
+
+    fn get_group_proof(&self, idx: usize) -> Result<(Vec<BaseElement>, Vec<Vec<BaseElement>>)> {
+        if idx >= self.height {
+            return Err(EigenError::MerkleTreeError(
+                "access invalid node".to_string(),
+            ));
+        }
+
+        let mut v = vec![BaseElement::ZERO; self.width];
+        for i in 0..self.width {
+            v[i] = self.get_element(idx, i);
+        }
+        let mp = self.merkle_gen_merkle_proof(idx, 0, self.height);
+        Ok((v, mp))
+    }
+
+    fn eq_root(&self, r1: &ElementDigest, r2: &ElementDigest) -> bool {
         r1 == r2
     }
 
-    pub fn verify_group_proof(
+    fn verify_group_proof(
         &self,
         root: &ElementDigest,
         mp: &Vec<Vec<BaseElement>>,
@@ -278,14 +278,15 @@ impl MerkleTree {
         Ok(self.eq_root(root, &c_root))
     }
 
-    pub fn root(&self) -> ElementDigest {
+    fn root(&self) -> ElementDigest {
         self.nodes[self.nodes.len() - 1]
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::merklehash::MerkleTree;
+    use crate::merklehash::MerkleTreeGL;
+    use crate::traits::MerkleTree;
     use winter_math::fields::f64::BaseElement;
     use winter_math::FieldElement;
 
@@ -302,7 +303,8 @@ mod tests {
             }
         }
 
-        let tree = MerkleTree::merkelize(cols, n_pols, n).unwrap();
+        let mut tree = MerkleTreeGL::new();
+        tree.merkelize(cols, n_pols, n).unwrap();
         let (v, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
         let re = root.as_elements();
@@ -329,7 +331,8 @@ mod tests {
             }
         }
 
-        let tree = MerkleTree::merkelize(pols, n_pols, n).unwrap();
+        let mut tree = MerkleTreeGL::new();
+        tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
         assert_eq!(
@@ -351,7 +354,8 @@ mod tests {
             }
         }
 
-        let tree = MerkleTree::merkelize(pols, n_pols, n).unwrap();
+        let mut tree = MerkleTreeGL::new();
+        tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
 
@@ -383,7 +387,8 @@ mod tests {
             }
         }
 
-        let tree = MerkleTree::merkelize(pols, n_pols, n).unwrap();
+        let mut tree = MerkleTreeGL::new();
+        tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
         assert_eq!(

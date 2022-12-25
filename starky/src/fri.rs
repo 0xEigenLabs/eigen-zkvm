@@ -1,15 +1,13 @@
 use crate::constant::{MG, SHIFT, SHIFT_INV};
-use crate::digest_bn128::ElementDigest;
+use crate::digest::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::f3g::F3G;
 use crate::fft::FFT;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::helper::log2_any;
-use crate::merklehash_bn128::MerkleTree;
-use crate::transcript_bn128::TranscriptBN128;
+use crate::traits::{MerkleTree, Transcript};
 use crate::types::{StarkStruct, Step};
 use ff::*;
-use std::fmt;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
 use winter_math::StarkField;
@@ -22,12 +20,14 @@ pub struct FRI {
 }
 
 #[derive(Default, Clone)]
-pub struct Query {
-    pub pol_queries: Vec<Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>>,
+pub struct Query<MB: Clone + std::default::Default> {
+    pub pol_queries: Vec<Vec<(Vec<BaseElement>, Vec<Vec<MB>>)>>,
     pub root: ElementDigest,
 }
 
-impl fmt::Display for Query {
+/*
+use std::fmt;
+impl fmt::Display for Query<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "root {}\n", self.root)?;
         write!(f, "pol_queries size {}\n", self.pol_queries.len())?;
@@ -42,7 +42,7 @@ impl fmt::Display for Query {
                 for qqq in qq.1.iter() {
                     write!(f, "\t\t[\n")?;
                     for t in qqq.iter() {
-                        write!(f, "\t\t\t Fr {}\n", crate::helper::fr_to_biguint(t))?;
+                        //write!(f, "\t\t\t Fr {}\n", crate::helper::fr_to_biguint(t))?; //FIXME
                     }
                     write!(f, "\t\t]\n")?;
                 }
@@ -51,17 +51,18 @@ impl fmt::Display for Query {
         Ok(())
     }
 }
+*/
 
 #[derive(Clone)]
-pub struct FRIProof {
-    pub queries: Vec<Query>,
+pub struct FRIProof<M: MerkleTree> {
+    pub queries: Vec<Query<M::BaseField>>,
     pub last: Vec<F3G>,
 }
 
-impl FRIProof {
+impl<M: MerkleTree> FRIProof<M> {
     pub fn new(qs: usize) -> Self {
         FRIProof {
-            queries: vec![Query::default(); qs],
+            queries: vec![Query::<M::BaseField>::default(); qs],
             last: Vec::new(),
         }
     }
@@ -77,12 +78,12 @@ impl FRI {
         }
     }
 
-    pub fn prove(
+    pub fn prove<M: MerkleTree, T: Transcript>(
         &mut self,
-        transcript: &mut TranscriptBN128,
+        transcript: &mut T,
         pol: &Vec<F3G>,
-        mut query_pol: impl FnMut(usize) -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>,
-    ) -> Result<FRIProof> {
+        mut query_pol: impl FnMut(usize) -> Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)>,
+    ) -> Result<FRIProof<M>> {
         let mut pol = pol.clone();
         let mut standard_fft = FFT::new();
         let mut pol_bits = log2_any(pol.len()) as usize;
@@ -92,9 +93,9 @@ impl FRI {
 
         let mut shift_inv = SHIFT_INV.clone();
         let mut shift = SHIFT.clone();
-        let mut tree: Vec<MerkleTree> = vec![];
+        let mut tree: Vec<M> = vec![];
 
-        let mut proof: FRIProof = FRIProof::new(self.steps.len());
+        let mut proof: FRIProof<M> = FRIProof::<M>::new(self.steps.len());
         for si in 0..self.steps.len() {
             let reduction_bits = pol_bits - self.steps[si].nBits;
             let pol2_n = 1 << (pol_bits - reduction_bits);
@@ -129,17 +130,25 @@ impl FRI {
                 let n_groups = 1 << self.steps[si + 1].nBits;
                 let group_size = (1 << self.steps[si].nBits) / n_groups;
                 let pol2_etb = get_transposed_buffer(&pol2_e, self.steps[si + 1].nBits);
-                tree.push(MerkleTree::merkelize(pol2_etb, 3 * group_size, n_groups)?);
+                let mut tmptree = M::new();
+                tmptree.merkelize(pol2_etb, 3 * group_size, n_groups)?;
+                tree.push(tmptree);
                 proof.queries[si + 1].root = tree[si].root();
-                transcript.put(&vec![tree[si].root().into()])?;
+                transcript.put(&[tree[si].root()])?;
             } else {
                 log::debug!("last {}", pol2_e.len());
                 for e in pol2_e.iter() {
                     let elems = e.as_elements();
-                    let v = vec![
-                        Fr::from_repr(FrRepr::from(elems[0].as_int())).unwrap(),
-                        Fr::from_repr(FrRepr::from(elems[1].as_int())).unwrap(),
-                        Fr::from_repr(FrRepr::from(elems[2].as_int())).unwrap(),
+                    let v = [
+                        ElementDigest::from(
+                            &Fr::from_repr(FrRepr::from(elems[0].as_int())).unwrap(),
+                        ),
+                        ElementDigest::from(
+                            &Fr::from_repr(FrRepr::from(elems[1].as_int())).unwrap(),
+                        ),
+                        ElementDigest::from(
+                            &Fr::from_repr(FrRepr::from(elems[2].as_int())).unwrap(),
+                        ),
                     ];
                     transcript.put(&v)?;
                 }
@@ -162,10 +171,11 @@ impl FRI {
 
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
 
-        let query_pol_fn = |si: usize, idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
-            log::debug!("query_pol_fn: si:{}, idx:{}", si, idx);
-            vec![tree[si].get_group_proof(idx).unwrap()]
-        };
+        let query_pol_fn =
+            |si: usize, idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)> {
+                log::debug!("query_pol_fn: si:{}, idx:{}", si, idx);
+                vec![tree[si].get_group_proof(idx).unwrap()]
+            };
 
         for si in 0..self.steps.len() {
             for ys_ in ys.iter() {
@@ -177,7 +187,7 @@ impl FRI {
                         .push(query_pol_fn(si - 1, *ys_));
                 }
             }
-            log::debug!("prove_query_pol: {} {}", si, proof.queries[si]);
+            //log::debug!("prove_query_pol: {} {}", si, proof.queries[si]);
 
             if si < self.steps.len() - 1 {
                 for i in 0..ys.len() {
@@ -188,13 +198,16 @@ impl FRI {
         Ok(proof)
     }
 
-    pub fn verify(
+    pub fn verify<M: MerkleTree, T: Transcript>(
         &self,
-        transcript: &mut TranscriptBN128,
-        proof: &FRIProof,
-        mut check_query: impl FnMut(&Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>, usize) -> Result<Vec<F3G>>,
+        transcript: &mut T,
+        proof: &FRIProof<M>,
+        mut check_query: impl FnMut(
+            &Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)>,
+            usize,
+        ) -> Result<Vec<F3G>>,
     ) -> Result<bool> {
-        let tree = MerkleTree::new();
+        let tree = M::new();
         let mut standard_fft = FFT::new();
         assert_eq!(proof.queries.len(), self.steps.len()); // the last +1 is ommited
         let mut special_x: Vec<F3G> = vec![];
@@ -203,16 +216,22 @@ impl FRI {
             if si < self.steps.len() - 1 {
                 //let n_groups = 1 << self.steps[si + 1].nBits;
                 //let group_size = (1 << self.steps[si].nBits) / n_groups;
-                transcript.put(&vec![proof.queries[si + 1].root.into()])?;
+                transcript.put(&[proof.queries[si + 1].root])?;
             } else {
-                let mut pp: Vec<Fr> = vec![];
+                let mut pp: Vec<ElementDigest> = vec![];
                 for e in proof.last.iter() {
                     let elems = e.as_elements();
-                    pp.push(Fr::from_str(&elems[0].as_int().to_string()).unwrap());
-                    pp.push(Fr::from_str(&elems[1].as_int().to_string()).unwrap());
-                    pp.push(Fr::from_str(&elems[2].as_int().to_string()).unwrap());
+                    pp.push(ElementDigest::from(
+                        &Fr::from_repr(FrRepr::from(elems[0].as_int())).unwrap(),
+                    ));
+                    pp.push(ElementDigest::from(
+                        &Fr::from_repr(FrRepr::from(elems[1].as_int())).unwrap(),
+                    ));
+                    pp.push(ElementDigest::from(
+                        &Fr::from_repr(FrRepr::from(elems[2].as_int())).unwrap(),
+                    ));
                 }
-                transcript.put(&pp)?;
+                transcript.put(&pp[..])?;
             }
         }
 
@@ -223,7 +242,7 @@ impl FRI {
         let mut shift = SHIFT.clone();
 
         let check_query_fn = |si: usize,
-                              query: &Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>,
+                              query: &Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)>,
                               idx: usize|
          -> Result<Vec<F3G>> {
             let res =
@@ -236,7 +255,7 @@ impl FRI {
 
         for si in 0..self.steps.len() {
             let proof_item = &proof.queries[si];
-            log::debug!("si: {}, queries: {}", si, proof_item);
+            //log::debug!("si: {}, queries: {}", si, proof_item);
             let reduction_bits = pol_bits - self.steps[si].nBits;
             log::debug!("si {} reduction_bits {}", si, reduction_bits);
             for i in 0..n_queries {

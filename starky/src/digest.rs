@@ -37,7 +37,7 @@ impl Display for ElementDigest {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}n\n{}n\n{}n\n{}n",
+            "{}\n{}\n{}\n{}",
             self.0[0].as_int(),
             self.0[1].as_int(),
             self.0[2].as_int(),
@@ -46,7 +46,6 @@ impl Display for ElementDigest {
     }
 }
 
-/// Field mapping
 /// Fr always consists of [u64; limbs], here for bn128, the limbs is 4.
 impl From<&Fr> for ElementDigest {
     fn from(e: &Fr) -> Self {
@@ -120,7 +119,7 @@ impl From<ElementDigest> for [BaseElement; DIGEST_SIZE] {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::digest_bn128::ElementDigest;
+    use crate::digest::ElementDigest;
     use crate::field_bn128::Fr;
     use ff::PrimeField;
     use rand_utils::rand_vector;

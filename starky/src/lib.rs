@@ -1,5 +1,6 @@
 pub mod errors;
 pub mod polsarray;
+mod traits;
 pub mod types;
 
 pub mod linearhash;
@@ -16,8 +17,8 @@ pub mod poseidon_opt;
 pub mod merklehash;
 pub mod merklehash_bn128;
 
-mod digest_bn128;
-pub use digest_bn128::ElementDigest;
+mod digest;
+pub use digest::ElementDigest;
 
 mod constant;
 mod expressionops;
@@ -39,7 +40,8 @@ mod starkinfo_cp_ver;
 mod starkinfo_fri_prover;
 mod starkinfo_fri_ver;
 mod starkinfo_map;
-mod transcript_bn128;
+pub mod transcript;
+pub mod transcript_bn128;
 
 #[macro_use]
 extern crate serde_json;

@@ -1,0 +1,141 @@
+{
+ "nCommitments": 4,
+ "nQ": 1,
+ "nIm": 0,
+ "nConstants": 4,
+ "publics": [],
+ "references": {
+  "Global.L1": {
+   "type": "constP",
+   "id": 0,
+   "polDeg": 1024,
+   "isArray": false
+  },
+  "Plookup.sel": {
+   "type": "cmP",
+   "id": 0,
+   "polDeg": 1024,
+   "isArray": false
+  },
+  "Plookup.a": {
+   "type": "cmP",
+   "id": 1,
+   "polDeg": 1024,
+   "isArray": false
+  },
+  "Plookup.b": {
+   "type": "cmP",
+   "id": 2,
+   "polDeg": 1024,
+   "isArray": false
+  },
+  "Plookup.SEL": {
+   "type": "constP",
+   "id": 1,
+   "polDeg": 1024,
+   "isArray": false
+  },
+  "Plookup.A": {
+   "type": "constP",
+   "id": 2,
+   "polDeg": 1024,
+   "isArray": false
+  },
+  "Plookup.B": {
+   "type": "constP",
+   "id": 3,
+   "polDeg": 1024,
+   "isArray": false
+  },
+  "Plookup.cc": {
+   "type": "cmP",
+   "id": 3,
+   "polDeg": 1024,
+   "isArray": false
+  }
+ },
+ "expressions": [
+  {
+   "op": "cm",
+   "deg": 1,
+   "id": 1,
+   "next": false
+  },
+  {
+   "op": "cm",
+   "deg": 1,
+   "id": 2,
+   "next": true
+  },
+  {
+   "op": "mul",
+   "deg": 1,
+   "idQ": 0,
+   "values": [
+    {
+     "op": "cm",
+     "deg": 1,
+     "id": 1,
+     "next": false
+    },
+    {
+     "op": "cm",
+     "deg": 1,
+     "id": 2,
+     "next": true
+    }
+   ]
+  },
+  {
+   "op": "cm",
+   "deg": 1,
+   "id": 0,
+   "next": false
+  },
+  {
+   "op": "const",
+   "deg": 1,
+   "id": 2,
+   "next": false
+  },
+  {
+   "op": "const",
+   "deg": 1,
+   "id": 3,
+   "next": false
+  },
+  {
+   "op": "cm",
+   "deg": 1,
+   "id": 3,
+   "next": false
+  },
+  {
+   "op": "const",
+   "deg": 1,
+   "id": 1,
+   "next": false
+  }
+ ],
+ "polIdentities": [],
+ "plookupIdentities": [
+  {
+   "f": [
+    0,
+    1,
+    2
+   ],
+   "t": [
+    4,
+    5,
+    6
+   ],
+   "selF": 3,
+   "selT": 7,
+   "fileName": "plookup.pil",
+   "line": 9
+  }
+ ],
+ "permutationIdentities": [],
+ "connectionIdentities": []
+}

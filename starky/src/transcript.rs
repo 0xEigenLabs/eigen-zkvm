@@ -1,76 +1,84 @@
+use crate::digest::ElementDigest;
 use crate::errors::Result;
-use crate::poseidon_opt::Poseidon;
-use std::collections::VecDeque;
-
 use crate::f3g::F3G;
-use winter_math::fields::f64::BaseElement;
-
+use crate::poseidon_opt::Poseidon;
+use crate::traits::Transcript;
 use num_bigint::BigUint;
+use winter_math::fields::f64::BaseElement;
+use winter_math::FieldElement;
+use winter_math::StarkField;
 
-pub struct Transcript {
+pub struct TranscriptGL {
     state: [BaseElement; 4],
     poseidon: Poseidon,
     pending: Vec<BaseElement>,
-    out: VecDeque<BaseElement>,
+    out: Vec<BaseElement>,
 }
 
-impl TranscriptBN128 {
-    pub fn new() -> Self {
-        Self {
-            state: [BaseElement::ZERO; 4],
-            poseidon: Poseidon::new(),
-            pending: Vec::new(),
-            out: VecDeque::new(),
-        }
-    }
-
-    pub fn get_field(&mut self) -> F3G {
-        let a = self.get_fields1().unwrap();
-        let b = self.get_fields1().unwrap();
-        let c = self.get_fields1().unwrap();
-        F3G::new(a, b, c)
-    }
-
-    pub fn get_fields1(&mut self) -> Result<BaseElement> {
-        if self.out.len() > 0 {
-            return Ok(self.out.pop_front().unwrap());
-        }
-        self.update_state()?;
-        self.get_fields1()
-    }
-
+impl TranscriptGL {
     fn update_state(&mut self) -> Result<()> {
         while self.pending.len() < 8 {
-            self.pending.push(Fr::zero());
+            self.pending.push(BaseElement::ZERO);
         }
-        self.out = VecDeque::from(self.poseidon.hash_ex(&self.pending, &self.state, 12)?);
+        self.out = self.poseidon.hash(&self.pending, &self.state, 12)?;
+
         self.pending = vec![];
         self.state.copy_from_slice(&self.out[0..4]);
         Ok(())
     }
-
-    pub fn put(&mut self, es: &[Fr]) -> Result<()> {
-        for e in es.iter() {
-            self.add_1(e)?;
-        }
-        Ok(())
-    }
-
-    fn add_1(&mut self, e: &Fr) -> Result<()> {
-        self.out = VecDeque::new();
+    fn add_1(&mut self, e: &BaseElement) -> Result<()> {
+        self.out = Vec::new();
         self.pending.push(e.clone());
         if self.pending.len() == 8 {
             self.update_state()?;
         }
         Ok(())
     }
+}
 
-    pub fn get_permutations(&mut self, n: usize, nbits: usize) -> Result<Vec<usize>> {
+impl Transcript for TranscriptGL {
+    fn new() -> Self {
+        Self {
+            state: [BaseElement::ZERO; 4],
+            poseidon: Poseidon::new(),
+            pending: Vec::new(),
+            out: Vec::new(),
+        }
+    }
+
+    fn get_field(&mut self) -> F3G {
+        let a = self.get_fields1().unwrap();
+        let b = self.get_fields1().unwrap();
+        let c = self.get_fields1().unwrap();
+        F3G::new(a, b, c)
+    }
+
+    fn get_fields1(&mut self) -> Result<BaseElement> {
+        if self.out.len() > 0 {
+            let v = self.out[0];
+            self.out.remove(0);
+            return Ok(v);
+        }
+        self.update_state()?;
+        self.get_fields1()
+    }
+
+    fn put(&mut self, es: &[ElementDigest]) -> Result<()> {
+        for e in es.iter() {
+            for t in e.as_elements() {
+                self.add_1(t)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn get_permutations(&mut self, n: usize, nbits: usize) -> Result<Vec<usize>> {
         let total_bits = n * nbits;
         let n_fields = (total_bits - 1) / 63 + 1;
         let mut fields: Vec<BigUint> = Vec::new();
         for _i in 0..n_fields {
-            fields.push(self.get_fields1());
+            let e = self.get_fields1()?;
+            fields.push(BigUint::from(e.as_int()));
         }
         let mut res: Vec<usize> = vec![];
         let mut cur_field = 0;

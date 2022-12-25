@@ -1,6 +1,6 @@
 #![allow(non_snake_case, dead_code)]
 use crate::constant::{MG, SHIFT};
-use crate::digest_bn128::ElementDigest;
+use crate::digest::ElementDigest;
 use crate::errors::Result;
 use crate::f3g::F3G;
 use crate::fft::FFT;
@@ -9,11 +9,10 @@ use crate::field_bn128::{Fr, FrRepr};
 use crate::fri::FRIProof;
 use crate::fri::FRI;
 use crate::interpreter::compile_code;
-use crate::merklehash_bn128::MerkleTree;
 use crate::polsarray::PolsArray;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{Polynom, Segment};
-use crate::transcript_bn128::TranscriptBN128;
+use crate::traits::{MerkleTree, Transcript};
 use crate::types::{StarkStruct, PIL};
 use ff::*;
 use rayon::prelude::*;
@@ -134,26 +133,26 @@ impl StarkContext {
     }
 }
 
-pub struct StarkProof {
+pub struct StarkProof<M: MerkleTree> {
     pub root1: ElementDigest,
     pub root2: ElementDigest,
     pub root3: ElementDigest,
     pub root4: ElementDigest,
-    pub fri_proof: FRIProof,
+    pub fri_proof: FRIProof<M>,
     pub evals: Vec<F3G>,
     pub publics: Vec<F3G>,
 }
 
-impl<'a> StarkProof {
-    pub fn stark_gen(
+impl<'a, M: MerkleTree> StarkProof<M> {
+    pub fn stark_gen<T: Transcript>(
         cm_pols: &PolsArray,
         const_pols: &PolsArray,
-        const_tree: &MerkleTree,
+        const_tree: &M,
         starkinfo: &'a StarkInfo,
         program: &Program,
         _pil: &PIL,
         stark_struct: &StarkStruct,
-    ) -> Result<StarkProof> {
+    ) -> Result<StarkProof<M>> {
         let mut ctx = StarkContext::default();
 
         let mut standard_fft = FFT::new();
@@ -174,7 +173,7 @@ impl<'a> StarkProof {
         ctx.cm2_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm2_n * ctx.Next];
         ctx.cm3_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm3_n * ctx.Next];
         ctx.cm4_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm4_n * ctx.Next];
-        ctx.const_2ns = vec![F3G::ZERO; const_tree.elements.len()];
+        ctx.const_2ns = vec![F3G::ZERO; const_tree.element_size()];
 
         ctx.q_2ns = vec![F3G::ZERO; starkinfo.q_dim * ctx.Next];
         ctx.f_2ns = vec![F3G::ZERO; 3 * ctx.Next];
@@ -216,24 +215,23 @@ impl<'a> StarkProof {
             }
         }
 
-        let mut transcript = TranscriptBN128::new();
+        let mut transcript = T::new();
 
         for i in 0..starkinfo.publics.len() {
             let b = ctx.publics[i]
                 .as_elements()
                 .iter()
-                .map(|e| Fr::from_repr(FrRepr::from(e.as_int())).unwrap())
-                .collect::<Vec<Fr>>();
-            transcript.put(&b)?;
+                .map(|e| ElementDigest::from(&Fr::from_repr(FrRepr::from(e.as_int())).unwrap()))
+                .collect::<Vec<ElementDigest>>();
+            transcript.put(&b[..])?;
         }
 
         log::info!("Merkeling 1....");
-        let tree1 = extend_and_merkelize(&mut ctx, starkinfo, "cm1_n").unwrap();
+        let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n").unwrap();
         tree1.to_f3g(&mut ctx.cm1_2ns);
-        let root: Fr = tree1.root().into();
-        log::info!("tree1 root: {:?}", crate::helper::fr_to_biguint(&root));
-        log::info!("tree1[0] {}", ctx.cm1_2ns[0]);
-        transcript.put(&vec![root])?;
+        log::info!("tree1 root: {}", tree1.root());
+        //log::info!("tree1[0] {}", ctx.cm1_2ns[0]);
+        transcript.put(&[tree1.root()])?;
         // 2.- Caluculate plookups h1 and h2
         ctx.challenges[0] = transcript.get_field(); //u
         ctx.challenges[1] = transcript.get_field(); //defVal
@@ -255,11 +253,10 @@ impl<'a> StarkProof {
         }
 
         log::info!("Merkeling 2....");
-        let tree2 = extend_and_merkelize(&mut ctx, starkinfo, "cm2_n").unwrap();
+        let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n").unwrap();
         tree2.to_f3g(&mut ctx.cm2_2ns);
-        let root: Fr = tree2.root().into();
-        transcript.put(&vec![root])?;
-        log::info!("tree2 root: {:?}", crate::helper::fr_to_biguint(&root));
+        transcript.put(&[tree2.root()])?;
+        log::info!("tree2 root: {}", tree2.root());
         if ctx.cm2_2ns.len() > 0 {
             log::info!("tree2[0] {}", ctx.cm2_2ns[0]);
         }
@@ -303,16 +300,14 @@ impl<'a> StarkProof {
 
         log::info!("Merkelizing 3....");
 
-        let tree3 = extend_and_merkelize(&mut ctx, starkinfo, "cm3_n").unwrap();
+        let tree3 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm3_n").unwrap();
         tree3.to_f3g(&mut ctx.cm3_2ns);
+        transcript.put(&[tree3.root()])?;
 
-        let root: Fr = tree3.root().into();
-        transcript.put(&vec![root])?;
-
-        log::info!("tree3 root: {:?}", crate::helper::fr_to_biguint(&root));
-        if ctx.cm3_2ns.len() > 0 {
-            log::info!("tree3[0] {}", ctx.cm3_2ns[0]);
-        }
+        log::info!("tree3 root: {}", tree3.root());
+        //if ctx.cm3_2ns.len() > 0 {
+        //    log::info!("tree3[0] {}", ctx.cm3_2ns[0]);
+        //}
         // 4. Compute C Polynomial
         ctx.challenges[4] = transcript.get_field(); // vc
         log::debug!("challenges[4] {}", ctx.challenges[4]);
@@ -329,7 +324,7 @@ impl<'a> StarkProof {
         );
         ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
         //crate::helper::pretty_print_array(&ctx.q_2ns);
-        log::debug!("qq1");
+        //log::debug!("qq1");
         //crate::helper::pretty_print_array(&qq1);
 
         let mut cur_s = F3G::ONE;
@@ -343,7 +338,7 @@ impl<'a> StarkProof {
             }
             cur_s = cur_s * shift_in;
         }
-        log::debug!("qq2");
+        //log::debug!("qq2");
         //crate::helper::pretty_print_array(&qq2);
 
         fft(
@@ -354,14 +349,13 @@ impl<'a> StarkProof {
         );
 
         log::info!("Merkelizing 4....");
-        let tree4 = merkelize(&mut ctx, starkinfo, "cm4_2ns").unwrap();
-        let root: Fr = tree4.root().into();
-        transcript.put(&vec![root])?;
+        let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
+        transcript.put(&[tree4.root()])?;
+        log::info!("tree4 root: {}", tree4.root());
 
-        log::info!("tree4 root: {:?}", crate::helper::fr_to_biguint(&root));
-        if ctx.cm4_2ns.len() > 0 {
-            log::info!("tree4[0] {}", ctx.cm4_2ns[0]);
-        }
+        //if ctx.cm4_2ns.len() > 0 {
+        //    log::info!("tree4[0] {}", ctx.cm4_2ns[0]);
+        //}
 
         ///////////
         // 5. Compute FRI Polynomial
@@ -422,8 +416,8 @@ impl<'a> StarkProof {
             let b = ctx.evals[i]
                 .as_elements()
                 .iter()
-                .map(|e| Fr::from_repr(FrRepr::from(e.as_int())).unwrap())
-                .collect::<Vec<Fr>>();
+                .map(|e| ElementDigest::from(&Fr::from_repr(FrRepr::from(e.as_int())).unwrap()))
+                .collect::<Vec<ElementDigest>>();
             transcript.put(&b)?;
         }
 
@@ -472,7 +466,7 @@ impl<'a> StarkProof {
         }
         //log::debug!("friPol {} {}", friPol.len(), N << extendBits);
 
-        let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
+        let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)> {
             vec![
                 tree1.get_group_proof(idx).unwrap(),
                 tree2.get_group_proof(idx).unwrap(),
@@ -482,22 +476,7 @@ impl<'a> StarkProof {
             ]
         };
         let mut fri = FRI::new(stark_struct);
-
-        let friProof = fri.prove(&mut transcript, &friPol, query_pol)?;
-        //log::debug!("tree1 nodes");
-        //for i in 0..tree1.nodes.len() {
-        //  log::info!("{}", tree1.nodes[i]);
-        //}
-        //for i in 0..tree2.nodes.len() {
-        //  log::info!("{}", tree2.nodes[i]);
-        //}
-        //for i in 0..tree3.nodes.len() {
-        //  log::info!("{}", tree3.nodes[i]);
-        //}
-        //for i in 0..tree4.nodes.len() {
-        //  log::info!("{}", tree4.nodes[i]);
-        //}
-        //log::debug!("end nodes");
+        let friProof = fri.prove::<M, T>(&mut transcript, &friPol, query_pol)?;
 
         Ok(StarkProof {
             root1: tree1.root(),
@@ -646,11 +625,11 @@ pub fn get_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: usize) -> 
     res
 }
 
-pub fn extend_and_merkelize(
+pub fn extend_and_merkelize<M: MerkleTree>(
     ctx: &mut StarkContext,
     starkinfo: &StarkInfo,
     section_name: &'static str,
-) -> Result<MerkleTree> {
+) -> Result<M> {
     let nBitsExt = ctx.nbits_ext;
     let nBits = ctx.nbits;
     let n_pols = starkinfo.map_sectionsN.get(section_name);
@@ -672,14 +651,16 @@ pub fn extend_and_merkelize(
             *be_out = f3g_in.to_be();
         });
     //crate::helper::pretty_print_array(&p_be);
-    Ok(MerkleTree::merkelize(p_be, n_pols, 1 << nBitsExt)?)
+    let mut tree = M::new();
+    tree.merkelize(p_be, n_pols, 1 << nBitsExt)?;
+    Ok(tree)
 }
 
-pub fn merkelize(
+pub fn merkelize<M: MerkleTree>(
     ctx: &mut StarkContext,
     starkinfo: &StarkInfo,
     section_name: &'static str,
-) -> Result<MerkleTree> {
+) -> Result<M> {
     let nBitsExt = ctx.nbits_ext;
     let n_pols = starkinfo.map_sectionsN.get(section_name);
     let p = ctx.get_mut(section_name).clone();
@@ -689,7 +670,9 @@ pub fn merkelize(
     p_be.par_iter_mut().zip(p).for_each(|(be_out, f3g_in)| {
         *be_out = f3g_in.to_be();
     });
-    Ok(MerkleTree::merkelize(p_be, n_pols, 1 << nBitsExt)?)
+    let mut tree = M::new();
+    tree.merkelize(p_be, n_pols, 1 << nBitsExt)?;
+    Ok(tree)
 }
 
 pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {
@@ -725,10 +708,14 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
 
 #[cfg(test)]
 pub mod tests {
+    use crate::merklehash::MerkleTreeGL;
+    use crate::merklehash_bn128::MerkleTreeBN128;
     use crate::polsarray::{PolKind, PolsArray};
     use crate::stark_gen::StarkProof;
     use crate::stark_setup::StarkSetup;
     use crate::stark_verify::stark_verify;
+    use crate::transcript::TranscriptGL;
+    use crate::transcript_bn128::TranscriptBN128;
     use crate::types::load_json;
     use crate::types::{StarkStruct, PIL};
 
@@ -742,8 +729,9 @@ pub mod tests {
         cm_pol.load("data/fib.cm").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
-        let mut setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
-        let starkproof = StarkProof::stark_gen(
+        let mut setup =
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             &cm_pol,
             &const_pol,
             &setup.const_tree,
@@ -756,7 +744,7 @@ pub mod tests {
 
         log::info!("verify the proof...");
 
-        let result = stark_verify(
+        let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
             &setup.const_root,
             &setup.starkinfo,
@@ -777,8 +765,9 @@ pub mod tests {
         cm_pol.load("data/pe.cm").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
-        let mut setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
-        let starkproof = StarkProof::stark_gen(
+        let mut setup =
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             &cm_pol,
             &const_pol,
             &setup.const_tree,
@@ -791,7 +780,7 @@ pub mod tests {
 
         log::info!("verify the proof...");
 
-        let result = stark_verify(
+        let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
             &setup.const_root,
             &setup.starkinfo,
@@ -803,7 +792,7 @@ pub mod tests {
     }
 
     #[test]
-    fn test_stark_plookup() {
+    fn test_stark_plookup_bn128() {
         env_logger::init();
         let mut pil = load_json::<PIL>("data/plookup.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
@@ -811,8 +800,9 @@ pub mod tests {
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
         cm_pol.load("data/plookup.cm").unwrap();
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
-        let mut setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
-        let starkproof = StarkProof::stark_gen(
+        let mut setup =
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             &cm_pol,
             &const_pol,
             &setup.const_tree,
@@ -823,7 +813,7 @@ pub mod tests {
         )
         .unwrap();
         log::info!("verify the proof...");
-        let result = stark_verify(
+        let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
             &setup.const_root,
             &setup.starkinfo,
@@ -843,8 +833,9 @@ pub mod tests {
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
         cm_pol.load("data/connection.cm").unwrap();
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
-        let mut setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
-        let starkproof = StarkProof::stark_gen(
+        let mut setup =
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             &cm_pol,
             &const_pol,
             &setup.const_tree,
@@ -855,7 +846,39 @@ pub mod tests {
         )
         .unwrap();
         log::info!("verify the proof...");
-        let result = stark_verify(
+        let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
+            &starkproof,
+            &setup.const_root,
+            &setup.starkinfo,
+            &stark_struct,
+            &mut setup.program,
+        )
+        .unwrap();
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn test_stark_plookup_gl() {
+        let mut pil = load_json::<PIL>("data/plookup.pil.json.gl").unwrap();
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
+        const_pol.load("data/plookup.const.gl").unwrap();
+        let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
+        cm_pol.load("data/plookup.cm.gl").unwrap();
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.gl").unwrap();
+        let mut setup =
+            StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let starkproof = StarkProof::<MerkleTreeGL>::stark_gen::<TranscriptGL>(
+            &cm_pol,
+            &const_pol,
+            &setup.const_tree,
+            &setup.starkinfo,
+            &setup.program,
+            &pil,
+            &stark_struct,
+        )
+        .unwrap();
+        log::info!("verify the proof...");
+        let result = stark_verify::<MerkleTreeGL, TranscriptGL>(
             &starkproof,
             &setup.const_root,
             &setup.starkinfo,
