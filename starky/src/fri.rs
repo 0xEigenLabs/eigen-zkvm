@@ -222,13 +222,13 @@ impl FRI {
                 for e in proof.last.iter() {
                     let elems = e.as_elements();
                     pp.push(ElementDigest::from(
-                        &Fr::from_str(&elems[0].as_int().to_string()).unwrap(),
+                        &Fr::from_repr(FrRepr::from(elems[0].as_int())).unwrap(),
                     ));
                     pp.push(ElementDigest::from(
-                        &Fr::from_str(&elems[1].as_int().to_string()).unwrap(),
+                        &Fr::from_repr(FrRepr::from(elems[1].as_int())).unwrap(),
                     ));
                     pp.push(ElementDigest::from(
-                        &Fr::from_str(&elems[2].as_int().to_string()).unwrap(),
+                        &Fr::from_repr(FrRepr::from(elems[2].as_int())).unwrap(),
                     ));
                 }
                 transcript.put(&pp[..])?;
