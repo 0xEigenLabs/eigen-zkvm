@@ -1,31 +1,30 @@
 #![allow(dead_code)]
 use crate::constant::{MG, SHIFT};
-use crate::digest_bn128::ElementDigest;
+use crate::digest::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::f3g::F3G;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::fri::FRI;
-use crate::merklehash_bn128::MerkleTree;
 use crate::stark_gen::StarkContext;
 use crate::stark_gen::StarkProof;
 use crate::starkinfo::Program;
 use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::{Node, Section};
-use crate::transcript_bn128::TranscriptBN128;
+use crate::traits::{MerkleTree, Transcript};
 use crate::types::StarkStruct;
 use ff::PrimeField;
 use std::collections::HashMap;
 use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
 //FIXME it doesn't make sense to ask for a mutable program
-pub fn stark_verify(
-    proof: &StarkProof,
+pub fn stark_verify<M: MerkleTree, T: Transcript>(
+    proof: &StarkProof<M>,
     const_root: &ElementDigest,
     starkinfo: &StarkInfo,
     stark_struct: &StarkStruct,
     program: &mut Program,
 ) -> Result<bool> {
-    let mut transcript = TranscriptBN128::new();
+    let mut transcript = T::new();
 
     let mut ctx = StarkContext::default();
     let extend_bits = stark_struct.nBitsExt - stark_struct.nBits;
@@ -39,30 +38,30 @@ pub fn stark_verify(
         let b = ctx.publics[i]
             .as_elements()
             .iter()
-            .map(|e| Fr::from_repr(FrRepr::from(e.as_int())).unwrap())
-            .collect::<Vec<Fr>>();
-        transcript.put(&b)?;
+            .map(|e| ElementDigest::from(&Fr::from_repr(FrRepr::from(e.as_int())).unwrap()))
+            .collect::<Vec<ElementDigest>>();
+        transcript.put(&b[..])?;
     }
 
-    transcript.put(&[proof.root1.into()])?;
+    transcript.put(&[proof.root1])?;
     ctx.challenges[0] = transcript.get_field(); // u
     ctx.challenges[1] = transcript.get_field(); // defVal
-    transcript.put(&[proof.root2.into()])?;
+    transcript.put(&[proof.root2])?;
     ctx.challenges[2] = transcript.get_field(); // gamma
     ctx.challenges[3] = transcript.get_field(); // beta
 
-    transcript.put(&[proof.root3.into()])?;
+    transcript.put(&[proof.root3])?;
     ctx.challenges[4] = transcript.get_field(); // vc
 
-    transcript.put(&[proof.root4.into()])?;
+    transcript.put(&[proof.root4])?;
     ctx.challenges[7] = transcript.get_field(); // xi
     for i in 0..ctx.evals.len() {
         let b = ctx.evals[i]
             .as_elements()
             .iter()
-            .map(|e| Fr::from_repr(FrRepr::from(e.as_int())).unwrap())
-            .collect::<Vec<Fr>>();
-        transcript.put(&b)?;
+            .map(|e| ElementDigest::from(&Fr::from_repr(FrRepr::from(e.as_int())).unwrap()))
+            .collect::<Vec<ElementDigest>>();
+        transcript.put(&b[..])?;
     }
 
     ctx.challenges[5] = transcript.get_field(); // v1
@@ -92,9 +91,9 @@ pub fn stark_verify(
 
     let fri = FRI::new(stark_struct);
     let check_query =
-        |query: &Vec<(Vec<BaseElement>, Vec<Vec<Fr>>)>, idx: usize| -> Result<Vec<F3G>> {
+        |query: &Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)>, idx: usize| -> Result<Vec<F3G>> {
             log::info!("Query: {}", idx);
-            let tree = MerkleTree::new();
+            let tree = M::new();
             let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
             //panic!("111");
             if !res {

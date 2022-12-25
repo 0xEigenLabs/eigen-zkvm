@@ -5,15 +5,8 @@ const path = require("path");
 
 
 class PE {
- async buildConstants(pols_) {
-
-   let pols = pols_.Global;
-   const N = pols.L1.length;
-
-    for ( let i=0; i<N; i++) {
-      pols.L1[i] = (i == 0)? 1n : 0n;
-    }
-
+ async buildConstants(pols) {
+   utils.buildConstantsGlobal(pols.Global)
  }
 
 async execute(pols_) {

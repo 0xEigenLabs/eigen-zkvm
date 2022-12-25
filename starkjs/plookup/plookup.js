@@ -24,18 +24,8 @@ class Plookup {
     }
   }
 
-  async buildConstantsGlobal(pols) {
-    const N = pols.L1.length;
-
-    for ( let i=0; i<N; i++) {
-      pols.L1[i] = (i == 0)? 1n : 0n;
-    }
-
-  }
-
   async buildConstants (pols) {
-    console.log(pols)
-    await this.buildConstantsGlobal(pols.Global)
+    await utils.buildConstantsGlobal(pols.Global)
     await this.buildConstants_(pols.Plookup)
   }
 
@@ -90,7 +80,7 @@ const starkStruct = {
   nBits: 10,
   nBitsExt: 11,
   nQueries: 8,
-  verificationHashType: "BN128",
+  verificationHashType: "GL", //FIXME BN128 not work
   steps: [
     {nBits: 11},
     {nBits: 3}

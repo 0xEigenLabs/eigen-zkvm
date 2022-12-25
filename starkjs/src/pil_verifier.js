@@ -6,7 +6,9 @@ const { FGL, starkSetup, starkGen, starkVerify } = require("pil-stark");
 const { interpolate } = require("../node_modules/pil-stark//src/fft_p.js");
 const starkInfoGen = require("../node_modules/pil-stark/src/starkinfo.js");
 const { proof2zkin } = require("../node_modules/pil-stark/src/proof2zkin.js");
+const pil2circom = require("../node_modules/pil-stark/src/pil2circom.js");
 const buildMerklehashBN128 = require("../node_modules/pil-stark/src/merklehash_bn128_p.js");
+const buildMerkleHashGL = require("../node_modules/pil-stark/src/merklehash_p.js");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true, storeAsString: true });
 
 const {elapse} = require("./utils");
@@ -60,7 +62,8 @@ module.exports = {
     elapse("buildConsttree", timer);
 
     const  circomFile = path.join(workspace, "circuit.circom")
-    const verifier = await this.pil2circom(pil, vk.constRoot, starkStruct)
+    const starkInfo = starkInfoGen(pil, starkStruct);
+    const verifier = await pil2circom(pil, vk.constRoot, starkInfo)
     elapse("pil2circom", timer);
     console.log(circomFile);
     await fs.promises.writeFile(circomFile, verifier, "utf8");
@@ -97,8 +100,8 @@ module.exports = {
     if (starkStruct.verificationHashType == "BN128") {
       MH = await buildMerklehashBN128();
     } else if (starkStruct.verificationHashType == "GL"){
-    //  MH = await buildMerkleHashGL();
-    //} else {
+      MH = await buildMerkleHashGL();
+    } else {
       throw new Error("Invalid hash type: " + starkStruct.verificationHashType)
     }
 
@@ -127,77 +130,5 @@ module.exports = {
     elapse("proveAndVerify/starkVerify", timer);
     assert(verified == true);
     return proof;
-  },
-
-  async pil2circom(pil, constRoot, starkStruct, options) {
-    options = options || {};
-    const starkInfo = starkInfoGen(pil, starkStruct);
-
-    this.setDimensions(starkInfo.verifierCode.first);
-    this.setDimensions(starkInfo.verifierQueryCode.first);
-    let template;
-    if (starkStruct.verificationHashType == "GL") {
-      template = await fs.promises.readFile(path.join(__dirname, "../node_modules/pil-stark", "circuits.gl", "stark_verifier.circom.ejs"), "utf8");
-    } else if (starkStruct.verificationHashType == "BN128") {
-      template = await fs.promises.readFile(path.join(__dirname, "../node_modules/pil-stark", "circuits.bn128", "stark_verifier.circom.ejs"), "utf8");
-    } else {
-      throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
-    }
-    const obj = {
-      F: FGL,
-      starkInfo: starkInfo,
-      starkStruct: starkStruct,
-      constRoot: constRoot,
-      pil: pil,
-      options: options
-    };
-
-    return ejs.render(template ,  obj);
-  },
-
-  setDimensions(code) {
-    const tmpDim = [];
-
-    for (let i=0; i<code.length; i++) {
-      let newDim;
-      switch (code[i].op) {
-        case 'add': newDim = Math.max(getDim(code[i].src[0]), getDim(code[i].src[1])); break;
-        case 'sub': newDim = Math.max(getDim(code[i].src[0]), getDim(code[i].src[1])); break;
-        case 'mul': newDim = Math.max(getDim(code[i].src[0]), getDim(code[i].src[1])); break;
-        case 'copy': newDim = getDim(code[i].src[0]); break;
-        default: throw new Error("Invalid op:"+ code[i].op);
-      }
-      setDim(code[i].dest, newDim);
-    }
-
-    function getDim(r) {
-      let d;
-      switch (r.type) {
-        case "tmp": d=tmpDim[r.id]; break;
-        case "tree1": d=r.dim; break;
-        case "tree2": d=r.dim; break;
-        case "tree3": d=r.dim; break;
-        case "tree4": d=r.dim; break;
-        case "const": d=1; break;
-        case "eval": d=3; break;
-        case "number": d=1; break;
-        case "public": d=1; break;
-        case "challenge": d=3; break;
-        case "xDivXSubXi": d=3; break;
-        case "xDivXSubWXi": d=3; break;
-        case "x": d=3; break;
-        case "Z": d=3; break;
-        default: throw new Error("Invalid reference type get: " + r.type);
-      }
-      r.dim = d;
-      return d;
-    }
-
-    function setDim(r, dim) {
-      switch (r.type) {
-        case "tmp": tmpDim[r.id] = dim; r.dim=dim; return;
-        default: throw new Error("Invalid reference type set: " + r.type);
-      }
-    }
   },
 }

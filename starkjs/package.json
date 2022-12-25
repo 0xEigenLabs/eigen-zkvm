@@ -6,7 +6,8 @@
   "scripts": {
     "fib": "mkdir -p circuits && node fibonacci/fibonacci.js -w circuits",
     "pc": "mkdir -p circuits && node permutation/permutation.js -w circuits",
-    "plookup": "mkdir -p circuits && node plookup/plookup.js -w circuits"
+    "plookup": "mkdir -p circuits && node plookup/plookup.js -w circuits",
+    "conn": "mkdir -p circuits && node connection/connection.js -w circuits"
   },
   "author": "",
   "license": "Apache-2.0",
@@ -16,7 +17,7 @@
     "pilcom": "^0.0.18",
     "tmp-promise": "3.0.3",
     "json-bigint": "^1.0.0",
-    "pil-stark": "0.0.39"
+    "pil-stark": "0.0.48"
   },
   "files": [
     "index.js",

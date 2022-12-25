@@ -2,17 +2,17 @@
 use crate::errors::Result;
 use crate::f3g::F3G;
 use crate::fft_p::interpolate;
-use crate::merklehash_bn128::MerkleTree;
 use crate::polsarray::PolsArray;
 use crate::starkinfo::{self, Program, StarkInfo};
+use crate::traits::MerkleTree;
 use crate::types::{StarkStruct, PIL};
 use crate::ElementDigest;
 use rayon::prelude::*;
 use winter_math::{fields::f64::BaseElement, FieldElement};
 
 #[derive(Default)]
-pub struct StarkSetup {
-    pub const_tree: MerkleTree,
+pub struct StarkSetup<M: MerkleTree> {
+    pub const_tree: M,
     pub const_root: ElementDigest,
     pub starkinfo: StarkInfo,
     pub program: Program,
@@ -21,12 +21,12 @@ pub struct StarkSetup {
 /// STARK SETUP
 ///
 ///  calculate the trace polynomial over extended field, return the new polynomial's coefficient.
-impl StarkSetup {
+impl<M: MerkleTree> StarkSetup<M> {
     pub fn new(
         const_pol: &PolsArray,
         pil: &mut PIL,
         stark_struct: &StarkStruct,
-    ) -> Result<StarkSetup> {
+    ) -> Result<StarkSetup<M>> {
         let nBits = stark_struct.nBits;
         let nBitsExt = stark_struct.nBitsExt;
         assert_eq!(const_pol.nPols, pil.nConstants);
@@ -58,7 +58,8 @@ impl StarkSetup {
                 *be_out = f3g_in.to_be();
             });
 
-        let const_tree = MerkleTree::merkelize(
+        let mut const_tree = M::new();
+        const_tree.merkelize(
             const_pols_array_e_be,
             const_pol.nPols,
             const_pol.n << (nBitsExt - nBits),
@@ -81,6 +82,7 @@ pub mod tests {
     use crate::types::{load_json, StarkStruct, PIL};
 
     use crate::field_bn128::Fr;
+    use crate::merklehash_bn128::MerkleTreeBN128;
     use ff::*;
 
     #[test]
@@ -90,7 +92,8 @@ pub mod tests {
         const_pol.load("data/fib.const").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
-        let setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let setup =
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
         let root: Fr = setup.const_root.into();
 
         let expect_root =
