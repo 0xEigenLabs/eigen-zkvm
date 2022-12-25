@@ -82,8 +82,11 @@ pub mod tests {
     use crate::types::{load_json, StarkStruct, PIL};
 
     use crate::field_bn128::Fr;
+    use crate::merklehash::MerkleTreeGL;
     use crate::merklehash_bn128::MerkleTreeBN128;
+    use crate::ElementDigest;
     use ff::*;
+    use winter_math::fields::f64::BaseElement;
 
     #[test]
     fn test_stark_setup() {
@@ -99,5 +102,23 @@ pub mod tests {
         let expect_root =
             "4658128321472362347225942316135505030498162093259225938328465623672244875764";
         assert_eq!(Fr::from_str(expect_root).unwrap(), root);
+    }
+
+    #[test]
+    fn test_stark_setup_gl() {
+        let mut pil = load_json::<PIL>("data/fib.pil.json.gl").unwrap();
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
+        const_pol.load("data/fib.const.gl").unwrap();
+
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.gl").unwrap();
+        let setup = StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+
+        let expect_root = ElementDigest::from([
+            BaseElement::from(15302509084042343527u64),
+            BaseElement::from(985081440042889555u64),
+            BaseElement::from(14692153289195851822u64),
+            BaseElement::from(1611894784155222896u64),
+        ]);
+        assert_eq!(expect_root, setup.const_root);
     }
 }

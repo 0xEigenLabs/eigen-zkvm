@@ -27,7 +27,7 @@ module.exports = {
     } else {
       pil = await compile(FGL, pilFile, null, pilConfig);
       if (typeof fileCachePil !== "undefined") {
-        await fs.promises.writeFile(fileCachePil + "pil.json", JSON.stringify(pil, null, 1) + "\n", "utf8");
+        await fs.promises.writeFile(fileCachePil + ".pil.json", JSON.stringify(pil, null, 1) + "\n", "utf8");
       }
     }
 
@@ -123,6 +123,7 @@ module.exports = {
     let timer = []
     elapse("proveAndVerify/start", timer);
     const setup = await starkSetup(constPols, pil, starkStruct);
+    console.log("const root: ", setup.constRoot);
     elapse("proveAndVerify/starkSetup", timer);
     const proof = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo);
     elapse("proveAndVerify/starkGen", timer);

@@ -37,7 +37,7 @@ impl Display for ElementDigest {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}n\n{}n\n{}n\n{}n",
+            "{}\n{}\n{}\n{}",
             self.0[0].as_int(),
             self.0[1].as_int(),
             self.0[2].as_int(),

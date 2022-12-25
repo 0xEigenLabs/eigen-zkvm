@@ -1,4 +1,4 @@
-constant %N = 32;
+constant %N = 2**10;
 namespace Fibonacci(%N);
     pol constant ISLAST;
 

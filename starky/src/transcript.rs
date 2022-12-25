@@ -1,31 +1,33 @@
+use crate::digest::ElementDigest;
 use crate::errors::Result;
-use crate::poseidon_opt::Poseidon;
-use std::collections::VecDeque;
 use crate::f3g::F3G;
-use winter_math::fields::f64::BaseElement;
+use crate::poseidon_opt::Poseidon;
 use crate::traits::Transcript;
 use num_bigint::BigUint;
-use crate::digest::ElementDigest;
+use winter_math::fields::f64::BaseElement;
+use winter_math::FieldElement;
+use winter_math::StarkField;
 
 pub struct TranscriptGL {
     state: [BaseElement; 4],
     poseidon: Poseidon,
     pending: Vec<BaseElement>,
-    out: VecDeque<BaseElement>,
+    out: Vec<BaseElement>,
 }
 
 impl TranscriptGL {
     fn update_state(&mut self) -> Result<()> {
         while self.pending.len() < 8 {
-            self.pending.push(Fr::zero());
+            self.pending.push(BaseElement::ZERO);
         }
-        self.out = VecDeque::from(self.poseidon.hash_ex(&self.pending, &self.state, 12)?);
+        self.out = self.poseidon.hash(&self.pending, &self.state, 12)?;
+
         self.pending = vec![];
         self.state.copy_from_slice(&self.out[0..4]);
         Ok(())
     }
-    fn add_1(&mut self, e: &Fr) -> Result<()> {
-        self.out = VecDeque::new();
+    fn add_1(&mut self, e: &BaseElement) -> Result<()> {
+        self.out = Vec::new();
         self.pending.push(e.clone());
         if self.pending.len() == 8 {
             self.update_state()?;
@@ -34,13 +36,13 @@ impl TranscriptGL {
     }
 }
 
-impl Transcript for Transcript {
+impl Transcript for TranscriptGL {
     fn new() -> Self {
         Self {
             state: [BaseElement::ZERO; 4],
             poseidon: Poseidon::new(),
             pending: Vec::new(),
-            out: VecDeque::new(),
+            out: Vec::new(),
         }
     }
 
@@ -53,7 +55,9 @@ impl Transcript for Transcript {
 
     fn get_fields1(&mut self) -> Result<BaseElement> {
         if self.out.len() > 0 {
-            return Ok(self.out.pop_front().unwrap());
+            let v = self.out[0];
+            self.out.remove(0);
+            return Ok(v);
         }
         self.update_state()?;
         self.get_fields1()
@@ -61,7 +65,9 @@ impl Transcript for Transcript {
 
     fn put(&mut self, es: &[ElementDigest]) -> Result<()> {
         for e in es.iter() {
-            self.add_1(e)?;
+            for t in e.as_elements() {
+                self.add_1(t)?;
+            }
         }
         Ok(())
     }
@@ -71,7 +77,8 @@ impl Transcript for Transcript {
         let n_fields = (total_bits - 1) / 63 + 1;
         let mut fields: Vec<BigUint> = Vec::new();
         for _i in 0..n_fields {
-            fields.push(self.get_fields1());
+            let e = self.get_fields1()?;
+            fields.push(BigUint::from(e.as_int()));
         }
         let mut res: Vec<usize> = vec![];
         let mut cur_field = 0;

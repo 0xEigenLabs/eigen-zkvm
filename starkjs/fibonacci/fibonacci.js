@@ -36,13 +36,13 @@ const argv = require("yargs")
 
 // construct the stark parameters
 const starkStruct = {
-  nBits: 5,
-  nBitsExt: 6,
-  nQueries: 2,
-  verificationHashType: "BN128",
+  nBits: 10,
+  nBitsExt: 11,
+  nQueries: 8,
+  verificationHashType: "GL",
   steps: [
-    {nBits: 6},
-    {nBits: 2}
+    {nBits: 11},
+    {nBits: 3}
   ]
 }
 console.log("security level(bits)", utils.security_test(starkStruct, 1024))
@@ -51,7 +51,7 @@ const pilFile = path.join(__dirname, "./fibonacci.pil");
 const proverAddr = "0x2FD31EB1BB3f0Ac8C4feBaF1114F42431c1F29E4";
 var start = new Date().getTime()
 const pilConfig = {};
-const pilCache = "/tmp/fib.pil.json"
+const pilCache = "/tmp/fib"
 pil_verifier.generate(argv.workspace, pilFile, pilConfig, pilCache, new FibonacciJS(), starkStruct, proverAddr, [1, 2]).then(() => {
   var end = new Date().getTime()
   console.log('cost is', `${end - start}ms`)

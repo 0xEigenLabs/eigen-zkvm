@@ -119,9 +119,6 @@ impl MerkleTreeGL {
         value: &ElementDigest,
         offset: usize,
     ) -> Result<ElementDigest> {
-        for i in mp.iter() {
-            crate::helper::pretty_print_array(i);
-        }
         if mp.len() == offset {
             return Ok(value.clone());
         }

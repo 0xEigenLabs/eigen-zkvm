@@ -40,7 +40,8 @@ mod starkinfo_cp_ver;
 mod starkinfo_fri_prover;
 mod starkinfo_fri_ver;
 mod starkinfo_map;
-mod transcript_bn128;
+pub mod transcript;
+pub mod transcript_bn128;
 
 #[macro_use]
 extern crate serde_json;

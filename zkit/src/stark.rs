@@ -3,6 +3,8 @@ use starky::{
     stark_gen::StarkProof,
     stark_setup::StarkSetup,
     stark_verify::stark_verify,
+    merklehash_bn128::MerkleTreeBN128,
+    transcript_bn128::TranscriptBN128,
     types::*,
 };
 
@@ -20,8 +22,8 @@ pub fn prove(
     cm_pol.load(cm_pol_file.as_str()).unwrap();
 
     let stark_struct = load_json::<StarkStruct>(stark_struct.as_str()).unwrap();
-    let mut setup = StarkSetup::new(&const_pol, &mut pil, &stark_struct).unwrap();
-    let starkproof = StarkProof::stark_gen(
+    let mut setup = StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+    let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
         &cm_pol,
         &const_pol,
         &setup.const_tree,
@@ -34,7 +36,7 @@ pub fn prove(
 
     println!("verify the proof...");
 
-    let result = stark_verify(
+    let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
         &starkproof,
         &setup.const_root,
         &setup.starkinfo,
