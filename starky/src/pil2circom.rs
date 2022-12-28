@@ -4,8 +4,13 @@ use crate::f3g::F3G;
 use crate::polsarray::PolsArray;
 use crate::starkinfo::StarkInfo;
 use crate::types::{StarkStruct, PIL};
-use std::collections::HashMap;
 use crate::starkinfo::Program;
+
+pub struct StarkOption {
+    pub enable_input: bool,
+    pub verkey_input: bool,
+    pub skip_main: bool,
+}
 
 pub fn pil2circom(
     pil: &PIL,
@@ -13,7 +18,7 @@ pub fn pil2circom(
     stark_struct: &StarkStruct,
     starkinfo: &mut StarkInfo,
     program: &mut Program,
-    options: HashMap<String, String>,
+    options: &StarkOption,
 ) -> Result<()> {
 
     starkinfo.set_code_dimensions_first(&mut program.verifier_code);

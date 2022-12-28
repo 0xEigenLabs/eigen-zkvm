@@ -8,6 +8,7 @@ use winter_math::StarkField;
 use crate::starkinfo_codegen::Node;
 use crate::starkinfo::StarkInfo;
 use crate::constant::SHIFT;
+use crate::pil2circom::StarkOption;
 
 fn header() -> String {
 
@@ -481,63 +482,110 @@ template VerifyQuery() {
 }
 
 
+fn map_values(&self, starkinfo: &StarkInfo) {
+    let mut res = format!(
+        r#"
 template MapValues() {
-    signal input vals1[<%- starkInfo.mapSectionsN.cm1_2ns %>];
-<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { -%>
-    signal input vals2[<%- starkInfo.mapSectionsN.cm2_2ns %>];
-<% }                                         -%>
-<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { -%>
-    signal input vals3[<%- starkInfo.mapSectionsN.cm3_2ns %>];
-<% }                                         -%>
-    signal input vals4[<%- starkInfo.mapSectionsN.cm4_2ns  %>];
+    signal input vals1[{}];
+"#, starkinfo.map_sectionsN.cm1_2ns);
 
-<% const sNames = [null, "cm1_2ns", "cm2_2ns", "cm3_2ns", "cm4_2ns"];              -%>
-<% for (let t = 1; t<=4; t++) {                                                  -%>
-<%      for (let i=0; i< starkInfo.mapSections[sNames[t]].length; i++) {        -%>
-<%          const p = starkInfo.varPolMap[starkInfo.mapSections[sNames[t]][i]];  -%>
-<%          if (p.dim == 1) {                                                    -%>
-    signal output tree<%- t %>_<%- i %>;
-<%          } else if (p.dim == 3) {                                             -%>
-    signal output tree<%- t %>_<%- i %>[3];
-<%          } else throw new Error("Invalid dim")                                -%>
-<%      }                                                                        -%>
-<% }                                                                             -%>
+    if starkinfo.map_sectionsN.cm2_2ns > 0 {
+        res.push_str(format!(r#"
+    signal input vals2[{}];
+"#, starkinfo.map_sectionsN.cm2_2ns));
+    }
 
-<% for (let t = 1; t<=4; t++) {                                                   -%>
-<%      for (let i=0; i< starkInfo.mapSections[sNames[t]].length; i++) {        -%>
-<%          const p = starkInfo.varPolMap[starkInfo.mapSections[sNames[t]][i]];  -%>
-<%          if (p.dim == 1) {                                                    -%>
-    tree<%- t %>_<%- i %> <== vals<%- t %>[<%- p.sectionPos %>];
-<%          } else if (p.dim == 3) {                                             -%>
-    tree<%- t %>_<%- i %>[0] <== vals<%- t %>[<%- p.sectionPos %>];
-    tree<%- t %>_<%- i %>[1] <== vals<%- t %>[<%- p.sectionPos + 1 %>];
-    tree<%- t %>_<%- i %>[2] <== vals<%- t %>[<%- p.sectionPos + 2 %>];
-<%          } else throw new Error("Invalid dim")                                -%>
-<%      }                                                                        -%>
-<% }                                                                             -%>
+    if starkinfo.map_sectionsN.cm3_2ns > 0 {
+        res.push_str(format!(r#"
+    signal input vals3[{}];
+"#, starkinfo.map_sectionsN.cm3_2ns));
+    }
+
+    res.push_str(format!(r#"
+    signal input vals4[{}];
+"#, starkinfo.map_sectionsN.cm4_2ns));
+
+
+    let sNames = vec!["", "cm1_2ns", "cm2_2ns", "cm3_2ns", "cm4_2ns"];
+    for t in 1..=4 {
+        for ms in starkinfo.map_sections.get(sNames[i]).iter() {
+            let p = starkinfo.var_pol_map[*ms];
+            if p.dim == 1 {
+                res.push_str(format!(r#"
+    signal output tree{}_{};
+                "#, t, i));
+            } else if p.dim == 3 {
+                res.push_str(format!(r#"
+    signal output tree{}_{}[3];
+                "#, t, i));
+            } else {
+                panic!("Invalid dim");
+            }
+        }
+    }
+
+    for t in 1..=4 {
+        for ms in starkinfo.map_sections.get(sNames[i]).iter() {
+            let p = starkinfo.var_pol_map[*ms];
+            if p.dim == 1 {
+                res.push_str(format!(r#"
+    tree<{}_{} <== vals{}[{}];
+                "#, t, i, t, p.section_pos));
+            } else if p.dim == 3 {
+                res.push_str(format!(r#"
+    tree{}_{}[0] <== vals{}[{}];
+    tree{}_{}[1] <== vals{}[{}];
+    tree{}_{}[2] <== vals{}[{}];
+}"#,
+                t, i, t, p.section_pos,
+                t, i, t, p.section_pos + 1,
+                t, i, t, p.section_pos + 2,
+                ));
+            } else {
+                panic!("Invalid dim");
+            }
+        }
+    }
 }
 
-
+fn stark_verifier(starkinfo: &StarkInfo, prorgam: &Program, pil: &PIL, stark_struct: &StarkStruct, const_root: &ElementDigest, options: &StarkOption) -> String {
+    let mut res = format!(r#"
 template StarkVerifier() {
-    signal input publics[<%- pil.publics.length %>];
+    signal input publics[{}];
     signal input root1[4];
     signal input root2[4];
     signal input root3[4];
     signal input root4[4];
+"#, pil.publics.len());
 
-<% if (options.verkeyInput) {  -%>
+    if options.verkey_input {
+        res.push_str(format!(r#"
     signal input rootC[4];
-<% } else { -%>
+"#));
+    } else {
+        let const_roots = const_root.as_elements();
+        res.push_str(format!(r#"
     signal rootC[4];
-    rootC[0] <== <%- constRoot[0] %>;
-    rootC[1] <== <%- constRoot[1] %>;
-    rootC[2] <== <%- constRoot[2] %>;
-    rootC[3] <== <%- constRoot[3] %>;
-<% } %>
+    rootC[0] <== {};
+    rootC[1] <== {};
+    rootC[2] <== {};
+    rootC[3] <== {};
+"#,
+   const_root[0].as_int(),
+   const_root[1].as_int(),
+   const_root[2].as_int(),
+   const_root[3].as_int()));
+    }
 
-    signal input evals[<%- starkInfo.evMap.length %>][3];
+    res.push_str(format!(r#"
+    signal input evals[{}][3];
+    signal input s0_vals1[{}][{}];
+    "#, starkinfo.ev_map.len(), stark_struct.n_queries, starkinfo.map_sectionsN.cm1_2ns));
 
-    signal input s0_vals1[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm1_2ns %>];
+    if starkinfo.map_sectionsN.cm2_2ns > 0 {
+        res.push_str(format!());
+    }
+
 <% if (starkInfo.mapSectionsN.cm2_2ns > 0) { -%>
     signal input s0_vals2[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm2_2ns %>];
 <% }                                         -%>
@@ -852,6 +900,9 @@ transcript.getPermutations("ys", starkStruct.nQueries, starkStruct.steps[0].nBit
             enable * lastIFFT.out[k][e] === 0;
         }
     }
+
+}
+
 
 }
 
