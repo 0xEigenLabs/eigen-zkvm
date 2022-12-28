@@ -459,6 +459,13 @@ impl StarkInfo {
         self._set_code_dimensions(&mut segment.last, &mut tmp_dim, dim_x);
     }
 
+    pub fn set_code_dimensions_first(&mut self, segment: &mut Segment) -> Result<()> {
+        let mut tmp_dim: HashMap<usize, usize> = HashMap::new();
+        let dim_x = 3;
+        self._set_code_dimensions(&mut segment.first, &mut tmp_dim, dim_x);
+        return Ok(())
+    }
+
     fn fix_prover_code(
         &mut self,
         segment: &mut Segment,
