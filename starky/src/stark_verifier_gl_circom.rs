@@ -215,11 +215,17 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> String {
         let inst = &code[i];
         if inst.dest.type_.as_str() == "tmp" {
             if inst.dest.dim == 1 {
-                str_code.push_str(&format!(r#"
-    signal tmp_{};"#, inst.dest.id));
+                str_code.push_str(&format!(
+                    r#"
+    signal tmp_{};"#,
+                    inst.dest.id
+                ));
             } else if inst.dest.dim == 3 {
-                str_code.push_str(&format!(r#"
-    signal tmp_{}[3];"#, inst.dest.id));
+                str_code.push_str(&format!(
+                    r#"
+    signal tmp_{}[3];"#,
+                    inst.dest.id
+                ));
             } else {
                 panic!("Invalid dimension");
             }
@@ -838,7 +844,8 @@ template MapValues() {{
             }
         }
     }
-    res.push_str(&format!(r#"
+    res.push_str(&format!(
+        r#"
 }}"#
     ));
     res
