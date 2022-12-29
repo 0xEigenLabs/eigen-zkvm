@@ -11,8 +11,7 @@ use winter_math::FieldElement;
 use winter_math::StarkField;
 
 fn header() -> String {
-    let header = r#"
-pragma circom 2.1.0;
+    let header = r#"pragma circom 2.1.0;
 pragma custom_templates;
 
 include "cmul.circom";
@@ -183,7 +182,7 @@ impl Transcript {
     }
 }
 
-fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> String {
+fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
     let ref_ = |r: &Node| -> String {
         match r.type_.as_str() {
             "eval" => format!("evals[{}]", r.id),
@@ -235,60 +234,70 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> String {
             "add" => {
                 if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
                     str_code.push_str(&format!(
-                        "\t{} <== {} + {}\n",
+                        r#"
+    {} <== {} + {};"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                 } else if inst.src[0].dim == 1 && inst.src[1].dim == 3 {
                     str_code.push_str(&format!(
-                        "\t{}[0] <== {} + {}[0]\n",
+                        r#"
+    {}[0] <== {} + {}[0];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[1] <== {}[1]\n",
+                        r#"
+    {}[1] <== {}[1];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[2] <== {}[2]\n",
+                        r#"
+    {}[2] <== {}[2];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[1])
                     ));
                 } else if inst.src[0].dim == 3 && inst.src[1].dim == 1 {
                     str_code.push_str(&format!(
-                        "\t{}[0] <== {}[0] + {}\n",
+                        r#"
+    {}[0] <== {}[0] + {};"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[1] <== {}[1]\n",
+                        r#"
+    {}[1] <== {}[1];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[2] <== {}[2]\n",
+                        r#"
+    {}[2] <== {}[2];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0])
                     ));
                 } else if inst.src[0].dim == 3 && inst.src[1].dim == 3 {
                     str_code.push_str(&format!(
-                        "\t{}[0] <== {}[0] + {}[0]\n",
+                        r#"
+    {}[0] <== {}[0] + {}[0];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[1] <== {}[1] + {}[1]\n",
+                        r#"
+    {}[1] <== {}[1] + {}[1];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[2] <== {}[2] + {}[2]\n",
+                        r#"
+    {}[2] <== {}[2] + {}[2];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
@@ -300,60 +309,70 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> String {
             "sub" => {
                 if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
                     str_code.push_str(&format!(
-                        "\t{} <== {} - {}\n",
+                        r#"
+    {} <== {} - {};"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                 } else if inst.src[0].dim == 1 && inst.src[1].dim == 3 {
                     str_code.push_str(&format!(
-                        "\t{}[0] <== {} - {}[0]\n",
+                        r#"
+    {}[0] <== {} - {}[0];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[1] <== {}[1]\n",
+                        r#"
+    {}[1] <== {}[1];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[2] <== {}[2]\n",
+                        r#"
+    {}[2] <== {}[2];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[1])
                     ));
                 } else if inst.src[0].dim == 3 && inst.src[1].dim == 1 {
                     str_code.push_str(&format!(
-                        "\t{}[0] <== {}[0] - {}\n",
+                        r#"
+    {}[0] <== {}[0] - {};"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[1] <== {}[1]\n",
+                        r#"
+    {}[1] <== {}[1];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[2] <== {}[2]\n",
+                        r#"
+    {}[2] <== {}[2];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0])
                     ));
                 } else if inst.src[0].dim == 3 && inst.src[1].dim == 3 {
                     str_code.push_str(&format!(
-                        "\t{}[0] <== {}[0] - {}[0]\n",
+                        r#"
+    {}[0] <== {}[0] - {}[0];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[1] <== {}[1] - {}[1]\n",
+                        r#"
+    {}[1] <== {}[1] - {}[1];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[2] <== {}[2] - {}[2]\n",
+                        r#"
+    {}[2] <== {}[2] - {}[2];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
@@ -365,45 +384,52 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> String {
             "mul" => {
                 if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
                     str_code.push_str(&format!(
-                        "\t{} <== {} * {}\n",
+                        r#"
+    {} <== {} * {};"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                 } else if inst.src[0].dim == 1 && inst.src[1].dim == 3 {
                     str_code.push_str(&format!(
-                        "\t{}[0] <== {} * {}[0]\n",
+                        r#"
+    {}[0] <== {} * {}[0];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[1] <== {} * {}[1]\n",
+                        r#"
+    {}[1] <== {} * {}[1];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[2] <== {} * {}[2]\n",
+                        r#"
+    {}[2] <== {} * {}[2];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                 } else if inst.src[0].dim == 3 && inst.src[1].dim == 1 {
                     str_code.push_str(&format!(
-                        "\t{}[0] <== {}[0] * {}\n",
+                        r#"
+    {}[0] <== {}[0] * {};"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[1] <== {}[1] * {}\n",
+                        r#"
+    {}[1] <== {}[1] * {};"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[2] <== {}[2] * {}\n",
+                        r#"
+    {}[2] <== {}[2] * {};"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
@@ -411,49 +437,62 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> String {
                 } else if inst.src[0].dim == 3 && inst.src[1].dim == 3 {
                     let cmpName = format!("cmul_{}", tmpNameId);
                     tmpNameId += 1;
-                    str_code.push_str(&format!("component {} = CMul();\n", cmpName));
                     str_code.push_str(&format!(
-                        "{}.ina[0] <== {}[0];\n",
+                        r#"
+    component {} = CMul();"#,
+                        cmpName
+                    ));
+                    str_code.push_str(&format!(
+                        r#"
+    {}.ina[0] <== {}[0];"#,
                         cmpName,
                         ref_(&inst.src[0])
                     ));
                     str_code.push_str(&format!(
-                        "{}.ina[1] <== {}[1];\n",
+                        r#"
+    {}.ina[1] <== {}[1];"#,
                         cmpName,
                         ref_(&inst.src[0])
                     ));
                     str_code.push_str(&format!(
-                        "{}.ina[2] <== {}[2];\n",
+                        r#"
+    {}.ina[2] <== {}[2];"#,
                         cmpName,
                         ref_(&inst.src[0])
                     ));
                     str_code.push_str(&format!(
-                        "{}.inb[0] <== {}[0];\n",
+                        r#"
+    {}.inb[0] <== {}[0];"#,
                         cmpName,
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "{}.inb[1] <== {}[1];\n",
+                        r#"
+    {}.inb[1] <== {}[1];"#,
                         cmpName,
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "{}.inb[2] <== {}[2];\n",
+                        r#"
+    {}.inb[2] <== {}[2];"#,
                         cmpName,
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
-                        "{}[0] <== {}.out[0];\n",
+                        r#"
+    {}[0] <== {}.out[0];"#,
                         ref_(&inst.dest),
                         cmpName
                     ));
                     str_code.push_str(&format!(
-                        "{}[1] <== {}.out[1];\n",
+                        r#"
+    {}[1] <== {}.out[1];"#,
                         ref_(&inst.dest),
                         cmpName
                     ));
                     str_code.push_str(&format!(
-                        "{}[2] <== {}.out[2];\n",
+                        r#"
+    {}[2] <== {}.out[2];"#,
                         ref_(&inst.dest),
                         cmpName
                     ));
@@ -464,23 +503,27 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> String {
             "copy" => {
                 if inst.src[0].dim == 1 {
                     str_code.push_str(&format!(
-                        "\t{} <== {}\n",
+                        r#"
+    {} <== {};"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0])
                     ));
                 } else if inst.src[0].dim == 3 {
                     str_code.push_str(&format!(
-                        "\t{}[0] <== {}[0]\n",
+                        r#"
+    {}[0] <== {}[0];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[1] <== {}[1]\n",
+                        r#"
+    {}[1] <== {}[1];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0])
                     ));
                     str_code.push_str(&format!(
-                        "\t{}[2] <== {}[2]\n",
+                        r#"
+    {}[2] <== {}[2];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0])
                     ));
@@ -491,7 +534,7 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> String {
             _ => panic!("Invalid op"),
         }
     }
-    ref_(&code[code.len() - 1].dest)
+    (str_code, ref_(&code[code.len() - 1].dest))
 }
 
 fn verify_evaluations(
@@ -549,20 +592,19 @@ template VerifyEvaluations() {{
 
     Z[0] <== zMul[{}].out[0] -1;
     Z[1] <== zMul[{}].out[1];
-    Z[2] <== zMul[{}].out[2];
-
-    signal xN[3] <== zMul[{}].out;
-            "#,
+    Z[2] <== zMul[{}].out[2];"#,
         stark_struct.nBits - 1,
         stark_struct.nBits - 1,
         stark_struct.nBits - 1,
-        stark_struct.nBits - 1
     ));
 
-    let evalP = unrollCode(&program.verifier_code.first, starkinfo);
+    let (tmpCode, evalP) = unrollCode(&program.verifier_code.first, starkinfo);
+    res.push_str(&tmpCode);
 
     res.push_str(&format!(
         r#"
+    signal xN[3] <== zMul[{}].out;
+
     signal xAcc[{}][3];
     signal qStep[{}][3];
     signal qAcc[{}][3];
@@ -579,6 +621,7 @@ template VerifyEvaluations() {{
             qAcc[i][2] <== qAcc[i-1][2] + qStep[i-1][2];
         }}
     }}"#,
+        stark_struct.nBits - 1,
         starkinfo.q_deg,
         starkinfo.q_deg - 1,
         starkinfo.q_deg,
@@ -744,7 +787,8 @@ template VerifyQuery() {{
         stark_struct.steps[0].nBits - 1,
     ));
 
-    let evalQ = unrollCode(&program.verifier_query_code.first, starkinfo);
+    let (tmpCode, evalQ) = unrollCode(&program.verifier_query_code.first, starkinfo);
+    res.push_str(&tmpCode);
 
     res.push_str(&format!(
         r#"
@@ -1500,7 +1544,10 @@ template StarkVerifier() {{
             s{}_lowValues[q].key[i] <== ys[q][i];
         }}
         "#,
-                stark_struct.steps[s].nBits, s, stark_struct.steps[s].nBits, s
+                1 << stark_struct.steps[s].nBits,
+                s,
+                stark_struct.steps[s].nBits,
+                s
             ));
         }
 
