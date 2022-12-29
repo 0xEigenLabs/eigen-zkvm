@@ -3,9 +3,9 @@ set -ex
 
 cargo build --release
 
-CIRCUIT=stark_verifier
+CIRCUIT=circuit
 CUR_DIR=$(cd $(dirname $0);pwd)
-POWER=22
+POWER=24
 export RUST_BACKTRACE=1
 ZKIT="${CUR_DIR}/../target/release/zkit"
 WORKSPACE=/tmp/${CIRCUIT}

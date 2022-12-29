@@ -46,6 +46,7 @@ pub mod transcript;
 pub mod transcript_bn128;
 
 pub mod pil2circom;
+pub mod proof2zkin;
 
 #[macro_use]
 extern crate serde_json;
