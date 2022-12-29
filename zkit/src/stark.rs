@@ -1,5 +1,6 @@
 use starky::{
     merklehash_bn128::MerkleTreeBN128,
+    pil2circom,
     polsarray::{PolKind, PolsArray},
     stark_gen::StarkProof,
     stark_setup::StarkSetup,
@@ -7,12 +8,15 @@ use starky::{
     transcript_bn128::TranscriptBN128,
     types::*,
 };
+use std::fs::File;
+use std::io::Write;
 
 pub fn prove(
     stark_struct: &String,
     pil_file: &String,
     const_pol_file: &String,
     cm_pol_file: &String,
+    circom_file: &String,
 ) -> Result<(), anyhow::Error> {
     let mut pil = load_json::<PIL>(pil_file.as_str()).unwrap();
     let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
@@ -46,6 +50,25 @@ pub fn prove(
     )
     .unwrap();
     assert_eq!(result, true);
-    println!("verify the proof successfully");
+    println!("verify the proof done");
+
+    let opt = pil2circom::StarkOption {
+        enable_input: false,
+        verkey_input: false,
+        skip_main: false,
+    };
+
+    println!("generate circom");
+    let str_ver = pil2circom::pil2circom(
+        &pil,
+        &setup.const_root,
+        &stark_struct,
+        &mut setup.starkinfo,
+        &mut setup.program,
+        &opt,
+    )?;
+    let mut file = File::create(&circom_file)?;
+    write!(file, "{}", str_ver)?;
+    println!("generate circom done");
     Ok(())
 }

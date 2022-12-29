@@ -463,7 +463,7 @@ impl StarkInfo {
         let mut tmp_dim: HashMap<usize, usize> = HashMap::new();
         let dim_x = 3;
         self._set_code_dimensions(&mut segment.first, &mut tmp_dim, dim_x);
-        return Ok(())
+        return Ok(());
     }
 
     fn fix_prover_code(

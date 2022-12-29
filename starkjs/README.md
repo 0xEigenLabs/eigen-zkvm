@@ -13,15 +13,11 @@ will generate the PIL json, Commitment Polynomial file and Constant Polynomial f
 ### Generate the Stark proof's circuits
 
 ```
-../target/debug/zkit stark_prove -s ../starky/data/starkStruct.json.2 \
-    -p ../starky/data/pe.pil.json \
-    -o ../starky/data/pe.const \
-    -m ../starky/data/pe.cm
+../target/release/zkit stark_prove -s ../starky/data/starkStruct.json.gl \
+    -p /tmp/fib.pil.json \
+    -o /tmp/fib.const \
+    -m /tmp/fib.cm -c circuits/stark_verifier.circom
 ```
-
-### Generate Circom file
-
-TODO
 
 ### Compile verifier and generate snark proof
 ```

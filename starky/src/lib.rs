@@ -3,6 +3,8 @@ pub mod polsarray;
 mod traits;
 pub mod types;
 
+pub mod stark_verifier_gl_circom;
+
 pub mod linearhash;
 pub mod linearhash_bn128;
 

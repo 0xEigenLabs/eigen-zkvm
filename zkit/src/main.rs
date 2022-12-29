@@ -174,6 +174,8 @@ struct StarkProveOpt {
     const_pols: String,
     #[clap(short = "m", long = "cm_pols", default_value = "pols.cm")]
     cm_pols: String,
+    #[clap(short = "c", long = "circom", default_value = "stark_verfier.circom")]
+    circom_file: String,
 }
 
 #[derive(Debug, Clap)]
@@ -313,6 +315,7 @@ fn main() {
             &args.piljson,
             &args.const_pols,
             &args.cm_pols,
+            &args.circom_file,
         ),
     };
     println!("time cost: {}", start.elapsed().as_secs_f64());
