@@ -6,7 +6,7 @@ PIL compiler and Circom transpiler. The stark prover is [starky](../starky).
 ### Generate Polynomial
 
 ```
-npm run pc
+npm run fib
 ```
 will generate the PIL json, Commitment Polynomial file and Constant Polynomial file.
 
