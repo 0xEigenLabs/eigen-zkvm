@@ -3,6 +3,8 @@ pub mod polsarray;
 mod traits;
 pub mod types;
 
+pub mod stark_verifier_gl_circom;
+
 pub mod linearhash;
 pub mod linearhash_bn128;
 
@@ -42,6 +44,8 @@ mod starkinfo_fri_ver;
 mod starkinfo_map;
 pub mod transcript;
 pub mod transcript_bn128;
+
+pub mod pil2circom;
 
 #[macro_use]
 extern crate serde_json;

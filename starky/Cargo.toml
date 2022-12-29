@@ -34,6 +34,9 @@ thiserror="1.0"
 log = "0.4.0"
 env_logger = "0.10"
 
+# R1CS
+plonky = { package="plonky", path = "../plonky", version = "0.0.1" }
+
 [dev-dependencies]
 criterion = "0.4"
 pprof = { version = "0.3", features = ["flamegraph"] }

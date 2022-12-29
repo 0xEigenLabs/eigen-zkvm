@@ -131,6 +131,25 @@ pub struct IndexVec {
     pub f_2ns: Vec<usize>,
 }
 
+impl IndexVec {
+    pub fn get(&self, name: &str) -> &Vec<usize> {
+        match name {
+            "cm1_n" => &self.cm1_n,
+            "cm1_2ns" => &self.cm1_2ns,
+            "cm2_n" => &self.cm2_n,
+            "cm2_2ns" => &self.cm2_2ns,
+            "cm3_n" => &self.cm3_n,
+            "cm3_2ns" => &self.cm3_2ns,
+            "cm4_n" => &self.cm4_n,
+            "cm4_2ns" => &self.cm4_2ns,
+            "tmpexp_n" => &self.tmpexp_n,
+            "q_2ns" => &self.q_2ns,
+            "f_2ns" => &self.q_2ns,
+            _ => panic!("Invalid name={} in index", name),
+        }
+    }
+}
+
 #[derive(Debug, Default, Serialize)]
 pub struct Index {
     pub cm1_n: usize,
