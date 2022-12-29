@@ -366,22 +366,22 @@ template VerifyQuery() {
     "#,
     stark_struct.steps[0].nBits,
     starkinfo.ev_map.len(),
-    starkinfo.map_sectionsN.cm1_2ns,
+    starkinfo.map_sectionsN.get("cm1_2ns"),
 );
 
-    if stark_struct.map_sectionsN.cm2_2ns > 0 {
+    if stark_struct.map_sectionsN.get("cm2_2ns") > 0 {
         res.push_str(
             format!(r#"
     signal input tree2[{}];
-            "#, starkinfo.map_sectionsN.cm2_2ns)
+            "#, starkinfo.map_sectionsN.get("cm2_2ns"))
         );
     }
 
-    if stark_struct.map_sectionsN.cm3_2ns > 0 {
+    if stark_struct.map_sectionsN.get("cm3_2ns") > 0 {
         res.push_str(
             format!(r#"
     signal input tree3[{}];
-            "#, starkinfo.map_sectionsN.cm3_2ns)
+            "#, starkinfo.map_sectionsN.get("cm3_2ns"))
         );
     }
 
@@ -390,7 +390,7 @@ template VerifyQuery() {
     signal input tree4[{}];
     signal input consts[{}];
     signal output out[3];
-        "#, starkinfo.map_sectionsN.cm4_2ns, starkinfo.n_constants)
+        "#, starkinfo.map_sectionsN.get("cm4_2ns"), starkinfo.n_constants)
     );
 
 ///////////
@@ -403,28 +403,28 @@ template VerifyQuery() {
     for (var i=0; i< {}; i++ ) {
         mapValues.vals1[i] <== tree1[i];
     }
-    "#, starkinfo.map_sectionsN.cm1_2ns));
+    "#, starkinfo.map_sectionsN.get("cm1_2ns")));
 
-    if starkinfo.map_sectionsN.cm2_2ns > 0 {
+    if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
         res.push_str(format!(r#"
     for (var i=0; i< {}; i++ ) {
         mapValues.vals2[i] <== tree2[i];
-    }"#, starkinfo.map_sectionsN.cm2_2ns));
+    }"#, starkinfo.map_sectionsN.get("cm2_2ns")));
     }
 
-    if starkinfo.map_sectionsN.cm3_2ns > 0 {
+    if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
         res.push_str(format!(r#"
     for (var i=0; i< {}; i++ ) {
         mapValues.vals3[i] <== tree3[i];
-    }"#, starkinfo.map_sectionsN.cm3_2ns));
+    }"#, starkinfo.map_sectionsN.get("cm3_2ns")));
     }
 
 
-    if starkinfo.map_sectionsN.cm4_2ns > 0 {
+    if starkinfo.map_sectionsN.get("cm4_2ns") > 0 {
         res.push_str(format!(r#"
     for (var i=0; i< {}; i++ ) {
         mapValues.vals4[i] <== tree4[i];
-    }"#, starkinfo.map_sectionsN.cm4_2ns));
+    }"#, starkinfo.map_sectionsN.get("cm4_2ns")));
     }
 
     res.push_str(format!(r#"
@@ -487,23 +487,23 @@ fn map_values(&self, starkinfo: &StarkInfo) {
         r#"
 template MapValues() {
     signal input vals1[{}];
-"#, starkinfo.map_sectionsN.cm1_2ns);
+"#, starkinfo.map_sectionsN.get("cm1_2ns"));
 
-    if starkinfo.map_sectionsN.cm2_2ns > 0 {
+    if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
         res.push_str(format!(r#"
     signal input vals2[{}];
-"#, starkinfo.map_sectionsN.cm2_2ns));
+"#, starkinfo.map_sectionsN.get("cm2_2ns")));
     }
 
-    if starkinfo.map_sectionsN.cm3_2ns > 0 {
+    if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
         res.push_str(format!(r#"
     signal input vals3[{}];
-"#, starkinfo.map_sectionsN.cm3_2ns));
+"#, starkinfo.map_sectionsN.get("cm3_2ns")));
     }
 
     res.push_str(format!(r#"
     signal input vals4[{}];
-"#, starkinfo.map_sectionsN.cm4_2ns));
+"#, starkinfo.map_sectionsN.get("cm4_2ns")));
 
 
     let sNames = vec!["", "cm1_2ns", "cm2_2ns", "cm3_2ns", "cm4_2ns"];
@@ -580,99 +580,128 @@ template StarkVerifier() {
     res.push_str(format!(r#"
     signal input evals[{}][3];
     signal input s0_vals1[{}][{}];
-    "#, starkinfo.ev_map.len(), stark_struct.n_queries, starkinfo.map_sectionsN.cm1_2ns));
+    "#, starkinfo.ev_map.len(), stark_struct.n_queries, starkinfo.map_sectionsN.get("cm1_2ns")));
 
-    if starkinfo.map_sectionsN.cm2_2ns > 0 {
-        res.push_str(format!());
+    if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
+        res.push_str(format!(r#"
+    signal input s0_vals2[{}][{}];
+        "#, stark_struct.nQueries, starkinfo.map_sectionsN.get("cm2_2ns")));
     }
 
-<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { -%>
-    signal input s0_vals2[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm2_2ns %>];
-<% }                                         -%>
-<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { -%>
-    signal input s0_vals3[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm3_2ns %>];
-<% }                                         -%>
-    signal input s0_vals4[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm4_2ns %>];
-    signal input s0_valsC[<%- starkStruct.nQueries %>][<%- starkInfo.nConstants %>];
-    signal input s0_siblings1[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>][4];
-<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { -%>
-    signal input s0_siblings2[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>][4];
-<% }                                         -%>
-<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { -%>
-    signal input s0_siblings3[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>][4];
-<% }                                         -%>
-    signal input s0_siblings4[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>][4];
-    signal input s0_siblingsC[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>][4];
+    if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
+        res.push_str(format!(r#"
+    signal input s0_vals3[{}][{}];
+        "#, stark_struct.nQueries, starkinfo.map_sectionsN.get("cm3_2ns")));
+    }
 
-<% for (let s=0; s<starkStruct.steps.length-1; s++) {   -%>
-    signal input s<%- s+1 %>_root[4];
-<% }                                                     -%>
+    res.push_str(format!(r#"
+    signal input s0_vals4[{}][{}];
+    signal input s0_valsC[{}][{}];
+    signal input s0_siblings1[{}][{}][4];
+"#, stark_struct.nQueries, starkinfo.map_sectionsN.get("cm4_2ns"), stark_struct.nQueries, starkinfo.n_constants, stark_struct.nQueries, stark_struct.steps[0].nBits));
 
-<% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
-    signal input s<%- s %>_vals[<%- starkStruct.nQueries %>][<%- (1 << (starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits))*3 %>];
-    signal input s<%- s %>_siblings[<%- starkStruct.nQueries %>][<%- starkStruct.steps[s].nBits %>][4];
-<% }                                                  -%>
+    if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
+        res.push_str(format!(r#"
+    signal input s0_siblings2[{}][{}][4];
+        "#, stark_struct.nQueries, stark_struct.steps[0].nBits));
+    }
 
-    signal input finalPol[<%- 1 << starkStruct.steps[starkStruct.steps.length-1].nBits %>][3];
+    if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
+        res.push_str(format!(r#"
+    signal input s0_siblings3[{}][{}][4];
+        "#, stark_struct.nQueries, stark_struct.steps[0].nBits));
+    }
 
-<% if (options.enableInput) { -%>
+    res.push_str(format!(r#"
+    signal input s0_siblings4[{}][{}][4];
+    signal input s0_siblingsC[{}][{}][4];
+        "#, stark_struct.nQueries, stark_struct.steps[0].nBits, stark_struct.nQueries, stark_struct.steps[0].nBits));
+
+    for s in 0..(stark_struct.steps.len() - 1) {
+        res.push_str(format!(r#"
+    signal input s{}_root[4];
+        "#, s+1));
+    }
+
+    for s in 1..stark_struct.steps.len() {
+        res.push_str(format!(r#"
+    signal input s{}_vals[{}][{}];
+    signal input s{}_siblings[{}][{}][4];
+        "#, s, stark_struct.nQueries, (1 << (stark_struct.steps[s-1].nBits - stark_struct.steps[s].nBits))*3,
+            s, stark_struct.nQueries, stark_struct.steps[s].nBits));
+    }
+
+
+    res.push_str(format!(r#"
+    signal input finalPol[{}][3];
+    "#, 1 << stark_struct.steps[stark_struct.steps.len()-1].nBits));
+
+    if options.enable_input {
+        res.push_str(format!(r#"
     signal input enable;
     enable * (enable -1 ) === 0;
-<% } else { -%>
+    "#));
+
+    } else {
+        res.push_str(format!(r#"
     signal enable;
     enable <== 1;
-<% } -%>
+    "#));
+    }
 
-
+    res.push_str(format!(r#"
     signal challenges[8][3];
-<% for (let s=0; s<starkStruct.steps.length; s++) {   -%>
-    signal s<%- s %>_specialX[3];
-<% }                                                    -%>
+    "#));
 
-    signal ys[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
+    for s in 0..stark_struct.steps.len() {
+        res.push_str(format!(r#"
+    signal s{}_specialX[3];
+    "#, s));
+    }
 
+    res.push_str(format!(r#"
+    signal ys[{}][{}];
+    "#, stark_struct.nQueries, stark_struct.steps[0].nBits));
 
 ///////////
 // challenge calculation
 ///////////
 
-<%
-const transcript = new Transcript();
-transcript.put("publics", pil.publics.length);
-transcript.put("root1", 4);
-transcript.getField("challenges[0]", 3);
-transcript.getField("challenges[1]", 3);
-transcript.put("root2", 4);
-transcript.getField("challenges[2]", 3);
-transcript.getField("challenges[3]", 3);
-transcript.put("root3", 4);
-transcript.getField("challenges[4]", 3);
-transcript.put("root4", 4);
-transcript.getField("challenges[7]", 3);
-for (let i=0; i<starkInfo.evMap.length; i++) {
-    transcript.put(`evals[${i}]`, 3);
-}
-transcript.getField("challenges[5]", 3);
-transcript.getField("challenges[6]", 3);
-for (let si=0; si<starkStruct.steps.length; si++) {
-    transcript.getField(`s${si}_specialX`, 3);
-    if (si < starkStruct.steps.length-1) {
-        transcript.put(`s${si+1}_root`, 4);
-    } else {
-        for (let j=0; j< 1<<starkStruct.steps[starkStruct.steps.length-1].nBits; j++ ) {
-            transcript.put(`finalPol[${j}]`, 3);
+    let transcript = Transcript::new();
+    transcript.put("publics", pil.publics.len());
+    transcript.put("root1", 4);
+    transcript.getField("challenges[0]", 3);
+    transcript.getField("challenges[1]", 3);
+    transcript.put("root2", 4);
+    transcript.getField("challenges[2]", 3);
+    transcript.getField("challenges[3]", 3);
+    transcript.put("root3", 4);
+    transcript.getField("challenges[4]", 3);
+    transcript.put("root4", 4);
+    transcript.getField("challenges[7]", 3);
+    for i in 0..starkinfo.ev_map.len() {
+        transcript.put(format!("evals[{}]", i), 3);
+    }
+    transcript.getField("challenges[5]", 3);
+    transcript.getField("challenges[6]", 3);
+    for si in 0..stark_struct.steps.len() {
+        transcript.getField(format!("s{}_specialX", si), 3);
+        if (si < starkStruct.steps.length-1) {
+            transcript.put(format!("s{}_root", si+1), 4);
+        } else {
+            for j in 0..(1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits) {
+                transcript.put(format!("finalPol[{}]", j), 3);
+            }
         }
     }
-}
-transcript.getPermutations("ys", starkStruct.nQueries, starkStruct.steps[0].nBits);
-
--%>
-
-<%- transcript.getCode() %>
+    transcript.getPermutations("ys", stark_struct.nQueries, stark_struct.steps[0].nBits);
+    res.push_str(transcript.getCode());
 
 ///////////
 // Constrain polynomial check in vauations
 ///////////
+
+    res.push_str(format!(r#"
     component verifyEvaluations = VerifyEvaluations();
     verifyEvaluations.enable <== enable;
     for (var i=0; i<8; i++) {
@@ -680,77 +709,125 @@ transcript.getPermutations("ys", starkStruct.nQueries, starkStruct.steps[0].nBit
             verifyEvaluations.challenges[i][k] <== challenges[i][k];
         }
     }
-    for (var i=0; i<<%- pil.publics.length %>; i++) {
+    for (var i=0; i<{}; i++) {
         verifyEvaluations.publics[i] <== publics[i];
     }
-    for (var i=0; i<<%- starkInfo.evMap.length %>; i++) {
+    for (var i=0; i<{}; i++) {
         for (var k=0; k<3; k++) {
             verifyEvaluations.evals[i][k] <== evals[i][k];
         }
     }
-
+    "#, pil.publics.len(), starkinfo.ev_map.len()))
 ///////////
 // Step0 Check and evaluate queries
 ///////////
 
-    component verifyQueries[<%- starkStruct.nQueries %>];
-    component s0_merkle1[<%- starkStruct.nQueries %>];
-<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+    res.push_str(format!(r#"
+    component verifyQueries[{}];
+    component s0_merkle1[{}];
+    "#, stark_struct.nQueries, stark_struct.nQueries))
+
+    if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
+        res.push_str(format!(r#"
     component s0_merkle2[<%- starkStruct.nQueries %>];
-<% }                                         %>
-<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
-    component s0_merkle3[<%- starkStruct.nQueries %>];
-<% }                                         %>
-    component s0_merkle4[<%- starkStruct.nQueries %>];
-    component s0_merkleC[<%- starkStruct.nQueries %>];
-    component s0_lowValues[<%- starkStruct.nQueries %>];
+    "#, stark_struct.nQueries));
+    }
 
-    for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
+    if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
+        res.push_str(format!(r#"
+    component s0_merkle3[{}];
+    "#, stark_struct.nQueries));
+    }
+
+    res.push_str(format!(r#"
+    component s0_merkle4[{}];
+    component s0_merkleC[{}];
+    component s0_lowValues[{}];
+    "#,
+    stark_struct.nQueries,
+    stark_struct.nQueries,
+    stark_struct.nQueries));
+
+
+    res.push_str(format!(r#"
+    for (var q=0; q<{}; q++) {
         verifyQueries[q] = VerifyQuery();
-        s0_merkle1[q] = MerkleHash(1, <%- starkInfo.mapSectionsN.cm1_2ns %>, <%- 1 << starkStruct.steps[0].nBits %>);
-<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
-        s0_merkle2[q] = MerkleHash(1, <%- starkInfo.mapSectionsN.cm2_2ns %>, <%- 1 << starkStruct.steps[0].nBits %>);
-<% }                                         %>
-<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
-        s0_merkle3[q] = MerkleHash(1, <%- starkInfo.mapSectionsN.cm3_2ns %>, <%- 1 << starkStruct.steps[0].nBits %>);
-<% }                                         %>
-        s0_merkle4[q] = MerkleHash(1, <%- starkInfo.mapSectionsN.cm4_2ns %>, <%- 1 << starkStruct.steps[0].nBits %>);
-        s0_merkleC[q] = MerkleHash(1, <%- starkInfo.nConstants %>, <%- 1 << starkStruct.steps[0].nBits %>);
-        s0_lowValues[q] = TreeSelector(<%- starkStruct.steps[0].nBits - ((0< starkStruct.steps.length-1) ? starkStruct.steps[1].nBits : 0)  %>, 3) ;
+        s0_merkle1[q] = MerkleHash(1, {}, {});
+    "#, stark_struct.nQueries, starkinfo.map_sectionsN.get("cm1_2ns", 1 << stark_struct.steps[0].nBits);
 
-        for (var i=0; i<<%- starkStruct.steps[0].nBits %>; i++ ) {
+    if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
+        res.push_str(format!(r#"
+        s0_merkle2[q] = MerkleHash(1, {}, {});
+    "#, starkinfo.map_sectionsN.get("cm2_2ns", 1 << stark_struct.steps[0].nBits)));
+    }
+
+    if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
+        res.push_str(format!(r#"
+        s0_merkle2[q] = MerkleHash(1, {}, {});
+    "#, starkinfo.map_sectionsN.get("cm3_2ns", 1 << stark_struct.steps[0].nBits)));
+    }
+        res.push_str(format!(r#"
+        s0_merkle4[q] = MerkleHash(1, {}, {});
+        s0_merkleC[q] = MerkleHash(1, {}, {});
+        s0_lowValues[q] = TreeSelector({}, 3) ;
+    "#, starkinfo.map_sectionsN.get("cm4_2ns",
+        1 << stark_struct.steps[0].nBits,
+        starkinfo.n_constants,
+        starkStruct.steps[0].nBits - (if (0 < stark_struct.steps.len()-1) { stark_struct.steps[1].nBits  } else {0})
+        )));
+
+        res.push_str(format!(r#"
+        for (var i=0; i<{}; i++ ) {
             verifyQueries[q].ys[i] <== ys[q][i];
             s0_merkle1[q].key[i] <== ys[q][i];
-<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+    "#, stark_struct.steps[0].nBits));
+
+    if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
+        res.push_str(format!(r#"
             s0_merkle2[q].key[i] <== ys[q][i];
-<% }                                         %>
-<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+    "#));
+    }
+    if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
+        res.push_str(format!(r#"
             s0_merkle3[q].key[i] <== ys[q][i];
-<% }                                         %>
+    "#));
+    }
+
+    res.push_str(format!(r#"
             s0_merkle4[q].key[i] <== ys[q][i];
             s0_merkleC[q].key[i] <== ys[q][i];
         }
-        for (var i=0; i<<%- starkInfo.mapSectionsN.cm1_2ns %>; i++ ) {
+        for (var i=0; i<{}; i++ ) {
             verifyQueries[q].tree1[i] <== s0_vals1[q][i];
             s0_merkle1[q].values[i][0] <== s0_vals1[q][i];
         }
-<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
-        for (var i=0; i<<%- starkInfo.mapSectionsN.cm2_2ns %>; i++ ) {
+    "#, starkinfo.map_sectionsN.get("cm1_2ns")));
+
+    if (starkInfo.map_sectionsN.get("cm2_2ns") > 0) {
+        res.push_str(format!(r#"
+        for (var i=0; i<{}; i++ ) {
             verifyQueries[q].tree2[i] <== s0_vals2[q][i];
             s0_merkle2[q].values[i][0] <== s0_vals2[q][i];
         }
-<% }                                         %>
-<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
-        for (var i=0; i<<%- starkInfo.mapSectionsN.cm3_2ns %>; i++ ) {
+    "#, starkinfo.map_sectionsN.get("cm2_2ns")));
+    }
+
+    if (starkInfo.map_sectionsN.get("cm3_2ns") > 0) {
+        res.push_str(format!(r#"
+        for (var i=0; i<{}; i++ ) {
             verifyQueries[q].tree3[i] <== s0_vals3[q][i];
             s0_merkle3[q].values[i][0] <== s0_vals3[q][i];
         }
-<% }                                         %>
-        for (var i=0; i<<%- starkInfo.mapSectionsN.cm4_2ns %>; i++ ) {
+    "#, starkinfo.map_sectionsN.get("cm3_2ns")));
+    }
+
+
+    res.push_str(format!(r#"
+        for (var i=0; i<{}; i++ ) {
             verifyQueries[q].tree4[i] <== s0_vals4[q][i];
             s0_merkle4[q].values[i][0] <== s0_vals4[q][i];
         }
-        for (var i=0; i<<%- starkInfo.nConstants %>; i++ ) {
+        for (var i=0; i<{}; i++ ) {
             verifyQueries[q].consts[i] <== s0_valsC[q][i];
             s0_merkleC[q].values[i][0] <== s0_valsC[q][i];
         }
@@ -759,20 +836,28 @@ transcript.getPermutations("ys", starkStruct.nQueries, starkStruct.steps[0].nBit
                 verifyQueries[q].challenges[i][e] <== challenges[i][e];
             }
         }
-        for (var i=0; i<<%- starkInfo.evMap.length %>; i++) {
+        for (var i=0; i<{}; i++) {
             for (var e=0; e<3; e++) {
                 verifyQueries[q].evals[i][e] <== evals[i][e];
             }
         }
-        for (var i=0; i<<%- starkStruct.steps[0].nBits %>;i++) {
+        for (var i=0; i<{};i++) {
             for (var j=0; j<4; j++) {
                 s0_merkle1[q].siblings[i][j] <== s0_siblings1[q][i][j];
-<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+    "#, starkinfo.map_sectionsN.get("cm4_2ns"), starkinfo.n_constants, starkInfo.ev_map.len(), stark_struct.steps[0].nBits));
+
+    if (starkInfo.map_sectionsN.get("cm2_2ns") > 0) {
+        res.push_str(format!(r#"
                 s0_merkle2[q].siblings[i][j] <== s0_siblings2[q][i][j];
-<% }                                         %>
-<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+        "#));
+    }
+    if (starkInfo.map_sectionsN.get("cm3_2ns") > 0) {
+        res.push_str(format!(r#"
                 s0_merkle3[q].siblings[i][j] <== s0_siblings3[q][i][j];
-<% }                                         %>
+        "#));
+    }
+
+    res.push_str(format!(r#"
                 s0_merkle4[q].siblings[i][j] <== s0_siblings4[q][i][j];
                 s0_merkleC[q].siblings[i][j] <== s0_siblingsC[q][i][j];
             }
@@ -780,39 +865,56 @@ transcript.getPermutations("ys", starkStruct.nQueries, starkStruct.steps[0].nBit
 
         for (var j=0; j<4; j++) {
             enable * (s0_merkle1[q].root[j] - root1[j]) === 0;
-<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+        "#));
+
+
+    if (starkInfo.map_sectionsN.get("cm2_2ns") > 0) {
+        res.push_str(format!(r#"
             enable * (s0_merkle2[q].root[j] - root2[j]) === 0;
-<% }                                         %>
-<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+        "#));
+    }
+    if (starkInfo.map_sectionsN.get("cm3_2ns") > 0) {
+        res.push_str(format!(r#"
             enable * (s0_merkle3[q].root[j] - root3[j]) === 0;
-<% }                                         %>
+        "#));
+    }
+
+    res.push_str(format!(r#"
             enable * (s0_merkle4[q].root[j] - root4[j]) === 0;
             enable * (s0_merkleC[q].root[j] - rootC[j]) === 0;
         }
+        "#));
 
-<% if (0 < starkStruct.steps.length-1) {            -%>
-        for (var i=0; i<<%- 1 << (starkStruct.steps[0].nBits - starkStruct.steps[1].nBits) %>; i++) {
+    if  0 < stark_struct.steps.len() - 1 {
+        res.push_str(format!(r#"
+        for (var i=0; i<<{}; i++) {
             for (var e=0; e<3; e++) {
                 s0_lowValues[q].values[i][e] <== s1_vals[q][i*3+e];
             }
         }
-        for (var i=0; i<<%- (starkStruct.steps[0].nBits - starkStruct.steps[1].nBits) %>; i++) {
-            s0_lowValues[q].key[i] <== ys[q][i + <%- starkStruct.steps[1].nBits %>];
+        for (var i=0; i<{}; i++) {
+            s0_lowValues[q].key[i] <== ys[q][i + {}];
         }
-<% } else { -%>
-        for (var i=0; i<<%- 1 << (starkStruct.steps[0].nBits) %>; i++) {
+        "#, 1 << (stark_struct.steps[0].nBits - stark_struct.steps[1].nBits), (stark_struct.steps[0].nBits - stark_struct.steps[1].nBits), stark_struct.steps[1].nBits));
+
+    } else {
+        res.push_str(format!(r#"
+        for (var i=0; i<{}; i++) {
             for (var e=0; e<3; e++) {
                 s0_lowValues[q].values[i][e] <== finalPol[i][e];
             }
         }
-        for (var i=0; i<<%- (starkStruct.steps[0].nBits) %>; i++) {
+        for (var i=0; i<{}; i++) {
             s0_lowValues[q].key[i] <== ys[q][i];
         }
-<% }      -%>
+        "#, 1<<stark_struct.steps[0].nBits, stark_struct.steps[0].nBits));
+    }
+
+    res.push_str(format!(r#"
         for (var e=0; e<3; e++) {
             enable * (s0_lowValues[q].out[e] - verifyQueries[q].out[e]) === 0;
         }
-
+        "#));
     }
 
 <% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
