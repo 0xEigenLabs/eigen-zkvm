@@ -13,7 +13,6 @@ use winter_math::StarkField;
 
 fn header() -> String {
     let header = r#"pragma circom 2.0.6;
-pragma custom_templates;
 
 include "gl.circom";
 include "poseidon.circom";
@@ -684,6 +683,7 @@ template VerifyEvaluations() {{
     enable * normC.out[0] === 0;
     enable * normC.out[1] === 0;
     enable * normC.out[2] === 0;
+}}
         "#,
         starkinfo.q_deg - 1,
         evalP,
@@ -783,7 +783,7 @@ template VerifyQuery() {{
         r#"
     var p = 0xFFFFFFFF00000001;
 
-    signal xacc[{}-1];
+    component xacc[{}-1];
     for (var i=1; i<{}; i++ ) {{
         xacc[i-1] = GLMul();
         if (i==1) {{
@@ -1438,7 +1438,6 @@ template StarkVerifier() {{
         r#"
             enable * (s0_merkle4[q].root - root4) === 0;
             enable * (s0_merkleC[q].root - rootC) === 0;
-        }}
         "#
     ));
 
