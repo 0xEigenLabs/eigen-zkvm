@@ -1593,7 +1593,7 @@ template StarkVerifier() {{
 "#,
         nLastBits,
         1 << nLastBits,
-        maxDegBits,
+        1 << maxDegBits,
         1 << nLastBits
     ));
 

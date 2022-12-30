@@ -10,10 +10,10 @@ npm run fib
 ```
 will generate the PIL json, Commitment Polynomial file and Constant Polynomial file.
 
-### Generate the Stark proof's circuits
+### Generate the Stark proof's circuits and Circom correspondingly
 
 ```
-../target/release/zkit stark_prove -s ../starky/data/starkStruct.json.gl \
+../target/release/zkit stark_prove -s ../starky/data/starkStruct.json \
     -p /tmp/fib.pil.json \
     -o /tmp/fib.const \
     -m /tmp/fib.cm -c circuits/circuit.circom

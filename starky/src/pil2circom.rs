@@ -23,7 +23,7 @@ pub fn pil2circom(
 
     let res;
     if stark_struct.verificationHashType.as_str() == "GL" {
-        res = crate::stark_verifier_gl_circom::render(
+        res = crate::stark_verifier_circom::render(
             starkinfo,
             program,
             pil,
@@ -32,7 +32,14 @@ pub fn pil2circom(
             options,
         );
     } else {
-        panic!("BN128 not supported");
+        res = crate::stark_verifier_circom_bn128::render(
+            starkinfo,
+            program,
+            pil,
+            stark_struct,
+            const_root,
+            options,
+        );
     }
 
     return Ok(res);
