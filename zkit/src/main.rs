@@ -15,7 +15,7 @@ mod stark;
 mod type_analysis_user;
 
 /// Align with https://github.com/iden3/circom/blob/master/circom/Cargo.toml#L3
-const VERSION: &'static str = "2.0.6";
+const VERSION: &'static str = "2.1.2";
 
 #[derive(Debug, Clap)]
 pub struct SetupOpt {

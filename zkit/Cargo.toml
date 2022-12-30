@@ -20,10 +20,10 @@ anyhow = "1.0.34"
 #thiserror = "1.0.33"
 
 ## from circom
-parser = { git = "https://github.com/iden3/circom.git", version = "2.0.8" }
-program_structure = { git = "https://github.com/iden3/circom.git", version = "2.0.8" }
-type_analysis = { git = "https://github.com/iden3/circom.git", version = "2.0.8"}
-constraint_generation = { git = "https://github.com/iden3/circom.git", version = "2.0.8" }
-constraint_writers = { git = "https://github.com/iden3/circom.git", version = "2.0.6"}
-compiler = { git = "https://github.com/iden3/circom.git", version = "2.0.8"}
-dag = { git = "https://github.com/iden3/circom.git", version = "2.0.8"}
+parser = { git = "https://github.com/iden3/circom.git", version = "2.1.1" }
+program_structure = { git = "https://github.com/iden3/circom.git", version = "2.1.1" }
+type_analysis = { git = "https://github.com/iden3/circom.git", version = "2.1.0"}
+constraint_generation = { git = "https://github.com/iden3/circom.git", version = "2.1.1" }
+constraint_writers = { git = "https://github.com/iden3/circom.git", version = "2.0.9"}
+compiler = { git = "https://github.com/iden3/circom.git", version = "2.1.2"}
+dag = { git = "https://github.com/iden3/circom.git", version = "2.0.9"}

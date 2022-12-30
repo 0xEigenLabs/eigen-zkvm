@@ -3,9 +3,9 @@ set -ex
 
 cargo build --release
 
-CIRCUIT=stark_verifier
+CIRCUIT=circuit
 CUR_DIR=$(cd $(dirname $0);pwd)
-POWER=22
+POWER=24
 export RUST_BACKTRACE=1
 ZKIT="${CUR_DIR}/../target/release/zkit"
 WORKSPACE=/tmp/${CIRCUIT}
@@ -20,9 +20,9 @@ cd $CUR_DIR
 
 echo "1. Compile the circuit"
 # BN128
-#${ZKIT} compile -i ../starkjs/circuits/$CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
+${ZKIT} compile -i ../starkjs/circuits/$CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
 # GL
-${ZKIT} compile -i ../starkjs/circuits/$CIRCUIT.circom -p goldilocks -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
+#${ZKIT} compile -i ../starkjs/circuits/$CIRCUIT.circom -p goldilocks -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
 
 echo "2. Generate witness"
 node ${WORKSPACE}/${CIRCUIT}_js/generate_witness.js ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm  ../starkjs/circuits/${CIRCUIT}.zkin.json $WORKSPACE/witness.wtns
