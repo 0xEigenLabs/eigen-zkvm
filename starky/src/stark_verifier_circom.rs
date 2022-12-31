@@ -100,8 +100,8 @@ impl Transcript {
         res
     }
 
-    pub fn put(&mut self, a: &str, l: usize) {
-        if l > 0 {
+    pub fn put(&mut self, a: &str, l: i32) {
+        if l >= 0 {
             for i in 0..l {
                 self._add1(&format!("{}[{}]", a, i));
             }
@@ -1083,7 +1083,7 @@ template StarkVerifier() {{
     ///////////
 
     let mut transcript = Transcript::new();
-    transcript.put("publics", pil.publics.len());
+    transcript.put("publics", pil.publics.len() as i32);
     transcript.put("root1", 4);
     transcript.getField("challenges[0]", 3);
     transcript.getField("challenges[1]", 3);
