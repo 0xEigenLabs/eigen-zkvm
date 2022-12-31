@@ -132,13 +132,13 @@ impl Transcript {
     }
 
     pub fn put(&mut self, a: &str, l: usize) {
-        if l > 0 {
-            for i in 0..l {
-                self._add1(&format!("{}[{}]", a, i));
-            }
-        } else {
-            self._add1(a);
+        //if l > 0 {
+        for i in 0..l {
+            self._add1(&format!("{}[{}]", a, i));
         }
+        //} else {
+        //    self._add1(a);
+        //}
     }
 
     pub fn _add1(&mut self, a: &str) {
