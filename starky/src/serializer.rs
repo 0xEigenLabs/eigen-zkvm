@@ -30,49 +30,57 @@ impl Serialize for F3G {
     }
 }
 
-impl Serialize for ElementDigest {
+pub struct Branch(ElementDigest, String);
+
+impl Branch {
+    pub fn new(e: ElementDigest, hashtype: String) -> Self {
+        Branch(e, hashtype)
+    }
+    pub fn is_dim_1(&self) -> bool {
+        self.0 .0[1] == self.0 .0[2]
+            && self.0 .0[1] == self.0 .0[3]
+            && self.0 .0[1] == BaseElement::ZERO
+    }
+}
+
+impl Serialize for Branch {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let r: Fr = (*self).into();
-        serializer.serialize_str(&helper::fr_to_biguint(&r).to_string())
+        if self.is_dim_1() {
+            return serializer.serialize_str(&self.0 .0[0].as_int().to_string());
+        }
+        match self.1.as_str() {
+            "BN128" => {
+                let r: Fr = self.0.into();
+                serializer.serialize_str(&helper::fr_to_biguint(&r).to_string())
+            }
+            "GL" => {
+                let mut seq = serializer.serialize_seq(Some(4))?;
+                for v in self.0 .0.iter() {
+                    seq.serialize_element(&v.as_int().to_string())?;
+                }
+                seq.end()
+            }
+            _ => panic!("Invalid hashtype {}", self.1),
+        }
     }
 }
 
-pub struct BE(BaseElement, BaseElement, BaseElement, BaseElement, u32);
-
-impl From<Fr> for BE {
+impl From<Fr> for Branch {
     fn from(val: Fr) -> Self {
         let e = ElementDigest::from(&val);
-        let es = e.as_elements();
-        Self(es[0], es[1], es[2], es[3], 4)
+        Self(e, "".to_string())
     }
 }
 
-impl From<BaseElement> for BE {
+impl From<BaseElement> for Branch {
     fn from(val: BaseElement) -> Self {
         Self(
-            val,
-            BaseElement::ZERO,
-            BaseElement::ZERO,
-            BaseElement::ZERO,
-            1,
+            ElementDigest::new([val, BaseElement::ZERO, BaseElement::ZERO, BaseElement::ZERO]),
+            "".to_string(),
         )
-    }
-}
-
-impl Serialize for BE {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        if self.4 == 1 {
-            serializer.serialize_str(&self.0.as_int().to_string())
-        } else {
-            let r: Fr = ElementDigest::from([self.0, self.1, self.2, self.3]).into();
-            serializer.serialize_str(&helper::fr_to_biguint(&r).to_string())
-        }
     }
 }
 
@@ -81,26 +89,24 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
     where
         S: Serializer,
     {
-        // root, evals, friProof * 3, s0_val{1,2,3,4,C},  s0_siblings{1,2,3,4,C}, p.fri_proof[0].polQueryies, finalPol
-        let len = 4
-            + 1
-            + (self.fri_proof.queries.len() - 1) * 3
-            + 5
-            + 5
-            + self.fri_proof.queries[0].pol_queries.len()
-            + 1;
+        // root, evals, friProof * 3, s0_val{1,2,3,4,C},  s0_siblings{1,2,3,4,C}, finalPol
+        let len = 16 + (self.fri_proof.queries.len() - 1) * 3;
         let mut map = serializer.serialize_map(Some(len))?;
 
-        map.serialize_entry("root1", &self.root1)?;
-        map.serialize_entry("root2", &self.root2)?;
-        map.serialize_entry("root3", &self.root3)?;
-        map.serialize_entry("root4", &self.root4)?;
+        let hashtype = &self.stark_struct.verificationHashType;
+        map.serialize_entry("root1", &Branch::new(self.root1, hashtype.clone()))?;
+        map.serialize_entry("root2", &Branch::new(self.root2, hashtype.clone()))?;
+        map.serialize_entry("root3", &Branch::new(self.root3, hashtype.clone()))?;
+        map.serialize_entry("root4", &Branch::new(self.root4, hashtype.clone()))?;
         map.serialize_entry("evals", &self.evals)?;
 
         for i in 1..(self.fri_proof.queries.len()) {
-            map.serialize_entry(&format!("s{}_root", i), &self.fri_proof.queries[i].root)?;
+            map.serialize_entry(
+                &format!("s{}_root", i),
+                &Branch::new(self.fri_proof.queries[i].root, hashtype.clone()),
+            )?;
             let mut vals: Vec<Vec<F3G>> = vec![];
-            let mut sibs: Vec<Vec<Vec<BE>>> = vec![];
+            let mut sibs: Vec<Vec<Vec<Branch>>> = vec![];
             for q in 0..self.fri_proof.queries[0].pol_queries.len() {
                 let qe = &self.fri_proof.queries[i].pol_queries[q];
                 vals.push(qe[0].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
@@ -108,8 +114,16 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                     qe[0]
                         .1
                         .iter()
-                        .map(|e| e.iter().map(|ee| ee.clone().into()).collect::<Vec<BE>>())
-                        .collect::<Vec<Vec<BE>>>(),
+                        .map(|e| {
+                            e.iter()
+                                .map(|ee| {
+                                    let mut res: Branch = ee.clone().into();
+                                    res.1 = hashtype.clone();
+                                    res
+                                })
+                                .collect::<Vec<Branch>>()
+                        })
+                        .collect::<Vec<Vec<Branch>>>(),
                 );
             }
             map.serialize_entry(&format!("s{}_vals", i), &vals)?;
@@ -121,11 +135,11 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         let mut s0_vals3: Vec<Vec<F3G>> = vec![];
         let mut s0_vals4: Vec<Vec<F3G>> = vec![];
         let mut s0_valsC: Vec<Vec<F3G>> = vec![];
-        let mut s0_siblings1: Vec<Vec<Vec<BE>>> = vec![];
-        let mut s0_siblings2: Vec<Vec<Vec<BE>>> = vec![];
-        let mut s0_siblings3: Vec<Vec<Vec<BE>>> = vec![];
-        let mut s0_siblings4: Vec<Vec<Vec<BE>>> = vec![];
-        let mut s0_siblingsC: Vec<Vec<Vec<BE>>> = vec![];
+        let mut s0_siblings1: Vec<Vec<Vec<Branch>>> = vec![];
+        let mut s0_siblings2: Vec<Vec<Vec<Branch>>> = vec![];
+        let mut s0_siblings3: Vec<Vec<Vec<Branch>>> = vec![];
+        let mut s0_siblings4: Vec<Vec<Vec<Branch>>> = vec![];
+        let mut s0_siblingsC: Vec<Vec<Vec<Branch>>> = vec![];
 
         for i in 0..self.fri_proof.queries[0].pol_queries.len() {
             let qe = &self.fri_proof.queries[0].pol_queries[i];
@@ -134,8 +148,16 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                 qe[0]
                     .1
                     .iter()
-                    .map(|e| e.iter().map(|ee| ee.clone().into()).collect::<Vec<BE>>())
-                    .collect::<Vec<Vec<BE>>>(),
+                    .map(|e| {
+                        e.iter()
+                            .map(|ee| {
+                                let mut res: Branch = ee.clone().into();
+                                res.1 = hashtype.clone();
+                                res
+                            })
+                            .collect::<Vec<Branch>>()
+                    })
+                    .collect::<Vec<Vec<Branch>>>(),
             );
 
             if qe[1].0.len() > 0 {
@@ -144,8 +166,16 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                     qe[1]
                         .1
                         .iter()
-                        .map(|e| e.iter().map(|ee| ee.clone().into()).collect::<Vec<BE>>())
-                        .collect::<Vec<Vec<BE>>>(),
+                        .map(|e| {
+                            e.iter()
+                                .map(|ee| {
+                                    let mut res: Branch = ee.clone().into();
+                                    res.1 = hashtype.clone();
+                                    res
+                                })
+                                .collect::<Vec<Branch>>()
+                        })
+                        .collect::<Vec<Vec<Branch>>>(),
                 );
             }
 
@@ -155,8 +185,16 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                     qe[2]
                         .1
                         .iter()
-                        .map(|e| e.iter().map(|ee| ee.clone().into()).collect::<Vec<BE>>())
-                        .collect::<Vec<Vec<BE>>>(),
+                        .map(|e| {
+                            e.iter()
+                                .map(|ee| {
+                                    let mut res: Branch = ee.clone().into();
+                                    res.1 = hashtype.clone();
+                                    res
+                                })
+                                .collect::<Vec<Branch>>()
+                        })
+                        .collect::<Vec<Vec<Branch>>>(),
                 );
             }
 
@@ -167,8 +205,16 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                     qe[3]
                         .1
                         .iter()
-                        .map(|e| e.iter().map(|ee| ee.clone().into()).collect::<Vec<BE>>())
-                        .collect::<Vec<Vec<BE>>>(),
+                        .map(|e| {
+                            e.iter()
+                                .map(|ee| {
+                                    let mut res: Branch = ee.clone().into();
+                                    res.1 = hashtype.clone();
+                                    res
+                                })
+                                .collect::<Vec<Branch>>()
+                        })
+                        .collect::<Vec<Vec<Branch>>>(),
                 );
             }
 
@@ -178,8 +224,16 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                     qe[4]
                         .1
                         .iter()
-                        .map(|e| e.iter().map(|ee| ee.clone().into()).collect::<Vec<BE>>())
-                        .collect::<Vec<Vec<BE>>>(),
+                        .map(|e| {
+                            e.iter()
+                                .map(|ee| {
+                                    let mut res: Branch = ee.clone().into();
+                                    res.1 = hashtype.clone();
+                                    res
+                                })
+                                .collect::<Vec<Branch>>()
+                        })
+                        .collect::<Vec<Vec<Branch>>>(),
                 );
             }
         }

@@ -4,7 +4,7 @@ use crate::f3g::F3G;
 use winter_math::fields::f64::BaseElement;
 
 pub trait MerkleTree {
-    type BaseField: Clone + std::default::Default + Into<crate::serializer::BE>;
+    type BaseField: Clone + std::default::Default + Into<crate::serializer::Branch>;
     fn new() -> Self;
     fn to_f3g(&self, p_be: &mut Vec<F3G>);
     fn merkelize(&mut self, buff: Vec<BaseElement>, width: usize, height: usize) -> Result<()>;

@@ -324,13 +324,13 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                     ));
                     str_code.push_str(&format!(
                         r#"
-    {}[1] <== {}[1];"#,
+    {}[1] <== -{}[1];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[1])
                     ));
                     str_code.push_str(&format!(
                         r#"
-    {}[2] <== {}[2];"#,
+    {}[2] <== -{}[2];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[1])
                     ));
