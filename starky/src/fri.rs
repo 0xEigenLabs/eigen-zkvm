@@ -25,34 +25,6 @@ pub struct Query<MB: Clone + std::default::Default> {
     pub root: ElementDigest,
 }
 
-/*
-use std::fmt;
-impl fmt::Display for Query<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "root {}\n", self.root)?;
-        write!(f, "pol_queries size {}\n", self.pol_queries.len())?;
-        for (i, pq) in self.pol_queries.iter().enumerate() {
-            write!(f, "\t pq {}\n", i)?;
-            for (_j, qq) in pq.iter().enumerate() {
-                write!(f, "\t\tleaf: ")?;
-                for qqq in qq.0.iter() {
-                    write!(f, "{},", qqq)?;
-                }
-                write!(f, "\n\t\tnode:")?;
-                for qqq in qq.1.iter() {
-                    write!(f, "\t\t[\n")?;
-                    for t in qqq.iter() {
-                        //write!(f, "\t\t\t Fr {}\n", crate::helper::fr_to_biguint(t))?; //FIXME
-                    }
-                    write!(f, "\t\t]\n")?;
-                }
-            }
-        }
-        Ok(())
-    }
-}
-*/
-
 #[derive(Clone)]
 pub struct FRIProof<M: MerkleTree> {
     pub queries: Vec<Query<M::BaseField>>,

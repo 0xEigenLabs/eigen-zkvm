@@ -55,8 +55,7 @@ impl Transcript {
         }
     }
 
-    //FIXME: l is dead code
-    fn getField(&mut self, v: &str, l: usize) {
+    fn getField(&mut self, v: &str, _l: usize) {
         let tmp = self.getFields1();
         self.code.push(format!("{}[0] <== {};", v, tmp));
         let tmp = self.getFields1();
@@ -1278,7 +1277,7 @@ template StarkVerifier() {{
     if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
         res.push_str(&format!(
             r#"
-        s0_merkle2[q] = MerkleHash(1, {}, {});
+        s0_merkle3[q] = MerkleHash(1, {}, {});
     "#,
             starkinfo.map_sectionsN.get("cm3_2ns"),
             1 << stark_struct.steps[0].nBits

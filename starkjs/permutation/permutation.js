@@ -58,7 +58,7 @@ const pilFile = path.join(__dirname, "./permutation_main.pil");
 const proverAddr = "0x2FD31EB1BB3f0Ac8C4feBaF1114F42431c1F29E4";
 var start = new Date().getTime()
 const pilConfig = {};
-const pilCache = "/tmp/pe.pil.json"
+const pilCache = "/tmp/pe"
 pil_verifier.generate(argv.workspace, pilFile, pilConfig, pilCache, new PE(), starkStruct, proverAddr, []).then(() => {
   var end = new Date().getTime()
   console.log('cost is', `${end - start}ms`)
