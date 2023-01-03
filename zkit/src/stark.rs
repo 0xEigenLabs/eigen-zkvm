@@ -17,6 +17,7 @@ pub fn prove(
     const_pol_file: &String,
     cm_pol_file: &String,
     circom_file: &String,
+    zkin: &String,
 ) -> Result<(), anyhow::Error> {
     let mut pil = load_json::<PIL>(pil_file.as_str()).unwrap();
     let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
@@ -70,5 +71,11 @@ pub fn prove(
     let mut file = File::create(&circom_file)?;
     write!(file, "{}", str_ver)?;
     println!("generate circom done");
+
+    let input = serde_json::to_string(&starkproof)?;
+    let mut file = File::create(&zkin)?;
+    write!(file, "{}", input)?;
+    println!("generate zkin done");
+
     Ok(())
 }

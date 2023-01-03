@@ -20,20 +20,24 @@ pub fn pil2circom(
 ) -> Result<String> {
     starkinfo.set_code_dimensions_first(&mut program.verifier_code)?;
     starkinfo.set_code_dimensions_first(&mut program.verifier_query_code)?;
-
-    let res;
-    if stark_struct.verificationHashType.as_str() == "GL" {
-        res = crate::stark_verifier_gl_circom::render(
+    let res = match stark_struct.verificationHashType.as_str() {
+        "GL" => crate::stark_verifier_circom::render(
             starkinfo,
             program,
             pil,
             stark_struct,
             const_root,
             options,
-        );
-    } else {
-        panic!("BN128 not supported");
-    }
-
+        ),
+        "BN128" => crate::stark_verifier_circom_bn128::render(
+            starkinfo,
+            program,
+            pil,
+            stark_struct,
+            const_root,
+            options,
+        ),
+        _ => panic!("Invalid hash type: {}", stark_struct.verificationHashType),
+    };
     return Ok(res);
 }

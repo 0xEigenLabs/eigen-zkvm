@@ -95,7 +95,6 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
             log::info!("Query: {}", idx);
             let tree = M::new();
             let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
-            //panic!("111");
             if !res {
                 return Err(FRIVerifierFailed);
             }
