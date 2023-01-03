@@ -141,6 +141,7 @@ pub struct StarkProof<M: MerkleTree> {
     pub fri_proof: FRIProof<M>,
     pub evals: Vec<F3G>,
     pub publics: Vec<F3G>,
+    pub stark_struct: StarkStruct,
 }
 
 impl<'a, M: MerkleTree> StarkProof<M> {
@@ -486,6 +487,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             fri_proof: friProof,
             evals: ctx.evals.clone(),
             publics: ctx.publics.clone(),
+            stark_struct: stark_struct.clone(),
         })
     }
 

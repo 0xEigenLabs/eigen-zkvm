@@ -55,8 +55,7 @@ impl Transcript {
         }
     }
 
-    //FIXME: l is dead code
-    fn getField(&mut self, v: &str, l: usize) {
+    fn getField(&mut self, v: &str, _l: usize) {
         let tmp = self.getFields1();
         self.code.push(format!("{}[0] <== {};", v, tmp));
         let tmp = self.getFields1();
@@ -132,8 +131,8 @@ impl Transcript {
         self.pending = vec![];
     }
 
-    pub fn put(&mut self, a: &str, l: usize) {
-        if l > 0 {
+    pub fn put(&mut self, a: &str, l: i32) {
+        if l >= 0 {
             for i in 0..l {
                 self._add1(&format!("{}[{}]", a, i));
             }
@@ -1161,16 +1160,16 @@ template StarkVerifier() {{
     ///////////
 
     let mut transcript = Transcript::new();
-    transcript.put("publics", pil.publics.len());
-    transcript.put("root1", 0);
+    transcript.put("publics", pil.publics.len() as i32);
+    transcript.put("root1", -1);
     transcript.getField("challenges[0]", 3);
     transcript.getField("challenges[1]", 3);
-    transcript.put("root2", 0);
+    transcript.put("root2", -1);
     transcript.getField("challenges[2]", 3);
     transcript.getField("challenges[3]", 3);
-    transcript.put("root3", 0);
+    transcript.put("root3", -1);
     transcript.getField("challenges[4]", 3);
-    transcript.put("root4", 0);
+    transcript.put("root4", -1);
     transcript.getField("challenges[7]", 3);
     for i in 0..starkinfo.ev_map.len() {
         transcript.put(&format!("evals[{}]", i), 3);
@@ -1180,7 +1179,7 @@ template StarkVerifier() {{
     for si in 0..stark_struct.steps.len() {
         transcript.getField(&format!("s{}_specialX", si), 3);
         if si < stark_struct.steps.len() - 1 {
-            transcript.put(&format!("s{}_root", si + 1), 0);
+            transcript.put(&format!("s{}_root", si + 1), -1);
         } else {
             for j in 0..(1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits) {
                 transcript.put(&format!("finalPol[{}]", j), 3);
@@ -1278,7 +1277,7 @@ template StarkVerifier() {{
     if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
         res.push_str(&format!(
             r#"
-        s0_merkle2[q] = MerkleHash(1, {}, {});
+        s0_merkle3[q] = MerkleHash(1, {}, {});
     "#,
             starkinfo.map_sectionsN.get("cm3_2ns"),
             1 << stark_struct.steps[0].nBits

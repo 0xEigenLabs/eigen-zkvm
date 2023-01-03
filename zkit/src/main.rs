@@ -176,6 +176,8 @@ struct StarkProveOpt {
     cm_pols: String,
     #[clap(short = "c", long = "circom", default_value = "stark_verfier.circom")]
     circom_file: String,
+    #[clap(short = "i", long = "zkin", default_value = "zkin.json")]
+    zkin: String,
 }
 
 #[derive(Debug, Clap)]
@@ -316,6 +318,7 @@ fn main() {
             &args.const_pols,
             &args.cm_pols,
             &args.circom_file,
+            &args.zkin,
         ),
     };
     println!("time cost: {}", start.elapsed().as_secs_f64());
