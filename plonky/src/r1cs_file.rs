@@ -24,6 +24,7 @@ pub struct Header {
     pub n_prv_in: u32,
     pub n_labels: u64,
     pub n_constraints: u32,
+    pub use_custom_gates: bool,
 }
 
 // R1CSFile parse result
@@ -41,6 +42,12 @@ fn read_field<R: Read, E: Engine>(mut reader: R) -> Result<E::Fr> {
     let fr = E::Fr::from_repr(repr).map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
     Ok(fr)
 }
+
+const HEADER_TYPE: u32 = 1;
+const CONSTRAINT_TYPE: u32 = 2;
+const WIRE2LABEL_TYPE: u32 = 3;
+const CUSTOM_GATES_LIST: u32 = 4;
+const CUSTOM_GATES_USE: u32 = 5;
 
 fn read_header<R: Read>(mut reader: R, size: u64) -> Result<Header> {
     let field_size = reader.read_u32::<LittleEndian>()?;
@@ -62,6 +69,7 @@ fn read_header<R: Read>(mut reader: R, size: u64) -> Result<Header> {
         n_prv_in: reader.read_u32::<LittleEndian>()?,
         n_labels: reader.read_u64::<LittleEndian>()?,
         n_constraints: reader.read_u32::<LittleEndian>()?,
+        use_custom_gates: false,
     })
 }
 
@@ -147,41 +155,43 @@ pub fn from_reader<R: Read + Seek>(mut reader: R) -> Result<R1CSFile<Bn256>> {
         reader.seek(SeekFrom::Current(section_size as i64))?;
     }
 
-    let header_type = 1;
-    let constraint_type = 2;
-    let wire2label_type = 3;
-
-    reader.seek(SeekFrom::Start(*section_offsets.get(&header_type).unwrap()))?;
-    let header = read_header(&mut reader, *section_sizes.get(&header_type).unwrap())?;
-    if header.field_size != 32 {
+    reader.seek(SeekFrom::Start(*section_offsets.get(&HEADER_TYPE).unwrap()))?;
+    let mut header = read_header(&mut reader, *section_sizes.get(&HEADER_TYPE).unwrap())?;
+    if section_offsets.get(&CUSTOM_GATES_USE).is_some() &&
+        section_offsets.get(&CUSTOM_GATES_LIST).is_some() {
+            header.use_custom_gates = true;
+    }
+    if !(header.field_size == 32 || header.field_size == 8)  {
         return Err(Error::new(
             ErrorKind::InvalidData,
-            "This parser only supports 32-byte fields",
+            "This parser only supports 32-bytes or 8-bytes fields",
         ));
     }
-    if header.prime_size != hex!("010000f093f5e1439170b97948e833285d588181b64550b829a031e1724e6430")
+    println!("{:?}", header.prime_size);
+    if !(header.prime_size == hex!("010000f093f5e1439170b97948e833285d588181b64550b829a031e1724e6430") ||
+        header.prime_size == hex!("01000000ffffffff"))
     {
         return Err(Error::new(
             ErrorKind::InvalidData,
-            "This parser only supports bn256",
+            "This parser only supports bn256 or GL",
         ));
     }
 
     reader.seek(SeekFrom::Start(
-        *section_offsets.get(&constraint_type).unwrap(),
+        *section_offsets.get(&CONSTRAINT_TYPE).unwrap(),
     ))?;
     let constraints = read_constraints::<&mut R, Bn256>(
         &mut reader,
-        *section_sizes.get(&constraint_type).unwrap(),
+        *section_sizes.get(&CONSTRAINT_TYPE).unwrap(),
         &header,
     )?;
 
     reader.seek(SeekFrom::Start(
-        *section_offsets.get(&wire2label_type).unwrap(),
+        *section_offsets.get(&WIRE2LABEL_TYPE).unwrap(),
     ))?;
     let wire_mapping = read_map(
         &mut reader,
-        *section_sizes.get(&wire2label_type).unwrap(),
+        *section_sizes.get(&WIRE2LABEL_TYPE).unwrap(),
         &header,
     )?;
 
