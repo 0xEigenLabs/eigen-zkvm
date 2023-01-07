@@ -157,19 +157,20 @@ pub fn from_reader<R: Read + Seek>(mut reader: R) -> Result<R1CSFile<Bn256>> {
 
     reader.seek(SeekFrom::Start(*section_offsets.get(&HEADER_TYPE).unwrap()))?;
     let mut header = read_header(&mut reader, *section_sizes.get(&HEADER_TYPE).unwrap())?;
-    if section_offsets.get(&CUSTOM_GATES_USE).is_some() &&
-        section_offsets.get(&CUSTOM_GATES_LIST).is_some() {
-            header.use_custom_gates = true;
+    if section_offsets.get(&CUSTOM_GATES_USE).is_some()
+        && section_offsets.get(&CUSTOM_GATES_LIST).is_some()
+    {
+        header.use_custom_gates = true;
     }
-    if !(header.field_size == 32 || header.field_size == 8)  {
+    if !(header.field_size == 32 || header.field_size == 8) {
         return Err(Error::new(
             ErrorKind::InvalidData,
             "This parser only supports 32-bytes or 8-bytes fields",
         ));
     }
-    println!("{:?}", header.prime_size);
-    if !(header.prime_size == hex!("010000f093f5e1439170b97948e833285d588181b64550b829a031e1724e6430") ||
-        header.prime_size == hex!("01000000ffffffff"))
+    if !(header.prime_size
+        == hex!("010000f093f5e1439170b97948e833285d588181b64550b829a031e1724e6430")
+        || header.prime_size == hex!("01000000ffffffff"))
     {
         return Err(Error::new(
             ErrorKind::InvalidData,
