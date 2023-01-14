@@ -1,10 +1,9 @@
 // some codes borrowed from https://github.com/poma/zkutil/blob/master/src/r1cs_reader.rs
 // Implement of https://github.com/iden3/r1csfile/blob/master/doc/r1cs_bin_format.md
 #![allow(unused_variables, dead_code)]
-use crate::bellman_ce::pairing::{
-    bn256::Bn256,
+use crate::bellman_ce::{
+    Field, PrimeField, PrimeFieldRepr, ScalarEngine,
 };
-use ff::{Field, PrimeField, PrimeFieldRepr, ScalarEngine};
 use crate::circom_circuit::Constraint;
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::{
@@ -206,8 +205,9 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
 #[cfg(test)]
 mod tests {
     use std::io::{BufReader, Cursor};
-
+    use crate::bellman_ce::pairing::ff;
     use super::*;
+    use crate::bellman_ce::pairing::bn256::Bn256;
 
     #[test]
     fn sample() {
@@ -263,9 +263,8 @@ mod tests {
     "
         );
 
-        use crate::bellman_ce::pairing::ff;
         let reader = BufReader::new(Cursor::new(&data[..]));
-        let file = from_reader(reader).unwrap();
+        let file = from_reader::<_, Bn256>(reader).unwrap();
         assert_eq!(file.version, 1);
 
         assert_eq!(file.header.field_size, 32);

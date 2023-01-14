@@ -8,13 +8,14 @@ use std::str;
 
 use crate::bellman_ce::{
     kate_commitment::{Crs, CrsForLagrangeForm, CrsForMonomialForm},
+    pairing::{Engine},
+    ScalarEngine, PrimeField,
     plonk::{
         better_cs::cs::PlonkCsWidth4WithNextStepParams,
         better_cs::keys::{Proof, VerificationKey},
     },
     Field, PrimeFieldRepr,
 };
-use ff::{PrimeField, ScalarEngine};
 
 use crate::circom_circuit::{CircuitJson, R1CS};
 
@@ -22,7 +23,7 @@ use crate::circom_circuit::{CircuitJson, R1CS};
 use crate::aggregation::{AggregatedProof, AggregationVerificationKey};
 
 /// load proof by filename
-pub fn load_proof<E: ScalarEngine>(filename: &str) -> Proof<E, PlonkCsWidth4WithNextStepParams> {
+pub fn load_proof<E: Engine>(filename: &str) -> Proof<E, PlonkCsWidth4WithNextStepParams> {
     Proof::<E, PlonkCsWidth4WithNextStepParams>::read(
         File::open(filename).expect("read proof file err"),
     )
@@ -30,7 +31,7 @@ pub fn load_proof<E: ScalarEngine>(filename: &str) -> Proof<E, PlonkCsWidth4With
 }
 
 /// load multiple proofs form a list
-pub fn load_proofs_from_list<E: ScalarEngine>(
+pub fn load_proofs_from_list<E: Engine>(
     list: &str,
 ) -> Vec<Proof<E, PlonkCsWidth4WithNextStepParams>> {
     let file = File::open(list).expect("read proof list file err");
@@ -57,7 +58,7 @@ pub fn load_proofs_from_list<E: ScalarEngine>(
 }
 
 /// load verification key file by filename
-pub fn load_verification_key<E: ScalarEngine>(
+pub fn load_verification_key<E: Engine>(
     filename: &str,
 ) -> VerificationKey<E, PlonkCsWidth4WithNextStepParams> {
     let mut reader =
@@ -80,14 +81,14 @@ fn get_universal_setup_file_buff_reader(
 }
 
 /// load monomial form SRS by filename
-pub fn load_key_monomial_form<E: ScalarEngine>(filename: &str) -> Crs<E, CrsForMonomialForm> {
+pub fn load_key_monomial_form<E: Engine>(filename: &str) -> Crs<E, CrsForMonomialForm> {
     let mut buf_reader =
         get_universal_setup_file_buff_reader(filename).expect("read key_monomial_form file err");
     Crs::<E, CrsForMonomialForm>::read(&mut buf_reader).expect("read key_monomial_form err")
 }
 
 /// load optional lagrange form SRS by filename
-pub fn maybe_load_key_lagrange_form<E: ScalarEngine>(
+pub fn maybe_load_key_lagrange_form<E: Engine>(
     option_filename: Option<String>,
 ) -> Option<Crs<E, CrsForLagrangeForm>> {
     match option_filename {
@@ -263,7 +264,7 @@ fn load_r1cs_from_bin_file<E: ScalarEngine>(filename: &str) -> (R1CS<E>, Vec<usi
 
 /// load r1cs from bin by a reader
 pub fn load_r1cs_from_bin<R: Read + Seek, E: ScalarEngine>(reader: R) -> (R1CS<E>, Vec<usize>) {
-    let file = crate::r1cs_file::from_reader(reader).expect("unable to read.");
+    let file = crate::r1cs_file::from_reader::<R, E>(reader).expect("unable to read.");
     let num_inputs = (1 + file.header.n_pub_in + file.header.n_pub_out) as usize;
     let num_variables = file.header.n_wires as usize;
     let num_aux = num_variables - num_inputs;

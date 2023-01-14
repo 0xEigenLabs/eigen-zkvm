@@ -12,9 +12,6 @@ extern crate num_bigint;
 extern crate num_traits;
 extern crate rand;
 
-#[macro_use]
-extern crate ff;
-
 pub mod circom_circuit;
 pub mod plonk;
 pub mod r1cs_file;
@@ -29,6 +26,8 @@ pub mod utils;
 pub mod verifier;
 
 pub use franklin_crypto::bellman as bellman_ce;
+use bellman_ce::pairing::ff as ff;
+pub use ff::*;
 
 pub mod api;
 

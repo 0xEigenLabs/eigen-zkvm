@@ -1,8 +1,6 @@
 #![allow(unused_imports)]
-use ff::*;
-
-use crate::bellman_ce::pairing::{Engine, CurveProjective};
-use std::default::Default;
+use crate::ff::*;
+use crate::bellman_ce::ScalarEngine;
 
 #[derive(PrimeField)]
 #[PrimeFieldModulus = "18446744069414584321"]

@@ -7,9 +7,10 @@ use std::collections::BTreeMap;
 use std::str;
 
 use crate::bellman_ce::{
+    pairing::{Engine},
+    ScalarEngine, PrimeField,
     Circuit, ConstraintSystem, Index, LinearCombination, SynthesisError, Variable,
 };
-use ff::{PrimeField, ScalarEngine};
 
 use crate::utils::repr_to_big;
 
@@ -25,9 +26,9 @@ pub struct CircuitJson {
 }
 
 pub type Constraint<E> = (
-    Vec<(usize, ScalarEngine::Fr)>,
-    Vec<(usize, ScalarEngine::Fr)>,
-    Vec<(usize, ScalarEngine::Fr)>,
+    Vec<(usize, <E as ScalarEngine>::Fr)>,
+    Vec<(usize, <E as ScalarEngine>::Fr)>,
+    Vec<(usize, <E as ScalarEngine>::Fr)>,
 );
 
 /// R1CS spec: https://www.sikoba.com/docs/SKOR_GD_R1CS_Format.pdf
@@ -77,7 +78,7 @@ impl<'a, E: ScalarEngine> CircomCircuit<E> {
 /// Our demo circuit implements this `Circuit` trait which
 /// is used during paramgen and proving in order to
 /// synthesize the constraint system.
-impl<'a, E: Engine> Circuit<E> for CircomCircuit<<E as ScalarEngine>> {
+impl<'a, E: Engine> Circuit<E> for CircomCircuit<E> {
     //noinspection RsBorrowChecker
     fn synthesize<CS: ConstraintSystem<E>>(self, cs: &mut CS) -> Result<(), SynthesisError> {
         let witness = &self.witness;
