@@ -7,9 +7,9 @@ use std::collections::BTreeMap;
 use std::str;
 
 use crate::bellman_ce::{
-    pairing::{ff::PrimeField, ff::ScalarEngine, Engine},
     Circuit, ConstraintSystem, Index, LinearCombination, SynthesisError, Variable,
 };
+use ff::{PrimeField, ScalarEngine};
 
 use crate::utils::repr_to_big;
 
@@ -25,14 +25,14 @@ pub struct CircuitJson {
 }
 
 pub type Constraint<E> = (
-    Vec<(usize, <E as ScalarEngine>::Fr)>,
-    Vec<(usize, <E as ScalarEngine>::Fr)>,
-    Vec<(usize, <E as ScalarEngine>::Fr)>,
+    Vec<(usize, ScalarEngine::Fr)>,
+    Vec<(usize, ScalarEngine::Fr)>,
+    Vec<(usize, ScalarEngine::Fr)>,
 );
 
 /// R1CS spec: https://www.sikoba.com/docs/SKOR_GD_R1CS_Format.pdf
 #[derive(Clone, Debug)]
-pub struct R1CS<E: Engine> {
+pub struct R1CS<E: ScalarEngine> {
     pub num_inputs: usize,
     pub num_aux: usize,
     pub num_variables: usize,
@@ -40,7 +40,7 @@ pub struct R1CS<E: Engine> {
 }
 
 #[derive(Clone, Debug)]
-pub struct CircomCircuit<E: Engine> {
+pub struct CircomCircuit<E: ScalarEngine> {
     pub r1cs: R1CS<E>,
     pub witness: Option<Vec<E::Fr>>,
     pub wire_mapping: Option<Vec<usize>>,
@@ -48,7 +48,7 @@ pub struct CircomCircuit<E: Engine> {
     // debug symbols
 }
 
-impl<'a, E: Engine> CircomCircuit<E> {
+impl<'a, E: ScalarEngine> CircomCircuit<E> {
     pub fn get_public_inputs(&self) -> Option<Vec<E::Fr>> {
         match &self.witness {
             None => None,
@@ -77,7 +77,7 @@ impl<'a, E: Engine> CircomCircuit<E> {
 /// Our demo circuit implements this `Circuit` trait which
 /// is used during paramgen and proving in order to
 /// synthesize the constraint system.
-impl<'a, E: Engine> Circuit<E> for CircomCircuit<E> {
+impl<'a, E: Engine> Circuit<E> for CircomCircuit<<E as ScalarEngine>> {
     //noinspection RsBorrowChecker
     fn synthesize<CS: ConstraintSystem<E>>(self, cs: &mut CS) -> Result<(), SynthesisError> {
         let witness = &self.witness;

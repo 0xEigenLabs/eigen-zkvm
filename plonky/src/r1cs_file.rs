@@ -3,9 +3,8 @@
 #![allow(unused_variables, dead_code)]
 use crate::bellman_ce::pairing::{
     bn256::Bn256,
-    ff::{Field, PrimeField, PrimeFieldRepr},
-    Engine,
 };
+use ff::{Field, PrimeField, PrimeFieldRepr, ScalarEngine};
 use crate::circom_circuit::Constraint;
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::{
@@ -29,14 +28,14 @@ pub struct Header {
 
 // R1CSFile parse result
 #[derive(Debug, Default)]
-pub struct R1CSFile<E: Engine> {
+pub struct R1CSFile<E: ScalarEngine> {
     pub version: u32,
     pub header: Header,
     pub constraints: Vec<Constraint<E>>,
     pub wire_mapping: Vec<u64>,
 }
 
-fn read_field<R: Read, E: Engine>(mut reader: R) -> Result<E::Fr> {
+fn read_field<R: Read, E: ScalarEngine>(mut reader: R) -> Result<E::Fr> {
     let mut repr = E::Fr::zero().into_repr();
     repr.read_le(&mut reader)?;
     let fr = E::Fr::from_repr(repr).map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
@@ -73,7 +72,7 @@ fn read_header<R: Read>(mut reader: R, size: u64) -> Result<Header> {
     })
 }
 
-fn read_constraint_vec<R: Read, E: Engine>(
+fn read_constraint_vec<R: Read, E: ScalarEngine>(
     mut reader: R,
     header: &Header,
 ) -> Result<Vec<(usize, E::Fr)>> {
@@ -88,7 +87,7 @@ fn read_constraint_vec<R: Read, E: Engine>(
     Ok(vec)
 }
 
-fn read_constraints<R: Read, E: Engine>(
+fn read_constraints<R: Read, E: ScalarEngine>(
     mut reader: R,
     size: u64,
     header: &Header,
@@ -125,7 +124,7 @@ fn read_map<R: Read>(mut reader: R, size: u64, header: &Header) -> Result<Vec<u6
     Ok(vec)
 }
 
-pub fn from_reader<R: Read + Seek>(mut reader: R) -> Result<R1CSFile<Bn256>> {
+pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1CSFile<E>> {
     let mut magic = [0u8; 4];
     reader.read_exact(&mut magic)?;
     if magic != [0x72, 0x31, 0x63, 0x73] {
@@ -181,7 +180,7 @@ pub fn from_reader<R: Read + Seek>(mut reader: R) -> Result<R1CSFile<Bn256>> {
     reader.seek(SeekFrom::Start(
         *section_offsets.get(&CONSTRAINT_TYPE).unwrap(),
     ))?;
-    let constraints = read_constraints::<&mut R, Bn256>(
+    let constraints = read_constraints::<&mut R, E>(
         &mut reader,
         *section_sizes.get(&CONSTRAINT_TYPE).unwrap(),
         &header,

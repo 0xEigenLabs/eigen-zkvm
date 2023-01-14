@@ -12,10 +12,14 @@ extern crate num_bigint;
 extern crate num_traits;
 extern crate rand;
 
+#[macro_use]
+extern crate ff;
+
 pub mod circom_circuit;
 pub mod plonk;
 pub mod r1cs_file;
 pub mod reader;
+pub mod scalar_gl;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod aggregation;
