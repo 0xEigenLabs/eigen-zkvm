@@ -7,9 +7,8 @@ use std::collections::BTreeMap;
 use std::str;
 
 use crate::bellman_ce::{
-    pairing::{Engine},
-    ScalarEngine, PrimeField,
-    Circuit, ConstraintSystem, Index, LinearCombination, SynthesisError, Variable,
+    pairing::Engine, Circuit, ConstraintSystem, Index, LinearCombination, PrimeField, ScalarEngine,
+    SynthesisError, Variable,
 };
 
 use crate::utils::repr_to_big;

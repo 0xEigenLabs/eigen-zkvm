@@ -25,9 +25,9 @@ pub mod transpile;
 pub mod utils;
 pub mod verifier;
 
-pub use franklin_crypto::bellman as bellman_ce;
-use bellman_ce::pairing::ff as ff;
+use bellman_ce::pairing::ff;
 pub use ff::*;
+pub use franklin_crypto::bellman as bellman_ce;
 
 pub mod api;
 

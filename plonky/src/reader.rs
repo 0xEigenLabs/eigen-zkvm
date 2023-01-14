@@ -8,13 +8,12 @@ use std::str;
 
 use crate::bellman_ce::{
     kate_commitment::{Crs, CrsForLagrangeForm, CrsForMonomialForm},
-    pairing::{Engine},
-    ScalarEngine, PrimeField,
+    pairing::Engine,
     plonk::{
         better_cs::cs::PlonkCsWidth4WithNextStepParams,
         better_cs::keys::{Proof, VerificationKey},
     },
-    Field, PrimeFieldRepr,
+    Field, PrimeField, PrimeFieldRepr, ScalarEngine,
 };
 
 use crate::circom_circuit::{CircuitJson, R1CS};
@@ -141,7 +140,9 @@ pub fn load_witness_from_bin_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr>
 }
 
 /// load witness from u8 array
-pub fn load_witness_from_array<E: ScalarEngine>(buffer: Vec<u8>) -> Result<Vec<E::Fr>, anyhow::Error> {
+pub fn load_witness_from_array<E: ScalarEngine>(
+    buffer: Vec<u8>,
+) -> Result<Vec<E::Fr>, anyhow::Error> {
     load_witness_from_bin_reader::<E, _>(buffer.as_slice())
 }
 
