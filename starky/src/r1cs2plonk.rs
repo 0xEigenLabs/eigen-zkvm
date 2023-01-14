@@ -5,3 +5,9 @@ use plonky::reader::load_r1cs;
 pub fn r1cs2plonk(r1cs: &R1CSFile) {
 
 }
+
+#[cfg(test)]
+pub mod tests {
+
+}
+
