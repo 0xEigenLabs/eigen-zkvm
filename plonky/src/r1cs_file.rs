@@ -34,11 +34,8 @@ pub struct R1CSFile<E: ScalarEngine> {
 
 fn read_field<R: Read, E: ScalarEngine>(mut reader: R) -> Result<E::Fr> {
     let mut repr = E::Fr::zero().into_repr();
-    println!("{:?} {:?}", repr, E::Fr::char());
     repr.read_le(&mut reader)?;
-    println!("read_field {:?}", repr);
     let fr = E::Fr::from_repr(repr).map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
-    println!("done");
     Ok(fr)
 }
 
@@ -78,7 +75,6 @@ fn read_constraint_vec<R: Read, E: ScalarEngine>(
 ) -> Result<Vec<(usize, E::Fr)>> {
     let n_vec = reader.read_u32::<LittleEndian>()? as usize;
     let mut vec = Vec::with_capacity(n_vec);
-    println!("read_constraint_vec {}", n_vec);
     for _ in 0..n_vec {
         vec.push((
             reader.read_u32::<LittleEndian>()? as usize,
@@ -94,7 +90,6 @@ fn read_constraints<R: Read, E: ScalarEngine>(
     header: &Header,
 ) -> Result<Vec<Constraint<E>>> {
     // todo check section size
-    println!("constraints size: {}", header.n_constraints);
     let mut vec = Vec::with_capacity(header.n_constraints as usize);
     for _ in 0..header.n_constraints {
         vec.push((
@@ -178,7 +173,6 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
             "This parser only supports bn256 or GL",
         ));
     }
-    println!("header: {:?}", header);
     reader.seek(SeekFrom::Start(
         *section_offsets.get(&CONSTRAINT_TYPE).unwrap(),
     ))?;

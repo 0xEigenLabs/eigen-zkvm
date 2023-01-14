@@ -1,3 +1,4 @@
+// FIXME: DON't use this library for scalar operation
 #![allow(unused_imports)]
 use crate::bellman_ce::ScalarEngine;
 use crate::ff::*;
@@ -280,7 +281,7 @@ impl crate::ff::PrimeField for Fr {
         }
     }
     fn from_raw_repr(r: FrRepr) -> Result<Self, crate::ff::PrimeFieldDecodingError> {
-        let mut r = Fr(r);
+        let r = Fr(r);
         if r.is_valid() {
             Ok(r)
         } else {
