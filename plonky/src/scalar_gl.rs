@@ -11,7 +11,7 @@ const MODULUS: FrRepr = FrRepr([18446744069414584321u64]);
 const MODULUS_BITS: u32 = 64u32;
 /// The number of bits that must be shaved from the beginning of
 /// the representation when randomly sampling.
-const REPR_SHAVE_BITS: u32 = 0u32;
+//const REPR_SHAVE_BITS: u32 = 0u32;
 /// Precalculated mask to shave bits from the top limb in random sampling
 const TOP_LIMB_SHAVE_MASK: u64 = 0u64;
 /// 2^{limbs*64} mod m
@@ -99,9 +99,9 @@ impl Ord for FrRepr {
     fn cmp(&self, other: &FrRepr) -> ::std::cmp::Ordering {
         for (a, b) in self.0.iter().rev().zip(other.0.iter().rev()) {
             if a < b {
-                return ::std::cmp::Ordering::Less
+                return ::std::cmp::Ordering::Less;
             } else if a > b {
-                return ::std::cmp::Ordering::Greater
+                return ::std::cmp::Ordering::Greater;
             }
         }
         ::std::cmp::Ordering::Equal
@@ -273,11 +273,9 @@ impl crate::ff::PrimeField for Fr {
             r.mul_assign(&Fr(R2));
             Ok(r)
         } else {
-            Err(
-                crate::ff::PrimeFieldDecodingError::NotInField({
-                    format!("{}", r.0)
-                }),
-            )
+            Err(crate::ff::PrimeFieldDecodingError::NotInField({
+                format!("{}", r.0)
+            }))
         }
     }
     fn from_raw_repr(r: FrRepr) -> Result<Self, crate::ff::PrimeFieldDecodingError> {
@@ -285,11 +283,9 @@ impl crate::ff::PrimeField for Fr {
         if r.is_valid() {
             Ok(r)
         } else {
-            Err(
-                crate::ff::PrimeFieldDecodingError::NotInField({
-                    format!("{}", r.0)
-                }),
-            )
+            Err(crate::ff::PrimeFieldDecodingError::NotInField({
+                format!("{}", r.0)
+            }))
         }
     }
     fn into_repr(&self) -> FrRepr {
@@ -388,7 +384,11 @@ impl crate::ff::Field for Fr {
                     c.sub_assign(&b);
                 }
             }
-            if u == one { Some(b) } else { Some(c) }
+            if u == one {
+                Some(b)
+            } else {
+                Some(c)
+            }
         }
     }
     #[inline(always)]
@@ -396,12 +396,7 @@ impl crate::ff::Field for Fr {
     #[inline]
     fn mul_assign(&mut self, other: &Fr) {
         let mut carry = 0;
-        let r0 = crate::ff::mac_with_carry(
-            0,
-            (self.0).0[0usize],
-            (other.0).0[0usize],
-            &mut carry,
-        );
+        let r0 = crate::ff::mac_with_carry(0, (self.0).0[0usize], (other.0).0[0usize], &mut carry);
         let r1 = carry;
         self.mont_reduce(r0, r1);
     }
@@ -409,12 +404,7 @@ impl crate::ff::Field for Fr {
     fn square(&mut self) {
         let r1 = 0;
         let mut carry = 0;
-        let r0 = crate::ff::mac_with_carry(
-            0,
-            (self.0).0[0usize],
-            (self.0).0[0usize],
-            &mut carry,
-        );
+        let r0 = crate::ff::mac_with_carry(0, (self.0).0[0usize], (self.0).0[0usize], &mut carry);
         let r1 = crate::ff::adc(r1, 0, &mut carry);
         self.mont_reduce(r0, r1);
     }
