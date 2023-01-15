@@ -34,7 +34,7 @@ pub struct CustomGates<E: ScalarEngine> {
 #[derive(Debug, Default)]
 pub struct CustomGatesUses {
     pub id: u64,
-    pub signal: Vec<u32>,
+    pub signals: Vec<u64>,
 }
 
 // R1CSFile parse result
@@ -137,20 +137,39 @@ fn read_map<R: Read>(mut reader: R, size: u64, header: &Header) -> Result<Vec<u6
     Ok(vec)
 }
 
-fn read_custom_gates_list<R: Read, E: ScalarEngine>(mut reader: R, size: u64, header: &Header) -> Result<Vec<CustomGates<E>>> {
+// TODO: why does the `read_to_end` not work?
+fn read_to_string<R: Read>(mut reader: R) -> String {
+    let mut name_buf = vec![1u8; 1];
+    let mut buf = vec![];
+    while true {
+        let name_size_res = reader.read_exact(&mut name_buf);
+        if name_buf[0] != 0 {
+            buf.push(name_buf[0]);
+        } else {
+            break;
+        }
+    }
+    String::from_utf8_lossy(&buf).to_string()
+}
+
+fn read_custom_gates_list<R: Read, E: ScalarEngine>(
+    mut reader: R,
+    size: u64,
+    header: &Header,
+) -> Result<Vec<CustomGates<E>>> {
     let num = reader.read_u32::<LittleEndian>()?;
     let mut custom_gates: Vec<CustomGates<E>> = vec![];
     println!("num: {}", num);
     for i in 0..num {
-        let mut name_buf = Vec::new();
-        let name_size = reader.read_to_end(&mut name_buf)?;
         let mut custom_gate = CustomGates::<E> {
-            template_name: String::from_utf8_lossy(&name_buf).to_string(),
+            template_name: read_to_string(&mut reader),
             parameters: vec![],
         };
         let num_parameters = reader.read_u32::<LittleEndian>()?;
         for _i in 0..num_parameters {
-            custom_gate.parameters.push(read_field::<&mut R, E>(&mut reader)?);
+            custom_gate
+                .parameters
+                .push(read_field::<&mut R, E>(&mut reader)?);
         }
         custom_gates.push(custom_gate);
     }
@@ -158,8 +177,39 @@ fn read_custom_gates_list<R: Read, E: ScalarEngine>(mut reader: R, size: u64, he
     Ok(custom_gates)
 }
 
-fn read_custom_gates_uses_list<R: Read>(mut reader: R, size: u64, header: &Header) -> Result<Vec<CustomGatesUses>> {
-    Ok(vec![])
+fn read_custom_gates_uses_list<R: Read>(
+    mut reader: R,
+    size: u64,
+    header: &Header,
+) -> Result<Vec<CustomGatesUses>> {
+    let mut custom_gates_uses: Vec<CustomGatesUses> = vec![];
+
+    let sz = size as usize / 4;
+    let mut b_r1cs32 = Vec::with_capacity(sz);
+    for _ in 0..sz {
+        b_r1cs32.push(reader.read_u32::<LittleEndian>()?);
+    }
+    println!("vec: {:?}, {}", b_r1cs32[0], sz);
+
+    let n_custom_gate_uses = b_r1cs32[0];
+    let mut b_r1cs_pos = 1;
+    for i in 0..n_custom_gate_uses {
+        //if ((options.logger)&&(i%100000 == 0)) options.logger.info(`${options.loggerCtx}: Loading custom gate uses: ${i}/${nCustomGateUses}`);
+        let mut c = CustomGatesUses::default();
+        c.id = b_r1cs32[b_r1cs_pos] as u64;
+        b_r1cs_pos += 1;
+        let num_signals = b_r1cs32[b_r1cs_pos];
+        b_r1cs_pos += 1;
+        for j in 0..num_signals {
+            let LSB = b_r1cs32[b_r1cs_pos] as u64;
+            b_r1cs_pos += 1;
+            let MSB = b_r1cs32[b_r1cs_pos] as u64;
+            b_r1cs_pos += 1;
+            c.signals.push(MSB * 0x100000000u64 + LSB);
+        }
+        custom_gates_uses.push(c);
+    }
+    Ok(custom_gates_uses)
 }
 
 pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1CSFile<E>> {
@@ -234,8 +284,6 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
         *section_sizes.get(&WIRE2LABEL_TYPE).unwrap(),
         &header,
     )?;
-    println!("header: {:?}", header);
-    println!("section: {:?}", section_sizes);
     reader.seek(SeekFrom::Start(
         *section_offsets.get(&CUSTOM_GATES_LIST).unwrap(),
     ))?;
