@@ -251,6 +251,8 @@ fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
         num_aux,
         num_variables: circuit_json.num_variables,
         constraints,
+        custom_gates: vec![], //TODO support custom_gates
+        custom_gates_uses: vec![],
     }
 }
 
@@ -275,6 +277,8 @@ pub fn load_r1cs_from_bin<R: Read + Seek, E: ScalarEngine>(reader: R) -> (R1CS<E
             num_inputs,
             num_variables,
             constraints: file.constraints,
+            custom_gates: file.custom_gates,
+            custom_gates_uses: file.custom_gates_uses,
         },
         file.wire_mapping.iter().map(|e| *e as usize).collect_vec(),
     )

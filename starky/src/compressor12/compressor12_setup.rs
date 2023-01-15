@@ -42,10 +42,46 @@ fn get_custom_gate_info(
     r1cs: &R1CS<GL>,
     pa: &Vec<PlonkGate>,
     pc: &Vec<PlonkAdd>,
-) {
+) -> (u64, u64, u64, u64) {
     let mut cmul_id = 0;
     let mut cmds_id = 0;
-    //assert_eq!(r1c);
+    let mut bcmul = false;
+    let mut bcmds = false;
+    assert_eq!(r1cs.custom_gates.len(), 2);
+    for (i, c) in r1cs.custom_gates.iter().enumerate() {
+        match c.template_name.as_str() {
+            "CMul" => {
+                cmul_id = i as u64;
+                bcmul = true;
+                assert!(c.parameters.len() == 0);
+            }
+            "MDS" => {
+                cmds_id = i as u64;
+                bcmds = true;
+                assert!(c.parameters.len() == 0);
+            }
+            _ => panic!("Invalid custom gate {}", c.template_name),
+        }
+    }
+    if !bcmul {
+        panic!("CMul custom gate not defined");
+    }
+    if !bcmds {
+        panic!("cmds_id custom gate not defined");
+    }
+
+    let mut n_cmul = 0;
+    let mut n_mds = 0;
+    for (i, c) in r1cs.custom_gates_uses.iter().enumerate() {
+        if c.id == cmul_id {
+            n_cmul += 1;
+        } else if c.id == cmds_id {
+            n_mds += 1;
+        } else {
+            panic!("Custom gate not defined {}", c.id);
+        }
+    }
+    (cmul_id, cmds_id, n_cmul, n_mds)
 }
 
 pub fn plonk_setup(r1cs: &R1CS<GL>, opts: &Options) {

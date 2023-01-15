@@ -30,6 +30,20 @@ pub type Constraint<E> = (
     Vec<(usize, <E as ScalarEngine>::Fr)>,
 );
 
+// R1CSfile's CustomGates
+#[derive(Debug, Default, Clone)]
+pub struct CustomGates<E: ScalarEngine> {
+    pub template_name: String,
+    pub parameters: Vec<E::Fr>,
+}
+
+// R1CSfile's CustomGatesUses
+#[derive(Debug, Default, Clone)]
+pub struct CustomGatesUses {
+    pub id: u64,
+    pub signals: Vec<u64>,
+}
+
 /// R1CS spec: https://www.sikoba.com/docs/SKOR_GD_R1CS_Format.pdf
 #[derive(Clone, Debug)]
 pub struct R1CS<E: ScalarEngine> {
@@ -37,6 +51,8 @@ pub struct R1CS<E: ScalarEngine> {
     pub num_aux: usize,
     pub num_variables: usize,
     pub constraints: Vec<Constraint<E>>,
+    pub custom_gates: Vec<CustomGates<E>>,
+    pub custom_gates_uses: Vec<CustomGatesUses>,
 }
 
 #[derive(Clone, Debug)]

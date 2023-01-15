@@ -2,7 +2,7 @@
 // Implement of https://github.com/iden3/r1csfile/blob/master/doc/r1cs_bin_format.md
 #![allow(unused_variables, dead_code)]
 use crate::bellman_ce::{Field, PrimeField, PrimeFieldRepr, ScalarEngine};
-use crate::circom_circuit::Constraint;
+use crate::circom_circuit::{Constraint, CustomGatesUses, CustomGates};
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::{
     collections::HashMap,
@@ -21,20 +21,6 @@ pub struct Header {
     pub n_labels: u64,
     pub n_constraints: u32,
     pub use_custom_gates: bool,
-}
-
-// R1CSfile's CustomGates
-#[derive(Debug, Default)]
-pub struct CustomGates<E: ScalarEngine> {
-    pub template_name: String,
-    pub parameters: Vec<E::Fr>,
-}
-
-// R1CSfile's CustomGatesUses
-#[derive(Debug, Default)]
-pub struct CustomGatesUses {
-    pub id: u64,
-    pub signals: Vec<u64>,
 }
 
 // R1CSFile parse result
