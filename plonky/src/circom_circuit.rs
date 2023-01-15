@@ -7,8 +7,8 @@ use std::collections::BTreeMap;
 use std::str;
 
 use crate::bellman_ce::{
-    pairing::{ff::PrimeField, ff::ScalarEngine, Engine},
-    Circuit, ConstraintSystem, Index, LinearCombination, SynthesisError, Variable,
+    pairing::Engine, Circuit, ConstraintSystem, Index, LinearCombination, PrimeField, ScalarEngine,
+    SynthesisError, Variable,
 };
 
 use crate::utils::repr_to_big;
@@ -32,7 +32,7 @@ pub type Constraint<E> = (
 
 /// R1CS spec: https://www.sikoba.com/docs/SKOR_GD_R1CS_Format.pdf
 #[derive(Clone, Debug)]
-pub struct R1CS<E: Engine> {
+pub struct R1CS<E: ScalarEngine> {
     pub num_inputs: usize,
     pub num_aux: usize,
     pub num_variables: usize,
@@ -40,7 +40,7 @@ pub struct R1CS<E: Engine> {
 }
 
 #[derive(Clone, Debug)]
-pub struct CircomCircuit<E: Engine> {
+pub struct CircomCircuit<E: ScalarEngine> {
     pub r1cs: R1CS<E>,
     pub witness: Option<Vec<E::Fr>>,
     pub wire_mapping: Option<Vec<usize>>,
@@ -48,7 +48,7 @@ pub struct CircomCircuit<E: Engine> {
     // debug symbols
 }
 
-impl<'a, E: Engine> CircomCircuit<E> {
+impl<'a, E: ScalarEngine> CircomCircuit<E> {
     pub fn get_public_inputs(&self) -> Option<Vec<E::Fr>> {
         match &self.witness {
             None => None,

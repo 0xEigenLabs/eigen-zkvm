@@ -16,6 +16,7 @@ pub mod circom_circuit;
 pub mod plonk;
 pub mod r1cs_file;
 pub mod reader;
+pub mod scalar_gl;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod aggregation;
@@ -24,6 +25,8 @@ pub mod transpile;
 pub mod utils;
 pub mod verifier;
 
+use bellman_ce::pairing::ff;
+pub use ff::*;
 pub use franklin_crypto::bellman as bellman_ce;
 
 pub mod api;

@@ -46,6 +46,8 @@ mod starkinfo_map;
 pub mod transcript;
 pub mod transcript_bn128;
 
+pub mod r1cs2plonk;
+
 pub mod pil2circom;
 pub mod serializer;
 

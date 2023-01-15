@@ -24,7 +24,7 @@ pub fn setup(power: u32, srs_monomial_form: &String) -> Result<()> {
 
 // circuit filename default resolver
 pub fn analyse(circuit_file: &String, output: &String) -> Result<()> {
-    let circuit = CircomCircuit {
+    let circuit = CircomCircuit::<Bn256> {
         r1cs: reader::load_r1cs(&circuit_file),
         witness: None,
         wire_mapping: None,

@@ -1,11 +1,7 @@
 // some codes borrowed from https://github.com/poma/zkutil/blob/master/src/r1cs_reader.rs
 // Implement of https://github.com/iden3/r1csfile/blob/master/doc/r1cs_bin_format.md
 #![allow(unused_variables, dead_code)]
-use crate::bellman_ce::pairing::{
-    bn256::Bn256,
-    ff::{Field, PrimeField, PrimeFieldRepr},
-    Engine,
-};
+use crate::bellman_ce::{Field, PrimeField, PrimeFieldRepr, ScalarEngine};
 use crate::circom_circuit::Constraint;
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::{
@@ -24,23 +20,30 @@ pub struct Header {
     pub n_prv_in: u32,
     pub n_labels: u64,
     pub n_constraints: u32,
+    pub use_custom_gates: bool,
 }
 
 // R1CSFile parse result
 #[derive(Debug, Default)]
-pub struct R1CSFile<E: Engine> {
+pub struct R1CSFile<E: ScalarEngine> {
     pub version: u32,
     pub header: Header,
     pub constraints: Vec<Constraint<E>>,
     pub wire_mapping: Vec<u64>,
 }
 
-fn read_field<R: Read, E: Engine>(mut reader: R) -> Result<E::Fr> {
+fn read_field<R: Read, E: ScalarEngine>(mut reader: R) -> Result<E::Fr> {
     let mut repr = E::Fr::zero().into_repr();
     repr.read_le(&mut reader)?;
     let fr = E::Fr::from_repr(repr).map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
     Ok(fr)
 }
+
+const HEADER_TYPE: u32 = 1;
+const CONSTRAINT_TYPE: u32 = 2;
+const WIRE2LABEL_TYPE: u32 = 3;
+const CUSTOM_GATES_LIST: u32 = 4;
+const CUSTOM_GATES_USE: u32 = 5;
 
 fn read_header<R: Read>(mut reader: R, size: u64) -> Result<Header> {
     let field_size = reader.read_u32::<LittleEndian>()?;
@@ -62,10 +65,11 @@ fn read_header<R: Read>(mut reader: R, size: u64) -> Result<Header> {
         n_prv_in: reader.read_u32::<LittleEndian>()?,
         n_labels: reader.read_u64::<LittleEndian>()?,
         n_constraints: reader.read_u32::<LittleEndian>()?,
+        use_custom_gates: false,
     })
 }
 
-fn read_constraint_vec<R: Read, E: Engine>(
+fn read_constraint_vec<R: Read, E: ScalarEngine>(
     mut reader: R,
     header: &Header,
 ) -> Result<Vec<(usize, E::Fr)>> {
@@ -80,7 +84,7 @@ fn read_constraint_vec<R: Read, E: Engine>(
     Ok(vec)
 }
 
-fn read_constraints<R: Read, E: Engine>(
+fn read_constraints<R: Read, E: ScalarEngine>(
     mut reader: R,
     size: u64,
     header: &Header,
@@ -117,7 +121,7 @@ fn read_map<R: Read>(mut reader: R, size: u64, header: &Header) -> Result<Vec<u6
     Ok(vec)
 }
 
-pub fn from_reader<R: Read + Seek>(mut reader: R) -> Result<R1CSFile<Bn256>> {
+pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1CSFile<E>> {
     let mut magic = [0u8; 4];
     reader.read_exact(&mut magic)?;
     if magic != [0x72, 0x31, 0x63, 0x73] {
@@ -147,41 +151,46 @@ pub fn from_reader<R: Read + Seek>(mut reader: R) -> Result<R1CSFile<Bn256>> {
         reader.seek(SeekFrom::Current(section_size as i64))?;
     }
 
-    let header_type = 1;
-    let constraint_type = 2;
-    let wire2label_type = 3;
-
-    reader.seek(SeekFrom::Start(*section_offsets.get(&header_type).unwrap()))?;
-    let header = read_header(&mut reader, *section_sizes.get(&header_type).unwrap())?;
-    if header.field_size != 32 {
+    reader.seek(SeekFrom::Start(*section_offsets.get(&HEADER_TYPE).unwrap()))?;
+    let mut header = read_header(&mut reader, *section_sizes.get(&HEADER_TYPE).unwrap())?;
+    if section_offsets.get(&CUSTOM_GATES_USE).is_some()
+        && section_offsets.get(&CUSTOM_GATES_LIST).is_some()
+    {
+        header.use_custom_gates = true;
+    }
+    if !(header.field_size == 32 || header.field_size == 8) {
         return Err(Error::new(
             ErrorKind::InvalidData,
-            "This parser only supports 32-byte fields",
+            "This parser only supports 32-bytes or 8-bytes fields",
         ));
     }
-    if header.prime_size != hex!("010000f093f5e1439170b97948e833285d588181b64550b829a031e1724e6430")
+    if header.field_size != (E::Fr::NUM_BITS + 7) / 8 {
+        return Err(Error::new(ErrorKind::InvalidData, "Different prime"));
+    }
+    if !(header.prime_size
+        == hex!("010000f093f5e1439170b97948e833285d588181b64550b829a031e1724e6430")
+        || header.prime_size == hex!("01000000ffffffff"))
     {
         return Err(Error::new(
             ErrorKind::InvalidData,
-            "This parser only supports bn256",
+            "This parser only supports bn256 or GL",
         ));
     }
-
     reader.seek(SeekFrom::Start(
-        *section_offsets.get(&constraint_type).unwrap(),
+        *section_offsets.get(&CONSTRAINT_TYPE).unwrap(),
     ))?;
-    let constraints = read_constraints::<&mut R, Bn256>(
+    let constraints = read_constraints::<&mut R, E>(
         &mut reader,
-        *section_sizes.get(&constraint_type).unwrap(),
+        *section_sizes.get(&CONSTRAINT_TYPE).unwrap(),
         &header,
     )?;
 
     reader.seek(SeekFrom::Start(
-        *section_offsets.get(&wire2label_type).unwrap(),
+        *section_offsets.get(&WIRE2LABEL_TYPE).unwrap(),
     ))?;
     let wire_mapping = read_map(
         &mut reader,
-        *section_sizes.get(&wire2label_type).unwrap(),
+        *section_sizes.get(&WIRE2LABEL_TYPE).unwrap(),
         &header,
     )?;
 
@@ -195,9 +204,10 @@ pub fn from_reader<R: Read + Seek>(mut reader: R) -> Result<R1CSFile<Bn256>> {
 
 #[cfg(test)]
 mod tests {
-    use std::io::{BufReader, Cursor};
-
     use super::*;
+    use crate::bellman_ce::pairing::bn256::Bn256;
+    use crate::bellman_ce::pairing::ff;
+    use std::io::{BufReader, Cursor};
 
     #[test]
     fn sample() {
@@ -253,9 +263,8 @@ mod tests {
     "
         );
 
-        use crate::bellman_ce::pairing::ff;
         let reader = BufReader::new(Cursor::new(&data[..]));
-        let file = from_reader(reader).unwrap();
+        let file = from_reader::<_, Bn256>(reader).unwrap();
         assert_eq!(file.version, 1);
 
         assert_eq!(file.header.field_size, 32);

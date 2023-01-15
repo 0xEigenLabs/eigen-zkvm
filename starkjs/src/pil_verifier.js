@@ -54,7 +54,9 @@ module.exports = {
     let zkIn = proof2zkin(proof.proof);
     elapse("proof2zkin", timer);
     zkIn.publics = proof.publics;
-    zkIn.proverAddr = BigInt(proverAddr);
+    if (starkStruct.verificationHashType == "BN128") {
+      zkIn.proverAddr = BigInt(proverAddr);
+    }
     elapse("proving", timer);
 
     // generate vk
