@@ -17,7 +17,7 @@ const CIRCUIT_ANALYZE_RESULT: &'static str = r#"{"num_inputs":2,"num_aux":2,"num
 
 #[test]
 fn test_analyze() {
-    let circuit = CircomCircuit {
+    let circuit = CircomCircuit::<Bn256> {
         r1cs: reader::load_r1cs(CIRCUIT_FILE),
         witness: None,
         wire_mapping: None,

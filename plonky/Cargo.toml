@@ -33,7 +33,7 @@ hex = "*"
 ethabi = { version = "14", optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-rand = "0.6.5"
+rand = "0.4"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = { version = "0.2.51", features = ["serde-serialize"]  }

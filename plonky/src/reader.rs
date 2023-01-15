@@ -8,12 +8,12 @@ use std::str;
 
 use crate::bellman_ce::{
     kate_commitment::{Crs, CrsForLagrangeForm, CrsForMonomialForm},
-    pairing::{bn256::Bn256, ff::PrimeField, Engine},
+    pairing::Engine,
     plonk::{
         better_cs::cs::PlonkCsWidth4WithNextStepParams,
         better_cs::keys::{Proof, VerificationKey},
     },
-    Field, PrimeFieldRepr,
+    Field, PrimeField, PrimeFieldRepr, ScalarEngine,
 };
 
 use crate::circom_circuit::{CircuitJson, R1CS};
@@ -103,7 +103,7 @@ pub fn maybe_load_key_lagrange_form<E: Engine>(
 }
 
 /// load witness file by filename with autodetect encoding (bin or json).
-pub fn load_witness_from_file<E: Engine>(filename: &str) -> Vec<E::Fr> {
+pub fn load_witness_from_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
     if filename.ends_with("json") {
         load_witness_from_json_file::<E>(filename)
     } else {
@@ -112,7 +112,7 @@ pub fn load_witness_from_file<E: Engine>(filename: &str) -> Vec<E::Fr> {
 }
 
 /// load witness from json file by filename
-pub fn load_witness_from_json_file<E: Engine>(filename: &str) -> Vec<E::Fr> {
+pub fn load_witness_from_json_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
@@ -121,7 +121,7 @@ pub fn load_witness_from_json_file<E: Engine>(filename: &str) -> Vec<E::Fr> {
 }
 
 /// load witness from json by a reader
-fn load_witness_from_json<E: Engine, R: Read>(reader: R) -> Vec<E::Fr> {
+fn load_witness_from_json<E: ScalarEngine, R: Read>(reader: R) -> Vec<E::Fr> {
     let witness: Vec<String> = serde_json::from_reader(reader).expect("unable to read.");
     witness
         .into_iter()
@@ -130,7 +130,7 @@ fn load_witness_from_json<E: Engine, R: Read>(reader: R) -> Vec<E::Fr> {
 }
 
 /// load witness from bin file by filename
-pub fn load_witness_from_bin_file<E: Engine>(filename: &str) -> Vec<E::Fr> {
+pub fn load_witness_from_bin_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
@@ -140,12 +140,14 @@ pub fn load_witness_from_bin_file<E: Engine>(filename: &str) -> Vec<E::Fr> {
 }
 
 /// load witness from u8 array
-pub fn load_witness_from_array<E: Engine>(buffer: Vec<u8>) -> Result<Vec<E::Fr>, anyhow::Error> {
+pub fn load_witness_from_array<E: ScalarEngine>(
+    buffer: Vec<u8>,
+) -> Result<Vec<E::Fr>, anyhow::Error> {
     load_witness_from_bin_reader::<E, _>(buffer.as_slice())
 }
 
 /// load witness from u8 array by a reader
-pub fn load_witness_from_bin_reader<E: Engine, R: Read>(
+pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(
     mut reader: R,
 ) -> Result<Vec<E::Fr>, anyhow::Error> {
     let mut wtns_header = [0u8; 4];
@@ -201,7 +203,7 @@ pub fn load_witness_from_bin_reader<E: Engine, R: Read>(
 }
 
 /// load r1cs file by filename with autodetect encoding (bin or json)
-pub fn load_r1cs(filename: &str) -> R1CS<Bn256> {
+pub fn load_r1cs<E: ScalarEngine>(filename: &str) -> R1CS<E> {
     if filename.ends_with("json") {
         load_r1cs_from_json_file(filename)
     } else {
@@ -211,7 +213,7 @@ pub fn load_r1cs(filename: &str) -> R1CS<Bn256> {
 }
 
 /// load r1cs from json file by filename
-fn load_r1cs_from_json_file<E: Engine>(filename: &str) -> R1CS<E> {
+fn load_r1cs_from_json_file<E: ScalarEngine>(filename: &str) -> R1CS<E> {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
@@ -220,7 +222,7 @@ fn load_r1cs_from_json_file<E: Engine>(filename: &str) -> R1CS<E> {
 }
 
 /// load r1cs from json by a reader
-fn load_r1cs_from_json<E: Engine, R: Read>(reader: R) -> R1CS<E> {
+fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
     let circuit_json: CircuitJson = serde_json::from_reader(reader).expect("unable to read.");
 
     let num_inputs = circuit_json.num_inputs + circuit_json.num_outputs + 1;
@@ -253,7 +255,7 @@ fn load_r1cs_from_json<E: Engine, R: Read>(reader: R) -> R1CS<E> {
 }
 
 /// load r1cs from bin file by filename
-fn load_r1cs_from_bin_file(filename: &str) -> (R1CS<Bn256>, Vec<usize>) {
+fn load_r1cs_from_bin_file<E: ScalarEngine>(filename: &str) -> (R1CS<E>, Vec<usize>) {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
@@ -262,8 +264,8 @@ fn load_r1cs_from_bin_file(filename: &str) -> (R1CS<Bn256>, Vec<usize>) {
 }
 
 /// load r1cs from bin by a reader
-pub fn load_r1cs_from_bin<R: Read + Seek>(reader: R) -> (R1CS<Bn256>, Vec<usize>) {
-    let file = crate::r1cs_file::from_reader(reader).expect("unable to read.");
+pub fn load_r1cs_from_bin<R: Read + Seek, E: ScalarEngine>(reader: R) -> (R1CS<E>, Vec<usize>) {
+    let file = crate::r1cs_file::from_reader::<R, E>(reader).expect("unable to read.");
     let num_inputs = (1 + file.header.n_pub_in + file.header.n_pub_out) as usize;
     let num_variables = file.header.n_wires as usize;
     let num_aux = num_variables - num_inputs;
