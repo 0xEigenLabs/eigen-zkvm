@@ -6,6 +6,9 @@ pub mod types;
 pub mod stark_verifier_circom;
 pub mod stark_verifier_circom_bn128;
 
+mod compressor12;
+pub use compressor12::*;
+
 pub mod linearhash;
 pub mod linearhash_bn128;
 

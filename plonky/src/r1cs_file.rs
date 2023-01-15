@@ -23,6 +23,20 @@ pub struct Header {
     pub use_custom_gates: bool,
 }
 
+// R1CSfile's CustomGates
+#[derive(Debug, Default)]
+pub struct CustomGates<E: ScalarEngine> {
+    pub template_name: String,
+    pub parameters: Vec<E::Fr>,
+}
+
+// R1CSfile's CustomGatesUses
+#[derive(Debug, Default)]
+pub struct CustomGatesUses {
+    pub id: u64,
+    pub signal: Vec<u32>,
+}
+
 // R1CSFile parse result
 #[derive(Debug, Default)]
 pub struct R1CSFile<E: ScalarEngine> {
@@ -30,6 +44,8 @@ pub struct R1CSFile<E: ScalarEngine> {
     pub header: Header,
     pub constraints: Vec<Constraint<E>>,
     pub wire_mapping: Vec<u64>,
+    pub custom_gates: Vec<CustomGates<E>>,
+    pub custom_gates_uses: Vec<CustomGatesUses>,
 }
 
 fn read_field<R: Read, E: ScalarEngine>(mut reader: R) -> Result<E::Fr> {
@@ -121,6 +137,31 @@ fn read_map<R: Read>(mut reader: R, size: u64, header: &Header) -> Result<Vec<u6
     Ok(vec)
 }
 
+fn read_custom_gates_list<R: Read, E: ScalarEngine>(mut reader: R, size: u64, header: &Header) -> Result<Vec<CustomGates<E>>> {
+    let num = reader.read_u32::<LittleEndian>()?;
+    let mut custom_gates: Vec<CustomGates<E>> = vec![];
+    println!("num: {}", num);
+    for i in 0..num {
+        let mut name_buf = Vec::new();
+        let name_size = reader.read_to_end(&mut name_buf)?;
+        let mut custom_gate = CustomGates::<E> {
+            template_name: String::from_utf8_lossy(&name_buf).to_string(),
+            parameters: vec![],
+        };
+        let num_parameters = reader.read_u32::<LittleEndian>()?;
+        for _i in 0..num_parameters {
+            custom_gate.parameters.push(read_field::<&mut R, E>(&mut reader)?);
+        }
+        custom_gates.push(custom_gate);
+    }
+    println!("custom_gate: {:?}", custom_gates);
+    Ok(custom_gates)
+}
+
+fn read_custom_gates_uses_list<R: Read>(mut reader: R, size: u64, header: &Header) -> Result<Vec<CustomGatesUses>> {
+    Ok(vec![])
+}
+
 pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1CSFile<E>> {
     let mut magic = [0u8; 4];
     reader.read_exact(&mut magic)?;
@@ -193,12 +234,33 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
         *section_sizes.get(&WIRE2LABEL_TYPE).unwrap(),
         &header,
     )?;
+    println!("header: {:?}", header);
+    println!("section: {:?}", section_sizes);
+    reader.seek(SeekFrom::Start(
+        *section_offsets.get(&CUSTOM_GATES_LIST).unwrap(),
+    ))?;
+    let custom_gates = read_custom_gates_list(
+        &mut reader,
+        *section_sizes.get(&CUSTOM_GATES_LIST).unwrap(),
+        &header,
+    )?;
+
+    reader.seek(SeekFrom::Start(
+        *section_offsets.get(&CUSTOM_GATES_USE).unwrap(),
+    ))?;
+    let custom_gates_uses = read_custom_gates_uses_list(
+        &mut reader,
+        *section_sizes.get(&CUSTOM_GATES_USE).unwrap(),
+        &header,
+    )?;
 
     Ok(R1CSFile {
         version,
         header,
         constraints,
         wire_mapping,
+        custom_gates: custom_gates,
+        custom_gates_uses: custom_gates_uses,
     })
 }
 
