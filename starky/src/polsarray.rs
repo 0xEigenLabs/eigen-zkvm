@@ -6,20 +6,36 @@ use std::fs::File;
 use crate::f3g::F3G;
 
 use std::io::{Read, Write};
-use winter_math::StarkField;
+use winter_math::{FieldElement, StarkField};
 
 use crate::errors::Result;
 use winter_math::fields::f64::BaseElement;
 
 #[derive(Default, Debug)]
 pub struct Compressor {
-    Qm: Vec<BaseElement>,
-    Ql: Vec<BaseElement>,
-    Qr: Vec<BaseElement>,
-    Qo: Vec<BaseElement>,
-    Qk: Vec<BaseElement>,
-    QCMul: Vec<BaseElement>,
-    QMDS: Vec<BaseElement>,
+    pub Qm: Vec<BaseElement>,
+    pub Ql: Vec<BaseElement>,
+    pub Qr: Vec<BaseElement>,
+    pub Qo: Vec<BaseElement>,
+    pub Qk: Vec<BaseElement>,
+    pub QCMul: Vec<BaseElement>,
+    pub QMDS: Vec<BaseElement>,
+    pub S: Vec<Vec<BaseElement>>,
+}
+
+impl Compressor {
+    pub fn new(sz: usize) -> Self {
+        Compressor {
+            Qm: vec![BaseElement::ZERO; sz],
+            Ql: vec![BaseElement::ZERO; sz],
+            Qr: vec![BaseElement::ZERO; sz],
+            Qo: vec![BaseElement::ZERO; sz],
+            Qk: vec![BaseElement::ZERO; sz],
+            QCMul: vec![BaseElement::ZERO; sz],
+            QMDS: vec![BaseElement::ZERO; sz],
+            S: vec![Vec::new(); sz],
+        }
+    }
 }
 
 #[derive(Default, Debug)]

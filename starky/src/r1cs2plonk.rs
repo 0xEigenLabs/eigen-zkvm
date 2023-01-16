@@ -8,14 +8,14 @@ use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
 #[derive(Debug)]
 pub struct PlonkGate(
-    usize,
-    usize,
-    usize,
-    BaseElement,
-    BaseElement,
-    BaseElement,
-    BaseElement,
-    BaseElement,
+    pub usize,
+    pub usize,
+    pub usize,
+    pub BaseElement,
+    pub BaseElement,
+    pub BaseElement,
+    pub BaseElement,
+    pub BaseElement,
 );
 
 impl std::fmt::Display for PlonkGate {
@@ -42,7 +42,7 @@ impl PlonkGate {
 }
 
 #[derive(Debug)]
-pub struct PlonkAdd(usize, usize, BaseElement, BaseElement);
+pub struct PlonkAdd(pub usize, pub usize, pub BaseElement, pub BaseElement);
 impl std::fmt::Display for PlonkAdd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {}, {}, {})", self.0, self.1, self.2, self.3)
