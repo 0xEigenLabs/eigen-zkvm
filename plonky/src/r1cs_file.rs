@@ -180,7 +180,6 @@ fn read_custom_gates_uses_list<R: Read>(
     let n_custom_gate_uses = b_r1cs32[0];
     let mut b_r1cs_pos = 1;
     for i in 0..n_custom_gate_uses {
-        //if ((options.logger)&&(i%100000 == 0)) options.logger.info(`${options.loggerCtx}: Loading custom gate uses: ${i}/${nCustomGateUses}`);
         let mut c = CustomGatesUses::default();
         c.id = b_r1cs32[b_r1cs_pos] as u64;
         b_r1cs_pos += 1;
