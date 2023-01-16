@@ -12,6 +12,17 @@ use crate::errors::Result;
 use winter_math::fields::f64::BaseElement;
 
 #[derive(Default, Debug)]
+pub struct Compressor {
+    Qm: Vec<BaseElement>,
+    Ql: Vec<BaseElement>,
+    Qr: Vec<BaseElement>,
+    Qo: Vec<BaseElement>,
+    Qk: Vec<BaseElement>,
+    QCMul: Vec<BaseElement>,
+    QMDS: Vec<BaseElement>,
+}
+
+#[derive(Default, Debug)]
 pub struct PolsArray {
     pub nPols: usize,
     // nameSpace, namePol, defArray's index,

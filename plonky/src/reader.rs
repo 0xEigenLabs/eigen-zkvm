@@ -250,6 +250,7 @@ fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
         num_inputs,
         num_aux,
         num_variables: circuit_json.num_variables,
+        num_outputs: circuit_json.num_outputs,
         constraints,
         custom_gates: vec![], //TODO support custom_gates
         custom_gates_uses: vec![],
@@ -276,6 +277,7 @@ pub fn load_r1cs_from_bin<R: Read + Seek, E: ScalarEngine>(reader: R) -> (R1CS<E
             num_aux,
             num_inputs,
             num_variables,
+            num_outputs: file.header.n_pub_out as usize,
             constraints: file.constraints,
             custom_gates: file.custom_gates,
             custom_gates_uses: file.custom_gates_uses,

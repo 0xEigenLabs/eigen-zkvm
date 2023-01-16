@@ -50,6 +50,7 @@ pub struct R1CS<E: ScalarEngine> {
     pub num_inputs: usize,
     pub num_aux: usize,
     pub num_variables: usize,
+    pub num_outputs: usize,
     pub constraints: Vec<Constraint<E>>,
     pub custom_gates: Vec<CustomGates<E>>,
     pub custom_gates_uses: Vec<CustomGatesUses>,

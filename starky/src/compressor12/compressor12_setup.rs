@@ -1,7 +1,13 @@
+use crate::compressor12::compressor12_pil;
+use crate::errors::{EigenError, Result};
+use crate::polsarray;
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
+use crate::types::PIL;
 use plonky::circom_circuit::R1CS;
 use plonky::scalar_gl::GL;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::Write;
 
 pub struct Options {
     pub force_bits: usize,
@@ -84,6 +90,30 @@ fn get_custom_gate_info(
     (cmul_id, cmds_id, n_cmul, n_mds)
 }
 
-pub fn plonk_setup(r1cs: &R1CS<GL>, opts: &Options) {
+pub fn plonk_setup_render(r1cs: &R1CS<GL>, opts: &Options, com_pil_file: &String) {
     let pc = r1cs2plonk(r1cs);
+    let plonkinfo = get_normal_plonkinfo(r1cs, &pc.0, &pc.1);
+    let custom_gates_info = get_custom_gate_info(r1cs, &pc.0, &pc.1);
+
+    let n_publics = r1cs.num_inputs + r1cs.num_outputs;
+    let n_public_rows = (n_publics - 1) / 12 + 1;
+
+    let n_uses = n_public_rows + plonkinfo.0 as usize /*N*/ + custom_gates_info.2 as usize +  custom_gates_info.3 as usize * 2;
+    let mut n_bits = crate::helper::log2_any(n_uses - 1) + 1;
+    if opts.force_bits > 0 {
+        n_bits = opts.force_bits;
+    }
+    let com_pil = compressor12_pil::render(n_bits, n_publics);
+    let mut file = File::create(&com_pil_file).unwrap();
+    write!(file, "{}", com_pil).unwrap();
+}
+
+pub fn plonk_setup_fix_compressor(r1cs: &R1CS<GL>, opts: &Options, pil: &PIL) {
+    let const_pols = polsarray::PolsArray::new(pil, polsarray::PolKind::Constant);
+    let n_publics = r1cs.num_inputs + r1cs.num_outputs;
+    let n_public_rows = (n_publics - 1) / 12 + 1;
+    let mut r = 0;
+    for i in 0..n_public_rows {
+        //
+    }
 }
