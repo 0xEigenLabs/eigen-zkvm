@@ -8,35 +8,8 @@ use crate::f3g::F3G;
 use std::io::{Read, Write};
 use winter_math::{FieldElement, StarkField};
 
-use crate::errors::Result;
+use crate::errors::{EigenError, Result};
 use winter_math::fields::f64::BaseElement;
-
-#[derive(Default, Debug)]
-pub struct Compressor {
-    pub Qm: Vec<BaseElement>,
-    pub Ql: Vec<BaseElement>,
-    pub Qr: Vec<BaseElement>,
-    pub Qo: Vec<BaseElement>,
-    pub Qk: Vec<BaseElement>,
-    pub QCMul: Vec<BaseElement>,
-    pub QMDS: Vec<BaseElement>,
-    pub S: Vec<Vec<BaseElement>>,
-}
-
-impl Compressor {
-    pub fn new(sz: usize) -> Self {
-        Compressor {
-            Qm: vec![BaseElement::ZERO; sz],
-            Ql: vec![BaseElement::ZERO; sz],
-            Qr: vec![BaseElement::ZERO; sz],
-            Qo: vec![BaseElement::ZERO; sz],
-            Qk: vec![BaseElement::ZERO; sz],
-            QCMul: vec![BaseElement::ZERO; sz],
-            QMDS: vec![BaseElement::ZERO; sz],
-            S: vec![Vec::new(); sz],
-        }
-    }
-}
 
 #[derive(Default, Debug)]
 pub struct PolsArray {
@@ -139,11 +112,32 @@ impl PolsArray {
         PolsArray {
             nPols: defArray.len(),
             n: defArray[0].polDeg,
-            defArray: defArray,
-            array: array,
-            def: def,
+            defArray,
+            array,
+            def,
         }
     }
+
+    pub fn get_mut<'arr>(&mut self, ns: &String, np: &String) -> &mut Vec<BaseElement> {
+        let namespace = self.def.get(ns);
+        if namespace.is_none() {
+            //retrun Err(EigenError::Unknown(format!("Invalid namespace:{}", ns)));
+        }
+        assert_eq!(namespace.is_some(), true);
+        let name_pol_index = namespace.unwrap().get(np);
+        assert_eq!(name_pol_index.is_some(), true);
+        if name_pol_index.is_none() {
+            //retrun Err(EigenError::Unknown(format!("Invalid name pol:{}/{}", ns, np)));
+        }
+        let idx = name_pol_index.unwrap()[0];
+        &mut self.array[idx]
+    }
+
+    /*
+    pub fn set(&mut self, ns: &String, np: &String, val: &Vec<Vec<BaseElement>>) {
+        let idx = self.def
+    }
+    */
 
     pub fn load(&mut self, fileName: &str) -> Result<()> {
         let mut f = File::open(fileName)?;

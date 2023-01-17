@@ -16,6 +16,33 @@ pub struct Options {
     pub force_bits: usize,
 }
 
+#[derive(Default, Debug)]
+pub struct Compressor {
+    pub Qm: Vec<BaseElement>,
+    pub Ql: Vec<BaseElement>,
+    pub Qr: Vec<BaseElement>,
+    pub Qo: Vec<BaseElement>,
+    pub Qk: Vec<BaseElement>,
+    pub QCMul: Vec<BaseElement>,
+    pub QMDS: Vec<BaseElement>,
+    pub S: Vec<Vec<BaseElement>>,
+}
+
+impl Compressor {
+    pub fn new(sz: usize) -> Self {
+        Compressor {
+            Qm: vec![BaseElement::ZERO; sz],
+            Ql: vec![BaseElement::ZERO; sz],
+            Qr: vec![BaseElement::ZERO; sz],
+            Qo: vec![BaseElement::ZERO; sz],
+            Qk: vec![BaseElement::ZERO; sz],
+            QCMul: vec![BaseElement::ZERO; sz],
+            QMDS: vec![BaseElement::ZERO; sz],
+            S: vec![Vec::new(); sz],
+        }
+    }
+}
+
 struct NormalPlonkInfo {
     pub N: usize,
     pub nConstaints: usize,
@@ -166,14 +193,14 @@ pub fn plonk_setup_fix_compressor(
     pil: &PIL,
     aux: &PlonkSetupInfo,
 ) {
-    let const_pols = polsarray::PolsArray::new(pil, polsarray::PolKind::Constant);
+    let mut const_pols = polsarray::PolsArray::new(pil, polsarray::PolKind::Constant);
 
     let n_used = aux.n_used;
     let n_publics = aux.n_publics;
     let n_public_rows = (n_publics - 1) / 12 + 1;
 
     let mut r = 0;
-    let mut compressor: polsarray::Compressor = polsarray::Compressor::new(n_public_rows + r);
+    let mut compressor: Compressor = Compressor::new(n_public_rows + r);
 
     let mut s_map: Vec<Vec<u64>> = vec![Vec::new(); 12];
     for i in 0..12 {
@@ -322,7 +349,7 @@ pub fn plonk_setup_fix_compressor(
                     //connect(&mut compressor.S[ls.col], ls.row, &mut compressor.S[j], i);
                     let tmp = compressor.S[j][i];
                     let tmp2 = compressor.S[ls.col][ls.row];
-                    compressor.S[ls.col] [ls.row]= tmp;
+                    compressor.S[ls.col][ls.row] = tmp;
                     compressor.S[j][i] = tmp2;
                 } else {
                     last_signal.insert(s_map[j][i], Grid { col: j, row: i });
@@ -346,15 +373,15 @@ pub fn plonk_setup_fix_compressor(
         r += 1;
     }
 
-    /*
     for i in 0..n_public_rows {
-        let L = const_pols.Global["L" + (i + 1)];
+        let L = const_pols.get_mut(&"Global".to_string(), &format!("L{}", i + 1));
         for i in 0..aux.plonkinfo.N {
             L[i] = BaseElement::ZERO;
         }
         L[i] = BaseElement::ONE;
     }
 
+    /*
     (
         pilStr: pilStr,
         constPols: constPols,
