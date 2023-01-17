@@ -116,7 +116,7 @@ fn get_custom_gate_info(
     }
 }
 
-struct PlonkSetupInfo {
+pub struct PlonkSetupInfo {
     n_used: usize,
     n_bits: usize,
     n_publics: usize,
@@ -175,7 +175,7 @@ pub fn plonk_setup_fix_compressor(
     let mut r = 0;
     let mut compressor: polsarray::Compressor = polsarray::Compressor::new(n_public_rows + r);
 
-    let s_map: Vec<Vec<u64>> = vec![Vec::new(); 12];
+    let mut s_map: Vec<Vec<u64>> = vec![Vec::new(); 12];
     for i in 0..12 {
         s_map[i] = vec![0u64; n_used];
     }
@@ -201,7 +201,7 @@ pub fn plonk_setup_fix_compressor(
             println!("Processing constraint... {}/{}", i, plonk_constraints.len())
         };
         let k = c.str_key();
-        let pr = partial_rows.get(&k);
+        let pr = partial_rows.get_mut(&k);
         if pr.is_some() {
             let pr = pr.unwrap();
             s_map[pr.n_used * 3][pr.row] = c.0 as u64;
@@ -288,7 +288,7 @@ pub fn plonk_setup_fix_compressor(
 
     // Calculate S Polynomials
     let ks = crate::helper::get_ks(11);
-    let w = BaseElement::ONE;
+    let mut w = BaseElement::ONE;
     compressor.S = vec![Vec::new(); 12];
     for i in 0..12 {
         compressor.S[i] = vec![BaseElement::ZERO; aux.plonkinfo.N];
@@ -308,15 +308,7 @@ pub fn plonk_setup_fix_compressor(
         row: usize,
         col: usize,
     };
-    let last_signal: HashMap<u64, Grid> = HashMap::new();
-
-    let connect = |p1: &mut Vec<BaseElement>, i1: usize, p2: &mut Vec<BaseElement>, i2: usize| {
-        //[p1[i1], p2[i2]] = [p2[i2], p1[i1]];
-        let tmp = p2[i2];
-        let tmp2 = p1[i1];
-        p1[i1] = tmp;
-        p2[i2] = tmp2;
-    };
+    let mut last_signal: HashMap<u64, Grid> = HashMap::new();
 
     for i in 0..r {
         if (i % 10000) == 0 {
@@ -327,7 +319,11 @@ pub fn plonk_setup_fix_compressor(
                 let ls = last_signal.get(&s_map[j][i]);
                 if ls.is_some() {
                     let ls = ls.unwrap();
-                    connect(&mut compressor.S[ls.col], ls.row, &mut compressor.S[j], i);
+                    //connect(&mut compressor.S[ls.col], ls.row, &mut compressor.S[j], i);
+                    let tmp = compressor.S[j][i];
+                    let tmp2 = compressor.S[ls.col][ls.row];
+                    compressor.S[ls.col] [ls.row]= tmp;
+                    compressor.S[j][i] = tmp2;
                 } else {
                     last_signal.insert(s_map[j][i], Grid { col: j, row: i });
                 }
@@ -350,6 +346,7 @@ pub fn plonk_setup_fix_compressor(
         r += 1;
     }
 
+    /*
     for i in 0..n_public_rows {
         let L = const_pols.Global["L" + (i + 1)];
         for i in 0..aux.plonkinfo.N {
@@ -358,7 +355,6 @@ pub fn plonk_setup_fix_compressor(
         L[i] = BaseElement::ONE;
     }
 
-    /*
     (
         pilStr: pilStr,
         constPols: constPols,

@@ -42,7 +42,7 @@ impl Compressor {
 pub struct PolsArray {
     pub nPols: usize,
     // nameSpace, namePol, defArray's index,
-    pub def: HashMap<String, HashMap<String, (bool, Vec<usize>)>>,
+    pub def: HashMap<String, HashMap<String, Vec<usize>>>,
     pub defArray: Vec<Pol>,
     pub array: Vec<Vec<BaseElement>>,
     pub n: usize,
@@ -63,8 +63,6 @@ pub enum PolKind {
     Constant,
 }
 
-pub type ArrayPol = (bool, Vec<usize>);
-
 impl PolsArray {
     pub fn new(pil: &PIL, kind: PolKind) -> Self {
         let nPols = match kind {
@@ -72,7 +70,7 @@ impl PolsArray {
             PolKind::Constant => pil.nConstants,
         };
 
-        let mut def: HashMap<String, HashMap<String, ArrayPol>> = HashMap::new();
+        let mut def: HashMap<String, HashMap<String, Vec<usize>>> = HashMap::new();
         let mut defArray: Vec<Pol> = vec![Pol::default(); nPols];
         let mut array: Vec<Vec<BaseElement>> = vec![Vec::new(); nPols];
         for i in 0..array.len() {
@@ -87,8 +85,8 @@ impl PolsArray {
                 let namePols = name_vec[1].to_string();
 
                 if ref_.isArray {
-                    let mut ns: HashMap<String, ArrayPol> = HashMap::new();
-                    let mut arrayPols: ArrayPol = (true, vec![0usize; ref_.len.unwrap()]);
+                    let mut ns: HashMap<String, Vec<usize>> = HashMap::new();
+                    let mut arrayPols: Vec<usize> = vec![0usize; ref_.len.unwrap()];
                     if def.contains_key(&nameSpace) {
                         ns = def.get(&nameSpace).unwrap().clone();
                         if ns.contains_key(&namePols) {
@@ -107,7 +105,7 @@ impl PolsArray {
                             },
                             polDeg: ref_.polDeg,
                         };
-                        arrayPols.1[i] = ref_.id + i;
+                        arrayPols[i] = ref_.id + i;
                         array[ref_.id + i] = vec![BaseElement::default(); ref_.polDeg];
                     }
                     ns.insert(namePols, arrayPols);
@@ -123,8 +121,8 @@ impl PolsArray {
                         },
                         polDeg: ref_.polDeg,
                     };
-                    let arrayPols: ArrayPol = (false, vec![ref_.id]);
-                    let mut ns: HashMap<String, ArrayPol> = HashMap::new();
+                    let arrayPols: Vec<usize> = vec![ref_.id];
+                    let mut ns: HashMap<String, Vec<usize>> = HashMap::new();
                     ns.insert(namePols, arrayPols);
                     def.insert(nameSpace, ns);
                     array[ref_.id] = vec![BaseElement::default(); ref_.polDeg];
