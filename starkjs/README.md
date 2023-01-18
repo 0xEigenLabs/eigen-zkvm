@@ -10,32 +10,41 @@ npm run fib
 ```
 will generate the PIL json, Commitment Polynomial file and Constant Polynomial file.
 
-### Generate the bottom layer proof's circuits and Circom correspondingly
+### Bottom Layer Proof
 
 ```
 ../target/release/zkit stark_prove -s ../starky/data/starkStruct.json.gl \
     -p /tmp/fib.pil.json \
     -o /tmp/fib.const \
-    -m /tmp/fib.cm -c circuits/circuit.circom -i circuits/circuit.zkin.json
+    -m /tmp/fib.cm -c circuits/fib.circom -i circuits/fib.zkin.json
 ```
 
-### Recursive Proof
+### Recursive Layer Proof
 
 ```
+circom --r1cs --wasm -p goldilocks circuits/fib.circom \
+    -l node_modules/pil-stark/circuits.gl \
+    --O2=full \
+    -o /tmp/
+
 node src/compressor12/main_compressor12_setup.js \
-    -r /tmp/circuit.gl.r1cs \
+    -r /tmp/fib.r1cs \
     -c /tmp/c12.const \
     -p /tmp/c12.pil \
-    -e /tmp/c12.cm
+    -e /tmp/c12.exec
 node src/compressor12/main_compressor12_exec.js \
-    -w /tmp/circuit.gl.wasm  \
-    -i /tmp/input.json  \
+    -w circuits/fib.wasm  \
+    -i circuits/fib.zkin.json  \
     -p /tmp/c12.pil  \
     -e /tmp/c12.exec \
     -m /tmp/c12.cm
+../target/release/zkit stark_prove -s ../starky/data/starkStruct.json \
+    -p /tmp/c12.pil.json \
+    -o /tmp/c12.const \
+    -m /tmp/c12.cm -c circuits/circuit.circom -i circuits/circuit.zkin.json
 ```
 
-### Compile verifier and generate snark proof
+### Top Layer: Snark proof
 ```
 cd ../test
 bash -x test_fibonacci_verifier.sh

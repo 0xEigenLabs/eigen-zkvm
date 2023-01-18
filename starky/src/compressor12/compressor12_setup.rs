@@ -156,7 +156,7 @@ pub struct PlonkSetupInfo {
 pub fn plonk_setup_render(
     r1cs: &R1CS<GL>,
     opts: &Options,
-    com_pil_file: &String,
+    out_pil: &str,
 ) -> PlonkSetupInfo {
     let pc = r1cs2plonk(r1cs);
     let plonkinfo = get_normal_plonkinfo(r1cs, &pc.0, &pc.1);
@@ -174,7 +174,7 @@ pub fn plonk_setup_render(
         n_bits = opts.force_bits;
     }
     let com_pil = compressor12_pil::render(n_bits, n_publics);
-    let mut file = File::create(&com_pil_file).unwrap();
+    let mut file = File::create(out_pil).unwrap();
     write!(file, "{}", com_pil).unwrap();
     PlonkSetupInfo {
         n_used,
@@ -187,6 +187,7 @@ pub fn plonk_setup_render(
     }
 }
 
+/*
 pub fn plonk_setup_fix_compressor(
     r1cs: &R1CS<GL>,
     opts: &Options,
@@ -373,6 +374,7 @@ pub fn plonk_setup_fix_compressor(
         r += 1;
     }
 
+    /*
     for i in 0..n_public_rows {
         let L = const_pols.get_mut(&"Global".to_string(), &format!("L{}", i + 1));
         for i in 0..aux.plonkinfo.N {
@@ -381,7 +383,6 @@ pub fn plonk_setup_fix_compressor(
         L[i] = BaseElement::ONE;
     }
 
-    /*
     (
         pilStr: pilStr,
         constPols: constPols,
@@ -390,3 +391,4 @@ pub fn plonk_setup_fix_compressor(
     )
     */
 }
+*/

@@ -94,7 +94,6 @@ namespace Compressor(%N);
 // Connection equations
     {{a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11]}} connect
         {{S[0], S[1], S[2], S[3], S[4], S[5], S[6], S[7], S[8], S[9], S[10], S[11]}};
-
-            "#));
+"#));
     res
 }
