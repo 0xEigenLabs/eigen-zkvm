@@ -244,8 +244,8 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::r1cs2plonk::r1cs2plonk;
     use crate::compressor12::compressor12_setup::{plonk_setup_render, Options};
+    use crate::r1cs2plonk::r1cs2plonk;
     //use plonky::bellman_ce::bn256::Bn256;
     use plonky::reader::load_r1cs;
     use plonky::scalar_gl::GL;

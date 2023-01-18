@@ -2,7 +2,7 @@
 // Implement of https://github.com/iden3/r1csfile/blob/master/doc/r1cs_bin_format.md
 #![allow(unused_variables, dead_code)]
 use crate::bellman_ce::{Field, PrimeField, PrimeFieldRepr, ScalarEngine};
-use crate::circom_circuit::{Constraint, CustomGatesUses, CustomGates};
+use crate::circom_circuit::{Constraint, CustomGates, CustomGatesUses};
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::{
     collections::HashMap,

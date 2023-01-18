@@ -153,11 +153,7 @@ pub struct PlonkSetupInfo {
     plonkinfo: NormalPlonkInfo,
 }
 
-pub fn plonk_setup_render(
-    r1cs: &R1CS<GL>,
-    opts: &Options,
-    out_pil: &str,
-) -> PlonkSetupInfo {
+pub fn plonk_setup_render(r1cs: &R1CS<GL>, opts: &Options, out_pil: &str) -> PlonkSetupInfo {
     let pc = r1cs2plonk(r1cs);
     let plonkinfo = get_normal_plonkinfo(r1cs, &pc.0, &pc.1);
     let custom_gates_info = get_custom_gate_info(r1cs, &pc.0, &pc.1);

@@ -3,14 +3,14 @@
 PIL compiler and Circom transpiler. The stark prover is [starky](../starky).
 
 ## Run Example
-### Generate Polynomial
+### Arithmetization:  Generate Polynomial
 
 ```
 npm run fib
 ```
 will generate the PIL json, Commitment Polynomial file and Constant Polynomial file.
 
-### Bottom Layer Proof
+### Bottom Layer: FRI Proof
 
 ```
 ../target/release/zkit stark_prove -s ../starky/data/starkStruct.json.gl \
@@ -19,9 +19,11 @@ will generate the PIL json, Commitment Polynomial file and Constant Polynomial f
     -m /tmp/fib.cm -c circuits/fib.circom -i circuits/fib.zkin.json
 ```
 
-### Recursive Layer Proof
+### Recursive Layer: FRI Proof
 
 ```
+# TODO: replace the tool `circom` by `zkit compile`.
+# ../target/debug/zkit compile -p goldilocks -i circuits/circuit.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 circom --r1cs --wasm -p goldilocks circuits/fib.circom \
     -l node_modules/pil-stark/circuits.gl \
     --O2=full \
@@ -33,7 +35,7 @@ node src/compressor12/main_compressor12_setup.js \
     -p /tmp/c12.pil \
     -e /tmp/c12.exec
 node src/compressor12/main_compressor12_exec.js \
-    -w circuits/fib.wasm  \
+    -w /tmp/fib_js/fib.wasm  \
     -i circuits/fib.zkin.json  \
     -p /tmp/c12.pil  \
     -e /tmp/c12.exec \
