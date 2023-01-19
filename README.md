@@ -8,7 +8,7 @@ eigen-zkvm is a zkVM on hybrid proof system, allowing the developers to write Ze
 
 - [x] GPU acceleration for proving, not opensourced; 
 
-- [x] WASM friendly for single proving and verifing, NodeJS/Javascript prover and verifier, [plonkjs](https://github.com/0xEigenLabs/plonkjs)
+- [x] WASM friendly for single proving and verifying, NodeJS/Javascript prover and verifier, [plonkjs](https://github.com/0xEigenLabs/plonkjs)
 
 - [x] Hybrid Proof system on Plonk and FRI.
 
