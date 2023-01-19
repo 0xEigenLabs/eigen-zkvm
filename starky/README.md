@@ -10,7 +10,7 @@ Generates a STARK proof from a State Machine written in PIL Language. Rusty Poly
 # Design
 
 ## The background
-After performance test on starkjs, we observe that the SM takes hours to generates a proof, and this makes it much impractical as a prototype of zk-zkVM.
+After performance test on starkjs, we observe that the SM takes hours to generate a proof, and this makes it much impractical as a prototype of zk-zkVM.
 So we plan to build a stark proving service to shift the computing intensive workload.
 
 A general process to generate a stark proof includes:
@@ -25,7 +25,7 @@ A general process to generate a stark proof includes:
 > 1. generate the plookup identities
 > 2. generate the permutation check identities (linear constraints)
 > 3. generate the commitment polynomial
-> 4. generate FRI polyonmial (composite polynomial)
+> 4. generate FRI polynomial (composite polynomial)
 
 5. [SLOW]calculate the merkle proof of quotient polynomial(Q), the plookup polynomial(H1H2), the target polynomial (Z), and the composite polynomial(C)
 
@@ -35,7 +35,7 @@ A general process to generate a stark proof includes:
 
 8. generate the consttree
 
-To be specific, the main calculation in step 4 is `extendAndMerkelize` over 256bits scalar field(BN128). For step 5, the main computaiton comes from polynomial evaluation.
+To be specific, the main calculation in step 4 is `extendAndMerkelize` over 256bits scalar field(BN128). For step 5, the main computation comes from polynomial evaluation.
 
 
 * Extending
