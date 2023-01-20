@@ -284,7 +284,7 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
     let custom_gates_uses: Vec<CustomGatesUses> = vec![];
     if section_offsets.get(&CUSTOM_GATES_USE).is_some() {
         reader.seek(SeekFrom::Start(
-                *section_offsets.get(&CUSTOM_GATES_USE).unwrap(),
+            *section_offsets.get(&CUSTOM_GATES_USE).unwrap(),
         ))?;
         let custom_gates_uses = read_custom_gates_uses_list(
             &mut reader,
@@ -362,7 +362,7 @@ mod tests {
         0f000000 00000000
         44010000 00000000
     "
-    );
+        );
 
         let reader = BufReader::new(Cursor::new(&data[..]));
         let file = from_reader::<_, Bn256>(reader).unwrap();
