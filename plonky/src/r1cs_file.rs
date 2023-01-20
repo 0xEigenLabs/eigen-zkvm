@@ -269,23 +269,29 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
         *section_sizes.get(&WIRE2LABEL_TYPE).unwrap(),
         &header,
     )?;
-    reader.seek(SeekFrom::Start(
-        *section_offsets.get(&CUSTOM_GATES_LIST).unwrap(),
-    ))?;
-    let custom_gates = read_custom_gates_list(
-        &mut reader,
-        *section_sizes.get(&CUSTOM_GATES_LIST).unwrap(),
-        &header,
-    )?;
+    let mut custom_gates: Vec<CustomGates<E>> = vec![];
+    if section_offsets.get(&CUSTOM_GATES_LIST).is_some() {
+        reader.seek(SeekFrom::Start(
+            *section_offsets.get(&CUSTOM_GATES_LIST).unwrap(),
+        ))?;
+        custom_gates = read_custom_gates_list(
+            &mut reader,
+            *section_sizes.get(&CUSTOM_GATES_LIST).unwrap(),
+            &header,
+        )?;
+    }
 
-    reader.seek(SeekFrom::Start(
-        *section_offsets.get(&CUSTOM_GATES_USE).unwrap(),
-    ))?;
-    let custom_gates_uses = read_custom_gates_uses_list(
-        &mut reader,
-        *section_sizes.get(&CUSTOM_GATES_USE).unwrap(),
-        &header,
-    )?;
+    let custom_gates_uses: Vec<CustomGatesUses> = vec![];
+    if section_offsets.get(&CUSTOM_GATES_USE).is_some() {
+        reader.seek(SeekFrom::Start(
+                *section_offsets.get(&CUSTOM_GATES_USE).unwrap(),
+        ))?;
+        let custom_gates_uses = read_custom_gates_uses_list(
+            &mut reader,
+            *section_sizes.get(&CUSTOM_GATES_USE).unwrap(),
+            &header,
+        )?;
+    }
 
     Ok(R1CSFile {
         version,
@@ -356,7 +362,7 @@ mod tests {
         0f000000 00000000
         44010000 00000000
     "
-        );
+    );
 
         let reader = BufReader::new(Cursor::new(&data[..]));
         let file = from_reader::<_, Bn256>(reader).unwrap();

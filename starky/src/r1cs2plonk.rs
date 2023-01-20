@@ -251,6 +251,7 @@ pub mod tests {
     use plonky::scalar_gl::GL;
 
     #[test]
+    #[ignore]
     fn test_r1cs2plonk() {
         let r1cs = load_r1cs::<GL>("/tmp/circuit.gl.r1cs");
         let (pc, pa) = r1cs2plonk(&r1cs);

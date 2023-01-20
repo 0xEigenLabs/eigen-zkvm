@@ -34,9 +34,11 @@ node src/compressor12/main_compressor12_setup.js \
     -c /tmp/c12.const \
     -p /tmp/c12.pil \
     -e /tmp/c12.exec
+
+// FIXME: -i should be `fib.zkin.json`
 node src/compressor12/main_compressor12_exec.js \
     -w /tmp/fib_js/fib.wasm  \
-    -i circuits/fib.zkin.json  \
+    -i circuits/circuit.zkin.json  \
     -p /tmp/c12.pil  \
     -e /tmp/c12.exec \
     -m /tmp/c12.cm
