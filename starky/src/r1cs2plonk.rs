@@ -4,20 +4,20 @@ use plonky::circom_circuit::R1CS;
 use plonky::scalar_gl::{Fr, GL};
 use std::collections::HashMap;
 use std::ops::Neg;
-use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
+use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
 #[derive(Debug)]
 pub struct PlonkGate(
-    usize,
-    usize,
-    usize,
-    BaseElement,
-    BaseElement,
-    BaseElement,
-    BaseElement,
-    BaseElement,
+    pub usize,
+    pub usize,
+    pub usize,
+    pub BaseElement,
+    pub BaseElement,
+    pub BaseElement,
+    pub BaseElement,
+    pub BaseElement,
 );
+
 impl std::fmt::Display for PlonkGate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -28,8 +28,21 @@ impl std::fmt::Display for PlonkGate {
     }
 }
 
+impl PlonkGate {
+    pub fn str_key(&self) -> String {
+        format!(
+            "{:X},{:X},{:X},{:X},{:X}",
+            self.3.as_int(),
+            self.4.as_int(),
+            self.5.as_int(),
+            self.6.as_int(),
+            self.7.as_int()
+        )
+    }
+}
+
 #[derive(Debug)]
-pub struct PlonkAdd(usize, usize, BaseElement, BaseElement);
+pub struct PlonkAdd(pub usize, pub usize, pub BaseElement, pub BaseElement);
 impl std::fmt::Display for PlonkAdd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {}, {}, {})", self.0, self.1, self.2, self.3)
@@ -231,6 +244,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
 
 #[cfg(test)]
 pub mod tests {
+    use crate::compressor12::compressor12_setup::{plonk_setup_render, Options};
     use crate::r1cs2plonk::r1cs2plonk;
     //use plonky::bellman_ce::bn256::Bn256;
     use plonky::reader::load_r1cs;
@@ -242,5 +256,7 @@ pub mod tests {
         let r1cs = load_r1cs::<GL>("/tmp/circuit.gl.r1cs");
         let (pc, pa) = r1cs2plonk(&r1cs);
         println!("pc {}, pa {}", pc.len(), pa.len());
+        let opts = Options { force_bits: 0 };
+        let plonksetupinfo = plonk_setup_render(&r1cs, &opts, "/tmp/c12.pil");
     }
 }

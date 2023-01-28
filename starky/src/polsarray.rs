@@ -6,16 +6,16 @@ use std::fs::File;
 use crate::f3g::F3G;
 
 use std::io::{Read, Write};
-use winter_math::StarkField;
+use winter_math::{FieldElement, StarkField};
 
-use crate::errors::Result;
+use crate::errors::{EigenError, Result};
 use winter_math::fields::f64::BaseElement;
 
 #[derive(Default, Debug)]
 pub struct PolsArray {
     pub nPols: usize,
     // nameSpace, namePol, defArray's index,
-    pub def: HashMap<String, HashMap<String, (bool, Vec<usize>)>>,
+    pub def: HashMap<String, HashMap<String, Vec<usize>>>,
     pub defArray: Vec<Pol>,
     pub array: Vec<Vec<BaseElement>>,
     pub n: usize,
@@ -36,8 +36,6 @@ pub enum PolKind {
     Constant,
 }
 
-pub type ArrayPol = (bool, Vec<usize>);
-
 impl PolsArray {
     pub fn new(pil: &PIL, kind: PolKind) -> Self {
         let nPols = match kind {
@@ -45,7 +43,7 @@ impl PolsArray {
             PolKind::Constant => pil.nConstants,
         };
 
-        let mut def: HashMap<String, HashMap<String, ArrayPol>> = HashMap::new();
+        let mut def: HashMap<String, HashMap<String, Vec<usize>>> = HashMap::new();
         let mut defArray: Vec<Pol> = vec![Pol::default(); nPols];
         let mut array: Vec<Vec<BaseElement>> = vec![Vec::new(); nPols];
         for i in 0..array.len() {
@@ -60,8 +58,8 @@ impl PolsArray {
                 let namePols = name_vec[1].to_string();
 
                 if ref_.isArray {
-                    let mut ns: HashMap<String, ArrayPol> = HashMap::new();
-                    let mut arrayPols: ArrayPol = (true, vec![0usize; ref_.len.unwrap()]);
+                    let mut ns: HashMap<String, Vec<usize>> = HashMap::new();
+                    let mut arrayPols: Vec<usize> = vec![0usize; ref_.len.unwrap()];
                     if def.contains_key(&nameSpace) {
                         ns = def.get(&nameSpace).unwrap().clone();
                         if ns.contains_key(&namePols) {
@@ -80,7 +78,7 @@ impl PolsArray {
                             },
                             polDeg: ref_.polDeg,
                         };
-                        arrayPols.1[i] = ref_.id + i;
+                        arrayPols[i] = ref_.id + i;
                         array[ref_.id + i] = vec![BaseElement::default(); ref_.polDeg];
                     }
                     ns.insert(namePols, arrayPols);
@@ -96,8 +94,8 @@ impl PolsArray {
                         },
                         polDeg: ref_.polDeg,
                     };
-                    let arrayPols: ArrayPol = (false, vec![ref_.id]);
-                    let mut ns: HashMap<String, ArrayPol> = HashMap::new();
+                    let arrayPols: Vec<usize> = vec![ref_.id];
+                    let mut ns: HashMap<String, Vec<usize>> = HashMap::new();
                     ns.insert(namePols, arrayPols);
                     def.insert(nameSpace, ns);
                     array[ref_.id] = vec![BaseElement::default(); ref_.polDeg];
@@ -114,11 +112,32 @@ impl PolsArray {
         PolsArray {
             nPols: defArray.len(),
             n: defArray[0].polDeg,
-            defArray: defArray,
-            array: array,
-            def: def,
+            defArray,
+            array,
+            def,
         }
     }
+
+    pub fn get_mut<'arr>(&mut self, ns: &String, np: &String) -> &mut Vec<BaseElement> {
+        let namespace = self.def.get(ns);
+        if namespace.is_none() {
+            //retrun Err(EigenError::Unknown(format!("Invalid namespace:{}", ns)));
+        }
+        assert_eq!(namespace.is_some(), true);
+        let name_pol_index = namespace.unwrap().get(np);
+        assert_eq!(name_pol_index.is_some(), true);
+        if name_pol_index.is_none() {
+            //retrun Err(EigenError::Unknown(format!("Invalid name pol:{}/{}", ns, np)));
+        }
+        let idx = name_pol_index.unwrap()[0];
+        &mut self.array[idx]
+    }
+
+    /*
+    pub fn set(&mut self, ns: &String, np: &String, val: &Vec<Vec<BaseElement>>) {
+        let idx = self.def
+    }
+    */
 
     pub fn load(&mut self, fileName: &str) -> Result<()> {
         let mut f = File::open(fileName)?;
