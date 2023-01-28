@@ -143,6 +143,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         let mut s0_siblingsC: Vec<Vec<Vec<Input>>> = vec![];
 
         for i in 0..self.fri_proof.queries[0].pol_queries.len() {
+            //(leaf, path) represents each query
             let qe = &self.fri_proof.queries[0].pol_queries[i];
             s0_vals1.push(qe[0].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
             s0_siblings1.push(
