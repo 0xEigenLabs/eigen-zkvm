@@ -247,7 +247,6 @@ impl MerkleTree for MerkleTreeBN128 {
             v[i] = self.get_element(idx, i);
         }
         let mp = self.merkle_gen_merkle_proof(idx, 0, self.height);
-
         Ok((v, mp))
     }
 
