@@ -1,6 +1,6 @@
 // some codes borrowed from https://github.com/poma/zkutil/blob/master/src/r1cs_reader.rs
 // Implement of https://github.com/iden3/r1csfile/blob/master/doc/r1cs_bin_format.md
-#![allow(unused_variables, dead_code)]
+#![allow(unused_variables, dead_code, non_snake_case)]
 use crate::bellman_ce::{Field, PrimeField, PrimeFieldRepr, ScalarEngine};
 use crate::circom_circuit::{Constraint, CustomGates, CustomGatesUses};
 use byteorder::{LittleEndian, ReadBytesExt};
@@ -127,7 +127,7 @@ fn read_map<R: Read>(mut reader: R, size: u64, header: &Header) -> Result<Vec<u6
 fn read_to_string<R: Read>(mut reader: R) -> String {
     let mut name_buf = vec![1u8; 1];
     let mut buf = vec![];
-    while true {
+    loop {
         let name_size_res = reader.read_exact(&mut name_buf);
         if name_buf[0] != 0 {
             buf.push(name_buf[0]);

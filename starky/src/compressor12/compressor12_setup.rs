@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use crate::compressor12::compressor12_pil;
 use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
