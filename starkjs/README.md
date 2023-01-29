@@ -49,8 +49,7 @@ node src/compressor12/main_compressor12_exec.js \
 
 ### Top Layer: Snark proof
 ```
-cd ../test
-bash -x test_fibonacci_verifier.sh
+bash -x ../test/test_fibonacci_verifier.sh
 ```
 
 ## Perf test for Fibonacci
