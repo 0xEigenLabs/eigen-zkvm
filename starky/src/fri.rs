@@ -12,6 +12,7 @@ use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
 use winter_math::StarkField;
 
+#[derive(Debug)]
 pub struct FRI {
     pub in_nbits: usize,
     pub max_deg_nbits: usize,
@@ -19,13 +20,13 @@ pub struct FRI {
     pub steps: Vec<Step>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Query<MB: Clone + std::default::Default> {
     pub pol_queries: Vec<Vec<(Vec<BaseElement>, Vec<Vec<MB>>)>>,
     pub root: ElementDigest,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct FRIProof<M: MerkleTree> {
     pub queries: Vec<Query<M::BaseField>>,
     pub last: Vec<F3G>,
@@ -140,9 +141,7 @@ impl FRI {
         }
 
         proof.last = last_pol;
-
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
-
         let query_pol_fn =
             |si: usize, idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)> {
                 log::debug!("query_pol_fn: si:{}, idx:{}", si, idx);
@@ -159,8 +158,6 @@ impl FRI {
                         .push(query_pol_fn(si - 1, *ys_));
                 }
             }
-            //log::debug!("prove_query_pol: {} {}", si, proof.queries[si]);
-
             if si < self.steps.len() - 1 {
                 for i in 0..ys.len() {
                     ys[i] = ys[i] % (1 << self.steps[si + 1].nBits);
@@ -227,9 +224,7 @@ impl FRI {
 
         for si in 0..self.steps.len() {
             let proof_item = &proof.queries[si];
-            //log::debug!("si: {}, queries: {}", si, proof_item);
             let reduction_bits = pol_bits - self.steps[si].nBits;
-            log::debug!("si {} reduction_bits {}", si, reduction_bits);
             for i in 0..n_queries {
                 let pgroup_e: Vec<F3G> = match si {
                     0 => {
@@ -244,11 +239,7 @@ impl FRI {
 
                 let pgroup_c = standard_fft.ifft(&pgroup_e);
                 let sinv = F3G::inv(shift * (MG.0[pol_bits].exp(ys[i])));
-
-                log::debug!("sinv {}, special_x[{}]={}", sinv, si, special_x[si]);
-
                 let ev = eval_pol(&pgroup_c, &(special_x[si] * sinv));
-                log::debug!("ev {}", ev);
 
                 if si < self.steps.len() - 1 {
                     let next_n_groups = 1 << self.steps[si + 1].nBits;
