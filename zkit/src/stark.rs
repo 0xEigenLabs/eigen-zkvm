@@ -42,7 +42,7 @@ pub fn prove(
                 &pil,
                 &stark_struct,
             )
-                .unwrap();
+            .unwrap();
             println!("verify the proof...");
             let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
                 &starkproof,
@@ -51,7 +51,7 @@ pub fn prove(
                 &stark_struct,
                 &mut setup.program,
             )
-                .unwrap();
+            .unwrap();
 
             assert_eq!(result, true);
             println!("verify the proof done");
@@ -81,7 +81,8 @@ pub fn prove(
             println!("generate zkin done");
         }
         "GL" => {
-            let mut setup = StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+            let mut setup =
+                StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct).unwrap();
             let starkproof = StarkProof::<MerkleTreeGL>::stark_gen::<TranscriptGL>(
                 &cm_pol,
                 &const_pol,
@@ -91,7 +92,7 @@ pub fn prove(
                 &pil,
                 &stark_struct,
             )
-                .unwrap();
+            .unwrap();
             println!("verify the proof...");
             let result = stark_verify::<MerkleTreeGL, TranscriptGL>(
                 &starkproof,
@@ -100,7 +101,7 @@ pub fn prove(
                 &stark_struct,
                 &mut setup.program,
             )
-                .unwrap();
+            .unwrap();
 
             assert_eq!(result, true);
             println!("verify the proof done");
