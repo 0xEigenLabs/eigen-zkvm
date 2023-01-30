@@ -89,12 +89,12 @@ Because the nExtBits reaches up to 24 so this step would be very slow, especiall
 - [x] Fully PIL syntax support
 - [x] Parallel Merklehash and Cooley–Tukey FFT by Rayon
 - [x] Codegen (arithmetization)
-- [] Verification hash type
+- [x] Verification hash type
 > - [x] BN128
-> - [] GL(F64)
-- [] Parallel reduce for polynomial evaluation
+> - [x] GL(F64)
+- [x] Parallel reduce for polynomial evaluation
 - [] Recursive FRI
-- [] Poseidon Hash on GPU/Multicore for BN128
+- [x] Poseidon Hash on GPU/Multicore for BN128
 
 ## Profiling
 

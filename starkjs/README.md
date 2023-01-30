@@ -22,12 +22,12 @@ will generate the PIL json, Commitment Polynomial file and Constant Polynomial f
 ### Recursive Layer: FRI Proof
 
 ```
-# TODO: replace the tool `circom` by `zkit compile`.
-# ../target/debug/zkit compile -p goldilocks -i circuits/circuit.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
-circom --r1cs --wasm -p goldilocks circuits/fib.circom \
-    -l node_modules/pil-stark/circuits.gl \
-    --O2=full \
-    -o /tmp/
+../target/release/zkit compile -p goldilocks -i circuits/fib.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
+## the above commands is equivalent to
+# circom --r1cs --wasm -p goldilocks circuits/fib.circom \
+#    -l node_modules/pil-stark/circuits.gl \
+#    --O2=full \
+#    -o /tmp/
 
 node src/compressor12/main_compressor12_setup.js \
     -r /tmp/fib.r1cs \
@@ -35,10 +35,9 @@ node src/compressor12/main_compressor12_setup.js \
     -p /tmp/c12.pil \
     -e /tmp/c12.exec
 
-// FIXME: -i should be `fib.zkin.json`
 node src/compressor12/main_compressor12_exec.js \
     -w /tmp/fib_js/fib.wasm  \
-    -i circuits/circuit.zkin.json  \
+    -i circuits/fib.zkin.json  \
     -p /tmp/c12.pil  \
     -e /tmp/c12.exec \
     -m /tmp/c12.cm
@@ -50,8 +49,7 @@ node src/compressor12/main_compressor12_exec.js \
 
 ### Top Layer: Snark proof
 ```
-cd ../test
-bash -x test_fibonacci_verifier.sh
+bash -x ../test/test_fibonacci_verifier.sh
 ```
 
 ## Perf test for Fibonacci
@@ -69,7 +67,7 @@ GPU: NVIDIA TESLA T4 X 4
 starkStruct.nBits: 4
 starkStruct.nBitsExt: 13 // extend 9
 starkStruct.nQueries: 7
-starkStruct.verificationHashType: BN128 //AKA. BN256
+starkStruct.verificationHashType: BN128
 
 Security bits: 63
 Generate stark proof and proof verifier: ~8s

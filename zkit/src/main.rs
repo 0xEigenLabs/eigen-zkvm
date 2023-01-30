@@ -275,7 +275,7 @@ pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
 fn main() {
     let args = Cli::parse();
     let start = Instant::now();
-    let _ = match args.command {
+    let exec_result = match args.command {
         Command::Setup(args) => setup(args.power, &args.srs_monomial_form),
         Command::Compile(args) => compile(args).map_err(|_| anyhow::anyhow!("compile error")),
         Command::Prove(args) => prove(
@@ -321,5 +321,8 @@ fn main() {
             &args.zkin,
         ),
     };
-    println!("time cost: {}", start.elapsed().as_secs_f64());
+    match exec_result {
+        Err(x) => println!("execute error: {}", x),
+        _ => println!("time cost: {}", start.elapsed().as_secs_f64()),
+    };
 }
