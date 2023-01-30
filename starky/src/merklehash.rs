@@ -248,6 +248,7 @@ impl MerkleTree for MerkleTreeGL {
         self.elements[self.width * idx + sub_idx]
     }
 
+    // the path always returns 2-dim array likes [[x,x,x,x], ...]
     fn get_group_proof(&self, idx: usize) -> Result<(Vec<BaseElement>, Vec<Vec<BaseElement>>)> {
         if idx >= self.height {
             return Err(EigenError::MerkleTreeError(
