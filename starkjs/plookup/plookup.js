@@ -83,6 +83,7 @@ const starkStruct = {
   verificationHashType: "GL", //FIXME BN128 not work
   steps: [
     {nBits: 11},
+    {nBits: 7},
     {nBits: 3}
   ]
 }
