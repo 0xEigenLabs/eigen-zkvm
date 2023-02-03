@@ -194,12 +194,12 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             xx = xx * MG.0[ctx.nbits_ext];
         }
         ctx.Zi = Self::build_Zh_Inv(ctx.nbits, extendBits);
-        log::debug!("Zi(1) {}", (ctx.Zi)(1));
+        //log::debug!("Zi(1) {}", (ctx.Zi)(1));
 
         ctx.const_n = const_pols.write_buff();
         const_tree.to_f3g(&mut ctx.const_2ns);
-        log::info!("const_2ns");
-        crate::helper::pretty_print_array(&ctx.const_2ns);
+        //log::info!("const_2ns");
+        //crate::helper::pretty_print_array(&ctx.const_2ns);
 
         ctx.publics = vec![F3G::ZERO; starkinfo.publics.len()];
         for (i, pe) in starkinfo.publics.iter().enumerate() {
@@ -226,19 +226,17 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                 .collect::<Vec<Vec<BaseElement>>>();
             transcript.put(&b[..])?;
         }
-        log::info!("publics");
-        crate::helper::pretty_print_array(&ctx.publics);
 
         log::info!("Merkeling 1....");
         let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n").unwrap();
         tree1.to_f3g(&mut ctx.cm1_2ns);
 
-        log::info!(
-            "tree1 root: {}",
-            crate::helper::fr_to_biguint(&tree1.root().into())
-        );
-        log::info!("cm1_2ns");
-        crate::helper::pretty_print_array(&ctx.cm1_2ns);
+        //log::info!(
+        //    "tree1 root: {}",
+        //    crate::helper::fr_to_biguint(&tree1.root().into())
+        //);
+        //log::info!("cm1_2ns");
+        //crate::helper::pretty_print_array(&ctx.cm1_2ns);
         transcript.put(&[tree1.root().as_elements().to_vec()])?;
         // 2.- Caluculate plookups h1 and h2
         ctx.challenges[0] = transcript.get_field(); //u
@@ -264,12 +262,12 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n").unwrap();
         tree2.to_f3g(&mut ctx.cm2_2ns);
         transcript.put(&[tree2.root().as_elements().to_vec()])?;
-        log::info!(
-            "tree2 root: {}",
-            crate::helper::fr_to_biguint(&tree2.root().into())
-        );
-        log::info!("cm2_2ns");
-        crate::helper::pretty_print_array(&ctx.cm2_2ns);
+        //log::info!(
+        //    "tree2 root: {}",
+        //    crate::helper::fr_to_biguint(&tree2.root().into())
+        //);
+        //log::info!("cm2_2ns");
+        //crate::helper::pretty_print_array(&ctx.cm2_2ns);
 
         // 3.- Compute Z polynomials
         ctx.challenges[2] = transcript.get_field(); // gamma
@@ -318,23 +316,21 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             "tree3 root: {}",
             crate::helper::fr_to_biguint(&tree3.root().into())
         );
-        //if ctx.cm3_2ns.len() > 0 {
-        //    log::info!("tree3[0] {}", ctx.cm3_2ns[0]);
-        //}
+
         // 4. Compute C Polynomial
         ctx.challenges[4] = transcript.get_field(); // vc
-        log::debug!("challenges[4] {}", ctx.challenges[4]);
+                                                    //log::debug!("challenges[4] {}", ctx.challenges[4]);
 
-        log::debug!("step42ns {}", &program.step42ns);
+        //log::debug!("step42ns {}", &program.step42ns);
         calculate_exps(&mut ctx, starkinfo, &program.step42ns, "2ns");
-        log::debug!("q_2ns");
-        crate::helper::pretty_print_array(&ctx.q_2ns);
+        //log::debug!("q_2ns");
+        //crate::helper::pretty_print_array(&ctx.q_2ns);
 
         let mut qq1 = vec![F3G::ZERO; ctx.q_2ns.len()];
         let mut qq2 = vec![F3G::ZERO; starkinfo.q_dim * ctx.Next * starkinfo.q_deg];
         ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
-        log::debug!("qq1");
-        crate::helper::pretty_print_array(&qq1);
+        //log::debug!("qq1");
+        //crate::helper::pretty_print_array(&qq1);
 
         let mut cur_s = F3G::ONE;
         let shift_in = (F3G::inv(SHIFT.clone())).exp(ctx.N);
@@ -347,8 +343,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             }
             cur_s = cur_s * shift_in;
         }
-        log::debug!("qq2");
-        crate::helper::pretty_print_array(&qq2);
+        //log::debug!("qq2");
+        //crate::helper::pretty_print_array(&qq2);
 
         fft(
             &qq2,
@@ -651,13 +647,6 @@ pub fn extend_and_merkelize<M: MerkleTree>(
     let n_pols = starkinfo.map_sectionsN.get(section_name);
     let mut result = vec![F3G::ZERO; (1 << nBitsExt) * n_pols];
     let p = ctx.get_mut(section_name);
-    //log::debug!(
-    //    "extend_and_merkelize: p.len {} nBits {} nBitsExt {} n_pols {}",
-    //    p.len(),
-    //    nBits,
-    //    nBitsExt,
-    //    n_pols
-    //);
     //crate::helper::pretty_print_array(&p);
     interpolate(p, n_pols, nBits, &mut result, nBitsExt);
     let mut p_be = vec![BaseElement::ZERO; result.len()];
@@ -685,8 +674,8 @@ pub fn merkelize<M: MerkleTree>(
         *be_out = f3g_in.to_be();
     });
     let mut tree = M::new();
-    log::debug!("merkelize: {} {}", section_name, nBitsExt);
-    crate::helper::pretty_print_array(&p_be);
+    //log::debug!("merkelize: {} {}", section_name, nBitsExt);
+    //crate::helper::pretty_print_array(&p_be);
     tree.merkelize(p_be, n_pols, 1 << nBitsExt)?;
     Ok(tree)
 }

@@ -177,10 +177,8 @@ impl Block {
 impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ns: {}\n", self.namespace)?;
-        //log::debug!("111");
         let idx = std::cmp::min(10000, self.exprs.len());
         for i in 0..idx {
-            //log::debug!("{}", self.exprs[i]);
             write!(f, "\t {}\n", self.exprs[i])?;
         }
         write!(f, "\n")
