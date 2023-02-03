@@ -232,7 +232,11 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         log::info!("Merkeling 1....");
         let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n").unwrap();
         tree1.to_f3g(&mut ctx.cm1_2ns);
-        log::info!("tree1 root: {}", tree1.root());
+
+        log::info!(
+            "tree1 root: {}",
+            crate::helper::fr_to_biguint(&tree1.root().into())
+        );
         log::info!("cm1_2ns");
         crate::helper::pretty_print_array(&ctx.cm1_2ns);
         transcript.put(&[tree1.root().as_elements().to_vec()])?;
@@ -260,7 +264,10 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n").unwrap();
         tree2.to_f3g(&mut ctx.cm2_2ns);
         transcript.put(&[tree2.root().as_elements().to_vec()])?;
-        log::info!("tree2 root: {}", tree2.root());
+        log::info!(
+            "tree2 root: {}",
+            crate::helper::fr_to_biguint(&tree2.root().into())
+        );
         log::info!("cm2_2ns");
         crate::helper::pretty_print_array(&ctx.cm2_2ns);
 
@@ -307,7 +314,10 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         tree3.to_f3g(&mut ctx.cm3_2ns);
         transcript.put(&[tree3.root().as_elements().to_vec()])?;
 
-        log::info!("tree3 root: {}", tree3.root());
+        log::info!(
+            "tree3 root: {}",
+            crate::helper::fr_to_biguint(&tree3.root().into())
+        );
         //if ctx.cm3_2ns.len() > 0 {
         //    log::info!("tree3[0] {}", ctx.cm3_2ns[0]);
         //}
@@ -349,7 +359,10 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         log::info!("Merkelizing 4....");
         let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
-        log::info!("tree4 root: {}", tree4.root());
+        log::info!(
+            "tree4 root: {}",
+            crate::helper::fr_to_biguint(&tree4.root().into())
+        );
         transcript.put(&[tree4.root().as_elements().to_vec()])?;
 
         //if ctx.cm4_2ns.len() > 0 {
@@ -412,21 +425,12 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         }
 
         for i in 0..ctx.evals.len() {
-            if stark_struct.verificationHashType.as_str() == "BN128" {
-                let b = ctx.evals[i]
-                    .as_elements()
-                    .iter()
-                    .map(|e| vec![e.clone()])
-                    .collect::<Vec<Vec<BaseElement>>>();
-                transcript.put(&b)?;
-            } else {
-                let b = ctx.evals[i]
-                    .as_elements()
-                    .iter()
-                    .map(|e| vec![e.clone()])
-                    .collect::<Vec<Vec<BaseElement>>>();
-                transcript.put(&b)?;
-            }
+            let b = ctx.evals[i]
+                .as_elements()
+                .iter()
+                .map(|e| vec![e.clone()])
+                .collect::<Vec<Vec<BaseElement>>>();
+            transcript.put(&b)?;
         }
 
         ctx.challenges[5] = transcript.get_field(); // v1
@@ -696,7 +700,7 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     let _c_last = compile_code(ctx, starkinfo, &seg.first, dom, false);
 
     let next = match dom {
-        "n"  => 1,
+        "n" => 1,
         _ => 1 << (ctx.nbits_ext - ctx.nbits),
     };
     let N = if dom == "n" { ctx.N } else { ctx.Next };

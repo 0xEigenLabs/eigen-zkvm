@@ -59,8 +59,7 @@ impl fmt::Display for Expr {
             }
             Ops::Write => {
                 write!(f, "write ({})", self.defs[0])
-            },
-            _ => panic!("Invalid expr op: {:?}", self.op),
+            }
         }
     }
 }

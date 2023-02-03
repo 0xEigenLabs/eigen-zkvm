@@ -1526,7 +1526,7 @@ template StarkVerifier() {{
         "#,
                 1 << (stark_struct.steps[s].nBits - stark_struct.steps[s + 1].nBits),
                 s,
-                s+1,
+                s + 1,
                 stark_struct.steps[s].nBits - stark_struct.steps[s + 1].nBits,
                 s,
                 stark_struct.steps[s + 1].nBits

@@ -3,7 +3,6 @@ use crate::digest::ElementDigest;
 use crate::errors::Result;
 use crate::f3g::F3G;
 use crate::field_bn128::{Fr, FrRepr};
-use winter_math::StarkField;
 use crate::helper::{biguint_to_be, fr_to_biguint};
 use crate::poseidon_bn128_opt::Poseidon;
 use crate::traits::Transcript;
@@ -11,6 +10,7 @@ use ff::*;
 use num_bigint::BigUint;
 use std::collections::VecDeque;
 use winter_math::fields::f64::BaseElement;
+use winter_math::StarkField;
 
 pub struct TranscriptBN128 {
     state: Fr,
@@ -33,7 +33,7 @@ impl TranscriptBN128 {
     }
     fn add_1(&mut self, e: &Fr) -> Result<()> {
         self.out = VecDeque::new();
-        log::debug!("add_1 to pending: {:?}", fr_to_biguint(e));
+        log::debug!("add_1: {:?}", fr_to_biguint(e));
         self.pending.push(e.clone());
         if self.pending.len() == 16 {
             self.update_state()?;
@@ -96,7 +96,7 @@ impl Transcript for TranscriptBN128 {
                 4 => {
                     let ie = ElementDigest::new([e[0], e[1], e[2], e[3]]);
                     ie.into()
-                },
+                }
                 _ => panic!("Invalid elements as inputs to transcript"),
             };
             self.add_1(&e)?;

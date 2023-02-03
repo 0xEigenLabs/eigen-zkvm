@@ -107,11 +107,7 @@ impl FRI {
             } else {
                 for e in pol2_e.iter() {
                     let elems = e.as_elements();
-                    let v = [
-                        vec![elems[0]],
-                        vec![elems[1]],
-                        vec![elems[2]],
-                    ];
+                    let v = [vec![elems[0]], vec![elems[1]], vec![elems[2]]];
                     transcript.put(&v)?;
                 }
             }
