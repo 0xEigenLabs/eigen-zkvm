@@ -3,14 +3,11 @@ use crate::digest::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::f3g::F3G;
 use crate::fft::FFT;
-use crate::field_bn128::{Fr, FrRepr};
 use crate::helper::log2_any;
 use crate::traits::{MerkleTree, Transcript};
 use crate::types::{StarkStruct, Step};
-use ff::*;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
-use winter_math::StarkField;
 
 #[derive(Debug)]
 pub struct FRI {
@@ -106,20 +103,14 @@ impl FRI {
                 tmptree.merkelize(pol2_etb, 3 * group_size, n_groups)?;
                 tree.push(tmptree);
                 proof.queries[si + 1].root = tree[si].root();
-                transcript.put(&[tree[si].root()])?;
+                transcript.put(&[tree[si].root().as_elements().to_vec()])?;
             } else {
                 for e in pol2_e.iter() {
                     let elems = e.as_elements();
                     let v = [
-                        ElementDigest::from(
-                            &Fr::from_raw_repr(FrRepr::from(elems[0].as_int())).unwrap(),
-                        ),
-                        ElementDigest::from(
-                            &Fr::from_raw_repr(FrRepr::from(elems[1].as_int())).unwrap(),
-                        ),
-                        ElementDigest::from(
-                            &Fr::from_raw_repr(FrRepr::from(elems[2].as_int())).unwrap(),
-                        ),
+                        vec![elems[0]],
+                        vec![elems[1]],
+                        vec![elems[2]],
                     ];
                     transcript.put(&v)?;
                 }
@@ -185,20 +176,14 @@ impl FRI {
             if si < self.steps.len() - 1 {
                 //let n_groups = 1 << self.steps[si + 1].nBits;
                 //let group_size = (1 << self.steps[si].nBits) / n_groups;
-                transcript.put(&[proof.queries[si + 1].root])?;
+                transcript.put(&[proof.queries[si + 1].root.as_elements().to_vec()])?;
             } else {
-                let mut pp: Vec<ElementDigest> = vec![];
+                let mut pp: Vec<Vec<BaseElement>> = vec![];
                 for e in proof.last.iter() {
                     let elems = e.as_elements();
-                    pp.push(ElementDigest::from(
-                        &Fr::from_raw_repr(FrRepr::from(elems[0].as_int())).unwrap(),
-                    ));
-                    pp.push(ElementDigest::from(
-                        &Fr::from_raw_repr(FrRepr::from(elems[1].as_int())).unwrap(),
-                    ));
-                    pp.push(ElementDigest::from(
-                        &Fr::from_raw_repr(FrRepr::from(elems[2].as_int())).unwrap(),
-                    ));
+                    pp.push(vec![elems[0]]);
+                    pp.push(vec![elems[1]]);
+                    pp.push(vec![elems[2]]);
                 }
                 transcript.put(&pp[..])?;
             }

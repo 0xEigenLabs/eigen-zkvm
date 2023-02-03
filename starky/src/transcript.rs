@@ -1,4 +1,3 @@
-use crate::digest::ElementDigest;
 use crate::errors::Result;
 use crate::f3g::F3G;
 use crate::poseidon_opt::Poseidon;
@@ -64,12 +63,10 @@ impl Transcript for TranscriptGL {
         self.get_fields1()
     }
 
-    fn put(&mut self, es: &[ElementDigest]) -> Result<()> {
+    fn put(&mut self, es: &[Vec<BaseElement>]) -> Result<()> {
         for e in es.iter() {
-            for t in e.as_elements() {
-                if !t.eq(&BaseElement::ZERO) {
-                    self.add_1(t)?;
-                }
+            for t in e {
+                self.add_1(t)?;
             }
         }
         Ok(())

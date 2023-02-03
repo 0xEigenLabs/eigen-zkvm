@@ -6,9 +6,9 @@ use std::fs::File;
 use crate::f3g::F3G;
 
 use std::io::{Read, Write};
-use winter_math::{FieldElement, StarkField};
+use winter_math::StarkField;
 
-use crate::errors::{EigenError, Result};
+use crate::errors::Result;
 use winter_math::fields::f64::BaseElement;
 
 #[derive(Default, Debug)]

@@ -39,7 +39,7 @@ const starkStruct = {
   nBits: 10,
   nBitsExt: 11,
   nQueries: 8,
-  verificationHashType: "GL",
+  verificationHashType: "BN128",
   steps: [
     {nBits: 11},
     {nBits: 7},
