@@ -26,6 +26,6 @@ pub trait Transcript {
     fn new() -> Self;
     fn get_field(&mut self) -> F3G;
     fn get_fields1(&mut self) -> Result<BaseElement>;
-    fn put(&mut self, es: &[BaseElement]) -> Result<()>;
+    fn put(&mut self, es: &[ElementDigest]) -> Result<()>;
     fn get_permutations(&mut self, n: usize, nbits: usize) -> Result<Vec<usize>>;
 }

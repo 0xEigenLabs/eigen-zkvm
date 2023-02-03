@@ -106,11 +106,10 @@ impl FRI {
                 tmptree.merkelize(pol2_etb, 3 * group_size, n_groups)?;
                 tree.push(tmptree);
                 proof.queries[si + 1].root = tree[si].root();
-                transcript.put(&tree[si].root().as_elements())?;
+                transcript.put(&[tree[si].root()])?;
             } else {
                 for e in pol2_e.iter() {
                     let elems = e.as_elements();
-                    /*
                     let v = [
                         ElementDigest::from(
                             &Fr::from_raw_repr(FrRepr::from(elems[0].as_int())).unwrap(),
@@ -122,7 +121,6 @@ impl FRI {
                             &Fr::from_raw_repr(FrRepr::from(elems[2].as_int())).unwrap(),
                         ),
                     ];
-                    */
                     transcript.put(&v)?;
                 }
             }
@@ -187,7 +185,7 @@ impl FRI {
             if si < self.steps.len() - 1 {
                 //let n_groups = 1 << self.steps[si + 1].nBits;
                 //let group_size = (1 << self.steps[si].nBits) / n_groups;
-                transcript.put(&proof.queries[si + 1].root.as_elements())?;
+                transcript.put(&[proof.queries[si + 1].root])?;
             } else {
                 let mut pp: Vec<ElementDigest> = vec![];
                 for e in proof.last.iter() {

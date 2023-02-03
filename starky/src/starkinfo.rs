@@ -85,7 +85,7 @@ pub struct StarkInfo {
 
 impl fmt::Display for StarkInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let obj = json!(self);
+        let obj = json!(self.ev_map);
         write!(f, "{}", serde_json::to_string_pretty(&obj).unwrap())
     }
 }

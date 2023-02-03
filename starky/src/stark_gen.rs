@@ -223,7 +223,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             let b = ctx.publics[i]
                 .as_elements()
                 .iter()
-                .map(|e| ElementDigest::from(&Fr::from_repr(FrRepr::from(e.as_int())).unwrap()))
+                .map(|e| ElementDigest::from(&Fr::from_raw_repr(FrRepr::from(e.as_int())).unwrap()))
                 .collect::<Vec<ElementDigest>>();
             transcript.put(&b[..])?;
         }
@@ -350,8 +350,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         log::info!("Merkelizing 4....");
         let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
-        transcript.put(&[tree4.root()])?;
         log::info!("tree4 root: {}", tree4.root());
+        transcript.put(&[tree4.root()])?;
 
         //if ctx.cm4_2ns.len() > 0 {
         //    log::info!("tree4[0] {}", ctx.cm4_2ns[0]);
@@ -406,7 +406,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                         p.buffer[(p.offset + (k << extendBits) * (p.size)) + 2].to_be(),
                     ),
                 };
-
+                log::debug!("acc: {}, v: {}, l[{}]: {}]", acc, v, k, l[k]);
                 acc = acc + (v * l[k])
             }
             ctx.evals[i] = acc;
@@ -432,6 +432,9 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         ctx.challenges[5] = transcript.get_field(); // v1
         ctx.challenges[6] = transcript.get_field(); // v2
+        log::debug!("ctx.challenges[5] {}", ctx.challenges[5]);
+        log::debug!("ctx.challenges[6] {}", ctx.challenges[6]);
+        log::debug!("ctx.challenges[7] {}", ctx.challenges[7]);
 
         // Calculate xDivXSubXi, xDivXSubWXi
         let xi = ctx.challenges[7];
@@ -687,6 +690,7 @@ pub fn merkelize<M: MerkleTree>(
 
 pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
+    println!("starkinfo {}", starkinfo);
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
     log::debug!("compile_code ctx.first:\n{}", c_first);
     let _c_i = compile_code(ctx, starkinfo, &seg.first, dom, false);

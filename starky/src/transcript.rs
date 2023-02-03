@@ -27,6 +27,7 @@ impl TranscriptGL {
         Ok(())
     }
     fn add_1(&mut self, e: &BaseElement) -> Result<()> {
+        log::debug!("add_1: {}", e);
         self.out = Vec::new();
         self.pending.push(e.clone());
         if self.pending.len() == 8 {
@@ -63,9 +64,13 @@ impl Transcript for TranscriptGL {
         self.get_fields1()
     }
 
-    fn put(&mut self, es: &[BaseElement]) -> Result<()> {
+    fn put(&mut self, es: &[ElementDigest]) -> Result<()> {
         for e in es.iter() {
-            self.add_1(e)?;
+            for t in e.as_elements() {
+                if !t.eq(&BaseElement::ZERO) {
+                    self.add_1(t)?;
+                }
+            }
         }
         Ok(())
     }
