@@ -1475,7 +1475,7 @@ template StarkVerifier() {{
             }}
             s{}_merkle[q].key[i] <== ys[q][i];
         }}
-        s{}_sx[q][0] <==  {} *  ( ys[q][0] * {}+1);
+        s{}_sx[q][0] <==  {} *  ( ys[q][0] * {} +1);
         for (var i=1; i<{}; i++) {{
             s{}_sx[q][i] <== s{}_sx[q][i-1] *  ( ys[q][i] * ((1/roots({} -i)) -1) +1);
         }}
@@ -1495,7 +1495,7 @@ template StarkVerifier() {{
             s,
             SHIFT
                 .clone()
-                .exp(1 << (stark_struct.steps[s - 1].nBits - stark_struct.steps[s].nBits))
+                .exp(1 << (stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits))
                 .inv()
                 .as_int(),
             (MG.0[stark_struct.steps[s - 1].nBits].inv() - F3G::ONE).as_int(),
@@ -1526,8 +1526,8 @@ template StarkVerifier() {{
         "#,
                 1 << (stark_struct.steps[s].nBits - stark_struct.steps[s + 1].nBits),
                 s,
-                s,
-                1 << (stark_struct.steps[s].nBits - stark_struct.steps[s + 1].nBits),
+                s+1,
+                stark_struct.steps[s].nBits - stark_struct.steps[s + 1].nBits,
                 s,
                 stark_struct.steps[s + 1].nBits
             ));

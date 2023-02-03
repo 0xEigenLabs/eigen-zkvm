@@ -59,7 +59,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
         let b = ctx.evals[i]
             .as_elements()
             .iter()
-            .map(|e| ElementDigest::from(&Fr::from_repr(FrRepr::from(e.as_int())).unwrap()))
+            .map(|e| ElementDigest::from(&Fr::from_raw_repr(FrRepr::from(e.as_int())).unwrap()))
             .collect::<Vec<ElementDigest>>();
         transcript.put(&b[..])?;
     }

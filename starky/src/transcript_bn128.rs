@@ -88,9 +88,11 @@ impl Transcript for TranscriptBN128 {
         self.get_fields1()
     }
 
-    fn put(&mut self, es: &[ElementDigest]) -> Result<()> {
-        for e in es.iter() {
-            let e: Fr = (*e).into();
+    fn put(&mut self, es: &[BaseElement]) -> Result<()> {
+        for i in (0..es.len()).step_by(4) {
+            let p = i * 4;
+            let e = ElementDigest::new(es[p..(p+4)].try_into().unwrap());
+            let e: Fr = e.into();
             self.add_1(&e)?;
         }
         Ok(())

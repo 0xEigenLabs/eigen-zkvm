@@ -130,7 +130,10 @@ impl F3G {
     }
 
     pub fn is_zero(self) -> bool {
-        self.eq(&Self::ZERO)
+        match self.dim {
+            1 => self.eq(&Self::ZERO),
+            _ => self.eq(&Self::ZERO3),
+        }
     }
 
     pub fn random() -> Self {

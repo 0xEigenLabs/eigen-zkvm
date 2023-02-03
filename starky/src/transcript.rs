@@ -63,11 +63,9 @@ impl Transcript for TranscriptGL {
         self.get_fields1()
     }
 
-    fn put(&mut self, es: &[ElementDigest]) -> Result<()> {
+    fn put(&mut self, es: &[BaseElement]) -> Result<()> {
         for e in es.iter() {
-            for t in e.as_elements() {
-                self.add_1(t)?;
-            }
+            self.add_1(e)?;
         }
         Ok(())
     }
