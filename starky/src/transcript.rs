@@ -1,4 +1,3 @@
-use crate::digest::ElementDigest;
 use crate::errors::Result;
 use crate::f3g::F3G;
 use crate::poseidon_opt::Poseidon;
@@ -27,6 +26,7 @@ impl TranscriptGL {
         Ok(())
     }
     fn add_1(&mut self, e: &BaseElement) -> Result<()> {
+        log::debug!("add_1: {}", e);
         self.out = Vec::new();
         self.pending.push(e.clone());
         if self.pending.len() == 8 {
@@ -63,9 +63,9 @@ impl Transcript for TranscriptGL {
         self.get_fields1()
     }
 
-    fn put(&mut self, es: &[ElementDigest]) -> Result<()> {
+    fn put(&mut self, es: &[Vec<BaseElement>]) -> Result<()> {
         for e in es.iter() {
-            for t in e.as_elements() {
+            for t in e {
                 self.add_1(t)?;
             }
         }

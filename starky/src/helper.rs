@@ -70,24 +70,19 @@ pub fn biguint_to_fr(f: &BigUint) -> Fr {
 }
 
 pub fn pretty_print_array<T: FieldElement + StarkField>(cols: &Vec<T>) {
-    println!("array size: {}", cols.len());
+    let mut msg = format!("array size: {}\n[\n", cols.len());
     let mut iglines = 2;
-    if cols.len() > 0 {
-        print!("\t [ {}, ", cols[0]);
-    }
-    if cols.len() > 1 {
-        print!("{}, ", cols[1]);
-        iglines += 2;
+    for i in 0..10 {
+        if cols.len() > i {
+            msg.push_str(&format!("\t{}\n", cols[i]));
+            iglines += 1;
+        }
     }
     if iglines < cols.len() {
-        print!(" ...{}s... ", cols.len() - iglines);
+        msg.push_str(&format!("\t...{}s...\n", cols.len() - iglines));
+        msg.push_str(&format!("\t{}", cols[cols.len() - 1]));
     }
-    if cols.len() > 3 {
-        print!("{}, ", cols[cols.len() - 2]);
-    }
-    if cols.len() > 2 {
-        println!("{}].", cols[cols.len() - 1]);
-    }
+    log::debug!("\t{}\n]", msg);
 }
 
 #[cfg(test)]
