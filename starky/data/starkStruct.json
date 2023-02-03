@@ -5,6 +5,7 @@
   "verificationHashType": "BN128",
   "steps": [
     {"nBits": 11},
+    {"nBits": 7},
     {"nBits": 3}
   ]
 }

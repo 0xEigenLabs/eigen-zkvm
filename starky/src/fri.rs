@@ -3,14 +3,11 @@ use crate::digest::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::f3g::F3G;
 use crate::fft::FFT;
-use crate::field_bn128::{Fr, FrRepr};
 use crate::helper::log2_any;
 use crate::traits::{MerkleTree, Transcript};
 use crate::types::{StarkStruct, Step};
-use ff::*;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
-use winter_math::StarkField;
 
 #[derive(Debug)]
 pub struct FRI {
@@ -98,7 +95,6 @@ impl FRI {
                 }
             }
             log::debug!("pol2_e 0={}, 1={}", pol2_e[0], pol2_e[1]);
-
             if si < self.steps.len() - 1 {
                 let n_groups = 1 << self.steps[si + 1].nBits;
                 let group_size = (1 << self.steps[si].nBits) / n_groups;
@@ -107,22 +103,11 @@ impl FRI {
                 tmptree.merkelize(pol2_etb, 3 * group_size, n_groups)?;
                 tree.push(tmptree);
                 proof.queries[si + 1].root = tree[si].root();
-                transcript.put(&[tree[si].root()])?;
+                transcript.put(&[tree[si].root().as_elements().to_vec()])?;
             } else {
-                log::debug!("last {}", pol2_e.len());
                 for e in pol2_e.iter() {
                     let elems = e.as_elements();
-                    let v = [
-                        ElementDigest::from(
-                            &Fr::from_repr(FrRepr::from(elems[0].as_int())).unwrap(),
-                        ),
-                        ElementDigest::from(
-                            &Fr::from_repr(FrRepr::from(elems[1].as_int())).unwrap(),
-                        ),
-                        ElementDigest::from(
-                            &Fr::from_repr(FrRepr::from(elems[2].as_int())).unwrap(),
-                        ),
-                    ];
+                    let v = [vec![elems[0]], vec![elems[1]], vec![elems[2]]];
                     transcript.put(&v)?;
                 }
             }
@@ -142,11 +127,13 @@ impl FRI {
 
         proof.last = last_pol;
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
+        /*
         let query_pol_fn =
             |si: usize, idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)> {
                 log::debug!("query_pol_fn: si:{}, idx:{}", si, idx);
                 vec![tree[si].get_group_proof(idx).unwrap()]
             };
+        */
 
         for si in 0..self.steps.len() {
             for ys_ in ys.iter() {
@@ -155,7 +142,7 @@ impl FRI {
                 } else {
                     proof.queries[si]
                         .pol_queries
-                        .push(query_pol_fn(si - 1, *ys_));
+                        .push(vec![tree[si - 1].get_group_proof(*ys_).unwrap()]);
                 }
             }
             if si < self.steps.len() - 1 {
@@ -185,20 +172,14 @@ impl FRI {
             if si < self.steps.len() - 1 {
                 //let n_groups = 1 << self.steps[si + 1].nBits;
                 //let group_size = (1 << self.steps[si].nBits) / n_groups;
-                transcript.put(&[proof.queries[si + 1].root])?;
+                transcript.put(&[proof.queries[si + 1].root.as_elements().to_vec()])?;
             } else {
-                let mut pp: Vec<ElementDigest> = vec![];
+                let mut pp: Vec<Vec<BaseElement>> = vec![];
                 for e in proof.last.iter() {
                     let elems = e.as_elements();
-                    pp.push(ElementDigest::from(
-                        &Fr::from_repr(FrRepr::from(elems[0].as_int())).unwrap(),
-                    ));
-                    pp.push(ElementDigest::from(
-                        &Fr::from_repr(FrRepr::from(elems[1].as_int())).unwrap(),
-                    ));
-                    pp.push(ElementDigest::from(
-                        &Fr::from_repr(FrRepr::from(elems[2].as_int())).unwrap(),
-                    ));
+                    pp.push(vec![elems[0]]);
+                    pp.push(vec![elems[1]]);
+                    pp.push(vec![elems[2]]);
                 }
                 transcript.put(&pp[..])?;
             }
@@ -206,7 +187,7 @@ impl FRI {
 
         let n_queries = self.n_queries;
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
-        let pol_bits = self.in_nbits;
+        let mut pol_bits = self.in_nbits;
         log::debug!("ys: {:?}, pol_bits {}", ys, self.in_nbits);
         let mut shift = SHIFT.clone();
 
@@ -217,6 +198,7 @@ impl FRI {
             let res =
                 tree.verify_group_proof(&proof.queries[si].root, &query[0].1, idx, &query[0].0)?;
             if !res {
+                log::error!("check_query_fn failed si:{},idx:{}", si, idx);
                 return Err(FRIVerifierFailed);
             }
             Ok(split3(&query[0].0))
@@ -230,6 +212,7 @@ impl FRI {
                     0 => {
                         let pgroup_e = check_query(&proof_item.pol_queries[i], ys[i])?;
                         if pgroup_e.len() == 0 {
+                            log::error!("check_query failed si:{}", si);
                             return Ok(false);
                         }
                         pgroup_e
@@ -245,16 +228,18 @@ impl FRI {
                     let next_n_groups = 1 << self.steps[si + 1].nBits;
                     let group_idx = ys[i] / next_n_groups;
                     if !ev.eq(&get3(&proof.queries[si + 1].pol_queries[i][0].0, group_idx)) {
+                        log::error!("eq query failed si:{}", si + 1);
                         return Ok(false);
                     }
                 } else {
                     if !ev.eq(&proof.last[ys[i]]) {
+                        log::error!("eq last failed si:{}, {}!={}", si, ev, &proof.last[ys[i]]);
                         return Ok(false);
                     }
                 }
             }
 
-            //let pol_bits = self.steps[si].nBits;
+            pol_bits = self.steps[si].nBits;
             for _j in 0..reduction_bits {
                 shift = shift * shift;
             }

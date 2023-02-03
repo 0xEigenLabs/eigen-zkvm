@@ -177,10 +177,11 @@ impl Block {
 impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ns: {}\n", self.namespace)?;
-        for i in 0..self.exprs.len() {
+        let idx = std::cmp::min(10000, self.exprs.len());
+        for i in 0..idx {
             write!(f, "\t {}\n", self.exprs[i])?;
         }
-        Ok(())
+        write!(f, "\n")
     }
 }
 
@@ -296,7 +297,6 @@ fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
             }
         }
         "xDivXSubXi" => {
-            // FIXME: change to F3G
             let id = get_i(expr, arg_i);
             F3G::new(
                 ctx.xDivXSubXi[id],

@@ -38,29 +38,29 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
         let b = ctx.publics[i]
             .as_elements()
             .iter()
-            .map(|e| ElementDigest::from(&Fr::from_repr(FrRepr::from(e.as_int())).unwrap()))
-            .collect::<Vec<ElementDigest>>();
+            .map(|e| vec![e.clone()])
+            .collect::<Vec<Vec<BaseElement>>>();
         transcript.put(&b[..])?;
     }
 
-    transcript.put(&[proof.root1])?;
+    transcript.put(&[proof.root1.as_elements().to_vec()])?;
     ctx.challenges[0] = transcript.get_field(); // u
     ctx.challenges[1] = transcript.get_field(); // defVal
-    transcript.put(&[proof.root2])?;
+    transcript.put(&[proof.root2.as_elements().to_vec()])?;
     ctx.challenges[2] = transcript.get_field(); // gamma
     ctx.challenges[3] = transcript.get_field(); // beta
 
-    transcript.put(&[proof.root3])?;
+    transcript.put(&[proof.root3.as_elements().to_vec()])?;
     ctx.challenges[4] = transcript.get_field(); // vc
 
-    transcript.put(&[proof.root4])?;
+    transcript.put(&[proof.root4.as_elements().to_vec()])?;
     ctx.challenges[7] = transcript.get_field(); // xi
     for i in 0..ctx.evals.len() {
         let b = ctx.evals[i]
             .as_elements()
             .iter()
-            .map(|e| ElementDigest::from(&Fr::from_repr(FrRepr::from(e.as_int())).unwrap()))
-            .collect::<Vec<ElementDigest>>();
+            .map(|e| vec![e.clone()])
+            .collect::<Vec<Vec<BaseElement>>>();
         transcript.put(&b[..])?;
     }
 
@@ -71,13 +71,11 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     ctx.Z = x_n - F3G::ONE;
     ctx.Zp = (ctx.challenges[7] * MG.0[ctx.nbits]).pow(ctx.N) - F3G::ONE;
 
-    log::debug!("xN: {} {} {}", x_n, ctx.Z, ctx.Zp);
     //log::debug!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);
 
     let mut x_acc = F3G::ONE;
     let mut q = F3G::ZERO;
-    log::debug!("q_deg: {}", starkinfo.q_deg);
     for i in 0..starkinfo.q_deg {
         q = q + x_acc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
         x_acc = x_acc * x_n;
@@ -185,7 +183,7 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
 
     let set_ref = |r: &mut Node, val: F3G, tmp: &mut HashMap<usize, F3G>| match r.type_.as_str() {
         "tmp" => {
-            log::debug!("verify set ref {} {}", r.id, val);
+            //log::debug!("verify set ref {} {}", r.id, val);
             tmp.insert(r.id, val);
         }
         _ => {

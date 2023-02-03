@@ -5,24 +5,24 @@ const path = require("path");
 class FibonacciJS {
   async buildConstants(pols_) {
     const pols = pols_.Fibonacci;
-    const N = pols.ISLAST.length;
-    for (let i = 0; i < N-1; i++) {
-      pols.ISLAST[i] = 0n;
+    const N = pols.L1.length;
+    for (let i = 0; i < N; i++) {
+      pols.L1[i] = (i == 0) ? 1n : 0n;
+      pols.LLAST[i] = (i == N-1) ? 1n : 0n;
     }
-    pols.ISLAST[N-1] = 1n;
   }
 
   async execute(pols_, input) {
     const pols = pols_.Fibonacci;
-    const N = pols.aLast.length;
-    pols.aBeforeLast[0] = BigInt(input[0]);
-    pols.aLast[0] = BigInt(input[1]);
+    const N = pols.l1.length;
+    pols.l2[0] = BigInt(input[0]);
+    pols.l1[0] = BigInt(input[1]);
 
     for (let i = 1; i < N; i ++) {
-      pols.aBeforeLast[i] = pols.aLast[i-1];
-      pols.aLast[i] = FGL.add(pols.aBeforeLast[i-1], pols.aLast[i-1]);
+      pols.l2[i] =pols.l1[i-1];
+      pols.l1[i] =FGL.add(FGL.square(pols.l2[i-1]), FGL.square(pols.l1[i-1]));
     }
-    return pols.aLast[N - 1];
+    return pols.l1[N - 1];
   }
 }
 
@@ -42,6 +42,7 @@ const starkStruct = {
   verificationHashType: "GL",
   steps: [
     {nBits: 11},
+    {nBits: 7},
     {nBits: 3}
   ]
 }

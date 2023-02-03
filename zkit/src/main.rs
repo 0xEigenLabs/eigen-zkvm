@@ -274,6 +274,7 @@ pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
 
 fn main() {
     let args = Cli::parse();
+    env_logger::init();
     let start = Instant::now();
     let exec_result = match args.command {
         Command::Setup(args) => setup(args.power, &args.srs_monomial_form),
