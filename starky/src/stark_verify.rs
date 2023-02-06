@@ -177,7 +177,7 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
             }
             _ => panic!("Invalid reference type, get: {}", r.type_),
         };
-        log::debug!("verify get ref {}", t);
+        //log::debug!("verify get ref {}", t);
         t
     };
 

@@ -473,7 +473,7 @@ impl StarkInfo {
         pil: &mut PIL,
         tmpexps: &mut HashMap<usize, usize>,
     ) {
-        log::debug!("fix_prover_code: {} {} {:?}", segment, dom, self.tmpexp_n);
+        //log::debug!("fix_prover_code: {} {} {:?}", segment, dom, self.tmpexp_n);
         let mut ctx_f = ContextF {
             exp_map: HashMap::new(),
             tmp_used: segment.tmp_used,
@@ -521,13 +521,13 @@ impl StarkInfo {
                     panic!("Invalid reference type {}", r.type_);
                 }
             };
-            log::debug!(
-                "node: {:?}, im_exps_list {:?} dom {} tmpexps: {:?}",
-                r,
-                ctx.starkinfo.im_exps_list,
-                ctx.dom,
-                ctx.tmpexps
-            );
+            //log::debug!(
+            //    "node: {:?}, im_exps_list {:?} dom {} tmpexps: {:?}",
+            //    r,
+            //    ctx.starkinfo.im_exps_list,
+            //    ctx.dom,
+            //    ctx.tmpexps
+            //);
         };
 
         iterate_code(segment, fix_ref, &mut ctx_f, pil);

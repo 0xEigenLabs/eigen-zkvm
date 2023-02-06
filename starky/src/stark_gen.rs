@@ -154,6 +154,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         stark_struct: &StarkStruct,
     ) -> Result<StarkProof<M>> {
         let mut ctx = StarkContext::default();
+        log::debug!("starkinfo: {}", starkinfo);
 
         let mut standard_fft = FFT::new();
         ctx.nbits = stark_struct.nBits;
@@ -194,12 +195,12 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             xx = xx * MG.0[ctx.nbits_ext];
         }
         ctx.Zi = Self::build_Zh_Inv(ctx.nbits, extendBits);
-        //log::debug!("Zi(1) {}", (ctx.Zi)(1));
+        log::debug!("Zi(1) {}", (ctx.Zi)(1));
 
         ctx.const_n = const_pols.write_buff();
         const_tree.to_f3g(&mut ctx.const_2ns);
-        //log::info!("const_2ns");
-        //crate::helper::pretty_print_array(&ctx.const_2ns);
+        log::info!("const_2ns");
+        crate::helper::pretty_print_array(&ctx.const_2ns);
 
         ctx.publics = vec![F3G::ZERO; starkinfo.publics.len()];
         for (i, pe) in starkinfo.publics.iter().enumerate() {
@@ -231,12 +232,12 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n").unwrap();
         tree1.to_f3g(&mut ctx.cm1_2ns);
 
-        //log::info!(
-        //    "tree1 root: {}",
-        //    crate::helper::fr_to_biguint(&tree1.root().into())
-        //);
-        //log::info!("cm1_2ns");
-        //crate::helper::pretty_print_array(&ctx.cm1_2ns);
+        log::info!(
+            "tree1 root: {}",
+            crate::helper::fr_to_biguint(&tree1.root().into())
+        );
+        log::info!("cm1_2ns");
+        crate::helper::pretty_print_array(&ctx.cm1_2ns);
         transcript.put(&[tree1.root().as_elements().to_vec()])?;
         // 2.- Caluculate plookups h1 and h2
         ctx.challenges[0] = transcript.get_field(); //u
@@ -262,12 +263,12 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n").unwrap();
         tree2.to_f3g(&mut ctx.cm2_2ns);
         transcript.put(&[tree2.root().as_elements().to_vec()])?;
-        //log::info!(
-        //    "tree2 root: {}",
-        //    crate::helper::fr_to_biguint(&tree2.root().into())
-        //);
-        //log::info!("cm2_2ns");
-        //crate::helper::pretty_print_array(&ctx.cm2_2ns);
+        log::info!(
+            "tree2 root: {}",
+            crate::helper::fr_to_biguint(&tree2.root().into())
+        );
+        log::info!("cm2_2ns");
+        crate::helper::pretty_print_array(&ctx.cm2_2ns);
 
         // 3.- Compute Z polynomials
         ctx.challenges[2] = transcript.get_field(); // gamma
@@ -321,16 +322,16 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ctx.challenges[4] = transcript.get_field(); // vc
                                                     //log::debug!("challenges[4] {}", ctx.challenges[4]);
 
-        //log::debug!("step42ns {}", &program.step42ns);
+        log::debug!("step42ns {}", &program.step42ns);
         calculate_exps(&mut ctx, starkinfo, &program.step42ns, "2ns");
-        //log::debug!("q_2ns");
-        //crate::helper::pretty_print_array(&ctx.q_2ns);
+        log::debug!("q_2ns");
+        crate::helper::pretty_print_array(&ctx.q_2ns);
 
         let mut qq1 = vec![F3G::ZERO; ctx.q_2ns.len()];
         let mut qq2 = vec![F3G::ZERO; starkinfo.q_dim * ctx.Next * starkinfo.q_deg];
         ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
-        //log::debug!("qq1");
-        //crate::helper::pretty_print_array(&qq1);
+        log::debug!("qq1");
+        crate::helper::pretty_print_array(&qq1);
 
         let mut cur_s = F3G::ONE;
         let shift_in = (F3G::inv(SHIFT.clone())).exp(ctx.N);
@@ -343,8 +344,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             }
             cur_s = cur_s * shift_in;
         }
-        //log::debug!("qq2");
-        //crate::helper::pretty_print_array(&qq2);
+        log::debug!("qq2");
+        crate::helper::pretty_print_array(&qq2);
 
         fft(
             &qq2,
@@ -369,7 +370,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         // 5. Compute FRI Polynomial
         ///////////
         ctx.challenges[7] = transcript.get_field(); // xi
-                                                    //log::debug!("ctx.challenges[7] {}", ctx.challenges[7]);
 
         let mut LEv = vec![F3G::ZERO; ctx.N];
         let mut LpEv = vec![F3G::ZERO; ctx.N];
