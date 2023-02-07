@@ -23,7 +23,7 @@ pub struct PCCTX {
     pub den_id: usize,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct Program {
     pub publics_code: Vec<Segment>,
     pub step2prev: Segment,
@@ -33,6 +33,13 @@ pub struct Program {
     pub step52ns: Segment,
     pub verifier_code: Segment,
     pub verifier_query_code: Segment,
+}
+
+impl fmt::Display for Program {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let obj = json!(self);
+        write!(f, "publics: {}\n", serde_json::to_string_pretty(&obj).unwrap())
+    }
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -213,15 +220,14 @@ impl fmt::Display for StarkInfo {
             "map_offsets: {}\n",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
-        //let obj = json!(self.map_deg);
-        //write!(f, "map_deg: {}\n", serde_json::to_string_pretty(&obj).unwrap())?;
-        write!(f, "map_total_n: {}\n", self.map_total_n)
-        //let obj = json!(self.exp2pol);
-        //write!(f, "exp2pol: {}\n", serde_json::to_string_pretty(&obj).unwrap())?;
-        //let obj = json!(self.publics);
-        //write!(f, "publics: {}\n", serde_json::to_string_pretty(&obj).unwrap())?;
-        //let obj = json!(self.ev_idx);
-        //write!(f, "ev_idx: {}\n", serde_json::to_string_pretty(&obj).unwrap())
+        let obj = json!(self.map_deg);
+        write!(f, "map_deg: {}\n", serde_json::to_string_pretty(&obj).unwrap())?;
+        write!(f, "map_total_n: {}\n", self.map_total_n)?;
+        let obj = json!(self.exp2pol);
+        write!(f, "exp2pol: {}\n", serde_json::to_string_pretty(&obj).unwrap())?;
+        let obj = json!(self.publics);
+        write!(f, "publics: {}\n", serde_json::to_string_pretty(&obj).unwrap())?;
+        write!(f, "ev_idx: {:?}\n", self.ev_idx)
     }
 }
 

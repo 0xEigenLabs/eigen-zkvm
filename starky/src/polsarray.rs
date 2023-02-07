@@ -143,6 +143,7 @@ impl PolsArray {
         let mut f = File::open(fileName)?;
         let maxBufferSize = 1024 * 1024 * 32;
         let totalSize = self.nPols * self.n;
+        log::info!("load: nPols {}, n {}, totalSize {}", self.nPols, self.n, totalSize);
         let mut buff8: Vec<u8> = vec![0u8; std::cmp::min(totalSize, maxBufferSize) * 8];
 
         let mut i = 0;
@@ -153,7 +154,7 @@ impl PolsArray {
                 "loading {:?}.. {:?} of {}",
                 fileName,
                 k / 1024 / 1024,
-                totalSize / 1024 / 1204
+                totalSize / 1024 / 1024
             );
             let mut n = std::cmp::min(buff8.len() / 8, totalSize - k);
             let rs = f.read(&mut buff8[..(n * 8)])?;
@@ -173,6 +174,7 @@ impl PolsArray {
             n = rs / 8;
             for l in 0..n {
                 self.array[i][j] = BaseElement::from(buff[l]);
+                log::debug!("self.array[{}][{}]={}", i, j, self.array[i][j]);
                 i += 1;
                 if i == self.nPols {
                     i = 0;

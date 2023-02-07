@@ -155,6 +155,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
     ) -> Result<StarkProof<M>> {
         let mut ctx = StarkContext::default();
         log::debug!("starkinfo: {}", starkinfo);
+        log::debug!("program: {}", program);
 
         let mut standard_fft = FFT::new();
         ctx.nbits = stark_struct.nBits;
