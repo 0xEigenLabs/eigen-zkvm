@@ -1,10 +1,10 @@
 pub mod errors;
 pub mod polsarray;
-mod traits;
-pub mod types;
-
+mod polutils;
 pub mod stark_verifier_circom;
 pub mod stark_verifier_circom_bn128;
+mod traits;
+pub mod types;
 
 mod compressor12;
 pub use compressor12::*;

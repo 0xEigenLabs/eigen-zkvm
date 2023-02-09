@@ -143,7 +143,12 @@ impl PolsArray {
         let mut f = File::open(fileName)?;
         let maxBufferSize = 1024 * 1024 * 32;
         let totalSize = self.nPols * self.n;
-        log::info!("load: nPols {}, n {}, totalSize {}", self.nPols, self.n, totalSize);
+        log::info!(
+            "load: nPols {}, n {}, totalSize {}",
+            self.nPols,
+            self.n,
+            totalSize
+        );
         let mut buff8: Vec<u8> = vec![0u8; std::cmp::min(totalSize, maxBufferSize) * 8];
 
         let mut i = 0;

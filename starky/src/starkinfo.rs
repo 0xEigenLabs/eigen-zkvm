@@ -38,7 +38,11 @@ pub struct Program {
 impl fmt::Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let obj = json!(self);
-        write!(f, "publics: {}\n", serde_json::to_string_pretty(&obj).unwrap())
+        write!(
+            f,
+            "publics: {}\n",
+            serde_json::to_string_pretty(&obj).unwrap()
+        )
     }
 }
 
@@ -221,12 +225,24 @@ impl fmt::Display for StarkInfo {
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.map_deg);
-        write!(f, "map_deg: {}\n", serde_json::to_string_pretty(&obj).unwrap())?;
+        write!(
+            f,
+            "map_deg: {}\n",
+            serde_json::to_string_pretty(&obj).unwrap()
+        )?;
         write!(f, "map_total_n: {}\n", self.map_total_n)?;
         let obj = json!(self.exp2pol);
-        write!(f, "exp2pol: {}\n", serde_json::to_string_pretty(&obj).unwrap())?;
+        write!(
+            f,
+            "exp2pol: {}\n",
+            serde_json::to_string_pretty(&obj).unwrap()
+        )?;
         let obj = json!(self.publics);
-        write!(f, "publics: {}\n", serde_json::to_string_pretty(&obj).unwrap())?;
+        write!(
+            f,
+            "publics: {}\n",
+            serde_json::to_string_pretty(&obj).unwrap()
+        )?;
         write!(f, "ev_idx: {:?}\n", self.ev_idx)
     }
 }

@@ -46,6 +46,7 @@ impl<M: MerkleTree> StarkSetup<M> {
 
         log::debug!("before interpolate, const");
         crate::helper::pretty_print_array(&const_buff);
+        log::debug!("nConstants: {}", pil.nConstants);
         interpolate(
             &const_buff,
             pil.nConstants,

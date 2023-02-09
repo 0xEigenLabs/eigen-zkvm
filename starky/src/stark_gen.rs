@@ -13,11 +13,10 @@ use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{Polynom, Segment};
 use crate::traits::{MerkleTree, Transcript};
 use crate::types::{StarkStruct, PIL};
-use ff::*;
 use rayon::prelude::*;
 use std::collections::HashMap;
 use winter_math::fields::f64::BaseElement;
-use winter_math::{FieldElement, StarkField};
+use winter_math::FieldElement;
 
 pub struct StarkContext {
     pub nbits: usize,
@@ -864,7 +863,6 @@ pub mod tests {
 
     #[test]
     fn test_stark_plookup_gl() {
-        env_logger::init();
         let mut pil = load_json::<PIL>("data/plookup.pil.json.gl").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/plookup.const.gl").unwrap();
