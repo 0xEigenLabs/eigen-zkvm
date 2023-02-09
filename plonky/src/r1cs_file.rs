@@ -145,7 +145,6 @@ fn read_custom_gates_list<R: Read, E: ScalarEngine>(
 ) -> Result<Vec<CustomGates<E>>> {
     let num = reader.read_u32::<LittleEndian>()?;
     let mut custom_gates: Vec<CustomGates<E>> = vec![];
-    println!("num: {}", num);
     for i in 0..num {
         let mut custom_gate = CustomGates::<E> {
             template_name: read_to_string(&mut reader),
@@ -159,7 +158,6 @@ fn read_custom_gates_list<R: Read, E: ScalarEngine>(
         }
         custom_gates.push(custom_gate);
     }
-    println!("custom_gate: {:?}", custom_gates);
     Ok(custom_gates)
 }
 
@@ -175,7 +173,6 @@ fn read_custom_gates_uses_list<R: Read>(
     for _ in 0..sz {
         b_r1cs32.push(reader.read_u32::<LittleEndian>()?);
     }
-    println!("vec: {:?}, {}", b_r1cs32[0], sz);
 
     let n_custom_gate_uses = b_r1cs32[0];
     let mut b_r1cs_pos = 1;
