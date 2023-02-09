@@ -277,6 +277,7 @@ pub fn interpolate(
     }
     log::info!("Interpolating prepare....");
     interpolate_prepare(bin, n_pols, nbits);
+    log::info!("Bit reverse....");
 
     bit_reverse(bout, bin, n_pols, nbitsext);
     (bin, bout) = (bout, bin);
