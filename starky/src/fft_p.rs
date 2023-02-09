@@ -235,7 +235,6 @@ pub fn interpolate(
     };
     blockbitsext = min(nbitsext, blockbitsext);
     let blocksizeext = 1 << blockbitsext;
-    let n_blocks_ext = n_ext / blocksizeext;
 
     if blockbitsext < nbitsext {
         n_transposes += (nbitsext - 1) / blockbitsext + 1;
