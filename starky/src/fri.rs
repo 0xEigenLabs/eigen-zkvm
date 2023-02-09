@@ -4,6 +4,7 @@ use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::f3g::F3G;
 use crate::fft::FFT;
 use crate::helper::log2_any;
+use crate::polutils::{eval_pol, pol_mul_axi};
 use crate::traits::{MerkleTree, Transcript};
 use crate::types::{StarkStruct, Step};
 use winter_math::fields::f64::BaseElement;
@@ -303,29 +304,10 @@ fn split3(arr: &Vec<BaseElement>) -> Vec<F3G> {
     return res;
 }
 
-fn pol_mul_axi(p: &mut Vec<F3G>, init: F3G, acc: &F3G) {
-    let mut r = init;
-    for i in 0..p.len() {
-        p[i] *= r;
-        r *= *acc;
-    }
-}
-
-fn eval_pol(p: &Vec<F3G>, x: &F3G) -> F3G {
-    if p.len() == 0 {
-        return F3G::ZERO;
-    }
-    let mut res = p[p.len() - 1];
-    for i in (0..(p.len() - 1)).rev() {
-        res = res * *x + p[i];
-    }
-    res
-}
-
 #[cfg(test)]
 mod tests {
     use crate::f3g::F3G;
-    use crate::fri::eval_pol;
+    use crate::polutils::eval_pol;
     use winter_math::polynom;
 
     #[test]

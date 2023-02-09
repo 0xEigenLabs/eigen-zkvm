@@ -14,7 +14,6 @@ pub struct Context {
     pub exp_id: usize,
     pub tmp_used: usize,
     pub code: Vec<Code>,
-    //pub calculated: Calculated,
     pub calculated: HashMap<(&'static str, usize), bool>,
 }
 

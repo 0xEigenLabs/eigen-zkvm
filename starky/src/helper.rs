@@ -72,7 +72,7 @@ pub fn biguint_to_fr(f: &BigUint) -> Fr {
 pub fn pretty_print_array<T: FieldElement + StarkField>(cols: &Vec<T>) {
     let mut msg = format!("array size: {}\n[\n", cols.len());
     let mut iglines = 2;
-    for i in 0..10 {
+    for i in 0..32 {
         if cols.len() > i {
             msg.push_str(&format!("\t{}\n", cols[i]));
             iglines += 1;

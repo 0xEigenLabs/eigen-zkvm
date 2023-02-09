@@ -3,7 +3,6 @@ use crate::constant::{MG, SHIFT};
 use crate::digest::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::f3g::F3G;
-use crate::field_bn128::{Fr, FrRepr};
 use crate::fri::FRI;
 use crate::stark_gen::StarkContext;
 use crate::stark_gen::StarkProof;
@@ -12,7 +11,6 @@ use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::{Node, Section};
 use crate::traits::{MerkleTree, Transcript};
 use crate::types::StarkStruct;
-use ff::PrimeField;
 use std::collections::HashMap;
 use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
@@ -177,7 +175,7 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
             }
             _ => panic!("Invalid reference type, get: {}", r.type_),
         };
-        log::debug!("verify get ref {}", t);
+        //log::debug!("verify get ref {}", t);
         t
     };
 

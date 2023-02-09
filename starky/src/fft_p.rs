@@ -80,8 +80,8 @@ pub fn interpolate_prepare(buff: &mut Vec<F3G>, n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
     let inv_n = F3G::inv(F3G::from(n));
     let mut n_per_thread_f = (n - 1) / get_max_workers() + 1;
-    let max_corrected = MIN_OPS_PER_THREAD / n_pols;
-    let min_corrected = MAX_OPS_PER_THREAD / n_pols;
+    let max_corrected = MAX_OPS_PER_THREAD / n_pols;
+    let min_corrected = MIN_OPS_PER_THREAD / n_pols;
 
     if n_per_thread_f > max_corrected {
         n_per_thread_f = max_corrected
@@ -90,22 +90,13 @@ pub fn interpolate_prepare(buff: &mut Vec<F3G>, n_pols: usize, nbits: usize) {
         n_per_thread_f = min_corrected
     };
 
-    rayon::scope(|_s| {
-        buff.par_chunks_mut(n_per_thread_f * n_pols)
-            .enumerate()
-            .for_each(|(i, bb)| {
-                let start = inv_n * (SHIFT.clone().exp(i));
-                let inc = SHIFT.clone();
-                interpolate_prepare_block(
-                    bb,
-                    n_pols,
-                    start,
-                    inc,
-                    i / n_per_thread_f,
-                    n / n_per_thread_f,
-                );
-            });
-    });
+    //TODO: parallel execution
+    for i in (0..n).step_by(n_per_thread_f) {
+        let cur_n = min(n_per_thread_f, n - i);
+        let mut bb = &mut buff[i * n_pols..(i + cur_n) * n_pols];
+        let start = inv_n * (SHIFT.clone().exp(i));
+        interpolate_prepare_block(&mut bb, n_pols, start, SHIFT.clone(), i, n / n_per_thread_f);
+    }
 }
 
 pub fn _fft(
@@ -119,7 +110,7 @@ pub fn _fft(
     let minblockbits = 12;
     let blocks_per_thread = 8;
     let n = 1 << nbits;
-    let mut tmpbuff: Vec<F3G> = vec![F3G::ZERO; n * n_pols]; //new BigBuffer(n*n_pols);
+    let mut tmpbuff: Vec<F3G> = vec![F3G::ZERO; n * n_pols];
     let outbuff = buffdst;
 
     let mut bin: &mut Vec<F3G>;
@@ -244,13 +235,12 @@ pub fn interpolate(
     };
     blockbitsext = min(nbitsext, blockbitsext);
     let blocksizeext = 1 << blockbitsext;
-    //let n_blocksExt = n_ext / blocksizeext;
 
     if blockbitsext < nbitsext {
         n_transposes += (nbitsext - 1) / blockbitsext + 1;
     }
 
-    if n_transposes & 1 > 0 {
+    if (n_transposes & 1) > 0 {
         bout = &mut tmpbuff;
         bin = outbuff;
     } else {
@@ -285,10 +275,10 @@ pub fn interpolate(
             (bin, bout) = (bout, bin);
         }
     }
-
     log::info!("Interpolating prepare....");
     interpolate_prepare(bin, n_pols, nbits);
     log::info!("Bit reverse....");
+
     bit_reverse(bout, bin, n_pols, nbitsext);
     (bin, bout) = (bout, bin);
 
@@ -308,7 +298,6 @@ pub fn interpolate(
                     s_inc,
                 );
             });
-
         if s_inc < nbitsext {
             // Do not transpose if it's the same
             transpose(bout, bin, n_pols, nbitsext, s_inc);
@@ -323,6 +312,7 @@ mod tests {
     use crate::f3g::F3G;
     use crate::fft::FFT;
     use crate::fft_p::{fft, ifft, interpolate, BR};
+    use crate::polutils::extend_pol;
     use winter_math::FieldElement;
 
     #[test]
@@ -333,26 +323,37 @@ mod tests {
 
     #[test]
     fn test_big_interpolate() {
+        env_logger::init();
         let nbits = 18;
-        let n_pols = 3;
+        let n_pols = 5;
         let extbits = 1;
 
         let n = 1 << nbits;
         let mut buff1 = vec![F3G::ZERO; n * n_pols];
         let mut buff2 = vec![F3G::ZERO; n * n_pols * (1 << extbits)];
 
-        log::info!("Initializing...");
+        let mut pols: Vec<Vec<F3G>> = vec![Vec::new(); n_pols];
         for i in 0..n_pols {
+            pols[i] = vec![F3G::ZERO; n];
             for j in 0..n {
                 let v = F3G::from(j);
+                pols[i][j] = v;
                 buff1[j * n_pols + i] = v;
             }
         }
 
-        log::info!("interpolate...");
-        interpolate(&buff1, n_pols, nbits, &mut buff2, nbits + extbits);
+        let mut pols_v: Vec<Vec<F3G>> = vec![Vec::new(); n_pols];
+        for i in 0..n_pols {
+            pols_v[i] = extend_pol(&pols[i], extbits);
+        }
 
-        //TODO check the result
+        interpolate(&buff1, n_pols, nbits, &mut buff2, nbits + extbits);
+        let n_ext = 1 << (nbits + extbits);
+        for i in 0..n_pols {
+            for j in 0..n_ext {
+                assert_eq!(pols_v[i][j], buff2[j * n_pols + i]);
+            }
+        }
     }
 
     #[test]
@@ -394,7 +395,7 @@ mod tests {
 
     #[test]
     fn test_p_ifft() {
-        let nbits = 18;
+        let nbits = 21;
         let n_pols = 5;
 
         let n = 1 << nbits;
