@@ -234,7 +234,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         log::info!(
             "tree1 root: {}",
-            crate::helper::fr_to_biguint(&tree1.root().into())
+            //crate::helper::fr_to_biguint(&tree1.root().into())
+            tree1.root(),
         );
         log::info!("cm1_2ns");
         crate::helper::pretty_print_array(&ctx.cm1_2ns);
@@ -265,7 +266,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         transcript.put(&[tree2.root().as_elements().to_vec()])?;
         log::info!(
             "tree2 root: {}",
-            crate::helper::fr_to_biguint(&tree2.root().into())
+            //crate::helper::fr_to_biguint(&tree2.root().into())
+            tree2.root(),
         );
         log::info!("cm2_2ns");
         crate::helper::pretty_print_array(&ctx.cm2_2ns);
@@ -315,7 +317,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         log::info!(
             "tree3 root: {}",
-            crate::helper::fr_to_biguint(&tree3.root().into())
+            //crate::helper::fr_to_biguint(&tree3.root().into())
+            tree3.root(),
         );
 
         // 4. Compute C Polynomial
@@ -358,7 +361,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
         log::info!(
             "tree4 root: {}",
-            crate::helper::fr_to_biguint(&tree4.root().into())
+            //crate::helper::fr_to_biguint(&tree4.root().into())
+            tree4.root(),
         );
         transcript.put(&[tree4.root().as_elements().to_vec()])?;
 

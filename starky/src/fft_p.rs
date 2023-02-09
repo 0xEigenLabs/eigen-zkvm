@@ -45,9 +45,6 @@ pub fn bit_reverse(buffdst: &mut Vec<F3G>, buffsrc: &Vec<F3G>, n_pols: usize, nb
         for k in 0..n_pols {
             buffdst[i * n_pols + k] = buffsrc[ri * n_pols + k];
         }
-        log::debug!("bitReverse: {} {} {}", i, nbits, ri);
-        crate::helper::pretty_print_array(&buffsrc[ri * n_pols..(ri * n_pols + n_pols)].to_vec());
-        log::debug!("{}", buffdst[i * n_pols]);
     }
 }
 
@@ -83,8 +80,8 @@ pub fn interpolate_prepare(buff: &mut Vec<F3G>, n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
     let inv_n = F3G::inv(F3G::from(n));
     let mut n_per_thread_f = (n - 1) / get_max_workers() + 1;
-    let max_corrected = MIN_OPS_PER_THREAD / n_pols;
-    let min_corrected = MAX_OPS_PER_THREAD / n_pols;
+    let max_corrected = MAX_OPS_PER_THREAD / n_pols;
+    let min_corrected = MIN_OPS_PER_THREAD / n_pols;
 
     if n_per_thread_f > max_corrected {
         n_per_thread_f = max_corrected
@@ -93,26 +90,13 @@ pub fn interpolate_prepare(buff: &mut Vec<F3G>, n_pols: usize, nbits: usize) {
         n_per_thread_f = min_corrected
     };
 
-    log::debug!(
-        "{}, {} {} {} {} {}, n_pols {} {}",
-        MAX_OPS_PER_THREAD,
-        MIN_OPS_PER_THREAD,
-        n_per_thread_f,
-        max_corrected,
-        min_corrected,
-        n_per_thread_f,
-        n_pols,
-        n
-    );
-    crate::helper::pretty_print_array(buff);
-    buff.chunks_mut(n_per_thread_f * n_pols)
-        .enumerate()
-        .for_each(|(i, bb)| {
-            let start = inv_n * (SHIFT.clone().exp(i));
-            log::debug!("interpolate_prepare_block");
-            crate::helper::pretty_print_array(&bb.to_vec());
-            interpolate_prepare_block(bb, n_pols, start, SHIFT.clone(), i, n / n_per_thread_f);
-        });
+    //TODO: parallel execution
+    for i in (0..n).step_by(n_per_thread_f) {
+        let cur_n = min(n_per_thread_f, n - i);
+        let mut bb = &mut buff[i * n_pols .. (i + cur_n) * n_pols];
+        let start = inv_n * (SHIFT.clone().exp(i));
+        interpolate_prepare_block(&mut bb, n_pols, start, SHIFT.clone(), i, n / n_per_thread_f);
+    }
 }
 
 pub fn _fft(
@@ -266,11 +250,8 @@ pub fn interpolate(
     }
 
     log::info!("Interpolating reverse....");
-    crate::helper::pretty_print_array(&buffsrc);
     interpolate_bit_reverse(bout, buffsrc, n_pols, nbits);
     (bin, bout) = (bout, bin);
-    crate::helper::pretty_print_array(&bin);
-    crate::helper::pretty_print_array(&bout);
 
     for i in (0..nbits).step_by(blockbits) {
         log::info!("Layer ifft {}", i);
@@ -295,37 +276,12 @@ pub fn interpolate(
             (bin, bout) = (bout, bin);
         }
     }
-    log::debug!("fft_block");
-    crate::helper::pretty_print_array(&bin);
-    crate::helper::pretty_print_array(&bout);
-
     log::info!("Interpolating prepare....");
-    log::info!(
-        "bin[100000] {}, 100 {}, 1000000 {}",
-        bin[100000],
-        bin[100],
-        bin[262144]
-    );
     interpolate_prepare(bin, n_pols, nbits);
 
-    crate::helper::pretty_print_array(&bin);
-    crate::helper::pretty_print_array(&bout);
-
-    log::info!(
-        "Bit reverse...., bin[100000] {}, 100 {}",
-        bin[100000],
-        bin[100]
-    );
     bit_reverse(bout, bin, n_pols, nbitsext);
     (bin, bout) = (bout, bin);
 
-    crate::helper::pretty_print_array(&bin);
-    crate::helper::pretty_print_array(&bout);
-    log::debug!(
-        "n_blocks_ext {}, blocksizeext {}",
-        n_blocks_ext,
-        blocksizeext
-    );
     for i in (0..nbitsext).step_by(blockbitsext) {
         log::info!("Layer fft {}", i);
         let s_inc = min(blockbitsext, nbitsext - i);
@@ -342,21 +298,13 @@ pub fn interpolate(
                     s_inc,
                 );
             });
-        log::debug!("bbbbbbbbbbbbbbbbL {}", i);
-        crate::helper::pretty_print_array(&bin);
-        crate::helper::pretty_print_array(&bout);
         if s_inc < nbitsext {
             // Do not transpose if it's the same
             transpose(bout, bin, n_pols, nbitsext, s_inc);
             (bin, bout) = (bout, bin);
         }
-        log::debug!("cccccccccccccccc {}", i);
-        crate::helper::pretty_print_array(&bin);
-        crate::helper::pretty_print_array(&bout);
     }
     log::info!("interpolation terminated");
-    crate::helper::pretty_print_array(&bin);
-    crate::helper::pretty_print_array(&bout);
 }
 
 #[cfg(test)]
