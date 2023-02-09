@@ -2,6 +2,8 @@
 
 eigen-zkvm is a zkVM on hybrid proof system, allowing the developers to write Zero-knowledge applications, proving with the hybrid proof system to achieve no trusted setup, constant on-chain proof size and low gas cost, and finally generating the solidity verifier.
 
+- [x] zkit: universal commandline for starky and plonky
+
 - [x] Transpile R1CS to PlonK prove system, with aggregation proof;
 
 - [x] Generate solidity verifier;
@@ -31,8 +33,11 @@ For power in range 20 to 26, you can download directly from [universal-setup hub
 * Aggregation proof
 [test_aggregation.sh](./test/test_aggregation.sh)
 
-* Hybrid proof system
+* Stark proof and recursive stark prove
 [starky](./starky)
+
+* Hybrid proof
+[starkjs](./starkjs)
 
 ## Applications
 * [zk-zkRollup](https://github.com/0xEigenLabs/zk-zkrollup)

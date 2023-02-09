@@ -93,8 +93,9 @@ Because the nExtBits reaches up to 24 so this step would be very slow, especiall
 > - [x] BN128
 > - [x] GL(F64)
 - [x] Parallel reduce for polynomial evaluation
-- [] Recursive FRI
+- [x] Recursive FRI
 - [x] Poseidon Hash on GPU/Multicore for BN128
+- [] Polynomial evaluation on GPU
 
 ## Profiling
 

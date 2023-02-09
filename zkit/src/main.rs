@@ -17,6 +17,7 @@ mod type_analysis_user;
 /// Align with https://github.com/iden3/circom/blob/master/circom/Cargo.toml#L3
 const VERSION: &'static str = "2.1.2";
 
+/// Trust setup for Plonk
 #[derive(Debug, Clap)]
 pub struct SetupOpt {
     #[clap(short, required = true, default_value = "20")]
@@ -53,6 +54,7 @@ pub struct CompilierOpt {
     link_directories: Vec<String>,
 }
 
+/// Prove by Plonk
 #[derive(Debug, Clap)]
 struct ProveOpt {
     #[clap(short, required = true)]
@@ -79,6 +81,7 @@ struct ProveOpt {
     public_json: String,
 }
 
+/// Verify the Plonk proof
 #[derive(Debug, Clap)]
 struct VerifyOpt {
     #[clap(short, default_value = "vk.bin")]
@@ -90,6 +93,7 @@ struct VerifyOpt {
     transcript: String,
 }
 
+/// Generate solidity verifier
 #[derive(Debug, Clap)]
 struct GenerateVerifierOpt {
     #[clap(short, default_value = "vk.bin")]
@@ -98,6 +102,7 @@ struct GenerateVerifierOpt {
     sol: String,
 }
 
+/// Export proof's verification key
 #[derive(Debug, Clap)]
 struct ExportVerificationKeyOpt {
     #[clap(short)]
@@ -108,6 +113,7 @@ struct ExportVerificationKeyOpt {
     output_vk: String,
 }
 
+/// Export aggregation proof's verification key
 #[derive(Debug, Clap)]
 struct ExportAggregationVerificationKeyOpt {
     #[clap(short = "c")]
@@ -120,6 +126,7 @@ struct ExportAggregationVerificationKeyOpt {
     output_vk: String,
 }
 
+/// Proof aggregation for plonk
 #[derive(Debug, Clap)]
 struct AggregationProveOpt {
     /// SRS monomial form
@@ -139,6 +146,7 @@ struct AggregationProveOpt {
     proof_json: String,
 }
 
+/// Verify aggregation proof
 #[derive(Debug, Clap)]
 struct AggregationVerifyOpt {
     #[clap(short = "p", default_value = "aggregation_proof.bin")]
@@ -164,6 +172,7 @@ struct GenerateAggregationVerifierOpt {
     sol: String,
 }
 
+/// Stark proving and verifying all in one
 #[derive(Debug, Clap)]
 struct StarkProveOpt {
     #[clap(short = "s", long = "stark_stuct", default_value = "stark_struct.json")]
