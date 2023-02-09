@@ -24,20 +24,11 @@ pub fn eval_pol(p: &Vec<F3G>, x: &F3G) -> F3G {
 
 #[allow(dead_code)]
 pub fn extend_pol(p: &Vec<F3G>, extend_bits: usize) -> Vec<F3G> {
-    log::debug!("res");
-    crate::helper::pretty_print_array(p);
     let mut standard_fft = FFT::new();
     let mut res = standard_fft.ifft(&p);
-    log::debug!("ifft");
-    crate::helper::pretty_print_array(&res);
     pol_mul_axi(&mut res, F3G::ONE, &SHIFT);
-    log::debug!("pol_mul_axi");
-    crate::helper::pretty_print_array(&res);
     let n_extend = (p.len() << extend_bits) - p.len();
     let zeros = vec![F3G::ZERO; n_extend];
     res.extend_from_slice(&zeros);
-    let res = standard_fft.fft(&res);
-    log::debug!("fft");
-    crate::helper::pretty_print_array(&res);
-    res
+    standard_fft.fft(&res)
 }
