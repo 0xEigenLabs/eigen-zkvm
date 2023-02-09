@@ -33,6 +33,7 @@ fn _fft_block(
     layers: usize,
 ) {
     //log::debug!("fft_block rel_pos:{} start_pos:{} shift: {} blockbits: {} layers: {}", rel_pos, start_pos, s, blockbits, layers);
+    //crate::helper::pretty_print_array(&buff.to_vec());
     let n = 1 << nbits;
     let m = 1 << blockbits;
     let md2 = m >> 1;

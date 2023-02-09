@@ -41,7 +41,7 @@ node src/compressor12/main_compressor12_exec.js \
     -p /tmp/c12.pil  \
     -e /tmp/c12.exec \
     -m /tmp/c12.cm
-../target/release/zkit stark_prove -s ../starky/data/starkStruct.json \
+../target/release/zkit stark_prove -s ../starky/data/c12.starkStruct.json \
     -p /tmp/c12.pil.json \
     -o /tmp/c12.const \
     -m /tmp/c12.cm -c circuits/circuit.circom -i circuits/circuit.zkin.json

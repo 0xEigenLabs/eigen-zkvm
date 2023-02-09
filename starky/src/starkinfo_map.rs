@@ -254,8 +254,8 @@ impl StarkInfo {
         self.map_offsets.cm1_n = 0;
         self.map_offsets.cm2_n = self.map_offsets.cm1_n + N * self.map_sectionsN.cm1_n;
         self.map_offsets.cm3_n = self.map_offsets.cm2_n + N * self.map_sectionsN.cm2_n;
-        self.map_offsets.cm4_n = self.map_offsets.cm3_n + N * self.map_sectionsN.cm3_n;
-        self.map_offsets.tmpexp_n = self.map_offsets.cm4_n + N * self.map_sectionsN.cm4_n;
+        //self.map_offsets.cm4_n = self.map_offsets.cm3_n + N * self.map_sectionsN.cm3_n;
+        self.map_offsets.tmpexp_n = self.map_offsets.cm3_n + N * self.map_sectionsN.cm3_n;
         self.map_offsets.cm1_2ns = self.map_offsets.tmpexp_n + N * self.map_sectionsN.tmpexp_n;
         self.map_offsets.cm2_2ns = self.map_offsets.cm1_2ns + Next * self.map_sectionsN.cm1_2ns;
         self.map_offsets.cm3_2ns = self.map_offsets.cm2_2ns + Next * self.map_sectionsN.cm2_2ns;
@@ -276,14 +276,6 @@ impl StarkInfo {
             q_2ns: Next,
             f_2ns: Next,
         };
-        log::debug!(
-            "map_offsets: {:?} {:?} {:?} {:?} {:?}",
-            self.map_offsets,
-            self.map_deg,
-            self.map_sections,
-            self.map_sectionsN,
-            self.map_sectionsN1
-        );
 
         for i in 0..program.publics_code.len() {
             self.fix_prover_code(&mut program.publics_code[i], "n", pil, &mut tmpexps);
@@ -473,7 +465,7 @@ impl StarkInfo {
         pil: &mut PIL,
         tmpexps: &mut HashMap<usize, usize>,
     ) {
-        log::debug!("fix_prover_code: {} {} {:?}", segment, dom, self.tmpexp_n);
+        //log::debug!("fix_prover_code: {} {} {:?}", segment, dom, self.tmpexp_n);
         let mut ctx_f = ContextF {
             exp_map: HashMap::new(),
             tmp_used: segment.tmp_used,
@@ -521,13 +513,13 @@ impl StarkInfo {
                     panic!("Invalid reference type {}", r.type_);
                 }
             };
-            log::debug!(
-                "node: {:?}, im_exps_list {:?} dom {} tmpexps: {:?}",
-                r,
-                ctx.starkinfo.im_exps_list,
-                ctx.dom,
-                ctx.tmpexps
-            );
+            //log::debug!(
+            //    "node: {:?}, im_exps_list {:?} dom {} tmpexps: {:?}",
+            //    r,
+            //    ctx.starkinfo.im_exps_list,
+            //    ctx.dom,
+            //    ctx.tmpexps
+            //);
         };
 
         iterate_code(segment, fix_ref, &mut ctx_f, pil);

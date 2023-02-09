@@ -27,6 +27,7 @@ impl<M: MerkleTree> StarkSetup<M> {
         pil: &mut PIL,
         stark_struct: &StarkStruct,
     ) -> Result<StarkSetup<M>> {
+        log::debug!("StarkSetup: {:?}", stark_struct);
         let nBits = stark_struct.nBits;
         let nBitsExt = stark_struct.nBitsExt;
         assert_eq!(const_pol.nPols, pil.nConstants);
@@ -43,6 +44,9 @@ impl<M: MerkleTree> StarkSetup<M> {
         let mut const_pols_array_e = vec![F3G::ZERO; (1 << nBitsExt) * pil.nConstants];
         let mut const_pols_array_e_be = vec![BaseElement::ZERO; (1 << nBitsExt) * pil.nConstants];
 
+        log::debug!("before interpolate, const");
+        crate::helper::pretty_print_array(&const_buff);
+        log::debug!("nConstants: {}", pil.nConstants);
         interpolate(
             &const_buff,
             pil.nConstants,
@@ -57,6 +61,8 @@ impl<M: MerkleTree> StarkSetup<M> {
             .for_each(|(be_out, f3g_in)| {
                 *be_out = f3g_in.to_be();
             });
+        log::debug!("before merklize, const");
+        crate::helper::pretty_print_array(&const_pols_array_e_be);
 
         let mut const_tree = M::new();
         const_tree.merkelize(
