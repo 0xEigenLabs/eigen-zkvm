@@ -173,7 +173,6 @@ impl PolsArray {
             n = rs / 8;
             for l in 0..n {
                 self.array[i][j] = BaseElement::from(buff[l]);
-                log::debug!("self.array[{}][{}]={}", i, j, self.array[i][j]);
                 i += 1;
                 if i == self.nPols {
                     i = 0;

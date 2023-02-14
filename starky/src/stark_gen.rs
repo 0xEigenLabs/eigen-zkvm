@@ -153,8 +153,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         stark_struct: &StarkStruct,
     ) -> Result<StarkProof<M>> {
         let mut ctx = StarkContext::default();
-        log::debug!("starkinfo: {}", starkinfo);
-        log::debug!("program: {}", program);
+        //log::debug!("starkinfo: {}", starkinfo);
+        //log::debug!("program: {}", program);
 
         let mut standard_fft = FFT::new();
         ctx.nbits = stark_struct.nBits;
@@ -199,7 +199,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         ctx.const_n = const_pols.write_buff();
         const_tree.to_f3g(&mut ctx.const_2ns);
-        log::info!("const_2ns");
+        log::debug!("const_2ns");
         crate::helper::pretty_print_array(&ctx.const_2ns);
 
         ctx.publics = vec![F3G::ZERO; starkinfo.publics.len()];
@@ -237,7 +237,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             //crate::helper::fr_to_biguint(&tree1.root().into())
             tree1.root(),
         );
-        log::info!("cm1_2ns");
+        log::debug!("cm1_2ns");
         crate::helper::pretty_print_array(&ctx.cm1_2ns);
         transcript.put(&[tree1.root().as_elements().to_vec()])?;
         // 2.- Caluculate plookups h1 and h2
@@ -269,7 +269,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             //crate::helper::fr_to_biguint(&tree2.root().into())
             tree2.root(),
         );
-        log::info!("cm2_2ns");
+        log::debug!("cm2_2ns");
         crate::helper::pretty_print_array(&ctx.cm2_2ns);
 
         // 3.- Compute Z polynomials

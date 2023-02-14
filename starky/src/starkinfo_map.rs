@@ -549,7 +549,7 @@ impl StarkInfo {
                 }
             }
             let t = (self.map_sectionsN.get(s) - self.map_sectionsN1.get(s)) / 3;
-            log::debug!("map_sectionN3 set {} = {}", s, t);
+            //log::debug!("map_sectionN3 set {} = {}", s, t);
             self.map_sectionsN3.set(s, t);
         }
         Ok(())

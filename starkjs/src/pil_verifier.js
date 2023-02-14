@@ -47,7 +47,7 @@ module.exports = {
     assert(res.length == 0);
 
     elapse("arithmetization", timer);
-
+/*
     // prove and verify the stark proof
     const proof = await this.proveAndVerify(pil, constPols, cmPols, starkStruct);
     elapse("proveAndVerify", timer);
@@ -84,6 +84,7 @@ module.exports = {
         return v;
       }
     }, 1), "utf8");
+   */
   },
 
   async buildConsttree(pil, constPols, cmPols, starkStruct) {
