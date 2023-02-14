@@ -102,12 +102,10 @@ impl StarkInfo {
                 "number" | "challenge" | "public" | "tmp" | "Z" | "x" | "eval" => {}
                 _ => panic!("Invalid reference type: {:?}", r),
             };
-            log::debug!("ev_map: {:?}", ctx.starkinfo.ev_map);
         };
 
         iterate_code(&mut code, fix_ref, &mut ctx_f, pil);
 
-        log::debug!("q_deg: {}", ctx_f.starkinfo.q_deg);
         for i in 0..ctx_f.starkinfo.q_deg {
             ctx_f.starkinfo.ev_idx.set(
                 "cm",

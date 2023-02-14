@@ -294,7 +294,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.num_id]);
             let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.den_id]);
             let z = calculate_Z(pNum, pDen);
-            log::debug!("n_cm {} {}", n_cm, starkinfo.cm_n[n_cm]);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], z);
             n_cm += 1;
         }
@@ -408,7 +407,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                 }
             };
             let l = if ev.prime { &LpEv } else { &LEv };
-            let mut acc = F3G::ZERO;
+            log::debug!("calculate acc: N={}", N);
+            /*
             for k in 0..N {
                 let v = match p.dim {
                     1 => p.buffer[(k << extendBits) * (p.size) + (p.offset)],
@@ -418,9 +418,23 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                         p.buffer[(p.offset + (k << extendBits) * (p.size)) + 2].to_be(),
                     ),
                 };
-                log::debug!("acc: {}, v: {}, l[{}]: {}]", acc, v, k, l[k]);
                 acc = acc + (v * l[k])
             }
+            */
+            let acc = (0..N)
+                .into_par_iter()
+                .map(|k| {
+                    let v = match p.dim {
+                        1 => p.buffer[(k << extendBits) * (p.size) + (p.offset)],
+                        _ => F3G::new(
+                            p.buffer[(p.offset + (k << extendBits) * (p.size))].to_be(),
+                            p.buffer[(p.offset + (k << extendBits) * (p.size)) + 1].to_be(),
+                            p.buffer[(p.offset + (k << extendBits) * (p.size)) + 2].to_be(),
+                        ),
+                    };
+                    v * l[k]
+                })
+                .reduce(|| F3G::ZERO, |a, b| a + b);
             ctx.evals[i] = acc;
         }
 
@@ -699,10 +713,10 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     let N = if dom == "n" { ctx.N } else { ctx.Next };
     for i in 0..next {
         c_first.eval(ctx, i);
-        log::debug!("ctx.q_2ns[3*{}] {} ", i, ctx.q_2ns[3 * i]);
-        for i in 0..ctx.tmp.len() {
-            log::debug!("tmp@{} {}", i, ctx.tmp[i]);
-        }
+        //log::debug!("ctx.q_2ns[3*{}] {} ", i, ctx.q_2ns[3 * i]);
+        //for i in 0..ctx.tmp.len() {
+        //    log::debug!("tmp@{} {}", i, ctx.tmp[i]);
+        //}
     }
 
     for i in next..(N - next) {
