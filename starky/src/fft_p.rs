@@ -90,13 +90,23 @@ pub fn interpolate_prepare(buff: &mut Vec<F3G>, n_pols: usize, nbits: usize) {
         n_per_thread_f = min_corrected
     };
 
-    //TODO: parallel execution
+    /*
     for i in (0..n).step_by(n_per_thread_f) {
         let cur_n = min(n_per_thread_f, n - i);
         let mut bb = &mut buff[i * n_pols..(i + cur_n) * n_pols];
         let start = inv_n * (SHIFT.clone().exp(i));
-        interpolate_prepare_block(&mut bb, n_pols, start, SHIFT.clone(), i, n / n_per_thread_f);
+        interpolate_prepare_block(&mut bb, n_pols, start, SHIFT.clone(), i, n);
     }
+    */
+    let mut tmp_buff = &mut buff[0..(n * n_pols)];
+    tmp_buff
+        .par_chunks_mut(n_per_thread_f * n_pols)
+        .enumerate()
+        .for_each(|(j, bb)| {
+            let i = j * n_per_thread_f;
+            let start = inv_n * (SHIFT.clone().exp(i));
+            interpolate_prepare_block(bb, n_pols, start, SHIFT.clone(), i, n);
+        });
 }
 
 pub fn _fft(

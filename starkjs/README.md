@@ -62,5 +62,5 @@ MEM: 32G
 | ---             | ---     |
 | Arithmetization | 0.021   |
 | Bottom Layer    | 0.34    |
-| Recursive Layer | 410.8   |
-| Bottom Layer    | 213.2   |
+| Recursive Layer | 224.8   |
+| Bottom Layer    | 267.2   |

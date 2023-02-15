@@ -712,7 +712,7 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
 
     for i in next..(N - next) {
         // c_i(ctx, i);
-        if (i % 1000) == 0 {
+        if (i % 10000) == 0 {
             log::debug!("Calculating expression.. {}/{}", i, N);
         }
         c_first.eval(ctx, i);
