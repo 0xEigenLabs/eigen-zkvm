@@ -51,3 +51,16 @@ node src/compressor12/main_compressor12_exec.js \
 ```
 bash -x ../test/test_fibonacci_verifier.sh
 ```
+
+## Time used
+
+CPU: 11th Gen Intel(R) Core(TM) i9-11900 @ 2.50GHz, 16core
+
+MEM: 32G
+
+| Step            | time(s) |
+| ---             | ---     |
+| Arithmetization | 0.021   |
+| Bottom Layer    | 0.34    |
+| Recursive Layer | 410.8   |
+| Bottom Layer    | 213.2   |

@@ -228,7 +228,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             transcript.put(&b[..])?;
         }
 
-        log::info!("Merkeling 1....");
+        log::info!("Merkelizing 1....");
         let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n").unwrap();
         tree1.to_f3g(&mut ctx.cm1_2ns);
 
@@ -260,7 +260,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             n_cm += 1;
         }
 
-        log::info!("Merkeling 2....");
+        log::info!("Merkelizing 2....");
         let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n").unwrap();
         tree2.to_f3g(&mut ctx.cm2_2ns);
         transcript.put(&[tree2.root().as_elements().to_vec()])?;
