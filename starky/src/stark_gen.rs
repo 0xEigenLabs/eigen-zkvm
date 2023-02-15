@@ -700,7 +700,6 @@ pub fn merkelize<M: MerkleTree>(
 
 pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
-    println!("starkinfo {}", starkinfo);
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
     log::debug!("compile_code ctx.first:\n{}", c_first);
     let _c_i = compile_code(ctx, starkinfo, &seg.first, dom, false);
