@@ -539,7 +539,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             sn = sn * sn;
         }
         let mut ZHInv = vec![F3G::ZERO; 1 << extendBits];
-        //log::debug!("extendBits: {}", 1 << extendBits);
         for i in 0..(1 << extendBits) {
             ZHInv[i] = F3G::inv(sn * w - F3G::ONE);
             w = w * MG.0[extendBits];
@@ -551,13 +550,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 fn set_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: &usize, pol: Vec<F3G>) {
     let id_pol = *id_pol;
     let p = get_pol_ref(ctx, starkinfo, id_pol);
-    //log::debug!(
-    //    "set_pol {:?} {} {} {}",
-    //    p.deg,
-    //    p.size,
-    //    p.dim,
-    //    p.buffer.len()
-    //);
     if p.dim == 1 {
         for i in 0..p.deg {
             p.buffer[(p.offset + i * p.size)] = pol[i];
