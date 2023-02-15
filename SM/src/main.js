@@ -41,7 +41,7 @@ const pilConfig = { defines: {N: 2 ** 23},
 //  disableUnusedError: true
 }
 
-const fileCachePil = path.join(argv.workspace, "vm.pil.json");
+const fileCachePil = path.join(argv.workspace, "zkvm");
 
 pil_verifier.generate(argv.workspace, pilFile, pilConfig, fileCachePil, new VM(), starkStruct, proverAddr, config).then(() => {
   var end = new Date().getTime()

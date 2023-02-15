@@ -153,8 +153,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         stark_struct: &StarkStruct,
     ) -> Result<StarkProof<M>> {
         let mut ctx = StarkContext::default();
-        log::debug!("starkinfo: {}", starkinfo);
-        log::debug!("program: {}", program);
+        //log::debug!("starkinfo: {}", starkinfo);
+        //log::debug!("program: {}", program);
 
         let mut standard_fft = FFT::new();
         ctx.nbits = stark_struct.nBits;
@@ -194,12 +194,13 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             ctx.x_2ns[i] = xx;
             xx = xx * MG.0[ctx.nbits_ext];
         }
+        log::debug!("build_Zh_inv");
         ctx.Zi = Self::build_Zh_Inv(ctx.nbits, extendBits);
         log::debug!("Zi(1) {}", (ctx.Zi)(1));
 
         ctx.const_n = const_pols.write_buff();
         const_tree.to_f3g(&mut ctx.const_2ns);
-        log::info!("const_2ns");
+        log::debug!("const_2ns");
         crate::helper::pretty_print_array(&ctx.const_2ns);
 
         ctx.publics = vec![F3G::ZERO; starkinfo.publics.len()];
@@ -228,7 +229,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             transcript.put(&b[..])?;
         }
 
-        log::info!("Merkeling 1....");
+        log::info!("Merkelizing 1....");
         let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n").unwrap();
         tree1.to_f3g(&mut ctx.cm1_2ns);
 
@@ -237,7 +238,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             //crate::helper::fr_to_biguint(&tree1.root().into())
             tree1.root(),
         );
-        log::info!("cm1_2ns");
+        log::debug!("cm1_2ns");
         crate::helper::pretty_print_array(&ctx.cm1_2ns);
         transcript.put(&[tree1.root().as_elements().to_vec()])?;
         // 2.- Caluculate plookups h1 and h2
@@ -260,7 +261,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             n_cm += 1;
         }
 
-        log::info!("Merkeling 2....");
+        log::info!("Merkelizing 2....");
         let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n").unwrap();
         tree2.to_f3g(&mut ctx.cm2_2ns);
         transcript.put(&[tree2.root().as_elements().to_vec()])?;
@@ -269,7 +270,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             //crate::helper::fr_to_biguint(&tree2.root().into())
             tree2.root(),
         );
-        log::info!("cm2_2ns");
+        log::debug!("cm2_2ns");
         crate::helper::pretty_print_array(&ctx.cm2_2ns);
 
         // 3.- Compute Z polynomials
@@ -294,7 +295,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.num_id]);
             let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.den_id]);
             let z = calculate_Z(pNum, pDen);
-            log::debug!("n_cm {} {}", n_cm, starkinfo.cm_n[n_cm]);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], z);
             n_cm += 1;
         }
@@ -408,19 +408,21 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                 }
             };
             let l = if ev.prime { &LpEv } else { &LEv };
-            let mut acc = F3G::ZERO;
-            for k in 0..N {
-                let v = match p.dim {
-                    1 => p.buffer[(k << extendBits) * (p.size) + (p.offset)],
-                    _ => F3G::new(
-                        p.buffer[(p.offset + (k << extendBits) * (p.size))].to_be(),
-                        p.buffer[(p.offset + (k << extendBits) * (p.size)) + 1].to_be(),
-                        p.buffer[(p.offset + (k << extendBits) * (p.size)) + 2].to_be(),
-                    ),
-                };
-                log::debug!("acc: {}, v: {}, l[{}]: {}]", acc, v, k, l[k]);
-                acc = acc + (v * l[k])
-            }
+            log::debug!("calculate acc: N={}", N);
+            let acc = (0..N)
+                .into_par_iter()
+                .map(|k| {
+                    let v = match p.dim {
+                        1 => p.buffer[(k << extendBits) * (p.size) + (p.offset)],
+                        _ => F3G::new(
+                            p.buffer[(p.offset + (k << extendBits) * (p.size))].to_be(),
+                            p.buffer[(p.offset + (k << extendBits) * (p.size)) + 1].to_be(),
+                            p.buffer[(p.offset + (k << extendBits) * (p.size)) + 2].to_be(),
+                        ),
+                    };
+                    v * l[k]
+                })
+                .reduce(|| F3G::ZERO, |a, b| a + b);
             ctx.evals[i] = acc;
         }
 
@@ -443,43 +445,55 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let xi = ctx.challenges[7];
         let wxi = ctx.challenges[7] * MG.0[ctx.nbits];
 
-        ctx.xDivXSubXi = vec![BaseElement::ZERO; (ctx.N << extendBits) * 3];
-        ctx.xDivXSubWXi = vec![BaseElement::ZERO; (ctx.N << extendBits) * 3];
-        let mut tmp_den = vec![F3G::ZERO; ctx.N << extendBits];
-        let mut tmp_denw = vec![F3G::ZERO; ctx.N << extendBits];
-        let mut x = SHIFT.clone();
-        for k in 0..(N << extendBits) {
-            tmp_den[k] = x - xi;
-            tmp_denw[k] = x - wxi;
-            x = x * MG.0[ctx.nbits + extendBits];
-        }
+        let extend_size = N << extendBits;
+
+        ctx.xDivXSubXi = vec![BaseElement::ZERO; extend_size * 3];
+        ctx.xDivXSubWXi = vec![BaseElement::ZERO; extend_size * 3];
+        let mut tmp_den = vec![F3G::ZERO; extend_size];
+        let mut tmp_denw = vec![F3G::ZERO; extend_size];
+
+        let mut x_buff = vec![F3G::ZERO; extend_size];
+
+        x_buff.par_iter_mut().enumerate().for_each(|(k, xb)| {
+            *xb = SHIFT.clone() * (MG.0[ctx.nbits + extendBits].pow(k));
+        });
+
+        tmp_den
+            .par_iter_mut()
+            .zip_eq(tmp_denw.par_iter_mut())
+            .enumerate()
+            .for_each(|(k, (td, tdw))| {
+                *td = x_buff[k] - xi;
+                *tdw = x_buff[k] - wxi;
+            });
+
         tmp_den = F3G::batch_inverse(&tmp_den);
         tmp_denw = F3G::batch_inverse(&tmp_denw);
-        x = SHIFT.clone();
-        for k in 0..(N << extendBits) {
-            let v = (tmp_den[k] * x).as_elements();
-            ctx.xDivXSubXi[3 * k] = v[0];
-            ctx.xDivXSubXi[3 * k + 1] = v[1];
-            ctx.xDivXSubXi[3 * k + 2] = v[2];
+        ctx.xDivXSubXi
+            .par_chunks_mut(3)
+            .zip_eq(ctx.xDivXSubWXi.par_chunks_mut(3))
+            .enumerate()
+            .for_each(|(k, (xxx, xxwx))| {
+                let v = (tmp_den[k] * x_buff[k]).as_elements();
+                xxx[0] = v[0];
+                xxx[1] = v[1];
+                xxx[2] = v[2];
 
-            let vw = (tmp_denw[k] * x).as_elements();
-            ctx.xDivXSubWXi[3 * k] = vw[0];
-            ctx.xDivXSubWXi[3 * k + 1] = vw[1];
-            ctx.xDivXSubWXi[3 * k + 2] = vw[2];
-
-            x = x * MG.0[ctx.nbits + extendBits];
-        }
+                let vw = (tmp_denw[k] * x_buff[k]).as_elements();
+                xxwx[0] = vw[0];
+                xxwx[1] = vw[1];
+                xxwx[2] = vw[2];
+            });
         calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns");
 
-        let mut friPol = vec![F3G::ZERO; N << extendBits];
-        for i in 0..(N << extendBits) {
-            friPol[i] = F3G::new(
+        let mut fri_pol = vec![F3G::ZERO; N << extendBits];
+        fri_pol.par_iter_mut().enumerate().for_each(|(i, o)| {
+            *o = F3G::new(
                 ctx.f_2ns[i * 3].to_be(),
                 ctx.f_2ns[i * 3 + 1].to_be(),
                 ctx.f_2ns[i * 3 + 2].to_be(),
             );
-        }
-        //log::debug!("friPol {} {}", friPol.len(), N << extendBits);
+        });
 
         let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)> {
             vec![
@@ -491,7 +505,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             ]
         };
         let mut fri = FRI::new(stark_struct);
-        let friProof = fri.prove::<M, T>(&mut transcript, &friPol, query_pol)?;
+        let friProof = fri.prove::<M, T>(&mut transcript, &fri_pol, query_pol)?;
 
         Ok(StarkProof {
             root1: tree1.root(),
@@ -525,7 +539,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             sn = sn * sn;
         }
         let mut ZHInv = vec![F3G::ZERO; 1 << extendBits];
-        //log::debug!("extendBits: {}", 1 << extendBits);
         for i in 0..(1 << extendBits) {
             ZHInv[i] = F3G::inv(sn * w - F3G::ONE);
             w = w * MG.0[extendBits];
@@ -537,13 +550,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 fn set_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: &usize, pol: Vec<F3G>) {
     let id_pol = *id_pol;
     let p = get_pol_ref(ctx, starkinfo, id_pol);
-    //log::debug!(
-    //    "set_pol {:?} {} {} {}",
-    //    p.deg,
-    //    p.size,
-    //    p.dim,
-    //    p.buffer.len()
-    //);
     if p.dim == 1 {
         for i in 0..p.deg {
             p.buffer[(p.offset + i * p.size)] = pol[i];
@@ -686,7 +692,6 @@ pub fn merkelize<M: MerkleTree>(
 
 pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
-    println!("starkinfo {}", starkinfo);
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
     log::debug!("compile_code ctx.first:\n{}", c_first);
     let _c_i = compile_code(ctx, starkinfo, &seg.first, dom, false);
@@ -699,14 +704,17 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     let N = if dom == "n" { ctx.N } else { ctx.Next };
     for i in 0..next {
         c_first.eval(ctx, i);
-        log::debug!("ctx.q_2ns[3*{}] {} ", i, ctx.q_2ns[3 * i]);
-        for i in 0..ctx.tmp.len() {
-            log::debug!("tmp@{} {}", i, ctx.tmp[i]);
-        }
+        //log::debug!("ctx.q_2ns[3*{}] {} ", i, ctx.q_2ns[3 * i]);
+        //for i in 0..ctx.tmp.len() {
+        //    log::debug!("tmp@{} {}", i, ctx.tmp[i]);
+        //}
     }
 
     for i in next..(N - next) {
         // c_i(ctx, i);
+        if (i % 1000) == 0 {
+            log::debug!("Calculating expression.. {}/{}", i, N);
+        }
         c_first.eval(ctx, i);
     }
     for i in (N - next)..N {

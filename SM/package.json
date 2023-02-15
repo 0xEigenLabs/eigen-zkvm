@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "demo": "mkdir -p circuits && node src/main.js -w circuits",
-    "genstarkstruct": ". ./tools/setup.sh && node tools/gen_debug_starkstruct.js -t BN128 -p pil/main.pil -s $BDIR/starkstruct.json",
+    "genstarkstruct": ". ./tools/setup.sh && node tools/gen_debug_starkstruct.js -t GL -p pil/main.pil -s $BDIR/starkstruct.json",
     "buildrom": ". ./tools/setup.sh && (cd node_modules/@0xpolygonhermez/zkevm-rom && npm run build -- -s 23) && cp node_modules/@0xpolygonhermez/zkevm-rom/build/rom.json $BDIR/rom.json",
     "buildstoragerom": ". ./tools/setup.sh && npm install --no-save https://github.com/0xpolygonhermez/zkevm-storage-rom.git && (cd node_modules/@hermeznetwork/zkasm && npm i && npm run build --) && cp node_modules/@hermeznetwork/zkasm/build/storage_sm_rom.json $BDIR/storage_sm_rom.json"
   },

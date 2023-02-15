@@ -27,7 +27,6 @@ impl<M: MerkleTree> StarkSetup<M> {
         pil: &mut PIL,
         stark_struct: &StarkStruct,
     ) -> Result<StarkSetup<M>> {
-        log::debug!("StarkSetup: {:?}", stark_struct);
         let nBits = stark_struct.nBits;
         let nBitsExt = stark_struct.nBitsExt;
         assert_eq!(const_pol.nPols, pil.nConstants);

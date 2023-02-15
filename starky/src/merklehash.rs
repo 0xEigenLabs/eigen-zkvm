@@ -91,7 +91,7 @@ impl MerkleTreeGL {
         _st_n: usize,
     ) -> Result<Vec<ElementDigest>> {
         log::debug!(
-            "merklizing bn128 hash start.... {}/{}, buff size {}",
+            "merklizing GL hash start.... {}/{}, buff size {}",
             _st_i,
             _st_n,
             buff_in.len()
