@@ -26,8 +26,9 @@ pub enum Ops {
 #[derive(Clone, Debug)]
 pub struct Expr {
     pub op: Ops,
-    pub syms: Vec<String>,
-    pub defs: Vec<Expr>,
+    pub syms: Vec<String>, // symbol: tmp, q_2ns etc.
+    pub defs: Vec<Expr>,  // values bound to the symbol
+    pub addr: Vec<usize>, // address, format: (offset, next, modulas, size)
 }
 
 impl fmt::Display for Expr {
@@ -47,10 +48,10 @@ impl fmt::Display for Expr {
                     f,
                     "addr ({}) ({} + ((i + {})%{}) * {}) dim={}",
                     self.syms[0],
-                    self.defs[0],
-                    self.defs[1],
-                    self.defs[2],
-                    self.defs[3],
+                    self.addr[0],
+                    self.addr[1],
+                    self.addr[2],
+                    self.addr[3],
                     if self.syms.len() == 2 { 3 } else { 1 }
                 )
             }
@@ -65,14 +66,14 @@ impl fmt::Display for Expr {
 }
 
 impl Expr {
-    pub fn new(op: Ops, syms: Vec<String>, defs: Vec<Expr>) -> Self {
-        Self { op, syms, defs }
+    pub fn new(op: Ops, syms: Vec<String>, defs: Vec<Expr>, addr: Vec<usize>) -> Self {
+        Self { op, syms, defs, addr }
     }
 }
 
 impl From<F3G> for Expr {
     fn from(v: F3G) -> Self {
-        Expr::new(Ops::Vari(v), vec![], vec![])
+        Expr::new(Ops::Vari(v), vec![], vec![], vec![])
     }
 }
 
@@ -219,10 +220,10 @@ pub fn compile_code(
         }
 
         let exp = match (&code[j].op).as_str() {
-            "add" => Expr::new(Ops::Add, Vec::new(), (&src[0..2]).to_vec()),
-            "sub" => Expr::new(Ops::Sub, Vec::new(), (&src[0..2]).to_vec()),
-            "mul" => Expr::new(Ops::Mul, Vec::new(), (&src[0..2]).to_vec()),
-            "copy" => Expr::new(Ops::Copy_, Vec::new(), (&src[0..1]).to_vec()),
+            "add" => Expr::new(Ops::Add, Vec::new(), (&src[0..2]).to_vec(), vec![]),
+            "sub" => Expr::new(Ops::Sub, Vec::new(), (&src[0..2]).to_vec(), vec![]),
+            "mul" => Expr::new(Ops::Mul, Vec::new(), (&src[0..2]).to_vec(), vec![]),
+            "copy" => Expr::new(Ops::Copy_, Vec::new(), (&src[0..1]).to_vec(), vec![]),
             _ => {
                 panic!("Invalid op {:?}", code[j])
             }
@@ -242,33 +243,22 @@ pub fn compile_code(
         let sz = code.len() - 1;
         body.exprs
             .push(get_ref(ctx, starkinfo, &code[sz].dest, dom, next, modulas));
-        body.exprs.push(Expr::new(Ops::Ret, vec![], vec![]));
+        body.exprs.push(Expr::new(Ops::Ret, vec![], vec![], vec![]));
     }
     body
 }
 
-fn get_index(offset: usize, next: usize, modulas: usize, size: usize) -> Vec<Expr> {
-    let offset = Expr::from(F3G::from(offset));
-    let size = Expr::from(F3G::from(size));
-    let next = Expr::from(F3G::from(next));
-    let modulas = Expr::from(F3G::from(modulas));
+#[inline(always)]
+fn get_index(offset: usize, next: usize, modulas: usize, size: usize) -> Vec<usize> {
     vec![offset, next, modulas, size]
 }
 
+#[inline(always)]
 fn get_i(expr: &Expr, arg_i: usize) -> usize {
-    let get_val = |i: usize| -> usize {
-        match expr.defs[i].op {
-            // reference to instant value
-            Ops::Vari(x) => x.to_be().as_int() as usize, //u64->usize
-            _ => {
-                panic!("Invalid Vari: {}", expr);
-            }
-        }
-    };
-    let offset = get_val(0);
-    let next = get_val(1);
-    let modulas = get_val(2);
-    let size = get_val(3);
+    let offset = expr.addr[0]; 
+    let next = expr.addr[1];
+    let modulas = expr.addr[2];
+    let size = expr.addr[3];
     offset + ((arg_i + next) % modulas) * size
 }
 
@@ -334,6 +324,7 @@ fn set_ref(
         "tmp" => Expr::new(
             Ops::Refer,
             vec!["tmp".to_string()],
+            vec![],
             get_index(r.id, 0, modulas, 0),
         ),
         "q" => {
@@ -344,12 +335,14 @@ fn set_ref(
                     Expr::new(
                         Ops::Refer,
                         vec!["q_2ns".to_string(), "3".to_string()],
+                        vec![],
                         get_index(r.id, 0, modulas, 3),
                     )
                 } else if starkinfo.q_dim == 1 {
                     Expr::new(
                         Ops::Refer,
                         vec!["q_2ns".to_string()],
+                        vec![],
                         get_index(r.id, 0, modulas, 1),
                     )
                 } else {
@@ -366,6 +359,7 @@ fn set_ref(
                 Expr::new(
                     Ops::Refer,
                     vec!["f_2ns".to_string(), "3".to_string()],
+                    vec![],
                     get_index(r.id, 0, modulas, 3),
                 )
             } else {
@@ -396,7 +390,7 @@ fn set_ref(
         }
     };
     body.exprs.push(val);
-    body.exprs.push(Expr::new(Ops::Write, vec![], vec![e_dst]));
+    body.exprs.push(Expr::new(Ops::Write, vec![], vec![e_dst], vec![]));
 }
 
 fn get_ref(
@@ -412,6 +406,7 @@ fn get_ref(
         "tmp" => Expr::new(
             Ops::Refer,
             vec!["tmp".to_string()],
+            vec![],
             get_index(r.id, 0, modulas, 0),
         ),
         "const" => {
@@ -420,12 +415,14 @@ fn get_ref(
                     Expr::new(
                         Ops::Refer,
                         vec!["const_n".to_string()],
+                        vec![],
                         get_index(r.id, 1, modulas, starkinfo.n_constants),
                     )
                 } else {
                     Expr::new(
                         Ops::Refer,
                         vec!["const_n".to_string()],
+                        vec![],
                         get_index(r.id, 0, modulas, starkinfo.n_constants),
                     )
                 }
@@ -434,12 +431,14 @@ fn get_ref(
                     Expr::new(
                         Ops::Refer,
                         vec!["const_2ns".to_string()],
+                        vec![],
                         get_index(r.id, next, modulas, starkinfo.n_constants),
                     )
                 } else {
                     Expr::new(
                         Ops::Refer,
                         vec!["const_2ns".to_string()],
+                        vec![],
                         get_index(r.id, 0, modulas, starkinfo.n_constants),
                     )
                 }
@@ -470,30 +469,36 @@ fn get_ref(
             Ops::Vari(F3G::from(r.value.clone().unwrap().parse::<u64>().unwrap())),
             vec![],
             vec![],
+            vec![],
         ),
         "public" => Expr::new(
             Ops::Refer,
             vec!["publics".to_string()],
+            vec![],
             get_index(r.id, 0, modulas, 0),
         ),
         "challenge" => Expr::new(
             Ops::Refer,
             vec!["challenge".to_string()],
+            vec![],
             get_index(r.id, 0, modulas, 0),
         ),
         "eval" => Expr::new(
             Ops::Refer,
             vec!["evals".to_string()],
+            vec![],
             get_index(r.id, 0, modulas, 0),
         ),
         "xDivXSubXi" => Expr::new(
             Ops::Refer,
             vec!["xDivXSubXi".to_string(), "3".to_string()],
+            vec![],
             get_index(0, 0, modulas, 3),
         ),
         "xDivXSubWXi" => Expr::new(
             Ops::Refer,
             vec!["xDivXSubWXi".to_string(), "3".to_string()],
+            vec![],
             get_index(0, 0, modulas, 3),
         ),
         "x" => {
@@ -501,12 +506,14 @@ fn get_ref(
                 Expr::new(
                     Ops::Refer,
                     vec!["x_n".to_string()],
+                    vec![],
                     get_index(0, 0, modulas, 1),
                 )
             } else if dom == "2ns" {
                 Expr::new(
                     Ops::Refer,
                     vec!["x_2ns".to_string()],
+                    vec![],
                     get_index(0, 0, modulas, 1), //i
                 )
             } else {
@@ -516,6 +523,7 @@ fn get_ref(
         "Zi" => Expr::new(
             Ops::Refer,
             vec!["Zi".to_string()],
+            vec![],
             get_index(0, 0, modulas, 1),
         ),
         _ => panic!("Invalid reference type get, {}", r.type_),
@@ -532,22 +540,22 @@ fn eval_map(
 ) -> Expr {
     let p = &starkinfo.var_pol_map[pol_id];
     //log::debug!("eval_map: {:?}", p);
-    let offset = Expr::from(F3G::from(p.section_pos));
-    let size = Expr::from(F3G::from(starkinfo.map_sectionsN.get(&p.section)));
-    let next = Expr::from(F3G::from(next));
-    let modulas = Expr::from(F3G::from(modulas));
-    let zero = Expr::from(F3G::ZERO);
+    let offset = p.section_pos;
+    let size = starkinfo.map_sectionsN.get(&p.section);
+    let zero = 0; 
     if p.dim == 1 {
         if prime {
             Expr::new(
                 Ops::Refer,
                 vec![p.section.clone()],
+                vec![],
                 vec![offset, next, modulas, size],
             )
         } else {
             Expr::new(
                 Ops::Refer,
                 vec![p.section.clone()],
+                vec![],
                 vec![offset, zero, modulas, size],
             )
         }
@@ -556,12 +564,14 @@ fn eval_map(
             Expr::new(
                 Ops::Refer,
                 vec![p.section.clone(), "3".to_string()],
+                vec![],
                 vec![offset, next, modulas, size],
             )
         } else {
             Expr::new(
                 Ops::Refer,
                 vec![p.section.clone(), "3".to_string()],
+                vec![],
                 vec![offset, zero, modulas, size],
             )
         }
