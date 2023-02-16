@@ -254,11 +254,6 @@ pub fn compile_code(
 }
 
 #[inline(always)]
-fn get_index(offset: usize, next: usize, modulas: usize, size: usize) -> Vec<usize> {
-    vec![offset, next, modulas, size]
-}
-
-#[inline(always)]
 fn get_i(expr: &Expr, arg_i: usize) -> usize {
     let offset = expr.addr[0];
     let next = expr.addr[1];
@@ -330,7 +325,7 @@ fn set_ref(
             Ops::Refer,
             vec!["tmp".to_string()],
             vec![],
-            get_index(r.id, 0, modulas, 0),
+            vec![r.id, 0, modulas, 0],
         ),
         "q" => {
             if dom == "n" {
@@ -341,14 +336,14 @@ fn set_ref(
                         Ops::Refer,
                         vec!["q_2ns".to_string(), "3".to_string()],
                         vec![],
-                        get_index(r.id, 0, modulas, 3),
+                        vec![r.id, 0, modulas, 3],
                     )
                 } else if starkinfo.q_dim == 1 {
                     Expr::new(
                         Ops::Refer,
                         vec!["q_2ns".to_string()],
                         vec![],
-                        get_index(r.id, 0, modulas, 1),
+                        vec![r.id, 0, modulas, 1],
                     )
                 } else {
                     panic!("Invalid dom");
@@ -365,7 +360,7 @@ fn set_ref(
                     Ops::Refer,
                     vec!["f_2ns".to_string(), "3".to_string()],
                     vec![],
-                    get_index(r.id, 0, modulas, 3),
+                    vec![r.id, 0, modulas, 3],
                 )
             } else {
                 panic!("Invalid dom");
@@ -413,7 +408,7 @@ fn get_ref(
             Ops::Refer,
             vec!["tmp".to_string()],
             vec![],
-            get_index(r.id, 0, modulas, 0),
+            vec![r.id, 0, modulas, 0],
         ),
         "const" => {
             if dom == "n" {
@@ -422,14 +417,14 @@ fn get_ref(
                         Ops::Refer,
                         vec!["const_n".to_string()],
                         vec![],
-                        get_index(r.id, 1, modulas, starkinfo.n_constants),
+                        vec![r.id, 1, modulas, starkinfo.n_constants],
                     )
                 } else {
                     Expr::new(
                         Ops::Refer,
                         vec!["const_n".to_string()],
                         vec![],
-                        get_index(r.id, 0, modulas, starkinfo.n_constants),
+                        vec![r.id, 0, modulas, starkinfo.n_constants],
                     )
                 }
             } else if dom == "2ns" {
@@ -438,14 +433,14 @@ fn get_ref(
                         Ops::Refer,
                         vec!["const_2ns".to_string()],
                         vec![],
-                        get_index(r.id, next, modulas, starkinfo.n_constants),
+                        vec![r.id, next, modulas, starkinfo.n_constants],
                     )
                 } else {
                     Expr::new(
                         Ops::Refer,
                         vec!["const_2ns".to_string()],
                         vec![],
-                        get_index(r.id, 0, modulas, starkinfo.n_constants),
+                        vec![r.id, 0, modulas, starkinfo.n_constants],
                     )
                 }
             } else {
@@ -481,31 +476,31 @@ fn get_ref(
             Ops::Refer,
             vec!["publics".to_string()],
             vec![],
-            get_index(r.id, 0, modulas, 0),
+            vec![r.id, 0, modulas, 0],
         ),
         "challenge" => Expr::new(
             Ops::Refer,
             vec!["challenge".to_string()],
             vec![],
-            get_index(r.id, 0, modulas, 0),
+            vec![r.id, 0, modulas, 0],
         ),
         "eval" => Expr::new(
             Ops::Refer,
             vec!["evals".to_string()],
             vec![],
-            get_index(r.id, 0, modulas, 0),
+            vec![r.id, 0, modulas, 0],
         ),
         "xDivXSubXi" => Expr::new(
             Ops::Refer,
             vec!["xDivXSubXi".to_string(), "3".to_string()],
             vec![],
-            get_index(0, 0, modulas, 3),
+            vec![0, 0, modulas, 3],
         ),
         "xDivXSubWXi" => Expr::new(
             Ops::Refer,
             vec!["xDivXSubWXi".to_string(), "3".to_string()],
             vec![],
-            get_index(0, 0, modulas, 3),
+            vec![0, 0, modulas, 3],
         ),
         "x" => {
             if dom == "n" {
@@ -513,14 +508,14 @@ fn get_ref(
                     Ops::Refer,
                     vec!["x_n".to_string()],
                     vec![],
-                    get_index(0, 0, modulas, 1),
+                    vec![0, 0, modulas, 1],
                 )
             } else if dom == "2ns" {
                 Expr::new(
                     Ops::Refer,
                     vec!["x_2ns".to_string()],
                     vec![],
-                    get_index(0, 0, modulas, 1), //i
+                    vec![0, 0, modulas, 1], //i
                 )
             } else {
                 panic!("Invalid dom");
@@ -530,7 +525,7 @@ fn get_ref(
             Ops::Refer,
             vec!["Zi".to_string()],
             vec![],
-            get_index(0, 0, modulas, 1),
+            vec![0, 0, modulas, 1],
         ),
         _ => panic!("Invalid reference type get, {}", r.type_),
     }
