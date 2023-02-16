@@ -27,8 +27,8 @@ pub enum Ops {
 pub struct Expr {
     pub op: Ops,
     pub syms: Vec<String>, // symbol: tmp, q_2ns etc.
-    pub defs: Vec<Expr>,  // values bound to the symbol
-    pub addr: Vec<usize>, // address, format: (offset, next, modulas, size)
+    pub defs: Vec<Expr>,   // values bound to the symbol
+    pub addr: Vec<usize>,  // address, format: (offset, next, modulas, size)
 }
 
 impl fmt::Display for Expr {
@@ -67,7 +67,12 @@ impl fmt::Display for Expr {
 
 impl Expr {
     pub fn new(op: Ops, syms: Vec<String>, defs: Vec<Expr>, addr: Vec<usize>) -> Self {
-        Self { op, syms, defs, addr }
+        Self {
+            op,
+            syms,
+            defs,
+            addr,
+        }
     }
 }
 
@@ -255,7 +260,7 @@ fn get_index(offset: usize, next: usize, modulas: usize, size: usize) -> Vec<usi
 
 #[inline(always)]
 fn get_i(expr: &Expr, arg_i: usize) -> usize {
-    let offset = expr.addr[0]; 
+    let offset = expr.addr[0];
     let next = expr.addr[1];
     let modulas = expr.addr[2];
     let size = expr.addr[3];
@@ -390,7 +395,8 @@ fn set_ref(
         }
     };
     body.exprs.push(val);
-    body.exprs.push(Expr::new(Ops::Write, vec![], vec![e_dst], vec![]));
+    body.exprs
+        .push(Expr::new(Ops::Write, vec![], vec![e_dst], vec![]));
 }
 
 fn get_ref(
@@ -542,7 +548,7 @@ fn eval_map(
     //log::debug!("eval_map: {:?}", p);
     let offset = p.section_pos;
     let size = starkinfo.map_sectionsN.get(&p.section);
-    let zero = 0; 
+    let zero = 0;
     if p.dim == 1 {
         if prime {
             Expr::new(
