@@ -702,24 +702,15 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
         _ => 1 << (ctx.nbits_ext - ctx.nbits),
     };
     let N = if dom == "n" { ctx.N } else { ctx.Next };
-    for i in 0..next {
+    for i in 0..N {
         c_first.eval(ctx, i);
         //log::debug!("ctx.q_2ns[3*{}] {} ", i, ctx.q_2ns[3 * i]);
         //for i in 0..ctx.tmp.len() {
         //    log::debug!("tmp@{} {}", i, ctx.tmp[i]);
         //}
-    }
-
-    for i in next..(N - next) {
-        // c_i(ctx, i);
         if (i % 10000) == 0 {
             log::debug!("Calculating expression.. {}/{}", i, N);
         }
-        c_first.eval(ctx, i);
-    }
-    for i in (N - next)..N {
-        // c_last(ctx, i);
-        c_first.eval(ctx, i);
     }
 }
 
