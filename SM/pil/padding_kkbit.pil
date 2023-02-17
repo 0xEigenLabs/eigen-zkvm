@@ -112,14 +112,14 @@ namespace PaddingKKBit(%N);
 
     /*
     connected, sOutBit, rBit   => sInBit
-    0 0 0     0
-    0 0 1     1
-    0 1 0     0
-    0 1 1     1
-    1 0 0     0
-    1 0 1     1
-    1 1 0     1
-    1 1 1     0
+        0         0       0          0
+        0         0       1          1
+        0         1       0          0
+        0         1       1          1
+        1         0       0          0
+        1         0       1          1
+        1         1       0          1
+        1         1       1          0
     */
 
     pol aux_sInBit = (sOutBit - 2*sOutBit*rBit);

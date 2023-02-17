@@ -1,7 +1,8 @@
+include "global.pil";
 namespace Mem(%N);
 
-    pol constant INCS; // 1......N
-    pol constant ISNOTLAST; // 1, 1, 1, .........1, 1, 0
+    pol INCS = Global.STEP + 1;
+    pol ISNOTLAST = (1 - Global.LLAST);
 
     pol commit addr;
     pol commit step;

@@ -1,4 +1,5 @@
 const { smtUtils, stateUtils } = require("@0xpolygonhermez/zkevm-commonjs");
+const { Scalar } = require("ffjavascript");
 
 function sr8to4(F, SR) {
     const r=[];
