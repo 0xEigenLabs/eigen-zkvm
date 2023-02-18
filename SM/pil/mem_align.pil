@@ -1,3 +1,4 @@
+include "global.pil";
 namespace MemAlign(%N);
 
     /*
@@ -43,13 +44,8 @@ namespace MemAlign(%N);
 
     pol commit offset;
 
-    // BYTE2A = 0 (x256), 1 (x256), 2 (x256), ..., 255 (x256)
-    pol constant BYTE2A;
-
-    // BYTE2B = 0, 1, 2, 4, **, 255, 0, 1, ..., 255
-    pol constant BYTE2B;
-
-    pol constant BYTE_C3072;
+    // BYTE_C4096 = 0 (x4096), 1 (x4096), ... , 31 (x4096), 32 (x4096), 0 (x4096), 1 (x4096), ...
+    pol constant BYTE_C4096; // [0:4096..255:4096]
 
     // FACTOR was same for all combinations of offset, wr8, wr256 is a f(step)
     // FACTOR[7] = 2**24, 2**16, 2**8, 1, 0 (x60)
@@ -62,31 +58,28 @@ namespace MemAlign(%N);
     // FACTOR change according the combinations of offset, wr8, wr256 and step.
     pol constant FACTORV[8];
 
-    // STEP = 0,1,2,...,62,63,0,1,2,...
-    pol constant STEP;
-
-    // STEP
+    // STEP32
     //    0 - 1023  WR256 = 0 WR8 = 0
-    // 1024 - 2047  WR256 = 1 WR8 = 0
-    // 2048 - 3071  WR256 = 0 WR8 = 1
-    pol constant WR256;
-    pol constant WR8;
+    // 1024 - 2047  WR256 = 0 WR8 = 0
+    // 2048 - 3071  WR256 = 1 WR8 = 0
+    // 3072 - 4096  WR256 = 0 WR8 = 1
+    pol constant WR256; // [0:2048,1:1024:0:1024]
+    pol constant WR8;   // [0:3072,1:1024]
 
-    // OFFSET = 0 (x64), 1 (x64), ... , 31 (x64), 32 (x64), 0 (x64), 1 (x64), ...
-    pol constant OFFSET; // 0 - 31
-
-    // RESET = 1, 0 (x63), 1, 0 (x63)
-    pol constant RESET;
+    // OFFSET = 0 (x32), 1 (x32), ... , 31 (x32), 32 (x32), 0 (x32), 1 (x32), ...
+    pol constant OFFSET; // [0:32..31:32]
 
     pol constant SELM1;
+
+    pol RESET = Global.CLK32[0];
 
     //              RangeCheck                  Latch   Clock
     // factorV      Plookup (FACTORV)           no      yes
     // wr256        Plookup (WR256)             yes     no
     // wr8          Plookup (WR8)               yes     no
     // offset       Plookup (OFFSET)            yes     no
-    // inV          RangeCheck (BYTE_C3072)     no      yes
-    // inM[0..1]    RangeCheck (BYTE2A,BYTE2B)  no      yes
+    // inV          RangeCheck (BYTE_C4096)     no      yes
+    // inM[0..1]    RangeCheck (BYTE2A,BYTE2)   no      yes
     // m0[0..7]     Built                       no      yes
     // m1[0..7]     Built                       no      yes
     // w0[0..7]     Built                       no      yes
@@ -99,15 +92,26 @@ namespace MemAlign(%N);
     (1 - RESET) * offset' = (1 - RESET) * offset;
     (1 - RESET) * wr8' = (1 - RESET) * wr8;
 
+    pol commit resultRd;
+    pol commit resultWr8;
+    pol commit resultWr256;
+    (1 - RESET) * resultRd = 0;
+    (1 - RESET) * resultWr8 = 0;
+    (1 - RESET) * resultWr256 = 0;
+
+    (1 - wr8) * resultWr8 = 0;
+    (1 - wr256) * resultWr256 = 0;
+    wr8 * wr256 = 0;
+
     // RangeCheck
-    {inM[1], inM[0]} in {BYTE2A, BYTE2B};
+    {inM[1], inM[0]} in {Global.BYTE_2A, Global.BYTE};
 
     // Plookup
     {
-        STEP, offset', wr256', wr8', selM1, inV,
+        Global.STEP32, offset', wr256', wr8', selM1, inV,
         factorV[0], factorV[1], factorV[2], factorV[3], factorV[4], factorV[5], factorV[6], factorV[7]
     } in {
-        STEP, OFFSET, WR256, WR8, SELM1, BYTE_C3072,
+        Global.STEP32, OFFSET, WR256, WR8, SELM1, BYTE_C4096,
         FACTORV[0], FACTORV[1], FACTORV[2], FACTORV[3], FACTORV[4], FACTORV[5], FACTORV[6], FACTORV[7]
     };
 

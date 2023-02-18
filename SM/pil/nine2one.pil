@@ -1,13 +1,13 @@
 include "keccakf.pil";
 
 namespace Nine2One(%N);
-    pol constant Field9latch;  // 0,0,0,0,0,0,0,0,0,1,0,0,0
-    pol constant Factor;  // 1, 1<<7, 1<<21, .....
+    pol constant FieldLatch;  // [0:44,1]
+    pol constant Factor;  // 1,2,4,8,...,2**43
 
     pol commit bit;
-    pol commit field9;
+    pol commit field44;
 
-    field9' = (1-Field9latch)*field9 + bit*Factor;
+    field44' = (1-FieldLatch)*field44 + bit*Factor;
     bit *(1-bit) = 0;
 
-    Field9latch*(field9 - KeccakF.a) = 0;
+    FieldLatch*(field44 - KeccakF.a44) = 0;

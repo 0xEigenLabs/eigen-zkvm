@@ -29,13 +29,13 @@ const config = {
   debug: false,
   debugInfo: { inputName: 'input_executor' },
   unsigned: false,
-  execute: false,
+  execute: true,
   tracer: false,
-  outputFile: path.join(argv.workspace, "zkevm.commit")
+  stats: false,
 }
 
 const pilConfig = { defines: {N: 2 ** 23},
-  namespaces: ['Global', 'Main', 'Rom', 'Byte4', 'MemAlign'],
+  namespaces: ['Global', 'Main', 'Rom', 'MemAlign'],
   verbose: true,
   color: true
 //  disableUnusedError: true

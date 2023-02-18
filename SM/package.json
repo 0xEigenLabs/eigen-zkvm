@@ -4,21 +4,22 @@
   "description": "State Machine for recursive layer.",
   "main": "index.js",
   "scripts": {
-    "demo": "mkdir -p circuits && node src/main.js -w circuits",
+    "vm": "mkdir -p circuits && node src/main.js -w circuits",
     "genstarkstruct": ". ./tools/setup.sh && node tools/gen_debug_starkstruct.js -t GL -p pil/main.pil -s $BDIR/starkstruct.json",
     "buildrom": ". ./tools/setup.sh && (cd node_modules/@0xpolygonhermez/zkevm-rom && npm run build -- -s 23) && cp node_modules/@0xpolygonhermez/zkevm-rom/build/rom.json $BDIR/rom.json",
     "buildstoragerom": ". ./tools/setup.sh && npm install --no-save https://github.com/0xpolygonhermez/zkevm-storage-rom.git && (cd node_modules/@hermeznetwork/zkasm && npm i && npm run build --) && cp node_modules/@hermeznetwork/zkasm/build/storage_sm_rom.json $BDIR/storage_sm_rom.json"
   },
   "author": "",
   "dependencies": {
-    "@0xpolygonhermez/zkasmcom": "https://github.com/0xPolygonHermez/zkasmcom.git#v0.4.0.0",
-    "@0xpolygonhermez/zkevm-commonjs": "https://github.com/eigmax/zkevm-commonjs.git",
-    "@0xpolygonhermez/zkevm-rom": "https://github.com/0xpolygonhermez/zkevm-rom.git#v0.4.0.0",
+    "@0xpolygonhermez/zkasmcom": "https://github.com/0xPolygonHermez/zkasmcom.git#v0.6.0.0-rc.1",
+    "@0xpolygonhermez/zkevm-commonjs": "https://github.com/0xpolygonhermez/zkevm-commonjs.git#v0.6.0.0-rc.1",
+    "@0xpolygonhermez/zkevm-rom": "https://github.com/0xpolygonhermez/zkevm-rom.git#v0.6.0.0-rc.1",
+    "chalk": "^3.0.0",
     "ethers": "^5.4.7",
     "ffjavascript": "^0.2.55",
     "jison": "^0.4.18",
-    "pil-stark": "0.0.41",
-    "pilcom": "0.0.18"
+    "pil-stark": "0.0.44",
+    "pilcom": "0.0.19"
   },
   "devDependencies": {
     "chai": "^4.3.4",

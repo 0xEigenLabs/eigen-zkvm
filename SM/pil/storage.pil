@@ -166,8 +166,14 @@ namespace Storage(%N);
     level3' = setLevel*(op3-level3) + iRotateLevel*(rotatedLevel3-level3) + level3;
 
     // Instruction that guarantees that op = hash(hl, hr); the poseidon SM will do the work; the result will be feeded by free
-    iHash {hashLeft0, hashLeft1, hashLeft2, hashLeft3, hashRight0, hashRight1, hashRight2, hashRight3, iHashType, 0, 0, 0, op0, op1, op2, op3} in
-        PoseidonG.LATCH {
+    iHash {
+        0, 0, 1,
+        hashLeft0, hashLeft1, hashLeft2, hashLeft3,
+        hashRight0, hashRight1, hashRight2, hashRight3,
+        iHashType, 0, 0, 0,
+        op0, op1, op2, op3
+    } is PoseidonG.result3 {
+            PoseidonG.result1, PoseidonG.result2, PoseidonG.result3,
             PoseidonG.in0,
             PoseidonG.in1,
             PoseidonG.in2,

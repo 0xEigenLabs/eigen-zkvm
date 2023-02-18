@@ -11,15 +11,6 @@ function logger (m) {
 }
 
 module.exports.buildConstants = async function (pols) {
-    const degree = pols.ISNOTLAST.length;
-
-    for (let i=0; i<degree; i++) {
-        pols.INCS[i] = BigInt(i+1); //1,2,3,...,N
-    }
-
-    for (let i=0; i<degree; i++) {
-        pols.ISNOTLAST[i] = (i==degree-1) ? 0n : 1n; //1,1,1,...,0
-    }
 }
 
 
