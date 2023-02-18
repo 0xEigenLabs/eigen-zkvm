@@ -40,7 +40,7 @@ node ../starkjs/src/compressor12/main_compressor12_exec.js \
     -e /tmp/c12.exec \
     -m /tmp/c12.cm
 
-../target/release/zkit stark_prove -s ../starky/data/c12.starkStruct.json \
+../target/release/zkit stark_prove -s ./tools/zkvm.c12.starkstruct.json \
     -p /tmp/c12.pil.json \
     -o /tmp/c12.const \
     -m /tmp/c12.cm -c circuits/circuit.circom -i circuits/circuit.zkin.json
@@ -48,7 +48,7 @@ node ../starkjs/src/compressor12/main_compressor12_exec.js \
 
 ### Top Layer: Snark proof
 ```
-bash -x ../test/test_fibonacci_verifier.sh
+bash -x ./tools/gen_final_proof.sh
 ```
 
 ## Generating custom transactions
