@@ -8,7 +8,7 @@ const { F1Field } = require("ffjavascript");
 const getKs = require("pilcom").getKs;
 
 
-const SlotSize = 158418;
+const SlotSize = 155286;
 
 module.exports.buildConstants = async function (pols) {
 
@@ -17,7 +17,7 @@ module.exports.buildConstants = async function (pols) {
 
     const N = pols.r8Id.length;
 
-    const nSlots = 9*Math.floor((N-1) / SlotSize);
+    const nBlocks = 44 * Math.floor((N-1) / SlotSize);
 
     const pow = log2(N);
     assert(1<<pow == N);
@@ -38,9 +38,9 @@ module.exports.buildConstants = async function (pols) {
 
 
     let p = 0;
-    for (let i=0; i<nSlots; i++) {
+    for (let i=0; i<nBlocks; i++) {
         let lasti = i-1;
-        if (lasti==-1) lasti = nSlots-1;
+        if (lasti==-1) lasti = nBlocks-1;
         for (let j=0; j<136; j++) {
             for (let k=0; k<8; k++) {
                 pols.r8Id[p] = F.e(-1);
@@ -167,12 +167,12 @@ module.exports.buildConstants = async function (pols) {
     }
 
 
-    function nine2onebit(slot, out, bit) {
+    function nine2onebit(block, out, bit) {
         let o = 1;
-        o += Math.floor(slot / 9 ) * SlotSize;
-        if (out) o += 1600*9;
-        o += bit*9;
-        o += slot % 9;
+        o += Math.floor(block / 44 ) * SlotSize;
+        if (out) o += 1600*44;
+        o += bit*44;
+        o += block % 44;
         return o;
     }
 
@@ -188,7 +188,7 @@ module.exports.execute = async function (pols, input) {
 
     const N = pols.r8.length;
 
-    const nSlots = 9*Math.floor((N-1) / SlotSize);
+    const nBlocks = 44*Math.floor((N-1) / SlotSize);
 
     let curInput =0;
     let p=0;
@@ -203,7 +203,7 @@ module.exports.execute = async function (pols, input) {
     let curState;
 
 
-    for (let i = 0; i<nSlots; i++) {
+    for (let i = 0; i<nBlocks; i++) {
         let connected = true;
         let stateWithR;
         if ((curInput>=input.length) || (input[curInput].connected == false)) {

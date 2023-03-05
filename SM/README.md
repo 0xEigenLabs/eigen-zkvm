@@ -10,7 +10,7 @@ Just for cross check. if violating the licence, will delete anytime.
 npm run buildrom
 npm run buildstoragerom
 npm run genstarkstruct
-node src/main.js -w circuits/
+npm run vm
 ```
 
 ### Bottom Layer: FRI Proof
@@ -27,19 +27,20 @@ node src/main.js -w circuits/
 ```
 ../target/release/zkit compile -p goldilocks -i circuits/zkvm.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
-node src/compressor12/main_compressor12_setup.js \
+node ../starkjs/src/compressor12/main_compressor12_setup.js \
     -r /tmp/zkvm.r1cs \
     -c /tmp/c12.const \
     -p /tmp/c12.pil \
     -e /tmp/c12.exec
 
-node src/compressor12/main_compressor12_exec.js \
+node ../starkjs/src/compressor12/main_compressor12_exec.js \
     -w /tmp/zkvm_js/zkvm.wasm  \
     -i circuits/zkvm.zkin.json  \
     -p /tmp/c12.pil  \
     -e /tmp/c12.exec \
     -m /tmp/c12.cm
-../target/release/zkit stark_prove -s ../starky/data/c12.starkStruct.json \
+
+../target/release/zkit stark_prove -s ./tools/zkvm.c12.starkstruct.json \
     -p /tmp/c12.pil.json \
     -o /tmp/c12.const \
     -m /tmp/c12.cm -c circuits/circuit.circom -i circuits/circuit.zkin.json
@@ -47,7 +48,7 @@ node src/compressor12/main_compressor12_exec.js \
 
 ### Top Layer: Snark proof
 ```
-bash -x ../test/test_fibonacci_verifier.sh
+bash -x ./tools/gen_final_proof.sh
 ```
 
 ## Generating custom transactions

@@ -16,12 +16,6 @@ module.exports.buildConstants = async function (pols) {
 
     let p =0;
 
-    pols.k_crF = [];
-
-    for (let i=0; i<8; i++) {
-        pols.k_crF[i] = pols[`k_crF${i}`];
-    }
-
     for (let i=0; i<nBlocks; i++) {
         const bytesBlock = N-p > BYTESPERBLOCK ? BYTESPERBLOCK : N-p;
         for (let j=0; j<bytesBlock; j++) {
@@ -42,24 +36,6 @@ module.exports.buildConstants = async function (pols) {
             p += 1;
         }
     }
-
-
-    for (let i=0; i<32; i++) {
-        pols.k_crOffset[i] = BigInt(i);
-        const acci = Math.floor(i / 4);
-        const sh = BigInt((i % 4)*8);
-        for (let k=0; k<8; k++) {
-            pols.k_crF[k][i] = (k == acci) ? BigInt(1n << sh) : 0n;
-        }
-    }
-
-    for (let i=32; i<N; i++) {
-        pols.k_crOffset[i] = pols.k_crOffset[0];
-        for (let k=0; k<8; k++) {
-            pols.k_crF[k][i] =  pols.k_crF[k][0]
-        }
-    }
-
 }
 
 
@@ -74,6 +50,7 @@ module.exports.execute = async function (pols, input) {
     };
 
     const N = pols.acc[0].length;
+    const POSEIDONG_PERMUTATION4_ID = 4;
 
     pols.crF = [];
     pols.crV = [];
@@ -132,6 +109,12 @@ module.exports.execute = async function (pols, input) {
             pols.remInv[p] = pols.rem[p] == 0n ? 0n : F.inv(pols.rem[p]);
             pols.spare[p] = pols.rem[p] > 0xFFFFn ? 1n : 0n;
             pols.firstHash[p] = j==0 ? 1n : 0n;
+            const lastBlock = (p % BYTESPERBLOCK) == (BYTESPERBLOCK - 1);
+            const lastHash = lastBlock && (pols.spare[p] || !pols.rem[p]);
+
+            // at least must be done a len before a digest
+            pols.lastHashLen[p] = (lastHash && input[i].lenCalled) ? 1n: 0n
+            pols.lastHashDigest[p] = (lastHash && input[i].digestCalled) ? 1n: 0n;
 
             if (lastOffset == 0n) {
                 curRead += 1;
@@ -194,7 +177,8 @@ module.exports.execute = async function (pols, input) {
                     pols.curHash0[p],
                     pols.curHash1[p],
                     pols.curHash2[p],
-                    pols.curHash3[p]
+                    pols.curHash3[p],
+                    POSEIDONG_PERMUTATION4_ID
                 ]);
                 pols.acc[0][p+1] = 0n;
                 pols.acc[1][p+1] = 0n;
@@ -236,7 +220,7 @@ module.exports.execute = async function (pols, input) {
     const nFullUnused = Math.floor((N -p - 1)/BYTESPERBLOCK)+1;
 
     const h0 = poseidon([ 0x1n, 0n, 0n, 0n, 0n, 0n, 0n, 0x80n << 48n ], [0n, 0n, 0n, 0n]);
-    required.PoseidonG.push([ 0x1n, 0n, 0n, 0n, 0n, 0n, 0n, 0x80n << 48n, 0n, 0n, 0n, 0n, ...h0  ]);
+    required.PoseidonG.push([ 0x1n, 0n, 0n, 0n, 0n, 0n, 0n, 0x80n << 48n, 0n, 0n, 0n, 0n, ...h0, POSEIDONG_PERMUTATION4_ID ]);
 
 
     for (let i=0; i<nFullUnused; i++) {
@@ -266,6 +250,9 @@ module.exports.execute = async function (pols, input) {
             pols.remInv[p] = pols.rem[p] == 0n ? 0n : F.inv(pols.rem[p]);
             pols.spare[p] = j>0 ? 1n : 0n;
             pols.firstHash[p] = j==0 ? 1n : 0n;
+            pols.lastHashLen[p] = 0n;
+            pols.lastHashDigest[p] = 0n;
+
             pols.prevHash0[p] = 0n;
             pols.prevHash1[p] = 0n;
             pols.prevHash2[p] = 0n;

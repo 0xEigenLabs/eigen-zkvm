@@ -77,7 +77,7 @@ for (let k=0; k<2^nExtBits; k++) {
 }
 ```
 
-Because the nExtBits reaches up to 24 so this step would be very slow, especially when the `starkInfo.evMap.length` is bigger than 2^16 in SM.
+Because the nExtBits reaches up to 24 so this step would be very slow. Consider importing parallel fold from Rayon. 
 
 ## Optimization
 
@@ -95,7 +95,7 @@ Because the nExtBits reaches up to 24 so this step would be very slow, especiall
 - [x] Parallel reduce for polynomial evaluation
 - [x] Recursive FRI
 - [x] Poseidon Hash on GPU/Multicore for BN128
-- [] Polynomial evaluation on GPU
+- [] Arithimization acceleration
 
 ## Profiling
 

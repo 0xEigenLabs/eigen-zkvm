@@ -80,9 +80,9 @@ function getVarFromCtx(ctx, global, varLabel) {
  * @returns {Scalar} value of the label
  */
 function getCalldataFromStack(ctx, offset = 0, length) {
-    const addr = 0x20000 + 1024 + Number(ctx.CTX) * 0x40000;
+    const addr = 0x10000 + 1024 + Number(ctx.CTX) * 0x40000;
     let value = "0x";
-    for (let i = addr + Number(offset); i < 0x30000 + Number(ctx.CTX) * 0x40000; i++) {
+    for (let i = addr + Number(offset); i < 0x20000 + Number(ctx.CTX) * 0x40000; i++) {
         const memVal = ctx.mem[i];
         if (!memVal) break;
         value += ethers.utils.hexlify(fea2scalar(ctx.Fr, memVal)).slice(2);
@@ -114,7 +114,7 @@ function getFromMemory(offset, length, ctx) {
     const offsetCtx = Number(ctx.CTX) * 0x40000;
     let addrMem = 0;
     addrMem += offsetCtx;
-    addrMem += 0x30000;
+    addrMem += 0x20000;
 
     let finalMemory = "";
     

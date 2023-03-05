@@ -1,35 +1,35 @@
-const SlotSize = 158418;
+const SlotSize = 155286;
 
 
 module.exports.buildConstants = async function (pols) {
-    const N = pols.Field9latch.length;
+    const N = pols.FieldLatch.length;
 
-    const nSlots9 = Math.floor((N-1)/SlotSize);
+    const nSlots = Math.floor((N-1)/SlotSize);
 
     for (i=0; i<N; i++) {
         let slot = -1;
         let iRel;
         if (i>0) {
             slot = Math.floor( (i - 1) / SlotSize );
-            if (slot < nSlots9) {
+            if (slot < nSlots) {
                 iRel = (i-1) % SlotSize;
             } else {
                 slot = -1;
             }
         }
         if (slot >= 0) {
-            if ( ((iRel%9) == 0) && (iRel<=9*3200) && (iRel>0) ) {
-                pols.Field9latch[i] = 1n;
+            if ( ((iRel%44) == 0) && (iRel<=44*3200) && (iRel>0) ) {
+                pols.FieldLatch[i] = 1n;
             } else {
-                pols.Field9latch[i] = 0n;
+                pols.FieldLatch[i] = 0n;
             }
-            if (iRel < 9*3200) {
-                pols.Factor[i] = 1n << BigInt(7 * (iRel%9));
+            if (iRel < 44*3200) {
+                pols.Factor[i] = 1n << BigInt(iRel%44);
             } else {
                 pols.Factor[i] = 0n;
             }
         } else {
-            pols.Field9latch[i] = 0n;
+            pols.FieldLatch[i] = 0n;
             pols.Factor[i] = 0n;
         }
 
@@ -45,47 +45,47 @@ module.exports.execute = async function (pols, input) {
 
     const N = pols.bit.length;
 
-    const nSlots9 = Math.floor((N-1)/SlotSize);
+    const nSlots = Math.floor((N-1)/SlotSize);
 
     let p=0;
 
     pols.bit[p] = 0n;
-    pols.field9[p] = 0n;
+    pols.field44[p] = 0n;
     p += 1;
 
-    let accField9 = 0n;
+    let accField = 0n;
 
 
-    for (let i=0; i<nSlots9; i++) {
+    for (let i=0; i<nSlots; i++) {
         const keccakFSlot = [];
         for (j=0; j<1600; j++) {
-            for (k=0; k<9; k++) {
-                pols.bit[p] = getBit(i*9+k, false, j);
-                pols.field9[p] = accField9;
-                accField9 = k==0 ? pols.bit[p] :
-                    accField9 +  (pols.bit[p] << (7n * BigInt(k)));
+            for (k=0; k<44; k++) {
+                pols.bit[p] = getBit(i*44+k, false, j);
+                pols.field44[p] = accField;
+                accField = k==0 ? pols.bit[p] :
+                    accField +  (pols.bit[p] << BigInt(k));
                 p += 1;
             }
-            keccakFSlot.push(accField9);
+            keccakFSlot.push(accField);
         }
         for (j=0; j<1600; j++) {
-            for (k=0; k<9; k++) {
-                pols.bit[p] = getBit(i*9+k, true, j);
-                pols.field9[p] = accField9;
-                accField9 = k==0 ? pols.bit[p] :
-                    accField9 +  (pols.bit[p] << (7n * BigInt(k)));
+            for (k=0; k<44; k++) {
+                pols.bit[p] = getBit(i*44+k, true, j);
+                pols.field44[p] = accField;
+                accField = k==0 ? pols.bit[p] :
+                    accField +  (pols.bit[p] << BigInt(k));
                 p += 1;
             }
         }
 
         pols.bit[p] = 0n;
-        pols.field9[p] = accField9;
-        accField9 = 0n;
+        pols.field44[p] = accField;
+        accField = 0n;
         p += 1;
 
-        for (j=3200*9+1; j<SlotSize; j++) {
+        for (j=3200*44+1; j<SlotSize; j++) {
             pols.bit[p] = 0n;
-            pols.field9[p] = 0n;
+            pols.field44[p] = 0n;
             p += 1;
         }
 
@@ -94,7 +94,7 @@ module.exports.execute = async function (pols, input) {
 
     while (p<N) {
         pols.bit[p] = 0n;
-        pols.field9[p] = 0n;
+        pols.field44[p] = 0n;
         p += 1;
     }
 

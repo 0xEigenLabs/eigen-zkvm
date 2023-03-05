@@ -153,9 +153,8 @@ module.exports.execute = async function (pols, input) {
         throw new Error("Not enough Poseidon slots");
     }
 
-
-
     let p=0;
+
     for (let i=0; i<input.length; i++) {
         pols.in0[p] = F.e(input[i][0]);
         pols.in1[p] = F.e(input[i][1]);
@@ -173,6 +172,10 @@ module.exports.execute = async function (pols, input) {
         pols.hash1[p] = F.e(input[i][13]);
         pols.hash2[p] = F.e(input[i][14]);
         pols.hash3[p] = F.e(input[i][15]);
+        pols.result1[p] = (input[i][16] == 1) ? 1n:0n;
+        pols.result2[p] = (input[i][16] == 2) ? 1n:0n;
+        pols.result3[p] = (input[i][16] == 3) ? 1n:0n;
+
         p += 1;
         let state = [
             pols.in0[p-1],
@@ -215,6 +218,9 @@ module.exports.execute = async function (pols, input) {
             pols.hash1[p] = input[i][13];
             pols.hash2[p] = input[i][14];
             pols.hash3[p] = input[i][15];
+            pols.result1[p] = 0n;
+            pols.result2[p] = 0n;
+            pols.result3[p] = 0n;
             p+=1;
         }
     }
@@ -250,6 +256,9 @@ module.exports.execute = async function (pols, input) {
         pols.hash1[p] = st0[nRoundsP + nRoundsF][1];
         pols.hash2[p] = st0[nRoundsP + nRoundsF][2];
         pols.hash3[p] = st0[nRoundsP + nRoundsF][3];
+        pols.result1[p] = 0n;
+        pols.result2[p] = 0n;
+        pols.result3[p] = 0n;
         p+=1;
     }
 

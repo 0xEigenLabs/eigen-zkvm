@@ -1,15 +1,17 @@
 const fs = require("fs");
 const path = require("path");
-const codes = require("./opcodes");
-const { scalar2fea, fea2scalar } = require("@0xpolygonhermez/zkevm-commonjs").smtUtils;
+const { fea2scalar } = require("@0xpolygonhermez/zkevm-commonjs").smtUtils;
 const { ethers } = require("ethers");
-const opIncContext = ['CALL', 'STATICCALL', 'DELEGATECALL', 'CALLCODE', 'CREATE', 'CREATE2'];
-const opDecContext = ['SELFDESTRUCT', 'STOP', 'RETURN'];
-const responseErrors = ['OOC', 'intrinsic_invalid']
 const { Scalar } = require("ffjavascript");
+
+const codes = require("./opcodes");
+const Verbose = require("./verbose-tracer");
+const { getTransactionHash, findOffsetLabel, getVarFromCtx, getCalldataFromStack, getRegFromCtx, getFromMemory } = require("./full-tracer-utils");
+
+const opIncContext = ['CALL', 'STATICCALL', 'DELEGATECALL', 'CALLCODE', 'CREATE', 'CREATE2'];
+const responseErrors = ['OOCS', 'OOCK', 'OOCB', 'OOCM', 'OOCA', 'OOCPA', 'OOCPO', 'intrinsic_invalid_signature', 'intrinsic_invalid_chain_id', 'intrinsic_invalid_nonce', `intrinsic_invalid_gas_limit`, `intrinsic_invalid_gas_overflow`, `intrinsic_invalid_balance`, `intrinsic_invalid_batch_gas_limit`, `intrinsic_invalid_sender_code`];
 const generate_call_trace = true;
 const generate_execute_trace = false;
-const { getTransactionHash, findOffsetLabel, getVarFromCtx, getCalldataFromStack, getRegFromCtx, getFromMemory } = require("./full-tracer-utils");
 
 /**
  * Tracer service to output the logs of a batch of transactions. A complete log is created with all the transactions embedded
@@ -21,8 +23,10 @@ class FullTracer {
     /**
      * Constructor, instantation of global vars
      * @param {String} logFileName Name of the output file
-     */
-    constructor(logFileName) {
+     * @param {Object} options full-tracer options
+     * @param {Bool} options.verbose flag to print traces
+    */
+    constructor(logFileName, options) {
         // Opcode step traces of the all the processed tx
         this.info = [];
         // Stack of the transaction
@@ -44,6 +48,9 @@ class FullTracer {
         this.txGAS = {};
         this.accBatchGas = 0;
         this.logs = [];
+
+        // options
+        this.verbose = new Verbose(options.verbose);
     }
 
     /**
@@ -78,9 +85,15 @@ class FullTracer {
      */
     onError(ctx, tag) {
         const errorName = tag.params[1].varName
-        //Intrinsic error should be set at tx level (not opcode)
+        this.verbose.printError(errorName);
+
+        // Intrinsic error should be set at tx level (not opcode)
         if (responseErrors.includes(errorName)) {
-            this.finalTrace.responses[this.txCount].error = errorName;
+            if (this.finalTrace.responses[this.txCount]) {
+                this.finalTrace.responses[this.txCount].error = errorName;
+            } else {
+                this.finalTrace.responses[this.txCount] = {error: errorName};
+            }
             return;
         }
         this.info[this.info.length - 1].error = errorName;
@@ -119,7 +132,7 @@ class FullTracer {
         this.logs[ctx.CTX][indexLog].batch_number = this.finalTrace.numBatch;
         this.logs[ctx.CTX][indexLog].tx_hash = this.finalTrace.responses[this.txCount].tx_hash;
         this.logs[ctx.CTX][indexLog].tx_index = this.txCount;
-        this.logs[ctx.CTX][indexLog].batch_hash = this.finalTrace.globalHash;
+        this.logs[ctx.CTX][indexLog].batch_hash = this.finalTrace.newAccInputHash;
         this.logs[ctx.CTX][indexLog].index = Number(indexLog);
     }
 
@@ -133,11 +146,12 @@ class FullTracer {
         const context = {};
         context.to = `0x${getVarFromCtx(ctx, false, "txDestAddr")}`;
         context.type = (context.to === "0x0") ? "CREATE" : "CALL";
-        context.to = (context.to === "0x0") ? "0x" : context.to;
+        context.to = (context.to === "0x0") ? "0x" : ethers.utils.hexlify(getVarFromCtx(ctx, false, "txDestAddr"));
         context.data = getCalldataFromStack(ctx, 0, getVarFromCtx(ctx, false, "txCalldataLen").toString());
         context.gas = getVarFromCtx(ctx, false, "txGasLimit").toString();
         context.value = getVarFromCtx(ctx, false, "txValue").toString();
-        context.batch = this.finalTrace.globalHash;
+        // TODO: future: should be set at the end of the tx with opBLOCKCHASH value
+        context.batch = this.finalTrace.newAccInputHash;
         context.output = ""
         context.gas_used = "";
         context.execution_time = ""
@@ -186,6 +200,8 @@ class FullTracer {
         this.depth = 0;
         this.deltaStorage = { 0: {} };
         this.txGAS[this.depth] = context.gas;
+
+        this.verbose.printTx(`start ${this.txCount}`);
     }
 
     /**
@@ -219,12 +235,12 @@ class FullTracer {
         };
 
         //Set consumed tx gas
-        if(Number(ctx.GAS) > Number(response.gas_left)) {
+        if (Number(ctx.GAS) > Number(response.gas_left)) {
             response.gas_used = String(Number(response.gas_left));
         } else {
             response.gas_used = String(Number(response.gas_left) - Number(ctx.GAS));
         }
-        
+
         response.call_trace.context.gas_used = response.gas_used;
         this.accBatchGas += Number(response.gas_used);
 
@@ -247,6 +263,9 @@ class FullTracer {
         //If processed opcodes
         if (this.info.length) {
             const lastOpcode = this.info[this.info.length - 1];
+            // set refunded gas
+            response.gas_refunded = lastOpcode.gas_refund;
+
             // Set counters of last opcode to zero
             Object.keys(lastOpcode.counters).forEach(key => {
                 lastOpcode.counters[key] = 0;
@@ -293,6 +312,9 @@ class FullTracer {
         }
 
         fs.writeFileSync(`${this.pathLogFile}_${this.txCount}.json`, JSON.stringify(this.finalTrace.responses[this.txCount], null, 2));
+
+        this.verbose.printTx(`finish ${this.txCount}`);
+
         // Increase transaction count
         this.txCount++;
     }
@@ -308,11 +330,14 @@ class FullTracer {
         }
         this.finalTrace.batchHash = ethers.utils.hexlify(getRegFromCtx(ctx, tag.params[1].regName));
         this.finalTrace.old_state_root = ethers.utils.hexlify(getVarFromCtx(ctx, true, "oldStateRoot"));
-        this.finalTrace.globalHash = ethers.utils.hexlify(getVarFromCtx(ctx, true, "globalHash"));
-        this.finalTrace.numBatch = Number(getVarFromCtx(ctx, true, "numBatch"));
+        // TODO: outputs should be set at the end of the batch
+        this.finalTrace.newAccInputHash = ethers.utils.hexlify(getVarFromCtx(ctx, true, "newAccInputHash"));
+        this.finalTrace.numBatch = Number(getVarFromCtx(ctx, true, "oldNumBatch")) + 1;
         this.finalTrace.timestamp = Number(getVarFromCtx(ctx, true, "timestamp"));
         this.finalTrace.sequencerAddr = ethers.utils.hexlify(getVarFromCtx(ctx, true, "sequencerAddr"));
         this.finalTrace.responses = [];
+
+        this.verbose.printBatch("start");
     }
 
     /**
@@ -333,9 +358,13 @@ class FullTracer {
         }
         //If some counter exceed, notify
         //if(this.finalTrace.counters.cnt_arith > )
-        // TODO: fix nsr
         this.finalTrace.new_state_root = ethers.utils.hexlify(fea2scalar(ctx.Fr, ctx.SR));
+        this.finalTrace.new_acc_input_hash = ethers.utils.hexlify(getVarFromCtx(ctx, true, "newAccInputHash"));
         this.finalTrace.new_local_exit_root = ethers.utils.hexlify(getVarFromCtx(ctx, true, "newLocalExitRoot"));
+        this.finalTrace.new_batch_num = ethers.utils.hexlify(getVarFromCtx(ctx, true, "newNumBatch"));
+
+        this.verbose.printBatch("finish");
+
         // Create ouput files and dirs
         this.exportTrace();
     }
@@ -364,12 +393,12 @@ class FullTracer {
         const offsetCtx = Number(ctx.CTX) * 0x40000;
         let addrMem = 0;
         addrMem += offsetCtx;
-        addrMem += 0x30000;
+        addrMem += 0x20000;
 
         const finalMemory = [];
         const lengthMemOffset = findOffsetLabel(ctx.rom.program, "memLength");
         const lenMemValue = ctx.mem[offsetCtx + lengthMemOffset];
-        const lenMemValueFinal = typeof lenMemValue === "undefined" ? 0 : Math.ceil(Number(fea2scalar(ctx.Fr, lenMemValue))/32);
+        const lenMemValueFinal = typeof lenMemValue === "undefined" ? 0 : Math.ceil(Number(fea2scalar(ctx.Fr, lenMemValue)) / 32);
 
         for (let i = 0; i < lenMemValueFinal; i++) {
             const memValue = ctx.mem[addrMem + i];
@@ -386,7 +415,7 @@ class FullTracer {
         // store stack
         let addr = 0;
         addr += offsetCtx;
-        addr += 0x20000;
+        addr += 0x10000;
 
         const finalStack = [];
 
@@ -402,7 +431,7 @@ class FullTracer {
 
         // add info opcodes
         this.depth = Number(getVarFromCtx(ctx, true, "depth"));
-        singleInfo.depth = this.depth;
+        singleInfo.depth = this.depth + 1;
         singleInfo.pc = Number(ctx.PC);
         singleInfo.remaining_gas = ctx.GAS.toString();
         if (this.info.length) {
@@ -488,6 +517,8 @@ class FullTracer {
         if (opIncContext.includes(singleInfo.opcode)) {
             this.deltaStorage[this.depth + 1] = {};
         }
+
+        this.verbose.printOpcode(opcode);
     }
 
     /**

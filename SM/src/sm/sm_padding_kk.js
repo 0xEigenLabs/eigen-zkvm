@@ -5,7 +5,7 @@ Scalar = require("ffjavascript").Scalar;
 const buildPoseidon = require("@0xpolygonhermez/zkevm-commonjs").getPoseidon;
 
 const BYTESPERBLOCK = 136;
-const BlockSize = 158418;
+const BlockSize = 155286;
 
 module.exports.buildConstants = async function (pols) {
     const poseidon = await buildPoseidon();
@@ -13,21 +13,15 @@ module.exports.buildConstants = async function (pols) {
 
     const N = pols.lastBlock.length;
 
-    const nBlocks = 9*Math.floor((N-1)/BlockSize);
+    const nBlocks = 44*Math.floor((N-1)/BlockSize);
 
     let p =0;
-
-    pols.k_crF = [];
-    for (let i=0; i<8; i++) {
-        pols.k_crF[i] = pols[`k_crF${i}`];
-    }
 
     for (let i=0; i<nBlocks; i++) {
         const bytesBlock = 136;
         for (let j=0; j<bytesBlock; j++) {
             pols.lastBlock[p] = (j == bytesBlock-1) ? 1n : 0n;
             pols.lastBlockLatch[p] = (j == bytesBlock-1) ? 1n : 0n;
-            pols.crValid[p] = F.one;
             pols.r8Id[p] = F.e(p);
             pols.sOutId[p] =  (j == bytesBlock-1) ? F.e(i) : F.zero;
             pols.forceLastHash[p] = ((j == bytesBlock-1)&&(i==nBlocks-1)) ? F.one : F.zero;
@@ -37,7 +31,6 @@ module.exports.buildConstants = async function (pols) {
     }
 
     for (let i=p; i<N; i++) {
-        pols.crValid[i] = F.zero;
         pols.r8Id[i] = F.zero;    // Must repeat the first byte
         pols.lastBlock[i] = i<N-1 ? F.zero : F.one;
         pols.lastBlockLatch[i] = F.zero;
@@ -45,23 +38,6 @@ module.exports.buildConstants = async function (pols) {
         pols.forceLastHash[i] = i==N-1 ? F.one : F.zero;
         pols.r8valid[i] = F.zero;
     }
-
-    for (let i=0; i<32; i++) {
-        pols.k_crOffset[i] = BigInt(i);
-        const acci = Math.floor(i / 4);
-        const sh = BigInt((i % 4)*8);
-        for (let k=0; k<8; k++) {
-            pols.k_crF[k][i] = (k == acci) ? BigInt(1n << sh) : 0n;
-        }
-    }
-
-    for (let i=32; i<N; i++) {
-        pols.k_crOffset[i] = pols.k_crOffset[0];
-        for (let k=0; k<8; k++) {
-            pols.k_crF[k][i] =  pols.k_crF[k][0]
-        }
-    }
-
 }
 
 
@@ -107,9 +83,17 @@ module.exports.execute = async function (pols, input) {
             pols.connected[p] = j<BYTESPERBLOCK ? 0n : 1n;
             pols.rem[p] = F.e(input[i].realLen - BigInt(j));
             pols.remInv[p] = pols.rem[p] == 0n ? 0n : F.inv(pols.rem[p]);
-            pols.spare[p] = pols.rem[p] > 0xFFFFn ? 1n : 0n;
+
+            // spare means we are in padding zone (realLen < j < dataBytes.length )
+            // check if pols.rem[p] was "negative"
+            pols.spare[p] = pols.rem[p] > 0x7FFFFFFF80000000n ? 1n : 0n;
             pols.firstHash[p] = j==0 ? 1n : 0n;
             pols.incCounter[p] = BigInt(Math.floor(j / BYTESPERBLOCK) +1);
+            const lastBlockLatch = (p % BYTESPERBLOCK) == (BYTESPERBLOCK - 1);
+            const lastHashLatch = lastBlockLatch && (pols.spare[p] || !pols.rem[p]);
+
+            pols.lastHashLen[p] = lastHashLatch && input[i].lenCalled ? 1n: 0n;
+            pols.lastHashDigest[p] = lastHashLatch && input[i].digestCalled ? 1n: 0n;
 
             if (lastOffset == 0n) {
                 curRead += 1;
@@ -173,7 +157,7 @@ module.exports.execute = async function (pols, input) {
         addr += 1n;
     }
 
-    const nTotalBlocks = 9*Math.floor(N/BlockSize);
+    const nTotalBlocks = 44*Math.floor(N/BlockSize);
     const nUsedBlocks = p/BYTESPERBLOCK;
 
     if (nUsedBlocks > nTotalBlocks) throw new Error(`Too many keccak blocks (${nUsedBlocks} vs ${nTotalBlocks} BS:${BlockSize})`);
@@ -196,10 +180,15 @@ module.exports.execute = async function (pols, input) {
             pols.addr[p] = addr;
             pols.rem[p] = F.e(-j);
             pols.remInv[p] = pols.rem[p] == 0n ? 0n : F.inv(pols.rem[p]);
-            pols.spare[p] = pols.rem[p] > 0xFFFFn ? 1n : 0n;
+
+            // spare means we are in padding zone
+            // check if pols.rem[p] was "negative"
+            pols.spare[p] = pols.rem[p] > 0x7FFFFFFF80000000n ? 1n : 0n;
             pols.firstHash[p] = j==0 ? 1n : 0n;
             pols.connected[p] = 0n;
             pols.incCounter[p] = 1n;
+            pols.lastHashLen[p] = 0n;
+            pols.lastHashDigest[p] = 0n;
 
 
             pols.crLen[p] =  F.one;
@@ -258,6 +247,8 @@ module.exports.execute = async function (pols, input) {
         pols.remInv[p] = pols.rem[p] == 0n ? 0n : F.inv(pols.rem[p]);
         pols.spare[p] =  p==fp ? 0n : 1n;
         pols.firstHash[p] = p==fp ? 1n : 0n;
+        pols.lastHashLen[p] = 0n;
+        pols.lastHashDigest[p] = 0n;
 
         pols.crLen[p] =  F.one;
         pols.crOffset[p] = F.zero;
