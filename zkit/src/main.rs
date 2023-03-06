@@ -332,7 +332,10 @@ fn main() {
         ),
     };
     match exec_result {
-        Err(x) => { println!("execute error: {}", x); std::process::exit(-1) },
+        Err(x) => {
+            println!("execute error: {}", x);
+            std::process::exit(-1)
+        }
         _ => println!("time cost: {}", start.elapsed().as_secs_f64()),
     };
 }
