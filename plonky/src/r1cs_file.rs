@@ -295,8 +295,8 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
         header,
         constraints,
         wire_mapping,
-        custom_gates: custom_gates,
-        custom_gates_uses: custom_gates_uses,
+        custom_gates,
+        custom_gates_uses,
     })
 }
 
