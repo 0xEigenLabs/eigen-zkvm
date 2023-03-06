@@ -226,11 +226,6 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
 
     reader.seek(SeekFrom::Start(*section_offsets.get(&HEADER_TYPE).unwrap()))?;
     let mut header = read_header(&mut reader, *section_sizes.get(&HEADER_TYPE).unwrap())?;
-    if section_offsets.get(&CUSTOM_GATES_USE).is_some()
-        && section_offsets.get(&CUSTOM_GATES_LIST).is_some()
-    {
-        header.use_custom_gates = true;
-    }
     if !(header.field_size == 32 || header.field_size == 8) {
         return Err(Error::new(
             ErrorKind::InvalidData,
@@ -278,25 +273,30 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
         )?;
     }
 
-    let custom_gates_uses: Vec<CustomGatesUses> = vec![];
+    let mut custom_gates_uses: Vec<CustomGatesUses> = vec![];
     if section_offsets.get(&CUSTOM_GATES_USE).is_some() {
         reader.seek(SeekFrom::Start(
             *section_offsets.get(&CUSTOM_GATES_USE).unwrap(),
         ))?;
-        let custom_gates_uses = read_custom_gates_uses_list(
+        custom_gates_uses = read_custom_gates_uses_list(
             &mut reader,
             *section_sizes.get(&CUSTOM_GATES_USE).unwrap(),
             &header,
         )?;
     }
 
+    header.use_custom_gates = section_offsets.get(&CUSTOM_GATES_USE).is_some()
+        && section_offsets.get(&CUSTOM_GATES_LIST).is_some()
+        && custom_gates.len() > 0
+        && custom_gates_uses.len() > 0;
+
     Ok(R1CSFile {
         version,
         header,
         constraints,
         wire_mapping,
-        custom_gates: custom_gates,
-        custom_gates_uses: custom_gates_uses,
+        custom_gates,
+        custom_gates_uses,
     })
 }
 
