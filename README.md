@@ -1,6 +1,6 @@
 # eigen-zkvm
 
-eigen-zkvm is a zkVM on hybrid proof system, allowing the developers to write Zero-knowledge applications, proving with the hybrid proof system to achieve no trusted setup, constant on-chain proof size and low gas cost, and finally generating the solidity verifier.
+eigen-zkvm is a zkVM on layered proof system, allowing the developers to write Zero-knowledge applications, proving with the layered proof system to achieve no trusted setup, constant on-chain proof size and low gas cost, and finally generating the solidity verifier.
 
 - [x] zkit: universal commandline for starky and plonky
 
@@ -12,11 +12,11 @@ eigen-zkvm is a zkVM on hybrid proof system, allowing the developers to write Ze
 
 - [x] WASM friendly for single proving and verifying, NodeJS/Javascript prover and verifier, [plonkjs](https://github.com/0xEigenLabs/plonkjs)
 
-- [x] Hybrid Proof system on Plonk and FRI.
+- [x] Layered Proof system on Plonk and FRI.
 
 - [] State Machine based VM
 
-## How hybrid proof system works
+## How layered proof system works
 
 ![mixed-proof-system](./docs/mixed-proof-system.png)
 
@@ -36,7 +36,7 @@ For power in range 20 to 26, you can download directly from [universal-setup hub
 * Stark proof and recursive stark prove
 [starky](./starky)
 
-* Hybrid proof
+* Layered proof
 [starkjs](./starkjs)
 
 ## Applications
