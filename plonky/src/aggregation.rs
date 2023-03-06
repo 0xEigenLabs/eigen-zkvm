@@ -409,7 +409,7 @@ fn verify_subproof_limbs(
     Ok(valid)
 }
 
-// verify a recursive proof by using a corresponding verification key
+// verify a aggregation proof by using a corresponding verification key
 pub fn verify(
     vk: VerificationKey<Bn256, RecursiveAggregationCircuitBn256>,
     aggregated_proof: AggregatedProof,
