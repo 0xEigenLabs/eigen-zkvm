@@ -226,6 +226,11 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
 
     reader.seek(SeekFrom::Start(*section_offsets.get(&HEADER_TYPE).unwrap()))?;
     let mut header = read_header(&mut reader, *section_sizes.get(&HEADER_TYPE).unwrap())?;
+    if section_offsets.get(&CUSTOM_GATES_USE).is_some()
+        && section_offsets.get(&CUSTOM_GATES_LIST).is_some()
+    {
+        header.use_custom_gates = true;
+    }
     if !(header.field_size == 32 || header.field_size == 8) {
         return Err(Error::new(
             ErrorKind::InvalidData,
@@ -284,11 +289,6 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
             &header,
         )?;
     }
-
-    header.use_custom_gates = section_offsets.get(&CUSTOM_GATES_USE).is_some()
-        && section_offsets.get(&CUSTOM_GATES_LIST).is_some()
-        && custom_gates.len() > 0
-        && custom_gates_uses.len() > 0;
 
     Ok(R1CSFile {
         version,
