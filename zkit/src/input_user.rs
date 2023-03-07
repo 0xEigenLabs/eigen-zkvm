@@ -32,7 +32,6 @@ pub struct Input {
     pub flag_verbose: bool,
     pub prime: String,
     pub link_libraries: Vec<PathBuf>,
-    pub use_custom_gates: bool,
 }
 
 const P_0: &'static str =
@@ -82,7 +81,6 @@ impl Input {
         o_style: SimplificationStyle,
         prime: String,
         paths: Vec<String>,
-        use_custom_gates: bool,
     ) -> Result<Input, ()> {
         let file_name = input.file_stem().unwrap().to_str().unwrap().to_string();
         let output_c_path = Input::build_folder(&output_path, &file_name, CPP);
@@ -132,7 +130,6 @@ impl Input {
             //prime: "bn128".to_string(), //goldilocks
             prime: prime,
             link_libraries: link_libraries,
-            use_custom_gates: use_custom_gates,
         })
     }
 
@@ -234,8 +231,5 @@ impl Input {
     }
     pub fn get_prime(&self) -> String {
         self.prime.clone()
-    }
-    pub fn custom_gate(&self) -> bool {
-        self.use_custom_gates
     }
 }

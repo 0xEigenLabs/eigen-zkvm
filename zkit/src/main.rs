@@ -54,10 +54,6 @@ pub struct CompilierOpt {
     /// setup the library path
     #[clap(short = "l")]
     link_directories: Vec<String>,
-
-    /// Use custom gate or not
-    #[clap(short = "c", parse(try_from_str), default_value = "true")]
-    use_custom_gate: bool,
 }
 
 /// Prove by Plonk
@@ -262,7 +258,6 @@ pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
         o_style,
         opt.prime,
         opt.link_directories,
-        opt.use_custom_gate,
     )?;
     let mut program_archive = parser_user::parse_project(&user_input)?;
 
@@ -283,7 +278,6 @@ pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
         r1cs: user_input.r1cs_file().to_string(),
         json_constraints: user_input.json_constraints_file().to_string(),
         prime: user_input.get_prime(),
-        use_custom_gates: user_input.custom_gate(),
     };
     let circuit = execution_user::execute_project(program_archive, config)?;
     let compilation_config = CompilerConfig {
