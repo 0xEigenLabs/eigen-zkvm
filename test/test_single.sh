@@ -28,10 +28,10 @@ echo "3. Export verification key"
 ${ZKIT} export_verification_key -s ${SRS}  -c $WORKSPACE/$CIRCUIT.r1cs -v $WORKSPACE/vk.bin
 
 echo "4. prove"
-${ZKIT} prove -c $WORKSPACE/$CIRCUIT.r1cs -w $WORKSPACE/witness.wtns -s ${SRS} -b $WORKSPACE/proof.bin -t rescue -j $WORKSPACE/proof.json
+${ZKIT} prove -c $WORKSPACE/$CIRCUIT.r1cs -w $WORKSPACE/witness.wtns -s ${SRS} -b $WORKSPACE/proof.bin -j $WORKSPACE/proof.json
 
 echo "5. Verify the proof"
-${ZKIT} verify -p $WORKSPACE/proof.bin -v $WORKSPACE/vk.bin -t rescue
+${ZKIT} verify -p $WORKSPACE/proof.bin -v $WORKSPACE/vk.bin
 
 echo "6. Generate verifier"
 ${ZKIT} generate_verifier -v $WORKSPACE/vk.bin -s single/contracts/verifier.sol

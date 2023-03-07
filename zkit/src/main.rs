@@ -257,7 +257,7 @@ pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
     let output = std::path::PathBuf::from(opt.output);
 
     let user_input =
-        input_user::Input::new(input, output, o_style, opt.prime, opt.link_directories)?;
+        input_user::Input::new(input, output, o_style, opt.prime, opt.link_directories, opt.use_custom_gate)?;
     let mut program_archive = parser_user::parse_project(&user_input)?;
 
     type_analysis_user::analyse_project(&mut program_archive)?;
@@ -277,7 +277,7 @@ pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
         r1cs: user_input.r1cs_file().to_string(),
         json_constraints: user_input.json_constraints_file().to_string(),
         prime: user_input.get_prime(),
-        custom_gates: user_input.custom_gate(),
+        use_custom_gates: user_input.custom_gate(),
     };
     let circuit = execution_user::execute_project(program_archive, config)?;
     let compilation_config = CompilerConfig {
@@ -355,7 +355,7 @@ fn main() {
     match exec_result {
         Err(x) => {
             println!("execute error: {}", x);
-            std::process::exit(-1)
+            std::process::exit(400)
         }
         _ => println!("time cost: {}", start.elapsed().as_secs_f64()),
     };

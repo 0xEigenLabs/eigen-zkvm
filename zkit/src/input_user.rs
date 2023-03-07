@@ -82,6 +82,7 @@ impl Input {
         o_style: SimplificationStyle,
         prime: String,
         paths: Vec<String>,
+        use_custom_gates: bool,
     ) -> Result<Input, ()> {
         let file_name = input.file_stem().unwrap().to_str().unwrap().to_string();
         let output_c_path = Input::build_folder(&output_path, &file_name, CPP);
@@ -131,7 +132,7 @@ impl Input {
             //prime: "bn128".to_string(), //goldilocks
             prime: prime,
             link_libraries: link_libraries,
-            use_custom_gates: false,
+            use_custom_gates: use_custom_gates,
         })
     }
 

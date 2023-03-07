@@ -19,7 +19,7 @@ pub struct ExecutionConfig {
     pub json_substitution_flag: bool,
     pub json_constraint_flag: bool,
     pub prime: String,
-    pub custom_gates: bool,
+    pub use_custom_gates: bool,
 }
 
 pub fn execute_project(
@@ -42,7 +42,7 @@ pub fn execute_project(
     };
     let (exporter, vcp) = build_circuit(program_archive, build_config)?;
     if config.r1cs_flag {
-        generate_output_r1cs(&config.r1cs, exporter.as_ref(), config.custom_gates)?;
+        generate_output_r1cs(&config.r1cs, exporter.as_ref(), config.use_custom_gates)?;
     }
     if config.sym_flag {
         generate_output_sym(&config.sym, exporter.as_ref())?;
@@ -56,9 +56,9 @@ pub fn execute_project(
 fn generate_output_r1cs(
     file: &str,
     exporter: &dyn ConstraintExporter,
-    custom_gates: bool,
+    use_custom_gates: bool,
 ) -> Result<(), ()> {
-    if let Result::Ok(()) = exporter.r1cs(file, custom_gates) {
+    if let Result::Ok(()) = exporter.r1cs(file, use_custom_gates) {
         println!("{} {}", Colour::Green.paint("Written successfully:"), file);
         Result::Ok(())
     } else {
