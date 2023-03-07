@@ -3,9 +3,9 @@ set -ex
 
 cargo build --release
 
-CIRCUIT=multiplier
+CIRCUIT=circuit
 CUR_DIR=$(cd $(dirname $0);pwd)
-POWER=10
+POWER=11
 ZKIT="${CUR_DIR}/../target/release/zkit"
 WORKSPACE=/tmp/single
 rm -rf $WORKSPACE && mkdir -p $WORKSPACE
