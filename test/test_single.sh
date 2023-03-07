@@ -19,7 +19,7 @@ if [ ! -f $SRS ]; then
 fi
 
 echo "1. Compile the circuit"
-${ZKIT} compile -i $CIRCUIT.circom --O2=full -o $WORKSPACE -c false
+${ZKIT} compile -i $CIRCUIT.circom --O2=full -o $WORKSPACE
 
 echo "2. Generate witness"
 node ${WORKSPACE}/${CIRCUIT}_js/generate_witness.js ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm $CUR_DIR/single/input.json $WORKSPACE/witness.wtns
