@@ -1,9 +1,9 @@
 extern crate clap;
 use clap::Clap;
 use plonky::api::{
-    aggregation_prove, aggregation_verify, export_aggregation_verification_key,
+    aggregation_prove, aggregation_verify, analyse, export_aggregation_verification_key,
     export_verification_key, generate_aggregation_verifier, generate_verifier, prove, setup,
-    verify, analyse
+    verify,
 };
 use std::time::Instant;
 
@@ -232,7 +232,7 @@ enum Command {
     StarkProve(StarkProveOpt),
 
     #[clap(name = "analyse")]
-    Analyse(AnalyseOpt)
+    Analyse(AnalyseOpt),
 }
 
 #[derive(Debug, Clap)]
