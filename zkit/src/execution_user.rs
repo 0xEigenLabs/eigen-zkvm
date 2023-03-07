@@ -52,10 +52,7 @@ pub fn execute_project(
     Result::Ok(vcp)
 }
 
-fn generate_output_r1cs(
-    file: &str,
-    exporter: &dyn ConstraintExporter,
-) -> Result<(), ()> {
+fn generate_output_r1cs(file: &str, exporter: &dyn ConstraintExporter) -> Result<(), ()> {
     if let Result::Ok(()) = exporter.r1cs(file, true) {
         println!("{} {}", Colour::Green.paint("Written successfully:"), file);
         Result::Ok(())

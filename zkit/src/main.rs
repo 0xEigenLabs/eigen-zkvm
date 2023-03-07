@@ -252,13 +252,8 @@ pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
     let input = std::path::PathBuf::from(opt.input);
     let output = std::path::PathBuf::from(opt.output);
 
-    let user_input = input_user::Input::new(
-        input,
-        output,
-        o_style,
-        opt.prime,
-        opt.link_directories,
-    )?;
+    let user_input =
+        input_user::Input::new(input, output, o_style, opt.prime, opt.link_directories)?;
     let mut program_archive = parser_user::parse_project(&user_input)?;
 
     type_analysis_user::analyse_project(&mut program_archive)?;
