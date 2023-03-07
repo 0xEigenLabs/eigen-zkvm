@@ -120,7 +120,7 @@ struct ExportVerificationKeyOpt {
 struct AnalyseOpt {
     #[clap(short)]
     circuit_file: String,
-    #[clap(short = "v", default_value = "analysis.json")]
+    #[clap(default_value = "analyse.json")]
     output: String,
 }
 
