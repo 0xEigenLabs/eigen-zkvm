@@ -28,7 +28,7 @@ echo "3. Export verification key"
 ${ZKIT} export_verification_key -s ${SRS}  -c $WORKSPACE/$CIRCUIT.r1cs -v $WORKSPACE/vk.bin
 
 echo "4. prove"
-${ZKIT} prove -c $WORKSPACE/$CIRCUIT.r1cs -w $WORKSPACE/witness.wtns -s ${SRS} -b $WORKSPACE/proof.bin -j $WORKSPACE/proof.json
+${ZKIT} prove -c $WORKSPACE/$CIRCUIT.r1cs -w $WORKSPACE/witness.wtns -s ${SRS} -b $WORKSPACE/proof.bin
 
 echo "5. Verify the proof"
 ${ZKIT} verify -p $WORKSPACE/proof.bin -v $WORKSPACE/vk.bin
