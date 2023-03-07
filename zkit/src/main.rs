@@ -1,7 +1,7 @@
 extern crate clap;
 use clap::Clap;
 use plonky::api::{
-    aggregation_prove, aggregation_verify, export_aggregation_verification_key,
+    aggregation_prove, aggregation_verify, analyse, export_aggregation_verification_key,
     export_verification_key, generate_aggregation_verifier, generate_verifier, prove, setup,
     verify,
 };
@@ -47,9 +47,11 @@ pub struct CompilierOpt {
     #[clap(long = "O2", hidden = false, default_value = "full")]
     full_simplification: String,
 
+    /// setup output path
     #[clap(short = "o")]
     output: String,
 
+    /// setup the library path
     #[clap(short = "l")]
     link_directories: Vec<String>,
 }
@@ -111,6 +113,15 @@ struct ExportVerificationKeyOpt {
     circuit_file: String,
     #[clap(short = "v", default_value = "vk.bin")]
     output_vk: String,
+}
+
+/// Analyse circuits
+#[derive(Debug, Clap)]
+struct AnalyseOpt {
+    #[clap(short)]
+    circuit_file: String,
+    #[clap(default_value = "analyse.json")]
+    output: String,
 }
 
 /// Export aggregation proof's verification key
@@ -215,6 +226,9 @@ enum Command {
 
     #[clap(name = "stark_prove")]
     StarkProve(StarkProveOpt),
+
+    #[clap(name = "analyse")]
+    Analyse(AnalyseOpt),
 }
 
 #[derive(Debug, Clap)]
@@ -330,9 +344,14 @@ fn main() {
             &args.circom_file,
             &args.zkin,
         ),
+
+        Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
     };
     match exec_result {
-        Err(x) => println!("execute error: {}", x),
+        Err(x) => {
+            println!("execute error: {}", x);
+            std::process::exit(400)
+        }
         _ => println!("time cost: {}", start.elapsed().as_secs_f64()),
     };
 }

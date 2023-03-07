@@ -278,12 +278,12 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
         )?;
     }
 
-    let custom_gates_uses: Vec<CustomGatesUses> = vec![];
+    let mut custom_gates_uses: Vec<CustomGatesUses> = vec![];
     if section_offsets.get(&CUSTOM_GATES_USE).is_some() {
         reader.seek(SeekFrom::Start(
             *section_offsets.get(&CUSTOM_GATES_USE).unwrap(),
         ))?;
-        let custom_gates_uses = read_custom_gates_uses_list(
+        custom_gates_uses = read_custom_gates_uses_list(
             &mut reader,
             *section_sizes.get(&CUSTOM_GATES_USE).unwrap(),
             &header,
@@ -295,8 +295,8 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
         header,
         constraints,
         wire_mapping,
-        custom_gates: custom_gates,
-        custom_gates_uses: custom_gates_uses,
+        custom_gates,
+        custom_gates_uses,
     })
 }
 
