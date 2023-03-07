@@ -3,7 +3,7 @@ use clap::Clap;
 use plonky::api::{
     aggregation_prove, aggregation_verify, export_aggregation_verification_key,
     export_verification_key, generate_aggregation_verifier, generate_verifier, prove, setup,
-    verify,
+    verify, analyse
 };
 use std::time::Instant;
 
@@ -47,11 +47,17 @@ pub struct CompilierOpt {
     #[clap(long = "O2", hidden = false, default_value = "full")]
     full_simplification: String,
 
+    /// setup output path
     #[clap(short = "o")]
     output: String,
 
+    /// setup the library path
     #[clap(short = "l")]
     link_directories: Vec<String>,
+
+    /// Use custom gate or not
+    #[clap(short = "c", parse(try_from_str), default_value = "true")]
+    use_custom_gate: bool,
 }
 
 /// Prove by Plonk
@@ -111,6 +117,15 @@ struct ExportVerificationKeyOpt {
     circuit_file: String,
     #[clap(short = "v", default_value = "vk.bin")]
     output_vk: String,
+}
+
+/// Analyse circuits
+#[derive(Debug, Clap)]
+struct AnalyseOpt {
+    #[clap(short)]
+    circuit_file: String,
+    #[clap(short = "v", default_value = "output.json")]
+    output: String,
 }
 
 /// Export aggregation proof's verification key
@@ -215,6 +230,9 @@ enum Command {
 
     #[clap(name = "stark_prove")]
     StarkProve(StarkProveOpt),
+
+    #[clap(name = "analyse")]
+    Analyse(AnalyseOpt)
 }
 
 #[derive(Debug, Clap)]
@@ -259,6 +277,7 @@ pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
         r1cs: user_input.r1cs_file().to_string(),
         json_constraints: user_input.json_constraints_file().to_string(),
         prime: user_input.get_prime(),
+        custom_gates: user_input.custom_gate(),
     };
     let circuit = execution_user::execute_project(program_archive, config)?;
     let compilation_config = CompilerConfig {
@@ -330,6 +349,8 @@ fn main() {
             &args.circom_file,
             &args.zkin,
         ),
+
+        Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
     };
     match exec_result {
         Err(x) => {

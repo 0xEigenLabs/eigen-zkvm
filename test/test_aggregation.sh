@@ -5,7 +5,7 @@ set -ex
 cargo build --release
 
 BIG_POWER=23
-POWER=16
+POWER=11
 CUR_DIR=$(cd $(dirname $0);pwd)
 ZKIT="${CUR_DIR}/../target/release/zkit"
 CIRCUIT="circuit"
@@ -29,7 +29,7 @@ if [ ! -f $BIG_SRS ]; then
 fi
 
 echo "1. compile circuit"
-${ZKIT} compile -i ${CIRCUIT}.circom --O2=full -o $WORKSPACE
+${ZKIT} compile -i ${CIRCUIT}.circom --O2=full -o $WORKSPACE -c false
 
 echo "2. export verification key"
 ${ZKIT} export_verification_key -s ${SRS} -c $WORKSPACE/${CIRCUIT}.r1cs -v $WORKSPACE/vk.bin
@@ -41,7 +41,8 @@ do
     node ${WORKSPACE}/${CIRCUIT}_js/generate_witness.js \
         ${WORKSPACE}/${CIRCUIT}_js/${CIRCUIT}.wasm \
         $input/input.json $input/witness.wtns
-    ${ZKIT} prove -c $WORKSPACE/${CIRCUIT}.r1cs -w $input/witness.wtns -b $input/proof.bin -s ${SRS} -t rescue
+    ${ZKIT} prove -c $WORKSPACE/${CIRCUIT}.r1cs -w $input/witness.wtns -b $input/proof.bin -s ${SRS} -j $input/proof.json -t rescue
+    ${ZKIT} verify -p $input/proof.bin -v $WORKSPACE/vk.bin -t rescue
 done
 
 echo "4. collect old proof list"

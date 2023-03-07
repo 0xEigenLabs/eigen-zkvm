@@ -32,6 +32,7 @@ pub struct Input {
     pub flag_verbose: bool,
     pub prime: String,
     pub link_libraries: Vec<PathBuf>,
+    pub use_custom_gates: bool,
 }
 
 const P_0: &'static str =
@@ -130,6 +131,7 @@ impl Input {
             //prime: "bn128".to_string(), //goldilocks
             prime: prime,
             link_libraries: link_libraries,
+            use_custom_gates: false,
         })
     }
 
@@ -231,5 +233,8 @@ impl Input {
     }
     pub fn get_prime(&self) -> String {
         self.prime.clone()
+    }
+    pub fn custom_gate(&self) -> bool {
+        self.use_custom_gates
     }
 }
