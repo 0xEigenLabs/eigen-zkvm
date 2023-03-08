@@ -129,6 +129,7 @@ fn _calculate_im_pols(
     im_expressions: &Option<HashMap<usize, bool>>,
     max_deg: usize,
     abs_max: usize,
+    abs_max_d: &mut i32,
 ) -> (Option<HashMap<usize, bool>>, i32) {
     //log::debug!(
     //    "im_expressions: {:?}, exp: {}, max_deg {}",
@@ -147,7 +148,7 @@ fn _calculate_im_pols(
         let mut im_e: Option<HashMap<usize, bool>> = im_expressions.clone();
         let values: &Vec<Expression> = exp.values.as_ref().unwrap();
         for v in values.iter() {
-            (im_e, d) = _calculate_im_pols(pil, v, &im_e, max_deg, abs_max);
+            (im_e, d) = _calculate_im_pols(pil, v, &im_e, max_deg, abs_max, abs_max_d);
             if d > md {
                 md = d;
             }
@@ -166,15 +167,30 @@ fn _calculate_im_pols(
         let values: &Vec<Expression> = exp.values.as_ref().unwrap();
         // TODO explain
         if vec!["number", "public", "challenge"].contains(&values[0].op.as_str()) {
-            return _calculate_im_pols(pil, &(values[1]), im_expressions, max_deg, abs_max);
+            return _calculate_im_pols(
+                pil,
+                &(values[1]),
+                im_expressions,
+                max_deg,
+                abs_max,
+                abs_max_d,
+            );
         }
         if vec!["number", "public", "challenge"].contains(&values[1].op.as_str()) {
-            return _calculate_im_pols(pil, &(values[0]), im_expressions, max_deg, abs_max);
+            return _calculate_im_pols(
+                pil,
+                &(values[0]),
+                im_expressions,
+                max_deg,
+                abs_max,
+                abs_max_d,
+            );
         }
         for l in 0..=max_deg {
             let r = max_deg - l;
-            let (e1, d1) = _calculate_im_pols(pil, &(values[0]), im_expressions, l, abs_max);
-            let (e2, d2) = _calculate_im_pols(pil, &(values[1]), &e1, r, abs_max);
+            let (e1, d1) =
+                _calculate_im_pols(pil, &(values[0]), im_expressions, l, abs_max, abs_max_d);
+            let (e2, d2) = _calculate_im_pols(pil, &(values[1]), &e1, r, abs_max, abs_max_d);
             if e2.is_some() {
                 if eb.is_none() {
                     eb = e2;
@@ -212,7 +228,7 @@ fn _calculate_im_pols(
             return (im_expressions.clone(), 1);
         }
         let exp_n = pil.expressions[exp.id.unwrap()].clone();
-        let (e, d) = _calculate_im_pols(pil, &exp_n, im_expressions, abs_max, abs_max);
+        let (e, d) = _calculate_im_pols(pil, &exp_n, im_expressions, abs_max, abs_max, abs_max_d);
         if e.is_none() {
             return (None, -1);
         }
@@ -220,6 +236,9 @@ fn _calculate_im_pols(
         let mut e = e.unwrap();
         if d > (max_deg as i32) {
             e.insert(exp.id.unwrap(), true);
+            if d > *abs_max_d {
+                *abs_max_d = d;
+            }
             return (Some(e), 1);
         } else {
             return (Some(e), d);
@@ -236,8 +255,16 @@ pub fn calculate_im_pols(
 ) -> Result<(Option<HashMap<usize, bool>>, i32)> {
     //log::debug!("calculate_im_pols: {} {}", _exp, max_deg);
 
+    let mut abs_max_d = 0;
     let im_expressions: HashMap<usize, bool> = HashMap::new();
-    let (re, rd) = _calculate_im_pols(pil, _exp, &Some(im_expressions), max_deg, max_deg);
+    let (re, rd) = _calculate_im_pols(
+        pil,
+        _exp,
+        &Some(im_expressions),
+        max_deg,
+        max_deg,
+        &mut abs_max_d,
+    );
 
     //log::debug!(
     //    "maxDeg: {}, nIm: {}, d: {}",
@@ -245,5 +272,5 @@ pub fn calculate_im_pols(
     //    re.as_ref().unwrap().len(),
     //    rd
     //);
-    Ok((re, rd - 1))
+    Ok((re, std::cmp::max(rd, abs_max_d) - 1))
 }

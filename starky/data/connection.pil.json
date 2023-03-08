@@ -1,0 +1,108 @@
+{
+ "nCommitments": 3,
+ "nQ": 0,
+ "nIm": 0,
+ "nConstants": 4,
+ "publics": [],
+ "references": {
+  "Global.L1": {
+   "type": "constP",
+   "id": 0,
+   "polDeg": 1024,
+   "isArray": false
+  },
+  "Connection.S1": {
+   "type": "constP",
+   "id": 1,
+   "polDeg": 1024,
+   "isArray": false
+  },
+  "Connection.S2": {
+   "type": "constP",
+   "id": 2,
+   "polDeg": 1024,
+   "isArray": false
+  },
+  "Connection.S3": {
+   "type": "constP",
+   "id": 3,
+   "polDeg": 1024,
+   "isArray": false
+  },
+  "Connection.a": {
+   "type": "cmP",
+   "id": 0,
+   "polDeg": 1024,
+   "isArray": false
+  },
+  "Connection.b": {
+   "type": "cmP",
+   "id": 1,
+   "polDeg": 1024,
+   "isArray": false
+  },
+  "Connection.c": {
+   "type": "cmP",
+   "id": 2,
+   "polDeg": 1024,
+   "isArray": false
+  }
+ },
+ "expressions": [
+  {
+   "op": "cm",
+   "deg": 1,
+   "id": 0,
+   "next": false
+  },
+  {
+   "op": "cm",
+   "deg": 1,
+   "id": 1,
+   "next": false
+  },
+  {
+   "op": "cm",
+   "deg": 1,
+   "id": 2,
+   "next": false
+  },
+  {
+   "op": "const",
+   "deg": 1,
+   "id": 1,
+   "next": false
+  },
+  {
+   "op": "const",
+   "deg": 1,
+   "id": 2,
+   "next": false
+  },
+  {
+   "op": "const",
+   "deg": 1,
+   "id": 3,
+   "next": false
+  }
+ ],
+ "polIdentities": [],
+ "plookupIdentities": [],
+ "permutationIdentities": [],
+ "connectionIdentities": [
+  {
+   "pols": [
+    0,
+    1,
+    2
+   ],
+   "connections": [
+    3,
+    4,
+    5
+   ],
+   "fileName": "connection.pil",
+   "line": 7
+  }
+ ]
+}
