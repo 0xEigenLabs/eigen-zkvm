@@ -1,11 +1,11 @@
 #!/bin/bash
-set -e
+set -ex
 
 ## build
 cargo build --release
 
-BIG_POWER=26
-POWER=20
+BIG_POWER=23
+POWER=11
 CUR_DIR=$(cd $(dirname $0);pwd)
 ZKIT="${CUR_DIR}/../target/release/zkit"
 CIRCUIT="circuit"
@@ -41,7 +41,8 @@ do
     node ${WORKSPACE}/${CIRCUIT}_js/generate_witness.js \
         ${WORKSPACE}/${CIRCUIT}_js/${CIRCUIT}.wasm \
         $input/input.json $input/witness.wtns
-    ${ZKIT} prove -c $WORKSPACE/${CIRCUIT}.r1cs -w $input/witness.wtns -b $input/proof.bin -s ${SRS} -t rescue
+    ${ZKIT} prove -c $WORKSPACE/${CIRCUIT}.r1cs -w $input/witness.wtns -b $input/proof.bin -s ${SRS} -j $input/proof.json -t rescue
+    ${ZKIT} verify -p $input/proof.bin -v $WORKSPACE/vk.bin -t rescue
 done
 
 echo "4. collect old proof list"

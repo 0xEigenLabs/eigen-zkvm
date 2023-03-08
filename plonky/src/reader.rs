@@ -252,7 +252,7 @@ fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
         num_variables: circuit_json.num_variables,
         num_outputs: circuit_json.num_outputs,
         constraints,
-        custom_gates: vec![], //TODO support custom_gates
+        custom_gates: vec![],
         custom_gates_uses: vec![],
     }
 }
