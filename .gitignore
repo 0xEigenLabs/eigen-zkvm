@@ -24,8 +24,14 @@ ir_log
 node_modules
 yarn.lock
 keys/setup_*.key
-**/circuit/
 **/circuits.*/
 **/circuits/
 **/package-lock.json
+witness.wtns
+
+artifacts
+cache
+dist
+typechain
+
 nohup.*
