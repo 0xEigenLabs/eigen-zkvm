@@ -4,7 +4,7 @@ eigen-zkvm is a zkVM on layered proof system, allowing the developers to write Z
 
 - [x] zkit: universal commandline for starky and plonky
 
-- [x] Transpile R1CS to PlonK prove system, with aggregation proof;
+- [x] Circom 2.x on PlonK prove system, with aggregation proof;
 
 - [x] Generate solidity verifier;
 

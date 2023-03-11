@@ -69,4 +69,7 @@ echo "7. verify"
 ${ZKIT} aggregation_verify -p $WORKSPACE/aggregation_proof.bin -v $WORKSPACE/aggregation_vk.bin
 
 echo "8. generate verifier"
-${ZKIT} generate_aggregation_verifier -o $WORKSPACE/vk.bin -n $WORKSPACE/aggregation_vk.bin -i 3 -s $WORKSPACE/verifier.sol
+${ZKIT} generate_aggregation_verifier -o $WORKSPACE/vk.bin -n $WORKSPACE/aggregation_vk.bin -i 3 -s aggregation/contracts/verifier.sol
+
+echo "9. run verifier test"
+cd $CUR_DIR/aggregation && npm run test

@@ -1,9 +1,9 @@
 extern crate clap;
 use clap::Clap;
 use plonky::api::{
-    aggregation_prove, aggregation_verify, analyse, export_aggregation_verification_key,
-    export_verification_key, generate_aggregation_verifier, generate_verifier, prove, setup,
-    verify,
+    aggregation_check, aggregation_prove, aggregation_verify, analyse,
+    export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
+    generate_verifier, prove, setup, verify,
 };
 use std::time::Instant;
 
@@ -120,7 +120,7 @@ struct ExportVerificationKeyOpt {
 struct AnalyseOpt {
     #[clap(short)]
     circuit_file: String,
-    #[clap(default_value = "analyse.json")]
+    #[clap(short, default_value = "analyse.json")]
     output: String,
 }
 
@@ -200,6 +200,19 @@ struct StarkProveOpt {
     zkin: String,
 }
 
+/// Check aggregation proof
+#[derive(Debug, Clap)]
+struct AggregationCheckOpt {
+    #[clap(short = "f")]
+    old_proof_list: String,
+
+    #[clap(short = "v", default_value = "vk.bin")]
+    old_vk: String,
+
+    #[clap(short = "n", default_value = "aggregation_proof.bin")]
+    new_proof: String,
+}
+
 #[derive(Debug, Clap)]
 enum Command {
     #[clap(name = "setup")]
@@ -223,6 +236,8 @@ enum Command {
     AggregationVerify(AggregationVerifyOpt),
     #[clap(name = "generate_aggregation_verifier")]
     GenerateAggregationVerifier(GenerateAggregationVerifierOpt),
+    #[clap(name = "aggregation_check")]
+    AggregationCheck(AggregationCheckOpt),
 
     #[clap(name = "stark_prove")]
     StarkProve(StarkProveOpt),
@@ -334,6 +349,9 @@ fn main() {
         Command::AggregationVerify(args) => aggregation_verify(&args.proof, &args.vk),
         Command::GenerateAggregationVerifier(args) => {
             generate_aggregation_verifier(&args.old_vk, &args.new_vk, args.num_inputs, &args.sol)
+        }
+        Command::AggregationCheck(args) => {
+            aggregation_check(&args.old_proof_list, &args.old_vk, &args.new_proof)
         }
 
         Command::StarkProve(args) => stark::prove(

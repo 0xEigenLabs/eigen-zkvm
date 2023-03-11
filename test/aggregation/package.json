@@ -1,0 +1,31 @@
+{
+  "license": "Apache-2.0",
+  "scripts": {
+    "lint": "./node_modules/.bin/eslint src --ext .ts",
+    "clean": "rm -rf build dist typechain cache artifacts",
+    "compile": "hardhat compile",
+    "build": "npm run clean && npm i && ./node_modules/.bin/tsc",
+    "test": "npm run build && npm run compile && npx hardhat test"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.2.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.5",
+    "@typechain/ethers-v5": "^10.2.0",
+    "@typechain/hardhat": "^6.1.5",
+    "@types/chai": "^4.3.4",
+    "@types/mocha": "^9.1.1",
+    "ethereum-waffle": "^3.0.0",
+    "chai": "^4.3.0",
+    "ethers": "^5.0.31",
+    "hardhat-gas-reporter": "^1.0.4",
+    "ts-node": "^10.4.0",
+    "typechain": "^8.1.1",
+    "typescript": "^4.6.2",
+    "typescript-eslint-parser": "^22.0.0"
+  },
+  "dependencies": {
+    "@nomiclabs/buidler": "^1.4.8",
+    "@typechain/hardhat": "^6.0.0",
+    "@types/sinon-chai": "^3.2.9"
+  }
+}

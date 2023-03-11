@@ -74,6 +74,7 @@ pub fn prove(
 
     std::fs::write(proof_json, ser_proof_str.as_bytes())?;
     std::fs::write(public_json, ser_inputs_str.as_bytes())?;
+
     Result::Ok(())
 }
 
@@ -170,7 +171,7 @@ pub fn aggregation_verify(proof: &String, vk: &String) -> Result<()> {
 
 // check an aggregated proof is corresponding to the original proofs
 #[cfg(not(feature = "wasm"))]
-pub fn check_aggregation(
+pub fn aggregation_check(
     old_proof_list: &String,
     old_vk: &String,
     new_proof: &String,
