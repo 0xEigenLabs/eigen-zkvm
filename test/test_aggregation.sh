@@ -5,7 +5,11 @@ set -ex
 cargo build --release
 
 BIG_POWER=23
-POWER=11
+POWER=12
+
+## number of private input: https://github.com/0xEigenLabs/eigen-zkvm/issues/49
+NUM_INPUTS=4
+
 CUR_DIR=$(cd $(dirname $0);pwd)
 ZKIT="${CUR_DIR}/../target/release/zkit"
 CIRCUIT="circuit"
@@ -60,7 +64,7 @@ done
 cat $OLD_PROOF_LIST
 
 echo "5. export aggregation vk"
-${ZKIT} export_aggregation_verification_key -c $i -i 3 -s ${BIG_SRS} -v $WORKSPACE/aggregation_vk.bin
+${ZKIT} export_aggregation_verification_key -c $i -i ${NUM_INPUTS} -s ${BIG_SRS} -v $WORKSPACE/aggregation_vk.bin
 
 echo "6. generate aggregation proof"
 ${ZKIT} aggregation_prove -s ${BIG_SRS} -f $OLD_PROOF_LIST  -v $WORKSPACE/vk.bin -n $WORKSPACE/aggregation_proof.bin  -j $WORKSPACE/aggregation_proof.json
@@ -69,7 +73,7 @@ echo "7. verify"
 ${ZKIT} aggregation_verify -p $WORKSPACE/aggregation_proof.bin -v $WORKSPACE/aggregation_vk.bin
 
 echo "8. generate verifier"
-${ZKIT} generate_aggregation_verifier -o $WORKSPACE/vk.bin -n $WORKSPACE/aggregation_vk.bin -i 3 -s aggregation/contracts/verifier.sol
+${ZKIT} generate_aggregation_verifier -o $WORKSPACE/vk.bin -n $WORKSPACE/aggregation_vk.bin -i ${NUM_INPUTS} -s aggregation/contracts/verifier.sol
 
 echo "9. run verifier test"
 cd $CUR_DIR/aggregation && npm run test
