@@ -8,30 +8,11 @@ on:
 jobs:
   create-release:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-pc-windows-gnu
-            archive: zip
-          - target: x86_64-unknown-linux-musl
-            archive: tar.gz
-          - target: x86_64-apple-darwin
-            archive: zip
     steps:
       - uses: actions/checkout@master
-      - name: Compile and release
-        uses: rust-build/rust-build.action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: taiki-e/create-gh-release-action@v1
         with:
-          RUSTTARGET: ${{ matrix.target }}
-          EXTRA_FILES: "README.md"
-          SRC_DIR: "zkit"
-          ARCHIVE_TYPES: ${{ matrix.archive }}
-          #PRE_BUILD: "pre_build.sh"
-          #POST_BUILD: "test/post_build.sh"
-          MINIFY: "yes"
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   upload-assets:
     name: ${{ matrix.target }}
@@ -42,20 +23,19 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
+          - windows-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: taiki-e/github-actions/install-rust@main
+      - uses: actions/checkout@master
+      - uses: taiki-e/install-action@v2
         with:
           toolchain: nightly
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
           # (required)
           bin: zkit
+          archive: $target
           target: ${{ matrix.target }}
-          # (optional) On which platform to distribute the `.tar.gz` file.
-          # [default value: unix]
-          # [possible values: all, unix, windows, none]
           tar: all
         env:
           # (required)
