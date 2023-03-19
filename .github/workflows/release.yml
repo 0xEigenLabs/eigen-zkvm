@@ -33,8 +33,8 @@ jobs:
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
           # (required)
-          bin: zkit
-          archive: $target
+          bin: eigen-zkit
+          archive: $bin-$target
           target: ${{ matrix.target }}
           tar: all
         env:

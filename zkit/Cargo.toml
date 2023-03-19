@@ -1,5 +1,5 @@
 [package]
-name = "zkit"
+name = "eigen-zkit"
 version = "0.0.1"
 edition = "2021"
 license = "Apache-2.0"
@@ -17,7 +17,6 @@ clap = { package = "clap-v3", version = "3.0.0-beta.1" } # todo: replace with of
 ansi_term = "0.12.1"
 wast = "39.0.0"
 anyhow = "1.0.34"
-#thiserror = "1.0.33"
 
 serde = { version = "1.0", features = [ "derive" ] }
 serde_json = "1.0"

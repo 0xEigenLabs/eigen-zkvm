@@ -11,7 +11,7 @@ POWER=12
 NUM_INPUTS=4
 
 CUR_DIR=$(cd $(dirname $0);pwd)
-ZKIT="${CUR_DIR}/../target/release/zkit"
+ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 CIRCUIT="circuit"
 
 cd ${CUR_DIR} && npm i 

@@ -7,7 +7,7 @@ cargo build --release
 BIG_POWER=26
 POWER=26
 CUR_DIR=$(cd $(dirname $0);pwd)
-ZKIT="${CUR_DIR}/../target/release/zkit"
+ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 CIRCUIT="fibonacci"
 
 cd ${CUR_DIR} && npm i 
