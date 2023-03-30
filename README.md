@@ -40,4 +40,4 @@ For power in range 20 to 26, you can download directly from [universal-setup hub
 [starkjs](./starkjs)
 
 ## Applications
-* [zk-zkRollup](https://github.com/0xEigenLabs/zk-zkrollup)
+* [eigen-secret](https://github.com/0xEigenLabs/eigen-secret)
