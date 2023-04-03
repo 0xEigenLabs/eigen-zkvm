@@ -2,6 +2,8 @@
 
 Generates a STARK proof from a State Machine written in PIL Language. Rusty Polygon Hermez [pil-stark](https://github.com/0xPolygonHermez/pil-stark).
 
+Design paper [eSTARK: Extending STARKs with Arguments](https://eprint.iacr.org/2023/474.pdf).
+
 # Example
 
 [starkjs](../starkjs)
