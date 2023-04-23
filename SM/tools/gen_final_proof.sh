@@ -7,11 +7,11 @@ CIRCUIT=circuit
 CUR_DIR=$(cd $(dirname $0);pwd)
 POWER=24
 export RUST_BACKTRACE=1
-ZKIT="${CUR_DIR}/../../target/release/zkit"
+ZKIT="${CUR_DIR}/../../target/release/eigen-zkit"
 WORKSPACE=/tmp/${CIRCUIT}
 rm -rf $WORKSPACE && mkdir -p $WORKSPACE
 
-SRS=${CUR_DIR}/../keys/setup_2^${POWER}.key
+SRS=${CUR_DIR}/../../keys/setup_2^${POWER}.key
 if [ ! -f $SRS ]; then
     ${ZKIT} setup -p ${POWER} -s ${SRS}
 fi
