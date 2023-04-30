@@ -1,4 +1,5 @@
 // FIXME: DON't use this library for scalar operation
+#![cfg(not(feature = "wasm"))]
 #![allow(unused_imports)]
 use crate::bellman_ce::ScalarEngine;
 use crate::ff::*;

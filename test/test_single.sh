@@ -5,7 +5,7 @@ cargo build --release
 
 CIRCUIT=circuit
 CUR_DIR=$(cd $(dirname $0);pwd)
-POWER=11
+POWER=12
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 WORKSPACE=/tmp/single
 rm -rf $WORKSPACE && mkdir -p $WORKSPACE
