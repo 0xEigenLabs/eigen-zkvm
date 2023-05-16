@@ -1,6 +1,6 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/circom.rs
-use wasmer::{Function, Instance, Value};
 use crate::errors::Result;
+use wasmer::{Function, Instance, Value};
 
 #[derive(Clone, Debug)]
 pub struct Wasm(Instance);
