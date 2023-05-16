@@ -17,6 +17,9 @@ pub mod plonk;
 pub mod r1cs_file;
 pub mod reader;
 pub mod scalar_gl;
+pub mod witness;
+pub mod errors;
+
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod aggregation;

@@ -32,7 +32,10 @@ serde_json = "1.0"
 handlebars = "3.*"
 hex = "*"
 ethabi = { version = "14", optional = true }
-
+wasmer = { version = "2.0", default-features = false }
+thiserror="1.0"
+fnv = { version = "1.0.3", default-features = false }
+num = { version = "0.4.0" }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rand = "0.4"
 
@@ -45,5 +48,5 @@ rand = { version="0.6.5", features = ["wasm-bindgen"] }
 wasm-bindgen-test = "0.3"
 
 [features]
-default = ["bellman_vk_codegen/multicore", "franklin-crypto/multicore", "ethabi", "recursive_aggregation_circuit/multicore"]
-wasm = ["bellman_vk_codegen/wasm", "recursive_aggregation_circuit/wasm"]
+default = ["bellman_vk_codegen/multicore", "franklin-crypto/multicore", "ethabi", "recursive_aggregation_circuit/multicore", "wasmer/default"]
+wasm = ["bellman_vk_codegen/wasm", "recursive_aggregation_circuit/wasm", "wasmer/js-default"]
