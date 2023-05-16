@@ -174,7 +174,7 @@ impl SafeMemory {
         let repr = num.into_repr();
         let required_length = repr.as_ref().len() * 8;
         let mut bytes: Vec<u8> = Vec::with_capacity(required_length);
-        repr.write_be(&mut bytes).unwrap();
+        repr.write_le(&mut bytes).unwrap();
         let len = bytes.len();
         buf[ptr..ptr + len].copy_from_slice(&bytes);
 
