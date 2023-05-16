@@ -10,7 +10,6 @@ pub trait CircomBase {
     fn func(&self, name: &str) -> &Function;
     fn get_ptr_witness_buffer(&self) -> Result<u32>;
     fn get_ptr_witness(&self, w: u32) -> Result<u32>;
-    fn get_n_vars(&self) -> Result<u32>;
     fn get_signal_offset32(
         &self,
         p_sig_offset: u32,
@@ -90,10 +89,6 @@ impl CircomBase for Wasm {
         let res = func.call(&[w.into()])?;
 
         Ok(res[0].unwrap_i32() as u32)
-    }
-
-    fn get_n_vars(&self) -> Result<u32> {
-        self.get_u32("getNVars")
     }
 
     fn get_signal_offset32(

@@ -193,20 +193,6 @@ impl WitnessCalculator {
 
         Ok(witness)
     }
-
-    pub fn get_witness_buffer(&self) -> Result<Vec<u8>> {
-        let ptr = self.instance.get_ptr_witness_buffer()? as usize;
-
-        let view = self.memory.memory.view::<u8>();
-
-        let len = self.instance.get_n_vars()? * self.n64 * 8;
-        let arr = view[ptr..ptr + len as usize]
-            .iter()
-            .map(Cell::get)
-            .collect::<Vec<_>>();
-
-        Ok(arr)
-    }
 }
 
 // callback hooks for debugging
@@ -276,7 +262,6 @@ mod tests {
     struct TestCase<'a> {
         circuit_path: &'a str,
         inputs_path: &'a str,
-        n_vars: u32,
         n64: u32,
         witness: &'a [&'a str],
     }
@@ -292,7 +277,6 @@ mod tests {
         run_test(TestCase {
             circuit_path: root_path("test-vectors/mycircuit.wasm").as_str(),
             inputs_path: root_path("test-vectors/mycircuit-input1.json").as_str(),
-            n_vars: 4,
             n64: 4,
             witness: &["1", "33", "3", "11"],
         });
@@ -303,7 +287,6 @@ mod tests {
         run_test(TestCase {
             circuit_path: root_path("test-vectors/mycircuit.wasm").as_str(),
             inputs_path: root_path("test-vectors/mycircuit-input2.json").as_str(),
-            n_vars: 4,
             n64: 4,
             witness: &[
                 "1",
@@ -319,7 +302,6 @@ mod tests {
         run_test(TestCase {
             circuit_path: root_path("test-vectors/mycircuit.wasm").as_str(),
             inputs_path: root_path("test-vectors/mycircuit-input3.json").as_str(),
-            n_vars: 4,
             n64: 4,
             witness: &[
                 "1",
@@ -347,7 +329,6 @@ mod tests {
             wtns.memory.prime.to_str_radix(16),
             "30644E72E131A029B85045B68181585D2833E84879B9709143E1F593F0000001".to_lowercase()
         );
-        //assert_eq!({ wtns.instance.get_n_vars().unwrap() }, case.n_vars);
         assert_eq!({ wtns.n64 }, case.n64);
 
         let inputs_str = std::fs::read_to_string(case.inputs_path).unwrap();
