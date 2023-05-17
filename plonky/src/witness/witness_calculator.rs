@@ -1,4 +1,4 @@
-// copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/memory.rs
+// copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/witness_calculator.rs
 use super::{fnv, CircomBase, SafeMemory, Wasm};
 use crate::bellman_ce::{Field, PrimeField, PrimeFieldRepr, ScalarEngine};
 use crate::errors::{EigenError, Result};
@@ -8,9 +8,16 @@ use num_traits::Zero;
 use std::cell::Cell;
 use std::str::FromStr;
 use wasmer::{imports, Function, Instance, Memory, MemoryType, Module, RuntimeError, Store};
-
 use super::Circom;
 use num::ToPrimitive;
+
+#[cfg(not(feature = "wasm"))]
+use std::fs::{File, OpenOptions};
+
+#[cfg(not(feature = "wasm"))]
+use std::io::{Seek, BufWriter, Write};
+
+use byteorder::{LittleEndian, WriteBytesExt};
 
 #[derive(Clone, Debug)]
 pub struct WitnessCalculator {
@@ -82,7 +89,7 @@ impl WitnessCalculator {
         let version = instance.get_version().unwrap_or(1);
 
         // Circom 2 feature flag with version 2
-        fn new_circom2(instance: Wasm, memory: Memory, version: u32) -> Result<WitnessCalculator> {
+        fn new_circom(instance: Wasm, memory: Memory, version: u32) -> Result<WitnessCalculator> {
             let n32 = instance.get_field_num_len32()?;
             let mut safe_memory = SafeMemory::new(memory, n32 as usize, BigInt::zero());
             instance.get_raw_prime()?;
@@ -110,7 +117,7 @@ impl WitnessCalculator {
         // c) Circom 1 default behavior
         //
         // Once Circom 2 support is more stable, feature flag can be removed
-        new_circom2(instance, memory, version)
+        new_circom(instance, memory, version)
     }
 
     pub fn calculate_witness<I: IntoIterator<Item = (String, Vec<BigInt>)>>(
@@ -120,11 +127,11 @@ impl WitnessCalculator {
     ) -> Result<Vec<BigInt>> {
         self.instance.init(sanity_check)?;
 
-        self.calculate_witness_circom2(inputs, sanity_check)
+        self.calculate_witness_circom(inputs, sanity_check)
     }
 
     // Circom 2 feature flag with version 2
-    fn calculate_witness_circom2<I: IntoIterator<Item = (String, Vec<BigInt>)>>(
+    fn calculate_witness_circom<I: IntoIterator<Item = (String, Vec<BigInt>)>>(
         &mut self,
         inputs: I,
         sanity_check: bool,
@@ -162,10 +169,45 @@ impl WitnessCalculator {
         Ok(w)
     }
 
+    #[cfg(not(feature = "wasm"))]
+    pub fn save_witness_to_bin_file(&self, filename: &str, w: &Vec<BigInt>) -> Result<anyhow::Error>{
+        let writer = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(filename)
+            .expect("unable to open.");
+
+        let mut writer = BufWriter::new(writer);
+        self.save_witness_from_bin_writer(writer)
+    }
+
+    pub fn save_witness_from_bin_writer<W: Write>(
+        &self,
+        mut writer: W,
+    ) -> Result<anyhow::Error> {
+        let n32 = self.instance.get_field_num_len32()?;
+        let wtns_header = [119, 116, 110, 115];
+        writer.write_all(&wtns_header)?;
+
+        let version = 2u32;
+        writer.write_u32::<LittleEndian>(version)?;
+        let num_section = 2u32;
+        writer.write_u32::<LittleEndian>(num_section)?;
+
+        // id section 1
+        let id_section = 1u32;
+        writer.write_u32::<LittleEndian>(id_section)?;
+
+        let id_section_1_len: u64  = n32 * 4 + 8;
+        writer.write_u64::<LittleEndian>(id_section_1_len)?;
+
+        Ok()
+    }
+
     pub fn calculate_witness_element<
         E: ScalarEngine,
         I: IntoIterator<Item = (String, Vec<BigInt>)>,
-    >(
+        >(
         &mut self,
         inputs: I,
         sanity_check: bool,
@@ -311,6 +353,8 @@ mod tests {
             ],
         });
     }
+
+    // TODO: test complex samples
 
     use serde_json::Value;
     use std::str::FromStr;
