@@ -1,21 +1,22 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/witness_calculator.rs
+use super::Circom;
 use super::{fnv, CircomBase, SafeMemory, Wasm};
-use crate::bellman_ce::{Field, PrimeField, PrimeFieldRepr, ScalarEngine};
+use crate::bellman_ce::{PrimeField, ScalarEngine};
 use crate::errors::{EigenError, Result};
+use num::ToPrimitive;
 use num_bigint::BigInt;
 use num_bigint::BigUint;
+use num_bigint::Sign;
 use num_traits::Zero;
-use std::cell::Cell;
+use serde_json::Value;
 use std::str::FromStr;
-use wasmer::{imports, Function, Instance, Memory, MemoryType, Module, RuntimeError, Store};
-use super::Circom;
-use num::ToPrimitive;
+use wasmer::{imports, Function, Instance, Memory, MemoryType, Module, Store};
 
 #[cfg(not(feature = "wasm"))]
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 
 #[cfg(not(feature = "wasm"))]
-use std::io::{Seek, BufWriter, Write};
+use std::io::{BufWriter, Write};
 
 use byteorder::{LittleEndian, WriteBytesExt};
 
@@ -111,11 +112,6 @@ impl WitnessCalculator {
             })
         }
 
-        // Three possibilities:
-        // a) Circom 2 feature flag enabled, WASM runtime version 2
-        // b) Circom 2 feature flag enabled, WASM runtime version 1
-        // c) Circom 1 default behavior
-        //
         // Once Circom 2 support is more stable, feature flag can be removed
         new_circom(instance, memory, version)
     }
@@ -126,7 +122,6 @@ impl WitnessCalculator {
         sanity_check: bool,
     ) -> Result<Vec<BigInt>> {
         self.instance.init(sanity_check)?;
-
         self.calculate_witness_circom(inputs, sanity_check)
     }
 
@@ -142,6 +137,7 @@ impl WitnessCalculator {
 
         // allocate the inputs
         for (name, values) in inputs.into_iter() {
+            println!("name {}, values: {:?}", name, values);
             let (msb, lsb) = fnv(&name);
 
             for (i, value) in values.into_iter().enumerate() {
@@ -164,32 +160,38 @@ impl WitnessCalculator {
                 arr[(n32 as usize) - 1 - (j as usize)] = self.instance.read_shared_rw_memory(j)?;
             }
             w.push(from_array32(arr));
+            println!("write {}", w[w.len() - 1]);
         }
 
         Ok(w)
     }
 
     #[cfg(not(feature = "wasm"))]
-    pub fn save_witness_to_bin_file(&self, filename: &str, w: &Vec<BigInt>) -> Result<anyhow::Error>{
+    pub fn save_witness_to_bin_file<E: ScalarEngine>(
+        &self,
+        filename: &str,
+        w: &Vec<BigInt>,
+    ) -> Result<()> {
         let writer = OpenOptions::new()
             .write(true)
             .create(true)
             .open(filename)
             .expect("unable to open.");
 
-        let mut writer = BufWriter::new(writer);
-        self.save_witness_from_bin_writer(writer)
+        let writer = BufWriter::new(writer);
+        self.save_witness_from_bin_writer::<E, _>(writer, w)
     }
 
-    pub fn save_witness_from_bin_writer<W: Write>(
+    pub fn save_witness_from_bin_writer<E: ScalarEngine, W: Write>(
         &self,
         mut writer: W,
-    ) -> Result<anyhow::Error> {
+        wtns: &Vec<BigInt>,
+    ) -> Result<()> {
         let n32 = self.instance.get_field_num_len32()?;
         let wtns_header = [119, 116, 110, 115];
         writer.write_all(&wtns_header)?;
 
-        let version = 2u32;
+        let version = self.circom_version;
         writer.write_u32::<LittleEndian>(version)?;
         let num_section = 2u32;
         writer.write_u32::<LittleEndian>(num_section)?;
@@ -198,21 +200,51 @@ impl WitnessCalculator {
         let id_section = 1u32;
         writer.write_u32::<LittleEndian>(id_section)?;
 
-        let id_section_1_len: u64  = n32 * 4 + 8;
-        writer.write_u64::<LittleEndian>(id_section_1_len)?;
+        let sec_size: u64 = (n32 * 4 + 8) as u64;
+        writer.write_u64::<LittleEndian>(sec_size)?;
 
-        Ok()
+        let field_size: u32 = n32 * 4;
+        writer.write_u32::<LittleEndian>(field_size)?;
+
+        // write prime
+        let (sign, prime_buf) = self.memory.prime.to_bytes_le();
+        if sign != Sign::Plus {
+            return Err(EigenError::Unknown(format!(
+                "Invalid prime: {}, must be positive",
+                self.memory.prime
+            )));
+        }
+        if prime_buf.len() as u32 != field_size {
+            return Err(EigenError::Unknown(format!(
+                "Invalid prime: {}, len must be of {}",
+                self.memory.prime,
+                prime_buf.len()
+            )));
+        }
+        writer.write_all(&prime_buf)?;
+
+        // write witness size
+        writer.write_u32::<LittleEndian>(wtns.len() as u32)?;
+        // sec type
+        writer.write_u32::<LittleEndian>(2)?;
+        // sec size
+        writer.write_u64::<LittleEndian>((wtns.len() * (field_size as usize)) as u64)?;
+
+        for i in 0..wtns.len() {
+            let (_sign, wtns_buf) = wtns[i].to_bytes_le();
+            writer.write_all(&wtns_buf)?;
+        }
+        Ok(())
     }
 
     pub fn calculate_witness_element<
         E: ScalarEngine,
         I: IntoIterator<Item = (String, Vec<BigInt>)>,
-        >(
+    >(
         &mut self,
         inputs: I,
         sanity_check: bool,
     ) -> Result<Vec<E::Fr>> {
-        use crate::ff::PrimeField;
         let witness = self.calculate_witness(inputs, sanity_check)?;
         let modulus = BigUint::from_str(
             "21888242871839275222246405745257275088548364400416034343698204186575808495617",
@@ -234,6 +266,14 @@ impl WitnessCalculator {
             .collect::<Vec<_>>();
 
         Ok(witness)
+    }
+}
+
+pub fn value_to_bigint(v: Value) -> BigInt {
+    match v {
+        Value::String(inner) => BigInt::from_str(&inner).unwrap(),
+        Value::Number(inner) => BigInt::from(inner.as_u64().expect("not a u32")),
+        _ => panic!("unsupported type"),
     }
 }
 
@@ -355,17 +395,6 @@ mod tests {
     }
 
     // TODO: test complex samples
-
-    use serde_json::Value;
-    use std::str::FromStr;
-
-    fn value_to_bigint(v: Value) -> BigInt {
-        match v {
-            Value::String(inner) => BigInt::from_str(&inner).unwrap(),
-            Value::Number(inner) => BigInt::from(inner.as_u64().expect("not a u32")),
-            _ => panic!("unsupported type"),
-        }
-    }
 
     fn run_test(case: TestCase) {
         let mut wtns = WitnessCalculator::new(case.circuit_path).unwrap();

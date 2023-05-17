@@ -5,18 +5,21 @@ A universal commandline for [plonky](../plonky) and [starky](../starky).
 ## Usage
 
 ```
-zkit 0.1.6
+eigen-zkit 0.1.6
 
 USAGE:
-    zkit <SUBCOMMAND>
+    eigen-zkit <SUBCOMMAND>
 
 FLAGS:
     -h, --help       Prints help information
     -V, --version    Prints version information
 
 SUBCOMMANDS:
+    aggregation_check                      Check aggregation proof
     aggregation_prove                      Proof aggregation for plonk
     aggregation_verify                     Verify aggregation proof
+    analyse                                Analyse circuits
+    calculate_witness                      Calculate witness and save to output file
     compile                                Compile circom circuits to r1cs, and generate witness
     export_aggregation_verification_key    Export aggregation proof's verification key
     export_verification_key                Export proof's verification key

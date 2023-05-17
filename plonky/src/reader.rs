@@ -104,6 +104,7 @@ pub fn maybe_load_key_lagrange_form<E: Engine>(
 
 /// load witness file by filename with autodetect encoding (bin or json).
 pub fn load_witness_from_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
+    println!("load from {}", filename);
     if filename.ends_with("json") {
         load_witness_from_json_file::<E>(filename)
     } else {
@@ -153,7 +154,7 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(
     let mut wtns_header = [0u8; 4];
     reader.read_exact(&mut wtns_header)?;
     if wtns_header != [119, 116, 110, 115] {
-        // ruby -e 'p "wtns".bytes' => [119, 116, 110, 115]
+        // python -c 'print([ord(c) for c in "wtns"])' => [119, 116, 110, 115]
         bail!("invalid file header");
     }
     let version = reader.read_u32::<LittleEndian>()?;
@@ -198,6 +199,7 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(
         let mut repr = E::Fr::zero().into_repr();
         repr.read_le(&mut reader)?;
         result.push(E::Fr::from_repr(repr)?);
+        println!("read: {}", result[result.len() - 1].to_string());
     }
     Ok(result)
 }

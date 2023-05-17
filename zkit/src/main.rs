@@ -1,7 +1,7 @@
 extern crate clap;
 use clap::Clap;
 use plonky::api::{
-    aggregation_check, aggregation_prove, aggregation_verify, analyse,
+    aggregation_check, aggregation_prove, aggregation_verify, analyse, calculate_witness,
     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
     generate_verifier, prove, setup, verify,
 };
@@ -54,6 +54,20 @@ pub struct CompilierOpt {
     /// setup the library path
     #[clap(short = "l")]
     link_directories: Vec<String>,
+}
+
+/// Calculate witness and save to output file
+#[derive(Debug, Clap)]
+struct CalculateWitnessOpt {
+    /// wasm circuit
+    #[clap(short, required = true)]
+    wasm_file: String,
+    /// [input] input json
+    #[clap(short, required = true)]
+    input_json: String,
+    /// [output] witness filename
+    #[clap(short, default_value = "witness.wtns")]
+    output: String,
 }
 
 /// Prove by Plonk
@@ -217,6 +231,8 @@ struct AggregationCheckOpt {
 enum Command {
     #[clap(name = "setup")]
     Setup(SetupOpt),
+    #[clap(name = "calculate_witness")]
+    CalculateWitness(CalculateWitnessOpt),
     /// Compile circom circuits to r1cs, and generate witness
     #[clap(name = "compile")]
     Compile(CompilierOpt),
@@ -317,6 +333,9 @@ fn main() {
     let exec_result = match args.command {
         Command::Setup(args) => setup(args.power, &args.srs_monomial_form),
         Command::Compile(args) => compile(args).map_err(|_| anyhow::anyhow!("compile error")),
+        Command::CalculateWitness(args) => {
+            calculate_witness(&args.wasm_file, &args.input_json, &args.output)
+        }
         Command::Prove(args) => prove(
             &args.circuit_file,
             &args.witness,

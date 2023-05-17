@@ -1,4 +1,4 @@
-mod witness_calculator;
+pub(super) mod witness_calculator;
 pub use witness_calculator::WitnessCalculator;
 
 mod memory;
