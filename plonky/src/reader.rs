@@ -153,7 +153,7 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(
     let mut wtns_header = [0u8; 4];
     reader.read_exact(&mut wtns_header)?;
     if wtns_header != [119, 116, 110, 115] {
-        // ruby -e 'p "wtns".bytes' => [119, 116, 110, 115]
+        // python -c 'print([ord(c) for c in "wtns"])' => [119, 116, 110, 115]
         bail!("invalid file header");
     }
     let version = reader.read_u32::<LittleEndian>()?;

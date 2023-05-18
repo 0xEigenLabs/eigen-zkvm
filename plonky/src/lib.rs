@@ -13,10 +13,12 @@ extern crate num_traits;
 extern crate rand;
 
 pub mod circom_circuit;
+pub mod errors;
 pub mod plonk;
 pub mod r1cs_file;
 pub mod reader;
 pub mod scalar_gl;
+pub mod witness;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod aggregation;

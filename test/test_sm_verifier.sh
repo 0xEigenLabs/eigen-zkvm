@@ -23,7 +23,7 @@ echo "1. Compile the circuit"
 ${ZKIT} compile -i ../${APP}/circuits/$CIRCUIT.circom -l "../${APP}/node_modules/pil-stark/circuits.bn128" -l "../${APP}/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
 
 echo "2. Generate witness"
-node ${WORKSPACE}/${CIRCUIT}_js/generate_witness.js ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm  ../${APP}/circuits/${CIRCUIT}.zkin.json $WORKSPACE/witness.wtns
+${ZKIT} -w ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm -i ../${APP}/circuits/${CIRCUIT}.zkin.json -o $WORKSPACE/witness.wtns
 
 echo "3. Export verification key"
 ${ZKIT} export_verification_key -s ${SRS}  -c $WORKSPACE/$CIRCUIT.r1cs -v $WORKSPACE/vk.bin
