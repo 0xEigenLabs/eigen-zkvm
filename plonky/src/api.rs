@@ -101,7 +101,6 @@ pub fn calculate_witness(wasm_file: &String, input_json: &String, output: &Strin
                     vec![BigInt::from_str(inner).unwrap()]
                 }
                 Value::Number(inner) => {
-                    println!("{}", inner.to_string());
                     vec![BigInt::from_str(&inner.to_string()).unwrap()]
                     //vec![BigInt::from(inner.as_u64().expect("not a u32"))]
                 }

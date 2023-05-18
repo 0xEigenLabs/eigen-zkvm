@@ -129,7 +129,7 @@ impl WitnessCalculator {
         for i in 0..witness_size {
             let mut arr = vec![0u32; n32 as usize];
             for j in 0..n32 {
-                arr.push(wtns_u32[(i * witness_size + j as u32) as usize]);
+                arr[(n32 - 1 - j) as usize] = wtns_u32[(i * witness_size + j as u32) as usize];
             }
             wo.push(from_array32(arr))
         }
@@ -291,7 +291,7 @@ pub fn value_to_bigint(v: Value) -> BigInt {
     match v {
         Value::String(inner) => BigInt::from_str(&inner).unwrap(),
         Value::Number(inner) => BigInt::from(inner.as_u64().expect("not a u32")),
-        _ => panic!("unsupported type"),
+        _ => panic!("unsupported type {:?}", v),
     }
 }
 
