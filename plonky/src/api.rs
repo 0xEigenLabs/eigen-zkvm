@@ -1,7 +1,8 @@
 use crate::bellman_ce::pairing::bn256::Bn256;
-use crate::witness::{witness_calculator::value_to_bigint, WitnessCalculator};
+use crate::witness::{flat_array, WitnessCalculator};
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
 use num_bigint::BigInt;
+use num_traits::{One, Zero};
 use serde_json::Value;
 use std::str::FromStr;
 
@@ -100,12 +101,20 @@ pub fn calculate_witness(wasm_file: &String, input_json: &String, output: &Strin
                 Value::String(inner) => {
                     vec![BigInt::from_str(inner).unwrap()]
                 }
+                Value::Bool(inner) => {
+                    if *inner {
+                        vec![BigInt::one()]
+                    } else {
+                        vec![BigInt::zero()]
+                    }
+                }
                 Value::Number(inner) => {
                     vec![BigInt::from_str(&inner.to_string()).unwrap()]
                     //vec![BigInt::from(inner.as_u64().expect("not a u32"))]
                 }
-                Value::Array(inner) => inner.iter().cloned().map(value_to_bigint).collect(),
-                _ => panic!(),
+                //Value::Array(inner) => inner.iter().cloned().map(value_to_bigint).collect(),
+                Value::Array(inner) => flat_array(inner),
+                _ => panic!("{:?}", value),
             };
 
             (key.clone(), res)

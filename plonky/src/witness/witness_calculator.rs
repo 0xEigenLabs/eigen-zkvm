@@ -7,7 +7,7 @@ use num::ToPrimitive;
 use num_bigint::BigInt;
 use num_bigint::BigUint;
 use num_bigint::Sign;
-use num_traits::Zero;
+use num_traits::{One, Zero};
 use serde_json::Value;
 use std::str::FromStr;
 use wasmer::{imports, Function, Instance, Memory, MemoryType, Module, Store};
@@ -292,6 +292,38 @@ pub fn value_to_bigint(v: Value) -> BigInt {
         Value::Number(inner) => BigInt::from(inner.as_u64().expect("not a u32")),
         _ => panic!("unsupported type {:?}", v),
     }
+}
+
+pub fn flat_array(v: &Vec<Value>) -> Vec<BigInt> {
+    let mut result = Vec::new();
+    fn fill_array(out: &mut Vec<BigInt>, value: &Value) {
+        match value {
+            Value::Array(inner) => {
+                for v2 in inner.iter() {
+                    fill_array(out, v2);
+                }
+            }
+            Value::Bool(inner) => {
+                if *inner {
+                    out.push(BigInt::one());
+                } else {
+                    out.push(BigInt::zero());
+                }
+            }
+            Value::String(inner) => {
+                out.push(BigInt::from_str(inner).unwrap());
+            }
+            Value::Number(inner) => {
+                out.push(BigInt::from_str(&inner.to_string()).unwrap());
+            }
+            _ => panic!(),
+        }
+    }
+
+    for v2 in v.iter() {
+        fill_array(&mut result, v2);
+    }
+    result
 }
 
 // callback hooks for debugging

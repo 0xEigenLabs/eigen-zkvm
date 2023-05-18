@@ -1,4 +1,5 @@
 pub(super) mod witness_calculator;
+pub use witness_calculator::flat_array;
 pub use witness_calculator::WitnessCalculator;
 
 mod memory;
