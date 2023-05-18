@@ -129,9 +129,10 @@ impl WitnessCalculator {
         for i in 0..witness_size {
             let mut arr = vec![0u32; n32 as usize];
             for j in 0..n32 {
-                arr[(n32 - 1 - j) as usize] = wtns_u32[(i * witness_size + j as u32) as usize];
+                arr[(n32 - 1 - j) as usize] = wtns_u32[(i * n32 + j as u32) as usize];
             }
-            wo.push(from_array32(arr))
+            wo.push(from_array32(arr));
+            println!("wo {}", wo[wo.len() - 1]);
         }
         Ok(wo)
     }
@@ -174,10 +175,8 @@ impl WitnessCalculator {
         let witness_size = self.instance.get_witness_size()?;
         for i in 0..witness_size {
             self.instance.get_witness(i)?;
-            let mut arr = vec![0; n32 as usize];
             for j in 0..n32 {
-                arr[(n32 as usize) - 1 - (j as usize)] = self.instance.read_shared_rw_memory(j)?;
-                w.push(arr[(n32 as usize) - 1 - (j as usize)]);
+                w.push(self.instance.read_shared_rw_memory(j)?);
             }
         }
 
@@ -446,6 +445,7 @@ mod tests {
 
         let res = wtns.calculate_witness(inputs, false).unwrap();
         for (r, w) in res.iter().zip(case.witness) {
+            println!("{} {}", r, w);
             assert_eq!(r, &BigInt::from_str(w).unwrap());
         }
     }
