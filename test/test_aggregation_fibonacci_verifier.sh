@@ -38,9 +38,7 @@ echo "3. generate each proof"
 for wtns in `ls $CUR_DIR/aggregation/${CIRCUIT}`
 do
     input=$CUR_DIR/aggregation/${CIRCUIT}/$wtns
-    node ${WORKSPACE}/${CIRCUIT}_js/generate_witness.js \
-        ${WORKSPACE}/${CIRCUIT}_js/${CIRCUIT}.wasm \
-        $input/input.json $input/witness.wtns
+    ${ZKIT} calculate_witness -w ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm -i ${input}/input.json -o $WORKSPACE/witness.wtns
     ${ZKIT} prove -c $WORKSPACE/${CIRCUIT}.r1cs -w $input/witness.wtns -b $input/proof.bin -s ${SRS} -t rescue
 done
 
