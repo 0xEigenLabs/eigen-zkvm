@@ -112,7 +112,6 @@ impl WitnessCalculator {
             })
         }
 
-        // Once Circom 2 support is more stable, feature flag can be removed
         new_circom(instance, memory, version)
     }
 
@@ -137,7 +136,6 @@ impl WitnessCalculator {
 
         // allocate the inputs
         for (name, values) in inputs.into_iter() {
-            println!("name {}, values: {:?}", name, values);
             let (msb, lsb) = fnv(&name);
 
             for (i, value) in values.into_iter().enumerate() {
@@ -157,10 +155,10 @@ impl WitnessCalculator {
             self.instance.get_witness(i)?;
             let mut arr = vec![0; n32 as usize];
             for j in 0..n32 {
-                arr[(n32 as usize) - 1 - (j as usize)] = self.instance.read_shared_rw_memory(j)?;
+                //arr[(n32 as usize) - 1 - (j as usize)] = self.instance.read_shared_rw_memory(j)?;
+                arr[(j as usize)] = self.instance.read_shared_rw_memory(j)?;
             }
             w.push(from_array32(arr));
-            println!("write {}", w[w.len() - 1]);
         }
 
         Ok(w)
