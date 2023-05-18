@@ -242,11 +242,12 @@ impl WitnessCalculator {
         writer.write_all(&prime_buf)?;
 
         // write witness size
-        writer.write_u32::<LittleEndian>(wtns.len() as u32)?;
+        let wtns_size = wtns.len() as u32 / n32;
+        writer.write_u32::<LittleEndian>(wtns_size)?;
         // sec type
         writer.write_u32::<LittleEndian>(2)?;
         // sec size
-        writer.write_u64::<LittleEndian>((wtns.len() * (field_size as usize)) as u64)?;
+        writer.write_u64::<LittleEndian>((wtns_size * field_size) as u64)?;
 
         for i in 0..wtns.len() {
             writer.write_u32::<LittleEndian>(wtns[i])?;

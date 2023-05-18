@@ -194,8 +194,9 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(
         bail!("invalid witness section size {}", sec_size);
     }
     let mut result = Vec::with_capacity(witness_len as usize);
-    for _ in 0..witness_len {
+    for i in 0..witness_len {
         let mut repr = E::Fr::zero().into_repr();
+        println!("{} {}", i, witness_len);
         repr.read_le(&mut reader)?;
         result.push(E::Fr::from_repr(repr)?);
         println!("read: {}", result[result.len() - 1].to_string());
