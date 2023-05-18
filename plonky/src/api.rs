@@ -113,7 +113,7 @@ pub fn calculate_witness(wasm_file: &String, input_json: &String, output: &Strin
         })
         .collect::<std::collections::HashMap<_, _>>();
 
-    let wtns_buf = wtns.calculate_witness(inputs, false)?;
+    let wtns_buf = wtns.calculate_witness_bin(inputs, false)?;
     Ok(wtns.save_witness_to_bin_file::<Bn256>(output, &wtns_buf)?)
 }
 

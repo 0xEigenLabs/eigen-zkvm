@@ -23,7 +23,7 @@ echo "1. Compile the circuit"
 
 echo "2. Generate witness"
 #node ${WORKSPACE}/${CIRCUIT}_js/generate_witness.js ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm $CUR_DIR/single/input.json $WORKSPACE/witness.wtns
-${ZKIT} calculate_witness -i ${CUR_DIR}/single/input.json -w ${WORKSPACE}/${CIRCUIT}_js/${CIRCUIT}.wasm -o $WORKSPACE/witness.wtns.rs
+${ZKIT} calculate_witness -i ${CUR_DIR}/single/input.json -w ${WORKSPACE}/${CIRCUIT}_js/${CIRCUIT}.wasm -o $WORKSPACE/witness.wtns
 
 echo "3. Export verification key"
 ${ZKIT} export_verification_key -s ${SRS}  -c $WORKSPACE/$CIRCUIT.r1cs -v $WORKSPACE/vk.bin

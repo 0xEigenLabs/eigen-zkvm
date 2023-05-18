@@ -121,6 +121,27 @@ impl WitnessCalculator {
         sanity_check: bool,
     ) -> Result<Vec<BigInt>> {
         self.instance.init(sanity_check)?;
+        let wtns_u32 = self.calculate_witness_circom(inputs, sanity_check)?;
+        let n32 = self.instance.get_field_num_len32()?;
+
+        let mut wo = Vec::new();
+        let witness_size = self.instance.get_witness_size()?;
+        for i in 0..witness_size {
+            let mut arr = vec![0u32; n32 as usize];
+            for j in 0..n32 {
+                arr.push(wtns_u32[(i * witness_size + j as u32) as usize]);
+            }
+            wo.push(from_array32(arr))
+        }
+        Ok(wo)
+    }
+
+    pub fn calculate_witness_bin<I: IntoIterator<Item = (String, Vec<BigInt>)>>(
+        &mut self,
+        inputs: I,
+        sanity_check: bool,
+    ) -> Result<Vec<u32>> {
+        self.instance.init(sanity_check)?;
         self.calculate_witness_circom(inputs, sanity_check)
     }
 
@@ -129,7 +150,7 @@ impl WitnessCalculator {
         &mut self,
         inputs: I,
         sanity_check: bool,
-    ) -> Result<Vec<BigInt>> {
+    ) -> Result<Vec<u32>> {
         self.instance.init(sanity_check)?;
 
         let n32 = self.instance.get_field_num_len32()?;
@@ -155,10 +176,9 @@ impl WitnessCalculator {
             self.instance.get_witness(i)?;
             let mut arr = vec![0; n32 as usize];
             for j in 0..n32 {
-                //arr[(n32 as usize) - 1 - (j as usize)] = self.instance.read_shared_rw_memory(j)?;
-                arr[(j as usize)] = self.instance.read_shared_rw_memory(j)?;
+                arr[(n32 as usize) - 1 - (j as usize)] = self.instance.read_shared_rw_memory(j)?;
+                w.push(arr[(n32 as usize) - 1 - (j as usize)]);
             }
-            w.push(from_array32(arr));
         }
 
         Ok(w)
@@ -168,7 +188,7 @@ impl WitnessCalculator {
     pub fn save_witness_to_bin_file<E: ScalarEngine>(
         &self,
         filename: &str,
-        w: &Vec<BigInt>,
+        w: &Vec<u32>,
     ) -> Result<()> {
         let writer = OpenOptions::new()
             .write(true)
@@ -183,7 +203,7 @@ impl WitnessCalculator {
     pub fn save_witness_from_bin_writer<E: ScalarEngine, W: Write>(
         &self,
         mut writer: W,
-        wtns: &Vec<BigInt>,
+        wtns: &Vec<u32>,
     ) -> Result<()> {
         let n32 = self.instance.get_field_num_len32()?;
         let wtns_header = [119, 116, 110, 115];
@@ -229,8 +249,7 @@ impl WitnessCalculator {
         writer.write_u64::<LittleEndian>((wtns.len() * (field_size as usize)) as u64)?;
 
         for i in 0..wtns.len() {
-            let (_sign, wtns_buf) = wtns[i].to_bytes_le();
-            writer.write_all(&wtns_buf)?;
+            writer.write_u32::<LittleEndian>(wtns[i])?;
         }
         Ok(())
     }

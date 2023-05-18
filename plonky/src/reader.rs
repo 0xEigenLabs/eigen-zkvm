@@ -104,7 +104,6 @@ pub fn maybe_load_key_lagrange_form<E: Engine>(
 
 /// load witness file by filename with autodetect encoding (bin or json).
 pub fn load_witness_from_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
-    println!("load from {}", filename);
     if filename.ends_with("json") {
         load_witness_from_json_file::<E>(filename)
     } else {

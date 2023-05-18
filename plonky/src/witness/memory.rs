@@ -30,6 +30,7 @@ impl Deref for SafeMemory {
     }
 }
 
+// TODO: remove dead code
 impl SafeMemory {
     /// Creates a new SafeMemory
     pub fn new(memory: Memory, n32: usize, prime: BigInt) -> Self {
