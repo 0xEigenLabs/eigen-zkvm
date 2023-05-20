@@ -1,10 +1,10 @@
-use anyhow::{bail, format_err};
 use byteorder::{LittleEndian, ReadBytesExt};
 use itertools::Itertools;
 use std::collections::BTreeMap;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, Read, Seek};
 use std::str;
+use crate::errors::{Result, EigenError};
 
 use crate::bellman_ce::{
     kate_commitment::{Crs, CrsForLagrangeForm, CrsForMonomialForm},
@@ -68,13 +68,10 @@ pub fn load_verification_key<E: Engine>(
 /// get universal setup file by filename
 fn get_universal_setup_file_buff_reader(
     setup_file_name: &str,
-) -> Result<BufReader<File>, anyhow::Error> {
+) -> Result<BufReader<File>> {
     let setup_file = File::open(setup_file_name).map_err(|e| {
-        format_err!(
-            "Failed to open universal setup file {}, err: {}",
-            setup_file_name,
-            e
-        )
+        let result = std::fmt::format(format_args!("Failed to open universal setup file {}, err: {}", setup_file_name, e));
+        EigenError::from(result)
     })?;
     Ok(BufReader::with_capacity(1 << 29, setup_file))
 }
@@ -142,56 +139,65 @@ pub fn load_witness_from_bin_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr>
 /// load witness from u8 array
 pub fn load_witness_from_array<E: ScalarEngine>(
     buffer: Vec<u8>,
-) -> Result<Vec<E::Fr>, anyhow::Error> {
+) -> Result<Vec<E::Fr>> {
     load_witness_from_bin_reader::<E, _>(buffer.as_slice())
 }
 
 /// load witness from u8 array by a reader
 pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(
     mut reader: R,
-) -> Result<Vec<E::Fr>, anyhow::Error> {
+) -> Result<Vec<E::Fr>> {
     let mut wtns_header = [0u8; 4];
     reader.read_exact(&mut wtns_header)?;
     if wtns_header != [119, 116, 110, 115] {
         // python -c 'print([ord(c) for c in "wtns"])' => [119, 116, 110, 115]
-        bail!("invalid file header");
+        let error_msg = String::from("Invalid file header");
+        return Err(EigenError::from(error_msg));
     }
     let version = reader.read_u32::<LittleEndian>()?;
     log::info!("wtns version {}", version);
     if version > 2 {
-        bail!("unsupported file version");
+        let error_msg = String::from("unsupported file version");
+        return Err(EigenError::from(error_msg));
     }
     let num_sections = reader.read_u32::<LittleEndian>()?;
     if num_sections != 2 {
-        bail!("invalid num sections");
+        let error_msg = String::from("invalid num sections");
+        return Err(EigenError::from(error_msg));
     }
     // read the first section
     let sec_type = reader.read_u32::<LittleEndian>()?;
     if sec_type != 1 {
-        bail!("invalid section type");
+        let error_msg = String::from("invalid section type");
+        return Err(EigenError::from(error_msg));
     }
     let sec_size = reader.read_u64::<LittleEndian>()?;
     if sec_size != 4 + 32 + 4 {
-        bail!("invalid section len")
+        let error_msg = String::from("invalid section len");
+        return Err(EigenError::from(error_msg));
     }
     let field_size = reader.read_u32::<LittleEndian>()?;
     if field_size != 32 {
-        bail!("invalid field byte size");
+        let error_msg = String::from("invalid field byte size");
+        return Err(EigenError::from(error_msg));
     }
     let mut prime = vec![0u8; field_size as usize];
     reader.read_exact(&mut prime)?;
     if prime != hex!("010000f093f5e1439170b97948e833285d588181b64550b829a031e1724e6430") {
-        bail!("invalid curve prime");
+        let error_msg = String::from("invalid curve prime");
+        return Err(EigenError::from(error_msg));
     }
     let witness_len = reader.read_u32::<LittleEndian>()?;
     log::info!("witness len {}", witness_len);
     let sec_type = reader.read_u32::<LittleEndian>()?;
     if sec_type != 2 {
-        bail!("invalid section type");
+        let error_msg = String::from("invalid section type");
+        return Err(EigenError::from(error_msg));
     }
     let sec_size = reader.read_u64::<LittleEndian>()?;
     if sec_size != (witness_len * field_size) as u64 {
-        bail!("invalid witness section size {}", sec_size);
+        let error_msg = format!("Invalid witness section size {}", sec_size);
+        return Err(EigenError::from(error_msg));
     }
     let mut result = Vec::with_capacity(witness_len as usize);
     for _ in 0..witness_len {
