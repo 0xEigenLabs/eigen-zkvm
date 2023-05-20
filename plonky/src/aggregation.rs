@@ -11,6 +11,7 @@ use bellman_ce::{
     worker::Worker,
     {Field, SynthesisError},
 };
+use crate::errors::Result;
 
 use bellman_ce::plonk::better_better_cs::{
     cs::{
@@ -162,7 +163,7 @@ impl AggregatedProof {
 }
 
 impl Serialize for AggregatedProof {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
         let mut seq = serializer.serialize_seq(Some(5))?;
         let (input, serialized_proof) = serialize_new_proof(&self.proof);
         seq.serialize_element(&input)?;
@@ -259,7 +260,7 @@ pub fn prove(
     big_crs: Crs<Bn256, CrsForMonomialForm>,
     old_proofs: Vec<OldProof<Bn256, PlonkCsWidth4WithNextStepParams>>,
     old_vk: OldVerificationKey<Bn256, PlonkCsWidth4WithNextStepParams>,
-) -> Result<AggregatedProof, SynthesisError> {
+) -> Result<AggregatedProof> {
     let num_proofs_to_check = old_proofs.len();
     assert!(num_proofs_to_check > 0);
     assert!(num_proofs_to_check < 256);
@@ -373,7 +374,7 @@ pub fn prove(
 fn verify_subproof_limbs(
     proof: &AggregatedProof,
     vk: &VerificationKey<Bn256, RecursiveAggregationCircuitBn256>,
-) -> Result<bool, SynthesisError> {
+) -> Result<bool> {
     let mut rns_params = RnsParameters::<Bn256, <Bn256 as Engine>::Fq>::new_for_field(68, 110, 4);
 
     //keep the behavior same as recursive_aggregation_circuit
@@ -413,7 +414,7 @@ fn verify_subproof_limbs(
 pub fn verify(
     vk: VerificationKey<Bn256, RecursiveAggregationCircuitBn256>,
     aggregated_proof: AggregatedProof,
-) -> Result<bool, SynthesisError> {
+) -> Result<bool> {
     let mut inputs = Vec::new();
     for chunk in aggregated_proof
         .individual_vk_inputs
@@ -442,7 +443,7 @@ pub fn export_vk(
     num_proofs_to_check: usize,
     num_inputs: usize,
     big_crs: &Crs<Bn256, CrsForMonomialForm>,
-) -> Result<VerificationKey<Bn256, RecursiveAggregationCircuitBn256>, anyhow::Error> {
+) -> Result<VerificationKey<Bn256, RecursiveAggregationCircuitBn256>> {
     let (recursive_circuit_vk, _recursive_circuit_setup) = create_recursive_circuit_vk_and_setup(
         num_proofs_to_check,
         num_inputs,
@@ -456,7 +457,7 @@ pub fn export_vk(
 pub fn get_aggregated_input(
     old_proofs: Vec<OldProof<Bn256, PlonkCsWidth4WithNextStepParams>>,
     old_vk: OldVerificationKey<Bn256, PlonkCsWidth4WithNextStepParams>,
-) -> Result<bn256::Fr, anyhow::Error> {
+) -> Result<bn256::Fr> {
     let num_proofs_to_check = old_proofs.len();
     assert!(num_proofs_to_check > 0);
     assert!(num_proofs_to_check < 256);
@@ -489,7 +490,7 @@ pub fn get_aggregated_input(
 
 pub fn get_vk_tree_root_hash(
     old_vk: OldVerificationKey<Bn256, PlonkCsWidth4WithNextStepParams>,
-) -> Result<bn256::Fr, anyhow::Error> {
+) -> Result<bn256::Fr> {
     let (_, (vks_tree, _)) = create_vks_tree(&vec![old_vk], VK_TREE_DEPTH)?;
     Ok(vks_tree.get_commitment())
 }
