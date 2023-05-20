@@ -1,6 +1,7 @@
 #![cfg(not(target_arch = "wasm32"))]
 // refers to https://github.com/matter-labs/recursive_aggregation_circuit/blob/master/src/circuit/mod.rs
 #![allow(clippy::needless_range_loop)]
+use crate::errors::Result;
 use crate::{bellman_ce, utils};
 use bellman_ce::{
     kate_commitment::{Crs, CrsForMonomialForm},
@@ -11,7 +12,6 @@ use bellman_ce::{
     worker::Worker,
     {Field, SynthesisError},
 };
-use crate::errors::Result;
 
 use bellman_ce::plonk::better_better_cs::{
     cs::{
