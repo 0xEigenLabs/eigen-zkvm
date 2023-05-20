@@ -46,6 +46,9 @@ pub enum EigenError {
     #[error("parse bigint error")]
     ParseBigIntError(#[from] num_bigint::ParseBigIntError),
 
+    #[error("Synthesis circuit error")]
+    SynthesisError(#[from] crate::bellman_ce::SynthesisError),
+
     #[error("Unknown error, `{0}`")]
     Unknown(String),
 }

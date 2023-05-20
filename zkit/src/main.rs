@@ -5,6 +5,7 @@ use plonky::api::{
     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
     generate_verifier, prove, setup, verify,
 };
+use plonky::errors::EigenError;
 use std::time::Instant;
 
 mod compilation_user;
@@ -332,7 +333,9 @@ fn main() {
     let start = Instant::now();
     let exec_result = match args.command {
         Command::Setup(args) => setup(args.power, &args.srs_monomial_form),
-        Command::Compile(args) => compile(args).map_err(|_| anyhow::anyhow!("compile error")),
+        Command::Compile(args) => {
+            compile(args).map_err(|_| EigenError::from("compile error".to_string()))
+        }
         Command::CalculateWitness(args) => {
             calculate_witness(&args.wasm_file, &args.input_json, &args.output)
         }
@@ -380,7 +383,8 @@ fn main() {
             &args.cm_pols,
             &args.circom_file,
             &args.zkin,
-        ),
+        )
+        .map_err(|_| EigenError::from("stark prove error".to_string())),
 
         Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
     };

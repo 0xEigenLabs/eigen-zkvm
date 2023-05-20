@@ -11,9 +11,10 @@ use crate::bellman_ce::{
         is_satisfied_using_one_shot_check, make_verification_key, prove, prove_by_steps, setup,
     },
     worker::Worker,
-    Circuit, ScalarEngine, SynthesisError,
+    Circuit, ScalarEngine,
 };
 use crate::circom_circuit::CircomCircuit;
+use crate::errors::{EigenError, Result};
 use crate::transpile::{transpile_with_gates_count, ConstraintStat, TranspilerWrapper};
 
 type E = Bn256;
@@ -27,11 +28,16 @@ const SETUP_MIN_POW2: u32 = 10;
 const SETUP_MAX_POW2: u32 = 26;
 
 // generate a monomial_form SRS
-pub fn gen_key_monomial_form(power: u32) -> Result<Crs<E, CrsForMonomialForm>, anyhow::Error> {
-    anyhow::ensure!(
-        (SETUP_MIN_POW2..=SETUP_MAX_POW2).contains(&power),
-        "setup power of two is not in the correct range"
-    );
+pub fn gen_key_monomial_form(power: u32) -> Result<Crs<E, CrsForMonomialForm>> {
+    if (!SETUP_MIN_POW2..=SETUP_MAX_POW2).contains(&power) {
+        return Err(EigenError::OutOfRangeError {
+            expected: format!(
+                "setup power of two is not in the correct range {:?}..={:?}",
+                SETUP_MIN_POW2, SETUP_MAX_POW2
+            ),
+            found: power.to_string(),
+        });
+    }
 
     // run a small setup to estimate time
     if power > 15 {
@@ -72,7 +78,7 @@ pub struct AnalyseResult {
 }
 
 // analyse a circuit
-pub fn analyse<E: Engine>(circuit: CircomCircuit<E>) -> Result<AnalyseResult, anyhow::Error> {
+pub fn analyse<E: Engine>(circuit: CircomCircuit<E>) -> Result<AnalyseResult> {
     let mut transpiler = TranspilerWrapper::<E, PlonkCsWidth4WithNextStepParams>::new();
     let mut result = AnalyseResult {
         num_inputs: circuit.r1cs.num_inputs,
@@ -101,7 +107,7 @@ impl SetupForProver {
         circuit: C,
         key_monomial_form: Crs<E, CrsForMonomialForm>,
         key_lagrange_form: Option<Crs<E, CrsForLagrangeForm>>,
-    ) -> Result<Self, anyhow::Error> {
+    ) -> Result<Self> {
         let (gates_count, hints) = transpile_with_gates_count(circuit.clone())?;
         log::info!(
             "transpile done, gates_count {} hints size {}",
@@ -116,10 +122,15 @@ impl SetupForProver {
             size
         );
         let setup_power_of_two = std::cmp::max(size, SETUP_MIN_POW2);
-        anyhow::ensure!(
-            (SETUP_MIN_POW2..=SETUP_MAX_POW2).contains(&setup_power_of_two),
-            "setup power of two is not in the correct range"
-        );
+        if (!SETUP_MIN_POW2..=SETUP_MAX_POW2).contains(&setup_power_of_two) {
+            return Err(EigenError::OutOfRangeError {
+                expected: format!(
+                    "setup power of two is not in the correct range {:?}..={:?}",
+                    SETUP_MIN_POW2, SETUP_MAX_POW2
+                ),
+                found: setup_power_of_two.to_string(),
+            });
+        }
 
         Ok(SetupForProver {
             setup_polynomials,
@@ -132,16 +143,16 @@ impl SetupForProver {
     // generate a verification key for a circuit
     pub fn make_verification_key(
         &self,
-    ) -> Result<VerificationKey<E, PlonkCsWidth4WithNextStepParams>, SynthesisError> {
-        make_verification_key(&self.setup_polynomials, &self.key_monomial_form)
+    ) -> Result<VerificationKey<E, PlonkCsWidth4WithNextStepParams>> {
+        return Ok(make_verification_key(
+            &self.setup_polynomials,
+            &self.key_monomial_form,
+        )?);
     }
 
     // quickly valiate whether a witness is satisfied
-    pub fn validate_witness<C: Circuit<E> + Clone>(
-        &self,
-        circuit: C,
-    ) -> Result<(), SynthesisError> {
-        is_satisfied_using_one_shot_check(circuit, &self.hints)
+    pub fn validate_witness<C: Circuit<E> + Clone>(&self, circuit: C) -> Result<()> {
+        return Ok(is_satisfied_using_one_shot_check(circuit, &self.hints)?);
     }
 
     // generate a plonk proof for a circuit, with witness loaded
@@ -149,43 +160,49 @@ impl SetupForProver {
         &self,
         circuit: C,
         transcript: &str,
-    ) -> Result<Proof<E, PlonkCsWidth4WithNextStepParams>, SynthesisError> {
+    ) -> Result<Proof<E, PlonkCsWidth4WithNextStepParams>> {
         is_satisfied_using_one_shot_check(circuit.clone(), &self.hints).expect("must satisfy");
         match &self.key_lagrange_form {
             Some(key_lagrange_form) => match transcript {
                 // NOTE: prove is not enabled in GPU bellman
-                "keccak" => prove::<_, _, RollingKeccakTranscript<<E as ScalarEngine>::Fr>>(
+                "keccak" => Ok(prove::<
+                    _,
+                    _,
+                    RollingKeccakTranscript<<E as ScalarEngine>::Fr>,
+                >(
                     circuit,
                     &self.hints,
                     &self.setup_polynomials,
                     &self.key_monomial_form,
                     key_lagrange_form,
-                ),
+                )?),
                 _ => {
                     unimplemented!();
                 }
             },
             None => match transcript {
-                "keccak" => {
-                    prove_by_steps::<_, _, RollingKeccakTranscript<<E as ScalarEngine>::Fr>>(
-                        circuit,
-                        &self.hints,
-                        &self.setup_polynomials,
-                        None,
-                        &self.key_monomial_form,
-                        None,
-                    )
-                }
+                "keccak" => Ok(prove_by_steps::<
+                    _,
+                    _,
+                    RollingKeccakTranscript<<E as ScalarEngine>::Fr>,
+                >(
+                    circuit,
+                    &self.hints,
+                    &self.setup_polynomials,
+                    None,
+                    &self.key_monomial_form,
+                    None,
+                )?),
                 "rescue" => {
                     let (bn256_param, rns_param) = get_default_rescue_transcript_params();
-                    prove_by_steps::<_, _, RescueTranscriptForRNS<E>>(
+                    Ok(prove_by_steps::<_, _, RescueTranscriptForRNS<E>>(
                         circuit,
                         &self.hints,
                         &self.setup_polynomials,
                         None,
                         &self.key_monomial_form,
                         Some((&bn256_param, &rns_param)),
-                    )
+                    )?)
                 }
                 _ => {
                     unimplemented!("invalid transcript. use 'keccak' or 'rescue'");
@@ -209,20 +226,20 @@ pub fn verify(
     vk: &VerificationKey<E, PlonkCsWidth4WithNextStepParams>,
     proof: &Proof<E, PlonkCsWidth4WithNextStepParams>,
     transcript: &str,
-) -> Result<bool, SynthesisError> {
+) -> Result<bool> {
     match transcript {
-        "keccak" => crate::bellman_ce::plonk::better_cs::verifier::verify::<
+        "keccak" => Ok(crate::bellman_ce::plonk::better_cs::verifier::verify::<
             _,
             _,
             RollingKeccakTranscript<<E as ScalarEngine>::Fr>,
-        >(proof, vk, None),
+        >(proof, vk, None)?),
         "rescue" => {
             let (bn256_param, rns_param) = get_default_rescue_transcript_params();
-            crate::bellman_ce::plonk::better_cs::verifier::verify::<_, _, RescueTranscriptForRNS<E>>(
-                proof,
-                vk,
-                Some((&bn256_param, &rns_param)),
-            )
+            Ok(crate::bellman_ce::plonk::better_cs::verifier::verify::<
+                _,
+                _,
+                RescueTranscriptForRNS<E>,
+            >(proof, vk, Some((&bn256_param, &rns_param)))?)
         }
         _ => {
             unimplemented!("invalid transcript. use 'keccak' or 'rescue'");

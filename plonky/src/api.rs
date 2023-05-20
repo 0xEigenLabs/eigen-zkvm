@@ -1,4 +1,5 @@
 use crate::bellman_ce::pairing::bn256::Bn256;
+use crate::errors::{EigenError, Result};
 use crate::witness::{flat_array, WitnessCalculator};
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
 use num_bigint::BigInt;
@@ -9,7 +10,6 @@ use std::str::FromStr;
 #[cfg(not(feature = "wasm"))]
 use crate::{aggregation, verifier};
 
-use anyhow::Result;
 use std::path::Path;
 
 // generate a monomial_form SRS, and save it to a file
@@ -152,7 +152,9 @@ pub fn verify(vk_file: &String, proof_bin: &String, transcript: &String) -> Resu
     let vk = reader::load_verification_key::<Bn256>(vk_file);
     let proof = reader::load_proof::<Bn256>(proof_bin);
     let ok = plonk::verify(&vk, &proof, transcript)?;
-    anyhow::ensure!(ok, "Proof is invalid");
+    if !ok {
+        return Err(EigenError::from("Proof is invalid".to_string()));
+    }
     Result::Ok(())
 }
 
@@ -212,7 +214,9 @@ pub fn aggregation_verify(proof: &String, vk: &String) -> Result<()> {
     let vk = reader::load_aggregation_verification_key(vk);
     let proof = reader::load_aggregated_proof(proof);
     let correct = aggregation::verify(vk, proof)?;
-    anyhow::ensure!(correct, "Proof is invalid");
+    if !correct {
+        return Err(EigenError::from("Proof is invalid".to_string()));
+    }
     Result::Ok(())
 }
 
@@ -229,10 +233,11 @@ pub fn aggregation_check(
 
     let expected = aggregation::get_aggregated_input(old_proofs, old_vk)?;
 
-    anyhow::ensure!(
-        expected == new_proof.proof.inputs[0],
-        "Aggregation hash input mismatch",
-    );
+    if expected != new_proof.proof.inputs[0] {
+        return Err(EigenError::from(
+            "Aggregation hash input mismatch".to_string(),
+        ));
+    }
     Result::Ok(())
 }
 
