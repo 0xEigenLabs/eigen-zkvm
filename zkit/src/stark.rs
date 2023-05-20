@@ -1,3 +1,4 @@
+use starky::errors::Result;
 use starky::{
     merklehash::MerkleTreeGL,
     merklehash_bn128::MerkleTreeBN128,
@@ -20,7 +21,7 @@ pub fn prove(
     cm_pol_file: &String,
     circom_file: &String,
     zkin: &String,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     let mut pil = load_json::<PIL>(pil_file.as_str()).unwrap();
     let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
     const_pol.load(const_pol_file.as_str()).unwrap();

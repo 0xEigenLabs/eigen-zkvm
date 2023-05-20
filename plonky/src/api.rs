@@ -1,11 +1,11 @@
 use crate::bellman_ce::pairing::bn256::Bn256;
+use crate::errors::{EigenError, Result};
 use crate::witness::{flat_array, WitnessCalculator};
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
 use serde_json::Value;
 use std::str::FromStr;
-use crate::errors::{Result, EigenError};
 
 #[cfg(not(feature = "wasm"))]
 use crate::{aggregation, verifier};
@@ -153,8 +153,7 @@ pub fn verify(vk_file: &String, proof_bin: &String, transcript: &String) -> Resu
     let proof = reader::load_proof::<Bn256>(proof_bin);
     let ok = plonk::verify(&vk, &proof, transcript)?;
     if !ok {
-        let error_msg = String::from("Proof is invalid");
-        return Err(EigenError::from(error_msg));
+        return Err(EigenError::from("Proof is invalid".to_string()));
     }
     Result::Ok(())
 }
@@ -216,8 +215,7 @@ pub fn aggregation_verify(proof: &String, vk: &String) -> Result<()> {
     let proof = reader::load_aggregated_proof(proof);
     let correct = aggregation::verify(vk, proof)?;
     if !correct {
-        let error_msg = String::from("Proof is invalid");
-        return Err(EigenError::from(error_msg));
+        return Err(EigenError::from("Proof is invalid".to_string()));
     }
     Result::Ok(())
 }
@@ -236,8 +234,9 @@ pub fn aggregation_check(
     let expected = aggregation::get_aggregated_input(old_proofs, old_vk)?;
 
     if expected != new_proof.proof.inputs[0] {
-        let error_msg = String::from("Aggregation hash input mismatch");
-        return Err(EigenError::from(error_msg));
+        return Err(EigenError::from(
+            "Aggregation hash input mismatch".to_string(),
+        ));
     }
     Result::Ok(())
 }
