@@ -132,7 +132,6 @@ impl WitnessCalculator {
                 arr[(n32 - 1 - j) as usize] = wtns_u32[(i * n32 + j as u32) as usize];
             }
             wo.push(from_array32(arr));
-            println!("wo {}", wo[wo.len() - 1]);
         }
         Ok(wo)
     }
@@ -477,7 +476,6 @@ mod tests {
 
         let res = wtns.calculate_witness(inputs, false).unwrap();
         for (r, w) in res.iter().zip(case.witness) {
-            println!("{} {}", r, w);
             assert_eq!(r, &BigInt::from_str(w).unwrap());
         }
     }
