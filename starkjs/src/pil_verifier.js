@@ -31,9 +31,12 @@ module.exports = {
       }
     }
 
+    // using 'pilcom' to compile .pil file into constPolys
     let constPols = newConstantPolsArray(pil);
     await builder.buildConstants(constPols, input);
     elapse("buildConstants", timer);
+
+    // using 'pilcom' to compile .pil file into commitPolys
     let cmPols = newCommitPolsArray(pil);
     await builder.execute(cmPols, input);
     elapse("execute", timer);
