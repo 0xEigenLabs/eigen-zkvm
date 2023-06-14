@@ -78,7 +78,7 @@ cd starkjs
 npm run poseidon 
 ```
 
-## 2. stark proof --> stark_verify process --> verify circuits(circom)
+### 2. stark proof --> stark_verify process --> verify circuits(circom)
 ```
 ../target/release/zkit stark_prove -s ../starky/data/starkStruct.json.gl \
     -p ./poseidon/build/poseidon_test.pil.json \
