@@ -384,7 +384,7 @@ fn main() {
             &args.circom_file,
             &args.zkin,
         )
-        .map_err(|_| EigenError::from("stark prove error".to_string())),
+        .map_err(|e| EigenError::from(format!("stark prove error {:?}", e))),
 
         Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
     };
