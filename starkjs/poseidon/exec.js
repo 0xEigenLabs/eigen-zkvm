@@ -5,11 +5,23 @@ const F1Field = require("ffjavascript").F1Field;
 // Files
 const pilFile = path.join(__dirname, "./poseidong.pil");
 const poseidonExecutor = require("./sm_poseidong");
-const starkStruct = require("./starkstruct.json");
+// const starkStruct = require("./starkstruct.json");
+const starkStruct = {
+  nBits: 8,
+  nBitsExt: 11,
+  nQueries: 4,
+  verificationHashType: "GL",
+  steps: [
+    {nBits: 11},
+    {nBits: 7},
+    {nBits: 3}
+  ]
+}
 const fs = require("fs");
 
-const {pil_verifier, utils} = require("../index.js");
-const fileCachePil = "./poseidon_test"
+const fileCachePil = "./poseidon/build/poseidon_test"
+const  pil2circom = require('../node_modules/pil-stark/src/pil2circom');
+
 async function generateAndVerifyPilStark(inputs) {
     // Generate constants (preprocessed)
     console.log(pilFile)
@@ -26,6 +38,7 @@ async function generateAndVerifyPilStark(inputs) {
       cmPols.saveToFile(fileCachePil + ".cm")
     }
 
+    
     // 
     await poseidonExecutor.buildConstants(constPols.PoseidonG);
     const executionResult = await poseidonExecutor.execute(cmPols.PoseidonG, inputs); 
@@ -44,22 +57,41 @@ async function generateAndVerifyPilStark(inputs) {
     const setup = await starkSetup(constPols, pil, starkStruct);
 
     // Generate the stark
-    const proverResult = await starkGen(cmPols,constPols,setup.constTree,setup.starkInfo);
+    const starkProof = await starkGen(cmPols,constPols,setup.constTree,setup.starkInfo);
 
-    console.log("STARK Proof:",proverResult)
+    // console.log("STARK Proof:",starkProof)
+    if (typeof fileCachePil !== "undefined") {
+      await fs.promises.writeFile(fileCachePil + ".stark_proof.json", JSON.stringify(starkProof, stringifyBigInt), "utf8");
+    }
     // Verify the stark
-    const verifierResult= await starkVerify(proverResult.proof, proverResult.publics, setup.constRoot,setup.starkInfo);
+    const verifierResult= await starkVerify(starkProof.proof, starkProof.publics, setup.constRoot,setup.starkInfo);
     if (verifierResult === true) { console.log("VALID proof!");
      } else { console.log("INVALID proof!"); }
     
-    return proverResult;
+
+    let stark_verifier_circom = await pil2circom(pil,setup.constRoot,setup.starkInfo);
+    await fs.promises.writeFile(fileCachePil + ".stark_verifier.circom", stark_verifier_circom , "utf8");
+
+
+}
+
+
+function stringifyBigInt(key, value) {
+  if (typeof value === 'bigint') {
+    return value.toString();
+  }
+  return value;
 }
 
 const F = new F1Field("0xFFFFFFFF00000001");
 const n1 = F.e(-1);
-const myinput = [
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0,  0, 0x3c18a9786cb0b359n, 0xc4055e3364a246c3n, 0x7953db0ab48808f4n, 0xc71603f33a1144can],
-  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0xd64e1e3efc5b8e9en, 0x53666633020aaa47n, 0xd40285597c6a8825n, 0x613a4f81e81231d2n],
-  [n1, n1, n1, n1, n1, n1, n1, n1, n1, n1, n1, n1, 0xbe0085cfc57a8357n, 0xd95af71847d05c09n, 0xcf55a13d33c1c953n, 0x95803a74f4530e82n]
+// const myinput = [
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0,  0, 0x3c18a9786cb0b359n, 0xc4055e3364a246c3n, 0x7953db0ab48808f4n, 0xc71603f33a1144can],
+//   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0xd64e1e3efc5b8e9en, 0x53666633020aaa47n, 0xd40285597c6a8825n, 0x613a4f81e81231d2n],
+//   [n1, n1, n1, n1, n1, n1, n1, n1, n1, n1, n1, n1, 0xbe0085cfc57a8357n, 0xd95af71847d05c09n, 0xcf55a13d33c1c953n, 0x95803a74f4530e82n]
+// ];
+
+const myinput1 = [
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0,  0, 0x3c18a9786cb0b359n, 0xc4055e3364a246c3n, 0x7953db0ab48808f4n, 0xc71603f33a1144can]
 ];
-generateAndVerifyPilStark(myinput);
+generateAndVerifyPilStark(myinput1);
