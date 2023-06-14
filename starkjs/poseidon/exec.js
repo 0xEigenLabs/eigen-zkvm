@@ -4,16 +4,28 @@ const path = require("path");
 const F1Field = require("ffjavascript").F1Field;
 // Files
 const pilFile = path.join(__dirname, "./poseidong.pil");
-// const input = require("../mfib.input.json");
 const poseidonExecutor = require("./sm_poseidong");
 const starkStruct = require("./starkstruct.json");
+const fs = require("fs");
 
+const {pil_verifier, utils} = require("../index.js");
+const fileCachePil = "./poseidon_test"
 async function generateAndVerifyPilStark(inputs) {
     // Generate constants (preprocessed)
     console.log(pilFile)
-    const pil = await compile(FGL, pilFile, null, { defines: { N: 2 ** 8}});
+    const pil = await compile(FGL, pilFile, null, { defines: { N: 2 ** starkStruct.nBits}});
+
+    if (typeof fileCachePil !== "undefined") {
+      await fs.promises.writeFile(fileCachePil + ".pil.json", JSON.stringify(pil, null, 1) + "\n", "utf8");
+    }
+
     const constPols = newConstantPolsArray(pil);
     const cmPols = newCommitPolsArray(pil);
+    if (typeof fileCachePil !== 'undefined') {
+      constPols.saveToFile(fileCachePil + ".const")
+      cmPols.saveToFile(fileCachePil + ".cm")
+    }
+
     // 
     await poseidonExecutor.buildConstants(constPols.PoseidonG);
     const executionResult = await poseidonExecutor.execute(cmPols.PoseidonG, inputs); 
