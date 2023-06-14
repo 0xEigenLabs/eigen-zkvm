@@ -1,3 +1,4 @@
+constant %N = 2**10;
 namespace PoseidonG(%N);
 
     pol constant LAST;   // 0, 0, 0, ...0, 1,      0, ...., 0, 1, 0, ....
