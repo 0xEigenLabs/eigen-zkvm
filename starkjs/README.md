@@ -13,7 +13,7 @@ will generate the PIL json, Commitment Polynomial file and Constant Polynomial f
 ### Bottom Layer: FRI Proof
 
 ```
-../target/release/zkit stark_prove -s ../starky/data/starkStruct.json.gl \
+../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
     -p /tmp/fib.pil.json \
     -o /tmp/fib.const \
     -m /tmp/fib.cm -c circuits/fib.circom -i circuits/fib.zkin.json
@@ -22,7 +22,7 @@ will generate the PIL json, Commitment Polynomial file and Constant Polynomial f
 ### Recursive Layer: FRI Proof
 
 ```
-../target/release/zkit compile -p goldilocks -i circuits/fib.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
+../target/release/eigen-zkit compile -p goldilocks -i circuits/fib.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 ## the above commands is equivalent to
 # circom --r1cs --wasm -p goldilocks circuits/fib.circom \
 #    -l node_modules/pil-stark/circuits.gl \
@@ -80,7 +80,7 @@ npm run poseidon
 
 ### 2. stark proof --> stark_verify process --> verify circuits(circom)
 ```
-../target/release/zkit stark_prove -s ../starky/data/starkStruct.json.gl \
+../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
     -p ./poseidon/build/poseidon_test.pil.json \
     -o ./poseidon/build/poseidon_test.const \
     -m ./poseidon/build/poseidon_test.cm -c ./poseidon/circuits/stark_verify.circom -i ./poseidon/circuits/stark_proof.json
@@ -88,7 +88,7 @@ npm run poseidon
 
 ### 3. generate .wasm and .r1cs through circom 
 ```
-../target/release/zkit compile -p goldilocks -i ./poseidon/circuits/stark_verify.circom -l node_modules/pil-stark/circuits.gl --O2=full -o ./poseidon/circuits/
+../target/release/eigen-zkit compile -p goldilocks -i ./poseidon/circuits/stark_verify.circom -l node_modules/pil-stark/circuits.gl --O2=full -o ./poseidon/circuits/
 ```
 
 
@@ -114,7 +114,7 @@ node src/compressor12/main_compressor12_exec.js \
 
 ### 5. pil --> stark proof --> stark_verify process --> verify circuits(circom)
 ```
-../target/release/zkit stark_prove -s ../starky/data/c12.starkStruct.json  \
+../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json  \
     -p ./poseidon/build/c12.pil.json \
     -o ./poseidon/build/c12.const \
     -m ./poseidon/build/c12.cm -c ./poseidon/circuits/c12_verify.circom -i ./poseidon/circuits/c12_stark_proof.json
