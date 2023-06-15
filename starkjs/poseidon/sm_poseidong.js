@@ -1,3 +1,4 @@
+// come from this version : https://github.com/0xPolygonHermez/zkevm-proverjs/blob/v0.6.0.0/src/sm/sm_poseidong.js
 const F1Field = require("ffjavascript").F1Field;
 const t = 12;
 const nRoundsF = 8;
