@@ -123,6 +123,18 @@ module.exports.buildConstants = async function (pols) {
     const maxHashes = Math.floor(N / (nRoundsF + nRoundsP + 1));
 
     for (let i=0; i<N; i++) {
+        if (i==0){
+            pols.LINPUT[0] = 1n;
+        }else{
+            pols.LINPUT[i] = 0n;
+        }
+
+        if (i==N-1){
+            pols.LOUTPUT[i] = 1n;
+        }else {
+            pols.LOUTPUT[i] = 0n;
+        }
+        
         const iH = Math.floor(i/(nRoundsF + nRoundsP + 1));
         const r = i%(nRoundsF + nRoundsP + 1);
         pols.LAST[i] = ((i == N-1) || (i % (nRoundsF + nRoundsP + 1)) == (nRoundsF + nRoundsP)) ? 1n : 0n;

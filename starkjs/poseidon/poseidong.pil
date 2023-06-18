@@ -11,6 +11,34 @@ namespace PoseidonG(%N);
     pol commit hash0, hash1, hash2, hash3;
     pol commit result1, result2, result3;
 
+    pol constant LINPUT;
+    pol constant LOUTPUT;
+    public pin0 = in0(0);
+    public pin1 = in1(0);
+    public pin2 = in2(0);
+    public pin3 = in3(0);
+    public pin4 = in4(0);
+    public pin5 = in5(0);
+    public pin6 = in6(0);
+    public pin7 = in7(0);
+    public out0 = hash0(%N-1);
+    public out1 = hash1(%N-1);
+    public out2 = hash2(%N-1);
+    public out3 = hash3(%N-1);
+    LINPUT * (in0 - :pin0) = 0;
+    LINPUT * (in1 - :pin1) = 0;
+    LINPUT * (in2 - :pin2) = 0;
+    LINPUT * (in3 - :pin3) = 0;
+    LINPUT * (in4 - :pin4) = 0;
+    LINPUT * (in5 - :pin5) = 0;
+    LINPUT * (in6 - :pin6) = 0;
+    LINPUT * (in7 - :pin7) = 0;
+    LOUTPUT * (hash0 -:out0)= 0;
+    LOUTPUT * (hash1 -:out1)= 0;
+    LOUTPUT * (hash2 -:out2)= 0;
+    LOUTPUT * (hash3 -:out3)= 0;
+    
+
     pol a0 = in0 + C[0];
     pol a1 = in1 + C[1];
     pol a2 = in2 + C[2];
