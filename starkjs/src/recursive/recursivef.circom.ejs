@@ -1,0 +1,100 @@
+pragma circom 2.1.0;
+pragma custom_templates;
+
+include "recursive2.verifier.circom";
+include "mux1.circom";
+include "iszero.circom";
+
+template Main() {
+    signal input publics[44];
+
+    signal input root1[4];
+    signal input root2[4];
+    signal input root3[4];
+    signal input root4[4];
+
+    signal input evals[70][3];
+
+    signal input s0_vals1[32][12];
+    signal input s0_vals3[32][9];
+    signal input s0_vals4[32][24];
+    signal input s0_valsC[32][34];
+    signal input s0_siblings1[32][24][4];
+    signal input s0_siblings3[32][24][4];
+    signal input s0_siblings4[32][24][4];
+    signal input s0_siblingsC[32][24][4];
+
+    signal input s1_root[4];
+    signal input s2_root[4];
+    signal input s3_root[4];
+    signal input s4_root[4];
+
+    signal input s1_vals[32][96];
+    signal input s1_siblings[32][19][4];
+    signal input s2_vals[32][96];
+    signal input s2_siblings[32][14][4];
+    signal input s3_vals[32][96];
+    signal input s3_siblings[32][9][4];
+    signal input s4_vals[32][48];
+    signal input s4_siblings[32][5][4];
+
+    signal input finalPol[32][3];
+
+    component sv = StarkVerifier();
+
+    for (var i=0; i<44; i++) {
+        sv.publics[i] <== publics[i];
+    }
+    sv.root1 <== root1;
+    sv.root2 <== root2;
+    sv.root3 <== root3;
+    sv.root4 <== root4;
+    sv.evals <== evals;
+    sv.s0_vals1 <== s0_vals1;
+    sv.s0_vals3 <== s0_vals3;
+    sv.s0_vals4 <== s0_vals4;
+    sv.s0_valsC <== s0_valsC;
+    sv.s0_siblings1 <== s0_siblings1;
+    sv.s0_siblings3 <== s0_siblings3;
+    sv.s0_siblings4 <== s0_siblings4;
+    sv.s0_siblingsC <== s0_siblingsC;
+    sv.s1_root <== s1_root;
+    sv.s2_root <== s2_root;
+    sv.s3_root <== s3_root;
+    sv.s4_root <== s4_root;
+    sv.s1_vals <== s1_vals;
+    sv.s1_siblings <== s1_siblings;
+    sv.s2_vals <== s2_vals;
+    sv.s2_siblings <== s2_siblings;
+    sv.s3_vals <== s3_vals;
+    sv.s3_siblings <== s3_siblings;
+    sv.s4_vals <== s4_vals;
+    sv.s4_siblings <== s4_siblings;
+    sv.finalPol <== finalPol;
+
+    component isOne = IsZero();
+    isOne.in <== publics[43] -publics[16] -1;
+    component muxKey = MultiMux1(4);
+    muxKey.s <== isOne.out;
+    muxKey.c[0][0] <== <%- constRoot2[0] %>;
+    muxKey.c[0][1] <== <%- constRoot2[1] %>;
+    muxKey.c[0][2] <== <%- constRoot2[2] %>;
+    muxKey.c[0][3] <== <%- constRoot2[3] %>;
+    muxKey.c[1][0] <== <%- constRoot1[0] %>;
+    muxKey.c[1][1] <== <%- constRoot1[1] %>;
+    muxKey.c[1][2] <== <%- constRoot1[2] %>;
+    muxKey.c[1][3] <== <%- constRoot1[3] %>;
+
+    sv.publics[44] <== <%- constRoot2[0] %>;
+    sv.publics[45] <== <%- constRoot2[1] %>;
+    sv.publics[46] <== <%- constRoot2[2] %>;
+    sv.publics[47] <== <%- constRoot2[3] %>;
+
+    sv.rootC[0] <== muxKey.out[0];
+    sv.rootC[1] <== muxKey.out[1];
+    sv.rootC[2] <== muxKey.out[2];
+    sv.rootC[3] <== muxKey.out[3];
+
+}
+
+component main {public [publics]}= Main();
