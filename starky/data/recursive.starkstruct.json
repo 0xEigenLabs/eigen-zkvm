@@ -2,7 +2,7 @@
     "nBits": 20,
     "nBitsExt": 24,
     "nQueries": 32,
-    "verificationHashType": "GL",
+    "verificationHashType": "BN128",
     "steps": [
         {"nBits": 24},
         {"nBits": 19},
