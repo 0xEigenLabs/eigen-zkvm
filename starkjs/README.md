@@ -50,12 +50,16 @@ node src/compressor12/main_compressor12_exec.js \
 ```
 
 ### Normalization Layer [bn128]
+```
 ../target/release/eigen-zkit compile -p goldilocks -i circuits/c12a.verifier.circom -l node_modules/pil-stark/circuits.gl  --O2=full -o /tmp/
+```
 
-// you need to do some hardcode work here 
-(1) modify the end line of circuits/c12a.verifier.circom 
+
+But you need to do some hardcode work here:
+
+- (1) modify the end line of circuits/c12a.verifier.circom 
     "component main {public [publics]}= StarkVerifier();" ==> component main {public [publics,rootC]}= StarkVerifier()
-(2) add signal input to rootC at circuits/c12a.verifier.circom 
+- (2) add signal input to rootC at circuits/c12a.verifier.circom 
 origin version 
 ```
     signal rootC[4];
@@ -72,13 +76,13 @@ update version
     // rootC[2] <== 8407973231335465230;
     // rootC[3] <== 15954052097301235018;
 ```
-(3) add the data of rootC into circuits/c12a.verifier.zkin.json
+- (3) add the data of rootC into circuits/c12a.verifier.zkin.json
 ```
     {...."publics":["1","2","74469561660084004"],"rootC":["2144474125363499765","1583360444347119487","8407973231335465230","15954052097301235018"]}
 ```
 
-
-// transfer r1cs to pil and generate stark proof 
+Convert r1cs to pil and generate stark proof 
+```
  node src/compressor12/main_compressor12_setup.js \
     -r /tmp/c12a.verifier.r1cs \
     -c /tmp/c12a.verifier.const \
@@ -91,11 +95,16 @@ node src/compressor12/main_compressor12_exec.js \
     -p /tmp/c12a.verifier.pil  \
     -e /tmp/c12a.verifier.exec \
     -m /tmp/c12a.verifier.cm
+```
 
+
+Generate recursive1_verify stark proof
+```
 ../target/release/eigen-zkit stark_prove -s ../starky/data/recursive.starkstruct.json \
     -p /tmp/c12a.verifier.pil.json \
     -o /tmp/c12a.verifier.const \
     -m /tmp/c12a.verifier.cm -c circuits/recursive1.verifier.circom -i circuits/recursive1.verifier.zkin.json
+```
 
 ### Top Layer: Snark proof
 ```
