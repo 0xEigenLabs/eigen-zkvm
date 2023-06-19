@@ -58,8 +58,11 @@ node src/compressor12/main_compressor12_exec.js \
 But you need to do some hardcode work here:
 
 - (1) modify the end line of circuits/c12a.verifier.circom 
+```
     "component main {public [publics]}= StarkVerifier();" ==> component main {public [publics,rootC]}= StarkVerifier()
+``` 
 - (2) add signal input to rootC at circuits/c12a.verifier.circom 
+
 origin version 
 ```
     signal rootC[4];
