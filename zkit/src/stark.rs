@@ -128,11 +128,11 @@ pub fn prove(
             println!("generate circom done");
 
             if !norm_stage {
-               starkproof.rootC = None;
+                starkproof.rootC = None;
             }
-           
+
             let input = serde_json::to_string(&starkproof)?;
-            
+
             let mut file = File::create(&zkin)?;
             write!(file, "{}", input)?;
             println!("generate zkin done");

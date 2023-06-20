@@ -1603,14 +1603,13 @@ template StarkVerifier() {{
     component main {{public [publics, rootC]}}= StarkVerifier();
     "#
             ));
-        }else {
+        } else {
             res.push_str(&format!(
                 r#"
     component main {{public [publics]}}= StarkVerifier();
     "#
-            ));    
+            ));
         }
-        
     }
     res
 }
