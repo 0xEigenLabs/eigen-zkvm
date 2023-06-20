@@ -50,6 +50,12 @@ node src/compressor12/main_compressor12_exec.js \
 ```
 
 ### Normalization Layer [bn128]
+#### Why do we need this Stage?
+We need to uniform the verified circuits of stark proof because we cannot aggregate two stark proofs with different circuits. 
+
+![image](https://github.com/cyl19970726/eigen-zkvm/assets/52317293/f6624571-bfd7-472e-b4b9-3802c0aebb94)
+
+
 ```
 ../target/release/eigen-zkit compile -p goldilocks -i circuits/c12a.verifier.circom -l node_modules/pil-stark/circuits.gl  --O2=full -o /tmp/
 ```
