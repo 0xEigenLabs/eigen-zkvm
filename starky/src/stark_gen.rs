@@ -139,6 +139,7 @@ pub struct StarkProof<M: MerkleTree> {
     pub fri_proof: FRIProof<M>,
     pub evals: Vec<F3G>,
     pub publics: Vec<F3G>,
+    pub rootC: Option<ElementDigest>,
     pub stark_struct: StarkStruct,
 }
 
@@ -508,6 +509,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let friProof = fri.prove::<M, T>(&mut transcript, &fri_pol, query_pol)?;
 
         Ok(StarkProof {
+            rootC: Some(const_tree.root()),
             root1: tree1.root(),
             root2: tree2.root(),
             root3: tree3.root(),

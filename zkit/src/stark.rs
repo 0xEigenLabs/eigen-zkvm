@@ -17,6 +17,7 @@ use std::io::Write;
 pub fn prove(
     stark_struct: &String,
     pil_file: &String,
+    norm_stage: bool,
     const_pol_file: &String,
     cm_pol_file: &String,
     circom_file: &String,
@@ -84,7 +85,7 @@ pub fn prove(
         "GL" => {
             let mut setup =
                 StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct).unwrap();
-            let starkproof = StarkProof::<MerkleTreeGL>::stark_gen::<TranscriptGL>(
+            let mut starkproof = StarkProof::<MerkleTreeGL>::stark_gen::<TranscriptGL>(
                 &cm_pol,
                 &const_pol,
                 &setup.const_tree,
@@ -109,7 +110,7 @@ pub fn prove(
 
             let opt = pil2circom::StarkOption {
                 enable_input: false,
-                verkey_input: false,
+                verkey_input: norm_stage,
                 skip_main: false,
             };
 
@@ -126,7 +127,12 @@ pub fn prove(
             write!(file, "{}", str_ver)?;
             println!("generate circom done");
 
+            if !norm_stage {
+               starkproof.rootC = None;
+            }
+           
             let input = serde_json::to_string(&starkproof)?;
+            
             let mut file = File::create(&zkin)?;
             write!(file, "{}", input)?;
             println!("generate zkin done");
