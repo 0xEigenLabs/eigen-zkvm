@@ -1597,11 +1597,20 @@ template StarkVerifier() {{
     ));
 
     if !options.skip_main {
-        res.push_str(&format!(
-            r#"
-component main {{public [publics]}}= StarkVerifier();
-"#
-        ));
+        if options.verkey_input {
+            res.push_str(&format!(
+                r#"
+    component main {{public [publics, rootC]}}= StarkVerifier();
+    "#
+            ));
+        }else {
+            res.push_str(&format!(
+                r#"
+    component main {{public [publics]}}= StarkVerifier();
+    "#
+            ));    
+        }
+        
     }
     res
 }

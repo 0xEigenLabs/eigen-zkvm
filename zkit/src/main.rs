@@ -205,6 +205,8 @@ struct StarkProveOpt {
     stark_struct: String,
     #[clap(short = "p", long = "piljson", default_value = "pil.json")]
     piljson: String,
+    #[clap(short = "n", long = "norm_stage", default_value = "false")]
+    norm_stage: String,
     #[clap(short = "o", long = "const_pols", default_value = "pols.const")]
     const_pols: String,
     #[clap(short = "m", long = "cm_pols", default_value = "pols.cm")]
@@ -379,6 +381,7 @@ fn main() {
         Command::StarkProve(args) => stark::prove(
             &args.stark_struct,
             &args.piljson,
+            args.norm_stage.parse().unwrap(),
             &args.const_pols,
             &args.cm_pols,
             &args.circom_file,
