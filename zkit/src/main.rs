@@ -116,7 +116,7 @@ struct VerifyOpt {
 struct GenerateVerifierOpt {
     #[arg(short, default_value = "vk.bin")]
     vk_file: String,
-    #[arg(long = "s", long = "sol", default_value = "verifier.sol")]
+    #[arg(long = "s", default_value = "verifier.sol")]
     sol: String,
 }
 
@@ -151,7 +151,7 @@ struct ExportAggregationVerificationKeyOpt {
     num_inputs: usize,
     #[arg(short)]
     srs_monomial_form: String,
-    #[arg(long = "vk", default_value = "aggregation_vk.bin")]
+    #[arg(long = "v", default_value = "aggregation_vk.bin")]
     output_vk: String,
 }
 
