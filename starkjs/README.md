@@ -15,8 +15,8 @@ will generate the PIL json, Commitment Polynomial file and Constant Polynomial f
 ```
 ../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
     -p /tmp/fib.pil.json \
-    -o /tmp/fib.const \
-    -m /tmp/fib.cm -c circuits/fib.verifier.circom -i circuits/fib.verifier.zkin.json
+    --o /tmp/fib.const \
+    --m /tmp/fib.cm -c circuits/fib.verifier.circom --i circuits/fib.verifier.zkin.json
 ```
 
 ### Recursive Layer: FRI Proof
@@ -45,8 +45,8 @@ node src/compressor12/main_compressor12_exec.js \
     -m /tmp/c12.cm
 ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json \
     -p /tmp/c12.pil.json \
-    -o /tmp/c12.const \
-    -m /tmp/c12.cm -c circuits/c12a.verifier.circom -i circuits/c12a.verifier.zkin.json
+    --o /tmp/c12.const \
+    --m /tmp/c12.cm -c circuits/c12a.verifier.circom --i circuits/c12a.verifier.zkin.json
 ```
 
 ### Normalization Layer [bn128]
@@ -105,8 +105,8 @@ Generate recursive1_verify stark proof
 ```
 ../target/release/eigen-zkit stark_prove -s ../starky/data/recursive.starkstruct.json \
     -p /tmp/c12a.verifier.pil.json \
-    -o /tmp/c12a.verifier.const \
-    -m /tmp/c12a.verifier.cm -c circuits/recursive1.verifier.circom -i circuits/recursive1.verifier.zkin.json
+    --o /tmp/c12a.verifier.const \
+    --m /tmp/c12a.verifier.cm -c circuits/recursive1.verifier.circom --i circuits/recursive1.verifier.zkin.json
 ```
 
 ### Top Layer: Snark proof
