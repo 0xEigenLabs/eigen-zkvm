@@ -46,7 +46,7 @@ node src/compressor12/main_compressor12_exec.js \
 ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json \
     -p /tmp/c12.pil.json \
     --o /tmp/c12.const \
-    --m /tmp/c12.cm -c circuits/c12a.verifier.circom --i circuits/c12a.verifier.zkin.json
+    --m /tmp/c12.cm -c circuits/c12a.verifier.circom --i circuits/c12a.verifier.zkin.json --norm_stage
 ```
 
 ### Normalization Layer [bn128]
