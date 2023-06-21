@@ -212,7 +212,7 @@ struct StarkProveOpt {
     stark_struct: String,
     #[arg(short, long = "piljson", default_value = "pil.json")]
     piljson: String,
-    #[arg(short, long = "norm_stage", action= clap::ArgAction::SetFalse)]
+    #[arg(short, long = "norm_stage", action= clap::ArgAction::SetTrue)]
     norm_stage: bool,
     #[arg(long = "o", default_value = "pols.const")]
     const_pols: String,
