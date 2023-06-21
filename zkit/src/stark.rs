@@ -35,7 +35,7 @@ pub fn prove(
         "BN128" => {
             let mut setup =
                 StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
-            let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
+            let mut starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
                 &cm_pol,
                 &const_pol,
                 &setup.const_tree,

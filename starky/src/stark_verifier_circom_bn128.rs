@@ -1768,7 +1768,7 @@ template StarkVerifier() {{
                 stark_struct.nQueries,
                 starkinfo.map_sectionsN.cm1_2ns
             ));
-        }else{
+        } else {
             res.push_str(&format!(
                 r#"
     template Main() {{
@@ -1790,7 +1790,6 @@ template StarkVerifier() {{
                 starkinfo.map_sectionsN.cm1_2ns
             ));
         }
-        
 
         if starkinfo.map_sectionsN.cm2_2ns > 0 {
             res.push_str(&format!(
@@ -1874,8 +1873,8 @@ template StarkVerifier() {{
                 (stark_struct.steps[s].nBits - 1) / 4 + 1
             ));
         }
-        
-        if options.verkey_input{
+
+        if options.verkey_input {
             res.push_str(&format!(
                 r#"
         signal input finalPol[{}][3];
@@ -1894,7 +1893,7 @@ template StarkVerifier() {{
     "#,
                 (1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits)
             ));
-        }else{
+        } else {
             res.push_str(&format!(
                 r#"
         signal input finalPol[{}][3];
@@ -2036,6 +2035,7 @@ template StarkVerifier() {{
                 component main = Main();
     "#
             ));
+        }
     }
     res
 }
