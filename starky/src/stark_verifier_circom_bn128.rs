@@ -1763,7 +1763,11 @@ template Main() {{
     signal input s0_vals1[{}][{}];
 "#,
             pil.publics.len(),
-            if options.verkey_input { "signal input rootC; "} else { "" },
+            if options.verkey_input {
+                "signal input rootC; "
+            } else {
+                ""
+            },
             starkinfo.ev_map.len(),
             stark_struct.nQueries,
             starkinfo.map_sectionsN.cm1_2ns
@@ -1868,7 +1872,11 @@ template Main() {{
 
     sv.s0_vals1 <== s0_vals1;
 "#,
-            if options.verkey_input { "sv.rootC <== rootC; "} else { "" },
+            if options.verkey_input {
+                "sv.rootC <== rootC; "
+            } else {
+                ""
+            },
             (1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits)
         ));
 
@@ -1982,7 +1990,11 @@ component main {} = Main();
             pil.publics.len(),
             pil.publics.len(),
             pil.publics.len(),
-            if options. norm_stage { "\{\{public [rootC]\}\}" } else {""}
+            if options.verkey_input {
+                "`{{`public [rootC]`}}`"
+            } else {
+                ""
+            }
         ));
     }
     res
