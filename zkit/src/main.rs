@@ -1,5 +1,5 @@
 extern crate clap;
-use clap::Clap;
+use clap::Parser;
 use plonky::api::{
     aggregation_check, aggregation_prove, aggregation_verify, analyse, calculate_witness,
     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
@@ -19,254 +19,264 @@ mod type_analysis_user;
 const VERSION: &'static str = "2.1.2";
 
 /// Trust setup for Plonk
-#[derive(Debug, Clap)]
+#[derive(Parser, Debug)]
 pub struct SetupOpt {
-    #[clap(short, required = true, default_value = "20")]
+    #[arg(short, required = true, default_value = "20")]
     power: u32,
-    #[clap(short, required = true)]
+    #[arg(short, required = true)]
     srs_monomial_form: String,
 }
 
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 pub struct CompilierOpt {
-    #[clap(short = "i", required = true)]
+    #[arg(short, required = true)]
     input: String,
 
     ///Set no simplification
-    #[clap(long = "O0", hidden = false)]
+    #[arg(long = "O0", hide = false)]
     no_simplification: bool,
 
     /// prime field, like goldilocks
-    #[clap(short = "p", default_value = "bn128")]
+    #[arg(short, default_value = "bn128")]
     prime: String,
 
     ///Set reduced simplification
-    #[clap(long = "O1", hidden = false)]
+    #[arg(long = "O1", hide = false)]
     reduced_simplification: bool,
 
     ///Set full simplification with rounds to optimize
-    #[clap(long = "O2", hidden = false, default_value = "full")]
+    #[arg(long = "O2", hide = false, default_value = "full")]
     full_simplification: String,
 
     /// setup output path
-    #[clap(short = "o")]
+    #[arg(short)]
     output: String,
 
     /// setup the library path
-    #[clap(short = "l")]
+    #[arg(short)]
     link_directories: Vec<String>,
 }
 
 /// Calculate witness and save to output file
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
+
 struct CalculateWitnessOpt {
     /// wasm circuit
-    #[clap(short, required = true)]
+    #[arg(short, required = true)]
     wasm_file: String,
     /// [input] input json
-    #[clap(short, required = true)]
+    #[arg(short, required = true)]
     input_json: String,
     /// [output] witness filename
-    #[clap(short, default_value = "witness.wtns")]
+    #[arg(short, default_value = "witness.wtns")]
     output: String,
 }
 
 /// Prove by Plonk
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 struct ProveOpt {
-    #[clap(short, required = true)]
+    #[arg(short, required = true)]
     circuit_file: String,
-    #[clap(short)]
+    #[arg(short)]
     witness: String,
     /// SRS monomial form
-    #[clap(short)]
+    #[arg(short)]
     srs_monomial_form: String,
 
-    #[clap(short = "l")]
+    #[arg(long = "l")]
     srs_lagrange_form: Option<String>,
 
-    #[clap(short, default_value = "keccak")]
+    #[arg(short, default_value = "keccak")]
     transcript: String,
 
-    #[clap(short = "b", default_value = "proof.bin")]
+    #[arg(long = "b", default_value = "proof.bin")]
     proof_bin: String,
 
-    #[clap(short = "j", default_value = "proof.json")]
+    #[arg(long = "j", default_value = "proof.json")]
     proof_json: String,
 
-    #[clap(short = "p", default_value = "public.json")]
+    #[arg(long = "p", default_value = "public.json")]
     public_json: String,
 }
 
 /// Verify the Plonk proof
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 struct VerifyOpt {
-    #[clap(short, default_value = "vk.bin")]
+    #[arg(short, default_value = "vk.bin")]
     vk_file: String,
-    #[clap(short)]
+    #[arg(short)]
     proof_bin: String,
     /// Transcript can be keccak or rescue, keccak default
-    #[clap(short, default_value = "keccak")]
+    #[arg(short, default_value = "keccak")]
     transcript: String,
 }
 
 /// Generate solidity verifier
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 struct GenerateVerifierOpt {
-    #[clap(short, default_value = "vk.bin")]
+    #[arg(short, default_value = "vk.bin")]
     vk_file: String,
-    #[clap(short = "s", long = "sol", default_value = "verifier.sol")]
+    #[arg(long = "s", default_value = "verifier.sol")]
     sol: String,
 }
 
 /// Export proof's verification key
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 struct ExportVerificationKeyOpt {
-    #[clap(short)]
+    #[arg(short)]
     srs_monomial_form: String,
-    #[clap(short)]
+    #[arg(short)]
     circuit_file: String,
-    #[clap(short = "v", default_value = "vk.bin")]
+    #[arg(long = "v", default_value = "vk.bin")]
     output_vk: String,
 }
 
 /// Analyse circuits
-#[derive(Debug, Clap)]
+#[derive(Parser, Debug)]
+
 struct AnalyseOpt {
-    #[clap(short)]
+    #[arg(short)]
     circuit_file: String,
-    #[clap(short, default_value = "analyse.json")]
+    #[arg(short, default_value = "analyse.json")]
     output: String,
 }
 
 /// Export aggregation proof's verification key
-#[derive(Debug, Clap)]
+#[derive(Parser, Debug)]
+
 struct ExportAggregationVerificationKeyOpt {
-    #[clap(short = "c")]
+    #[arg(long = "c")]
     num_proofs_to_check: usize,
-    #[clap(short = "i")]
+    #[arg(long = "i")]
     num_inputs: usize,
-    #[clap(short)]
+    #[arg(short)]
     srs_monomial_form: String,
-    #[clap(short = "v", long = "vk", default_value = "aggregation_vk.bin")]
+    #[arg(long = "v", default_value = "aggregation_vk.bin")]
     output_vk: String,
 }
 
 /// Proof aggregation for plonk
-#[derive(Debug, Clap)]
+#[derive(Parser, Debug)]
+
 struct AggregationProveOpt {
     /// SRS monomial form
-    #[clap(short)]
+    #[arg(short)]
     srs_monomial_form: String,
 
-    #[clap(short = "f")]
+    #[arg(long = "f")]
     old_proof_list: String,
 
-    #[clap(short = "v", default_value = "vk.bin")]
+    #[arg(long = "v", default_value = "vk.bin")]
     old_vk: String,
 
-    #[clap(short = "n", default_value = "aggregation_proof.bin")]
+    #[arg(long = "n", default_value = "aggregation_proof.bin")]
     new_proof: String,
 
-    #[clap(short = "j", default_value = "proof.json")]
+    #[arg(long = "j", default_value = "proof.json")]
     proof_json: String,
 }
 
 /// Verify aggregation proof
-#[derive(Debug, Clap)]
+#[derive(Parser, Debug)]
+
 struct AggregationVerifyOpt {
-    #[clap(short = "p", default_value = "aggregation_proof.bin")]
+    #[arg(long = "p", default_value = "aggregation_proof.bin")]
     proof: String,
-    #[clap(short = "v", default_value = "aggregation_vk.bin")]
+    #[arg(long = "v", default_value = "aggregation_vk.bin")]
     vk: String,
 }
 
 /// A subcommand for generating a Solidity aggregation verifier smart contract
-#[derive(Debug, Clap)]
+#[derive(Parser, Debug)]
+
 struct GenerateAggregationVerifierOpt {
     /// Original individual verification key file
-    #[clap(short = "o", long = "old_vk", default_value = "vk.bin")]
+    #[arg(short, long = "old_vk", default_value = "vk.bin")]
     old_vk: String,
     /// Aggregated verification key file
-    #[clap(short = "n", long = "new_vk", default_value = "aggregation_vk.bin")]
+    #[arg(long = "n", default_value = "aggregation_vk.bin")]
     new_vk: String,
     /// Num of inputs
-    #[clap(short = "i", long = "num_inputs")]
+    #[arg(long = "i", long = "num_inputs")]
     num_inputs: usize,
     /// Output solidity file
-    #[clap(short = "s", long = "sol", default_value = "verifier.sol")]
+    #[arg(short, long = "sol", default_value = "verifier.sol")]
     sol: String,
 }
 
 /// Stark proving and verifying all in one
-#[derive(Debug, Clap)]
+#[derive(Parser, Debug)]
+
 struct StarkProveOpt {
-    #[clap(short = "s", long = "stark_stuct", default_value = "stark_struct.json")]
+    #[arg(short, long = "stark_stuct", default_value = "stark_struct.json")]
     stark_struct: String,
-    #[clap(short = "p", long = "piljson", default_value = "pil.json")]
+    #[arg(short, long = "piljson", default_value = "pil.json")]
     piljson: String,
-    #[clap(short = "o", long = "const_pols", default_value = "pols.const")]
+    #[arg(short, long = "norm_stage", action= clap::ArgAction::SetFalse)]
+    norm_stage: bool,
+    #[arg(long = "o", default_value = "pols.const")]
     const_pols: String,
-    #[clap(short = "m", long = "cm_pols", default_value = "pols.cm")]
+    #[arg(long = "m", default_value = "pols.cm")]
     cm_pols: String,
-    #[clap(short = "c", long = "circom", default_value = "stark_verfier.circom")]
+    #[arg(short, long = "circom", default_value = "stark_verfier.circom")]
     circom_file: String,
-    #[clap(short = "i", long = "zkin", default_value = "zkin.json")]
+    #[arg(long = "i", default_value = "zkin.json")]
     zkin: String,
 }
 
 /// Check aggregation proof
-#[derive(Debug, Clap)]
+#[derive(Parser, Debug)]
+
 struct AggregationCheckOpt {
-    #[clap(short = "f")]
+    #[arg(long = "f")]
     old_proof_list: String,
 
-    #[clap(short = "v", default_value = "vk.bin")]
+    #[arg(long = "v", default_value = "vk.bin")]
     old_vk: String,
 
-    #[clap(short = "n", default_value = "aggregation_proof.bin")]
+    #[arg(short, default_value = "aggregation_proof.bin")]
     new_proof: String,
 }
 
-#[derive(Debug, Clap)]
+#[derive(Parser, Debug)]
 enum Command {
-    #[clap(name = "setup")]
+    #[command(name = "setup")]
     Setup(SetupOpt),
-    #[clap(name = "calculate_witness")]
+    #[command(name = "calculate_witness")]
     CalculateWitness(CalculateWitnessOpt),
     /// Compile circom circuits to r1cs, and generate witness
-    #[clap(name = "compile")]
+    #[command(name = "compile")]
     Compile(CompilierOpt),
-    #[clap(name = "prove")]
+    #[command(name = "prove")]
     Prove(ProveOpt),
-    #[clap(name = "verify")]
+    #[command(name = "verify")]
     Verify(VerifyOpt),
-    #[clap(name = "export_verification_key")]
+    #[command(name = "export_verification_key")]
     ExportVerificationKey(ExportVerificationKeyOpt),
-    #[clap(name = "generate_verifier")]
+    #[command(name = "generate_verifier")]
     GenerateVerifier(GenerateVerifierOpt),
-    #[clap(name = "export_aggregation_verification_key")]
+    #[command(name = "export_aggregation_verification_key")]
     ExportAggregationVerificationKey(ExportAggregationVerificationKeyOpt),
-    #[clap(name = "aggregation_prove")]
+    #[command(name = "aggregation_prove")]
     AggregationProve(AggregationProveOpt),
-    #[clap(name = "aggregation_verify")]
+    #[command(name = "aggregation_verify")]
     AggregationVerify(AggregationVerifyOpt),
-    #[clap(name = "generate_aggregation_verifier")]
+    #[command(name = "generate_aggregation_verifier")]
     GenerateAggregationVerifier(GenerateAggregationVerifierOpt),
-    #[clap(name = "aggregation_check")]
+    #[command(name = "aggregation_check")]
     AggregationCheck(AggregationCheckOpt),
 
-    #[clap(name = "stark_prove")]
+    #[command(name = "stark_prove")]
     StarkProve(StarkProveOpt),
 
-    #[clap(name = "analyse")]
+    #[command(name = "analyse")]
     Analyse(AnalyseOpt),
 }
 
-#[derive(Debug, Clap)]
-#[clap(version = "0.1.6")]
+#[derive(Parser, Debug)]
+#[command(author, version = "0.1.6", about, long_about = None)]
 struct Cli {
-    #[clap(subcommand)]
+    #[command(subcommand)]
     command: Command,
 }
 
@@ -379,6 +389,7 @@ fn main() {
         Command::StarkProve(args) => stark::prove(
             &args.stark_struct,
             &args.piljson,
+            args.norm_stage,
             &args.const_pols,
             &args.cm_pols,
             &args.circom_file,
