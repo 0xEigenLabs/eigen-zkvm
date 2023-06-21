@@ -1746,50 +1746,28 @@ template StarkVerifier() {{
     ));
 
     if !options.skip_main {
-        if options.verkey_input {
-            res.push_str(&format!(
-                r#"
-    template Main() {{
-        signal input proverAddr;
-        signal output publicsHash;
-    
-        signal input publics[{}];
-        signal input rootC
-        signal input root1;
-        signal input root2;
-        signal input root3;
-        signal input root4;
-        signal input evals[{}][3];
-    
-        signal input s0_vals1[{}][{}];
-    "#,
-                pil.publics.len(),
-                starkinfo.ev_map.len(),
-                stark_struct.nQueries,
-                starkinfo.map_sectionsN.cm1_2ns
-            ));
-        } else {
-            res.push_str(&format!(
-                r#"
-    template Main() {{
-        signal input proverAddr;
-        signal output publicsHash;
-    
-        signal input publics[{}];
-        signal input root1;
-        signal input root2;
-        signal input root3;
-        signal input root4;
-        signal input evals[{}][3];
-    
-        signal input s0_vals1[{}][{}];
-    "#,
-                pil.publics.len(),
-                starkinfo.ev_map.len(),
-                stark_struct.nQueries,
-                starkinfo.map_sectionsN.cm1_2ns
-            ));
-        }
+        res.push_str(&format!(
+            r#"
+template Main() {{
+    signal input proverAddr;
+    signal output publicsHash;
+
+    signal input publics[{}];
+    {}
+    signal input root1;
+    signal input root2;
+    signal input root3;
+    signal input root4;
+    signal input evals[{}][3];
+
+    signal input s0_vals1[{}][{}];
+"#,
+            pil.publics.len(),
+            if options.verkey_input { "signal input rootC; "} else { "" },
+            starkinfo.ev_map.len(),
+            stark_struct.nQueries,
+            starkinfo.map_sectionsN.cm1_2ns
+        ));
 
         if starkinfo.map_sectionsN.cm2_2ns > 0 {
             res.push_str(&format!(
@@ -1874,44 +1852,25 @@ template StarkVerifier() {{
             ));
         }
 
-        if options.verkey_input {
-            res.push_str(&format!(
-                r#"
-        signal input finalPol[{}][3];
-    
-        component sv = StarkVerifier();
-        
-        sv.rootC <== rootC;
-        sv.publics <== publics;
-        sv.root1 <== root1;
-        sv.root2 <== root2;
-        sv.root3 <== root3;
-        sv.root4 <== root4;
-        sv.evals <== evals;
-    
-        sv.s0_vals1 <== s0_vals1;
-    "#,
-                (1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits)
-            ));
-        } else {
-            res.push_str(&format!(
-                r#"
-        signal input finalPol[{}][3];
-    
-        component sv = StarkVerifier();
-    
-        sv.publics <== publics;
-        sv.root1 <== root1;
-        sv.root2 <== root2;
-        sv.root3 <== root3;
-        sv.root4 <== root4;
-        sv.evals <== evals;
-    
-        sv.s0_vals1 <== s0_vals1;
-    "#,
-                (1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits)
-            ));
-        }
+        res.push_str(&format!(
+            r#"
+    signal input finalPol[{}][3];
+
+    component sv = StarkVerifier();
+
+    sv.publics <== publics;
+    {}
+    sv.root1 <== root1;
+    sv.root2 <== root2;
+    sv.root3 <== root3;
+    sv.root4 <== root4;
+    sv.evals <== evals;
+
+    sv.s0_vals1 <== s0_vals1;
+"#,
+            if options.verkey_input { "sv.rootC <== rootC; "} else { "" },
+            (1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits)
+        ));
 
         if starkinfo.map_sectionsN.cm2_2ns > 0 {
             res.push_str(&format!(
@@ -2016,26 +1975,15 @@ template StarkVerifier() {{
 
     publicsHash <== n2bPublicsHash.out;
 }}
+
+component main {} = Main();
 "#,
             160 + 64 * pil.publics.len(),
             pil.publics.len(),
             pil.publics.len(),
-            pil.publics.len()
+            pil.publics.len(),
+            if options. norm_stage { "\{\{public [rootC]\}\}" } else {""}
         ));
-
-        if options.verkey_input {
-            res.push_str(&format!(
-                r#"
-    component main {{public [rootC]}}= Main();
-    "#
-            ));
-        } else {
-            res.push_str(&format!(
-                r#"
-                component main = Main();
-    "#
-            ));
-        }
     }
     res
 }
