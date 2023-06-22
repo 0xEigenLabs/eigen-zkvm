@@ -66,4 +66,4 @@ echo "7. verify"
 ${ZKIT} aggregation_verify --p $WORKSPACE/aggregation_proof.bin --v $WORKSPACE/aggregation_vk.bin
 
 echo "8. generate verifier"
-${ZKIT} generate_aggregation_verifier -o $WORKSPACE/vk.bin --n $WORKSPACE/aggregation_vk.bin --num_inputs 3 -s $WORKSPACE/verifier.sol
+${ZKIT} generate_aggregation_verifier -o $WORKSPACE/vk.bin --n $WORKSPACE/aggregation_vk.bin --num_inputs 2 -s $WORKSPACE/verifier.sol
