@@ -1991,7 +1991,7 @@ component main {} = Main();
             pil.publics.len(),
             pil.publics.len(),
             if options.verkey_input {
-                "`{{`public [rootC]`}}`"
+                "{{public [rootC]}}"
             } else {
                 ""
             }
