@@ -57,7 +57,7 @@ done
 cat $OLD_PROOF_LIST
 
 echo "5. export aggregation vk"
-${ZKIT} export_aggregation_verification_key --c $i --i 3 -s ${BIG_SRS} --v $WORKSPACE/aggregation_vk.bin
+${ZKIT} export_aggregation_verification_key --c $i --i 2 -s ${BIG_SRS} --v $WORKSPACE/aggregation_vk.bin
 
 echo "6. generate aggregation proof"
 ${ZKIT} aggregation_prove -s ${BIG_SRS} --f $OLD_PROOF_LIST  --v $WORKSPACE/vk.bin --n $WORKSPACE/aggregation_proof.bin  --j $WORKSPACE/aggregation_proof.json
