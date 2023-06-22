@@ -1872,12 +1872,12 @@ template Main() {{
 
     sv.s0_vals1 <== s0_vals1;
 "#,
+            (1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits),
             if options.verkey_input {
                 "sv.rootC <== rootC; "
             } else {
                 ""
-            },
-            (1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits)
+            }
         ));
 
         if starkinfo.map_sectionsN.cm2_2ns > 0 {
@@ -1991,7 +1991,7 @@ component main {} = Main();
             pil.publics.len(),
             pil.publics.len(),
             if options.verkey_input {
-                "`{{`public [rootC]`}}`"
+                "{public [rootC]}"
             } else {
                 ""
             }
