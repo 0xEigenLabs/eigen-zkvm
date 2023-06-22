@@ -1,4 +1,4 @@
-mkdir -p circuits && node fibonacci/fibonacci.js -w circuits -i "./input2.json" 
+mkdir -p circuits && node fibonacci/fibonacci.js -w circuits -i "./inputs/input2.json" 
 
 ../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
     -p /tmp/fib.pil.json \
