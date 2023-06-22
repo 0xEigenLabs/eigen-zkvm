@@ -2,6 +2,7 @@ const { FGL } = require("pil-stark");
 const {pil_verifier, utils} = require("../index.js");
 const path = require("path");
 
+
 class FibonacciJS {
   async buildConstants(pols_) {
     const pols = pols_.Fibonacci;
@@ -29,9 +30,11 @@ class FibonacciJS {
 const version = require("../package").version;
 const argv = require("yargs")
   .version(version)
-  .usage("node fibonacci.js -w /path/to/workspace")
+  .usage("node fibonacci.js -w /path/to/workspace -i ./input1.json")
   .alias("w", "workspace") //workspace to stash temp and output files
+  .alias("i", "input") //workspace to stash temp and output files
   .demand('workspace')
+  .demand("input")
   .argv;
 
 // construct the stark parameters
@@ -53,7 +56,11 @@ const proverAddr = "0x2FD31EB1BB3f0Ac8C4feBaF1114F42431c1F29E4";
 var start = new Date().getTime()
 const pilConfig = {};
 const pilCache = "/tmp/fib"
-pil_verifier.generate(argv.workspace, pilFile, pilConfig, pilCache, new FibonacciJS(), starkStruct, proverAddr, [1, 2]).then(() => {
+
+const input = require(argv.input);
+console.log(input)
+
+pil_verifier.generate(argv.workspace, pilFile, pilConfig, pilCache, new FibonacciJS(), starkStruct, proverAddr, [3, 5]).then(() => {
   var end = new Date().getTime()
   console.log('cost is', `${end - start}ms`)
 })
