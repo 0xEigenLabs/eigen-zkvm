@@ -1877,7 +1877,7 @@ template Main() {{
                 "sv.rootC <== rootC; "
             } else {
                 ""
-            },
+            }
         ));
 
         if starkinfo.map_sectionsN.cm2_2ns > 0 {
