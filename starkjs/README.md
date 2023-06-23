@@ -22,11 +22,7 @@ will generate the PIL json, Commitment Polynomial file and Constant Polynomial f
 ### Recursive Layer: FRI Proof
 
 ```
-<<<<<<< HEAD
-../target/release/eigen-zkit compile -p goldilocks -i circuits/fib.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
-=======
 ../target/release/eigen-zkit compile -p goldilocks -i circuits/fib.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
->>>>>>> main
 ## the above commands is equivalent to
 # circom --r1cs --wasm -p goldilocks circuits/fib.circom \
 #    -l node_modules/pil-stark/circuits.gl \

@@ -39,13 +39,7 @@ pub fn prove(
             // only the const polynomials will engage in the setup stage 
             let mut setup =
                 StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
-<<<<<<< HEAD
-
-            // generate the stark proof
-            let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
-=======
             let mut starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
->>>>>>> main
                 &cm_pol,
                 &const_pol,
                 &setup.const_tree,
