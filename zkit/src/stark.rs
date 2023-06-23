@@ -24,19 +24,15 @@ pub fn prove(
     zkin: &String,
 ) -> Result<()> {
     let mut pil = load_json::<PIL>(pil_file.as_str()).unwrap();
-    // load the const polynomials which writen in pil and compiled by 'pil-com'
     let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
     const_pol.load(const_pol_file.as_str()).unwrap();
 
-    // load the commit polynomials which writen in pil and compiled by 'pil-com'
     let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
     cm_pol.load(cm_pol_file.as_str()).unwrap();
 
     let stark_struct = load_json::<StarkStruct>(stark_struct.as_str()).unwrap();
     match stark_struct.verificationHashType.as_str() {
         "BN128" => {
-
-            // only the const polynomials will engage in the setup stage 
             let mut setup =
                 StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
             let mut starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
@@ -62,7 +58,6 @@ pub fn prove(
             assert_eq!(result, true);
             println!("verify the proof done");
 
-            // translate the .pil to circom
             let opt = pil2circom::StarkOption {
                 enable_input: false,
                 verkey_input: norm_stage,
