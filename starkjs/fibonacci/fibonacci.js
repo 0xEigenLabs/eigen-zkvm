@@ -30,11 +30,13 @@ class FibonacciJS {
 const version = require("../package").version;
 const argv = require("yargs")
   .version(version)
-  .usage("node fibonacci.js -w /path/to/workspace -i ./input1.json")
+  .usage("node fibonacci.js -w /path/to/workspace -i ./input1.json  --pc /tmp/fib")
   .alias("w", "workspace") //workspace to stash temp and output files
-  .alias("i", "input") //workspace to stash temp and output files
+  .alias("i", "input")
+  .alias("pc","pilCache")
   .demand('workspace')
   .demand("input")
+  .demand("pilCache")
   .argv;
 
 // construct the stark parameters
@@ -55,7 +57,8 @@ const pilFile = path.join(__dirname, "./fibonacci.pil");
 const proverAddr = "0x2FD31EB1BB3f0Ac8C4feBaF1114F42431c1F29E4";
 var start = new Date().getTime()
 const pilConfig = {};
-const pilCache = "/tmp/fib"
+const pilCache = argv.pilCache
+console.log("pilCache:",pilCache)
 
 const input = require(argv.input);
 console.log(input)
