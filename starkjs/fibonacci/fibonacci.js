@@ -60,7 +60,7 @@ const pilCache = "/tmp/fib"
 const input = require(argv.input);
 console.log(input)
 
-pil_verifier.generate(argv.workspace, pilFile, pilConfig, pilCache, new FibonacciJS(), starkStruct, proverAddr, [3, 5]).then(() => {
+pil_verifier.generate(argv.workspace, pilFile, pilConfig, pilCache, new FibonacciJS(), starkStruct, proverAddr, input).then(() => {
   var end = new Date().getTime()
   console.log('cost is', `${end - start}ms`)
 })
