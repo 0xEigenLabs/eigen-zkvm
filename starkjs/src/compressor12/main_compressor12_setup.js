@@ -23,13 +23,11 @@ async function run() {
     const pilFile = typeof(argv.pil) === "string" ?  argv.pil.trim() : "mycircuit.c12.pil";
     const execFile = typeof(argv.exec) === "string" ?  argv.exec.trim() : "mycircuit.c12.exec";
 
-    // the file.r1cs generated invoking 'circom2 --r1cs test.circom'
     const r1cs = await readR1cs(r1csFile, {F: F, logger:console });
 
     const options = {
-        forceNBits: argv.forceNBits // default is 23
+        forceNBits: argv.forceNBits
     };
-    // generate .pil through r1cs
     const res = await plonkSetup(r1cs, options);
 
     await fs.promises.writeFile(pilFile, res.pilStr, "utf8");

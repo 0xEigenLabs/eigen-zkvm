@@ -10,8 +10,6 @@ const r1cs2plonk = require("../../node_modules/pil-stark/src/r1cs2plonk");
 
 module.exports = async function plonkSetup(r1cs, options) {
     const F = new F3G();
-
-    // seems to use plonkup to convert r1cs circuits to plonkish circuits.
     const [plonkConstraints, plonkAdditions] = r1cs2plonk(F, r1cs);
 
     const plonkInfo = getNormalPlonkInfo();
@@ -22,10 +20,9 @@ module.exports = async function plonkSetup(r1cs, options) {
 
     const customGatesInfo = getCustomGatesInfo();
 
-    // the number of public parameters is equal to the sum of r1cs-inputs and r1cs-outputs  
     let nPublics = r1cs.nOutputs + r1cs.nPubInputs;
     const nPublicRows = Math.floor((nPublics - 1)/12) +1;
-    
+
     const NUsed = nPublicRows + plonkInfo.N + customGatesInfo.nCMul + customGatesInfo.nMDS*2;
     let nBits = log2(NUsed - 1) + 1;
 
