@@ -4,7 +4,9 @@ set -e
 # build
 cargo build --release
 
+# generate the first poseidon hash and recursive Stark into Snark
 ./recursive_poseidon_to_snark.sh 0
+# generate the second poseidon hash and recursive Stark into Snark
 ./recursive_poseidon_to_snark.sh 1
 
 BIG_POWER=26
