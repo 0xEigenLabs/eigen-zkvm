@@ -1,26 +1,29 @@
 WORKSPACE=/tmp
 RUNDIR=../starkjs
+OutputNamePrefix=fib
+PILCACHE=$WORKSPACE/$OutputNamePrefix
+PILEXECJS=fibonacci/fibonacci.js
 
-mkdir -p $RUNDIR/circuits && node $RUNDIR/fibonacci/fibonacci.js -w circuits -i "./inputs/input1.json" 
+mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w circuits -i "./inputs/input1.json" --pc $PILCACHE
 
 ../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
-    -p $WORKSPACE/fib.pil.json \
-    --o $WORKSPACE/fib.const \
-    --m $WORKSPACE/fib.cm -c $RUNDIR/circuits/fib.verifier.circom --i $RUNDIR/circuits/fib.verifier.zkin.json
+    -p $WORKSPACE/$OutputNamePrefix.pil.json \
+    --o $WORKSPACE/$OutputNamePrefix.const \
+    --m $WORKSPACE/$OutputNamePrefix.cm -c $RUNDIR/circuits/$OutputNamePrefix.verifier.circom --i $RUNDIR/circuits/$OutputNamePrefix.verifier.zkin.json
 
 
-../target/release/eigen-zkit compile -p goldilocks -i $RUNDIR/circuits/fib.verifier.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/
+../target/release/eigen-zkit compile -p goldilocks -i $RUNDIR/circuits/$OutputNamePrefix.verifier.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/
 
 
 node $RUNDIR/src/compressor12/main_compressor12_setup.js \
-    -r $WORKSPACE/fib.verifier.r1cs \
+    -r $WORKSPACE/$OutputNamePrefix.verifier.r1cs \
     -c $WORKSPACE/c12.const \
     -p $WORKSPACE/c12.pil \
     -e $WORKSPACE/c12.exec
 
 node $RUNDIR/src/compressor12/main_compressor12_exec.js \
-    -w $WORKSPACE/fib.verifier_js/fib.verifier.wasm  \
-    -i $RUNDIR/circuits/fib.verifier.zkin.json  \
+    -w $WORKSPACE/$OutputNamePrefix.verifier_js/$OutputNamePrefix.verifier.wasm  \
+    -i $RUNDIR/circuits/$OutputNamePrefix.verifier.zkin.json  \
     -p $WORKSPACE/c12.pil  \
     -e $WORKSPACE/c12.exec \
     -m $WORKSPACE/c12.cm

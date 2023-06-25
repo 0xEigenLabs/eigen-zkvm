@@ -1,43 +1,29 @@
 const { FGL } = require("pil-stark");
 const {pil_verifier, utils} = require("../index.js");
 const path = require("path");
+const poseidonExecutor = require("./sm_poseidong.js");
 
-
-class FibonacciJS {
+class PoseidonJS {
   async buildConstants(pols_) {
-    const pols = pols_.Fibonacci;
-    const N = pols.L1.length;
-    for (let i = 0; i < N; i++) {
-      pols.L1[i] = (i == 0) ? 1n : 0n;
-      pols.LLAST[i] = (i == N-1) ? 1n : 0n;
-    }
+    await poseidonExecutor.buildConstants(pols_.PoseidonG)
   }
 
   async execute(pols_, input) {
-    const pols = pols_.Fibonacci;
-    const N = pols.l1.length;
-    pols.l2[0] = BigInt(input[0]);
-    pols.l1[0] = BigInt(input[1]);
-
-    for (let i = 1; i < N; i ++) {
-      pols.l2[i] =pols.l1[i-1];
-      pols.l1[i] =FGL.add(FGL.square(pols.l2[i-1]), FGL.square(pols.l1[i-1]));
-    }
-    return pols.l1[N - 1];
+    return await poseidonExecutor.execute(pols_.PoseidonG,input)
   }
 }
 
 const version = require("../package").version;
 const argv = require("yargs")
   .version(version)
-  .usage("node fibonacci.js -w /path/to/workspace -i ./input1.json  --pc /tmp/fib")
+  .usage("node main_poseidon.js -w /path/to/workspace -i 0  --pc /tmp/poseidon")
   .alias("w", "workspace") //workspace to stash temp and output files
   .alias("i", "input")
   .alias("pc","pilCache")
   .demand('workspace')
   .demand("input")
   .demand("pilCache")
-  .argv;
+  .argv
 
 // construct the stark parameters
 const starkStruct = {
@@ -53,17 +39,25 @@ const starkStruct = {
 }
 console.log("security level(bits)", utils.security_test(starkStruct, 1024))
 
-const pilFile = path.join(__dirname, "./fibonacci.pil");
+const pilFile = path.join(__dirname, "./poseidong.pil");
 const proverAddr = "0x2FD31EB1BB3f0Ac8C4feBaF1114F42431c1F29E4";
 var start = new Date().getTime()
 const pilConfig = {};
 const pilCache = argv.pilCache
 console.log("pilCache:",pilCache)
 
-const input = require(argv.input);
-console.log(input)
+let _input;
+if (argv.input=="0") {
+  _input = [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0,  0, 0x3c18a9786cb0b359n, 0xc4055e3364a246c3n, 0x7953db0ab48808f4n, 0xc71603f33a1144can]
+  ];
+}else{
+  _input = [
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0xd64e1e3efc5b8e9en, 0x53666633020aaa47n, 0xd40285597c6a8825n, 0x613a4f81e81231d2n]
+  ]
+}
 
-pil_verifier.generate(argv.workspace, pilFile, pilConfig, pilCache, new FibonacciJS(), starkStruct, proverAddr, input).then(() => {
+pil_verifier.generate(argv.workspace, pilFile, pilConfig, pilCache, new PoseidonJS(), starkStruct, proverAddr, _input).then(() => {
   var end = new Date().getTime()
   console.log('cost is', `${end - start}ms`)
 })

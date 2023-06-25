@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "poseidon": "mkdir -p poseidon/build && mkdir -p poseidon/&& node poseidon/main_poseidon.js -w poseidon/build",
     "fib": "mkdir -p circuits && node fibonacci/fibonacci.js -w circuits",
     "pc": "mkdir -p circuits && node permutation/permutation.js -w circuits",
     "plookup": "mkdir -p circuits && node plookup/plookup.js -w circuits",
@@ -14,6 +15,7 @@
   "dependencies": {
     "circomlib": "^2.0.5",
     "circomlibjs": "^0.1.6",
+    "ffjavascript": "^0.2.59",
     "json-bigint": "^1.0.0",
     "pil-stark": "0.0.44",
     "pilcom": "^0.0.19",
