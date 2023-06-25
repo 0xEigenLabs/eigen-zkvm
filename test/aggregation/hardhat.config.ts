@@ -1,5 +1,6 @@
 import "@nomiclabs/hardhat-waffle";
-import "@typechain/hardhat"
+import "@typechain/hardhat";
+import "hardhat-gas-reporter";
 import { task, HardhatUserConfig } from "hardhat/config";
 import { resolve } from "path";
 
