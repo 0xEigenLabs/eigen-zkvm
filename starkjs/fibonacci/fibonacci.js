@@ -30,7 +30,7 @@ class FibonacciJS {
 const version = require("../package").version;
 const argv = require("yargs")
   .version(version)
-  .usage("node fibonacci.js -w /path/to/workspace -i ./input1.json  --pc /tmp/fib")
+  .usage("node fibonacci.js -w /path/to/workspace -i 0  --pc /tmp/fib")
   .alias("w", "workspace") //workspace to stash temp and output files
   .alias("i", "input")
   .alias("pc","pilCache")
@@ -59,9 +59,12 @@ var start = new Date().getTime()
 const pilConfig = {};
 const pilCache = argv.pilCache
 console.log("pilCache:",pilCache)
-
-const input = require(argv.input);
-console.log(input)
+let input;
+if (argv.input == "0") {
+  input = [1, 2]
+} else {
+  input = [3, 4]
+}
 
 pil_verifier.generate(argv.workspace, pilFile, pilConfig, pilCache, new FibonacciJS(), starkStruct, proverAddr, input).then(() => {
   var end = new Date().getTime()

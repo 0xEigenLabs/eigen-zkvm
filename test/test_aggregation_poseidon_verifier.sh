@@ -9,16 +9,18 @@ BIG_POWER=26
 POWER=22
 CUR_DIR=$(cd $(dirname $0);pwd)
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
-CIRCUIT="poseidon.second_verifier"
-PROOFDIT=$CUR_DIR
+CIRCUIT="poseidon"
+PILEXECJS="poseidon/main_poseidon.js"
 
 cd ${CUR_DIR} && npm i
 
 # generate the first poseidon hash and recursive Stark into Snark
-nohup ./recursive_poseidon_to_snark.sh 0 &
+nohup ./recursive_proof_to_snark.sh 0 $CIRCUIT $PILEXECJS &
 # generate the second poseidon hash and recursive Stark into Snark
-nohup ./recursive_poseidon_to_snark.sh 1 &
+nohup ./recursive_proof_to_snark.sh 1 $CIRCUIT $PILEXECJS &
 wait
+
+CIRCUIT=${CIRCUIT}/0.second_verifier
 
 WORKSPACE=/tmp/aggregation_poseidon
 rm -rf $WORKSPACE && mkdir -p $WORKSPACE
