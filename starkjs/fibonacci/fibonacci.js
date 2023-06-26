@@ -58,7 +58,7 @@ const proverAddr = "0x2FD31EB1BB3f0Ac8C4feBaF1114F42431c1F29E4";
 var start = new Date().getTime()
 const pilConfig = {};
 const pilCache = argv.pilCache
-console.log("pilCache:",pilCache)
+console.log("pilCache:", pilCache)
 let input;
 if (argv.input == "0") {
   input = [1, 2]

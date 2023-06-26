@@ -33,9 +33,8 @@ if [ ! -f $BIG_SRS ]; then
 #   curl https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${BIG_POWER}.key -o $BIG_SRS
     ${ZKIT} setup -p ${BIG_POWER} -s ${BIG_SRS}
 fi
-
-echo "1. compile circuit"
-${ZKIT} compile -i ../starkjs/circuits/$CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
+echo "1. compile circuit, use task 0 by default"
+${ZKIT} compile -i ../starkjs/circuits/0/$CIRCUIT.recursive1.circom -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
 
 echo "2. export verification key"
 ${ZKIT} export_verification_key -s ${SRS} -c $WORKSPACE/${CIRCUIT}.r1cs --v $WORKSPACE/vk.bin
