@@ -4,20 +4,21 @@ set -e
 # build
 cargo build --release
 
-# generate the first poseidon hash and recursive Stark into Snark
-./recursive_poseidon_to_snark.sh 0
-# generate the second poseidon hash and recursive Stark into Snark
-./recursive_poseidon_to_snark.sh 1
-
 BIG_POWER=26
 
-POWER=26
+POWER=22
 CUR_DIR=$(cd $(dirname $0);pwd)
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 CIRCUIT="poseidon.second_verifier"
 PROOFDIT=$CUR_DIR
 
-cd ${CUR_DIR} && npm i 
+cd ${CUR_DIR} && npm i
+
+# generate the first poseidon hash and recursive Stark into Snark
+nohup ./recursive_poseidon_to_snark.sh 0 &
+# generate the second poseidon hash and recursive Stark into Snark
+nohup ./recursive_poseidon_to_snark.sh 1 &
+wait
 
 WORKSPACE=/tmp/aggregation_poseidon
 rm -rf $WORKSPACE && mkdir -p $WORKSPACE
@@ -56,7 +57,7 @@ OLD_PROOF_LIST=$WORKSPACE/old_proof_list.txt
 i=0
 for wtns in `ls $CUR_DIR/aggregation/${CIRCUIT}`
 do
-    input=${CUR_DIR}/aggregation/${CIRCUIT}/$wtns
+    input=${CUR_DIR}/aggregation/${CIRCUIT}/$wtns/$i
     echo $input/proof.bin >> $OLD_PROOF_LIST
     i=$((i+1))
 done
@@ -77,4 +78,4 @@ ${ZKIT} generate_aggregation_verifier -o $WORKSPACE/vk.bin --n $WORKSPACE/aggreg
 
 echo "9. run verifier test"
 cp  $WORKSPACE/aggregation_proof.json /tmp/aggregation/aggregation_proof.json
-cd $CUR_DIR/aggregation && npm install && npx hardhat test 
+cd $CUR_DIR/aggregation && npm install && npx hardhat test
