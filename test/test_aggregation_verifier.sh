@@ -6,18 +6,24 @@ cargo build --release
 
 BIG_POWER=26
 POWER=22
+NUM_PROOF=2
 CUR_DIR=$(cd $(dirname $0);pwd)
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 CIRCUIT="fibonacci"
 PILEXECJS="fibonacci/fibonacci.js"
-WORKSPACE=/tmp/aggregation_fibonacci
+
+# test poseidon
+#CIRCUIT="poseidon"
+#PILEXECJS="poseidon/main_poseidon.js"
+
+WORKSPACE=/tmp/aggregation_$CIRCUIT
 rm -rf $WORKSPACE && mkdir -p $WORKSPACE
 
 cd ${CUR_DIR} && npm i
-# generate the first poseidon hash and recursive Stark into Snark
-nohup ./recursive_proof_to_snark.sh 0 $WORKSPACE $CIRCUIT $PILEXECJS &
-# generate the second poseidon hash and recursive Stark into Snark
-nohup ./recursive_proof_to_snark.sh 1 $WORKSPACE $CIRCUIT $PILEXECJS &
+for (( i=0; i<$NUM_PROOF; i++ ))
+do
+    nohup ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS &
+done
 wait
 
 
@@ -33,36 +39,35 @@ if [ ! -f $BIG_SRS ]; then
 #   curl https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${BIG_POWER}.key -o $BIG_SRS
     ${ZKIT} setup -p ${BIG_POWER} -s ${BIG_SRS}
 fi
+RECURSIVE_CIRCUIT=$CIRCUIT.recursive1
 echo "1. compile circuit, use task 0 by default"
-${ZKIT} compile -i ../starkjs/circuits/0/$CIRCUIT.recursive1.circom -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
+${ZKIT} compile -i ../starkjs/circuits/0/$RECURSIVE_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
 
 echo "2. export verification key"
-${ZKIT} export_verification_key -s ${SRS} -c $WORKSPACE/${CIRCUIT}.r1cs --v $WORKSPACE/vk.bin
+${ZKIT} export_verification_key -s ${SRS} -c $WORKSPACE/${RECURSIVE_CIRCUIT}.r1cs --v $WORKSPACE/vk.bin
 
 echo "3. generate each proof"
-for wtns in `ls $CUR_DIR/aggregation/${CIRCUIT}*`
+for (( i=0; i<$NUM_PROOF; i++ ))
 do
-    input=$CUR_DIR/aggregation/${CIRCUIT}/$wtns
-    ${ZKIT} calculate_witness -w ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm -i ${input}/input.json -o $input/witness.wtns
-    ${ZKIT} prove -c $WORKSPACE/${CIRCUIT}.r1cs -w $input/witness.wtns --b $input/proof.bin -s ${SRS} -t rescue
+    input=$CUR_DIR/aggregation/${RECURSIVE_CIRCUIT}/$i && mkdir -p $input
+    ${ZKIT} calculate_witness -w ${WORKSPACE}/${RECURSIVE_CIRCUIT}_js/$RECURSIVE_CIRCUIT.wasm -i ${input}/input.json -o $input/witness.wtns
+    ${ZKIT} prove -c $WORKSPACE/${RECURSIVE_CIRCUIT}.r1cs -w $input/witness.wtns --b $input/proof.bin -s ${SRS} -t rescue
 done
 
 echo "4. collect old proof list"
 OLD_PROOF_LIST=$WORKSPACE/old_proof_list.txt
 > $OLD_PROOF_LIST
 
-i=0
-for wtns in `ls $CUR_DIR/aggregation/${CIRCUIT}`
+for (( i=0; i<$NUM_PROOF; i++ ))
 do
-    input=${CUR_DIR}/aggregation/${CIRCUIT}/$wtns
+    input=${CUR_DIR}/aggregation/${RECURSIVE_CIRCUIT}/$i
     echo $input/proof.bin >> $OLD_PROOF_LIST
-    i=$((i+1))
 done
 
 cat $OLD_PROOF_LIST
 
 echo "5. export aggregation vk"
-${ZKIT} export_aggregation_verification_key --c $i --i 2 -s ${BIG_SRS} --v $WORKSPACE/aggregation_vk.bin
+${ZKIT} export_aggregation_verification_key --c $NUM_PROOF --i 2 -s ${BIG_SRS} --v $WORKSPACE/aggregation_vk.bin
 
 echo "6. generate aggregation proof"
 ${ZKIT} aggregation_prove -s ${BIG_SRS} --f $OLD_PROOF_LIST  --v $WORKSPACE/vk.bin --n $WORKSPACE/aggregation_proof.bin  --j $WORKSPACE/aggregation_proof.json

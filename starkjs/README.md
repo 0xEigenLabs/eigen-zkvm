@@ -57,7 +57,7 @@ bash -x ../test/test_fibonacci_verifier.sh
 ### Snark proof aggregation
 
 ```
-bash -x ../test/test_aggregation_fibonacci_verifier.sh
+bash -x ../test/test_aggregation_verifier.sh
 ```
 
 ## Time used

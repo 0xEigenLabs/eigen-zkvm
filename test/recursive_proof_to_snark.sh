@@ -21,7 +21,7 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
     --o $WORKSPACE/$TASK_NO/$CIRCUIT.const \
     --m $WORKSPACE/$TASK_NO/$CIRCUIT.cm -c $RUNDIR/circuits/$C12_VERIFIER.circom --i $RUNDIR/circuits/$C12_VERIFIER.zkin.json
 
-#../target/release/eigen-zkit compile -p goldilocks -i $RUNDIR/circuits/$C12_VERIFIER.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/$TASK_NO
+../target/release/eigen-zkit compile -p goldilocks -i $RUNDIR/circuits/$C12_VERIFIER.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/$TASK_NO
 
 node $RUNDIR/src/compressor12/main_compressor12_setup.js \
     -r $WORKSPACE/$C12_VERIFIER.r1cs \
