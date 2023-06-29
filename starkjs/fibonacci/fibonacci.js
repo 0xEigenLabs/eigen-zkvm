@@ -30,7 +30,7 @@ class FibonacciJS {
 const version = require("../package").version;
 const argv = require("yargs")
   .version(version)
-  .usage("node fibonacci.js -w /path/to/workspace -i 0  --pc /tmp/fib")
+  .usage("node fibonacci.js -w /path/to/workspace --i 0 --pc /tmp/fib")
   .alias("w", "workspace") //workspace to stash temp and output files
   .alias("i", "input")
   .alias("pc","pilCache")
