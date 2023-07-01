@@ -23,12 +23,18 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
 
 ../target/release/eigen-zkit compile -p goldilocks -i $RUNDIR/circuits/$C12_VERIFIER.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/$TASK_NO
 
+# generate the pil files and  const polynomicals files
+# input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
+# output files :  $C12_VERIFIER.exec
 node $RUNDIR/src/compressor12/main_compressor12_setup.js \
     -r $WORKSPACE/$C12_VERIFIER.r1cs \
     -c $WORKSPACE/$C12_VERIFIER.const \
     -p $WORKSPACE/$C12_VERIFIER.pil \
     -e $WORKSPACE/$C12_VERIFIER.exec
 
+# generate the commit polynomicals files 
+# input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil /$C12_VERIFIER.exec
+# output files :  $C12_VERIFIER.cm
 node $RUNDIR/src/compressor12/main_compressor12_exec.js \
     -w $WORKSPACE/$C12_VERIFIER"_js"/$CIRCUIT.c12.wasm  \
     -i $RUNDIR/circuits/$C12_VERIFIER.zkin.json  \
@@ -38,6 +44,9 @@ node $RUNDIR/src/compressor12/main_compressor12_exec.js \
 
 mkdir -p ./aggregation/$RECURSIVE1_VERIFIER/
 
+# generate the stark proof and the circom circuits to verify stark proof.
+# input files : $C12_VERIFIER.pil.json(stark proof)  $C12_VERIFIER.const(const polynomials)  $C12_VERIFIER.cm (commit polynomials)
+# output files :  $RECURSIVE1_VERIFIER.circom  $RECURSIVE1_VERIFIER/input.json
 ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.bn128.json \
     -p $WORKSPACE/$C12_VERIFIER.pil.json \
     --o $WORKSPACE/$C12_VERIFIER.const \
