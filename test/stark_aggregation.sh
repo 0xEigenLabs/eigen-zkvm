@@ -22,22 +22,22 @@ WORKSPACE=/tmp/aggregation_$CIRCUIT
 rm -rf $WORKSPACE && mkdir -p $WORKSPACE
 
 cd ${CUR_DIR} && npm i
-for (( i=0; i<$NUM_PROOF; i++ ))
-do
-    ./recursive_proof_to_stark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS 
-done
+# for (( i=0; i<$NUM_PROOF; i++ ))
+# do
+#     ./recursive_proof_to_stark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS 
+# done
 # wait
 
 RECURSIVE_CIRCUIT=$CIRCUIT.recursive1
 RECURSIVE2_CIRCUIT=$CIRCUIT.recursive2
-echo "1. compile circuit, use task 0 by default"
+# echo "1. compile circuit, use task 0 by default"
 ${ZKIT} compile -i ../starkjs/circuits/0/$RECURSIVE_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
 
 echo "2. combine input1.zkin.json with input2.zkin.json "
-input0=$CUR_DIR/aggregation/0/${RECURSIVE_CIRCUIT} && mkdir -p $input
-input1=$CUR_DIR/aggregation/1/${RECURSIVE_CIRCUIT} && mkdir -p $input
+input0=$CUR_DIR/aggregation/0/${RECURSIVE_CIRCUIT} && mkdir -p $input0
+input1=$CUR_DIR/aggregation/1/${RECURSIVE_CIRCUIT} && mkdir -p $input1
 
-$RUNDIR/src/recursive/main_joinzkin.json  --zkin1 $input0/input.json --zkin2 $input1/input.json  --zkinout $input0/r1_input.zkin.json
+node $RUNDIR/src/recursive/main_joinzkin.js  --zkin1 $input0/input.zkin.json --zkin2 $input1/input.zkin.json  --zkinout $input0/r1_input.zkin.json
 
 
 echo "3. generate the pil files and  const polynomicals files "

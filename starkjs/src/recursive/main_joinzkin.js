@@ -1,7 +1,7 @@
-const fs = require("fs");
+const fs= require("fs");
 const path = require("path");
 const { polMulAxi } = require("pil-stark/src/polutils");
-const version = require("../package").version;
+const version = require("../../package").version;
 const JSONbig = require("json-bigint");
 
 const argv = require("yargs")
@@ -55,7 +55,7 @@ async function run() {
     // for (let i=0; i<8; i++) zkinOut.publics[27+i] = zkin2.publics[27+i];  // newAccInputHash0
     // for (let i=0; i<8; i++) zkinOut.publics[35+i] = zkin2.publics[35+i];  // newLocalExitRoot
 
-    zkinOut.publics[43] = zkin2.publics[43];  // oldBatchNum
+    // zkinOut.publics[43] = zkin2.publics[43];  // oldBatchNum
 
     zkinOut.a_publics = zkin1.publics;
     zkinOut.a_rootC = zkin1.rootC;
