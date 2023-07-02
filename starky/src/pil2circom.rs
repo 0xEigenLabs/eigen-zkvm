@@ -7,6 +7,7 @@ use crate::types::{StarkStruct, PIL};
 pub struct StarkOption {
     pub enable_input: bool,
     pub verkey_input: bool,
+    pub agg_stage: bool,
     pub skip_main: bool,
 }
 
