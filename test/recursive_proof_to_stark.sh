@@ -50,4 +50,5 @@ mkdir -p ./aggregation/$RECURSIVE1_VERIFIER/
 ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json \
     -p $WORKSPACE/$C12_VERIFIER.pil.json \
     --o $WORKSPACE/$C12_VERIFIER.const \
-    --m $WORKSPACE/$C12_VERIFIER.cm -c $RUNDIR/circuits/$RECURSIVE1_VERIFIER.circom --i ./aggregation/$RECURSIVE1_VERIFIER/input.zkin.json --agg_stage
+    --m $WORKSPACE/$C12_VERIFIER.cm -c $RUNDIR/circuits/$RECURSIVE1_VERIFIER.circom --i ./aggregation/$RECURSIVE1_VERIFIER/input.zkin.json --agg_stage --norm_stage
+ 
