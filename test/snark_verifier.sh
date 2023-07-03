@@ -57,6 +57,9 @@ if [ "$1" = "groth16" ]; then
 
     echo "5. generate verifier contract"
     snarkjs zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
+
+    echo "6. calculate verify gas cost"
+    npx hardhat test test/final.test.ts
 else 
     echo ">>> fflonk scheme <<< "
     echo "1. fflonk setup "
