@@ -913,7 +913,7 @@ template StarkVerifier() {{
         pil.publics.len()
     );
 
-    if options.verkey_input || options.agg_stage {
+    if options.verkey_input {
         res.push_str(&format!(
             r#"
     signal input rootC[4];
@@ -1859,16 +1859,17 @@ template Recursive2() {{
     }
 
     if !options.skip_main {
-        if options.verkey_input {
-            res.push_str(&format!(
-                r#"
-component main {{public [publics, rootC]}}= StarkVerifier();
-    "#
-            ));
-        } else if options.agg_stage {
+        
+        if options.agg_stage {
             res.push_str(&format!(
                 r#"
 component main {{public [a_publics, a_rootC, b_publics,b_rootC]}}= Recursive2();
+    "#
+            ));
+        } else  if options.verkey_input {
+            res.push_str(&format!(
+                r#"
+component main {{public [publics, rootC]}}= StarkVerifier();
     "#
             ));
         } else {
