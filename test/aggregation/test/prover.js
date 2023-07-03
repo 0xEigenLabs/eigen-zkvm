@@ -14,15 +14,9 @@ async function generateG16Proof(witness) {
     [proof.pi_c[0], proof.pi_c[1]],
   ];
 
-  // the inputs format :
-  // input[0] = encodingKey % modulusBn254;
-  // input[1] = xBn254;
-  // input[2] = mask;
-  const signals = {
-    signals: [inputs[0], inputs[1], inputs[2]],
-  };
+  console.log("inputs:",inputs)
 
-  return [solProof, signals];
+  return [solProof, inputs];
 }
 
 exports.generateG16Proof = generateG16Proof;

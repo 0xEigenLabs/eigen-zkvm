@@ -26,6 +26,7 @@
   "dependencies": {
     "@nomiclabs/buidler": "^1.4.8",
     "@typechain/hardhat": "^6.0.0",
-    "@types/sinon-chai": "^3.2.9"
+    "@types/sinon-chai": "^3.2.9",
+    "snarkjs": "^0.7.0"
   }
 }
