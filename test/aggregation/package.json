@@ -5,7 +5,8 @@
     "clean": "rm -rf build dist typechain cache artifacts",
     "compile": "hardhat compile",
     "build": "npm run clean && npm i && ./node_modules/.bin/tsc",
-    "test": "npm run build && npm run compile && npx hardhat test"
+    "test": "npm run build && npm run compile && npx hardhat test test/agg.test.ts",
+    "finaltest": "npm run build && npm run compile && npx hardhat test test/final.test.ts"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.2",
