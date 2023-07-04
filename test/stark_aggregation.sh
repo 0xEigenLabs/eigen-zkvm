@@ -4,6 +4,9 @@ set -e
 ## build
 cargo build --release
 
+export NODE_OPTIONS="--max-old-space-size=81920"
+source ~/.bashrc 
+
 BIG_POWER=26
 NUM_PROOF=2
 NUM_INPUT=2
@@ -25,6 +28,8 @@ FINAL_CIRCUIT=$CIRCUIT.final
 input0=$CUR_DIR/aggregation/0/${RECURSIVE_CIRCUIT} && mkdir -p $input0
 input1=$CUR_DIR/aggregation/1/${RECURSIVE_CIRCUIT} && mkdir -p $input1
 
+mkdir -p ./aggregation/$RECURSIVE2_CIRCUIT 
+mkdir -p ./aggregation/$FINAL_CIRCUIT
 
 # test poseidon
 #CIRCUIT="poseidon"
@@ -67,8 +72,6 @@ node $RUNDIR/src/compressor12/main_compressor12_exec.js \
     -e $WORKSPACE/$RECURSIVE_CIRCUIT.exec \
     -m $WORKSPACE/$RECURSIVE_CIRCUIT.cm
 
-mkdir -p ./aggregation/$RECURSIVE2_CIRCUIT 
-
 echo "5. generate recursive2 proof  "
 # generate the stark proof and the circom circuits to verify stark proof.
 # input files : $C12_VERIFIER.pil.json(stark proof)  $C12_VERIFIER.const(const polynomials)  $C12_VERIFIER.cm (commit polynomials)
@@ -96,7 +99,7 @@ node $RUNDIR/src/compressor12/main_compressor12_setup.js \
     -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil \
     -e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec 
 
-echo "3. generate the commit polynomicals files  "
+echo "3. generate the commit polynomicals files "
 node $RUNDIR/src/compressor12/main_compressor12_exec.js \
     -w $WORKSPACE/$RECURSIVE2_CIRCUIT"_js"/$RECURSIVE2_CIRCUIT.wasm  \
     -i ./aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json   \
@@ -105,10 +108,8 @@ node $RUNDIR/src/compressor12/main_compressor12_exec.js \
     -m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm
 
 
-mkdir -p ./aggregation/$FINAL_CIRCUIT
-
 echo "4. generate final proof  "
-# Remark: the N of final.starkStruct must be 2^20 , because the degree of $RECURSIVE2_CIRCUIT.pil is 2^18 which determined by the proocess of converting  $RECURSIVE_CIRCUIT2.circom to  $RECURSIVE_CIRCUIT2.pil
+# Remark: the N of final.starkStruct must be 2^20 , because the degree of $RECURSIVE2_CIRCUIT.pil is 2^20 which determined by the proocess of converting  $RECURSIVE_CIRCUIT2.circom to  $RECURSIVE_CIRCUIT2.pil
 ../target/release/eigen-zkit stark_prove -s ../starky/data/final.starkStruct.bn128.json \
     -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
