@@ -1,8 +1,5 @@
 const fs= require("fs");
-const path = require("path");
-const { polMulAxi } = require("pil-stark/src/polutils");
 const version = require("../../package").version;
-const JSONbig = require("json-bigint");
 
 const argv = require("yargs")
     .version(version)
