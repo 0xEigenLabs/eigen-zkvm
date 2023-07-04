@@ -1,15 +1,16 @@
 #!/bin/bash
 set -e
 
-export NODE_OPTIONS="--max-old-space-size=32768"
+export NODE_OPTIONS="--max-old-space-size=16384"
 source ~/.bashrc 
 
 CUR_DIR=$(cd $(dirname $0);pwd)
 
 POWER=22
-BIG_POWER=26
+BIG_POWER=27
 SRS=${CUR_DIR}/../keys/setup_2^${POWER}.ptau
 BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
+BIG_SRS_FINAL=${CUR_DIR}/../keys/setup_2^${BIG_POWER}_final.ptau
 
 CIRCUIT_NAME=fibonacci.final
 
@@ -28,17 +29,13 @@ if [ "$2" = "true" ]; then
     cp $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm /tmp/aggregation/circuits.wasm
 fi 
 
-if [ ! -f $SRS ]; then
-    echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
-    curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${POWER}.ptau -o $SRS
-fi
-
-if [ ! -f $BIG_SRS ]; then
-    echo "downloading powersOfTau28_hez_final_${BIG_POWER}.ptau"
-    curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${BIG_POWER}.ptau -o $BIG_SRS
-fi
 
 if [ "$1" = "groth16" ]; then
+    if [ ! -f $SRS ]; then
+        echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
+        curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${POWER}.ptau -o $SRS
+    fi
+    
     echo ">>> groth16 scheme <<< "
     echo "1. groth16 setup"
     snarkjs g16s $WORK_DIR/$CIRCUIT_NAME.r1cs $SRS  $WORK_DIR/g16.zkey
@@ -61,14 +58,19 @@ if [ "$1" = "groth16" ]; then
     echo "6. calculate verify gas cost"
     npx hardhat test test/final.test.ts
 else 
+    if [ ! -f $BIG_SRS ]; then
+        echo "downloading powersOfTau28_hez_final_${BIG_POWER}.ptau"
+        curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${BIG_POWER}.ptau -o $BIG_SRS
+    fi
+
     echo ">>> fflonk scheme <<< "
     echo "1. fflonk setup "
-    snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs $BIG_SRS  $WORK_DIR/fflonk.zkey
+    echo "$BIG_SRS"
+    snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey
 
     echo "2. fflonk fullprove"
-    snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs $BIG_SRS  $WORK_DIR/fflonk.zkey
-    snarkjs pkf $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/fflonk.zkey $WORK_DIR/proof.fflonk.json $WORK_DIR/public.fflonk.json
-
+    snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS_FINAL  $WORK_DIR/fflonk.zkey
+    snarkjs pkf $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/fflonk.zkey $WORK_DIR/proof.fflonk.json $WORK_DIR/public.fflonk.
     echo "3. generate verification_key"
     snarkjs zkev  $WORK_DIR/fflonk.zkey  $WORK_DIR/verification_key.fflonk.json
 
