@@ -36,17 +36,19 @@ mkdir -p ./aggregation/$FINAL_CIRCUIT
 #PILEXECJS="poseidon/main_poseidon.js"
 
 cd ${CUR_DIR} && npm i
-for (( i=0; i<$NUM_PROOF; i++ ))
-do
-    ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "stark"
-done
+# for (( i=0; i<$NUM_PROOF; i++ ))
+# do
+#     ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "stark"
+# done
 
 echo " ==> aggregation stage <== "
 if [ ! -f "$WORKSPACE/$RECURSIVE_CIRCUIT.r1cs" ]; then
     echo "1. compile circuit, use task 0 by default"
     ${ZKIT} compile -p goldilocks -i $CUR_DIR/../starkjs/circuits/0/$RECURSIVE_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
+else
+    echo "1.no need compile circom : "$WORKSPACE/$RECURSIVE_CIRCUIT.r1cs" already generated"
 fi
-echo "1.no need compile circom : "$WORKSPACE/$RECURSIVE_CIRCUIT.r1cs" already generated"
+
 
 echo "2. combine input1.zkin.json with input2.zkin.json "
 node $RUNDIR/src/recursive/main_joinzkin.js  --zkin1 $input0/input.zkin.json --zkin2 $input1/input.zkin.json  --zkinout $input0/r1_input.zkin.json
@@ -89,8 +91,10 @@ echo " ==> final recursive stage <== "
 if [ ! -f "$WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs" ]; then
     echo "1. compile circuit and generate r1cs and wasm"
     ${ZKIT} compile -p goldilocks -i $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE 
+else
+    echo "1.no need compile circom : "$WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs" already generated"
 fi
-echo "1.no need compile circom : "$WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs" already generated"
+
 
 echo "2. generate the pil files and  const polynomicals files "
 node $RUNDIR/src/compressor12/main_compressor12_setup.js \
