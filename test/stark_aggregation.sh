@@ -36,10 +36,10 @@ mkdir -p ./aggregation/$FINAL_CIRCUIT
 #PILEXECJS="poseidon/main_poseidon.js"
 
 cd ${CUR_DIR} && npm i
-# for (( i=0; i<$NUM_PROOF; i++ ))
-# do
-#     ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "stark"
-# done
+for (( i=0; i<$NUM_PROOF; i++ ))
+do
+    ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "stark"
+done
 
 echo " ==> aggregation stage <== "
 if [ ! -f "$WORKSPACE/$RECURSIVE_CIRCUIT.r1cs" ]; then
