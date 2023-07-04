@@ -6,7 +6,6 @@ const JSONbig = require("json-bigint");
 
 const argv = require("yargs")
     .version(version)
-    // .usage("node  -v <verification_key.json> --zkin1 <in1.zkin.json> --zkin2 <in2.zkin.json>  --zkinout <out.zkin.json>")
     .usage("node --zkin1 <in1.zkin.json> --zkin2 <in2.zkin.json>  --zkinout <out.zkin.json>")
     .argv;
 
