@@ -14,7 +14,9 @@ PILEXECJS="fibonacci/fibonacci.js"
 RUNDIR="${CUR_DIR}/../starkjs"
 
 WORKSPACE=/tmp/aggregation_$CIRCUIT
-rm -rf $WORKSPACE && mkdir -p $WORKSPACE
+if [ $1 = "restart" ]; then
+    rm -rf $WORKSPACE && mkdir -p $WORKSPACE
+fi 
 
 RECURSIVE_CIRCUIT=$CIRCUIT.recursive1
 RECURSIVE2_CIRCUIT=$CIRCUIT.recursive2
@@ -35,13 +37,14 @@ do
 done
 
 echo " ==> aggregation stage <== "
-
-echo "1. compile circuit, use task 0 by default"
-${ZKIT} compile -p goldilocks -i $CUR_DIR/../starkjs/circuits/0/$RECURSIVE_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
+if [ ! -f "$WORKSPACE/$RECURSIVE_CIRCUIT.r1cs" ]; then
+    echo "1. compile circuit, use task 0 by default"
+    ${ZKIT} compile -p goldilocks -i $CUR_DIR/../starkjs/circuits/0/$RECURSIVE_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
+fi
+echo "1.no need compile circom : "$WORKSPACE/$RECURSIVE_CIRCUIT.r1cs" already generated"
 
 echo "2. combine input1.zkin.json with input2.zkin.json "
 node $RUNDIR/src/recursive/main_joinzkin.js  --zkin1 $input0/input.zkin.json --zkin2 $input1/input.zkin.json  --zkinout $input0/r1_input.zkin.json
-
 
 echo "3. generate the pil files and  const polynomicals files "
 # generate the pil files and  const polynomicals files
@@ -64,6 +67,8 @@ node $RUNDIR/src/compressor12/main_compressor12_exec.js \
     -e $WORKSPACE/$RECURSIVE_CIRCUIT.exec \
     -m $WORKSPACE/$RECURSIVE_CIRCUIT.cm
 
+mkdir -p ./aggregation/$RECURSIVE2_CIRCUIT 
+
 echo "5. generate recursive2 proof  "
 # generate the stark proof and the circom circuits to verify stark proof.
 # input files : $C12_VERIFIER.pil.json(stark proof)  $C12_VERIFIER.const(const polynomials)  $C12_VERIFIER.cm (commit polynomials)
@@ -78,8 +83,11 @@ echo "5. generate recursive2 proof  "
 
 # final recursive stage 
 echo " ==> final recursive stage <== "
-echo "1. compile circuit and generate r1cs and wasm"
-${ZKIT} compile -p goldilocks -i $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE 
+if [ ! -f "$WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs" ]; then
+    echo "1. compile circuit and generate r1cs and wasm"
+    ${ZKIT} compile -p goldilocks -i $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE 
+fi
+echo "1.no need compile circom : "$WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs" already generated"
 
 echo "2. generate the pil files and  const polynomicals files "
 node $RUNDIR/src/compressor12/main_compressor12_setup.js \
