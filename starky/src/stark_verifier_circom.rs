@@ -1859,14 +1859,13 @@ template Recursive2() {{
     }
 
     if !options.skip_main {
-        
         if options.agg_stage {
             res.push_str(&format!(
                 r#"
 component main {{public [a_publics, a_rootC, b_publics,b_rootC]}}= Recursive2();
     "#
             ));
-        } else  if options.verkey_input {
+        } else if options.verkey_input {
             res.push_str(&format!(
                 r#"
 component main {{public [publics, rootC]}}= StarkVerifier();
