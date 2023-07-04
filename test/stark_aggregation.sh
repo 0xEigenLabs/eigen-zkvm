@@ -31,7 +31,7 @@ input1=$CUR_DIR/aggregation/1/${RECURSIVE_CIRCUIT} && mkdir -p $input1
 cd ${CUR_DIR} && npm i
 for (( i=0; i<$NUM_PROOF; i++ ))
 do
-    ./recursive_proof_to_stark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS 
+    ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "stark"
 done
 
 echo " ==> aggregation stage <== "

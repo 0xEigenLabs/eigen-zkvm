@@ -23,7 +23,7 @@ rm -rf $WORKSPACE && mkdir -p $WORKSPACE
 cd ${CUR_DIR} && npm i
 for (( i=0; i<$NUM_PROOF; i++ ))
 do
-    nohup ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS &
+    nohup ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "snark" &
 done
 wait
 
