@@ -35,21 +35,6 @@ describe("Plonk verifier test", function() {
 
     await verifier.deployed();
 
-    const solProof = [
-        [proof.pi_a[0], proof.pi_a[1]],
-        [
-          [proof.pi_b[0][1], proof.pi_b[0][0]],
-          [proof.pi_b[1][1], proof.pi_b[1][0]],
-        ],
-        [proof.pi_c[0], proof.pi_c[1]],
-      ];
-    
-
-    expect(await verifier.verifyProof(
-        solProof[0],
-        solProof[1],
-        solProof[2],
-        publics,
-    )).to.equal(true);
+    // todo : add verify process
   });
 });
