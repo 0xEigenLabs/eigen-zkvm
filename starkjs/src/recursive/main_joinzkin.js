@@ -15,47 +15,11 @@ async function run() {
     const zkin1File = typeof(argv.zkin1) === "string" ?  argv.zkin1.trim() : "zkin1.json";
     const zkin2File = typeof(argv.zkin2) === "string" ?  argv.zkin2.trim() : "zkin2.json";
     const zkinOutFile = typeof(argv.zkinout) === "string" ?  argv.zkinout : "zkinOut.json";
-    // const verKeyFile = typeof(argv.verkey) === "string" ?  argv.verkey.trim() : "recursive2.verkey.json";
-
 
     const zkin1 = JSON.parse(await fs.promises.readFile(zkin1File, "utf8"));
     const zkin2 = JSON.parse(await fs.promises.readFile(zkin2File, "utf8"));
-    // const verKey = JSONbig.parse(await fs.promises.readFile(verKeyFile, "utf8"));
-    // const constRoot = verKey.constRoot;
-
 
     const zkinOut = {};
-
-    // zkinOut.publics = [];
-
-    // for (let i=0; i<8; i++) zkinOut.publics[0+i] = zkin1.publics[0+i];  // oldStateRoot
-
-    // for (let i=0; i<8; i++) zkinOut.publics[8+i] = zkin1.publics[8+i];  // oldAccInputHash0
-
-    // zkinOut.publics[16] = zkin1.publics[16];  // oldBatchNum
-
-    // zkinOut.publics[17] = zkin1.publics[17];  // chainId
-
-    // zkinOut.publics[18] = zkin1.publics[18];  // forkID
-
-    // if (zkin1.publics[17] != (zkin2.publics[17])) throw new Error("chainID doesn't match");
-
-    // if (zkin1.publics[18] != (zkin2.publics[18])) throw new Error("forkID doesn't match");
-    // // midStateRoot
-    // for (let i=0; i<8; i++) {
-    //     if (zkin1.publics[19 + i] != (zkin2.publics[0 + i])) throw new Error("midStateRoot doesnt't match");
-    // }
-    // // midAccInputHash0
-    // for (let i=0; i<8; i++) {
-    //     if (zkin1.publics[27 + i] != (zkin2.publics[8 + i])) throw new Error("midAccInputHash0 doesnt't match");
-    // }
-    // if (zkin1.publics[43] != (zkin2.publics[16])) throw new Error("batchNum doesn't match");
-
-    // for (let i=0; i<8; i++) zkinOut.publics[19+i] = zkin2.publics[19+i];  // newStateRoot
-    // for (let i=0; i<8; i++) zkinOut.publics[27+i] = zkin2.publics[27+i];  // newAccInputHash0
-    // for (let i=0; i<8; i++) zkinOut.publics[35+i] = zkin2.publics[35+i];  // newLocalExitRoot
-
-    // zkinOut.publics[43] = zkin2.publics[43];  // oldBatchNum
 
     zkinOut.a_publics = zkin1.publics;
     zkinOut.a_rootC = zkin1.rootC;
@@ -114,12 +78,7 @@ async function run() {
     zkinOut.b_s3_vals = zkin2.s3_vals;
     zkinOut.b_s4_vals = zkin2.s4_vals;
     zkinOut.b_finalPol = zkin2.finalPol;
-
-    // zkinOut.rootC = [];
-    // for (let i=0; i<4; i++) {
-    //     zkinOut.rootC[i] = constRoot[i].toString();
-    // }
-
+    
     await fs.promises.writeFile(zkinOutFile, JSON.stringify(zkinOut, null, 1), "utf8");
 
     console.log("file Generated Correctly");
