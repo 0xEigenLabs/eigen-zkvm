@@ -10,7 +10,7 @@ POWER=22
 BIG_POWER=27
 SRS=${CUR_DIR}/../keys/setup_2^${POWER}.ptau
 BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
-BIG_SRS_FINAL=${CUR_DIR}/../keys/setup_2^${BIG_POWER}_final.ptau
+BIG_SRS_FINAL=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
 
 CIRCUIT_NAME=fibonacci.final
 
@@ -37,8 +37,8 @@ if [ "$1" = "groth16" ]; then
     fi
     
     echo ">>> groth16 scheme <<< "
-    echo "1. groth16 setup"
-    snarkjs g16s $WORK_DIR/$CIRCUIT_NAME.r1cs $SRS  $WORK_DIR/g16.zkey
+    # echo "1. groth16 setup"
+    # snarkjs g16s $WORK_DIR/$CIRCUIT_NAME.r1cs $SRS  $WORK_DIR/g16.zkey
 
     echo "2. groth16 fullprove"
     snarkjs g16f $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/g16.zkey $WORK_DIR/proof.json $WORK_DIR/public.json
@@ -66,7 +66,7 @@ else
     echo ">>> fflonk scheme <<< "
     echo "1. fflonk setup "
     echo "$BIG_SRS"
-    snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey
+    nohup snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey &
 
     echo "2. fflonk fullprove"
     snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS_FINAL  $WORK_DIR/fflonk.zkey
