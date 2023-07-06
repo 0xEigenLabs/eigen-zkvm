@@ -36,7 +36,7 @@ echo "1. compile circuit"
 ${ZKIT} compile -i ${CIRCUIT}.circom --O2=full -o $WORKSPACE
 
 echo "2. export verification key"
-${ZKIT} export_verification_key -s ${SRS} -c $WORKSPACE/${CIRCUIT}.r1cs -v $WORKSPACE/vk.bin
+${ZKIT} export_verification_key -s ${SRS} -c $WORKSPACE/${CIRCUIT}.r1cs --v $WORKSPACE/vk.bin
 
 echo "3. generate each proof"
 for wtns in `ls $CUR_DIR/aggregation/input`
@@ -45,7 +45,7 @@ do
     ${ZKIT} calculate_witness -i $input/input.json \
         -w ${WORKSPACE}/${CIRCUIT}_js/${CIRCUIT}.wasm \
         -o $WORKSPACE/witness.wtns
-    ${ZKIT} prove -c $WORKSPACE/${CIRCUIT}.r1cs -w $input/witness.wtns -b $input/proof.bin -s ${SRS} -j $input/proof.json -t rescue
+    ${ZKIT} prove -c $WORKSPACE/${CIRCUIT}.r1cs -w $input/witness.wtns --b $input/proof.bin -s ${SRS} --j $input/proof.json -t rescue
     ${ZKIT} verify -p $input/proof.bin -v $WORKSPACE/vk.bin -t rescue
 done
 
@@ -64,7 +64,7 @@ done
 cat $OLD_PROOF_LIST
 
 echo "5. export aggregation vk"
-${ZKIT} export_aggregation_verification_key -c $i -i ${NUM_INPUTS} -s ${BIG_SRS} -v $WORKSPACE/aggregation_vk.bin
+${ZKIT} export_aggregation_verification_key --c $i --i ${NUM_INPUTS} -s ${BIG_SRS} --v $WORKSPACE/aggregation_vk.bin
 
 echo "6. generate aggregation proof"
 ${ZKIT} aggregation_prove -s ${BIG_SRS} -f $OLD_PROOF_LIST  -v $WORKSPACE/vk.bin -n $WORKSPACE/aggregation_proof.bin  -j $WORKSPACE/aggregation_proof.json
