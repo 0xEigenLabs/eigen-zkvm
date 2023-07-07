@@ -68,30 +68,18 @@ impl Transcript {
             while self.pending.len() < 8 {
                 self.pending.push(String::from("0"));
             }
-            self.code
-                .push(format!("component tcHahs_{} = Poseidon(12);", self.h_cnt));
+            self.code.push(format!(
+                "signal tcHahs_{}[12] <==  Poseidon(12)([{}], [{}]);",
+                self.h_cnt,
+                self.pending.join(","),
+                self.state.join(",")
+            ));
             self.h_cnt += 1;
-
-            for i in 0..8 {
-                self.code.push(format!(
-                    "tcHahs_{}.in[{}] <== {};",
-                    self.h_cnt - 1,
-                    i,
-                    self.pending[i]
-                ));
-            }
             for i in 0..12 {
-                self.out
-                    .push(format!("tcHahs_{}.out[{}]", self.h_cnt - 1, i));
+                self.out.push(format!("tcHahs_{}[{}]", self.h_cnt - 1, i));
             }
             for i in 0..4 {
-                self.code.push(format!(
-                    "tcHahs_{}.capacity[{}] <== {};",
-                    self.h_cnt - 1,
-                    i,
-                    self.state[i]
-                ));
-                self.state[i] = format!("tcHahs_{}.out[{}]", self.h_cnt - 1, i);
+                self.state[i] = format!("tcHahs_{}[{}]", self.h_cnt - 1, i);
             }
             self.pending = vec![];
         }
@@ -114,30 +102,19 @@ impl Transcript {
         self.out = vec![];
         self.pending.push(a.to_string());
         if self.pending.len() == 8 {
-            self.code
-                .push(format!("component tcHahs_{} = Poseidon(12);", self.h_cnt));
+            self.code.push(format!(
+                "signal tcHahs_{}[12] <== Poseidon(12)([{}], [{}]);",
+                self.h_cnt,
+                self.pending.join(","),
+                self.state.join(",")
+            ));
             self.h_cnt += 1;
-            for i in 0..8 {
-                self.code.push(format!(
-                    "tcHahs_{}.in[{}] <== {};",
-                    self.h_cnt - 1,
-                    i,
-                    self.pending[i]
-                ));
-            }
             self.out = vec![];
             for i in 0..12 {
-                self.out
-                    .push(format!("tcHahs_{}.out[{}]", self.h_cnt - 1, i));
+                self.out.push(format!("tcHahs_{}[{}]", self.h_cnt - 1, i));
             }
             for i in 0..4 {
-                self.code.push(format!(
-                    "tcHahs_{}.capacity[{}] <== {};",
-                    self.h_cnt - 1,
-                    i,
-                    self.state[i]
-                ));
-                self.state[i] = format!("tcHahs_{}.out[{}]", self.h_cnt - 1, i);
+                self.state[i] = format!("tcHahs_{}[{}]", self.h_cnt - 1, i);
             }
             self.pending = vec![];
         }

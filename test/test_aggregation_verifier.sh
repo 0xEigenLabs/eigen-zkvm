@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 
 ## build
 cargo build --release
