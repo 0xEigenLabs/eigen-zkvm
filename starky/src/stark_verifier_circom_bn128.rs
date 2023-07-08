@@ -567,6 +567,40 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                 } else {
                     panic!("Invalid src dimensions");
                 }
+            },
+            "muladd" => {
+                if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
+                    let cmpName = format!("muladd_{}", tmpNameId);
+                    tmpNameId += 1;
+                    str_code.push_str(&format!(
+                            r#"
+                            component {} = GLMulAdd();
+                            {}.ina <== {};
+                            {}.inb <== {};"#,
+                            cmpName, cmpName, cmpName, ref_(&inst.src[0]), ref_(&inst.src[1])
+                    ));
+                    if inst.src[2].dim == 1 {
+                        str_code.push_str(&format!(r#"
+                        {}.inc <== {};
+                        {} <== {}.out;
+                        "#, cmpName, ref_(&inst.src[2]), ref_(&inst.dest), cmpName
+                        ));
+                    } else {
+                        str_code.push_str(&format!(r#"
+                        {}.inc <== {}[0];
+                        {} <== {}.out;
+                        {} <== {}[1];
+                        {} <== {}[2];
+                       "#,
+                       cmpName, ref_(&inst.src[2]),
+                       ref_(&inst.dest), ref_(&inst.src[2]),
+                       ref_(&inst.dest), ref_(&inst.src[2]),
+                       ref_(&inst.dest), ref_(&inst.src[2])
+                       ));
+                    }
+                } else {
+                    let
+                }
             }
             _ => panic!("Invalid op"),
         }
