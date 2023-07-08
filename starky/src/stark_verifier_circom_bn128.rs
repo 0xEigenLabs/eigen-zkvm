@@ -599,7 +599,52 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                        ));
                     }
                 } else {
-                    let
+                    let cmpName = format!("cmuladd_{}", tmpNameId);
+                    tmpNameId += 1;
+                    str_code.push_str(&format!(r#"
+                    component {} = GLCMulAdd();
+                    "#, cmpName));
+                    if inst.src[0].dim == 1 {
+                        str_code.push_str(&format!(r#"
+                        {}.ina[0] <== {};
+                        {}.ina[1] <== 0;
+                        {}.ina[2] <== 0;
+                        "#, cmpName, ref_(&inst.src[0]), cmpName, cmpName));
+                    } else {
+                        str_code.push_str(&format!(r#"
+                        {}.ina[0] <== {}[0];
+                        {}.ina[1] <== {}[1];
+                        {}.ina[2] <== {}[2];
+                        "#, cmpName, ref_(&inst.src[0]), cmpName, ref_(&inst.src[0]), cmpName, ref_(&inst.src[0])));
+                    }
+
+                    if inst.src[1].dim == 1 {
+                        str_code.push_str(&format!(r#"
+                        {}.inb[0] <== {};
+                        {}.inb[1] <== 0;
+                        {}.inb[2] <== 0;
+                        "#, cmpName, ref_(&inst.src[1]), cmpName, cmpName));
+                    } else {
+                        str_code.push_str(&format!(r#"
+                        {}.inb[0] <== {}[0];
+                        {}.inb[1] <== {}[1];
+                        {}.inb[2] <== {}[2];
+                        "#, cmpName, ref_(&inst.src[1]), cmpName, ref_(&inst.src[1]), cmpName, ref_(&inst.src[1])));
+                    }
+
+                    if inst.src[2].dim == 1 {
+                        str_code.push_str(&format!(r#"
+                        {}.inc[0] <== {};
+                        {}.inc[1] <== 0;
+                        {}.inc[2] <== 0;
+                        "#, cmpName, ref_(&inst.src[0]), cmpName, cmpName));
+                    } else {
+                        str_code.push_str(&format!(r#"
+                        {}.inc[0] <== {}[0];
+                        {}.inc[1] <== {}[1];
+                        {}.inc[2] <== {}[2];
+                        "#, cmpName, ref_(&inst.src[2]), cmpName, ref_(&inst.src[2]), cmpName, ref_(&inst.src[2])));
+                    }
                 }
             }
             _ => panic!("Invalid op"),
