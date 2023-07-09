@@ -439,12 +439,6 @@ impl StarkInfo {
                     );
                     new_dim = std::cmp::max(tmp, self.get_dim(&mut c.src[2], tmp_dim, dim_x));
                 }
-                "muladd" => {
-                    new_dim = std::cmp::max(
-                        self.get_dim(&mut c.src[0], tmp_dim, dim_x),
-                        self.get_dim(&mut c.src[1], tmp_dim, dim_x), // FIXME
-                    );
-                }
                 "copy" => {
                     new_dim = self.get_dim(&mut c.src[0], tmp_dim, dim_x);
                 }
