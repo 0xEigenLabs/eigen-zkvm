@@ -185,8 +185,8 @@ impl StarkInfo {
                 line: 0,
                 fileName: "".to_string(),
             });
-            pil_code_gen(ctx, pil, pu_ctx.num_id, false, "", 0)?;
-            pil_code_gen(ctx, pil, pu_ctx.den_id, false, "", 0)?;
+            pil_code_gen(ctx, pil, pu_ctx.num_id, false, "", 0, false)?;
+            pil_code_gen(ctx, pil, pu_ctx.den_id, false, "", 0, false)?;
         }
         Ok(())
     }
@@ -262,9 +262,8 @@ impl StarkInfo {
                 fileName: "".to_string(),
             });
 
-            pil_code_gen(ctx, pil, self.pe_ctx[i].num_id.clone(), false, "", 0)?;
-
-            pil_code_gen(ctx, pil, self.pe_ctx[i].den_id.clone(), false, "", 0)?;
+            pil_code_gen(ctx, pil, self.pe_ctx[i].num_id.clone(), false, "", 0, false)?;
+            pil_code_gen(ctx, pil, self.pe_ctx[i].den_id.clone(), false, "", 0, false)?;
         }
         Ok(())
     }
@@ -399,8 +398,8 @@ impl StarkInfo {
                 fileName: "".to_string(),
             });
 
-            pil_code_gen(ctx, pil, ci_ctx.num_id.clone(), false, "", 0)?;
-            pil_code_gen(ctx, pil, ci_ctx.den_id.clone(), false, "", 0)?;
+            pil_code_gen(ctx, pil, ci_ctx.num_id.clone(), false, "", 0, false)?;
+            pil_code_gen(ctx, pil, ci_ctx.den_id.clone(), false, "", 0, false)?;
             self.ci_ctx.push(ci_ctx);
         }
         Ok(())

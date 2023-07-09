@@ -144,7 +144,7 @@ impl StarkInfo {
             self.cm_2ns.push(ppz_2ns.clone());
             self.map_sections.cm3_n.push(ppz_n);
             self.map_sections.cm3_2ns.push(ppz_2ns);
-            pil.cm_dims[(self.n_cm1 + self.n_cm2 + i)] = 3;
+            pil.cm_dims[self.n_cm1 + self.n_cm2 + i] = 3;
 
             if im_exps_none(&o.num_id) {
                 if tmpexps.get(&o.num_id).is_none() {
@@ -200,7 +200,7 @@ impl StarkInfo {
             self.cm_2ns.push(ppz_2ns);
             self.map_sections.cm3_n.push(ppz_n);
             self.map_sections.cm3_2ns.push(ppz_2ns);
-            pil.cm_dims[(self.n_cm1 + self.n_cm2 + i)] = dim;
+            pil.cm_dims[self.n_cm1 + self.n_cm2 + i] = dim;
             self.exp2pol.insert(self.im_exps_list[i], ppz_n);
             log::debug!("5 exp2pol {:?}", self.exp2pol)
         }
@@ -226,7 +226,7 @@ impl StarkInfo {
             self.cm_2ns.push(ppz_2ns);
             self.map_sections.cm4_n.push(ppz_n);
             self.map_sections.cm4_2ns.push(ppz_2ns);
-            pil.cm_dims[(self.n_cm1 + self.n_cm2 + self.n_cm3 + i)] = self.q_dim;
+            pil.cm_dims[self.n_cm1 + self.n_cm2 + self.n_cm3 + i] = self.q_dim;
         }
 
         let ppq_2ns = add_pol(PolType {
@@ -254,8 +254,8 @@ impl StarkInfo {
         self.map_offsets.cm1_n = 0;
         self.map_offsets.cm2_n = self.map_offsets.cm1_n + N * self.map_sectionsN.cm1_n;
         self.map_offsets.cm3_n = self.map_offsets.cm2_n + N * self.map_sectionsN.cm2_n;
-        //self.map_offsets.cm4_n = self.map_offsets.cm3_n + N * self.map_sectionsN.cm3_n;
-        self.map_offsets.tmpexp_n = self.map_offsets.cm3_n + N * self.map_sectionsN.cm3_n;
+        self.map_offsets.cm4_n = self.map_offsets.cm3_n + N * self.map_sectionsN.cm3_n;
+        self.map_offsets.tmpexp_n = self.map_offsets.cm4_n + N * self.map_sectionsN.cm4_n;
         self.map_offsets.cm1_2ns = self.map_offsets.tmpexp_n + N * self.map_sectionsN.tmpexp_n;
         self.map_offsets.cm2_2ns = self.map_offsets.cm1_2ns + Next * self.map_sectionsN.cm1_2ns;
         self.map_offsets.cm3_2ns = self.map_offsets.cm2_2ns + Next * self.map_sectionsN.cm2_2ns;
@@ -267,7 +267,7 @@ impl StarkInfo {
             cm1_n: N,
             cm2_n: N,
             cm3_n: N,
-            cm4_n: 0, // FIXME
+            cm4_n: N,
             tmpexp_n: N,
             cm1_2ns: Next,
             cm2_2ns: Next,
@@ -432,6 +432,19 @@ impl StarkInfo {
                         self.get_dim(&mut c.src[1], tmp_dim, dim_x),
                     );
                 }
+                "muladd" => {
+                    let tmp = std::cmp::max(
+                        self.get_dim(&mut c.src[0], tmp_dim, dim_x),
+                        self.get_dim(&mut c.src[1], tmp_dim, dim_x),
+                    );
+                    new_dim = std::cmp::max(tmp, self.get_dim(&mut c.src[2], tmp_dim, dim_x));
+                }
+                "muladd" => {
+                    new_dim = std::cmp::max(
+                        self.get_dim(&mut c.src[0], tmp_dim, dim_x),
+                        self.get_dim(&mut c.src[1], tmp_dim, dim_x), // FIXME
+                    );
+                }
                 "copy" => {
                     new_dim = self.get_dim(&mut c.src[0], tmp_dim, dim_x);
                 }
@@ -557,7 +570,7 @@ impl StarkInfo {
 
     pub fn get_exp_dim(pil: &PIL, exp: &Expression) -> usize {
         match exp.op.as_str() {
-            "add" | "sub" | "mul" | "addc" | "mulc" | "neg" => {
+            "add" | "sub" | "mul" | "muladd" | "addc" | "mulc" | "neg" => {
                 let mut md = 1;
                 let values = exp.values.as_ref().unwrap();
                 for v in values.iter() {

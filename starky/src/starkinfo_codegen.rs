@@ -282,6 +282,7 @@ pub fn pil_code_gen(
     prime: bool,
     res_type: &str,
     res_id: usize,
+    muladd: bool,
 ) -> Result<()> {
     log::debug!(
         "pil_code_gen: {} {}, {} {}",
@@ -310,7 +311,7 @@ pub fn pil_code_gen(
     }
 
     let exp = pil.expressions[exp_id].clone();
-    calculate_deps(ctx, pil, &exp, prime, exp_id)?;
+    calculate_deps(ctx, pil, &exp, prime, exp_id, muladd)?;
 
     let mut code_ctx = ContextC {
         exp_id: exp_id,
@@ -318,7 +319,11 @@ pub fn pil_code_gen(
         code: Vec::new(),
     };
     let exp = pil.expressions[exp_id].clone();
-    let ret_ref = eval_exp(&mut code_ctx, pil, &exp, prime)?;
+    let _exp = match muladd {
+        true => find_muladd(&exp),
+        _ => exp,
+    };
+    let ret_ref = eval_exp(&mut code_ctx, pil, &_exp, prime)?;
     if ret_ref.type_.as_str() == "tmp" {
         let sz = code_ctx.code.len() - 1;
         code_ctx.code[sz].dest = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
@@ -359,6 +364,34 @@ pub fn pil_code_gen(
     }
     log::debug!("ctx.calculated: {:?}", ctx.calculated);
     Ok(())
+}
+
+fn find_muladd(exp: &Expression) -> Expression {
+    if exp.values.is_some() {
+        let values = exp.values.as_ref().unwrap();
+        if exp.op.as_str() == "add" && values[0].op.as_str() == "mul" {
+            let value_of_values = values[0].values.as_ref().unwrap();
+            let a = find_muladd(&value_of_values[0]);
+            let b = find_muladd(&value_of_values[1]);
+            let c = find_muladd(&values[1]);
+            return Expression::new("muladd".to_string(), 0, None, None, Some(vec![a, b, c]));
+        } else if exp.op.as_str() == "add" && values[1].op.as_str() == "mul" {
+            let value_of_values = values[1].values.as_ref().unwrap();
+            let a = find_muladd(&value_of_values[0]);
+            let b = find_muladd(&value_of_values[1]);
+            let c = find_muladd(&values[0]);
+            return Expression::new("muladd".to_string(), 0, None, None, Some(vec![a, b, c]));
+        } else {
+            let mut r = exp.clone();
+            let mut mut_values: Vec<Expression> = Vec::new();
+            for i in 0..values.len() {
+                mut_values.push(find_muladd(&values[i]))
+            }
+            r.values = Some(mut_values);
+            return r;
+        }
+    }
+    exp.clone()
 }
 
 pub fn eval_exp(
@@ -412,6 +445,20 @@ pub fn eval_exp(
                 op: "mul".to_string(),
                 dest: r.clone(),
                 src: vec![a, b],
+            };
+            code_ctx.code.push(c);
+            Ok(r)
+        }
+        "muladd" => {
+            let a = eval_exp(code_ctx, pil, &values[0], prime)?;
+            let b = eval_exp(code_ctx, pil, &values[1], prime)?;
+            let c = eval_exp(code_ctx, pil, &values[2], prime)?;
+            let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
+            code_ctx.tmp_used += 1;
+            let c = Section {
+                op: "mul".to_string(),
+                dest: r.clone(),
+                src: vec![a, b, c],
             };
             code_ctx.code.push(c);
             Ok(r)
@@ -569,6 +616,7 @@ pub fn calculate_deps(
     expr: &Expression,
     prime: bool,
     exp_id: usize,
+    muladd: bool,
 ) -> Result<()> {
     //log::debug!("calculate_deps: {}", expr);
     if expr.op == "exp" {
@@ -576,11 +624,11 @@ pub fn calculate_deps(
         if prime && expr.next() {
             expression_error(pil, "Double prime".to_string(), exp_id, id)?;
         }
-        pil_code_gen(ctx, pil, id, prime || expr.next(), "", 0)?;
+        pil_code_gen(ctx, pil, id, prime || expr.next(), "", 0, muladd)?;
     }
     if expr.values.is_some() {
         for e in expr.values.as_ref().unwrap().iter() {
-            calculate_deps(ctx, pil, e, prime, exp_id)?;
+            calculate_deps(ctx, pil, e, prime, exp_id, muladd)?;
         }
     }
     Ok(())

@@ -316,7 +316,7 @@ impl StarkInfo {
             verifier_query_code: Segment::default(),
         };
 
-        info.generate_pubulic_calculators(pil, &mut program)?;
+        info.generate_public_calculators(pil, &mut program)?;
         info.n_cm1 = pil.nCommitments;
 
         let mut ctx = Context {
@@ -380,14 +380,14 @@ impl StarkInfo {
         Ok((info, program))
     }
 
-    pub fn generate_pubulic_calculators(
+    pub fn generate_public_calculators(
         &mut self,
         pil: &mut PIL,
         program: &mut Program,
     ) -> Result<()> {
         let publics = pil.publics.clone();
         log::debug!(
-            "generate_pubulic_calculators: publics as input: {:?}",
+            "generate_public_calculators: publics as input: {:?}",
             publics
         );
         for p in publics.iter() {
@@ -398,7 +398,7 @@ impl StarkInfo {
                     calculated: HashMap::new(),
                     exp_id: 0,
                 };
-                pil_code_gen(&mut ctx, pil, p.polId, false, "", 0)?;
+                pil_code_gen(&mut ctx, pil, p.polId, false, "", 0, false)?;
                 let mut segment = build_code(&mut ctx, pil);
 
                 let mut ctx_f = ContextF {
@@ -425,7 +425,7 @@ impl StarkInfo {
 
                 segment.tmp_used = ctx_f.tmp_used;
                 program.publics_code.push(segment);
-                //log::debug!("generate_pubulic_calculators: publics_code: {}", program.publics_code.len());
+                //log::debug!("generate_public_calculators: publics_code: {}", program.publics_code.len());
                 //    log::debug!("{}", pp);
                 //}
                 ctx.calculated.clear(); // TODO: useless
@@ -490,8 +490,8 @@ impl StarkInfo {
             f_exp.keep = Some(true);
             pil.expressions.push(f_exp);
 
-            pil_code_gen(ctx, pil, f_exp_id, false, "", 0)?;
-            pil_code_gen(ctx, pil, t_exp_id, false, "", 0)?;
+            pil_code_gen(ctx, pil, f_exp_id, false, "", 0, false)?;
+            pil_code_gen(ctx, pil, t_exp_id, false, "", 0, false)?;
 
             let h1_id = pil.nCommitments;
             pil.nCommitments += 1;

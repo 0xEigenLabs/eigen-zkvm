@@ -12,7 +12,7 @@ impl StarkInfo {
         program: &mut Program,
     ) -> Result<()> {
         log::debug!("cp ver begin ctx {:?}, c_exp: {}", ctx, self.c_exp);
-        pil_code_gen(ctx, pil, self.c_exp, false, "", 0)?;
+        pil_code_gen(ctx, pil, self.c_exp, false, "", 0, true)?;
 
         log::debug!("cp ver buildcode ctx begin {:?}", ctx);
         let mut code = build_code(ctx, pil);

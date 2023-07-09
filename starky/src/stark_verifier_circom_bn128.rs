@@ -567,83 +567,121 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                 } else {
                     panic!("Invalid src dimensions");
                 }
-            },
+            }
             "muladd" => {
                 if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
                     let cmpName = format!("muladd_{}", tmpNameId);
                     tmpNameId += 1;
-                    str_code.push_str(&format!(
-                            r#"
-                            component {} = GLMulAdd();
-                            {}.ina <== {};
-                            {}.inb <== {};"#,
-                            cmpName, cmpName, cmpName, ref_(&inst.src[0]), ref_(&inst.src[1])
-                    ));
                     if inst.src[2].dim == 1 {
-                        str_code.push_str(&format!(r#"
-                        {}.inc <== {};
-                        {} <== {}.out;
-                        "#, cmpName, ref_(&inst.src[2]), ref_(&inst.dest), cmpName
+                        str_code.push_str(&format!(
+                            r#"signal {} <== GLMulAdd()({}, {}, {});"#,
+                            ref_(&inst.dest),
+                            ref_(&inst.src[0]),
+                            ref_(&inst.src[1]),
+                            ref_(&inst.src[2])
                         ));
                     } else {
-                        str_code.push_str(&format!(r#"
-                        {}.inc <== {}[0];
-                        {} <== {}.out;
-                        {} <== {}[1];
-                        {} <== {}[2];
-                       "#,
-                       cmpName, ref_(&inst.src[2]),
-                       ref_(&inst.dest), ref_(&inst.src[2]),
-                       ref_(&inst.dest), ref_(&inst.src[2]),
-                       ref_(&inst.dest), ref_(&inst.src[2])
-                       ));
+                        str_code.push_str(&format!(
+                            r#"signal {}[3] <== GLMulAdd()({}, {}, {}[0], {}[1], {}[2]);"#,
+                            ref_(&inst.dest),
+                            ref_(&inst.src[0]),
+                            ref_(&inst.src[1]),
+                            ref_(&inst.src[2]),
+                            ref_(&inst.src[2]),
+                            ref_(&inst.src[2])
+                        ));
                     }
                 } else {
                     let cmpName = format!("cmuladd_{}", tmpNameId);
                     tmpNameId += 1;
-                    str_code.push_str(&format!(r#"
+                    str_code.push_str(&format!(
+                        r#"
                     component {} = GLCMulAdd();
-                    "#, cmpName));
+                    "#,
+                        cmpName
+                    ));
                     if inst.src[0].dim == 1 {
-                        str_code.push_str(&format!(r#"
+                        str_code.push_str(&format!(
+                            r#"
                         {}.ina[0] <== {};
                         {}.ina[1] <== 0;
                         {}.ina[2] <== 0;
-                        "#, cmpName, ref_(&inst.src[0]), cmpName, cmpName));
+                        "#,
+                            cmpName,
+                            ref_(&inst.src[0]),
+                            cmpName,
+                            cmpName
+                        ));
                     } else {
-                        str_code.push_str(&format!(r#"
+                        str_code.push_str(&format!(
+                            r#"
                         {}.ina[0] <== {}[0];
                         {}.ina[1] <== {}[1];
                         {}.ina[2] <== {}[2];
-                        "#, cmpName, ref_(&inst.src[0]), cmpName, ref_(&inst.src[0]), cmpName, ref_(&inst.src[0])));
+                        "#,
+                            cmpName,
+                            ref_(&inst.src[0]),
+                            cmpName,
+                            ref_(&inst.src[0]),
+                            cmpName,
+                            ref_(&inst.src[0])
+                        ));
                     }
 
                     if inst.src[1].dim == 1 {
-                        str_code.push_str(&format!(r#"
+                        str_code.push_str(&format!(
+                            r#"
                         {}.inb[0] <== {};
                         {}.inb[1] <== 0;
                         {}.inb[2] <== 0;
-                        "#, cmpName, ref_(&inst.src[1]), cmpName, cmpName));
+                        "#,
+                            cmpName,
+                            ref_(&inst.src[1]),
+                            cmpName,
+                            cmpName
+                        ));
                     } else {
-                        str_code.push_str(&format!(r#"
+                        str_code.push_str(&format!(
+                            r#"
                         {}.inb[0] <== {}[0];
                         {}.inb[1] <== {}[1];
                         {}.inb[2] <== {}[2];
-                        "#, cmpName, ref_(&inst.src[1]), cmpName, ref_(&inst.src[1]), cmpName, ref_(&inst.src[1])));
+                        "#,
+                            cmpName,
+                            ref_(&inst.src[1]),
+                            cmpName,
+                            ref_(&inst.src[1]),
+                            cmpName,
+                            ref_(&inst.src[1])
+                        ));
                     }
 
                     if inst.src[2].dim == 1 {
-                        str_code.push_str(&format!(r#"
+                        str_code.push_str(&format!(
+                            r#"
                         {}.inc[0] <== {};
                         {}.inc[1] <== 0;
                         {}.inc[2] <== 0;
-                        "#, cmpName, ref_(&inst.src[0]), cmpName, cmpName));
+                        "#,
+                            cmpName,
+                            ref_(&inst.src[0]),
+                            cmpName,
+                            cmpName
+                        ));
                     } else {
-                        str_code.push_str(&format!(r#"
+                        str_code.push_str(&format!(
+                            r#"
                         {}.inc[0] <== {}[0];
                         {}.inc[1] <== {}[1];
                         {}.inc[2] <== {}[2];
-                        "#, cmpName, ref_(&inst.src[2]), cmpName, ref_(&inst.src[2]), cmpName, ref_(&inst.src[2])));
+                        "#,
+                            cmpName,
+                            ref_(&inst.src[2]),
+                            cmpName,
+                            ref_(&inst.src[2]),
+                            cmpName,
+                            ref_(&inst.src[2])
+                        ));
                     }
                 }
             }
@@ -774,7 +812,7 @@ template VerifyEvaluations() {{
 fn verify_query(starkinfo: &StarkInfo, program: &Program, stark_struct: &StarkStruct) -> String {
     let mut res = format!(
         r#"
-template VerifyQuery() {{
+template parallel VerifyQuery() {{
     signal input ys[{}];
     signal input challenges[8][3];
     signal input evals[{}][3];
@@ -1492,30 +1530,6 @@ template StarkVerifier() {{
                 s0_merkleC[q].siblings[i][j] <== s0_siblingsC[q][i][j];
             }}
         }}
-
-        enable * (s0_merkle1[q].root - root1) === 0;
-        "#
-    ));
-
-    if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
-        res.push_str(&format!(
-            r#"
-            enable * (s0_merkle2[q].root - root2) === 0;
-        "#
-        ));
-    }
-    if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
-        res.push_str(&format!(
-            r#"
-            enable * (s0_merkle3[q].root - root3) === 0;
-        "#
-        ));
-    }
-
-    res.push_str(&format!(
-        r#"
-            enable * (s0_merkle4[q].root - root4) === 0;
-            enable * (s0_merkleC[q].root - rootC) === 0;
         "#
     ));
 
@@ -1551,15 +1565,6 @@ template StarkVerifier() {{
             stark_struct.steps[0].nBits
         ));
     }
-
-    res.push_str(&format!(
-        r#"
-        for (var e=0; e<3; e++) {{
-            enable * (s0_lowValues[q].out[e] - verifyQueries[q].out[e]) === 0;
-        }}
-    }}
-        "#
-    ));
 
     for s in 1..stark_struct.steps.len() {
         res.push_str(&format!(
@@ -1783,14 +1788,54 @@ template StarkVerifier() {{
         for (var e=0; e<3; e++) {{
             s{}_cNorm[q].in[e] <== s{}_evalPol[q].out[e] - s{}_lowValues[q].out[e] + p;
         }}
+    }}
+}}
+        /// Checks
+for (var q=0; q < {}; q ++) {{
+    enable * (s0_merkle1[q].root - root1) === 0;
+}}
+        "#,
+            s, s, s, s, stark_struct.nQueries
+        ));
+    }
+
+    if starkinfo.map_sectionsN.cm2_2ns > 0 {
+        res.push_str(&format!(
+            r#"
+    enable * (s0_merkle2[q].root - root2) === 0;
+                "#
+        ));
+    }
+
+    if starkinfo.map_sectionsN.cm3_2ns > 0 {
+        res.push_str(&format!(
+            r#"
+        enable * (s0_merkle3[q].root - root3) === 0;
+                    "#
+        ));
+    }
+
+    res.push_str(&format!(
+        r#"
+        enable * (s0_merkle4[q].root - root4) === 0;
+        enable * (s0_merkleC[q].root - rootC) === 0;
+        for (var e=0; e<3; e++) {{
+            enable * (s0_lowValues[q].out[e] - verifyQueries[q].out[e]) === 0;
+        }}
+    }}"#,
+    ));
+
+    for s in 1..stark_struct.steps.len() {
+        res.push_str(&format!(
+            r#"
+    for (var q = 0; q < {}; q ++) {{
         for (var e=0; e<3; e++) {{
             enable * s{}_cNorm[q].out[e] === 0;
         }}
-
         enable * (s{}_merkle[q].root - s{}_root) === 0;
     }}
         "#,
-            s, s, s, s, s, s, s
+            stark_struct.nQueries, s, s, s
         ));
     }
 

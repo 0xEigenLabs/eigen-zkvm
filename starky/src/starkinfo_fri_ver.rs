@@ -10,7 +10,7 @@ impl StarkInfo {
         pil: &mut PIL,
         program: &mut Program,
     ) -> Result<()> {
-        pil_code_gen(ctx, pil, self.fri_exp_id, false, "", 0)?;
+        pil_code_gen(ctx, pil, self.fri_exp_id, false, "", 0, true)?;
 
         let code = build_code(ctx, pil);
         self.n_exps = pil.expressions.len();

@@ -207,7 +207,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ctx.publics = vec![F3G::ZERO; starkinfo.publics.len()];
         for (i, pe) in starkinfo.publics.iter().enumerate() {
             if pe.polType.as_str() == "cmP" {
-                ctx.publics[i] = ctx.cm1_n[(pe.idx * starkinfo.map_sectionsN.cm1_n + pe.polId)];
+                ctx.publics[i] = ctx.cm1_n[pe.idx * starkinfo.map_sectionsN.cm1_n + pe.polId];
             } else if pe.polType.as_str() == "imP" {
                 ctx.publics[i] = Self::calculate_exp_at_point(
                     &mut ctx,
@@ -416,9 +416,9 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                     let v = match p.dim {
                         1 => p.buffer[(k << extendBits) * (p.size) + (p.offset)],
                         _ => F3G::new(
-                            p.buffer[(p.offset + (k << extendBits) * (p.size))].to_be(),
-                            p.buffer[(p.offset + (k << extendBits) * (p.size)) + 1].to_be(),
-                            p.buffer[(p.offset + (k << extendBits) * (p.size)) + 2].to_be(),
+                            p.buffer[p.offset + (k << extendBits) * (p.size)].to_be(),
+                            p.buffer[p.offset + (k << extendBits) * (p.size) + 1].to_be(),
+                            p.buffer[p.offset + (k << extendBits) * (p.size) + 2].to_be(),
                         ),
                     };
                     v * l[k]
@@ -554,7 +554,7 @@ fn set_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: &usize, pol: V
     let p = get_pol_ref(ctx, starkinfo, id_pol);
     if p.dim == 1 {
         for i in 0..p.deg {
-            p.buffer[(p.offset + i * p.size)] = pol[i];
+            p.buffer[p.offset + i * p.size] = pol[i];
         }
     } else if p.dim == 3 {
         for i in 0..p.deg {
@@ -633,14 +633,14 @@ pub fn get_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: usize) -> 
     let mut res = vec![F3G::ZERO; p.deg];
     if p.dim == 1 {
         for i in 0..p.deg {
-            res[i] = p.buffer[(p.offset + i * p.size)];
+            res[i] = p.buffer[p.offset + i * p.size];
         }
     } else if p.dim == 3 {
         for i in 0..p.deg {
             res[i] = F3G::new(
-                p.buffer[(p.offset + i * p.size)].to_be(),
-                p.buffer[(p.offset + i * p.size) + 1].to_be(),
-                p.buffer[(p.offset + i * p.size) + 2].to_be(),
+                p.buffer[p.offset + i * p.size].to_be(),
+                p.buffer[p.offset + i * p.size + 1].to_be(),
+                p.buffer[p.offset + i * p.size + 2].to_be(),
             );
         }
     } else {

@@ -84,7 +84,7 @@ impl StarkInfo {
         }
         pil.expressions.push(fri_exp);
 
-        pil_code_gen(ctx, pil, self.fri_exp_id, false, "f", 0)?;
+        pil_code_gen(ctx, pil, self.fri_exp_id, false, "f", 0, false)?;
         let sz = ctx.code.len() - 1;
         let code = &mut ctx.code[sz].code;
         let sz = code.len() - 1;

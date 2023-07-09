@@ -32,21 +32,21 @@ impl StarkInfo {
                 c_exp = e;
             }
         }
-        let (im_exps, q_deg) = calculate_im_pols(
-            pil,
-            &c_exp,
-            (1 << (stark_struct.nBitsExt - stark_struct.nBits)) + 1,
-        )?;
-
-        if q_deg > 0 {
-            self.q_deg = q_deg as usize;
+        self.q_deg = 0;
+        let max_deg = (1 << (stark_struct.nBitsExt - stark_struct.nBits)) + 1;
+        for d in 2..=max_deg {
+            let (im_exps, q_deg) = calculate_im_pols(pil, &c_exp, d)?;
+            if im_exps.is_some() {
+                if self.q_deg == 0
+                    || (im_exps.clone().unwrap().len() + (q_deg as usize)
+                        < self.im_exps.len() + self.q_deg)
+                {
+                    self.q_deg = q_deg as usize;
+                    self.im_exps = im_exps.unwrap();
+                }
+            }
         }
-        //log::debug!("q_deg: {}", self.q_deg);
 
-        self.im_exps = HashMap::new();
-        if im_exps.is_some() {
-            self.im_exps = im_exps.unwrap();
-        }
         //log::debug!("im_exps: {:?} q_deg {}", self.im_exps, self.q_deg);
 
         for k in self.im_exps.keys() {
@@ -87,7 +87,7 @@ impl StarkInfo {
         }
 
         for i in 0..self.im_exps_list.len() {
-            pil_code_gen(ctx, pil, self.im_exps_list[i], false, "", 0)?;
+            pil_code_gen(ctx, pil, self.im_exps_list[i], false, "", 0, false)?;
         }
 
         program.step3 = build_code(ctx, pil);
@@ -98,7 +98,7 @@ impl StarkInfo {
             ctx2ns.calculated.insert(("expsPrime", *k), *v);
         }
         //log::debug!("ctx2ns: {} {:?}", pil, ctx2ns);
-        pil_code_gen(ctx2ns, pil, self.c_exp, false, "", 0)?;
+        pil_code_gen(ctx2ns, pil, self.c_exp, false, "", 0, false)?;
 
         let sz = ctx2ns.code.len() - 1;
         let code = &mut ctx2ns.code[sz].code;
@@ -186,6 +186,10 @@ fn _calculate_im_pols(
                 abs_max_d,
             );
         }
+        let max_deg_here = get_exp_dim(pil, exp);
+        if max_deg_here <= (max_deg as i32) {
+            return (im_expressions.clone(), max_deg_here);
+        }
         for l in 0..=max_deg {
             let r = max_deg - l;
             let (e1, d1) =
@@ -245,6 +249,35 @@ fn _calculate_im_pols(
         }
     } else {
         panic!("Exp op not defined: {}", exp.op);
+    }
+}
+
+pub fn get_exp_dim(pil: &PIL, exp: &Expression) -> i32 {
+    let values: Vec<Expression> = if exp.values.is_none() {
+        Vec::new()
+    } else {
+        exp.values.clone().unwrap()
+    };
+    match exp.op.as_str() {
+        "add" | "sub" | "addc" | "mulc" | "neg" => {
+            let mut md = 1;
+            for i in 0..values.len() {
+                let d = get_exp_dim(pil, &values[i]);
+                if d > md {
+                    md = d;
+                }
+            }
+            md
+        }
+        "mul" => get_exp_dim(pil, &values[0]) + get_exp_dim(pil, &values[1]),
+        "muladd" => std::cmp::max(
+            get_exp_dim(pil, &values[0]) + get_exp_dim(pil, &values[1]),
+            get_exp_dim(pil, &values[2]),
+        ),
+        "cm" | "const" | "x" => 1,
+        "exp" => get_exp_dim(pil, &pil.expressions[exp.id.unwrap()]),
+        "number" | "public" | "challenge" | "eval" => 0,
+        _ => panic!("Exp op not defined: {}", exp.op),
     }
 }
 

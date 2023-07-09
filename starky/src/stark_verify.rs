@@ -198,6 +198,7 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
             "add" => src[0] + src[1],
             "sub" => src[0] - src[1],
             "mul" => src[0] * src[1],
+            "muladd" => src[0] * src[1] + src[2],
             "copy" => src[0],
             _ => panic!("Invalid op: {}", code[i].op),
         };

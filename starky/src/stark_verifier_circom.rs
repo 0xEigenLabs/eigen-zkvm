@@ -362,6 +362,77 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                     panic!("Invalid src dimensions");
                 }
             }
+            "muladd" => {
+                if inst.src[2].dim == 1 {
+                    if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
+                        str_code.push_str(&format!(
+                            r#"
+                        signal {} <== {} * {} + {};
+                        "#,
+                            ref_(&inst.dest),
+                            ref_(&inst.src[0]),
+                            ref_(&inst.src[1]),
+                            ref_(&inst.src[2])
+                        ));
+                    } else if inst.src[0].dim == 1 && inst.src[1].dim == 3 {
+                        str_code.push_str(&format!(
+                            r#"
+                        signal {}[3] <== [{} * {}[0] + {}, {} * {}[1], {} * {}[2]];
+                        "#,
+                            ref_(&inst.dest),
+                            ref_(&inst.src[0]),
+                            ref_(&inst.src[1]),
+                            ref_(&inst.src[2]),
+                            ref_(&inst.src[0]),
+                            ref_(&inst.src[1]),
+                            ref_(&inst.src[0]),
+                            ref_(&inst.src[1])
+                        ));
+                    } else if inst.src[0].dim == 3 && inst.src[1].dim == 1 {
+                        str_code.push_str(&format!(
+                            r#"
+                        signal {}[3] <== [{}[0] * {} + {}, {}[0] * {}, {}[2] * {}];
+                        "#,
+                            ref_(&inst.dest),
+                            ref_(&inst.src[0]),
+                            ref_(&inst.src[1]),
+                            ref_(&inst.src[2]),
+                            ref_(&inst.src[0]),
+                            ref_(&inst.src[1]),
+                            ref_(&inst.src[0]),
+                            ref_(&inst.src[1])
+                        ));
+                    } else if inst.src[0].dim == 3 && inst.src[1].dim == 3 {
+                        str_code.push_str(&format!(
+                            r#"
+                        signal {}[3] <== CMulAdd()({}, {}, {}, 0, 0);
+                        "#,
+                            ref_(&inst.dest),
+                            ref_(&inst.src[0]),
+                            ref_(&inst.src[1]),
+                            ref_(&inst.src[2])
+                        ));
+                    } else {
+                        panic!("Invalid src dimensions")
+                    }
+                } else if inst.src[2].dim == 3 {
+                    if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
+                        str_code.push_str(&format!(
+                            r#"
+                        signal {}[3] <== [{}*{} + {}[0], {}[1], {}[2]];
+                        "#,
+                            ref_(&inst.dest),
+                            ref_(&inst.src[0]),
+                            ref_(&inst.src[1]),
+                            ref_(&inst.src[2]),
+                            ref_(&inst.src[2]),
+                            ref_(&inst.src[2])
+                        ));
+                    }
+                } else {
+                    panic!("Invalid src dimensions")
+                }
+            }
             _ => panic!("Invalid op"),
         }
     }
@@ -471,7 +542,7 @@ template VerifyEvaluations() {{
 fn verify_query(starkinfo: &StarkInfo, program: &Program, stark_struct: &StarkStruct) -> String {
     let mut res = format!(
         r#"
-template VerifyQuery() {{
+template parallel VerifyQuery() {{
     signal input ys[{}];
     signal input challenges[8][3];
     signal input evals[{}][3];
@@ -1157,32 +1228,6 @@ template StarkVerifier() {{
                 s0_merkleC[q].siblings[i][j] <== s0_siblingsC[q][i][j];
             }}
         }}
-
-        for (var j=0; j<4; j++) {{
-            enable * (s0_merkle1[q].root[j] - root1[j]) === 0;
-        "#
-    ));
-
-    if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
-        res.push_str(&format!(
-            r#"
-            enable * (s0_merkle2[q].root[j] - root2[j]) === 0;
-        "#
-        ));
-    }
-    if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
-        res.push_str(&format!(
-            r#"
-            enable * (s0_merkle3[q].root[j] - root3[j]) === 0;
-        "#
-        ));
-    }
-
-    res.push_str(&format!(
-        r#"
-            enable * (s0_merkle4[q].root[j] - root4[j]) === 0;
-            enable * (s0_merkleC[q].root[j] - rootC[j]) === 0;
-        }}
         "#
     ));
 
@@ -1218,15 +1263,6 @@ template StarkVerifier() {{
             stark_struct.steps[0].nBits
         ));
     }
-
-    res.push_str(&format!(
-        r#"
-        for (var e=0; e<3; e++) {{
-            enable * (s0_lowValues[q].out[e] - verifyQueries[q].out[e]) === 0;
-        }}
-    }}
-        "#
-    ));
 
     for s in 1..stark_struct.steps.len() {
         res.push_str(&format!(
@@ -1370,6 +1406,35 @@ template StarkVerifier() {{
                 s
             ));
         }
+
+        //// Checks
+        let enable2 = if starkinfo.map_sectionsN.cm2_2ns > 0 {
+            "enable * (s0_merkle2[q].root[j] - root2[j]) === 0;"
+        } else {
+            ""
+        };
+        let enable3 = if starkinfo.map_sectionsN.cm3_2ns > 0 {
+            "enable * (s0_merkle3[q].root[j] - root3[j]) === 0;"
+        } else {
+            ""
+        };
+        res.push_str(&format!(
+            r#"
+        for(var q = 0; q < {}; q ++) {{
+            for(var j = 0; j < 4; j ++) {{
+                enable * (s0_merkle1[q].root[j] - root1[j]) === 0;
+                {}
+                {}
+                enable * (s0_merkle4[q].root[j] - root4[j]) === 0;
+                enable * (s0_merkleC[q].root[j] - rootC[j]) === 0;
+            }}
+            for (var e = 0; e < 3; e ++) {{
+                enable * (s0_lowValues[q].out[e] - verifyQueries[q].out[e]) === 0;
+            }}
+        }}
+        "#,
+            stark_struct.nQueries, enable2, enable3
+        ));
 
         res.push_str(&format!(
             r#"
