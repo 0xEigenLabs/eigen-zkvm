@@ -731,6 +731,7 @@ pub mod tests {
 
     #[test]
     fn test_stark_gen() {
+        env_logger::init();
         let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/fib.const").unwrap();

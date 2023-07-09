@@ -266,6 +266,7 @@ impl FRI {
 
         for i in (max_deg + 1)..last_pol_c.len() {
             if !last_pol_c[i].is_zero() {
+                log::error!("check last pol c failed");
                 return Ok(false);
             }
         }
