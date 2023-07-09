@@ -38,7 +38,7 @@ impl StarkInfo {
             let (im_exps, q_deg) = calculate_im_pols(pil, &c_exp, d)?;
             if im_exps.is_some() {
                 if self.q_deg == 0
-                    || (im_exps.clone().unwrap().len() + (q_deg as usize)
+                    || (im_exps.as_ref().unwrap().len() + (q_deg as usize)
                         < self.im_exps.len() + self.q_deg)
                 {
                     self.q_deg = q_deg as usize;
