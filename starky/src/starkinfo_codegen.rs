@@ -311,19 +311,19 @@ pub fn pil_code_gen(
     }
 
     let exp = pil.expressions[exp_id].clone();
-    calculate_deps(ctx, pil, &exp, prime, exp_id, muladd)?;
+    calculate_deps(ctx, pil, &exp, prime, exp_id, false)?;
 
     let mut code_ctx = ContextC {
         exp_id: exp_id,
         tmp_used: ctx.tmp_used,
         code: Vec::new(),
     };
-    let exp = pil.expressions[exp_id].clone();
-    let _exp = match muladd {
-        true => find_muladd(&exp),
-        _ => exp,
+    let _exp = pil.expressions[exp_id].clone();
+    let exp = match muladd {
+        true => find_muladd(&_exp),
+        _ => _exp,
     };
-    let ret_ref = eval_exp(&mut code_ctx, pil, &_exp, prime)?;
+    let ret_ref = eval_exp(&mut code_ctx, pil, &exp, prime)?;
     if ret_ref.type_.as_str() == "tmp" {
         let sz = code_ctx.code.len() - 1;
         code_ctx.code[sz].dest = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
@@ -370,12 +370,14 @@ fn find_muladd(exp: &Expression) -> Expression {
     if exp.values.is_some() {
         let values = exp.values.as_ref().unwrap();
         if exp.op.as_str() == "add" && values[0].op.as_str() == "mul" {
+            log::debug!("exp: {:?}", exp);
             let value_of_values = values[0].values.as_ref().unwrap();
             let a = find_muladd(&value_of_values[0]);
             let b = find_muladd(&value_of_values[1]);
             let c = find_muladd(&values[1]);
             return Expression::new("muladd".to_string(), 0, None, None, Some(vec![a, b, c]));
         } else if exp.op.as_str() == "add" && values[1].op.as_str() == "mul" {
+            log::debug!("exp: 1 {:?}", exp);
             let value_of_values = values[1].values.as_ref().unwrap();
             let a = find_muladd(&value_of_values[0]);
             let b = find_muladd(&value_of_values[1]);
@@ -387,7 +389,9 @@ fn find_muladd(exp: &Expression) -> Expression {
             for i in 0..values.len() {
                 mut_values.push(find_muladd(&values[i]))
             }
-            r.values = Some(mut_values);
+            if mut_values.len() > 0 {
+                r.values = Some(mut_values);
+            }
             return r;
         }
     }
@@ -456,7 +460,7 @@ pub fn eval_exp(
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
             let c = Section {
-                op: "mul".to_string(),
+                op: "muladd".to_string(),
                 dest: r.clone(),
                 src: vec![a, b, c],
             };

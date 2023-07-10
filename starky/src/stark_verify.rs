@@ -69,7 +69,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     ctx.Z = x_n - F3G::ONE;
     ctx.Zp = (ctx.challenges[7] * MG.0[ctx.nbits]).pow(ctx.N) - F3G::ONE;
 
-    //log::debug!("verifier_code {}", program.verifier_code);
+    log::debug!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);
 
     let mut x_acc = F3G::ONE;
@@ -194,11 +194,13 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
         for s in code[i].src.iter() {
             src.push(get_ref(s, &tmp));
         }
+        log::debug!("code[{}], {:?}", i, code[i]);
+        //crate::helper::pretty_print_array(&src);
         let res = match code[i].op.as_str() {
             "add" => src[0] + src[1],
             "sub" => src[0] - src[1],
             "mul" => src[0] * src[1],
-            "muladd" => src[0] * src[1] + src[2],
+            "muladd" => (src[0] * src[1]) + src[2],
             "copy" => src[0],
             _ => panic!("Invalid op: {}", code[i].op),
         };
