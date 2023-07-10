@@ -1264,6 +1264,12 @@ template StarkVerifier() {{
         ));
     }
 
+    res.push_str(&format!(
+        r#"
+    }}
+        "#
+    ));
+
     for s in 1..stark_struct.steps.len() {
         res.push_str(&format!(
             r#"
