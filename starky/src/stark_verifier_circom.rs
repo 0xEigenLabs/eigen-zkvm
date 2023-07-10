@@ -367,8 +367,7 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                     if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
                         str_code.push_str(&format!(
                             r#"
-                        signal {} <== {} * {} + {};
-                        "#,
+    signal {} <== {} * {} + {};"#,
                             ref_(&inst.dest),
                             ref_(&inst.src[0]),
                             ref_(&inst.src[1]),
@@ -377,8 +376,7 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                     } else if inst.src[0].dim == 1 && inst.src[1].dim == 3 {
                         str_code.push_str(&format!(
                             r#"
-                        signal {}[3] <== [{} * {}[0] + {}, {} * {}[1], {} * {}[2]];
-                        "#,
+    signal {}[3] <== [{} * {}[0] + {}, {} * {}[1], {} * {}[2]];"#,
                             ref_(&inst.dest),
                             ref_(&inst.src[0]),
                             ref_(&inst.src[1]),
@@ -391,8 +389,7 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                     } else if inst.src[0].dim == 3 && inst.src[1].dim == 1 {
                         str_code.push_str(&format!(
                             r#"
-                        signal {}[3] <== [{}[0] * {} + {}, {}[0] * {}, {}[2] * {}];
-                        "#,
+    signal {}[3] <== [{}[0] * {} + {}, {}[1] * {}, {}[2] * {}];"#,
                             ref_(&inst.dest),
                             ref_(&inst.src[0]),
                             ref_(&inst.src[1]),
@@ -405,8 +402,7 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                     } else if inst.src[0].dim == 3 && inst.src[1].dim == 3 {
                         str_code.push_str(&format!(
                             r#"
-                        signal {}[3] <== CMulAdd()({}, {}, {}, 0, 0);
-                        "#,
+    signal {}[3] <== CMulAdd()({}, {}, [{}, 0, 0]);"#,
                             ref_(&inst.dest),
                             ref_(&inst.src[0]),
                             ref_(&inst.src[1]),
@@ -419,14 +415,48 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                     if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
                         str_code.push_str(&format!(
                             r#"
-                        signal {}[3] <== [{}*{} + {}[0], {}[1], {}[2]];
-                        "#,
+    signal {}[3] <== [{}*{} + {}[0], {}[1], {}[2]];"#,
                             ref_(&inst.dest),
                             ref_(&inst.src[0]),
                             ref_(&inst.src[1]),
                             ref_(&inst.src[2]),
                             ref_(&inst.src[2]),
                             ref_(&inst.src[2])
+                        ));
+                    } else {
+                        let mut ina = "".to_string();
+                        let mut inb = "".to_string();
+                        let mut inc = "".to_string();
+                        if inst.src[0].dim == 3 {
+                            ina = ref_(&inst.src[0]);
+                        } else if inst.src[0].dim == 1 {
+                            ina = format!("[{}, 0, 0]", ref_(&inst.src[0]));
+                        } else {
+                            panic!("Invalid src dimensions")
+                        }
+
+                        if inst.src[1].dim == 3 {
+                            inb = ref_(&inst.src[1]);
+                        } else if inst.src[1].dim == 1 {
+                            inb = format!("[{}, 0, 0]", ref_(&inst.src[1]));
+                        } else {
+                            panic!("Invalid src dimensions")
+                        }
+
+                        if inst.src[2].dim == 3 {
+                            inc = ref_(&inst.src[2]);
+                        } else if inst.src[2].dim == 1 {
+                            inc = format!("[{}, 0, 0]", ref_(&inst.src[2]));
+                        } else {
+                            panic!("Invalid src dimensions")
+                        }
+                        str_code.push_str(&format!(
+                            r#"
+    signal {}[3] <== CMulAdd()({}, {}, {});"#,
+                            ref_(&inst.dest),
+                            ina,
+                            inb,
+                            inc
                         ));
                     }
                 } else {

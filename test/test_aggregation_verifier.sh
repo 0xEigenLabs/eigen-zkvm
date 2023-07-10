@@ -5,7 +5,7 @@ set -ex
 cargo build --release
 
 BIG_POWER=26
-POWER=22
+POWER=23
 NUM_PROOF=2
 NUM_INPUT=2
 CUR_DIR=$(cd $(dirname $0);pwd)
