@@ -214,34 +214,15 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
             _ => panic!("Invalid ref: {}", r.type_),
         }
     };
-    let mut tmpNameId = 0;
     let mut str_code = String::from("");
     for i in 0..code.len() {
         let inst = &code[i];
-        if inst.dest.type_.as_str() == "tmp" {
-            if inst.dest.dim == 1 {
-                str_code.push_str(&format!(
-                    r#"
-    signal tmp_{};"#,
-                    inst.dest.id
-                ));
-            } else if inst.dest.dim == 3 {
-                str_code.push_str(&format!(
-                    r#"
-    signal tmp_{}[3];"#,
-                    inst.dest.id
-                ));
-            } else {
-                panic!("Invalid dimension");
-            }
-        }
-
         match inst.op.as_str() {
             "add" => {
                 if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
                     str_code.push_str(&format!(
                         r#"
-    {} <== {} + {};"#,
+    signal {} <== {}[0] + {}[0];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
@@ -249,62 +230,32 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                 } else if inst.src[0].dim == 1 && inst.src[1].dim == 3 {
                     str_code.push_str(&format!(
                         r#"
-    {}[0] <== {} + {}[0];"#,
+    signal {}[3] <== [{} + {}[0], {}[1], {}[2]];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
-                        ref_(&inst.src[1])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[1] <== {}[1];"#,
-                        ref_(&inst.dest),
-                        ref_(&inst.src[1])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[2] <== {}[2];"#,
-                        ref_(&inst.dest),
+                        ref_(&inst.src[1]),
+                        ref_(&inst.src[1]),
                         ref_(&inst.src[1])
                     ));
                 } else if inst.src[0].dim == 3 && inst.src[1].dim == 1 {
                     str_code.push_str(&format!(
                         r#"
-    {}[0] <== {}[0] + {};"#,
+    signal {}[3] <== [{}[0] + {}, {}[1], {}[2]];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
-                        ref_(&inst.src[1])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[1] <== {}[1];"#,
-                        ref_(&inst.dest),
-                        ref_(&inst.src[0])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[2] <== {}[2];"#,
-                        ref_(&inst.dest),
+                        ref_(&inst.src[1]),
+                        ref_(&inst.src[0]),
                         ref_(&inst.src[0])
                     ));
                 } else if inst.src[0].dim == 3 && inst.src[1].dim == 3 {
                     str_code.push_str(&format!(
                         r#"
-    {}[0] <== {}[0] + {}[0];"#,
+    signal {}[3] <== [{}[0] + {}[0], {}[1] + {}[1], {}[2] + {}[2]];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
-                        ref_(&inst.src[1])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[1] <== {}[1] + {}[1];"#,
-                        ref_(&inst.dest),
+                        ref_(&inst.src[1]),
                         ref_(&inst.src[0]),
-                        ref_(&inst.src[1])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[2] <== {}[2] + {}[2];"#,
-                        ref_(&inst.dest),
+                        ref_(&inst.src[1]),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
@@ -316,7 +267,7 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                 if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
                     str_code.push_str(&format!(
                         r#"
-    {} <== {} - {};"#,
+    signal {} <== {} - {};"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
@@ -324,62 +275,32 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                 } else if inst.src[0].dim == 1 && inst.src[1].dim == 3 {
                     str_code.push_str(&format!(
                         r#"
-    {}[0] <== {} - {}[0] + p;"#,
+    signal {}[3] <== [{} - {}[0] + p, -{}[1] + p, -{}[2] + p];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
-                        ref_(&inst.src[1])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[1] <== -{}[1] + p;"#,
-                        ref_(&inst.dest),
-                        ref_(&inst.src[1])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[2] <== -{}[2] + p;"#,
-                        ref_(&inst.dest),
+                        ref_(&inst.src[1]),
+                        ref_(&inst.src[1]),
                         ref_(&inst.src[1])
                     ));
                 } else if inst.src[0].dim == 3 && inst.src[1].dim == 1 {
                     str_code.push_str(&format!(
                         r#"
-    {}[0] <== {}[0] - {} + p;"#,
+    signal {}[3] <== [{}[0] - {} + p, {}[1], {}[2]];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
-                        ref_(&inst.src[1])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[1] <== {}[1];"#,
-                        ref_(&inst.dest),
-                        ref_(&inst.src[0])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[2] <== {}[2];"#,
-                        ref_(&inst.dest),
+                        ref_(&inst.src[1]),
+                        ref_(&inst.src[0]),
                         ref_(&inst.src[0])
                     ));
                 } else if inst.src[0].dim == 3 && inst.src[1].dim == 3 {
                     str_code.push_str(&format!(
                         r#"
-    {}[0] <== {}[0] - {}[0] + p;"#,
+    signal {}[3] <== [{}[0] - {}[0] + p, {}[1] - {}[1] + p, {}[2] - {}[2] + p];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
-                        ref_(&inst.src[1])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[1] <== {}[1] - {}[1] + p;"#,
-                        ref_(&inst.dest),
+                        ref_(&inst.src[1]),
                         ref_(&inst.src[0]),
-                        ref_(&inst.src[1])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[2] <== {}[2] - {}[2] + p;"#,
-                        ref_(&inst.dest),
+                        ref_(&inst.src[1]),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1])
                     ));
@@ -389,149 +310,36 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
             }
             "mul" => {
                 if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
-                    let cmpName = format!("cmul_{}", tmpNameId);
-                    tmpNameId += 1;
                     str_code.push_str(&format!(
                         r#"
-    component {} = GLCMul1();
-    {}.ina <== {};
-    {}.inb <== {};
-    {} <== {}.out;"#,
-                        cmpName,
-                        cmpName,
+    signal {} = GLCMul1()({}, {});"#,
                         ref_(&inst.dest),
-                        cmpName,
                         ref_(&inst.src[0]),
-                        ref_(&inst.src[1]),
-                        cmpName
+                        ref_(&inst.src[1])
                     ));
                 } else if inst.src[0].dim == 1 && inst.src[1].dim == 3 {
-                    let cmpName = format!("cmul_{}", tmpNameId);
-                    tmpNameId += 1;
                     str_code.push_str(&format!(
                         r#"
-    component {} = GLCMul();
-    {}.ina[0] <== {};
-    {}.ina[1] <== 0;
-    {}.ina[2] <== 0;
-    {}.inb[0] <== {}[0];
-    {}.inb[1] <== {}[1];
-    {}.inb[2] <== {}[2];
-    {}[0] <== {}.out[0];
-    {}[1] <== {}.out[1];
-    {}[2] <== {}.out[2];"#,
-                        cmpName,
-                        cmpName,
+    signal {}[3] <== GLCMul()([{}, 0, 0], {});"#,
+                        ref_(&inst.dest),
                         ref_(&inst.src[0]),
-                        cmpName,
-                        cmpName,
-                        cmpName,
-                        ref_(&inst.src[1]),
-                        cmpName,
-                        ref_(&inst.src[1]),
-                        cmpName,
-                        ref_(&inst.src[1]),
-                        ref_(&inst.dest),
-                        cmpName,
-                        ref_(&inst.dest),
-                        cmpName,
-                        ref_(&inst.dest),
-                        cmpName
+                        ref_(&inst.src[1])
                     ));
                 } else if inst.src[0].dim == 3 && inst.src[1].dim == 1 {
-                    let cmpName = format!("cmul_{}", tmpNameId);
-                    tmpNameId += 1;
                     str_code.push_str(&format!(
                         r#"
-    component {} = GLCMul();
-    {}.ina[0] <== {}[0];
-    {}.ina[1] <== {}[1];
-    {}.ina[2] <== {}[2];
-    {}.inb[0] <== {};
-    {}.inb[1] <== 0;
-    {}.inb[2] <== 0;
-    {}[0] <== {}.out[0];
-    {}[1] <== {}.out[1];
-    {}[2] <== {}.out[2];"#,
-                        cmpName,
-                        cmpName,
+    signal {}[3] <== GLCMul()({}, [{}, 0, 0]);"#,
+                        ref_(&inst.dest),
                         ref_(&inst.src[0]),
-                        cmpName,
-                        ref_(&inst.src[0]),
-                        cmpName,
-                        ref_(&inst.src[0]),
-                        cmpName,
                         ref_(&inst.src[1]),
-                        cmpName,
-                        cmpName,
-                        ref_(&inst.dest),
-                        cmpName,
-                        ref_(&inst.dest),
-                        cmpName,
-                        ref_(&inst.dest),
-                        cmpName
                     ));
                 } else if inst.src[0].dim == 3 && inst.src[1].dim == 3 {
-                    let cmpName = format!("cmul_{}", tmpNameId);
-                    tmpNameId += 1;
                     str_code.push_str(&format!(
                         r#"
-    component {} = GLCMul();"#,
-                        cmpName
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}.ina[0] <== {}[0];"#,
-                        cmpName,
-                        ref_(&inst.src[0])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}.ina[1] <== {}[1];"#,
-                        cmpName,
-                        ref_(&inst.src[0])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}.ina[2] <== {}[2];"#,
-                        cmpName,
-                        ref_(&inst.src[0])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}.inb[0] <== {}[0];"#,
-                        cmpName,
-                        ref_(&inst.src[1])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}.inb[1] <== {}[1];"#,
-                        cmpName,
-                        ref_(&inst.src[1])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}.inb[2] <== {}[2];"#,
-                        cmpName,
-                        ref_(&inst.src[1])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[0] <== {}.out[0];"#,
+    signal {}[3] <== GLCMul()({}, {});"#,
                         ref_(&inst.dest),
-                        cmpName
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[1] <== {}.out[1];"#,
-                        ref_(&inst.dest),
-                        cmpName
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[2] <== {}.out[2];"#,
-                        ref_(&inst.dest),
-                        cmpName
+                        ref_(&inst.src[0]),
+                        ref_(&inst.src[1])
                     ));
                 } else {
                     panic!("Invalid src dimensions");
@@ -541,31 +349,73 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                 if inst.src[0].dim == 1 {
                     str_code.push_str(&format!(
                         r#"
-    {} <== {};"#,
+    signal {} <== {};"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0])
                     ));
                 } else if inst.src[0].dim == 3 {
                     str_code.push_str(&format!(
                         r#"
-    {}[0] <== {}[0];"#,
-                        ref_(&inst.dest),
-                        ref_(&inst.src[0])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[1] <== {}[1];"#,
-                        ref_(&inst.dest),
-                        ref_(&inst.src[0])
-                    ));
-                    str_code.push_str(&format!(
-                        r#"
-    {}[2] <== {}[2];"#,
+    signal {}[3] <== {};"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0])
                     ));
                 } else {
                     panic!("Invalid src dimensions");
+                }
+            }
+            "muladd" => {
+                if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
+                    if inst.src[2].dim == 1 {
+                        str_code.push_str(&format!(
+                            r#"
+    signal {} <== GLMulAdd()({}, {}, {});"#,
+                            ref_(&inst.dest),
+                            ref_(&inst.src[0]),
+                            ref_(&inst.src[1]),
+                            ref_(&inst.src[2])
+                        ));
+                    } else {
+                        str_code.push_str(&format!(
+                            r#"
+    signal {}[3] <== [GLMulAdd()({}, {}, {}[0]), {}[1], {}[2]);"#,
+                            ref_(&inst.dest),
+                            ref_(&inst.src[0]),
+                            ref_(&inst.src[1]),
+                            ref_(&inst.src[2]),
+                            ref_(&inst.src[2]),
+                            ref_(&inst.src[2])
+                        ));
+                    }
+                } else {
+                    let mut ina = "".to_string();
+                    let mut inb = "".to_string();
+                    let mut inc = "".to_string();
+                    if inst.src[0].dim == 1 {
+                        ina = format!("[{}, 0, 0]", ref_(&inst.src[0]));
+                    } else {
+                        ina = ref_(&inst.src[0]);
+                    }
+
+                    if inst.src[1].dim == 1 {
+                        inb = format!("[{}, 0, 0]", ref_(&inst.src[1]));
+                    } else {
+                        inb = ref_(&inst.src[1]);
+                    }
+
+                    if inst.src[2].dim == 1 {
+                        inc = format!("[{}, 0, 0]", ref_(&inst.src[2]));
+                    } else {
+                        inc = ref_(&inst.src[2]);
+                    }
+                    str_code.push_str(&format!(
+                        r#"
+    signal {}[3] <== GLCMulAdd()({}, {}, {});"#,
+                        ref_(&inst.dest),
+                        ina,
+                        inb,
+                        inc
+                    ));
                 }
             }
             _ => panic!("Invalid op"),
@@ -695,7 +545,7 @@ template VerifyEvaluations() {{
 fn verify_query(starkinfo: &StarkInfo, program: &Program, stark_struct: &StarkStruct) -> String {
     let mut res = format!(
         r#"
-template VerifyQuery() {{
+template parallel VerifyQuery() {{
     signal input ys[{}];
     signal input challenges[8][3];
     signal input evals[{}][3];
@@ -1413,30 +1263,6 @@ template StarkVerifier() {{
                 s0_merkleC[q].siblings[i][j] <== s0_siblingsC[q][i][j];
             }}
         }}
-
-        enable * (s0_merkle1[q].root - root1) === 0;
-        "#
-    ));
-
-    if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
-        res.push_str(&format!(
-            r#"
-            enable * (s0_merkle2[q].root - root2) === 0;
-        "#
-        ));
-    }
-    if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
-        res.push_str(&format!(
-            r#"
-            enable * (s0_merkle3[q].root - root3) === 0;
-        "#
-        ));
-    }
-
-    res.push_str(&format!(
-        r#"
-            enable * (s0_merkle4[q].root - root4) === 0;
-            enable * (s0_merkleC[q].root - rootC) === 0;
         "#
     ));
 
@@ -1466,21 +1292,16 @@ template StarkVerifier() {{
         }}
         for (var i=0; i<{}; i++) {{
             s0_lowValues[q].key[i] <== ys[q][i];
-        }}
-        "#,
+        }}"#,
             1 << stark_struct.steps[0].nBits,
             stark_struct.steps[0].nBits
         ));
     }
 
-    res.push_str(&format!(
+    res.push_str(
         r#"
-        for (var e=0; e<3; e++) {{
-            enable * (s0_lowValues[q].out[e] - verifyQueries[q].out[e]) === 0;
-        }}
-    }}
-        "#
-    ));
+    }"#,
+    );
 
     for s in 1..stark_struct.steps.len() {
         res.push_str(&format!(
@@ -1532,8 +1353,7 @@ template StarkVerifier() {{
                 s{}_merkle[q].values[i][e] <== s{}_vals[q][i*3+e];
                 s{}_fft[q].in[i][e] <== s{}_vals[q][i*3+e];
             }}
-        }}
-        "#,
+        }}"#,
             stark_struct.nQueries,
             s,
             1 << (stark_struct.steps[s - 1].nBits - stark_struct.steps[s].nBits),
@@ -1584,8 +1404,7 @@ template StarkVerifier() {{
                 s{}_sx[q][i-1].ina <== s{}_sx[q][i-2].out;
             }}
             s{}_sx[q][i-1].inb <== ys[q][i] * (_inv1(roots({} -i)) -1) +1;
-        }}
-        "#,
+        }}"#,
             stark_struct.steps[s].nBits,
             s,
             s,
@@ -1689,8 +1508,7 @@ template StarkVerifier() {{
         }}
         for (var i=0; i<{}; i++) {{
             s{}_lowValues[q].key[i] <== ys[q][i];
-        }}
-        "#,
+        }}"#,
                 1 << stark_struct.steps[s].nBits,
                 s,
                 stark_struct.steps[s].nBits,
@@ -1704,14 +1522,52 @@ template StarkVerifier() {{
         for (var e=0; e<3; e++) {{
             s{}_cNorm[q].in[e] <== s{}_evalPol[q].out[e] - s{}_lowValues[q].out[e] + p;
         }}
+    }}"#,
+            s, s, s, s
+        ));
+    }
+    /// Checks
+    res.push_str(&format!(
+        r#"
+    for (var q=0; q < {}; q ++) {{
+        enable * (s0_merkle1[q].root - root1) === 0;"#,
+        stark_struct.nQueries
+    ));
+
+    if starkinfo.map_sectionsN.cm2_2ns > 0 {
+        res.push_str(&format!(
+            r#"
+        enable * (s0_merkle2[q].root - root2) === 0;"#
+        ));
+    }
+
+    if starkinfo.map_sectionsN.cm3_2ns > 0 {
+        res.push_str(&format!(
+            r#"
+        enable * (s0_merkle3[q].root - root3) === 0;"#
+        ));
+    }
+
+    res.push_str(&format!(
+        r#"
+        enable * (s0_merkle4[q].root - root4) === 0;
+        enable * (s0_merkleC[q].root - rootC) === 0;
+        for (var e=0; e<3; e++) {{
+            enable * (s0_lowValues[q].out[e] - verifyQueries[q].out[e]) === 0;
+        }}
+    }}"#
+    ));
+
+    for s in 1..stark_struct.steps.len() {
+        res.push_str(&format!(
+            r#"
+    for (var q = 0; q < {}; q ++) {{
         for (var e=0; e<3; e++) {{
             enable * s{}_cNorm[q].out[e] === 0;
         }}
-
         enable * (s{}_merkle[q].root - s{}_root) === 0;
-    }}
-        "#,
-            s, s, s, s, s, s, s
+    }}"#,
+            stark_struct.nQueries, s, s, s
         ));
     }
 
@@ -1724,7 +1580,7 @@ template StarkVerifier() {{
 
     res.push_str(&format!(
         r#"
-    component lastIFFT = FFT({}, 1 );
+    component lastIFFT = FFT({}, 1);
 
     for (var k=0; k< {}; k++ ){{
         for (var e=0; e<3; e++) {{
