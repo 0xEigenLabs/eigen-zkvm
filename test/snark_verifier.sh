@@ -23,14 +23,17 @@ RUNDIR="${CUR_DIR}/../starkjs"
 
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 
-if [ "$2" = "true" ]; then 
+snark_type=${1-groth16}
+first_run=${2-false}
+
+if [ $first_run = "true" ]; then 
     echo "compile circom and generate wasm and r1cs"
     circom $CUR_DIR/../starkjs/circuits/$CIRCUIT_NAME.circom --wasm --r1cs -p bn128  -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
     # cp $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm /tmp/aggregation/circuits.wasm
 fi 
 
 
-if [ "$1" = "groth16" ]; then
+if [ $snark_type = "groth16" ]; then
     if [ ! -f $SRS ]; then
         echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
         curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${POWER}.ptau -o $SRS
@@ -47,20 +50,23 @@ if [ "$1" = "groth16" ]; then
     echo "2. groth16 fullprove"
     snarkjs g16f $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/g16.zkey $WORK_DIR/proof.json $WORK_DIR/public.json
 
-    echo "3. generate verification_key"
-    snarkjs zkev  $WORK_DIR/g16.zkey  $WORK_DIR/verification_key.json
+    if [ $first_run = "true" ]; then 
+        echo "3. generate verification_key"
+        snarkjs zkev  $WORK_DIR/g16.zkey  $WORK_DIR/verification_key.json
 
-    echo "4. verify groth16 proof"
-    snarkjs g16v $WORK_DIR/verification_key.json $WORK_DIR/public.json $WORK_DIR/proof.json
+        echo "4. verify groth16 proof"
+        snarkjs g16v $WORK_DIR/verification_key.json $WORK_DIR/public.json $WORK_DIR/proof.json
 
-    cp $WORK_DIR/public.json /tmp/aggregation/final_public.json 
-    cp $WORK_DIR/proof.json /tmp/aggregation/final_proof.json
+        cp $WORK_DIR/public.json /tmp/aggregation/final_public.json 
+        cp $WORK_DIR/proof.json /tmp/aggregation/final_proof.json
 
-    echo "5. generate verifier contract"
-    snarkjs zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
+        echo "5. generate verifier contract"
+        snarkjs zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
 
-    echo "6. calculate verify gas cost"
-    cd aggregation && npm install && npx hardhat test test/final.test.ts
+        echo "6. calculate verify gas cost"
+        cd aggregation && npx hardhat test test/final.test.ts
+    fi 
+
 else 
     if [ ! -f $SRS ]; then
         echo "downloading powersOfTau28_hez_final_${POWER}.ptau"

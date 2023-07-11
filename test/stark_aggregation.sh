@@ -17,9 +17,11 @@ PILEXECJS="fibonacci/fibonacci.js"
 RUNDIR="${CUR_DIR}/../starkjs"
 
 WORKSPACE=/tmp/aggregation_$CIRCUIT
-if [ $1 = "restart" ]; then
+
+force=${1-no}
+if [ $force = "yes" ]; then
     rm -rf $WORKSPACE && mkdir -p $WORKSPACE
-fi 
+fi
 
 RECURSIVE_CIRCUIT=$CIRCUIT.recursive1
 RECURSIVE2_CIRCUIT=$CIRCUIT.recursive2
@@ -35,11 +37,16 @@ mkdir -p ./aggregation/$FINAL_CIRCUIT
 #CIRCUIT="poseidon"
 #PILEXECJS="poseidon/main_poseidon.js"
 
+c12_start=$(date +%s)
 cd ${CUR_DIR} && npm i
 for (( i=0; i<$NUM_PROOF; i++ ))
 do
     ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "stark"
 done
+c12_end=$(date +%s)
+
+
+aggregation_start=$(date +%s)
 
 echo " ==> aggregation stage <== "
 if [ ! -f "$WORKSPACE/$RECURSIVE_CIRCUIT.r1cs" ]; then
@@ -86,8 +93,10 @@ echo "5. generate recursive2 proof  "
     --o $WORKSPACE/$RECURSIVE_CIRCUIT.const \
     --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom --i ./aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json  --norm_stage
 
+aggregation_end=$(date +%s)
 
 
+final_start=$(date +%s)
 # final recursive stage 
 echo " ==> final recursive stage <== "
 if [ ! -f "$WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs" ]; then
@@ -123,8 +132,20 @@ echo "4. generate final proof  "
     --o $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
     --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $RUNDIR/circuits/$FINAL_CIRCUIT.circom --i ./aggregation/$FINAL_CIRCUIT/final_input.zkin.json  --norm_stage 
 
-if [ $1 = "restart" ]; then
+final_end=$(date +%s)
+
+snark_start=$(date +%s)
+
+if [ $force = "yes" ]; then
     ./snark_verifier.sh groth16 true 
 else 
     ./snark_verifier.sh groth16 false  
 fi 
+
+snark_end=$(date +%s)
+
+echo "C12 Stage Time Cost ($((c12_end - c12_start))s)"
+echo "Aggregation Stage Time Cost ($((aggregation_end - aggregation_start))s)"
+echo "Final Stage Time Cost ($((final_end - final_start))s)"
+echo "Recursive Snark Stage Time Cost ($((snark_end - snark_start))s)"
+echo "Full Process Time Cost ($((snark_end - c12_start))s)"

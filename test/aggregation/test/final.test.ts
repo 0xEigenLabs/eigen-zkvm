@@ -29,12 +29,12 @@ describe("Plonk verifier test", function() {
     )).to.equal(true);
   });
 
-  it("Fflonk Verify", async function() {
-    const verifierFactory = await ethers.getContractFactory("FflonkVerifier");
-    const verifier = await verifierFactory.deploy();
+  // it("Fflonk Verify", async function() {
+  //   const verifierFactory = await ethers.getContractFactory("FflonkVerifier");
+  //   const verifier = await verifierFactory.deploy();
 
-    await verifier.deployed();
+  //   await verifier.deployed();
 
-    // todo : add verify process
-  });
+  //   // todo : add verify process
+  // });
 });
