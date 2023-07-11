@@ -3,15 +3,21 @@ const version = require("../../package").version;
 
 const argv = require("yargs")
     .version(version)
-    .usage("node --zkin1 <in1.zkin.json> --zkin2 <in2.zkin.json>  --zkinout <out.zkin.json>")
+    .usage("node --starksetup <starksetup.json> --zkin1 <in1.zkin.json> --zkin2 <in2.zkin.json>  --zkinout <out.zkin.json>")
+    .alias("s","starksetup")
+    .alias("1","zkin1")
+    .alias("2","zkin2")
+    .alias("o","zkinout")
     .argv;
 
 async function run() {
 
+    const starkSetupFile = typeof(argv.starksetup) === "string" ?  argv.starksetup.trim() : "starksetup.json";
     const zkin1File = typeof(argv.zkin1) === "string" ?  argv.zkin1.trim() : "zkin1.json";
     const zkin2File = typeof(argv.zkin2) === "string" ?  argv.zkin2.trim() : "zkin2.json";
     const zkinOutFile = typeof(argv.zkinout) === "string" ?  argv.zkinout : "zkinOut.json";
 
+    const starkSetup = JSON.parse(await fs.promises.readFile(starkSetupFile, "utf8"));
     const zkin1 = JSON.parse(await fs.promises.readFile(zkin1File, "utf8"));
     const zkin2 = JSON.parse(await fs.promises.readFile(zkin2File, "utf8"));
 
@@ -32,18 +38,15 @@ async function run() {
     zkinOut.a_s0_siblings3 = zkin1.s0_siblings3;
     zkinOut.a_s0_siblings4 = zkin1.s0_siblings4;
     zkinOut.a_s0_siblingsC = zkin1.s0_siblingsC;
-    zkinOut.a_s1_root = zkin1.s1_root;
-    zkinOut.a_s2_root = zkin1.s2_root;
-    zkinOut.a_s3_root = zkin1.s3_root;
-    zkinOut.a_s4_root = zkin1.s4_root;
-    zkinOut.a_s1_siblings = zkin1.s1_siblings;
-    zkinOut.a_s2_siblings = zkin1.s2_siblings;
-    zkinOut.a_s3_siblings = zkin1.s3_siblings;
-    zkinOut.a_s4_siblings = zkin1.s4_siblings;
-    zkinOut.a_s1_vals = zkin1.s1_vals;
-    zkinOut.a_s2_vals = zkin1.s2_vals;
-    zkinOut.a_s3_vals = zkin1.s3_vals;
-    zkinOut.a_s4_vals = zkin1.s4_vals;
+    for (let i = 1; i < starkSetup["steps"].length; i++) {
+        let keyRoot = `a_s${i}_root`;
+        let keySiblings = `a_s${i}_siblings`;
+        let keyVals = `a_s${i}_vals`;
+
+        zkinOut[keyRoot] = zkin1[`s${i}_root`];
+        zkinOut[keySiblings] = zkin1[`s${i}_siblings`];
+        zkinOut[keyVals] = zkin1[`s${i}_vals`];
+    }
     zkinOut.a_finalPol = zkin1.finalPol;
 
     zkinOut.b_publics = zkin2.publics;
@@ -61,18 +64,16 @@ async function run() {
     zkinOut.b_s0_siblings3 = zkin2.s0_siblings3;
     zkinOut.b_s0_siblings4 = zkin2.s0_siblings4;
     zkinOut.b_s0_siblingsC = zkin2.s0_siblingsC;
-    zkinOut.b_s1_root = zkin2.s1_root;
-    zkinOut.b_s2_root = zkin2.s2_root;
-    zkinOut.b_s3_root = zkin2.s3_root;
-    zkinOut.b_s4_root = zkin2.s4_root;
-    zkinOut.b_s1_siblings = zkin2.s1_siblings;
-    zkinOut.b_s2_siblings = zkin2.s2_siblings;
-    zkinOut.b_s3_siblings = zkin2.s3_siblings;
-    zkinOut.b_s4_siblings = zkin2.s4_siblings;
-    zkinOut.b_s1_vals = zkin2.s1_vals;
-    zkinOut.b_s2_vals = zkin2.s2_vals;
-    zkinOut.b_s3_vals = zkin2.s3_vals;
-    zkinOut.b_s4_vals = zkin2.s4_vals;
+    for (let i = 1; i < starkSetup["steps"].length; i++) {
+        let keyRoot = `b_s${i}_root`;
+        let keySiblings = `b_s${i}_siblings`;
+        let keyVals = `b_s${i}_vals`;
+
+        zkinOut[keyRoot] = zkin2[`s${i}_root`];
+        zkinOut[keySiblings] = zkin2[`s${i}_siblings`];
+        zkinOut[keyVals] = zkin2[`s${i}_vals`];
+    }
+
     zkinOut.b_finalPol = zkin2.finalPol;
     
     await fs.promises.writeFile(zkinOutFile, JSON.stringify(zkinOut, null, 1), "utf8");
