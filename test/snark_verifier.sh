@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 
 export NODE_OPTIONS="--max-old-space-size=16384"
 source ~/.bashrc 
@@ -10,7 +10,6 @@ POWER=22
 BIG_POWER=27
 SRS=${CUR_DIR}/../keys/setup_2^${POWER}.ptau
 BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
-BIG_SRS_FINAL=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
 
 CIRCUIT_NAME=fibonacci.final
 
@@ -73,7 +72,7 @@ if [ $snark_type = "groth16" ]; then
     fi 
 
 else 
-    if [ ! -f $SRS ]; then
+    if [ ! -f $BIG_SRS ]; then
         echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
         curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${POWER}.ptau -o $BIG_SRS
     fi
@@ -90,7 +89,7 @@ else
     fi
 
     echo "2. fflonk fullprove"
-    $SNARKJS ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS_FINAL  $WORK_DIR/fflonk.zkey
+    $SNARKJS ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey
     $SNARKJS pkf $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/fflonk.zkey $WORK_DIR/proof.fflonk.json $WORK_DIR/public.fflonk.
     echo "3. generate verification_key"
     $SNARKJS zkev  $WORK_DIR/fflonk.zkey  $WORK_DIR/verification_key.fflonk.json
