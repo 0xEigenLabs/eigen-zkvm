@@ -76,9 +76,7 @@ impl Transcript for TranscriptBN128 {
 
         if self.out.len() > 0 {
             let v = self.out.pop_front().unwrap();
-            log::debug!("get_fields1 out3 v={}", v);
             let bv = fr_to_biguint(&v);
-            log::debug!("get_fields1 out3 {}", bv);
             let mask = BigUint::from(0xFFFFFFFFFFFFFFFFu128);
             self.out3.push_back(biguint_to_be(&(&bv & &mask)));
             self.out3.push_back(biguint_to_be(&((&bv >> 64) & &mask))); //FIXME: optimization
@@ -111,7 +109,6 @@ impl Transcript for TranscriptBN128 {
         for _i in 0..n_fields {
             fields.push(fr_to_biguint(&self.get_fields253()?));
         }
-        log::debug!("get_permutations: {:?}", fields);
         let mut res: Vec<usize> = vec![];
         let mut cur_field = 0;
         let mut cur_bit = 0usize;

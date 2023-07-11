@@ -45,7 +45,7 @@ do
     ${ZKIT} calculate_witness -i $input/input.json \
         -w ${WORKSPACE}/${CIRCUIT}_js/${CIRCUIT}.wasm \
         -o $WORKSPACE/witness.wtns
-    ${ZKIT} prove -c $WORKSPACE/${CIRCUIT}.r1cs -w $input/witness.wtns --b $input/proof.bin -s ${SRS} --j $input/proof.json -t rescue
+    ${ZKIT} prove -c $WORKSPACE/${CIRCUIT}.r1cs -w $WORKSPACE/witness.wtns --b $input/proof.bin -s ${SRS} --j $input/proof.json -t rescue
     ${ZKIT} verify -p $input/proof.bin -v $WORKSPACE/vk.bin -t rescue
 done
 

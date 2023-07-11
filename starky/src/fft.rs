@@ -2,6 +2,7 @@
 use crate::constant::MG;
 use crate::f3g::F3G;
 use crate::helper::log2_any;
+use rayon::prelude::*;
 use winter_math::FieldElement;
 
 pub struct FFT {
@@ -35,60 +36,50 @@ impl FFT {
         }
     }
 
-    pub fn ifft(&mut self, p: &Vec<F3G>) -> Vec<F3G> {
-        if p.len() <= 1 {
-            return p.clone();
-        }
-
-        let bits = log2_any(p.len() - 1) + 1;
-        self.set_roots(bits);
-
-        let m = 1 << bits;
-        if p.len() != m {
-            panic!("Size must be mutiple of 2");
-        }
-        let res = self._fft(p, bits, 0, 1);
-        let twoinvm = F3G::inv(F3G::ONE.mul_scalar(m));
-        let mut resn = vec![F3G::ZERO; m];
-        for i in 0..m {
-            resn[i] = res[(m - i) % m] * twoinvm;
-        }
-        resn
-    }
-
     pub fn fft(&mut self, p: &Vec<F3G>) -> Vec<F3G> {
         if p.len() <= 1 {
             return p.clone();
         }
         let bits = log2_any(p.len() - 1) + 1;
         self.set_roots(bits);
-        let m = 1 << bits;
-        if p.len() != m {
-            panic!("Size must be mutiple of 2");
+
+        let n = 1 << bits;
+        if p.len() != n {
+            panic!("Size must be multiple of 2")
         }
-        self._fft(p, bits, 0, 1)
+        let mut buff = vec![F3G::ZERO; n];
+        for i in 0..p.len() {
+            let r = (i as u32).reverse_bits() >> (32 - bits);
+            buff[r as usize] = p[i];
+        }
+
+        for s in 1..=bits {
+            let m = 1 << s;
+            let mdiv2 = m >> 1;
+            let winc = self.roots[s][1];
+            for k in (0..n).step_by(m) {
+                let mut w = F3G::ONE;
+                for j in 0..mdiv2 {
+                    let t = w * buff[k + j + mdiv2];
+                    let u = buff[k + j];
+                    buff[k + j] = u + t;
+                    buff[k + j + mdiv2] = u - t;
+                    w = w * winc;
+                }
+            }
+        }
+        buff
     }
 
-    fn _fft(&mut self, p: &Vec<F3G>, bits: usize, offset: usize, step: usize) -> Vec<F3G> {
-        let n = 1 << bits;
-        if n == 1 {
-            return vec![p[offset]];
-        } else if n == 2 {
-            return vec![p[offset] + p[offset + step], p[offset] - p[offset + step]];
+    pub fn ifft(&mut self, p: &Vec<F3G>) -> Vec<F3G> {
+        let q = self.fft(p);
+        let n = p.len();
+        let n2inv = F3G::from(p.len()).inv();
+        let mut res = vec![F3G::ZERO; q.len()];
+        for i in 0..n {
+            res[(n - i) % n] = q[i] * n2inv;
         }
-
-        let ndiv2 = n >> 1;
-        let p1 = self._fft(p, bits - 1, offset, step * 2);
-        let p2 = self._fft(p, bits - 1, offset + step, step * 2);
-
-        let mut out = vec![F3G::ZERO; n];
-
-        for i in 0..ndiv2 {
-            out[i] = p1[i] + p2[i] * self.roots[bits][i];
-            out[i + ndiv2] = p1[i] - p2[i] * self.roots[bits][i];
-        }
-
-        out
+        res
     }
 }
 

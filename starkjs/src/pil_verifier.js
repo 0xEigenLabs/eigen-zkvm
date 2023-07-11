@@ -47,10 +47,10 @@ module.exports = {
     assert(res.length == 0);
 
     elapse("arithmetization", timer);
-/*
     // prove and verify the stark proof
     const proof = await this.proveAndVerify(pil, constPols, cmPols, starkStruct);
     elapse("proveAndVerify", timer);
+/*
     let zkIn = proof2zkin(proof.proof);
     elapse("proof2zkin", timer);
     zkIn.publics = proof.publics;
@@ -133,6 +133,7 @@ module.exports = {
     const verified = await starkVerify(proof.proof, proof.publics, setup.constRoot, setup.starkInfo);
     elapse("proveAndVerify/starkVerify", timer);
     assert(verified == true);
+    console.log("verify done")
     return proof;
   },
 }
