@@ -1728,22 +1728,26 @@ template Recursive2() {{
     vA.s0_siblings1 <== a_s0_siblings1;
     vA.s0_siblings3 <== a_s0_siblings3;
     vA.s0_siblings4 <== a_s0_siblings4;
-    vA.s0_siblingsC <== a_s0_siblingsC;
-    vA.s1_root <== a_s1_root;
-    vA.s2_root <== a_s2_root;
-    vA.s3_root <== a_s3_root;
-    vA.s4_root <== a_s4_root;
-    vA.s1_vals <== a_s1_vals;
-    vA.s1_siblings <== a_s1_siblings;
-    vA.s2_vals <== a_s2_vals;
-    vA.s2_siblings <== a_s2_siblings;
-    vA.s3_vals <== a_s3_vals;
-    vA.s3_siblings <== a_s3_siblings;
-    vA.s4_vals <== a_s4_vals;
-    vA.s4_siblings <== a_s4_siblings;
+    vA.s0_siblingsC <== a_s0_siblingsC;   
+
     vA.finalPol <== a_finalPol;
 
+            "#,
+        ));
 
+        for s in 1..(stark_struct.steps.len()) {
+            res.push_str(&format!(
+                r#"
+    vA.s{}_root <== a_s{}_root;
+    vA.s{}_vals <== a_s{}_vals;
+    vA.s{}_siblings <== a_s{}_siblings;
+            "#,
+                s, s, s, s, s, s,
+            ));
+        }
+
+        res.push_str(&format!(
+            r#"
     component vB = StarkVerifier();
 
     vB.publics <== b_publics;
@@ -1762,21 +1766,26 @@ template Recursive2() {{
     vB.s0_siblings3 <== b_s0_siblings3;
     vB.s0_siblings4 <== b_s0_siblings4;
     vB.s0_siblingsC <== b_s0_siblingsC;
-    vB.s1_root <== b_s1_root;
-    vB.s2_root <== b_s2_root;
-    vB.s3_root <== b_s3_root;
-    vB.s4_root <== b_s4_root;
-    vB.s1_vals <== b_s1_vals;
-    vB.s1_siblings <== b_s1_siblings;
-    vB.s2_vals <== b_s2_vals;
-    vB.s2_siblings <== b_s2_siblings;
-    vB.s3_vals <== b_s3_vals;
-    vB.s3_siblings <== b_s3_siblings;
-    vB.s4_vals <== b_s4_vals;
-    vB.s4_siblings <== b_s4_siblings;
+
     vB.finalPol <== b_finalPol;
-}}
             "#,
+        ));
+
+        for s in 1..(stark_struct.steps.len()) {
+            res.push_str(&format!(
+                r#"
+    vB.s{}_root <== b_s{}_root;
+    vB.s{}_vals <== b_s{}_vals;
+    vB.s{}_siblings <== b_s{}_siblings;
+            "#,
+                s, s, s, s, s, s,
+            ));
+        }
+
+        res.push_str(&format!(
+            r#"
+}}
+            "#
         ))
     }
 
