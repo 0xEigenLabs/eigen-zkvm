@@ -26,14 +26,14 @@ echo "2. Generate witness"
 ${ZKIT} calculate_witness -w ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm -i ../starkjs/circuits/${CIRCUIT}.zkin.json -o $WORKSPACE/witness.wtns
 
 echo "3. Export verification key"
-${ZKIT} export_verification_key -s ${SRS}  -c $WORKSPACE/$CIRCUIT.r1cs -v $WORKSPACE/vk.bin
+${ZKIT} export_verification_key -s ${SRS}  -c $WORKSPACE/$CIRCUIT.r1cs --v $WORKSPACE/vk.bin
 
 echo "4. prove"
-${ZKIT} prove -c $WORKSPACE/$CIRCUIT.r1cs -w $WORKSPACE/witness.wtns -s ${SRS} -b $WORKSPACE/proof.bin
+${ZKIT} prove -c $WORKSPACE/$CIRCUIT.r1cs -w $WORKSPACE/witness.wtns -s ${SRS} --b $WORKSPACE/proof.bin
 
 echo "5. Verify the proof"
 ${ZKIT} verify -p $WORKSPACE/proof.bin -v $WORKSPACE/vk.bin
 
 echo "6. Generate verifier"
 mkdir -p ${CIRCUIT}/contracts
-${ZKIT} generate_verifier -v $WORKSPACE/vk.bin -s ${CIRCUIT}/contracts/verifier.sol
+${ZKIT} generate_verifier -v $WORKSPACE/vk.bin --s ${CIRCUIT}/contracts/verifier.sol
