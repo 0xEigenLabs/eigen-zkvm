@@ -21,6 +21,11 @@ SNARK_INPUT=$WORK_DIR/final_input.zkin.json
 
 RUNDIR="${CUR_DIR}/../starkjs"
 
+SNARKJS=${CUR_DIR}/aggregation/node_modules/snarkjs/build/cli.cjs
+if [ ! -d "${CUR_DIR}/aggregation/node_modules/snarkjs" ]; then
+    cd ${CUR_DIR}/aggregation && npm install 
+fi
+
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 
 snark_type=${1-groth16}
@@ -42,26 +47,26 @@ if [ $snark_type = "groth16" ]; then
     echo ">>> groth16 scheme <<< "
     if [  "$2" = "true" ]; then
         echo "1. generate groth16 zkey"
-        snarkjs g16s $WORK_DIR/$CIRCUIT_NAME.r1cs $SRS  $WORK_DIR/g16.zkey
+        $SNARKJS g16s $WORK_DIR/$CIRCUIT_NAME.r1cs $SRS  $WORK_DIR/g16.zkey
     else 
         echo "1. groth16 zkey already generated"
     fi
 
     echo "2. groth16 fullprove"
-    snarkjs g16f $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/g16.zkey $WORK_DIR/proof.json $WORK_DIR/public.json
+     $SNARKJS g16f $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/g16.zkey $WORK_DIR/proof.json $WORK_DIR/public.json
 
     if [ $first_run = "true" ]; then 
         echo "3. generate verification_key"
-        snarkjs zkev  $WORK_DIR/g16.zkey  $WORK_DIR/verification_key.json
+        $SNARKJS zkev  $WORK_DIR/g16.zkey  $WORK_DIR/verification_key.json
 
         echo "4. verify groth16 proof"
-        snarkjs g16v $WORK_DIR/verification_key.json $WORK_DIR/public.json $WORK_DIR/proof.json
+        $SNARKJS g16v $WORK_DIR/verification_key.json $WORK_DIR/public.json $WORK_DIR/proof.json
 
         cp $WORK_DIR/public.json /tmp/aggregation/final_public.json 
         cp $WORK_DIR/proof.json /tmp/aggregation/final_proof.json
 
         echo "5. generate verifier contract"
-        snarkjs zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
+        $SNARKJS zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
 
         echo "6. calculate verify gas cost"
         cd aggregation && npx hardhat test test/final.test.ts
@@ -79,23 +84,23 @@ else
      if [ ! -f "$WORK_DIR/fflonk.zkey" ]; then
         echo "1. generate groth16 zkey"
         # nohup snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey &
-        snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey
+        $SNARKJS ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey
     else 
         echo "1. fflonk zkey already generated"
     fi
 
     echo "2. fflonk fullprove"
-    snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS_FINAL  $WORK_DIR/fflonk.zkey
-    snarkjs pkf $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/fflonk.zkey $WORK_DIR/proof.fflonk.json $WORK_DIR/public.fflonk.
+    $SNARKJS ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS_FINAL  $WORK_DIR/fflonk.zkey
+    $SNARKJS pkf $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/fflonk.zkey $WORK_DIR/proof.fflonk.json $WORK_DIR/public.fflonk.
     echo "3. generate verification_key"
-    snarkjs zkev  $WORK_DIR/fflonk.zkey  $WORK_DIR/verification_key.fflonk.json
+    $SNARKJS zkev  $WORK_DIR/fflonk.zkey  $WORK_DIR/verification_key.fflonk.json
 
     echo "4. verify fflonk proof"
-    snarkjs ffv $WORK_DIR/verification_key.fflonk.json $WORK_DIR/public.fflonk.json $WORK_DIR/proof.fflonk.json
+    $SNARKJS ffv $WORK_DIR/verification_key.fflonk.json $WORK_DIR/public.fflonk.json $WORK_DIR/proof.fflonk.json
 
     cp $WORK_DIR/public.fflonk.json  /tmp/aggregation/final_public.fflonk.json 
     cp $WORK_DIR/proof.fflonk.json /tmp/aggregation/final_proof.fflonk.json
 
     echo "5. generate verifier contract"
-    snarkjs zkesv $WORK_DIR/fflonk.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier_fflonk.sol
+    $SNARKJS zkesv $WORK_DIR/fflonk.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier_fflonk.sol
 fi 
