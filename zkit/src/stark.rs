@@ -18,6 +18,7 @@ pub fn prove(
     stark_struct: &String,
     pil_file: &String,
     norm_stage: bool,
+    agg_stage: bool,
     const_pol_file: &String,
     cm_pol_file: &String,
     circom_file: &String,
@@ -62,6 +63,7 @@ pub fn prove(
                 enable_input: false,
                 verkey_input: norm_stage,
                 skip_main: false,
+                agg_stage: false,
             };
 
             println!("generate circom");
@@ -116,6 +118,7 @@ pub fn prove(
                 enable_input: false,
                 verkey_input: norm_stage,
                 skip_main: false,
+                agg_stage: agg_stage,
             };
 
             println!("generate circom");

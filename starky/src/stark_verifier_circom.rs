@@ -1511,6 +1511,7 @@ template StarkVerifier() {{
         }}
     }}
 }}
+
 "#,
         nLastBits,
         1 << nLastBits,
@@ -1518,17 +1519,291 @@ template StarkVerifier() {{
         1 << nLastBits
     ));
 
-    if !options.skip_main {
-        if options.verkey_input {
+    ///////
+    // Aggregation Stage
+    ///////
+
+    if options.agg_stage {
+        res.push_str(&format!(
+            r#"
+template Recursive2() {{
+    signal input a_publics[{}];
+    signal input a_root1[4];
+    signal input a_root2[4];
+    signal input a_root3[4];
+    signal input a_root4[4];
+
+    signal input b_publics[{}];
+    signal input b_root1[4];
+    signal input b_root2[4];
+    signal input b_root3[4];
+    signal input b_root4[4];
+    "#,
+            pil.publics.len(),
+            pil.publics.len()
+        ));
+
+        res.push_str(&format!(
+            r#"
+    signal input a_rootC[4];
+    signal input b_rootC[4];
+"#
+        ));
+
+        res.push_str(&format!(
+            r#"
+    signal input a_evals[{}][3];
+    signal input a_s0_vals1[{}][{}];
+
+    signal input b_evals[{}][3];
+    signal input b_s0_vals1[{}][{}];
+        "#,
+            starkinfo.ev_map.len(),
+            stark_struct.nQueries,
+            starkinfo.map_sectionsN.get("cm1_2ns"),
+            starkinfo.ev_map.len(),
+            stark_struct.nQueries,
+            starkinfo.map_sectionsN.get("cm1_2ns")
+        ));
+
+        if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
             res.push_str(&format!(
                 r#"
-    component main {{public [publics, rootC]}}= StarkVerifier();
+    signal input a_s0_vals2[{}][{}];
+    signal input b_s0_vals2[{}][{}];
+            "#,
+                stark_struct.nQueries,
+                starkinfo.map_sectionsN.get("cm2_2ns"),
+                stark_struct.nQueries,
+                starkinfo.map_sectionsN.get("cm2_2ns")
+            ));
+        }
+
+        if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
+            res.push_str(&format!(
+                r#"
+    signal input a_s0_vals3[{}][{}];
+
+    signal input b_s0_vals3[{}][{}];
+            "#,
+                stark_struct.nQueries,
+                starkinfo.map_sectionsN.get("cm3_2ns"),
+                stark_struct.nQueries,
+                starkinfo.map_sectionsN.get("cm3_2ns")
+            ));
+        }
+
+        res.push_str(&format!(
+            r#"
+    signal input a_s0_vals4[{}][{}];
+    signal input a_s0_valsC[{}][{}];
+    signal input a_s0_siblings1[{}][{}][4];
+
+    signal input b_s0_vals4[{}][{}];
+    signal input b_s0_valsC[{}][{}];
+    signal input b_s0_siblings1[{}][{}][4];
+    "#,
+            stark_struct.nQueries,
+            starkinfo.map_sectionsN.get("cm4_2ns"),
+            stark_struct.nQueries,
+            starkinfo.n_constants,
+            stark_struct.nQueries,
+            stark_struct.steps[0].nBits,
+            stark_struct.nQueries,
+            starkinfo.map_sectionsN.get("cm4_2ns"),
+            stark_struct.nQueries,
+            starkinfo.n_constants,
+            stark_struct.nQueries,
+            stark_struct.steps[0].nBits
+        ));
+
+        if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
+            res.push_str(&format!(
+                r#"
+    signal input a_s0_siblings2[{}][{}][4];
+
+    signal input b_s0_siblings2[{}][{}][4];
+            "#,
+                stark_struct.nQueries,
+                stark_struct.steps[0].nBits,
+                stark_struct.nQueries,
+                stark_struct.steps[0].nBits
+            ));
+        }
+
+        if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
+            res.push_str(&format!(
+                r#"
+    signal input a_s0_siblings3[{}][{}][4];
+
+    signal input b_s0_siblings3[{}][{}][4];
+            "#,
+                stark_struct.nQueries,
+                stark_struct.steps[0].nBits,
+                stark_struct.nQueries,
+                stark_struct.steps[0].nBits,
+            ));
+        }
+
+        res.push_str(&format!(
+            r#"
+    signal input a_s0_siblings4[{}][{}][4];
+    signal input a_s0_siblingsC[{}][{}][4];
+
+    signal input b_s0_siblings4[{}][{}][4];
+    signal input b_s0_siblingsC[{}][{}][4];
+            "#,
+            stark_struct.nQueries,
+            stark_struct.steps[0].nBits,
+            stark_struct.nQueries,
+            stark_struct.steps[0].nBits,
+            stark_struct.nQueries,
+            stark_struct.steps[0].nBits,
+            stark_struct.nQueries,
+            stark_struct.steps[0].nBits
+        ));
+
+        for s in 0..(stark_struct.steps.len() - 1) {
+            res.push_str(&format!(
+                r#"
+        signal input a_s{}_root[4];
+
+        signal input b_s{}_root[4];
+            "#,
+                s + 1,
+                s + 1
+            ));
+        }
+
+        for s in 1..stark_struct.steps.len() {
+            res.push_str(&format!(
+                r#"
+    signal input a_s{}_vals[{}][{}];
+    signal input a_s{}_siblings[{}][{}][4];
+
+    signal input b_s{}_vals[{}][{}];
+    signal input b_s{}_siblings[{}][{}][4];
+            "#,
+                s,
+                stark_struct.nQueries,
+                (1 << (stark_struct.steps[s - 1].nBits - stark_struct.steps[s].nBits)) * 3,
+                s,
+                stark_struct.nQueries,
+                stark_struct.steps[s].nBits,
+                s,
+                stark_struct.nQueries,
+                (1 << (stark_struct.steps[s - 1].nBits - stark_struct.steps[s].nBits)) * 3,
+                s,
+                stark_struct.nQueries,
+                stark_struct.steps[s].nBits
+            ));
+        }
+
+        res.push_str(&format!(
+            r#"
+    signal input a_finalPol[{}][3];
+
+    signal input b_finalPol[{}][3];
+        "#,
+            1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits,
+            1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits,
+        ));
+
+        res.push_str(&format!(
+            r#"
+    component vA = StarkVerifier();
+
+    vA.publics <== a_publics;
+    vA.rootC <== a_rootC;
+
+    vA.root1 <== a_root1;
+    vA.root2 <== a_root2;
+    vA.root3 <== a_root3;
+    vA.root4 <== a_root4;
+    vA.evals <== a_evals;
+    vA.s0_vals1 <== a_s0_vals1;
+    vA.s0_vals3 <== a_s0_vals3;
+    vA.s0_vals4 <== a_s0_vals4;
+    vA.s0_valsC <== a_s0_valsC;
+    vA.s0_siblings1 <== a_s0_siblings1;
+    vA.s0_siblings3 <== a_s0_siblings3;
+    vA.s0_siblings4 <== a_s0_siblings4;
+    vA.s0_siblingsC <== a_s0_siblingsC;   
+
+    vA.finalPol <== a_finalPol;
+            "#,
+        ));
+
+        for s in 1..(stark_struct.steps.len()) {
+            res.push_str(&format!(
+                r#"
+    vA.s{}_root <== a_s{}_root;
+    vA.s{}_vals <== a_s{}_vals;
+    vA.s{}_siblings <== a_s{}_siblings;
+            "#,
+                s, s, s, s, s, s,
+            ));
+        }
+
+        res.push_str(&format!(
+            r#"
+    component vB = StarkVerifier();
+
+    vB.publics <== b_publics;
+    vB.rootC <== b_rootC;
+
+    vB.root1 <== b_root1;
+    vB.root2 <== b_root2;
+    vB.root3 <== b_root3;
+    vB.root4 <== b_root4;
+    vB.evals <== b_evals;
+    vB.s0_vals1 <== b_s0_vals1;
+    vB.s0_vals3 <== b_s0_vals3;
+    vB.s0_vals4 <== b_s0_vals4;
+    vB.s0_valsC <== b_s0_valsC;
+    vB.s0_siblings1 <== b_s0_siblings1;
+    vB.s0_siblings3 <== b_s0_siblings3;
+    vB.s0_siblings4 <== b_s0_siblings4;
+    vB.s0_siblingsC <== b_s0_siblingsC;
+
+    vB.finalPol <== b_finalPol;
+            "#,
+        ));
+
+        for s in 1..(stark_struct.steps.len()) {
+            res.push_str(&format!(
+                r#"
+    vB.s{}_root <== b_s{}_root;
+    vB.s{}_vals <== b_s{}_vals;
+    vB.s{}_siblings <== b_s{}_siblings;
+            "#,
+                s, s, s, s, s, s,
+            ));
+        }
+
+        res.push_str(&format!(
+            r#"
+}}
+            "#
+        ))
+    }
+
+    if !options.skip_main {
+        if options.agg_stage {
+            res.push_str(&format!(
+                r#"
+component main {{public [a_publics, a_rootC, b_publics,b_rootC]}}= Recursive2();"#
+            ));
+        } else if options.verkey_input {
+            res.push_str(&format!(
+                r#"
+component main {{public [publics, rootC]}}= StarkVerifier();
     "#
             ));
         } else {
             res.push_str(&format!(
                 r#"
-    component main {{public [publics]}}= StarkVerifier();
+component main {{public [publics]}}= StarkVerifier();
     "#
             ));
         }

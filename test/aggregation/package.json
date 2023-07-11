@@ -5,7 +5,8 @@
     "clean": "rm -rf build dist typechain cache artifacts",
     "compile": "hardhat compile",
     "build": "npm run clean && npm i && ./node_modules/.bin/tsc",
-    "test": "npm run build && npm run compile && npx hardhat test"
+    "test": "npm run build && npm run compile && npx hardhat test test/agg.test.ts",
+    "finaltest": "npm run build && npm run compile && npx hardhat test test/final.test.ts"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.2",
@@ -18,6 +19,7 @@
     "ethereum-waffle": "^3.0.0",
     "ethers": "^5.0.31",
     "hardhat-gas-reporter": "^1.0.9",
+    "snarkjs": "^0.7.0",
     "ts-node": "^10.4.0",
     "typechain": "^8.1.1",
     "typescript": "^4.6.2",
