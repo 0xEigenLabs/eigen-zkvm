@@ -388,9 +388,9 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                         ));
                     }
                 } else {
-                    let mut ina = "".to_string();
-                    let mut inb = "".to_string();
-                    let mut inc = "".to_string();
+                    let mut ina = String::new();
+                    let mut inb = String::new();
+                    let mut inc = String::new();
                     if inst.src[0].dim == 1 {
                         ina = format!("[{}, 0, 0]", ref_(&inst.src[0]));
                     } else {
@@ -1526,7 +1526,7 @@ template StarkVerifier() {{
             s, s, s, s
         ));
     }
-    /// Checks
+    // Checks
     res.push_str(&format!(
         r#"
     for (var q=0; q < {}; q ++) {{

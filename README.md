@@ -4,7 +4,9 @@ eigen-zkvm is a zkVM on layered proof system, allowing the developers to write Z
 
 - [x] zkit: universal commandline for starky and plonky
 
-- [x] Circom 2.x on PlonK prove system, with aggregation proof;
+- [x] Circom 2.x on PlonK prove system;
+
+- [x] Aggregation Proof over both Stark and Snark proof;
 
 - [x] Generate solidity verifier;
 
@@ -41,3 +43,4 @@ For power in range 20 to 26, you can download directly from [universal-setup hub
 
 ## Applications
 * [eigen-secret](https://github.com/0xEigenLabs/eigen-secret)
+* [zk-mixer](https://github.com/0xEigenLabs/zk-mixer)

@@ -424,9 +424,9 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                             ref_(&inst.src[2])
                         ));
                     } else {
-                        let mut ina = "".to_string();
-                        let mut inb = "".to_string();
-                        let mut inc = "".to_string();
+                        let mut ina = String::new();
+                        let mut inb = String::new();
+                        let mut inc = String::new();
                         if inst.src[0].dim == 3 {
                             ina = ref_(&inst.src[0]);
                         } else if inst.src[0].dim == 1 {
@@ -1728,7 +1728,7 @@ template Recursive2() {{
     vA.s0_siblings1 <== a_s0_siblings1;
     vA.s0_siblings3 <== a_s0_siblings3;
     vA.s0_siblings4 <== a_s0_siblings4;
-    vA.s0_siblingsC <== a_s0_siblingsC;   
+    vA.s0_siblingsC <== a_s0_siblingsC;
 
     vA.finalPol <== a_finalPol;
             "#,

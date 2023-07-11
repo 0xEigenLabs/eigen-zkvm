@@ -137,10 +137,10 @@ final_end=$(date +%s)
 snark_start=$(date +%s)
 
 if [ $first_run = "yes" ]; then
-    ./snark_verifier.sh groth16 true 
-else 
-    ./snark_verifier.sh groth16 false  
-fi 
+    $CUR_DIR/snark_verifier.sh groth16 true
+else
+    $CUR_DIR/snark_verifier.sh groth16 false
+fi
 
 snark_end=$(date +%s)
 

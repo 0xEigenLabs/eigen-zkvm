@@ -23,7 +23,7 @@ RUNDIR="${CUR_DIR}/../starkjs"
 
 SNARKJS=${CUR_DIR}/aggregation/node_modules/snarkjs/build/cli.cjs
 if [ ! -d "${CUR_DIR}/aggregation/node_modules/snarkjs" ]; then
-    cd ${CUR_DIR}/aggregation && npm install 
+    cd ${CUR_DIR}/aggregation && npm install
 fi
 
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
@@ -33,7 +33,7 @@ first_run=${2-false}
 
 if [ $first_run = "true" ]; then 
     echo "compile circom and generate wasm and r1cs"
-    circom $CUR_DIR/../starkjs/circuits/$CIRCUIT_NAME.circom --wasm --r1cs -p bn128  -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
+    $ZKIT compile -i $CUR_DIR/../starkjs/circuits/$CIRCUIT_NAME.circom -p bn128  -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
     # cp $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm /tmp/aggregation/circuits.wasm
 fi 
 
