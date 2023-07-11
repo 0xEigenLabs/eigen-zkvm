@@ -1731,7 +1731,6 @@ template Recursive2() {{
     vA.s0_siblingsC <== a_s0_siblingsC;   
 
     vA.finalPol <== a_finalPol;
-
             "#,
         ));
 
@@ -1793,8 +1792,7 @@ template Recursive2() {{
         if options.agg_stage {
             res.push_str(&format!(
                 r#"
-component main {{public [a_publics, a_rootC, b_publics,b_rootC]}}= Recursive2();
-    "#
+component main {{public [a_publics, a_rootC, b_publics,b_rootC]}}= Recursive2();"#
             ));
         } else if options.verkey_input {
             res.push_str(&format!(
