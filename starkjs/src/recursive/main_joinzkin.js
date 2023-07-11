@@ -76,7 +76,7 @@ async function run() {
 
     zkinOut.b_finalPol = zkin2.finalPol;
     
-    await fs.promises.writeFileSync(zkinOutFile, JSON.stringify(zkinOut, null, 1), "utf8");
+    fs.writeFileSync(zkinOutFile, JSON.stringify(zkinOut, null, 1), "utf8");
 
     console.log("file Generated Correctly");
 
