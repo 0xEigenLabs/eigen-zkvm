@@ -55,13 +55,15 @@ node $RUNDIR/src/recursive/main_joinzkin.js  --zkin1 $input0/input.zkin.json --z
 
 echo "3. generate the pil files and  const polynomicals files "
 # generate the pil files and  const polynomicals files
-# input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
-# output files :  $C12_VERIFIER.exec
-node $RUNDIR/src/compressor12/main_compressor12_setup.js \
-    -r $WORKSPACE/$RECURSIVE_CIRCUIT.r1cs \
-    -c $WORKSPACE/$RECURSIVE_CIRCUIT.const \
-    -p $WORKSPACE/$RECURSIVE_CIRCUIT.pil \
-    -e $WORKSPACE/$RECURSIVE_CIRCUIT.exec 
+# input files :  $C12_VERIFIER.r1cs
+# output files : $C12_VERIFIER.const  $C12_VERIFIER.pil  $C12_VERIFIER.exec
+if [ ! -f "$WORKSPACE/$RECURSIVE_CIRCUIT.pil" ]; then
+    node $RUNDIR/src/compressor12/main_compressor12_setup.js \
+        -r $WORKSPACE/$RECURSIVE_CIRCUIT.r1cs \
+        -c $WORKSPACE/$RECURSIVE_CIRCUIT.const \
+        -p $WORKSPACE/$RECURSIVE_CIRCUIT.pil \
+        -e $WORKSPACE/$RECURSIVE_CIRCUIT.exec 
+fi 
 
 echo "4. generate the commit polynomicals files  "
 # generate the commit polynomicals files 
@@ -82,7 +84,7 @@ echo "5. generate recursive2 proof  "
 ../target/release/eigen-zkit stark_prove -s ../starky/data/r2.starkStruct.json \
     -p $WORKSPACE/$RECURSIVE_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE_CIRCUIT.const \
-    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom --i ./aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json 
+    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom --i ./aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json  --norm_stage
 
 
 
@@ -97,11 +99,13 @@ fi
 
 
 echo "2. generate the pil files and  const polynomicals files "
-node $RUNDIR/src/compressor12/main_compressor12_setup.js \
-    -r $WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs \
-    -c $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
-    -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil \
-    -e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec 
+if [ ! -f "$WORKSPACE/$RECURSIVE2_CIRCUIT.pil" ]; then
+    node $RUNDIR/src/compressor12/main_compressor12_setup.js \
+        -r $WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs \
+        -c $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
+        -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil \
+        -e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec 
+fi 
 
 echo "3. generate the commit polynomicals files "
 node $RUNDIR/src/compressor12/main_compressor12_exec.js \
@@ -117,4 +121,10 @@ echo "4. generate final proof  "
 ../target/release/eigen-zkit stark_prove -s ../starky/data/final.starkStruct.bn128.json \
     -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
-    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $RUNDIR/circuits/$FINAL_CIRCUIT.circom --i ./aggregation/$FINAL_CIRCUIT/final_input.zkin.json 
+    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $RUNDIR/circuits/$FINAL_CIRCUIT.circom --i ./aggregation/$FINAL_CIRCUIT/final_input.zkin.json  --norm_stage 
+
+if [ $1 = "restart" ]; then
+    ./snark_verifier.sh groth16 true 
+else 
+    ./snark_verifier.sh groth16 false  
+fi 

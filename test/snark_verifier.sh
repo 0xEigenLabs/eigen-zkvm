@@ -26,7 +26,7 @@ ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 if [ "$2" = "true" ]; then 
     echo "compile circom and generate wasm and r1cs"
     circom $CUR_DIR/../starkjs/circuits/$CIRCUIT_NAME.circom --wasm --r1cs -p bn128  -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
-    cp $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm /tmp/aggregation/circuits.wasm
+    # cp $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm /tmp/aggregation/circuits.wasm
 fi 
 
 
@@ -37,8 +37,12 @@ if [ "$1" = "groth16" ]; then
     fi
     
     echo ">>> groth16 scheme <<< "
-    # echo "1. groth16 setup"
-    # snarkjs g16s $WORK_DIR/$CIRCUIT_NAME.r1cs $SRS  $WORK_DIR/g16.zkey
+    if [  "$2" = "true" ]; then
+        echo "1. generate groth16 zkey"
+        snarkjs g16s $WORK_DIR/$CIRCUIT_NAME.r1cs $SRS  $WORK_DIR/g16.zkey
+    else 
+        echo "1. groth16 zkey already generated"
+    fi
 
     echo "2. groth16 fullprove"
     snarkjs g16f $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/g16.zkey $WORK_DIR/proof.json $WORK_DIR/public.json
@@ -56,17 +60,23 @@ if [ "$1" = "groth16" ]; then
     snarkjs zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
 
     echo "6. calculate verify gas cost"
-    npx hardhat test test/final.test.ts
+    cd aggregation && npm install && npx hardhat test test/final.test.ts
 else 
-    if [ ! -f $BIG_SRS ]; then
-        echo "downloading powersOfTau28_hez_final_${BIG_POWER}.ptau"
-        curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${BIG_POWER}.ptau -o $BIG_SRS
+    if [ ! -f $SRS ]; then
+        echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
+        curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${POWER}.ptau -o $BIG_SRS
     fi
 
     echo ">>> fflonk scheme <<< "
     echo "1. fflonk setup "
-    echo "$BIG_SRS"
-    nohup snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey &
+    
+     if [ ! -f "$WORK_DIR/fflonk.zkey" ]; then
+        echo "1. generate groth16 zkey"
+        # nohup snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey &
+        snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey
+    else 
+        echo "1. fflonk zkey already generated"
+    fi
 
     echo "2. fflonk fullprove"
     snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS_FINAL  $WORK_DIR/fflonk.zkey
