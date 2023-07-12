@@ -1,8 +1,8 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-const proof = require("/tmp/aggregation/final_proof.json");
-const publics = require("/tmp/aggregation/final_public.json");
+const proof = require("../fibonacci.final/proof.json");
+const publics = require("../fibonacci.final/public.json");
 
 describe("Plonk verifier test", function() {
   it("Groth16 Verify", async function() {
@@ -28,13 +28,4 @@ describe("Plonk verifier test", function() {
         publics,
     )).to.equal(true);
   });
-
-  // it("Fflonk Verify", async function() {
-  //   const verifierFactory = await ethers.getContractFactory("FflonkVerifier");
-  //   const verifier = await verifierFactory.deploy();
-
-  //   await verifier.deployed();
-
-  //   // todo : add verify process
-  // });
 });

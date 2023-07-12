@@ -62,9 +62,6 @@ if [ $snark_type = "groth16" ]; then
         echo "4. verify groth16 proof"
         $SNARKJS g16v $WORK_DIR/verification_key.json $WORK_DIR/public.json $WORK_DIR/proof.json
 
-        cp $WORK_DIR/public.json /tmp/aggregation/final_public.json 
-        cp $WORK_DIR/proof.json /tmp/aggregation/final_proof.json
-
         echo "5. generate verifier contract"
         $SNARKJS zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
 
@@ -100,4 +97,7 @@ else
 
     echo "5. generate verifier contract"
     $SNARKJS zkesv $WORK_DIR/fflonk.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier_fflonk.sol
+
+    echo "6. calculate verify gas cost"
+    cd aggregation && npx hardhat test test/final.fflonk.test.ts
 fi 
