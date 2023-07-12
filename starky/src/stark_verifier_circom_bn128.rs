@@ -388,26 +388,20 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                         ));
                     }
                 } else {
-                    let mut ina = "".to_string();
-                    let mut inb = "".to_string();
-                    let mut inc = "".to_string();
-                    if inst.src[0].dim == 1 {
-                        ina = format!("[{}, 0, 0]", ref_(&inst.src[0]));
-                    } else {
-                        ina = ref_(&inst.src[0]);
-                    }
+                    let ina = match inst.src[0].dim {
+                        1 => format!("[{}, 0, 0]", ref_(&inst.src[0])),
+                        _ => ref_(&inst.src[0]),
+                    };
 
-                    if inst.src[1].dim == 1 {
-                        inb = format!("[{}, 0, 0]", ref_(&inst.src[1]));
-                    } else {
-                        inb = ref_(&inst.src[1]);
-                    }
+                    let inb = match inst.src[1].dim {
+                        1 => format!("[{}, 0, 0]", ref_(&inst.src[1])),
+                        _ => ref_(&inst.src[1]),
+                    };
 
-                    if inst.src[2].dim == 1 {
-                        inc = format!("[{}, 0, 0]", ref_(&inst.src[2]));
-                    } else {
-                        inc = ref_(&inst.src[2]);
-                    }
+                    let inc = match inst.src[2].dim {
+                        1 => format!("[{}, 0, 0]", ref_(&inst.src[2])),
+                        _ => ref_(&inst.src[2]),
+                    };
                     str_code.push_str(&format!(
                         r#"
     signal {}[3] <== GLCMulAdd()({}, {}, {});"#,
@@ -1526,7 +1520,7 @@ template StarkVerifier() {{
             s, s, s, s
         ));
     }
-    /// Checks
+    // Checks
     res.push_str(&format!(
         r#"
     for (var q=0; q < {}; q ++) {{

@@ -699,11 +699,12 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     log::debug!("compile_code ctx.first:\n{}", c_first);
     let _c_i = compile_code(ctx, starkinfo, &seg.first, dom, false);
     let _c_last = compile_code(ctx, starkinfo, &seg.first, dom, false);
-
+    /*
     let next = match dom {
         "n" => 1,
         _ => 1 << (ctx.nbits_ext - ctx.nbits),
     };
+    */
     let N = if dom == "n" { ctx.N } else { ctx.Next };
     for i in 0..N {
         c_first.eval(ctx, i);

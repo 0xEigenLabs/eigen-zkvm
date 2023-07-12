@@ -2,7 +2,6 @@
 use crate::constant::MG;
 use crate::f3g::F3G;
 use crate::helper::log2_any;
-use rayon::prelude::*;
 use winter_math::FieldElement;
 
 pub struct FFT {

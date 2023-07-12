@@ -424,32 +424,23 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                             ref_(&inst.src[2])
                         ));
                     } else {
-                        let mut ina = "".to_string();
-                        let mut inb = "".to_string();
-                        let mut inc = "".to_string();
-                        if inst.src[0].dim == 3 {
-                            ina = ref_(&inst.src[0]);
-                        } else if inst.src[0].dim == 1 {
-                            ina = format!("[{}, 0, 0]", ref_(&inst.src[0]));
-                        } else {
-                            panic!("Invalid src dimensions")
-                        }
+                        let ina = match inst.src[0].dim {
+                            3 => ref_(&inst.src[0]),
+                            1 => format!("[{}, 0, 0]", ref_(&inst.src[0])),
+                            _ => panic!("Invalid src dimensions"),
+                        };
 
-                        if inst.src[1].dim == 3 {
-                            inb = ref_(&inst.src[1]);
-                        } else if inst.src[1].dim == 1 {
-                            inb = format!("[{}, 0, 0]", ref_(&inst.src[1]));
-                        } else {
-                            panic!("Invalid src dimensions")
-                        }
+                        let inb = match inst.src[1].dim {
+                            3 => ref_(&inst.src[1]),
+                            1 => format!("[{}, 0, 0]", ref_(&inst.src[1])),
+                            _ => panic!("Invalid src dimensions"),
+                        };
 
-                        if inst.src[2].dim == 3 {
-                            inc = ref_(&inst.src[2]);
-                        } else if inst.src[2].dim == 1 {
-                            inc = format!("[{}, 0, 0]", ref_(&inst.src[2]));
-                        } else {
-                            panic!("Invalid src dimensions")
-                        }
+                        let inc = match inst.src[2].dim {
+                            3 => ref_(&inst.src[2]),
+                            1 => format!("[{}, 0, 0]", ref_(&inst.src[2])),
+                            _ => panic!("Invalid src dimensions"),
+                        };
                         str_code.push_str(&format!(
                             r#"
     signal {}[3] <== CMulAdd()({}, {}, {});"#,
@@ -1728,7 +1719,7 @@ template Recursive2() {{
     vA.s0_siblings1 <== a_s0_siblings1;
     vA.s0_siblings3 <== a_s0_siblings3;
     vA.s0_siblings4 <== a_s0_siblings4;
-    vA.s0_siblingsC <== a_s0_siblingsC;   
+    vA.s0_siblingsC <== a_s0_siblingsC;
 
     vA.finalPol <== a_finalPol;
             "#,
