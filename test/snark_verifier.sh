@@ -9,7 +9,8 @@ CUR_DIR=$(cd $(dirname $0);pwd)
 POWER=22
 BIG_POWER=28
 SRS=${CUR_DIR}/../keys/setup_2^${POWER}.ptau
-BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
+#BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
+BIG_SRS=/zkp/zkevm-proverjs/build/powersOfTau28_hez_final.ptau
 
 CIRCUIT_NAME=fibonacci.final
 
@@ -74,7 +75,6 @@ if [ $snark_type = "groth16" ]; then
 else 
     if [ ! -f $BIG_SRS ]; then
         echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
-        #curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${POWER}.ptau -o $BIG_SRS
         curl wget -P build https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final.ptau -o $BIG_SRS
     fi
 
@@ -90,16 +90,13 @@ else
     fi
 
     echo "2. fflonk fullprove"
-    $SNARKJS ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey
-    $SNARKJS pkf $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/fflonk.zkey $WORK_DIR/proof.fflonk.json $WORK_DIR/public.fflonk.
+    $SNARKJS fff $SNARK_INPUT $WORK_DIR/${CIRCUIT_NAME}_js/$CIRCUIT_NAME.wasm $WORK_DIR/fflonk.zkey $WORK_DIR/proof.fflonk.json $WORK_DIR/public.fflonk.json
+
     echo "3. generate verification_key"
     $SNARKJS zkev  $WORK_DIR/fflonk.zkey  $WORK_DIR/verification_key.fflonk.json
 
     echo "4. verify fflonk proof"
     $SNARKJS ffv $WORK_DIR/verification_key.fflonk.json $WORK_DIR/public.fflonk.json $WORK_DIR/proof.fflonk.json
-
-    cp $WORK_DIR/public.fflonk.json  /tmp/aggregation/final_public.fflonk.json 
-    cp $WORK_DIR/proof.fflonk.json /tmp/aggregation/final_proof.fflonk.json
 
     echo "5. generate verifier contract"
     $SNARKJS zkesv $WORK_DIR/fflonk.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier_fflonk.sol
