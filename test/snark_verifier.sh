@@ -7,7 +7,7 @@ source ~/.bashrc
 CUR_DIR=$(cd $(dirname $0);pwd)
 
 POWER=22
-BIG_POWER=27
+BIG_POWER=28
 SRS=${CUR_DIR}/../keys/setup_2^${POWER}.ptau
 BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
 
@@ -74,7 +74,8 @@ if [ $snark_type = "groth16" ]; then
 else 
     if [ ! -f $BIG_SRS ]; then
         echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
-        curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${POWER}.ptau -o $BIG_SRS
+        #curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${POWER}.ptau -o $BIG_SRS
+        curl wget -P build https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final.ptau -o $BIG_SRS
     fi
 
     echo ">>> fflonk scheme <<< "
