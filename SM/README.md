@@ -14,16 +14,16 @@ npm run vm
 ### Bottom Layer: FRI Proof
 
 ```
-../target/release/zkit stark_prove -s ./build/proof/starkstruct.json \
+../target/release/eigen-zkit stark_prove -s ./build/proof/starkstruct.json \
     -p ./circuits/zkvm.pil.json \
-    -o ./circuits/zkvm.const \
-    -m ./circuits/zkvm.cm -c circuits/zkvm.circom -i circuits/zkvm.zkin.json
+    --o ./circuits/zkvm.const \
+    --m ./circuits/zkvm.cm -c circuits/zkvm.circom --i circuits/zkvm.zkin.json
 ```
 
 ### Recursive Layer: FRI Proof
 
 ```
-../target/release/zkit compile -p goldilocks -i circuits/zkvm.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
+../target/release/eigen-zkit compile -p goldilocks -i circuits/zkvm.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
 node ../starkjs/src/compressor12/main_compressor12_setup.js \
     -r /tmp/zkvm.r1cs \
@@ -38,7 +38,7 @@ node ../starkjs/src/compressor12/main_compressor12_exec.js \
     -e /tmp/c12.exec \
     -m /tmp/c12.cm
 
-../target/release/zkit stark_prove -s ./tools/zkvm.c12.starkstruct.json \
+../target/release/eigen-zkit stark_prove -s ./tools/zkvm.c12.starkstruct.json \
     -p /tmp/c12.pil.json \
     -o /tmp/c12.const \
     -m /tmp/c12.cm -c circuits/circuit.circom -i circuits/circuit.zkin.json
