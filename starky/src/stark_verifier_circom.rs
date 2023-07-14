@@ -220,7 +220,7 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                 } else if inst.src[0].dim == 1 && inst.src[1].dim == 3 {
                     str_code.push_str(&format!(
                         r#"
-    signal {}[3] <== [{} + {}[0], {}[1]. {}[2]];"#,
+    signal {}[3] <== [{} + {}[0], {}[1], {}[2]];"#,
                         ref_(&inst.dest),
                         ref_(&inst.src[0]),
                         ref_(&inst.src[1]),

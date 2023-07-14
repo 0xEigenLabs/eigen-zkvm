@@ -40,8 +40,8 @@ node ../starkjs/src/compressor12/main_compressor12_exec.js \
 
 ../target/release/eigen-zkit stark_prove -s ./tools/zkvm.c12.starkstruct.json \
     -p /tmp/c12.pil.json \
-    -o /tmp/c12.const \
-    -m /tmp/c12.cm -c circuits/circuit.circom -i circuits/circuit.zkin.json
+    --o /tmp/c12.const \
+    --m /tmp/c12.cm -c circuits/circuit.circom --i circuits/circuit.zkin.json
 ```
 
 ### Top Layer: Snark proof
