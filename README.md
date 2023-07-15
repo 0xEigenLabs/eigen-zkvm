@@ -32,8 +32,12 @@ For power in range 20 to 26, you can download directly from [universal-setup hub
 * Single proof
 [test_single.sh](./test/test_single.sh)
 
-* Aggregation proof
+* Snark aggregation proof
 [test_aggregation.sh](./test/test_aggregation.sh)
+
+* Stark aggregation proof
+[stark_aggregation.sh yes bn128](./test/stark_aggregation.sh)
+[stark_aggregation.sh yes bls12-381](./test/stark_aggregation.sh)
 
 * Stark proof and recursive stark prove
 [starky](./starky)

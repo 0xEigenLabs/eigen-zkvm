@@ -5,10 +5,13 @@ export NODE_OPTIONS="--max-old-space-size=16384"
 source ~/.bashrc 
 
 CUR_DIR=$(cd $(dirname $0);pwd)
-
+snark_type=${1-groth16}
+first_run=${2-false}
+#bls12-381
+CURVE=${3-bn128}
 POWER=22
 BIG_POWER=28
-SRS=${CUR_DIR}/../keys/setup_2^${POWER}.ptau
+SRS=${CUR_DIR}/../keys/setup_2^${POWER}.${CURVE}.ptau
 #BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
 BIG_SRS=/zkp/zkevm-proverjs/build/powersOfTau28_hez_final.ptau
 
@@ -28,9 +31,6 @@ fi
 
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 
-snark_type=${1-groth16}
-first_run=${2-false}
-
 if [ $first_run = "true" ]; then 
     echo "compile circom and generate wasm and r1cs"
     $ZKIT compile -i $CUR_DIR/../starkjs/circuits/$CIRCUIT_NAME.circom -p bn128  -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
@@ -41,9 +41,12 @@ fi
 if [ $snark_type = "groth16" ]; then
     if [ ! -f $SRS ]; then
         echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
-        curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${POWER}.ptau -o $SRS
+        #curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${POWER}.ptau -o $SRS
+        $SNARKJS powersoftau new $CURVE ${POWER} /tmp/pot${POWER}_0000.ptau -v
+        $SNARKJS powersoftau contribute /tmp/pot${POWER}_0000.ptau /tmp/pot${POWER}_0001.ptau --name="First contribution" -v
+        $SNARKJS powersoftau prepare phase2 /tmp/pot${POWER}_0001.ptau $SRS -v
     fi
-    
+
     echo ">>> groth16 scheme <<< "
     if [  "$2" = "true" ]; then
         echo "1. generate groth16 zkey"
@@ -62,14 +65,20 @@ if [ $snark_type = "groth16" ]; then
         echo "4. verify groth16 proof"
         $SNARKJS g16v $WORK_DIR/verification_key.json $WORK_DIR/public.json $WORK_DIR/proof.json
 
-        echo "5. generate verifier contract"
-        $SNARKJS zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
+        if [ $CURVE = "bn128" ]; then
+            echo "5. generate verifier contract"
+            $SNARKJS zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
 
-        echo "6. calculate verify gas cost"
-        cd aggregation && npx hardhat test test/final.test.ts
-    fi 
+            echo "6. calculate verify gas cost"
+            cd aggregation && npx hardhat test test/final.test.ts
+        fi
+    fi
 
 else 
+    if [ $CURVE != "bn128" ]; then
+        echo "Not support bls12-381"
+        exit -1
+    fi
     if [ ! -f $BIG_SRS ]; then
         echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
         curl wget -P build https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final.ptau -o $BIG_SRS
