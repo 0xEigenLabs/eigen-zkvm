@@ -19,6 +19,7 @@ RUNDIR="${CUR_DIR}/../starkjs"
 WORKSPACE=/tmp/aggregation_$CIRCUIT
 
 first_run=${1-no}
+CURVE=${2-bn128}
 if [ $first_run = "yes" ]; then
     rm -rf $WORKSPACE && mkdir -p $WORKSPACE
 fi
@@ -137,9 +138,9 @@ final_end=$(date +%s)
 snark_start=$(date +%s)
 
 if [ $first_run = "yes" ]; then
-    $CUR_DIR/snark_verifier.sh groth16 true
+    $CUR_DIR/snark_verifier.sh groth16 true $CURVE
 else
-    $CUR_DIR/snark_verifier.sh groth16 false
+    $CUR_DIR/snark_verifier.sh groth16 false $CURVE
 fi
 
 snark_end=$(date +%s)

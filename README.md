@@ -30,16 +30,25 @@ zkit setup -p 13 -s setup_2^13.key
 For power in range 20 to 26, you can download directly from [universal-setup hub](https://universal-setup.ams3.digitaloceanspaces.com).
 
 * Single proof
-[test_single.sh](./test/test_single.sh)
 
-* Aggregation proof
-[test_aggregation.sh](./test/test_aggregation.sh)
+> [test_single.sh](./test/test_single.sh)
+
+* Snark aggregation proof
+
+> [test_aggregation.sh](./test/test_aggregation.sh)
+
+* Stark aggregation proof
+
+> [stark_aggregation.sh yes bn128](./test/stark_aggregation.sh)
+
+> [stark_aggregation.sh yes bls12381](./test/stark_aggregation.sh)
 
 * Stark proof and recursive stark prove
-[starky](./starky)
+> [starky](./starky)
 
 * Layered proof
-[starkjs](./starkjs)
+
+> [starkjs](./starkjs)
 
 ## Applications
 * [eigen-secret](https://github.com/0xEigenLabs/eigen-secret)

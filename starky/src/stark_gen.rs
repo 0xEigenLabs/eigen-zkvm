@@ -349,7 +349,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             }
             cur_s = cur_s * shift_in;
         }
-        log::debug!("qq2");
+        //log::debug!("qq2");
         //crate::helper::pretty_print_array(&qq2);
 
         fft(
