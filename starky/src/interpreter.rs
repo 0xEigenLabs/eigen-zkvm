@@ -38,24 +38,24 @@ impl fmt::Display for Expr {
             //    write!(f, "{:?} {} {}", self.op, self.defs[0], self.defs[1])
             //}
             Ops::Add => {
-                write!(f, "{} + {}", self.defs[0], self.defs[1])
+                write!(f, "let _tmp = ctx.{} + ctx.{};", self.defs[0], self.defs[1])
             }
             Ops::Mul => {
-                write!(f, "{} * {}", self.defs[0], self.defs[1])
+                write!(f, "let _tmp = ctx.{} * ctx.{};", self.defs[0], self.defs[1])
             }
             Ops::Sub => {
-                write!(f, "{} - {}", self.defs[0], self.defs[1])
+                write!(f, "let _tmp = ctx.{} - ctx.{};", self.defs[0], self.defs[1])
             }
             Ops::Copy_ => {
-                write!(f, "({})", self.defs[0])
+                write!(f, "ctx.{} = _tmp;", self.defs[0])
             }
             Ops::Ret => {
-                write!(f, "return;")
+                write!(f, "return _tmp;")
             }
             Ops::Refer => {
                 write!(
                     f,
-                    "{} = ({} + ((i + {})%{}) * {});",
+                    "{}[{} + ((i + {})%{}) * {})]",
                     self.syms[0],
                     self.addr[0],
                     self.addr[1],
@@ -65,10 +65,10 @@ impl fmt::Display for Expr {
                 )
             }
             Ops::Vari(x) => {
-                write!(f, "{};", x)
+                write!(f, "{}", x)
             }
             Ops::Write => {
-                write!(f, "{} = ", self.defs[0])
+                write!(f, "ctx.{} = _tmp;", self.defs[0])
             }
         }
     }
@@ -191,9 +191,8 @@ impl Block {
 
 impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "ns: {}\n", self.namespace)?;
-        let idx = std::cmp::min(10000, self.exprs.len());
-        for i in 0..idx {
+        //write!(f, "ns: {}\n", self.namespace)?;
+        for i in 0..self.exprs.len() {
             write!(f, "\t {}\n", self.exprs[i])?;
         }
         write!(f, "\n")
