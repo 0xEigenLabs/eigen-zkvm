@@ -45,6 +45,5 @@ name = "merklehash"
 harness = false
 
 [features]
-default = [ "build" ]
 build = []
 eval = []

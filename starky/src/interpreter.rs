@@ -34,9 +34,6 @@ pub struct Expr {
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.op {
-            //Ops::Add | Ops::Mul | Ops::Sub => {
-            //    write!(f, "{:?} {} {}", self.op, self.defs[0], self.defs[1])
-            //}
             Ops::Add => {
                 write!(f, "let _tmp = ctx.{} + ctx.{};", self.defs[0], self.defs[1])
             }
@@ -47,7 +44,7 @@ impl fmt::Display for Expr {
                 write!(f, "let _tmp = ctx.{} - ctx.{};", self.defs[0], self.defs[1])
             }
             Ops::Copy_ => {
-                write!(f, "ctx.{} = _tmp;", self.defs[0])
+                write!(f, "let _tmp = ctx.{};", self.defs[0])
             }
             Ops::Ret => {
                 write!(f, "return _tmp;")
@@ -55,7 +52,7 @@ impl fmt::Display for Expr {
             Ops::Refer => {
                 write!(
                     f,
-                    "{}[{} + ((i + {})%{}) * {})]",
+                    "{}[{} + ((i + {})%{}) * {}]",
                     self.syms[0],
                     self.addr[0],
                     self.addr[1],
@@ -115,10 +112,41 @@ impl Block {
     }
 
     #[cfg(not(feature = "build"))]
-    pub fn eval(&self, ctx: &mut StarkContext, i: usize, dom: &str, step: &str) -> F3G {
-        include!("/tmp/{}_{}.rs", step, dom);
+    pub fn eval_public_n(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {
+        include!("/tmp/public_n.rs");
         F3G::ZERO
     }
+
+    #[cfg(not(feature = "build"))]
+    pub fn eval_step2prev_n(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {
+        include!("/tmp/step2prev_n.rs");
+        F3G::ZERO
+    }
+
+    #[cfg(not(feature = "build"))]
+    pub fn eval_step3_n(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {
+        include!("/tmp/step3_n.rs");
+        F3G::ZERO
+    }
+
+    #[cfg(not(feature = "build"))]
+    pub fn eval_step3prev_n(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {
+        include!("/tmp/step3prev_n.rs");
+        F3G::ZERO
+    }
+
+    #[cfg(not(feature = "build"))]
+    pub fn eval_step4_2ns(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {
+        include!("/tmp/step4_2ns.rs");
+        F3G::ZERO
+    }
+
+    #[cfg(not(feature = "build"))]
+    pub fn eval_step5_2ns(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {
+        include!("/tmp/step5_2ns.rs");
+        F3G::ZERO
+    }
+
     /// parameters: ctx, i
     /// example:
     /// let block = compile_code();
@@ -213,7 +241,6 @@ impl Block {
 
 impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        //write!(f, "ns: {}\n", self.namespace)?;
         for i in 0..self.exprs.len() {
             write!(f, "\t {}\n", self.exprs[i])?;
         }
