@@ -98,11 +98,33 @@ pub struct Block {
 }
 
 impl Block {
+    #[cfg(not(feature = "build"))]
+    pub fn codegen(&self, dom: &str, step: &str) {}
+
+    #[cfg(feature = "build")]
+    pub fn codegen(&self, dom: &str, step: &str) {
+        use std::io::Write;
+        let body = format!(
+            r#"
+        {}
+"#,
+            self
+        );
+        let mut f = std::fs::File::create(&format!("/tmp/{}_{}.rs", step, dom)).unwrap();
+        write!(f, "{}", &body);
+    }
+
+    #[cfg(not(feature = "build"))]
+    pub fn eval(&self, ctx: &mut StarkContext, i: usize, dom: &str, step: &str) -> F3G {
+        include!("/tmp/{}_{}.rs", step, dom);
+        F3G::ZERO
+    }
     /// parameters: ctx, i
     /// example:
     /// let block = compile_code();
     /// block.eval(&mut ctx, i);
-    pub fn eval(&self, ctx: &mut StarkContext, arg_i: usize) -> F3G {
+    #[cfg(feature = "build")]
+    pub fn eval(&self, ctx: &mut StarkContext, arg_i: usize, _dom: &str, _step: &str) -> F3G {
         let mut val_stack: Vec<F3G> = Vec::new();
         let length = self.exprs.len();
 

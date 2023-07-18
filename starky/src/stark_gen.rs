@@ -251,7 +251,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         log::debug!("challenges[1] {}", ctx.challenges[1]);
 
         //TODO parallel execution
-        calculate_exps(&mut ctx, starkinfo, &program.step2prev, "n");
+        calculate_exps(&mut ctx, starkinfo, &program.step2prev, "n", "step2prev");
 
         for pu in starkinfo.pu_ctx.iter() {
             let f_pol = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.f_exp_id]);
@@ -281,7 +281,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         log::debug!("challenges[2] {}", ctx.challenges[2]);
         log::debug!("challenges[3] {}", ctx.challenges[3]);
 
-        calculate_exps(&mut ctx, starkinfo, &program.step3prev, "n");
+        calculate_exps(&mut ctx, starkinfo, &program.step3prev, "n", "step3prev");
 
         for (i, pu) in starkinfo.pu_ctx.iter().enumerate() {
             log::info!("Calculating z for plookup {}", i);
@@ -309,7 +309,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             n_cm += 1;
         }
 
-        calculate_exps(&mut ctx, starkinfo, &program.step3, "n");
+        calculate_exps(&mut ctx, starkinfo, &program.step3, "n", "step3");
 
         log::info!("Merkelizing 3....");
 
@@ -328,7 +328,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                                                     //log::debug!("challenges[4] {}", ctx.challenges[4]);
 
         //log::debug!("step42ns {}", &program.step42ns);
-        calculate_exps(&mut ctx, starkinfo, &program.step42ns, "2ns");
+        calculate_exps(&mut ctx, starkinfo, &program.step42ns, "2ns", "step4");
         log::debug!("q_2ns");
         //crate::helper::pretty_print_array(&ctx.q_2ns);
 
@@ -486,7 +486,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                 xxwx[1] = vw[1];
                 xxwx[2] = vw[2];
             });
-        calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns");
+        calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns", "step5");
 
         let mut fri_pol = vec![F3G::ZERO; N << extend_bits];
         fri_pol.par_iter_mut().enumerate().for_each(|(i, o)| {
@@ -530,7 +530,9 @@ impl<'a, M: MerkleTree> StarkProof<M> {
     ) -> F3G {
         ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
-        let res = t.eval(ctx, idx);
+        log::info!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
+        t.codegen("n", "public");
+        let res = t.eval(ctx, idx, "n", "public");
         //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
         res
     }
@@ -693,10 +695,17 @@ pub fn merkelize<M: MerkleTree>(
     Ok(tree)
 }
 
-pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {
+pub fn calculate_exps(
+    ctx: &mut StarkContext,
+    starkinfo: &StarkInfo,
+    seg: &Segment,
+    dom: &str,
+    step: &str,
+) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    log::info!("compile_code ctx.first:\n{}", c_first);
+    log::info!("calculate_exps compile_code ctx.first:\n{}", c_first);
+    c_first.codegen(dom, step);
     let _c_i = compile_code(ctx, starkinfo, &seg.first, dom, false);
     let _c_last = compile_code(ctx, starkinfo, &seg.first, dom, false);
     /*
@@ -707,7 +716,7 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     */
     let N = if dom == "n" { ctx.N } else { ctx.Next };
     for i in 0..N {
-        c_first.eval(ctx, i);
+        c_first.eval(ctx, i, dom, step);
         //log::debug!("ctx.q_2ns[3*{}] {} ", i, ctx.q_2ns[3 * i]);
         //for i in 0..ctx.tmp.len() {
         //    log::debug!("tmp@{} {}", i, ctx.tmp[i]);

@@ -2,7 +2,7 @@
 set -e
 
 ## build
-cargo build --release
+cargo build --release --features build
 
 export NODE_OPTIONS="--max-old-space-size=81920"
 source ~/.bashrc 

@@ -43,3 +43,8 @@ env_logger = "0.10"
 [[bench]]
 name = "merklehash"
 harness = false
+
+[features]
+default = [ "build" ]
+build = []
+eval = []
