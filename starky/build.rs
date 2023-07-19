@@ -1,0 +1,48 @@
+// build.rs
+
+use std::env;
+use std::fs;
+use std::path::Path;
+
+macro_rules! p {
+    ($($tokens: tt)*) => {
+        println!("cargo:warning={}", format!($($tokens)*))
+    }
+}
+
+fn main() {
+    let src_dir = match env::var_os("SRC_DIR") {
+        Some(x) => x,
+        _ => "/tmp".into(),
+    };
+    let out_dir = env::var_os("OUT_DIR").unwrap();
+    p!("{:?}", out_dir);
+    // /tmp/ctx_public.rs  /tmp/ctx_step2prev.rs  /tmp/ctx_step3prev.rs  /tmp/ctx_step3.rs  /tmp/ctx_step4.rs  /tmp/ctx_step5.rs
+    let file_inc = vec![
+        "public",
+        "step2prev",
+        "step3prev",
+        "step3",
+        "step4",
+        "step5",
+    ];
+    for fi in file_inc.iter() {
+        let rfn = Path::new(&src_dir).join(format!("ctx_{}.rs", fi));
+        let fc = fs::read_to_string(&rfn).unwrap();
+        let dest_path = Path::new(&out_dir).join(format!("ctx_{}.rs", fi));
+        let body = format!(
+            r#"
+impl Block {{
+        #[cfg(not(feature = "build"))]
+        pub fn {}_fn(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {{
+            {}
+        }}
+}}
+        "#,
+            fi, fc
+        );
+        p!("file path {:?}: 11111111{}", rfn, body);
+        fs::write(&dest_path, body).unwrap();
+    }
+    println!("cargo:rerun-if-changed=build.rs");
+}
