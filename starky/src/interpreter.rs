@@ -34,38 +34,32 @@ pub struct Expr {
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.op {
-            Ops::Add => {
-                write!(f, "let _tmp = ctx.{} + ctx.{};", self.defs[0], self.defs[1])
-            }
-            Ops::Mul => {
-                write!(f, "let _tmp = ctx.{} * ctx.{};", self.defs[0], self.defs[1])
-            }
-            Ops::Sub => {
-                write!(f, "let _tmp = ctx.{} - ctx.{};", self.defs[0], self.defs[1])
+            Ops::Add | Ops::Mul | Ops::Sub => {
+                write!(f, "{:?} {} {}", self.op, self.defs[0], self.defs[1])
             }
             Ops::Copy_ => {
-                write!(f, "let _tmp = ctx.{};", self.defs[0])
+                write!(f, "copy ({})", self.defs[0])
             }
             Ops::Ret => {
-                write!(f, "return _tmp;")
+                write!(f, "ret")
             }
             Ops::Refer => {
                 write!(
                     f,
-                    "{}[{} + ((i + {})%{}) * {}]",
+                    "addr ({}) ({} + ((i + {})%{}) * {}) dim={}",
                     self.syms[0],
                     self.addr[0],
                     self.addr[1],
                     self.addr[2],
                     self.addr[3],
-                    //if self.syms.len() == 2 { 3 } else { 1 }
+                    if self.syms.len() == 2 { 3 } else { 1 }
                 )
             }
             Ops::Vari(x) => {
                 write!(f, "{}", x)
             }
             Ops::Write => {
-                write!(f, "ctx.{} = _tmp;", self.defs[0])
+                write!(f, "write ({})", self.defs[0])
             }
         }
     }
