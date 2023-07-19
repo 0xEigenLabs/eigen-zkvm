@@ -531,7 +531,11 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
         log::info!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
+
+        #[cfg(feature = "build")]
         let res = t.eval(ctx, idx, "n", "public");
+        #[cfg(not(feature = "build"))]
+        let res = t.public_fn(ctx, idx);
         //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
         res
     }
@@ -714,7 +718,20 @@ pub fn calculate_exps(
     */
     let N = if dom == "n" { ctx.N } else { ctx.Next };
     for i in 0..N {
+        #[cfg(feature = "build")]
         c_first.eval(ctx, i, dom, step);
+
+        #[cfg(not(feature = "build"))]
+        match step {
+            "public" => c_first.public_fn(ctx, i),
+            "step2prev" => c_first.step2prev_fn(ctx, i),
+            "step3" => c_first.step3_fn(ctx, i),
+            "step3prev" => c_first.step3prev_fn(ctx, i),
+            "step4" => c_first.step4_fn(ctx, i),
+            "step5" => c_first.step5_fn(ctx, i),
+            _ => panic!("Invalid step {}", step),
+        };
+
         //log::debug!("ctx.q_2ns[3*{}] {} ", i, ctx.q_2ns[3 * i]);
         //for i in 0..ctx.tmp.len() {
         //    log::debug!("tmp@{} {}", i, ctx.tmp[i]);

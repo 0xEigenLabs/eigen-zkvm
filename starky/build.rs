@@ -16,7 +16,9 @@ fn main() {
         _ => "/tmp".into(),
     };
     let out_dir = env::var_os("OUT_DIR").unwrap();
+    p!("out_dir: {:?}", out_dir);
     // /tmp/ctx_public.rs  /tmp/ctx_step2prev.rs  /tmp/ctx_step3prev.rs  /tmp/ctx_step3.rs  /tmp/ctx_step4.rs  /tmp/ctx_step5.rs
+    #[cfg(not(feature = "build"))]
     let file_inc = vec![
         "public",
         "step2prev",
@@ -25,6 +27,9 @@ fn main() {
         "step4",
         "step5",
     ];
+    #[cfg(feature = "build")]
+    let file_inc: [&str; 0] = [];
+
     for fi in file_inc.iter() {
         let rfn = Path::new(&src_dir).join(format!("ctx_{}.rs", fi));
         let fc = fs::read_to_string(&rfn).unwrap();
@@ -33,7 +38,7 @@ fn main() {
             r#"
 impl Block {{
         #[cfg(not(feature = "build"))]
-        pub fn {}_fn(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {{
+        pub fn {}_fn(&self, ctx: &mut StarkContext, i: usize) -> F3G {{
             {}
         }}
 }}
@@ -42,5 +47,6 @@ impl Block {{
         );
         fs::write(&dest_path, body).unwrap();
     }
-    println!("cargo:rerun-if-changed=build.rs");
+    //println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=rebuild");
 }

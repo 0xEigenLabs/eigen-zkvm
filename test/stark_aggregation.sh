@@ -1,11 +1,11 @@
 #!/bin/bash
-set -e
+set -ex
 
 ## build
 cargo build --release --features build
 
 export NODE_OPTIONS="--max-old-space-size=81920"
-source ~/.bashrc 
+source ~/.bashrc
 
 BIG_POWER=26
 NUM_PROOF=2
@@ -93,6 +93,8 @@ $ZKIT stark_prove -s ../starky/data/r2.starkStruct.json \
     -p $WORKSPACE/$RECURSIVE_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE_CIRCUIT.const \
     --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom --i ./aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json  --norm_stage
+
+exit
 
 aggregation_end=$(date +%s)
 
