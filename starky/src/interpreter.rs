@@ -148,6 +148,7 @@ impl Block {
                             get_value(ctx, &expr.defs[1], arg_i),
                         ),
                     };
+                    log::info!("+++++++++ {} {}", ls, rs);
                     val_stack.push(lhs + rhs);
                     codebuf.push_str(&format!("let tmp_{} = {} + {};\n", i, ls, rs));
                 }
@@ -166,7 +167,7 @@ impl Block {
                             get_value(ctx, &expr.defs[1], arg_i),
                         ),
                     };
-                    log::info!("--------- {} {}", ls, rs);
+                    log::info!("***************** {} {}", ls, rs);
                     val_stack.push(lhs * rhs);
                     codebuf.push_str(&format!("let tmp_{} = {} * {};\n", i, ls, rs));
                 }
