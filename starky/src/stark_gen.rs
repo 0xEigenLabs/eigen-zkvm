@@ -23,7 +23,7 @@ pub struct StarkContext {
     pub nbits_ext: usize,
     pub N: usize,
     pub Next: usize,
-    pub challenges: Vec<F3G>,
+    pub challenge: Vec<F3G>,
     pub tmp: Vec<F3G>,
     pub cm1_n: Vec<F3G>,
     pub cm2_n: Vec<F3G>,
@@ -65,7 +65,7 @@ impl Default for StarkContext {
             nbits_ext: 0,
             N: 0,
             Next: 0,
-            challenges: vec![F3G::ZERO; 8],
+            challenge: vec![F3G::ZERO; 8],
             tmp: Vec::new(),
             cm1_n: Vec::new(),
             cm2_n: Vec::new(),
@@ -120,7 +120,7 @@ impl StarkContext {
             "const_2ns" => &mut self.const_2ns,
             "evals" => &mut self.evals,
             "publics" => &mut self.publics,
-            "challenge" => &mut self.challenges,
+            "challenge" => &mut self.challenge,
             "tmpexp_n" => &mut self.tmpexp_n,
             "x_n" => &mut self.x_n,
             "x_2ns" => &mut self.x_2ns,
@@ -244,11 +244,11 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         //crate::helper::pretty_print_array(&ctx.cm1_2ns);
         transcript.put(&[tree1.root().as_elements().to_vec()])?;
         // 2.- Caluculate plookups h1 and h2
-        ctx.challenges[0] = transcript.get_field(); //u
-        ctx.challenges[1] = transcript.get_field(); //defVal
+        ctx.challenge[0] = transcript.get_field(); //u
+        ctx.challenge[1] = transcript.get_field(); //defVal
 
-        log::debug!("challenges[0] {}", ctx.challenges[0]);
-        log::debug!("challenges[1] {}", ctx.challenges[1]);
+        log::debug!("challenge[0] {}", ctx.challenge[0]);
+        log::debug!("challenge[1] {}", ctx.challenge[1]);
 
         //TODO parallel execution
         calculate_exps(&mut ctx, starkinfo, &program.step2prev, "n", "step2prev");
@@ -276,10 +276,10 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         //crate::helper::pretty_print_array(&ctx.cm2_2ns);
 
         // 3.- Compute Z polynomials
-        ctx.challenges[2] = transcript.get_field(); // gamma
-        ctx.challenges[3] = transcript.get_field(); // betta
-        log::debug!("challenges[2] {}", ctx.challenges[2]);
-        log::debug!("challenges[3] {}", ctx.challenges[3]);
+        ctx.challenge[2] = transcript.get_field(); // gamma
+        ctx.challenge[3] = transcript.get_field(); // betta
+        log::debug!("challenge[2] {}", ctx.challenge[2]);
+        log::debug!("challenge[3] {}", ctx.challenge[3]);
 
         calculate_exps(&mut ctx, starkinfo, &program.step3prev, "n", "step3prev");
 
@@ -324,8 +324,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         );
 
         // 4. Compute C Polynomial
-        ctx.challenges[4] = transcript.get_field(); // vc
-                                                    //log::debug!("challenges[4] {}", ctx.challenges[4]);
+        ctx.challenge[4] = transcript.get_field(); // vc
+                                                   //log::debug!("challenge[4] {}", ctx.challenge[4]);
 
         //log::debug!("step42ns {}", &program.step42ns);
         calculate_exps(&mut ctx, starkinfo, &program.step42ns, "2ns", "step4");
@@ -375,15 +375,15 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ///////////
         // 5. Compute FRI Polynomial
         ///////////
-        ctx.challenges[7] = transcript.get_field(); // xi
+        ctx.challenge[7] = transcript.get_field(); // xi
 
         let mut LEv = vec![F3G::ZERO; ctx.N];
         let mut LpEv = vec![F3G::ZERO; ctx.N];
         LEv[0] = F3G::from(BaseElement::from(1u64));
         LpEv[0] = F3G::from(BaseElement::from(1u64));
 
-        let xis = ctx.challenges[7] / SHIFT.clone();
-        let wxis = (ctx.challenges[7] * MG.0[ctx.nbits]) / SHIFT.clone();
+        let xis = ctx.challenge[7] / SHIFT.clone();
+        let wxis = (ctx.challenge[7] * MG.0[ctx.nbits]) / SHIFT.clone();
 
         for i in 1..ctx.N {
             LEv[i] = LEv[i - 1] * xis;
@@ -437,15 +437,15 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             transcript.put(&b)?;
         }
 
-        ctx.challenges[5] = transcript.get_field(); // v1
-        ctx.challenges[6] = transcript.get_field(); // v2
-        log::debug!("ctx.challenges[5] {}", ctx.challenges[5]);
-        log::debug!("ctx.challenges[6] {}", ctx.challenges[6]);
-        log::debug!("ctx.challenges[7] {}", ctx.challenges[7]);
+        ctx.challenge[5] = transcript.get_field(); // v1
+        ctx.challenge[6] = transcript.get_field(); // v2
+        log::debug!("ctx.challenge[5] {}", ctx.challenge[5]);
+        log::debug!("ctx.challenge[6] {}", ctx.challenge[6]);
+        log::debug!("ctx.challenge[7] {}", ctx.challenge[7]);
 
         // Calculate xDivXSubXi, xDivXSubWXi
-        let xi = ctx.challenges[7];
-        let wxi = ctx.challenges[7] * MG.0[ctx.nbits];
+        let xi = ctx.challenge[7];
+        let wxi = ctx.challenge[7] * MG.0[ctx.nbits];
 
         let extend_size = N << extend_bits;
 
@@ -531,7 +531,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
         log::info!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
-        t.codegen("n", "public");
         let res = t.eval(ctx, idx, "n", "public");
         //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
         res
@@ -705,7 +704,6 @@ pub fn calculate_exps(
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
     log::info!("calculate_exps compile_code ctx.first:\n{}", c_first);
-    c_first.codegen(dom, step);
     let _c_i = compile_code(ctx, starkinfo, &seg.first, dom, false);
     let _c_last = compile_code(ctx, starkinfo, &seg.first, dom, false);
     /*

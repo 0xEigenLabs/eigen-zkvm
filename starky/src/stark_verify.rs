@@ -42,17 +42,17 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     }
 
     transcript.put(&[proof.root1.as_elements().to_vec()])?;
-    ctx.challenges[0] = transcript.get_field(); // u
-    ctx.challenges[1] = transcript.get_field(); // defVal
+    ctx.challenge[0] = transcript.get_field(); // u
+    ctx.challenge[1] = transcript.get_field(); // defVal
     transcript.put(&[proof.root2.as_elements().to_vec()])?;
-    ctx.challenges[2] = transcript.get_field(); // gamma
-    ctx.challenges[3] = transcript.get_field(); // beta
+    ctx.challenge[2] = transcript.get_field(); // gamma
+    ctx.challenge[3] = transcript.get_field(); // beta
 
     transcript.put(&[proof.root3.as_elements().to_vec()])?;
-    ctx.challenges[4] = transcript.get_field(); // vc
+    ctx.challenge[4] = transcript.get_field(); // vc
 
     transcript.put(&[proof.root4.as_elements().to_vec()])?;
-    ctx.challenges[7] = transcript.get_field(); // xi
+    ctx.challenge[7] = transcript.get_field(); // xi
     for i in 0..ctx.evals.len() {
         let b = ctx.evals[i]
             .as_elements()
@@ -62,12 +62,12 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
         transcript.put(&b[..])?;
     }
 
-    ctx.challenges[5] = transcript.get_field(); // v1
-    ctx.challenges[6] = transcript.get_field(); // v2
+    ctx.challenge[5] = transcript.get_field(); // v1
+    ctx.challenge[6] = transcript.get_field(); // v2
 
-    let x_n = ctx.challenges[7].exp(ctx.N);
+    let x_n = ctx.challenge[7].exp(ctx.N);
     ctx.Z = x_n - F3G::ONE;
-    ctx.Zp = (ctx.challenges[7] * MG.0[ctx.nbits]).pow(ctx.N) - F3G::ONE;
+    ctx.Zp = (ctx.challenge[7] * MG.0[ctx.nbits]).pow(ctx.N) - F3G::ONE;
 
     log::debug!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);
@@ -119,12 +119,12 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
 
             ctx_query.evals = ctx.evals.clone();
             ctx_query.publics = ctx.publics.clone();
-            ctx_query.challenges = ctx.challenges.clone();
+            ctx_query.challenge = ctx.challenge.clone();
 
             let x = SHIFT.clone() * (MG.0[ctx.nbits + extend_bits].exp(idx));
-            ctx_query.xDivXSubXi = (x / (x - ctx_query.challenges[7])).as_elements();
+            ctx_query.xDivXSubXi = (x / (x - ctx_query.challenge[7])).as_elements();
             ctx_query.xDivXSubWXi =
-                (x / (x - (ctx_query.challenges[7] * MG.0[ctx.nbits]))).as_elements();
+                (x / (x - (ctx_query.challenge[7] * MG.0[ctx.nbits]))).as_elements();
 
             let vals = vec![execute_code(
                 &mut ctx_query,
@@ -162,10 +162,10 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
             "eval" => ctx.evals[r.id],
             "number" => F3G::from(r.value.clone().unwrap().parse::<u64>().unwrap()),
             "public" => ctx.publics[r.id],
-            "challenge" => ctx.challenges[r.id],
+            "challenge" => ctx.challenge[r.id],
             "xDivXSubXi" => F3G::new(ctx.xDivXSubXi[0], ctx.xDivXSubXi[1], ctx.xDivXSubXi[2]),
             "xDivXSubWXi" => F3G::new(ctx.xDivXSubWXi[0], ctx.xDivXSubWXi[1], ctx.xDivXSubWXi[2]),
-            "x" => ctx.challenges[7],
+            "x" => ctx.challenge[7],
             "Z" => {
                 if r.prime {
                     ctx.Zp

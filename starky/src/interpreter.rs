@@ -94,57 +94,19 @@ pub struct Block {
     pub exprs: Vec<Expr>,
 }
 
+include!(concat!(env!("OUT_DIR"), "/ctx_public.rs"));
+include!(concat!(env!("OUT_DIR"), "/ctx_step2prev.rs"));
+include!(concat!(env!("OUT_DIR"), "/ctx_step3.rs"));
+include!(concat!(env!("OUT_DIR"), "/ctx_step3prev.rs"));
+include!(concat!(env!("OUT_DIR"), "/ctx_step4.rs"));
+include!(concat!(env!("OUT_DIR"), "/ctx_step5.rs"));
+
 impl Block {
-    #[cfg(not(feature = "build"))]
-    pub fn codegen(&self, dom: &str, step: &str) {}
-
-    #[cfg(feature = "build")]
-    pub fn codegen(&self, dom: &str, step: &str) {
+    fn codegen(&self, step: &str, codebuf: String) {
         use std::io::Write;
-        let body = format!(
-            r#"
-        {}
-"#,
-            self
-        );
-        let mut f = std::fs::File::create(&format!("/tmp/{}_{}.rs", step, dom)).unwrap();
-        write!(f, "{}", &body);
-    }
-
-    #[cfg(not(feature = "build"))]
-    pub fn eval_public_n(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {
-        include!("/tmp/public_n.rs");
-        F3G::ZERO
-    }
-
-    #[cfg(not(feature = "build"))]
-    pub fn eval_step2prev_n(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {
-        include!("/tmp/step2prev_n.rs");
-        F3G::ZERO
-    }
-
-    #[cfg(not(feature = "build"))]
-    pub fn eval_step3_n(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {
-        include!("/tmp/step3_n.rs");
-        F3G::ZERO
-    }
-
-    #[cfg(not(feature = "build"))]
-    pub fn eval_step3prev_n(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {
-        include!("/tmp/step3prev_n.rs");
-        F3G::ZERO
-    }
-
-    #[cfg(not(feature = "build"))]
-    pub fn eval_step4_2ns(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {
-        include!("/tmp/step4_2ns.rs");
-        F3G::ZERO
-    }
-
-    #[cfg(not(feature = "build"))]
-    pub fn eval_step5_2ns(&self, ctx: &mut StarkContext, i: usize, _dom: &str, _step: &str) -> F3G {
-        include!("/tmp/step5_2ns.rs");
-        F3G::ZERO
+        let body = format!(r#"{}"#, codebuf);
+        let mut f = std::fs::File::create(&format!("/tmp/{}_{}.rs", self.namespace, step)).unwrap();
+        write!(f, "{}", &body).unwrap();
     }
 
     /// parameters: ctx, i
@@ -155,57 +117,84 @@ impl Block {
     pub fn eval(&self, ctx: &mut StarkContext, arg_i: usize, _dom: &str, _step: &str) -> F3G {
         let mut val_stack: Vec<F3G> = Vec::new();
         let length = self.exprs.len();
+        let mut codebuf = String::new();
 
         let mut i = 0usize;
         while i < length {
             let expr = &self.exprs[i];
-            //log::debug!("op@{} is {}", i, expr);
             i += 1;
             match expr.op {
                 Ops::Ret => {
+                    codebuf.push_str(&format!("tmp_{}", i - 1));
+                    self.codegen(_step, codebuf);
                     return val_stack.pop().unwrap();
                 }
                 Ops::Vari(x) => {
                     val_stack.push(x);
+                    codebuf.push_str(&format!("let tmp_{} = {};\n", i, x));
                 }
                 Ops::Add => {
-                    let lhs = match expr.defs[0].op {
-                        Ops::Vari(x) => x,
-                        _ => get_value(ctx, &expr.defs[0], arg_i),
+                    let (ls, lhs) = match expr.defs[0].op {
+                        Ops::Vari(x) => (format!("{}", x), x),
+                        _ => (
+                            format!("{}", expr.defs[0]),
+                            get_value(ctx, &expr.defs[0], arg_i),
+                        ),
                     };
-                    let rhs = match expr.defs[1].op {
-                        Ops::Vari(x) => x,
-                        _ => get_value(ctx, &expr.defs[1], arg_i),
+                    let (rs, rhs) = match expr.defs[1].op {
+                        Ops::Vari(x) => (format!("{}", x), x),
+                        _ => (
+                            format!("ctx.{}", expr.defs[1]),
+                            get_value(ctx, &expr.defs[1], arg_i),
+                        ),
                     };
                     val_stack.push(lhs + rhs);
+                    codebuf.push_str(&format!("let tmp_{} = {} + {};\n", i, ls, rs));
                 }
                 Ops::Mul => {
-                    let lhs = match expr.defs[0].op {
-                        Ops::Vari(x) => x,
-                        _ => get_value(ctx, &expr.defs[0], arg_i),
+                    let (ls, lhs) = match expr.defs[0].op {
+                        Ops::Vari(x) => (format!("{}", x), x),
+                        _ => (
+                            format!("{}", expr.defs[0]),
+                            get_value(ctx, &expr.defs[0], arg_i),
+                        ),
                     };
-                    let rhs = match expr.defs[1].op {
-                        Ops::Vari(x) => x,
-                        _ => get_value(ctx, &expr.defs[1], arg_i),
+                    let (rs, rhs) = match expr.defs[1].op {
+                        Ops::Vari(x) => (format!("{}", x), x),
+                        _ => (
+                            format!("ctx.{}", expr.defs[1]),
+                            get_value(ctx, &expr.defs[1], arg_i),
+                        ),
                     };
+                    log::info!("--------- {} {}", ls, rs);
                     val_stack.push(lhs * rhs);
+                    codebuf.push_str(&format!("let tmp_{} = {} * {};\n", i, ls, rs));
                 }
                 Ops::Sub => {
-                    let lhs = match expr.defs[0].op {
-                        Ops::Vari(x) => x,
-                        _ => get_value(ctx, &expr.defs[0], arg_i),
+                    let (ls, lhs) = match expr.defs[0].op {
+                        Ops::Vari(x) => (format!("{}", x), x),
+                        _ => (
+                            format!("{}", expr.defs[0]),
+                            get_value(ctx, &expr.defs[0], arg_i),
+                        ),
                     };
-                    let rhs = match expr.defs[1].op {
-                        Ops::Vari(x) => x,
-                        _ => get_value(ctx, &expr.defs[1], arg_i),
+                    let (rs, rhs) = match expr.defs[1].op {
+                        Ops::Vari(x) => (format!("{}", x), x),
+                        _ => (
+                            format!("ctx.{}", expr.defs[1]),
+                            get_value(ctx, &expr.defs[1], arg_i),
+                        ),
                     };
                     val_stack.push(lhs - rhs);
+                    codebuf.push_str(&format!("let tmp_{} = {} - {};\n", i, ls, rs));
                 }
                 Ops::Copy_ => {
                     let x = if let Ops::Vari(x) = expr.defs[0].op {
+                        codebuf.push_str(&format!("let tmp_{} = {};\n", i, x));
                         x
                     } else {
                         // get value from address
+                        codebuf.push_str(&format!("let tmp_{} = {};\n", i, expr.defs[0]));
                         get_value(ctx, &expr.defs[0], arg_i)
                     };
                     val_stack.push(x);
@@ -215,6 +204,16 @@ impl Block {
                     let id = get_i(next_expr, arg_i);
                     let addr = &next_expr.syms[0];
                     let val = val_stack.pop().unwrap(); // get the value from stack
+
+                    codebuf.push_str(&format!(
+                        "ctx.{}[{} + ((i + {})%{}) * {}] = tmp_{};\n",
+                        next_expr.syms[0],
+                        next_expr.addr[0],
+                        next_expr.addr[1],
+                        next_expr.addr[2],
+                        next_expr.addr[3],
+                        i - 1
+                    ));
 
                     let val_addr = ctx.get_mut(addr.as_str());
                     if val.dim == 1 || addr.as_str() == "tmp" {
@@ -232,9 +231,15 @@ impl Block {
                     // push value into stack
                     let x = get_value(ctx, expr, arg_i);
                     val_stack.push(x);
+                    codebuf.push_str(&format!(
+                        "let tmp_{} = ctx.{}[{} + ((i + {})%{}) * {}];\n",
+                        i, expr.syms[0], expr.addr[0], expr.addr[1], expr.addr[2], expr.addr[3],
+                    ));
                 }
             }
         }
+        codebuf.push_str("F3G::ZERO");
+        self.codegen(_step, codebuf);
         F3G::ZERO
     }
 }
