@@ -16,7 +16,6 @@ fn main() {
         _ => "/tmp".into(),
     };
     let out_dir = env::var_os("OUT_DIR").unwrap();
-    p!("{:?}", out_dir);
     // /tmp/ctx_public.rs  /tmp/ctx_step2prev.rs  /tmp/ctx_step3prev.rs  /tmp/ctx_step3.rs  /tmp/ctx_step4.rs  /tmp/ctx_step5.rs
     let file_inc = vec![
         "public",
@@ -41,7 +40,6 @@ impl Block {{
         "#,
             fi, fc
         );
-        p!("file path {:?}: 11111111{}", rfn, body);
         fs::write(&dest_path, body).unwrap();
     }
     println!("cargo:rerun-if-changed=build.rs");
