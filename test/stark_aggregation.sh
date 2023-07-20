@@ -106,10 +106,8 @@ $ZKIT stark_prove -s ../starky/data/r2.starkStruct.json \
 stark_eval_end=$(date +%s)
 echo "Build Time Cost ----- ($((stark_build_end - stark_build_begin))s)"
 echo "Eval Time Cost ----- ($((stark_eval_end - stark_eval_begin))s)"
-exit
 
 aggregation_end=$(date +%s)
-
 
 final_start=$(date +%s)
 # final recursive stage 
