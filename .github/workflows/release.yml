@@ -36,6 +36,7 @@ jobs:
           bin: eigen-zkit
           archive: $bin-$target
           target: ${{ matrix.target }}
+          features: build
           tar: all
         env:
           # (required)

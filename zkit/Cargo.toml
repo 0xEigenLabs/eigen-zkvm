@@ -31,6 +31,6 @@ compiler = { git = "https://github.com/iden3/circom.git", version = "2.1.6"}
 dag = { git = "https://github.com/iden3/circom.git", version = "2.1.5"}
 
 [features]
-default = [ "build" ]
+default = []
 build = [ "starky/build" ]
 eval = [ "starky/eval" ]
