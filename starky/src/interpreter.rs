@@ -114,7 +114,7 @@ impl Block {
     /// let block = compile_code();
     /// block.eval(&mut ctx, i);
     #[cfg(feature = "build")]
-    pub fn eval(&self, ctx: &mut StarkContext, arg_i: usize, _dom: &str, _step: &str) -> F3G {
+    pub fn eval(&self, ctx: &mut StarkContext, arg_i: usize, _step: &str, codegen: bool) -> F3G {
         let mut val_stack: Vec<F3G> = Vec::new();
         let length = self.exprs.len();
         let mut codebuf = String::new();
@@ -125,13 +125,17 @@ impl Block {
             i += 1;
             match expr.op {
                 Ops::Ret => {
-                    codebuf.push_str(&format!("tmp_{}", i - 1));
-                    self.codegen(_step, codebuf);
+                    if codegen {
+                        codebuf.push_str(&format!("tmp_{}", i - 1));
+                        self.codegen(_step, codebuf);
+                    }
                     return val_stack.pop().unwrap();
                 }
                 Ops::Vari(x) => {
+                    if codegen {
+                        codebuf.push_str(&format!("let tmp_{} = F3G::from({}u64);\n", i, x));
+                    }
                     val_stack.push(x);
-                    codebuf.push_str(&format!("let tmp_{} = F3G::from({}u64);\n", i, x));
                 }
                 Ops::Add => {
                     let (ls, lhs) = match expr.defs[0].op {
@@ -143,7 +147,9 @@ impl Block {
                         _ => get_value(ctx, &expr.defs[1], arg_i),
                     };
                     val_stack.push(lhs + rhs);
-                    codebuf.push_str(&format!("let tmp_{} = {} + {};\n", i, ls, rs));
+                    if codegen {
+                        codebuf.push_str(&format!("let tmp_{} = {} + {};\n", i, ls, rs));
+                    }
                 }
                 Ops::Mul => {
                     let (ls, lhs) = match expr.defs[0].op {
@@ -155,7 +161,9 @@ impl Block {
                         _ => get_value(ctx, &expr.defs[1], arg_i),
                     };
                     val_stack.push(lhs * rhs);
-                    codebuf.push_str(&format!("let tmp_{} = {} * {};\n", i, ls, rs));
+                    if codegen {
+                        codebuf.push_str(&format!("let tmp_{} = {} * {};\n", i, ls, rs));
+                    }
                 }
                 Ops::Sub => {
                     let (ls, lhs) = match expr.defs[0].op {
@@ -167,16 +175,22 @@ impl Block {
                         _ => get_value(ctx, &expr.defs[1], arg_i),
                     };
                     val_stack.push(lhs - rhs);
-                    codebuf.push_str(&format!("let tmp_{} = {} - {};\n", i, ls, rs));
+                    if codegen {
+                        codebuf.push_str(&format!("let tmp_{} = {} - {};\n", i, ls, rs));
+                    }
                 }
                 Ops::Copy_ => {
                     let x = if let Ops::Vari(x) = expr.defs[0].op {
-                        codebuf.push_str(&format!("let tmp_{} = F3G::from({}u64);\n", i, x));
+                        if codegen {
+                            codebuf.push_str(&format!("let tmp_{} = F3G::from({}u64);\n", i, x));
+                        }
                         x
                     } else {
                         // get value from address
                         let (exps, vals) = get_value(ctx, &expr.defs[0], arg_i);
-                        codebuf.push_str(&format!("let tmp_{} = {};\n", i, exps));
+                        if codegen {
+                            codebuf.push_str(&format!("let tmp_{} = {};\n", i, exps));
+                        }
                         vals
                     };
                     val_stack.push(x);
@@ -191,40 +205,48 @@ impl Block {
                     if val.dim == 1 || addr.as_str() == "tmp" {
                         // TODO: need double confirm the condition
                         val_addr[id] = val;
-                        codebuf.push_str(&format!("ctx.{}[{}] = tmp_{};\n", addr, idxs, i - 1));
+                        if codegen {
+                            codebuf.push_str(&format!("ctx.{}[{}] = tmp_{};\n", addr, idxs, i - 1));
+                        }
                     } else {
                         // here we again unfold elements of GF(2^3) to 3-tuple(triple)
                         let vals = val.as_elements();
                         val_addr[id] = F3G::from(vals[0]);
                         val_addr[id + 1] = F3G::from(vals[1]);
                         val_addr[id + 2] = F3G::from(vals[2]);
-                        codebuf.push_str(&format!(
-                            r#"
+                        if codegen {
+                            codebuf.push_str(&format!(
+                                r#"
 let vals = tmp_{}.as_elements();
 ctx.{}[{}] = F3G::from(vals[0]);
 ctx.{}[{} + 1] = F3G::from(vals[1]);
 ctx.{}[{} + 2] = F3G::from(vals[2]);
 "#,
-                            i - 1,
-                            addr,
-                            idxs,
-                            addr,
-                            idxs,
-                            addr,
-                            idxs,
-                        ));
+                                i - 1,
+                                addr,
+                                idxs,
+                                addr,
+                                idxs,
+                                addr,
+                                idxs,
+                            ));
+                        }
                     }
                 }
                 Ops::Refer => {
                     // push value into stack
                     let (exps, x) = get_value(ctx, expr, arg_i);
                     val_stack.push(x);
-                    codebuf.push_str(&format!("let tmp_{} = {};\n", i, exps));
+                    if codegen {
+                        codebuf.push_str(&format!("let tmp_{} = {};\n", i, exps));
+                    }
                 }
             }
         }
-        codebuf.push_str("F3G::ZERO");
-        self.codegen(_step, codebuf);
+        if codegen {
+            codebuf.push_str("F3G::ZERO");
+            self.codegen(_step, codebuf);
+        }
         F3G::ZERO
     }
 }

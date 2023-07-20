@@ -533,7 +533,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         log::info!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
 
         #[cfg(feature = "build")]
-        let res = t.eval(ctx, idx, "n", "public");
+        let res = t.eval(ctx, idx, "public", true); // just let public codegen run multiple times
         #[cfg(not(feature = "build"))]
         let res = t.public_fn(ctx, idx);
         //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
@@ -708,6 +708,10 @@ pub fn calculate_exps(
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
     log::info!("calculate_exps compile_code ctx.first:\n{}", c_first);
+    // codegen
+    #[cfg(feature = "build")]
+    c_first.eval(ctx, 0, step, true);
+
     let _c_i = compile_code(ctx, starkinfo, &seg.first, dom, false);
     let _c_last = compile_code(ctx, starkinfo, &seg.first, dom, false);
     /*
@@ -719,7 +723,7 @@ pub fn calculate_exps(
     let N = if dom == "n" { ctx.N } else { ctx.Next };
     for i in 0..N {
         #[cfg(feature = "build")]
-        c_first.eval(ctx, i, dom, step);
+        c_first.eval(ctx, i, step, false);
 
         #[cfg(not(feature = "build"))]
         match step {
