@@ -17,10 +17,23 @@ RECURSIVE1_VERIFIER=$TASK_NO/${CIRCUIT}".recursive1"
 
 mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TASK_NO --pc $PILCACHE
 
+cargo build --release --features build
+stark_build_begin=$(date +%s)
 ../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
     -p $WORKSPACE/$TASK_NO/$CIRCUIT.pil.json \
     --o $WORKSPACE/$TASK_NO/$CIRCUIT.const \
     --m $WORKSPACE/$TASK_NO/$CIRCUIT.cm -c $RUNDIR/circuits/$C12_VERIFIER.circom --i $RUNDIR/circuits/$C12_VERIFIER.zkin.json
+stark_build_end=$(date +%s)
+
+cargo build --release --features eval
+stark_eval_begin=$(date +%s)
+../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
+    -p $WORKSPACE/$TASK_NO/$CIRCUIT.pil.json \
+    --o $WORKSPACE/$TASK_NO/$CIRCUIT.const \
+    --m $WORKSPACE/$TASK_NO/$CIRCUIT.cm -c $RUNDIR/circuits/$C12_VERIFIER.circom --i $RUNDIR/circuits/$C12_VERIFIER.zkin.json
+stark_eval_end=$(date +%s)
+echo "Build Time Cost ----- ($((stark_build_end - stark_build_begin))s)"
+echo "Eval Time Cost ----- ($((stark_eval_end - stark_eval_begin))s)"
 
 ../target/release/eigen-zkit compile -p goldilocks -i $RUNDIR/circuits/$C12_VERIFIER.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/$TASK_NO
 
@@ -50,10 +63,23 @@ if [ "$GENERATE_PROOF_TYPE" = "stark" ]; then
     # generate the stark proof and the circom circuits to verify stark proof.
     # input files : $C12_VERIFIER.pil.json(stark proof)  $C12_VERIFIER.const(const polynomials)  $C12_VERIFIER.cm (commit polynomials)
     # output files :  $RECURSIVE1_VERIFIER.circom  $RECURSIVE1_VERIFIER/input.json
+    cargo build --release --features build
+    stark_build_begin=$(date +%s)
     ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json \
         -p $WORKSPACE/$C12_VERIFIER.pil.json \
         --o $WORKSPACE/$C12_VERIFIER.const \
         --m $WORKSPACE/$C12_VERIFIER.cm -c $RUNDIR/circuits/$RECURSIVE1_VERIFIER.circom --i ./aggregation/$RECURSIVE1_VERIFIER/input.zkin.json --agg_stage --norm_stage 
+    stark_build_end=$(date +%s)
+
+    cargo build --release --features eval
+    stark_eval_begin=$(date +%s)
+    ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json \
+        -p $WORKSPACE/$C12_VERIFIER.pil.json \
+        --o $WORKSPACE/$C12_VERIFIER.const \
+        --m $WORKSPACE/$C12_VERIFIER.cm -c $RUNDIR/circuits/$RECURSIVE1_VERIFIER.circom --i ./aggregation/$RECURSIVE1_VERIFIER/input.zkin.json --agg_stage --norm_stage 
+    stark_eval_end=$(date +%s)
+    echo "Build Time Cost ----- ($((stark_build_end - stark_build_begin))s)"
+    echo "Eval Time Cost ----- ($((stark_eval_end - stark_eval_begin))s)"
 else 
     echo "Generate snark proof"
      # generate the stark proof and the circom circuits to verify stark proof.

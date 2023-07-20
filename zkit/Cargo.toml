@@ -11,7 +11,7 @@ homepage = "https://eigen.cash"
 
 [dependencies]
 plonky = { package="plonky", path = "../plonky", version = "0.0.2" }
-starky = { package="starky", path = "../starky", version = "0.0.1" }
+starky = { package="starky", path = "../starky", version = "0.0.1", default-features = false }
 clap = { package = "clap", version = "4.3.4", features = ["derive"] }
 
 ansi_term = "0.12.1"
