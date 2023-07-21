@@ -38,6 +38,7 @@ fn main() {
             r#"
 impl Block {{
         #[cfg(not(feature = "build"))]
+        #[inline(always)]
         pub fn {}_fn(&self, ctx: &mut StarkContext, i: usize) -> F3G {{
             {}
         }}
