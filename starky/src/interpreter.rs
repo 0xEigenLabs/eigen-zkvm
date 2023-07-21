@@ -114,7 +114,7 @@ impl Block {
     /// let block = compile_code();
     /// block.eval(&mut ctx, i);
     #[cfg(feature = "build")]
-    pub fn eval(&self, ctx: &mut StarkContext, arg_i: usize, _step: &str, codegen: bool) -> F3G {
+    pub fn eval_and_codegen(&self, ctx: &mut StarkContext, arg_i: usize, _step: &str) -> F3G {
         let mut val_stack: Vec<F3G> = Vec::new();
         let length = self.exprs.len();
         let mut codebuf = String::new();
@@ -125,79 +125,65 @@ impl Block {
             i += 1;
             match expr.op {
                 Ops::Ret => {
-                    if codegen {
-                        codebuf.push_str(&format!("tmp_{}", i - 1));
-                        self.codegen(_step, codebuf);
-                    }
+                    codebuf.push_str(&format!("tmp_{}", i - 1));
+                    self.codegen(_step, codebuf);
                     return val_stack.pop().unwrap();
                 }
                 Ops::Vari(x) => {
-                    if codegen {
-                        codebuf.push_str(&format!("let tmp_{} = F3G::from({}u64);\n", i, x));
-                    }
+                    codebuf.push_str(&format!("let tmp_{} = F3G::from({}u64);\n", i, x));
                     val_stack.push(x);
                 }
                 Ops::Add => {
                     let (ls, lhs) = match expr.defs[0].op {
                         Ops::Vari(x) => (format!("F3G::from({}u64)", x), x),
-                        _ => get_value(ctx, &expr.defs[0], arg_i),
+                        _ => get_value_ex(ctx, &expr.defs[0], arg_i),
                     };
                     let (rs, rhs) = match expr.defs[1].op {
                         Ops::Vari(x) => (format!("F3G::from({}u64)", x), x),
-                        _ => get_value(ctx, &expr.defs[1], arg_i),
+                        _ => get_value_ex(ctx, &expr.defs[1], arg_i),
                     };
                     val_stack.push(lhs + rhs);
-                    if codegen {
-                        codebuf.push_str(&format!("let tmp_{} = {} + {};\n", i, ls, rs));
-                    }
+                    codebuf.push_str(&format!("let tmp_{} = {} + {};\n", i, ls, rs));
                 }
                 Ops::Mul => {
                     let (ls, lhs) = match expr.defs[0].op {
                         Ops::Vari(x) => (format!("F3G::from({}u64)", x), x),
-                        _ => get_value(ctx, &expr.defs[0], arg_i),
+                        _ => get_value_ex(ctx, &expr.defs[0], arg_i),
                     };
                     let (rs, rhs) = match expr.defs[1].op {
                         Ops::Vari(x) => (format!("F3G::from({}u64)", x), x),
-                        _ => get_value(ctx, &expr.defs[1], arg_i),
+                        _ => get_value_ex(ctx, &expr.defs[1], arg_i),
                     };
                     val_stack.push(lhs * rhs);
-                    if codegen {
-                        codebuf.push_str(&format!("let tmp_{} = {} * {};\n", i, ls, rs));
-                    }
+                    codebuf.push_str(&format!("let tmp_{} = {} * {};\n", i, ls, rs));
                 }
                 Ops::Sub => {
                     let (ls, lhs) = match expr.defs[0].op {
                         Ops::Vari(x) => (format!("F3G::from({}u64)", x), x),
-                        _ => get_value(ctx, &expr.defs[0], arg_i),
+                        _ => get_value_ex(ctx, &expr.defs[0], arg_i),
                     };
                     let (rs, rhs) = match expr.defs[1].op {
                         Ops::Vari(x) => (format!("F3G::from({}u64)", x), x),
-                        _ => get_value(ctx, &expr.defs[1], arg_i),
+                        _ => get_value_ex(ctx, &expr.defs[1], arg_i),
                     };
                     val_stack.push(lhs - rhs);
-                    if codegen {
-                        codebuf.push_str(&format!("let tmp_{} = {} - {};\n", i, ls, rs));
-                    }
+                    codebuf.push_str(&format!("let tmp_{} = {} - {};\n", i, ls, rs));
                 }
                 Ops::Copy_ => {
                     let x = if let Ops::Vari(x) = expr.defs[0].op {
-                        if codegen {
-                            codebuf.push_str(&format!("let tmp_{} = F3G::from({}u64);\n", i, x));
-                        }
+                        codebuf.push_str(&format!("let tmp_{} = F3G::from({}u64);\n", i, x));
                         x
                     } else {
                         // get value from address
-                        let (exps, vals) = get_value(ctx, &expr.defs[0], arg_i);
-                        if codegen {
-                            codebuf.push_str(&format!("let tmp_{} = {};\n", i, exps));
-                        }
+                        let (exps, vals) = get_value_ex(ctx, &expr.defs[0], arg_i);
+                        codebuf.push_str(&format!("let tmp_{} = {};\n", i, exps));
                         vals
                     };
                     val_stack.push(x);
                 }
                 Ops::Write => {
                     let next_expr = &expr.defs[0];
-                    let (idxs, id) = get_i(next_expr, arg_i);
+                    let (idxs, id) = get_i_ex(next_expr, arg_i);
                     let addr = &next_expr.syms[0];
                     let val = val_stack.pop().unwrap(); // get the value from stack
 
@@ -205,47 +191,126 @@ impl Block {
                     if val.dim == 1 || addr.as_str() == "tmp" {
                         // TODO: need double confirm the condition
                         val_addr[id] = val;
-                        if codegen {
-                            codebuf.push_str(&format!("ctx.{}[{}] = tmp_{};\n", addr, idxs, i - 1));
-                        }
+                        codebuf.push_str(&format!("ctx.{}[{}] = tmp_{};\n", addr, idxs, i - 1));
                     } else {
                         // here we again unfold elements of GF(2^3) to 3-tuple(triple)
                         let vals = val.as_elements();
                         val_addr[id] = F3G::from(vals[0]);
                         val_addr[id + 1] = F3G::from(vals[1]);
                         val_addr[id + 2] = F3G::from(vals[2]);
-                        if codegen {
-                            codebuf.push_str(&format!(
-                                r#"
+                        codebuf.push_str(&format!(
+                            r#"
 let vals = tmp_{}.as_elements();
 ctx.{}[{}] = F3G::from(vals[0]);
 ctx.{}[{} + 1] = F3G::from(vals[1]);
 ctx.{}[{} + 2] = F3G::from(vals[2]);
 "#,
-                                i - 1,
-                                addr,
-                                idxs,
-                                addr,
-                                idxs,
-                                addr,
-                                idxs,
-                            ));
-                        }
+                            i - 1,
+                            addr,
+                            idxs,
+                            addr,
+                            idxs,
+                            addr,
+                            idxs,
+                        ));
                     }
                 }
                 Ops::Refer => {
                     // push value into stack
-                    let (exps, x) = get_value(ctx, expr, arg_i);
+                    let (exps, x) = get_value_ex(ctx, expr, arg_i);
                     val_stack.push(x);
-                    if codegen {
-                        codebuf.push_str(&format!("let tmp_{} = {};\n", i, exps));
-                    }
+                    codebuf.push_str(&format!("let tmp_{} = {};\n", i, exps));
                 }
             }
         }
-        if codegen {
-            codebuf.push_str("F3G::ZERO");
-            self.codegen(_step, codebuf);
+        codebuf.push_str("F3G::ZERO");
+        self.codegen(_step, codebuf);
+        F3G::ZERO
+    }
+
+    #[cfg(feature = "build")]
+    pub fn eval(&self, ctx: &mut StarkContext, arg_i: usize) -> F3G {
+        let mut val_stack: Vec<F3G> = Vec::new();
+        let length = self.exprs.len();
+
+        let mut i = 0usize;
+        while i < length {
+            let expr = &self.exprs[i];
+            //log::debug!("op@{} is {}", i, expr);
+            i += 1;
+            match expr.op {
+                Ops::Ret => {
+                    return val_stack.pop().unwrap();
+                }
+                Ops::Vari(x) => {
+                    val_stack.push(x);
+                }
+                Ops::Add => {
+                    let lhs = match expr.defs[0].op {
+                        Ops::Vari(x) => x,
+                        _ => get_value(ctx, &expr.defs[0], arg_i),
+                    };
+                    let rhs = match expr.defs[1].op {
+                        Ops::Vari(x) => x,
+                        _ => get_value(ctx, &expr.defs[1], arg_i),
+                    };
+                    val_stack.push(lhs + rhs);
+                }
+                Ops::Mul => {
+                    let lhs = match expr.defs[0].op {
+                        Ops::Vari(x) => x,
+                        _ => get_value(ctx, &expr.defs[0], arg_i),
+                    };
+                    let rhs = match expr.defs[1].op {
+                        Ops::Vari(x) => x,
+                        _ => get_value(ctx, &expr.defs[1], arg_i),
+                    };
+                    val_stack.push(lhs * rhs);
+                }
+                Ops::Sub => {
+                    let lhs = match expr.defs[0].op {
+                        Ops::Vari(x) => x,
+                        _ => get_value(ctx, &expr.defs[0], arg_i),
+                    };
+                    let rhs = match expr.defs[1].op {
+                        Ops::Vari(x) => x,
+                        _ => get_value(ctx, &expr.defs[1], arg_i),
+                    };
+                    val_stack.push(lhs - rhs);
+                }
+                Ops::Copy_ => {
+                    let x = if let Ops::Vari(x) = expr.defs[0].op {
+                        x
+                    } else {
+                        // get value from address
+                        get_value(ctx, &expr.defs[0], arg_i)
+                    };
+                    val_stack.push(x);
+                }
+                Ops::Write => {
+                    let next_expr = &expr.defs[0];
+                    let id = get_i(next_expr, arg_i);
+                    let addr = &next_expr.syms[0];
+                    let val = val_stack.pop().unwrap(); // get the value from stack
+
+                    let val_addr = ctx.get_mut(addr.as_str());
+                    if val.dim == 1 || addr.as_str() == "tmp" {
+                        // TODO: need double confirm the condition
+                        val_addr[id] = val;
+                    } else {
+                        // here we again unfold elements of GF(2^3) to 3-tuple(triple)
+                        let vals = val.as_elements();
+                        val_addr[id] = F3G::from(vals[0]);
+                        val_addr[id + 1] = F3G::from(vals[1]);
+                        val_addr[id + 2] = F3G::from(vals[2]);
+                    }
+                }
+                Ops::Refer => {
+                    // push value into stack
+                    let x = get_value(ctx, expr, arg_i);
+                    val_stack.push(x);
+                }
+            }
         }
         F3G::ZERO
     }
@@ -323,7 +388,7 @@ pub fn compile_code(
 }
 
 #[inline(always)]
-fn get_i(expr: &Expr, arg_i: usize) -> (String, usize) {
+fn get_i_ex(expr: &Expr, arg_i: usize) -> (String, usize) {
     let offset = expr.addr[0];
     let next = expr.addr[1];
     let modulas = expr.addr[2];
@@ -334,19 +399,19 @@ fn get_i(expr: &Expr, arg_i: usize) -> (String, usize) {
     )
 }
 
-fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> (String, F3G) {
+fn get_value_ex(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> (String, F3G) {
     let addr = &expr.syms[0];
     match addr.as_str() {
         "tmp" | "cm1_n" | "cm1_2ns" | "cm2_n" | "cm2_2ns" | "cm3_n" | "cm3_2ns" | "cm4_n"
         | "cm4_2ns" | "q_2ns" | "f_2ns" | "publics" | "challenge" | "exps_n" | "exps_2ns"
         | "const_n" | "const_2ns" | "evals" | "x_n" | "x_2ns" | "tmpexp_n" => {
-            let (idxs, id) = get_i(expr, arg_i);
+            let (idxs, id) = get_i_ex(expr, arg_i);
             let ctx_section = ctx.get_mut(addr.as_str()); // OPT: readonly ctx
             let dim = match expr.syms.len() {
                 2 => expr.syms[1].parse::<usize>().unwrap(),
                 _ => 1,
             };
-            //log::debug!("get_value {} {} {}", addr, ctx_section.len(), id);
+            //log::debug!("get_value_ex {} {} {}", addr, ctx_section.len(), id);
             match dim {
                 3 => (
                     format!("F3G::new(ctx.{}[{}].to_be(), ctx.{}[{} + 1].to_be(), ctx.{}[{} + 2].to_be())", addr, idxs, addr, idxs, addr, idxs),
@@ -361,7 +426,7 @@ fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> (String, F3G)
             }
         }
         "xDivXSubXi" => {
-            let (idxs, id) = get_i(expr, arg_i);
+            let (idxs, id) = get_i_ex(expr, arg_i);
             (
                 format!(
                     "F3G::new(ctx.xDivXSubXi[{}], ctx.xDivXSubXi[{} + 1], ctx.xDivXSubXi[{} + 2])",
@@ -375,7 +440,7 @@ fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> (String, F3G)
             )
         }
         "xDivXSubWXi" => {
-            let (idxs, id) = get_i(expr, arg_i);
+            let (idxs, id) = get_i_ex(expr, arg_i);
             (
                 format!("F3G::new(ctx.xDivXSubWXi[{}], ctx.xDivXSubWXi[{} + 1], ctx.xDivXSubWXi[{} + 2])", idxs, idxs, idxs),
                 F3G::new(
@@ -386,6 +451,62 @@ fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> (String, F3G)
             )
         }
         "Zi" => (format!("(ctx.Zi)(i)"), (ctx.Zi)(arg_i)),
+        _ => {
+            panic!("invalid symbol {:?}", addr);
+        }
+    }
+}
+
+#[inline(always)]
+fn get_i(expr: &Expr, arg_i: usize) -> usize {
+    let offset = expr.addr[0];
+    let next = expr.addr[1];
+    let modulas = expr.addr[2];
+    let size = expr.addr[3];
+    offset + ((arg_i + next) % modulas) * size
+}
+
+fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
+    let addr = &expr.syms[0];
+
+    match addr.as_str() {
+        "tmp" | "cm1_n" | "cm1_2ns" | "cm2_n" | "cm2_2ns" | "cm3_n" | "cm3_2ns" | "cm4_n"
+        | "cm4_2ns" | "q_2ns" | "f_2ns" | "publics" | "challenge" | "exps_n" | "exps_2ns"
+        | "const_n" | "const_2ns" | "evals" | "x_n" | "x_2ns" | "tmpexp_n" => {
+            let id = get_i(expr, arg_i);
+            let ctx_section = ctx.get_mut(addr.as_str()); // OPT: readonly ctx
+            let dim = match expr.syms.len() {
+                2 => expr.syms[1].parse::<usize>().unwrap(),
+                _ => 1,
+            };
+            //log::debug!("get_value {} {} {}", addr, ctx_section.len(), id);
+            match dim {
+                3 => F3G::new(
+                    ctx_section[id].to_be(),
+                    ctx_section[id + 1].to_be(),
+                    ctx_section[id + 2].to_be(),
+                ),
+                1 => ctx_section[id],
+                _ => panic!("Invalid dim"),
+            }
+        }
+        "xDivXSubXi" => {
+            let id = get_i(expr, arg_i);
+            F3G::new(
+                ctx.xDivXSubXi[id],
+                ctx.xDivXSubXi[id + 1],
+                ctx.xDivXSubXi[id + 2],
+            )
+        }
+        "xDivXSubWXi" => {
+            let id = get_i(expr, arg_i);
+            F3G::new(
+                ctx.xDivXSubWXi[id],
+                ctx.xDivXSubWXi[id + 1],
+                ctx.xDivXSubWXi[id + 2],
+            )
+        }
+        "Zi" => (ctx.Zi)(arg_i),
         _ => {
             panic!("invalid symbol {:?}", addr);
         }
