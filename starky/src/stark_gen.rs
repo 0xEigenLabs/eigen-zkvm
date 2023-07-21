@@ -23,7 +23,7 @@ pub struct StarkContext {
     pub nbits_ext: usize,
     pub N: usize,
     pub Next: usize,
-    pub challenges: Vec<F3G>,
+    pub challenge: Vec<F3G>,
     pub tmp: Vec<F3G>,
     pub cm1_n: Vec<F3G>,
     pub cm2_n: Vec<F3G>,
@@ -65,7 +65,7 @@ impl Default for StarkContext {
             nbits_ext: 0,
             N: 0,
             Next: 0,
-            challenges: vec![F3G::ZERO; 8],
+            challenge: vec![F3G::ZERO; 8],
             tmp: Vec::new(),
             cm1_n: Vec::new(),
             cm2_n: Vec::new(),
@@ -120,7 +120,7 @@ impl StarkContext {
             "const_2ns" => &mut self.const_2ns,
             "evals" => &mut self.evals,
             "publics" => &mut self.publics,
-            "challenge" => &mut self.challenges,
+            "challenge" => &mut self.challenge,
             "tmpexp_n" => &mut self.tmpexp_n,
             "x_n" => &mut self.x_n,
             "x_2ns" => &mut self.x_2ns,
@@ -244,14 +244,14 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         //crate::helper::pretty_print_array(&ctx.cm1_2ns);
         transcript.put(&[tree1.root().as_elements().to_vec()])?;
         // 2.- Caluculate plookups h1 and h2
-        ctx.challenges[0] = transcript.get_field(); //u
-        ctx.challenges[1] = transcript.get_field(); //defVal
+        ctx.challenge[0] = transcript.get_field(); //u
+        ctx.challenge[1] = transcript.get_field(); //defVal
 
-        log::debug!("challenges[0] {}", ctx.challenges[0]);
-        log::debug!("challenges[1] {}", ctx.challenges[1]);
+        log::debug!("challenge[0] {}", ctx.challenge[0]);
+        log::debug!("challenge[1] {}", ctx.challenge[1]);
 
         //TODO parallel execution
-        calculate_exps(&mut ctx, starkinfo, &program.step2prev, "n");
+        calculate_exps(&mut ctx, starkinfo, &program.step2prev, "n", "step2prev");
 
         for pu in starkinfo.pu_ctx.iter() {
             let f_pol = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.f_exp_id]);
@@ -276,12 +276,12 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         //crate::helper::pretty_print_array(&ctx.cm2_2ns);
 
         // 3.- Compute Z polynomials
-        ctx.challenges[2] = transcript.get_field(); // gamma
-        ctx.challenges[3] = transcript.get_field(); // betta
-        log::debug!("challenges[2] {}", ctx.challenges[2]);
-        log::debug!("challenges[3] {}", ctx.challenges[3]);
+        ctx.challenge[2] = transcript.get_field(); // gamma
+        ctx.challenge[3] = transcript.get_field(); // betta
+        log::debug!("challenge[2] {}", ctx.challenge[2]);
+        log::debug!("challenge[3] {}", ctx.challenge[3]);
 
-        calculate_exps(&mut ctx, starkinfo, &program.step3prev, "n");
+        calculate_exps(&mut ctx, starkinfo, &program.step3prev, "n", "step3prev");
 
         for (i, pu) in starkinfo.pu_ctx.iter().enumerate() {
             log::info!("Calculating z for plookup {}", i);
@@ -309,7 +309,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             n_cm += 1;
         }
 
-        calculate_exps(&mut ctx, starkinfo, &program.step3, "n");
+        calculate_exps(&mut ctx, starkinfo, &program.step3, "n", "step3");
 
         log::info!("Merkelizing 3....");
 
@@ -324,11 +324,11 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         );
 
         // 4. Compute C Polynomial
-        ctx.challenges[4] = transcript.get_field(); // vc
-                                                    //log::debug!("challenges[4] {}", ctx.challenges[4]);
+        ctx.challenge[4] = transcript.get_field(); // vc
+                                                   //log::debug!("challenge[4] {}", ctx.challenge[4]);
 
         //log::debug!("step42ns {}", &program.step42ns);
-        calculate_exps(&mut ctx, starkinfo, &program.step42ns, "2ns");
+        calculate_exps(&mut ctx, starkinfo, &program.step42ns, "2ns", "step4");
         log::debug!("q_2ns");
         //crate::helper::pretty_print_array(&ctx.q_2ns);
 
@@ -375,15 +375,15 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ///////////
         // 5. Compute FRI Polynomial
         ///////////
-        ctx.challenges[7] = transcript.get_field(); // xi
+        ctx.challenge[7] = transcript.get_field(); // xi
 
         let mut LEv = vec![F3G::ZERO; ctx.N];
         let mut LpEv = vec![F3G::ZERO; ctx.N];
         LEv[0] = F3G::from(BaseElement::from(1u64));
         LpEv[0] = F3G::from(BaseElement::from(1u64));
 
-        let xis = ctx.challenges[7] / SHIFT.clone();
-        let wxis = (ctx.challenges[7] * MG.0[ctx.nbits]) / SHIFT.clone();
+        let xis = ctx.challenge[7] / SHIFT.clone();
+        let wxis = (ctx.challenge[7] * MG.0[ctx.nbits]) / SHIFT.clone();
 
         for i in 1..ctx.N {
             LEv[i] = LEv[i - 1] * xis;
@@ -437,15 +437,15 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             transcript.put(&b)?;
         }
 
-        ctx.challenges[5] = transcript.get_field(); // v1
-        ctx.challenges[6] = transcript.get_field(); // v2
-        log::debug!("ctx.challenges[5] {}", ctx.challenges[5]);
-        log::debug!("ctx.challenges[6] {}", ctx.challenges[6]);
-        log::debug!("ctx.challenges[7] {}", ctx.challenges[7]);
+        ctx.challenge[5] = transcript.get_field(); // v1
+        ctx.challenge[6] = transcript.get_field(); // v2
+        log::debug!("ctx.challenge[5] {}", ctx.challenge[5]);
+        log::debug!("ctx.challenge[6] {}", ctx.challenge[6]);
+        log::debug!("ctx.challenge[7] {}", ctx.challenge[7]);
 
         // Calculate xDivXSubXi, xDivXSubWXi
-        let xi = ctx.challenges[7];
-        let wxi = ctx.challenges[7] * MG.0[ctx.nbits];
+        let xi = ctx.challenge[7];
+        let wxi = ctx.challenge[7] * MG.0[ctx.nbits];
 
         let extend_size = N << extend_bits;
 
@@ -486,7 +486,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                 xxwx[1] = vw[1];
                 xxwx[2] = vw[2];
             });
-        calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns");
+        calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns", "step5");
 
         let mut fri_pol = vec![F3G::ZERO; N << extend_bits];
         fri_pol.par_iter_mut().enumerate().for_each(|(i, o)| {
@@ -530,7 +530,12 @@ impl<'a, M: MerkleTree> StarkProof<M> {
     ) -> F3G {
         ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
-        let res = t.eval(ctx, idx);
+        log::info!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
+
+        #[cfg(feature = "build")]
+        let res = t.eval_and_codegen(ctx, idx, "public"); // just let public codegen run multiple times
+        #[cfg(not(feature = "build"))]
+        let res = t.public_fn(ctx, idx);
         //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
         res
     }
@@ -693,10 +698,20 @@ pub fn merkelize<M: MerkleTree>(
     Ok(tree)
 }
 
-pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segment, dom: &str) {
+pub fn calculate_exps(
+    ctx: &mut StarkContext,
+    starkinfo: &StarkInfo,
+    seg: &Segment,
+    dom: &str,
+    step: &str,
+) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    log::debug!("compile_code ctx.first:\n{}", c_first);
+    log::info!("calculate_exps compile_code ctx.first:\n{}", c_first);
+    // codegen
+    #[cfg(feature = "build")]
+    c_first.eval_and_codegen(ctx, 0, step);
+
     let _c_i = compile_code(ctx, starkinfo, &seg.first, dom, false);
     let _c_last = compile_code(ctx, starkinfo, &seg.first, dom, false);
     /*
@@ -707,7 +722,20 @@ pub fn calculate_exps(ctx: &mut StarkContext, starkinfo: &StarkInfo, seg: &Segme
     */
     let N = if dom == "n" { ctx.N } else { ctx.Next };
     for i in 0..N {
+        #[cfg(feature = "build")]
         c_first.eval(ctx, i);
+
+        #[cfg(not(feature = "build"))]
+        match step {
+            "public" => c_first.public_fn(ctx, i),
+            "step2prev" => c_first.step2prev_fn(ctx, i),
+            "step3" => c_first.step3_fn(ctx, i),
+            "step3prev" => c_first.step3prev_fn(ctx, i),
+            "step4" => c_first.step4_fn(ctx, i),
+            "step5" => c_first.step5_fn(ctx, i),
+            _ => panic!("Invalid step {}", step),
+        };
+
         //log::debug!("ctx.q_2ns[3*{}] {} ", i, ctx.q_2ns[3 * i]);
         //for i in 0..ctx.tmp.len() {
         //    log::debug!("tmp@{} {}", i, ctx.tmp[i]);

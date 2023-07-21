@@ -1,11 +1,11 @@
 #!/bin/bash
-set -e
+set -ex
 
 ## build
-cargo build --release
+cargo build --release --features build
 
 export NODE_OPTIONS="--max-old-space-size=81920"
-source ~/.bashrc 
+source ~/.bashrc
 
 BIG_POWER=26
 NUM_PROOF=2
@@ -84,18 +84,30 @@ node $RUNDIR/src/compressor12/main_compressor12_exec.js \
     -e $WORKSPACE/$RECURSIVE_CIRCUIT.exec \
     -m $WORKSPACE/$RECURSIVE_CIRCUIT.cm
 
-echo "5. generate recursive2 proof  "
+echo "5. generate recursive2 proof"
 # generate the stark proof and the circom circuits to verify stark proof.
 # input files : $C12_VERIFIER.pil.json(stark proof)  $C12_VERIFIER.const(const polynomials)  $C12_VERIFIER.cm (commit polynomials)
 # output files :  $RECURSIVE2_CIRCUIT.circom  $RECURSIVE2_CIRCUIT/r2_input.json
 # Remark: the N of r2.starkStruct must be 2^20 , because the degree of $RECURSIVE_CIRCUIT.pil is 2^20 which determined by the proocess of converting  $RECURSIVE_CIRCUIT.circom to  $RECURSIVE_CIRCUIT.pil
-../target/release/eigen-zkit stark_prove -s ../starky/data/r2.starkStruct.json \
+cargo build --release --features build
+stark_build_begin=$(date +%s)
+$ZKIT stark_prove -s ../starky/data/r2.starkStruct.json \
     -p $WORKSPACE/$RECURSIVE_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE_CIRCUIT.const \
     --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom --i ./aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json  --norm_stage
+stark_build_end=$(date +%s)
+
+cargo build --release --features eval
+stark_eval_begin=$(date +%s)
+$ZKIT stark_prove -s ../starky/data/r2.starkStruct.json \
+    -p $WORKSPACE/$RECURSIVE_CIRCUIT.pil.json \
+    --o $WORKSPACE/$RECURSIVE_CIRCUIT.const \
+    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom --i ./aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json  --norm_stage
+stark_eval_end=$(date +%s)
+echo "Build Time Cost ----- ($((stark_build_end - stark_build_begin))s)"
+echo "Eval Time Cost ----- ($((stark_eval_end - stark_eval_begin))s)"
 
 aggregation_end=$(date +%s)
-
 
 final_start=$(date +%s)
 # final recursive stage 
@@ -128,10 +140,23 @@ node $RUNDIR/src/compressor12/main_compressor12_exec.js \
 
 echo "4. generate final proof  "
 # Remark: the N of final.starkStruct must be 2^20 , because the degree of $RECURSIVE2_CIRCUIT.pil is 2^20 which determined by the proocess of converting  $RECURSIVE_CIRCUIT2.circom to  $RECURSIVE_CIRCUIT2.pil
-../target/release/eigen-zkit stark_prove -s ../starky/data/final.starkStruct.bn128.json \
+cargo build --release --features build
+stark_build_begin=$(date +%s)
+$ZKIT stark_prove -s ../starky/data/final.starkStruct.bn128.json \
     -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
     --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $RUNDIR/circuits/$FINAL_CIRCUIT.circom --i ./aggregation/$FINAL_CIRCUIT/final_input.zkin.json  --norm_stage 
+stark_build_end=$(date +%s)
+
+cargo build --release --features eval
+stark_eval_begin=$(date +%s)
+$ZKIT stark_prove -s ../starky/data/final.starkStruct.bn128.json \
+    -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json \
+    --o $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
+    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $RUNDIR/circuits/$FINAL_CIRCUIT.circom --i ./aggregation/$FINAL_CIRCUIT/final_input.zkin.json  --norm_stage 
+stark_eval_end=$(date +%s)
+echo "Build Time Cost ----- ($((stark_build_end - stark_build_begin))s)"
+echo "Eval Time Cost ----- ($((stark_eval_end - stark_eval_begin))s)"
 
 final_end=$(date +%s)
 

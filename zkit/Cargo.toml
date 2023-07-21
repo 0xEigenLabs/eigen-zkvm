@@ -29,3 +29,8 @@ constraint_generation = { git = "https://github.com/iden3/circom.git", version =
 constraint_writers = { git = "https://github.com/iden3/circom.git", version = "2.1.5"}
 compiler = { git = "https://github.com/iden3/circom.git", version = "2.1.6"}
 dag = { git = "https://github.com/iden3/circom.git", version = "2.1.5"}
+
+[features]
+default = []
+build = [ "starky/build" ]
+eval = [ "starky/eval" ]
