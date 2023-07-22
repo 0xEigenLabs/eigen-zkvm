@@ -102,13 +102,11 @@ template DigitReader (b, n) {
             if (idx == 0) {
               log(i);
               log(s[idx][i][n] + B[i] + 1000000000);
-              log(999999);
             }
         }
       ams[idx].out ==> digits[idx];
       if (idx == 0) {
           log(ams[idx].out);
-          log(555555);
       }
     }
     //am.out ==> digit;

@@ -3,9 +3,9 @@ set -ex
 
 cargo build --release --features build
 
-CIRCUIT=$1 # use circuit or mnist as the first parameter
+CIRCUIT=${1-circuit} # use circuit or mnist as the first parameter
 CUR_DIR=$(cd $(dirname $0);pwd)
-POWER=15
+POWER=${2-12} # 15 for zkMinist
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 WORKSPACE=/tmp/single
 rm -rf $WORKSPACE && mkdir -p $WORKSPACE
