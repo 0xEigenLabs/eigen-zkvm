@@ -47,14 +47,15 @@ impl F3G {
         dim: 3,
     };
 
+    #[inline(always)]
     pub fn to_be(&self) -> BaseElement {
-        if self.dim != 1 {
-            panic!("to_be {}", *self);
-        }
-        let r = self.as_elements();
-        r[0]
+        assert_eq!(self.dim, 1);
+        let cc = &[self.cube];
+        let elems = CubeExtension::<BaseElement>::as_base_elements(cc).to_vec();
+        elems[0]
     }
 
+    #[inline(always)]
     pub fn as_elements(&self) -> Vec<BaseElement> {
         let cc = &[self.cube];
         let elems = CubeExtension::<BaseElement>::as_base_elements(cc).to_vec();
@@ -65,10 +66,12 @@ impl F3G {
         }
     }
 
+    #[inline]
     pub fn double(self) -> Self {
         self + self
     }
 
+    #[inline]
     pub fn mul_scalar(self, b: usize) -> Self {
         let b = BaseElement::from(b as u128);
         let elems = self.as_elements();
@@ -79,6 +82,7 @@ impl F3G {
         }
     }
 
+    #[inline]
     pub fn square(self) -> Self {
         match self.dim {
             3 => Self {
@@ -92,11 +96,13 @@ impl F3G {
         }
     }
 
+    #[inline]
     fn eq(self, rhs: &Self) -> bool {
         assert_eq!(self.dim, rhs.dim); // FIXME: align with JS
         self.cube == rhs.cube
     }
 
+    #[inline]
     pub fn gt(self, rhs: &Self) -> bool {
         assert_eq!(self.dim, rhs.dim); // FIXME: align with JS
         let les = self.as_elements();
@@ -117,18 +123,22 @@ impl F3G {
         }
     }
 
+    #[inline]
     pub fn geq(self, rhs: &Self) -> bool {
         self.eq(rhs) || self.gt(rhs)
     }
 
+    #[inline]
     pub fn lt(self, rhs: &Self) -> bool {
         !self.geq(rhs)
     }
 
+    #[inline]
     pub fn leq(self, rhs: &Self) -> bool {
         !self.gt(rhs)
     }
 
+    #[inline]
     pub fn is_zero(self) -> bool {
         match self.dim {
             1 => self.eq(&Self::ZERO),
@@ -141,6 +151,7 @@ impl F3G {
         Self::from(cube[0])
     }
 
+    #[inline]
     pub fn exp(self, e_: usize) -> Self {
         let mut e = e_;
         if e == 0 {
@@ -171,10 +182,12 @@ impl F3G {
         res
     }
 
+    #[inline]
     pub fn pow(self, e: usize) -> Self {
         self.exp(e)
     }
 
+    #[inline]
     pub fn batch_inverse(elems: &[Self]) -> Vec<Self> {
         winter_math::batch_inversion(elems)
 
@@ -202,6 +215,7 @@ impl F3G {
 
 impl Add for F3G {
     type Output = Self;
+    #[inline]
     fn add(self, rhs: Self) -> Self::Output {
         match self.dim {
             3 => {
@@ -239,6 +253,7 @@ impl AddAssign for F3G {
 
 impl Sub for F3G {
     type Output = Self;
+    #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
         match self.dim {
             3 => {
@@ -276,6 +291,7 @@ impl SubAssign for F3G {
 
 impl Mul for F3G {
     type Output = Self;
+    #[inline]
     fn mul(self, rhs: Self) -> Self::Output {
         match self.dim {
             3 => {
@@ -317,6 +333,7 @@ impl MulAssign for F3G {
 
 impl Div for F3G {
     type Output = Self;
+    #[inline]
     fn div(self, rhs: Self) -> Self::Output {
         self * (rhs.inv())
     }
@@ -331,6 +348,7 @@ impl DivAssign for F3G {
 
 impl Neg for F3G {
     type Output = Self;
+    #[inline]
     fn neg(self) -> Self::Output {
         match self.dim {
             3 => Self {
@@ -346,6 +364,7 @@ impl Neg for F3G {
 }
 
 impl From<BaseElement> for F3G {
+    #[inline]
     fn from(value: BaseElement) -> Self {
         F3G {
             cube: CubeExtension::<BaseElement>::new(value, BaseElement::ZERO, BaseElement::ZERO),
@@ -355,36 +374,42 @@ impl From<BaseElement> for F3G {
 }
 
 impl From<u64> for F3G {
+    #[inline]
     fn from(value: u64) -> Self {
         Self::from(BaseElement::from(value))
     }
 }
 
 impl From<i32> for F3G {
+    #[inline]
     fn from(value: i32) -> Self {
         Self::from(BaseElement::from(value as u64))
     }
 }
 
 impl From<u32> for F3G {
+    #[inline]
     fn from(value: u32) -> Self {
         Self::from(BaseElement::from(value as u64))
     }
 }
 
 impl From<usize> for F3G {
+    #[inline]
     fn from(value: usize) -> Self {
         Self::from(BaseElement::from(value as u64))
     }
 }
 
 impl From<&i32> for F3G {
+    #[inline]
     fn from(value: &i32) -> Self {
         Self::from(BaseElement::from(*value as u64))
     }
 }
 
 impl From<&usize> for F3G {
+    #[inline]
     fn from(value: &usize) -> Self {
         Self::from(BaseElement::from(*value as u64))
     }
@@ -392,6 +417,7 @@ impl From<&usize> for F3G {
 
 impl From<u16> for F3G {
     /// Converts a 16-bit value into a field element.
+    #[inline]
     fn from(value: u16) -> Self {
         Self::from(value as u64)
     }
@@ -399,6 +425,7 @@ impl From<u16> for F3G {
 
 impl From<u8> for F3G {
     /// Converts an 8-bit value into a field element.
+    #[inline]
     fn from(value: u8) -> Self {
         Self::from(value as u64)
     }
@@ -409,6 +436,7 @@ impl From<[u8; 8]> for F3G {
     /// assumed to encode the element in the canonical representation in little-endian byte order.
     /// If the value is greater than or equal to the field modulus, modular reduction is silently
     /// performed.
+    #[inline]
     fn from(bytes: [u8; 8]) -> Self {
         let value = u64::from_le_bytes(bytes);
         Self::from(value)
