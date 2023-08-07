@@ -1,5 +1,5 @@
 #![allow(non_snake_case, dead_code)]
-use crate::constant::{MG, SHIFT};
+use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MG, MIN_OPS_PER_THREAD, SHIFT};
 use crate::digest::ElementDigest;
 use crate::errors::Result;
 use crate::f3g::F3G;
@@ -712,15 +712,15 @@ pub fn calculate_exps(
     #[cfg(feature = "build")]
     c_first.eval_and_codegen(ctx, 0, step);
 
-    let _c_i = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    let _c_last = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    /*
-    let next = match dom {
-        "n" => 1,
-        _ => 1 << (ctx.nbits_ext - ctx.nbits),
-    };
-    */
     let N = if dom == "n" { ctx.N } else { ctx.Next };
+    /*
+    let _c_i = compile_code(ctx, starkinfo, &seg.i, dom, false);
+    let _c_last = compile_code(ctx, starkinfo, &seg.last, dom, false);
+    let next = if dom =="n" { 1 } else { 1<< (ctx.nBitsExt - ctx.nBits) };
+    */
+    // 0 ~ next: c_first
+    // next ~ N-next: c_i
+    // N-next ~ N: c_last
     for i in 0..N {
         #[cfg(feature = "build")]
         c_first.eval(ctx, i);
@@ -736,14 +736,260 @@ pub fn calculate_exps(
             _ => panic!("Invalid step {}", step),
         };
 
-        //log::debug!("ctx.q_2ns[3*{}] {} ", i, ctx.q_2ns[3 * i]);
-        //for i in 0..ctx.tmp.len() {
-        //    log::debug!("tmp@{} {}", i, ctx.tmp[i]);
-        //}
         if (i % 10000) == 0 {
             log::debug!("Calculating expression.. {}/{}", i, N);
         }
     }
+}
+
+pub fn calculate_exps_parallel(
+    ctx: &mut StarkContext,
+    starkinfo: &StarkInfo,
+    seg: &Segment,
+    _dom: &str,
+    step: &str,
+) {
+    struct ExecItem {
+        name: String,
+        width: usize,
+    };
+    struct ExecInfo {
+        input_sections: Vec<ExecItem>,
+        output_sections: Vec<ExecItem>,
+    };
+
+    let mut exec_info = ExecInfo {
+        input_sections: vec![],
+        output_sections: vec![],
+    };
+
+    let dom = match step {
+        "step2prev" => {
+            exec_info.input_sections.push(ExecItem {
+                name: "cm1_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "const_n".to_string(),
+                width: 0,
+            });
+            exec_info.output_sections.push(ExecItem {
+                name: "cm2_n".to_string(),
+                width: 0,
+            });
+            exec_info.output_sections.push(ExecItem {
+                name: "cm3_n".to_string(),
+                width: 0,
+            });
+            exec_info.output_sections.push(ExecItem {
+                name: "tmpexp_n".to_string(),
+                width: 0,
+            });
+            "n"
+        }
+        "step3prev" => {
+            exec_info.input_sections.push(ExecItem {
+                name: "cm1_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "cm2_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "cm3_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "const_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "x_n".to_string(),
+                width: 0,
+            });
+            exec_info.output_sections.push(ExecItem {
+                name: "cm3_n".to_string(),
+                width: 0,
+            });
+            exec_info.output_sections.push(ExecItem {
+                name: "tmpexp_n".to_string(),
+                width: 0,
+            });
+            "n"
+        }
+        "step3" => {
+            exec_info.input_sections.push(ExecItem {
+                name: "cm1_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "cm2_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "cm3_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "const_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "x_n".to_string(),
+                width: 0,
+            });
+            exec_info.output_sections.push(ExecItem {
+                name: "cm3_n".to_string(),
+                width: 0,
+            });
+            exec_info.output_sections.push(ExecItem {
+                name: "tmpexp_n".to_string(),
+                width: 0,
+            });
+            "n"
+        }
+        "step4" => {
+            exec_info.input_sections.push(ExecItem {
+                name: "cm1_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "cm2_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "cm3_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "const_2ns".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "x_2ns".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "q_2ns".to_string(),
+                width: 0,
+            });
+            "2ns"
+        }
+        "step5" => {
+            exec_info.input_sections.push(ExecItem {
+                name: "cm1_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "cm2_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "cm3_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "cm4_n".to_string(),
+                width: 0,
+            });
+            exec_info.input_sections.push(ExecItem {
+                name: "const_2ns".to_string(),
+                width: 0,
+            });
+            exec_info.output_sections.push(ExecItem {
+                name: "xDivXSubXi".to_string(),
+                width: 0,
+            });
+            exec_info.output_sections.push(ExecItem {
+                name: "xDivXSubWXi".to_string(),
+                width: 0,
+            });
+            exec_info.output_sections.push(ExecItem {
+                name: "f_2ns".to_string(),
+                width: 0,
+            });
+            "2ns"
+        }
+        _ => panic!("Invalid step {}", step),
+    };
+
+    let set_width = |section: &mut ExecItem| {
+        let name: &str = section.name.as_str();
+        if name == "const_n" || name == "const_2ns" {
+            section.width = starkinfo.n_constants;
+        } else if starkinfo.map_sectionsN.get(name) != usize::MAX {
+            section.width = starkinfo.map_sectionsN.get(name);
+        } else if vec!["x_n", "x_2ns"].contains(&name) {
+            section.width = 1;
+        } else if vec!["xDivXSubXi", "xDivXSubWXi", "f_2ns"].contains(&name) {
+            section.width = 3;
+        } else if vec!["q_2ns"].contains(&name) {
+            section.width = starkinfo.q_dim;
+        } else {
+            panic!("Invalid section name {}", name)
+        }
+    };
+
+    for i in 0..exec_info.input_sections.len() {
+        set_width(&mut exec_info.input_sections[i]);
+    }
+    for i in 0..exec_info.output_sections.len() {
+        set_width(&mut exec_info.output_sections[i]);
+    }
+
+    let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
+    let c_i = compile_code(ctx, starkinfo, &seg.i, dom, false);
+    let c_last = compile_code(ctx, starkinfo, &seg.last, dom, false);
+
+    let n = if dom == "n" { ctx.N } else { ctx.Next };
+    let next = if dom == "n" {
+        1
+    } else {
+        1 << (ctx.nbits_ext - ctx.nbits)
+    };
+
+    /*
+    for i in 0..N {
+        c_first.eval(ctx, i);
+    }
+    */
+    let mut n_per_thread_f = (n - 1) / get_max_workers() + 1;
+
+    if n_per_thread_f > MAX_OPS_PER_THREAD {
+        n_per_thread_f = MAX_OPS_PER_THREAD
+    };
+    if n_per_thread_f < MIN_OPS_PER_THREAD {
+        n_per_thread_f = MIN_OPS_PER_THREAD
+    };
+
+    let mut ctx_chunks: Vec<StarkContext> = vec![];
+    for i in (0..n).step_by(n_per_thread_f) {
+        let cur_n = std::cmp::min(n_per_thread_f, n - i);
+        let mut tmp_ctx = StarkContext::default();
+        tmp_ctx.N = n;
+        tmp_ctx.nbits = ctx.nbits;
+        tmp_ctx.nbits_ext = ctx.nbits_ext;
+        tmp_ctx.evals = ctx.evals.clone();
+        tmp_ctx.publics = ctx.publics.clone();
+        tmp_ctx.challenge = ctx.challenge.clone();
+
+        for si in &exec_info.input_sections {
+            let tmp = tmp_ctx.get_mut(si.name.as_str());
+            *tmp = vec![F3G::ZERO; (cur_n + next) * si.width];
+            let ori_sec = ctx.get_mut(si.name.as_str());
+            for j in 0..(cur_n * si.width) {
+                tmp[j] = ori_sec[i * si.width + j]
+            }
+            // next
+            for j in 0..(next * si.width) {
+                tmp[cur_n * si.width + j] = ori_sec[((i + cur_n) % n) * si.width + j]
+            }
+        }
+        ctx_chunks.push(tmp_ctx);
+    }
+
+    //(0..n).into_par_iter().chunks(n_per_thread_f).map(||);
 }
 
 #[cfg(test)]

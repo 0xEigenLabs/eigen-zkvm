@@ -178,7 +178,7 @@ impl Index {
             "tmpexp_n" => self.tmpexp_n,
             "q_2ns" => self.q_2ns,
             "f_2ns" => self.q_2ns,
-            _ => panic!("Invalid name={} in index", name),
+            _ => usize::MAX,
         }
     }
 
