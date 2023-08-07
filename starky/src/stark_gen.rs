@@ -938,9 +938,11 @@ pub fn calculate_exps_parallel(
         set_width(&mut exec_info.output_sections[i]);
     }
 
+    /*
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
     let c_i = compile_code(ctx, starkinfo, &seg.i, dom, false);
     let c_last = compile_code(ctx, starkinfo, &seg.last, dom, false);
+    */
 
     let n = if dom == "n" { ctx.N } else { ctx.Next };
     let next = if dom == "n" {
@@ -974,8 +976,6 @@ pub fn calculate_exps_parallel(
         tmp_ctx.evals = ctx.evals.clone();
         tmp_ctx.publics = ctx.publics.clone();
         tmp_ctx.challenge = ctx.challenge.clone();
-        // TODO move it to the worker
-        tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i);
 
         for si in &exec_info.input_sections {
             let tmp = tmp_ctx.get_mut(si.name.as_str());
@@ -990,17 +990,22 @@ pub fn calculate_exps_parallel(
             }
         }
 
+        ctx_chunks.push(tmp_ctx);
+    }
+
+    ctx_chunks.par_iter_mut().enumerate().map(|(i, tmp_ctx)| {
+        tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i);
         for so in &exec_info.output_sections {
             let tmp = tmp_ctx.get_mut(so.name.as_str());
             if tmp.len() == 0 {
                 *tmp = vec![F3G::ZERO; so.width * (n + next)];
             }
         }
-        ctx_chunks.push(tmp_ctx);
-    }
 
-    //(0..n).into_par_iter().chunks(n_per_thread_f).map(||);
+        calculate_exps(&mut tmp_ctx, starkinfo, seg, &dom, step);
+    });
 
+    // TODO write back the output
 }
 
 #[cfg(test)]
