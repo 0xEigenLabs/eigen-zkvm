@@ -198,7 +198,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         //crate::helper::pretty_print_array(&ctx.x_2ns);
         log::debug!("ctx.x_2ns 3 {} {}", xx, ctx.N << extend_bits);
-        ctx.Zi = Self::build_Zh_Inv(ctx.nbits, extend_bits);
+        ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, 0);
         log::debug!("Zi(1) {}", (ctx.Zi)(1));
 
         ctx.const_n = const_pols.write_buff();
@@ -539,20 +539,20 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
         res
     }
+}
 
-    pub fn build_Zh_Inv(nBits: usize, extend_bits: usize) -> Box<dyn Fn(usize) -> F3G + 'static> {
-        let mut w = F3G::ONE;
-        let mut sn = SHIFT.clone();
-        for _i in 0..nBits {
-            sn = sn * sn;
-        }
-        let mut ZHInv = vec![F3G::ZERO; 1 << extend_bits];
-        for i in 0..(1 << extend_bits) {
-            ZHInv[i] = F3G::inv(sn * w - F3G::ONE);
-            w = w * MG.0[extend_bits];
-        }
-        Box::new(move |i: usize| ZHInv[i % ZHInv.len()].clone())
+pub fn build_Zh_Inv(nBits: usize, extend_bits: usize, offset: usize) -> Box<dyn Fn(usize) -> F3G + 'static> {
+    let mut w = F3G::ONE;
+    let mut sn = SHIFT.clone();
+    for _i in 0..nBits {
+        sn = sn * sn;
     }
+    let mut ZHInv = vec![F3G::ZERO; 1 << extend_bits];
+    for i in 0..(1 << extend_bits) {
+        ZHInv[i] = F3G::inv(sn * w - F3G::ONE);
+        w = w * MG.0[extend_bits];
+    }
+    Box::new(move |i: usize| ZHInv[(i + offset) % ZHInv.len()].clone())
 }
 
 fn set_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: &usize, pol: Vec<F3G>) {
@@ -948,6 +948,7 @@ pub fn calculate_exps_parallel(
     } else {
         1 << (ctx.nbits_ext - ctx.nbits)
     };
+    let extend_bits = ctx.nbits_ext - ctx.nbits;
 
     /*
     for i in 0..N {
@@ -973,6 +974,8 @@ pub fn calculate_exps_parallel(
         tmp_ctx.evals = ctx.evals.clone();
         tmp_ctx.publics = ctx.publics.clone();
         tmp_ctx.challenge = ctx.challenge.clone();
+        // TODO move it to the worker
+        tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i);
 
         for si in &exec_info.input_sections {
             let tmp = tmp_ctx.get_mut(si.name.as_str());
@@ -986,10 +989,18 @@ pub fn calculate_exps_parallel(
                 tmp[cur_n * si.width + j] = ori_sec[((i + cur_n) % n) * si.width + j]
             }
         }
+
+        for so in &exec_info.output_sections {
+            let tmp = tmp_ctx.get_mut(so.name.as_str());
+            if tmp.len() == 0 {
+                *tmp = vec![F3G::ZERO; so.width * (n + next)];
+            }
+        }
         ctx_chunks.push(tmp_ctx);
     }
 
     //(0..n).into_par_iter().chunks(n_per_thread_f).map(||);
+
 }
 
 #[cfg(test)]
