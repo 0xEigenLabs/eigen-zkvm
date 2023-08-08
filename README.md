@@ -32,6 +32,7 @@ For power in range 20 to 26, you can download directly from [universal-setup hub
 * Single proof and zkML
 
 > [test_single.sh](./test/test_single.sh)
+
 > [test_single.sh mnist 15](./test/test_single.sh)
 
 * Snark aggregation proof

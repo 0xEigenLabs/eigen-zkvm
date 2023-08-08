@@ -17,6 +17,7 @@ use rayon::prelude::*;
 use std::collections::HashMap;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
+use crate::helper::pretty_print_array;
 
 pub struct StarkContext {
     pub nbits: usize,
@@ -57,6 +58,38 @@ pub struct StarkContext {
     pub tree4: Vec<BaseElement>,
     pub consts: Vec<BaseElement>,
 }
+
+impl std::fmt::Debug for StarkContext {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "n {}\n", self.N)?;
+        write!(f, "nBits {}\n", self.nbits)?;
+        write!(f, "nBitsExt {}\n", self.nbits_ext)?;
+        write!(f, "evals {:?}\n", pretty_print_array(&self.evals))?;
+        write!(f, "publics {:?}\n", pretty_print_array(&self.publics))?;
+        write!(f, "challenge {:?}\n", pretty_print_array(&self.challenge))?;
+        write!(f, "cm1_n {:?}\n", pretty_print_array(&self.cm1_n))?;
+        write!(f, "cm2_n {:?}\n", pretty_print_array(&self.cm2_n))?;
+        write!(f, "cm3_n {:?}\n", pretty_print_array(&self.cm3_n))?;
+        write!(f, "cm4_n {:?}\n", pretty_print_array(&self.cm4_n))?;
+        write!(f, "cm1_2ns {:?}\n", pretty_print_array(&self.cm1_2ns))?;
+        write!(f, "cm2_2ns {:?}\n", pretty_print_array(&self.cm2_2ns))?;
+        write!(f, "cm3_2ns {:?}\n", pretty_print_array(&self.cm3_2ns))?;
+        write!(f, "cm4_2ns {:?}\n", pretty_print_array(&self.cm4_2ns))?;
+        write!(f, "const_n {:?}\n", pretty_print_array(&self.const_n))?;
+        write!(f, "const_2ns {:?}\n", pretty_print_array(&self.const_2ns))?;
+        write!(f, "x_n {:?}\n", pretty_print_array(&self.x_n))?;
+        write!(f, "x_2ns {:?}\n", pretty_print_array(&self.x_2ns))?;
+        write!(f, "xDivXSubXi {:?}\n", pretty_print_array(&self.xDivXSubXi))?;
+        write!(f, "xDivXSubWXi {:?}\n", pretty_print_array(&self.xDivXSubWXi))?;
+        write!(f, "q_2ns {:?}\n", pretty_print_array(&self.q_2ns))?;
+        write!(f, "f_2ns {:?}\n", pretty_print_array(&self.f_2ns))?;
+        write!(f, "tmp {:?}\n", pretty_print_array(&self.tmp))?;
+        Ok(())
+    }
+}
+
+unsafe impl Send for StarkContext {}
+unsafe impl Sync for StarkContext {}
 
 impl Default for StarkContext {
     fn default() -> Self {
@@ -101,6 +134,13 @@ impl Default for StarkContext {
 }
 
 impl StarkContext {
+    pub fn get_mut_base(&mut self, section: &str) -> &mut Vec<BaseElement> {
+        match section {
+            "xDivXSubXi" => &mut self.xDivXSubXi,
+            "xDivXSubWXi" => &mut self.xDivXSubWXi,
+            _ => panic!("invalid symbol {:?}", section),
+        }
+    }
     pub fn get_mut(&mut self, section: &str) -> &mut Vec<F3G> {
         match section {
             "tmp" => &mut self.tmp,
@@ -196,14 +236,10 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             xx = xx * MG.0[ctx.nbits_ext];
         }
 
-        //crate::helper::pretty_print_array(&ctx.x_2ns);
-        log::debug!("ctx.x_2ns 3 {} {}", xx, ctx.N << extend_bits);
         ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, 0);
-        log::debug!("Zi(1) {}", (ctx.Zi)(1));
 
         ctx.const_n = const_pols.write_buff();
         const_tree.to_f3g(&mut ctx.const_2ns);
-        //crate::helper::pretty_print_array(&ctx.const_2ns);
 
         ctx.publics = vec![F3G::ZERO; starkinfo.publics.len()];
         for (i, pe) in starkinfo.publics.iter().enumerate() {
@@ -232,7 +268,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         }
 
         log::info!("Merkelizing 1....");
-        let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n").unwrap();
+        let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n")?;
         tree1.to_f3g(&mut ctx.cm1_2ns);
 
         log::info!(
@@ -240,8 +276,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             //crate::helper::fr_to_biguint(&tree1.root().into())
             tree1.root(),
         );
-        log::debug!("cm1_2ns");
-        //crate::helper::pretty_print_array(&ctx.cm1_2ns);
         transcript.put(&[tree1.root().as_elements().to_vec()])?;
         // 2.- Caluculate plookups h1 and h2
         ctx.challenge[0] = transcript.get_field(); //u
@@ -250,8 +284,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         log::debug!("challenge[0] {}", ctx.challenge[0]);
         log::debug!("challenge[1] {}", ctx.challenge[1]);
 
-        //TODO parallel execution
-        calculate_exps(&mut ctx, starkinfo, &program.step2prev, "n", "step2prev");
+        calculate_exps_parallel(&mut ctx, starkinfo, &program.step2prev, "n", "step2prev");
 
         for pu in starkinfo.pu_ctx.iter() {
             let f_pol = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.f_exp_id]);
@@ -264,16 +297,14 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         }
 
         log::info!("Merkelizing 2....");
-        let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n").unwrap();
+        let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n")?;
         tree2.to_f3g(&mut ctx.cm2_2ns);
         transcript.put(&[tree2.root().as_elements().to_vec()])?;
         log::info!(
             "tree2 root: {}",
-            //crate::helper::fr_to_biguint(&tree2.root().into())
+            // crate::helper::fr_to_biguint(&tree2.root().into())
             tree2.root(),
         );
-        log::debug!("cm2_2ns");
-        //crate::helper::pretty_print_array(&ctx.cm2_2ns);
 
         // 3.- Compute Z polynomials
         ctx.challenge[2] = transcript.get_field(); // gamma
@@ -281,62 +312,56 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         log::debug!("challenge[2] {}", ctx.challenge[2]);
         log::debug!("challenge[3] {}", ctx.challenge[3]);
 
-        calculate_exps(&mut ctx, starkinfo, &program.step3prev, "n", "step3prev");
+        calculate_exps_parallel(&mut ctx, starkinfo, &program.step3prev, "n", "step3prev");
 
         for (i, pu) in starkinfo.pu_ctx.iter().enumerate() {
             log::info!("Calculating z for plookup {}", i);
-            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.num_id]);
-            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.den_id]);
-            let z = calculate_Z(pNum, pDen);
+            let p_num = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.num_id]);
+            let p_den = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.den_id]);
+            let z = calculate_Z(p_num, p_den);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], z);
             n_cm += 1;
         }
 
         for (i, pe) in starkinfo.pe_ctx.iter().enumerate() {
             log::info!("Calculating z for permutation {}", i);
-            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.num_id]);
-            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.den_id]);
-            let z = calculate_Z(pNum, pDen);
+            let p_num = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.num_id]);
+            let p_den = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.den_id]);
+            let z = calculate_Z(p_num, p_den);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], z);
             n_cm += 1;
         }
         for (i, ci) in starkinfo.ci_ctx.iter().enumerate() {
             log::info!("Calculating z for connection {}", i);
-            let pNum = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&ci.num_id]);
-            let pDen = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&ci.den_id]);
-            let z = calculate_Z(pNum, pDen);
+            let p_num = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&ci.num_id]);
+            let p_den = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&ci.den_id]);
+            let z = calculate_Z(p_num, p_den);
             set_pol(&mut ctx, starkinfo, &starkinfo.cm_n[n_cm], z);
             n_cm += 1;
         }
 
-        calculate_exps(&mut ctx, starkinfo, &program.step3, "n", "step3");
+        calculate_exps_parallel(&mut ctx, starkinfo, &program.step3, "n", "step3");
 
         log::info!("Merkelizing 3....");
 
-        let tree3 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm3_n").unwrap();
+        let tree3 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm3_n")?;
         tree3.to_f3g(&mut ctx.cm3_2ns);
         transcript.put(&[tree3.root().as_elements().to_vec()])?;
 
         log::info!(
             "tree3 root: {}",
-            //crate::helper::fr_to_biguint(&tree3.root().into())
-            tree3.root(),
+            crate::helper::fr_to_biguint(&tree3.root().into())
+            //tree3.root(),
         );
 
         // 4. Compute C Polynomial
         ctx.challenge[4] = transcript.get_field(); // vc
-                                                   //log::debug!("challenge[4] {}", ctx.challenge[4]);
 
-        //log::debug!("step42ns {}", &program.step42ns);
-        calculate_exps(&mut ctx, starkinfo, &program.step42ns, "2ns", "step4");
-        log::debug!("q_2ns");
-        //crate::helper::pretty_print_array(&ctx.q_2ns);
+        calculate_exps_parallel(&mut ctx, starkinfo, &program.step42ns, "2ns", "step4");
 
         let mut qq1 = vec![F3G::ZERO; ctx.q_2ns.len()];
         let mut qq2 = vec![F3G::ZERO; starkinfo.q_dim * ctx.Next * starkinfo.q_deg];
         ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
-        log::debug!("qq1");
-        //crate::helper::pretty_print_array(&qq1);
 
         let mut cur_s = F3G::ONE;
         let shift_in = (F3G::inv(SHIFT.clone())).exp(ctx.N);
@@ -349,8 +374,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             }
             cur_s = cur_s * shift_in;
         }
-        //log::debug!("qq2");
-        //crate::helper::pretty_print_array(&qq2);
 
         fft(
             &qq2,
@@ -363,8 +386,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
         log::info!(
             "tree4 root: {}",
-            //crate::helper::fr_to_biguint(&tree4.root().into())
-            tree4.root(),
+            crate::helper::fr_to_biguint(&tree4.root().into())
+            //tree4.root(),
         );
         transcript.put(&[tree4.root().as_elements().to_vec()])?;
 
@@ -486,7 +509,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                 xxwx[1] = vw[1];
                 xxwx[2] = vw[2];
             });
-        calculate_exps(&mut ctx, starkinfo, &program.step52ns, "2ns", "step5");
+        calculate_exps_parallel(&mut ctx, starkinfo, &program.step52ns, "2ns", "step5");
 
         let mut fri_pol = vec![F3G::ZERO; N << extend_bits];
         fri_pol.par_iter_mut().enumerate().for_each(|(i, o)| {
@@ -541,7 +564,11 @@ impl<'a, M: MerkleTree> StarkProof<M> {
     }
 }
 
-pub fn build_Zh_Inv(nBits: usize, extend_bits: usize, offset: usize) -> Box<dyn Fn(usize) -> F3G + 'static> {
+pub fn build_Zh_Inv(
+    nBits: usize,
+    extend_bits: usize,
+    offset: usize,
+) -> Box<dyn Fn(usize) -> F3G + 'static> {
     let mut w = F3G::ONE;
     let mut sn = SHIFT.clone();
     for _i in 0..nBits {
@@ -665,7 +692,6 @@ pub fn extend_and_merkelize<M: MerkleTree>(
     let n_pols = starkinfo.map_sectionsN.get(section_name);
     let mut result = vec![F3G::ZERO; (1 << nBitsExt) * n_pols];
     let p = ctx.get_mut(section_name);
-    //crate::helper::pretty_print_array(&p);
     interpolate(p, n_pols, nBits, &mut result, nBitsExt);
     let mut p_be = vec![BaseElement::ZERO; result.len()];
     p_be.par_iter_mut()
@@ -673,7 +699,6 @@ pub fn extend_and_merkelize<M: MerkleTree>(
         .for_each(|(be_out, f3g_in)| {
             *be_out = f3g_in.to_be();
         });
-    //crate::helper::pretty_print_array(&p_be);
     let mut tree = M::new();
     tree.merkelize(p_be, n_pols, 1 << nBitsExt)?;
     Ok(tree)
@@ -692,8 +717,6 @@ pub fn merkelize<M: MerkleTree>(
         *be_out = f3g_in.to_be();
     });
     let mut tree = M::new();
-    //log::debug!("merkelize: {} {}", section_name, nBitsExt);
-    //crate::helper::pretty_print_array(&p_be);
     tree.merkelize(p_be, n_pols, 1 << nBitsExt)?;
     Ok(tree)
 }
@@ -707,7 +730,7 @@ pub fn calculate_exps(
 ) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    log::info!("calculate_exps compile_code ctx.first:\n{}", c_first);
+    log::info!("calculate_exps compile_code ctx.first:\n{} \nN = {}, tmp size: {}", c_first, ctx.N, seg.tmp_used);
     // codegen
     #[cfg(feature = "build")]
     c_first.eval_and_codegen(ctx, 0, step);
@@ -737,7 +760,7 @@ pub fn calculate_exps(
         };
 
         if (i % 10000) == 0 {
-            log::debug!("Calculating expression.. {}/{}", i, N);
+            log::info!("Calculating expression.. {}/{}", i, N);
         }
     }
 }
@@ -749,14 +772,17 @@ pub fn calculate_exps_parallel(
     _dom: &str,
     step: &str,
 ) {
+    #[derive(Debug)]
     struct ExecItem {
         name: String,
         width: usize,
-    };
+    }
+
+    #[derive(Debug)]
     struct ExecInfo {
         input_sections: Vec<ExecItem>,
         output_sections: Vec<ExecItem>,
-    };
+    }
 
     let mut exec_info = ExecInfo {
         input_sections: vec![],
@@ -851,15 +877,15 @@ pub fn calculate_exps_parallel(
         }
         "step4" => {
             exec_info.input_sections.push(ExecItem {
-                name: "cm1_n".to_string(),
+                name: "cm1_2ns".to_string(),
                 width: 0,
             });
             exec_info.input_sections.push(ExecItem {
-                name: "cm2_n".to_string(),
+                name: "cm2_2ns".to_string(),
                 width: 0,
             });
             exec_info.input_sections.push(ExecItem {
-                name: "cm3_n".to_string(),
+                name: "cm3_2ns".to_string(),
                 width: 0,
             });
             exec_info.input_sections.push(ExecItem {
@@ -870,7 +896,7 @@ pub fn calculate_exps_parallel(
                 name: "x_2ns".to_string(),
                 width: 0,
             });
-            exec_info.input_sections.push(ExecItem {
+            exec_info.output_sections.push(ExecItem {
                 name: "q_2ns".to_string(),
                 width: 0,
             });
@@ -878,30 +904,30 @@ pub fn calculate_exps_parallel(
         }
         "step5" => {
             exec_info.input_sections.push(ExecItem {
-                name: "cm1_n".to_string(),
+                name: "cm1_2ns".to_string(),
                 width: 0,
             });
             exec_info.input_sections.push(ExecItem {
-                name: "cm2_n".to_string(),
+                name: "cm2_2ns".to_string(),
                 width: 0,
             });
             exec_info.input_sections.push(ExecItem {
-                name: "cm3_n".to_string(),
+                name: "cm3_2ns".to_string(),
                 width: 0,
             });
             exec_info.input_sections.push(ExecItem {
-                name: "cm4_n".to_string(),
+                name: "cm4_2ns".to_string(),
                 width: 0,
             });
             exec_info.input_sections.push(ExecItem {
                 name: "const_2ns".to_string(),
                 width: 0,
             });
-            exec_info.output_sections.push(ExecItem {
+            exec_info.input_sections.push(ExecItem {
                 name: "xDivXSubXi".to_string(),
                 width: 0,
             });
-            exec_info.output_sections.push(ExecItem {
+            exec_info.input_sections.push(ExecItem {
                 name: "xDivXSubWXi".to_string(),
                 width: 0,
             });
@@ -937,40 +963,27 @@ pub fn calculate_exps_parallel(
     for i in 0..exec_info.output_sections.len() {
         set_width(&mut exec_info.output_sections[i]);
     }
+    log::info!("exec info: {:?}", exec_info);
 
-    /*
-    let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    let c_i = compile_code(ctx, starkinfo, &seg.i, dom, false);
-    let c_last = compile_code(ctx, starkinfo, &seg.last, dom, false);
-    */
-
-    let n = if dom == "n" { ctx.N } else { ctx.Next };
-    let next = if dom == "n" {
-        1
-    } else {
-        1 << (ctx.nbits_ext - ctx.nbits)
-    };
     let extend_bits = ctx.nbits_ext - ctx.nbits;
+    let n = if dom == "n" { ctx.N } else { ctx.Next };
+    let next = if dom == "n" { 1 } else { 1 << extend_bits };
 
-    /*
-    for i in 0..N {
-        c_first.eval(ctx, i);
-    }
-    */
-    let mut n_per_thread_f = (n - 1) / get_max_workers() + 1;
-
-    if n_per_thread_f > MAX_OPS_PER_THREAD {
-        n_per_thread_f = MAX_OPS_PER_THREAD
+    let mut n_per_thread = (n - 1) / get_max_workers() + 1;
+    if n_per_thread > MAX_OPS_PER_THREAD {
+        n_per_thread = MAX_OPS_PER_THREAD
     };
-    if n_per_thread_f < MIN_OPS_PER_THREAD {
-        n_per_thread_f = MIN_OPS_PER_THREAD
+    if n_per_thread < MIN_OPS_PER_THREAD {
+        n_per_thread = MIN_OPS_PER_THREAD
     };
 
     let mut ctx_chunks: Vec<StarkContext> = vec![];
-    for i in (0..n).step_by(n_per_thread_f) {
-        let cur_n = std::cmp::min(n_per_thread_f, n - i);
+
+    for i in (0..n).step_by(n_per_thread) {
+        let cur_n = std::cmp::min(n_per_thread, n - i);
         let mut tmp_ctx = StarkContext::default();
         tmp_ctx.N = n;
+        tmp_ctx.Next = ctx.Next;
         tmp_ctx.nbits = ctx.nbits;
         tmp_ctx.nbits_ext = ctx.nbits_ext;
         tmp_ctx.evals = ctx.evals.clone();
@@ -978,34 +991,61 @@ pub fn calculate_exps_parallel(
         tmp_ctx.challenge = ctx.challenge.clone();
 
         for si in &exec_info.input_sections {
-            let tmp = tmp_ctx.get_mut(si.name.as_str());
-            *tmp = vec![F3G::ZERO; (cur_n + next) * si.width];
-            let ori_sec = ctx.get_mut(si.name.as_str());
-            for j in 0..(cur_n * si.width) {
-                tmp[j] = ori_sec[i * si.width + j]
-            }
-            // next
-            for j in 0..(next * si.width) {
-                tmp[cur_n * si.width + j] = ori_sec[((i + cur_n) % n) * si.width + j]
+            if si.name.as_str() == "xDivXSubXi" || si.name.as_str() == "xDivXSubWXi" {
+                let tmp = tmp_ctx.get_mut_base(si.name.as_str());
+                *tmp = vec![BaseElement::ZERO; (cur_n + next) * si.width];
+                let ori_sec = ctx.get_mut_base(si.name.as_str());
+                for j in 0..(cur_n * si.width) {
+                    tmp[j] = ori_sec[i * si.width + j]
+                }
+                // next
+                for j in 0..(next * si.width) {
+                    tmp[cur_n * si.width + j] = ori_sec[((i + cur_n) % n) * si.width + j]
+                }
+            } else {
+                let tmp = tmp_ctx.get_mut(si.name.as_str());
+                *tmp = vec![F3G::ZERO; (cur_n + next) * si.width];
+                let ori_sec = ctx.get_mut(si.name.as_str());
+                for j in 0..(cur_n * si.width) {
+                    tmp[j] = ori_sec[i * si.width + j]
+                }
+                // next
+                for j in 0..(next * si.width) {
+                    tmp[cur_n * si.width + j] = ori_sec[((i + cur_n) % n) * si.width + j]
+                }
             }
         }
-
         ctx_chunks.push(tmp_ctx);
     }
 
-    ctx_chunks.par_iter_mut().enumerate().map(|(i, tmp_ctx)| {
-        tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i);
+    log::info!("execute trace LDE {}", n_per_thread);
+    ctx_chunks
+        .par_iter_mut()
+        .enumerate()
+        .for_each(|(i, tmp_ctx)| {
+            tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i * n_per_thread);
+            log::info!("fill output in worker\n{} {:?}", step, tmp_ctx);
+            for so in &exec_info.output_sections {
+                let tmp = tmp_ctx.get_mut(so.name.as_str());
+                if tmp.len() == 0 {
+                    *tmp = vec![F3G::ZERO; so.width * (n + next)];
+                }
+            }
+            calculate_exps(tmp_ctx, starkinfo, seg, &dom, step);
+            log::info!("fill output in worker done\n{} {} {:?}", i * n_per_thread, step, tmp_ctx);
+        });
+    log::info!("execute trace LDE done");
+
+    // write back the output
+    for i in 0..ctx_chunks.len() {
         for so in &exec_info.output_sections {
-            let tmp = tmp_ctx.get_mut(so.name.as_str());
-            if tmp.len() == 0 {
-                *tmp = vec![F3G::ZERO; so.width * (n + next)];
+            let tmp = ctx_chunks[i].get_mut(so.name.as_str());
+            let out = ctx.get_mut(so.name.as_str());
+            for k in 0..(tmp.len() - so.width * next) {
+                out[i * n_per_thread * so.width + k] = tmp[k];
             }
         }
-
-        calculate_exps(&mut tmp_ctx, starkinfo, seg, &dom, step);
-    });
-
-    // TODO write back the output
+    }
 }
 
 #[cfg(test)]
@@ -1025,6 +1065,7 @@ pub mod tests {
 
     #[test]
     fn test_stark_gen() {
+        env_logger::init();
         let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/fib.const").unwrap();
