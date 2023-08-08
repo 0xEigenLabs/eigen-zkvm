@@ -160,7 +160,6 @@ mod tests {
             BaseElement::from(6188675464075253840u64),
             BaseElement::from(2608530331018891925u64),
         ];
-        //crate::helper::pretty_print_array(&input);
 
         let lh = LinearHashBN128::new();
         let result = lh.hash_element_array(&input).unwrap();

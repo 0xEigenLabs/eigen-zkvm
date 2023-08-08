@@ -194,8 +194,6 @@ fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
         for s in code[i].src.iter() {
             src.push(get_ref(s, &tmp));
         }
-        log::debug!("code[{}], {:?}", i, code[i]);
-        //crate::helper::pretty_print_array(&src);
         let res = match code[i].op.as_str() {
             "add" => src[0] + src[1],
             "sub" => src[0] - src[1],

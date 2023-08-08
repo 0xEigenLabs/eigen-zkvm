@@ -7,6 +7,7 @@ use crate::fft::FFT;
 use crate::fft_p::{fft, ifft, interpolate};
 use crate::fri::FRIProof;
 use crate::fri::FRI;
+use crate::helper::pretty_print_array;
 use crate::interpreter::compile_code;
 use crate::polsarray::PolsArray;
 use crate::starkinfo::{Program, StarkInfo};
@@ -17,7 +18,6 @@ use rayon::prelude::*;
 use std::collections::HashMap;
 use winter_math::fields::f64::BaseElement;
 use winter_math::FieldElement;
-use crate::helper::pretty_print_array;
 
 pub struct StarkContext {
     pub nbits: usize,
@@ -80,7 +80,11 @@ impl std::fmt::Debug for StarkContext {
         write!(f, "x_n {:?}\n", pretty_print_array(&self.x_n))?;
         write!(f, "x_2ns {:?}\n", pretty_print_array(&self.x_2ns))?;
         write!(f, "xDivXSubXi {:?}\n", pretty_print_array(&self.xDivXSubXi))?;
-        write!(f, "xDivXSubWXi {:?}\n", pretty_print_array(&self.xDivXSubWXi))?;
+        write!(
+            f,
+            "xDivXSubWXi {:?}\n",
+            pretty_print_array(&self.xDivXSubWXi)
+        )?;
         write!(f, "q_2ns {:?}\n", pretty_print_array(&self.q_2ns))?;
         write!(f, "f_2ns {:?}\n", pretty_print_array(&self.f_2ns))?;
         write!(f, "tmp {:?}\n", pretty_print_array(&self.tmp))?;
@@ -350,8 +354,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         log::info!(
             "tree3 root: {}",
-            crate::helper::fr_to_biguint(&tree3.root().into())
-            //tree3.root(),
+            // crate::helper::fr_to_biguint(&tree3.root().into())
+            tree3.root(),
         );
 
         // 4. Compute C Polynomial
@@ -386,8 +390,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
         log::info!(
             "tree4 root: {}",
-            crate::helper::fr_to_biguint(&tree4.root().into())
-            //tree4.root(),
+            // crate::helper::fr_to_biguint(&tree4.root().into())
+            tree4.root(),
         );
         transcript.put(&[tree4.root().as_elements().to_vec()])?;
 
@@ -730,7 +734,12 @@ pub fn calculate_exps(
 ) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    log::info!("calculate_exps compile_code ctx.first:\n{} \nN = {}, tmp size: {}", c_first, ctx.N, seg.tmp_used);
+    log::info!(
+        "calculate_exps compile_code ctx.first:\n{} \nN = {}, tmp size: {}",
+        c_first,
+        ctx.N,
+        seg.tmp_used
+    );
     // codegen
     #[cfg(feature = "build")]
     c_first.eval_and_codegen(ctx, 0, step);
@@ -963,7 +972,6 @@ pub fn calculate_exps_parallel(
     for i in 0..exec_info.output_sections.len() {
         set_width(&mut exec_info.output_sections[i]);
     }
-    log::info!("exec info: {:?}", exec_info);
 
     let extend_bits = ctx.nbits_ext - ctx.nbits;
     let n = if dom == "n" { ctx.N } else { ctx.Next };
@@ -1018,13 +1026,12 @@ pub fn calculate_exps_parallel(
         ctx_chunks.push(tmp_ctx);
     }
 
-    log::info!("execute trace LDE {}", n_per_thread);
     ctx_chunks
         .par_iter_mut()
         .enumerate()
         .for_each(|(i, tmp_ctx)| {
+            log::info!("execute trace LDE {}", i * n_per_thread / n);
             tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i * n_per_thread);
-            log::info!("fill output in worker\n{} {:?}", step, tmp_ctx);
             for so in &exec_info.output_sections {
                 let tmp = tmp_ctx.get_mut(so.name.as_str());
                 if tmp.len() == 0 {
@@ -1032,9 +1039,7 @@ pub fn calculate_exps_parallel(
                 }
             }
             calculate_exps(tmp_ctx, starkinfo, seg, &dom, step);
-            log::info!("fill output in worker done\n{} {} {:?}", i * n_per_thread, step, tmp_ctx);
         });
-    log::info!("execute trace LDE done");
 
     // write back the output
     for i in 0..ctx_chunks.len() {

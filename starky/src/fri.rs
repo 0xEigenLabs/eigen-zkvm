@@ -77,8 +77,6 @@ impl FRI {
 
             let mut sinv = shift_inv;
             let wi = F3G::inv(MG.0[pol_bits]);
-            log::debug!("n_x {} {} {}", n_x, pol2_n, special_x);
-            //crate::helper::pretty_print_array(&pol);
 
             for g in 0..(pol.len() / n_x) {
                 if si == 0 {

@@ -3,8 +3,8 @@ use crate::field_bn128::Fr;
 use ff::*;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
-use std::ops::Mul;
 use std::fmt::Write;
+use std::ops::Mul;
 use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
 ///exports.getKs = function getKs(Fr, n) {
@@ -84,8 +84,7 @@ pub fn pretty_print_array<T: FieldElement + StarkField>(cols: &Vec<T>) -> String
         write!(&mut msg, "\t...{}s...\n", cols.len() - iglines).unwrap();
         write!(&mut msg, "\t{}", cols[cols.len() - 1]).unwrap();
     }
-    write!(&mut msg, "\n]").unwrap();
-    log::info!("{}", msg);
+    write!(&mut msg, "]").unwrap();
     msg
 }
 
