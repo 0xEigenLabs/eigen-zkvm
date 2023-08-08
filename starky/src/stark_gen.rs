@@ -1001,6 +1001,7 @@ pub fn calculate_exps_parallel(
         for si in &exec_info.input_sections {
             if si.name.as_str() == "xDivXSubXi" || si.name.as_str() == "xDivXSubWXi" {
                 let tmp = tmp_ctx.get_mut_base(si.name.as_str());
+                // for GL(2)
                 *tmp = vec![BaseElement::ZERO; (cur_n + next) * si.width];
                 let ori_sec = ctx.get_mut_base(si.name.as_str());
                 for j in 0..(cur_n * si.width) {
@@ -1012,6 +1013,7 @@ pub fn calculate_exps_parallel(
                 }
             } else {
                 let tmp = tmp_ctx.get_mut(si.name.as_str());
+                // for GL(2^3)
                 *tmp = vec![F3G::ZERO; (cur_n + next) * si.width];
                 let ori_sec = ctx.get_mut(si.name.as_str());
                 for j in 0..(cur_n * si.width) {
