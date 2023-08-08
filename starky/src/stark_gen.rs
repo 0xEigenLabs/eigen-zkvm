@@ -1030,7 +1030,7 @@ pub fn calculate_exps_parallel(
         .par_iter_mut()
         .enumerate()
         .for_each(|(i, tmp_ctx)| {
-            log::info!("execute trace LDE {}", i * n_per_thread / n);
+            log::info!("execute trace LDE {}/{}", i * n_per_thread, n);
             tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i * n_per_thread);
             for so in &exec_info.output_sections {
                 let tmp = tmp_ctx.get_mut(so.name.as_str());
