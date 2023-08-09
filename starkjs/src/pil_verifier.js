@@ -48,9 +48,9 @@ module.exports = {
 
     elapse("arithmetization", timer);
     // prove and verify the stark proof
+/*
     const proof = await this.proveAndVerify(pil, constPols, cmPols, starkStruct);
     elapse("proveAndVerify", timer);
-/*
     let zkIn = proof2zkin(proof.proof);
     elapse("proof2zkin", timer);
     zkIn.publics = proof.publics;

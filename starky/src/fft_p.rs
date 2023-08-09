@@ -333,7 +333,6 @@ mod tests {
 
     #[test]
     fn test_big_interpolate() {
-        env_logger::init();
         let nbits = 18;
         let n_pols = 5;
         let extbits = 1;

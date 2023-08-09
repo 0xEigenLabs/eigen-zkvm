@@ -3,6 +3,7 @@ use crate::field_bn128::Fr;
 use ff::*;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
+use std::fmt::Write;
 use std::ops::Mul;
 use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
@@ -69,20 +70,23 @@ pub fn biguint_to_fr(f: &BigUint) -> Fr {
     Fr::from_str(&f.to_string()).unwrap()
 }
 
-pub fn pretty_print_array<T: FieldElement + StarkField>(cols: &Vec<T>) {
-    let mut msg = format!("array size: {}\n[\n", cols.len());
+pub fn pretty_print_array<T: FieldElement + StarkField>(cols: &Vec<T>) -> String {
+    let mut msg = String::new();
+    writeln!(&mut msg, "array size: {}", cols.len()).unwrap();
+    writeln!(&mut msg, "[").unwrap();
     let mut iglines = 2;
-    for i in 0..32 {
+    for i in 0..8 {
         if cols.len() > i {
-            msg.push_str(&format!("\t{}\n", cols[i]));
+            writeln!(&mut msg, "  {}", cols[i]).unwrap();
             iglines += 1;
         }
     }
     if iglines < cols.len() {
-        msg.push_str(&format!("\t...{}s...\n", cols.len() - iglines));
-        msg.push_str(&format!("\t{}", cols[cols.len() - 1]));
+        writeln!(&mut msg, "  ...{}s...", cols.len() - iglines).unwrap();
+        writeln!(&mut msg, "  {}", cols[cols.len() - 1]).unwrap();
     }
-    log::debug!("\t{}\n]", msg);
+    writeln!(&mut msg, "]").unwrap();
+    msg
 }
 
 #[cfg(test)]

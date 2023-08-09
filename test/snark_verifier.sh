@@ -47,18 +47,12 @@ if [ $snark_type = "groth16" ]; then
         $SNARKJS powersoftau prepare phase2 /tmp/pot${POWER}_0001.ptau $SRS -v
     fi
 
-    echo ">>> groth16 scheme <<< "
-    if [  "$2" = "true" ]; then
-        echo "1. generate groth16 zkey"
-        $SNARKJS g16s $WORK_DIR/$CIRCUIT_NAME.r1cs $SRS  $WORK_DIR/g16.zkey
-    else 
-        echo "1. groth16 zkey already generated"
-    fi
+    $SNARKJS g16s $WORK_DIR/$CIRCUIT_NAME.r1cs $SRS $WORK_DIR/g16.zkey
 
     echo "2. groth16 fullprove"
      $SNARKJS g16f $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/g16.zkey $WORK_DIR/proof.json $WORK_DIR/public.json
 
-    if [ $first_run = "true" ]; then 
+    if [ $first_run = "true" ]; then
         echo "3. generate verification_key"
         $SNARKJS zkev  $WORK_DIR/g16.zkey  $WORK_DIR/verification_key.json
 
@@ -76,7 +70,7 @@ if [ $snark_type = "groth16" ]; then
 
 else 
     if [ $CURVE != "bn128" ]; then
-        echo "Not support bls12381"
+        echo "Not support ${CURVE}"
         exit -1
     fi
     if [ ! -f $BIG_SRS ]; then
