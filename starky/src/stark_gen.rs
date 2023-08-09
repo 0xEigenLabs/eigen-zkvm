@@ -80,11 +80,7 @@ impl std::fmt::Debug for StarkContext {
         writeln!(f, "x_n {}", pretty_print_array(&self.x_n))?;
         writeln!(f, "x_2ns {}", pretty_print_array(&self.x_2ns))?;
         writeln!(f, "xDivXSubXi {}", pretty_print_array(&self.xDivXSubXi))?;
-        writeln!(
-            f,
-            "xDivXSubWXi {}",
-            pretty_print_array(&self.xDivXSubWXi)
-        )?;
+        writeln!(f, "xDivXSubWXi {}", pretty_print_array(&self.xDivXSubWXi))?;
         writeln!(f, "q_2ns {}", pretty_print_array(&self.q_2ns))?;
         writeln!(f, "f_2ns {}", pretty_print_array(&self.f_2ns))?;
         writeln!(f, "tmp {}", pretty_print_array(&self.tmp))?;
@@ -731,6 +727,7 @@ pub fn calculate_exps(
     seg: &Segment,
     dom: &str,
     step: &str,
+    N: usize,
 ) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
@@ -743,8 +740,8 @@ pub fn calculate_exps(
     #[cfg(feature = "build")]
     c_first.eval_and_codegen(ctx, 0, step);
 
-    let N = if dom == "n" { ctx.N } else { ctx.Next };
     /*
+    let mut N = if dom == "n" { ctx.N } else { ctx.Next };
     let _c_i = compile_code(ctx, starkinfo, &seg.i, dom, false);
     let _c_last = compile_code(ctx, starkinfo, &seg.last, dom, false);
     let next = if dom =="n" { 1 } else { 1<< (ctx.nBitsExt - ctx.nBits) };
@@ -1031,15 +1028,16 @@ pub fn calculate_exps_parallel(
         .par_iter_mut()
         .enumerate()
         .for_each(|(i, tmp_ctx)| {
+            let cur_n = std::cmp::min(n_per_thread, n - i * n_per_thread);
             log::info!("execute trace LDE {}/{}", i * n_per_thread, n);
             tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i * n_per_thread);
             for so in &exec_info.output_sections {
                 let tmp = tmp_ctx.get_mut(so.name.as_str());
                 if tmp.len() == 0 {
-                    *tmp = vec![F3G::ZERO; so.width * (n + next)];
+                    *tmp = vec![F3G::ZERO; so.width * (cur_n + next)];
                 }
             }
-            calculate_exps(tmp_ctx, starkinfo, seg, &dom, step);
+            calculate_exps(tmp_ctx, starkinfo, seg, &dom, step, cur_n);
         });
 
     // write back the output
@@ -1049,11 +1047,15 @@ pub fn calculate_exps_parallel(
         for so in &exec_info.output_sections {
             let tmp = ctx_chunks[i].get_mut(so.name.as_str());
             let out = ctx.get_mut(so.name.as_str());
-            log::info!("i {}, sec {}, out.len {}, from {}, offset: {}", i, so.name, out.len(), tmp.len() - so.width * next, i * n_per_thread * so.width);
+            log::info!(
+                "i {}, sec {}, out.len {}, from {}, offset: {}",
+                i,
+                so.name,
+                out.len(),
+                tmp.len() - so.width * next,
+                i * n_per_thread * so.width
+            );
             for k in 0..(tmp.len() - so.width * next) {
-                if (i * n_per_thread * so.width + k) >= out.len() {
-                    break;
-                }
                 out[i * n_per_thread * so.width + k] = tmp[k];
             }
         }
