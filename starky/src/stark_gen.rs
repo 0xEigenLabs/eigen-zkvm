@@ -1048,6 +1048,7 @@ pub fn calculate_exps_parallel(
         for so in &exec_info.output_sections {
             let tmp = ctx_chunks[i].get_mut(so.name.as_str());
             let out = ctx.get_mut(so.name.as_str());
+            log::info!("i {}, sec {}, out.len {}, from {}, offset: {}", i, so.name, out.len(), tmp.len() - so.width * next, i * n_per_thread * so.width);
             for k in 0..(tmp.len() - so.width * next) {
                 out[i * n_per_thread * so.width + k] = tmp[k];
             }
