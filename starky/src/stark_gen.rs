@@ -1036,8 +1036,9 @@ pub fn calculate_exps_parallel(
             tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i * n_per_thread);
             for so in &exec_info.output_sections {
                 let tmp = tmp_ctx.get_mut(so.name.as_str());
-                if tmp.len() == 0 {
-                    *tmp = vec![F3G::ZERO; so.width * (n + next)];
+                if tmp.len() < so.width * (n + next) {
+                    // *tmp = vec![F3G::ZERO; so.width * (n + next)];
+                    tmp.resize_with(so.width * (n + next) - tmp.len(), || F3G::ZERO);
                 }
             }
             calculate_exps(tmp_ctx, starkinfo, seg, &dom, step);
