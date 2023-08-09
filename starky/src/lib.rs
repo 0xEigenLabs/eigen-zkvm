@@ -3,7 +3,7 @@ pub mod polsarray;
 mod polutils;
 pub mod stark_verifier_circom;
 pub mod stark_verifier_circom_bn128;
-mod traits;
+pub mod traits;
 pub mod types;
 
 mod compressor12;
