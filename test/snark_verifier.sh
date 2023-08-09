@@ -47,7 +47,9 @@ if [ $snark_type = "groth16" ]; then
         $SNARKJS powersoftau prepare phase2 /tmp/pot${POWER}_0001.ptau $SRS -v
     fi
 
-    $SNARKJS g16s $WORK_DIR/$CIRCUIT_NAME.r1cs $SRS $WORK_DIR/g16.zkey
+    if [ $first_run = "true" ]; then
+        $SNARKJS g16s $WORK_DIR/$CIRCUIT_NAME.r1cs $SRS $WORK_DIR/g16.zkey
+    fi
 
     echo "2. groth16 fullprove"
      $SNARKJS g16f $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/g16.zkey $WORK_DIR/proof.json $WORK_DIR/public.json
