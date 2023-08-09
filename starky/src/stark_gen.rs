@@ -61,33 +61,33 @@ pub struct StarkContext {
 
 impl std::fmt::Debug for StarkContext {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "n {}\n", self.N)?;
-        write!(f, "nBits {}\n", self.nbits)?;
-        write!(f, "nBitsExt {}\n", self.nbits_ext)?;
-        write!(f, "evals {:?}\n", pretty_print_array(&self.evals))?;
-        write!(f, "publics {:?}\n", pretty_print_array(&self.publics))?;
-        write!(f, "challenge {:?}\n", pretty_print_array(&self.challenge))?;
-        write!(f, "cm1_n {:?}\n", pretty_print_array(&self.cm1_n))?;
-        write!(f, "cm2_n {:?}\n", pretty_print_array(&self.cm2_n))?;
-        write!(f, "cm3_n {:?}\n", pretty_print_array(&self.cm3_n))?;
-        write!(f, "cm4_n {:?}\n", pretty_print_array(&self.cm4_n))?;
-        write!(f, "cm1_2ns {:?}\n", pretty_print_array(&self.cm1_2ns))?;
-        write!(f, "cm2_2ns {:?}\n", pretty_print_array(&self.cm2_2ns))?;
-        write!(f, "cm3_2ns {:?}\n", pretty_print_array(&self.cm3_2ns))?;
-        write!(f, "cm4_2ns {:?}\n", pretty_print_array(&self.cm4_2ns))?;
-        write!(f, "const_n {:?}\n", pretty_print_array(&self.const_n))?;
-        write!(f, "const_2ns {:?}\n", pretty_print_array(&self.const_2ns))?;
-        write!(f, "x_n {:?}\n", pretty_print_array(&self.x_n))?;
-        write!(f, "x_2ns {:?}\n", pretty_print_array(&self.x_2ns))?;
-        write!(f, "xDivXSubXi {:?}\n", pretty_print_array(&self.xDivXSubXi))?;
-        write!(
+        writeln!(f, "n {}", self.N)?;
+        writeln!(f, "nBits {}", self.nbits)?;
+        writeln!(f, "nBitsExt {}", self.nbits_ext)?;
+        writeln!(f, "evals {}", pretty_print_array(&self.evals))?;
+        writeln!(f, "publics {}", pretty_print_array(&self.publics))?;
+        writeln!(f, "challenge {}", pretty_print_array(&self.challenge))?;
+        writeln!(f, r#"cm1_n {}"#, pretty_print_array(&self.cm1_n))?;
+        writeln!(f, "cm2_n {}", pretty_print_array(&self.cm2_n))?;
+        writeln!(f, "cm3_n {}", pretty_print_array(&self.cm3_n))?;
+        writeln!(f, "cm4_n {}", pretty_print_array(&self.cm4_n))?;
+        writeln!(f, "cm1_2ns {}", pretty_print_array(&self.cm1_2ns))?;
+        writeln!(f, "cm2_2ns {}", pretty_print_array(&self.cm2_2ns))?;
+        writeln!(f, "cm3_2ns {}", pretty_print_array(&self.cm3_2ns))?;
+        writeln!(f, "cm4_2ns {}", pretty_print_array(&self.cm4_2ns))?;
+        writeln!(f, "const_n {}", pretty_print_array(&self.const_n))?;
+        writeln!(f, "const_2ns {}", pretty_print_array(&self.const_2ns))?;
+        writeln!(f, "x_n {}", pretty_print_array(&self.x_n))?;
+        writeln!(f, "x_2ns {}", pretty_print_array(&self.x_2ns))?;
+        writeln!(f, "xDivXSubXi {}", pretty_print_array(&self.xDivXSubXi))?;
+        writeln!(
             f,
-            "xDivXSubWXi {:?}\n",
+            "xDivXSubWXi {}",
             pretty_print_array(&self.xDivXSubWXi)
         )?;
-        write!(f, "q_2ns {:?}\n", pretty_print_array(&self.q_2ns))?;
-        write!(f, "f_2ns {:?}\n", pretty_print_array(&self.f_2ns))?;
-        write!(f, "tmp {:?}\n", pretty_print_array(&self.tmp))?;
+        writeln!(f, "q_2ns {}", pretty_print_array(&self.q_2ns))?;
+        writeln!(f, "f_2ns {}", pretty_print_array(&self.f_2ns))?;
+        writeln!(f, "tmp {}", pretty_print_array(&self.tmp))?;
         Ok(())
     }
 }
@@ -735,10 +735,9 @@ pub fn calculate_exps(
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
     log::info!(
-        "calculate_exps compile_code ctx.first:\n{} \nN = {}, tmp size: {}",
-        c_first,
-        ctx.N,
-        seg.tmp_used
+        "calculate_exps compile_code {} ctx.first:\n{}",
+        step,
+        c_first
     );
     // codegen
     #[cfg(feature = "build")]
@@ -1036,21 +1035,25 @@ pub fn calculate_exps_parallel(
             tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i * n_per_thread);
             for so in &exec_info.output_sections {
                 let tmp = tmp_ctx.get_mut(so.name.as_str());
-                if tmp.len() < so.width * (n + next) {
-                    // *tmp = vec![F3G::ZERO; so.width * (n + next)];
-                    tmp.resize_with(so.width * (n + next) - tmp.len(), || F3G::ZERO);
+                if tmp.len() == 0 {
+                    *tmp = vec![F3G::ZERO; so.width * (n + next)];
                 }
             }
             calculate_exps(tmp_ctx, starkinfo, seg, &dom, step);
         });
 
     // write back the output
+    log::info!("ctx: {:?}", ctx);
     for i in 0..ctx_chunks.len() {
+        log::info!("ctx tmp: {:?}", ctx_chunks[i]);
         for so in &exec_info.output_sections {
             let tmp = ctx_chunks[i].get_mut(so.name.as_str());
             let out = ctx.get_mut(so.name.as_str());
             log::info!("i {}, sec {}, out.len {}, from {}, offset: {}", i, so.name, out.len(), tmp.len() - so.width * next, i * n_per_thread * so.width);
             for k in 0..(tmp.len() - so.width * next) {
+                if (i * n_per_thread * so.width + k) >= out.len() {
+                    break;
+                }
                 out[i * n_per_thread * so.width + k] = tmp[k];
             }
         }

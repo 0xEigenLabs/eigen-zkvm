@@ -72,19 +72,20 @@ pub fn biguint_to_fr(f: &BigUint) -> Fr {
 
 pub fn pretty_print_array<T: FieldElement + StarkField>(cols: &Vec<T>) -> String {
     let mut msg = String::new();
-    write!(&mut msg, "array size: {}\n[\n", cols.len()).unwrap();
+    writeln!(&mut msg, "array size: {}", cols.len()).unwrap();
+    writeln!(&mut msg, "[").unwrap();
     let mut iglines = 2;
-    for i in 0..32 {
+    for i in 0..8 {
         if cols.len() > i {
-            write!(&mut msg, "\t{}\n", cols[i]).unwrap();
+            writeln!(&mut msg, "  {}", cols[i]).unwrap();
             iglines += 1;
         }
     }
     if iglines < cols.len() {
-        write!(&mut msg, "\t...{}s...\n", cols.len() - iglines).unwrap();
-        write!(&mut msg, "\t{}", cols[cols.len() - 1]).unwrap();
+        writeln!(&mut msg, "  ...{}s...", cols.len() - iglines).unwrap();
+        writeln!(&mut msg, "  {}", cols[cols.len() - 1]).unwrap();
     }
-    write!(&mut msg, "]").unwrap();
+    writeln!(&mut msg, "]").unwrap();
     msg
 }
 
