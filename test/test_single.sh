@@ -1,7 +1,7 @@
 # EigenZKit
 set -ex
 
-cargo build --release --features build
+cargo build --release
 
 CIRCUIT=${1-circuit} # use circuit or mnist as the first parameter
 CUR_DIR=$(cd $(dirname $0);pwd)
