@@ -35,6 +35,7 @@ pub mod api;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
 mod scalar_gl_tests; 
 
 #[cfg(target_arch = "wasm32")]

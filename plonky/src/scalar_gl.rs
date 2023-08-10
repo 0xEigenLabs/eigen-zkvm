@@ -14,7 +14,8 @@ const MODULUS_BITS: u32 = 64u32;
 /// the representation when randomly sampling.
 //const REPR_SHAVE_BITS: u32 = 0u32;
 /// Precalculated mask to shave bits from the top limb in random sampling
-const TOP_LIMB_SHAVE_MASK: u64 = 0u64;
+// const TOP_LIMB_SHAVE_MASK: u64 = 0u64;
+const TOP_LIMB_SHAVE_MASK: u64 = 0x7FFFFFFFFFFFFFFF;
 /// 2^{limbs*64} mod m
 const R: FrRepr = FrRepr([18446744065119617025u64]);
 /// 2^{limbs*64*2} mod m
@@ -64,7 +65,11 @@ impl ::rand::Rand for FrRepr {
 }
 impl ::std::fmt::Display for FrRepr {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "0x{}", self)
+        write!(f, "0x")?;
+        for i in self.0.iter().rev() {
+            write!(f, "{:016x}", *i)?;
+        }
+        Ok(())
     }
 }
 impl std::hash::Hash for FrRepr {
