@@ -1,5 +1,6 @@
 #![allow(unused_imports)]
 use crate::ff::*;
+use core::ops::{Add, Div, Mul, Neg, Sub};
 #[derive(Eq)]
 pub struct Fr(pub FrRepr);
 /// This is the modulus m of the prime field
@@ -525,30 +526,54 @@ impl crate::ff::SqrtField for Fr {
     }
 }
 
-impl std::ops::Add for Fr {
+impl Add for Fr {
     type Output = Self;
+    #[inline]
     fn add(self, other: Self) -> Self {
-        let mut lhr = self.clone();
-        lhr.add_assign(&other);
-        lhr
+        let mut lhs = self.clone();
+        lhs.add_assign(&other);
+        lhs
     }
 }
 
-impl std::ops::Mul for Fr {
+impl Mul for Fr {
     type Output = Self;
+    #[inline]
     fn mul(self, other: Self) -> Self {
-        let mut lhr = self.clone();
-        lhr.mul_assign(&other);
-        lhr
+        let mut lhs = self.clone();
+        lhs.mul_assign(&other);
+        lhs
     }
 }
 
-impl std::ops::Sub for Fr {
+impl Sub for Fr {
     type Output = Self;
+    #[inline]
     fn sub(self, other: Self) -> Self {
-        let mut lhr = self.clone();
-        lhr.sub_assign(&other);
-        lhr
+        let mut lhs = self.clone();
+        lhs.sub_assign(&other);
+        lhs
+    }
+}
+
+impl Div for Fr {
+    type Output = Self;
+
+    #[inline]
+    #[allow(clippy::suspicious_arithmetic_impl)]
+    fn div(self, rhs: Self) -> Self {
+        self * rhs.inverse().unwrap()
+    }
+}
+
+impl Neg for Fr {
+    type Output = Self;
+
+    #[inline]
+    fn neg(self) -> Self {
+        let mut tmp = self;
+        tmp.negate();
+        tmp
     }
 }
 
@@ -576,7 +601,7 @@ mod tests {
     use super::PrimeField;
     use crate::ff::*;
     use crate::rand::Rand;
-    use std::ops::{Add, Mul, Sub};
+    use std::ops::{Add, Div, Mul, Sub};
 
     #[test]
     #[allow(clippy::eq_op)]
@@ -597,9 +622,9 @@ mod tests {
         for i in 0..320 {
             let l = Fr::rand(&mut rng);
             let l2 = Fr::rand(&mut rng);
-            let lhr = l2 - l;
-            let rhr = lhr + l;
-            assert_eq!(l2, rhr);
+            let lhs = l2 - l;
+            let rhs = lhs + l;
+            assert_eq!(l2, rhs);
         }
     }
 
@@ -608,10 +633,10 @@ mod tests {
     fn gl_check_mul() {
         let mut rng = ::rand::thread_rng();
         let l = Fr::rand(&mut rng);
-        let lhr = l * l * l;
-        let mut rhr = l.clone();
-        rhr.square();
-        assert_eq!(lhr, rhr * l);
+        let lhs = l * l * l;
+        let mut rhs = l.clone();
+        rhs.square();
+        assert_eq!(lhs, rhs * l);
     }
 
     #[test]
@@ -620,6 +645,17 @@ mod tests {
         let x = Fr::rand(&mut rng);
         let x_inversed = x.inverse().unwrap();
         assert_eq!(x * x_inversed, Fr::one());
+    }
+
+    #[test]
+    fn gl_check_div() {
+        for i in 0..320 {
+            let mut rng = rand::thread_rng();
+            let x = Fr::rand(&mut rng);
+            let y = Fr::rand(&mut rng);
+            let z = x / y;
+            assert_eq!(z * y, x);
+        }
     }
 
     #[test]
