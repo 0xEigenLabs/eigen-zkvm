@@ -640,8 +640,9 @@ mod tests {
                 sq_x.square();
                 assert_eq!(x, sq_x);
             },
-            //TODO https://github.com/consensys/gnark-crypto/blob/v0.11.1/field/goldilocks/element.go#L947
-            _ => ()
+            _ => {
+                assert_eq!(x.legendre(), crate::ff::LegendreSymbol::QuadraticNonResidue);
+            }
         }
     }
 }
