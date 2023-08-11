@@ -241,9 +241,6 @@ impl crate::ff::PrimeFieldRepr for FrRepr {
         for (a, b) in self.0.iter_mut().zip(other.0.iter()) {
             *a = crate::ff::sbb(*a, *b, &mut borrow);
         }
-        if borrow > 0 {
-            self.0[0] = MODULUS.0[0] + self.0[0];
-        }
     }
 }
 impl ::std::marker::Copy for Fr {}
@@ -371,7 +368,10 @@ impl crate::ff::Field for Fr {
     #[inline]
     fn sub_assign(&mut self, other: &Fr) {
         if other.0 > self.0 {
-            self.0.add_nocarry(&MODULUS);
+            let mut tmp = MODULUS;
+            tmp.sub_noborrow(&other.0);
+            self.0.add_nocarry(&tmp);
+            return;
         }
         self.0.sub_noborrow(&other.0);
     }
