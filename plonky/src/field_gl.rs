@@ -475,7 +475,7 @@ impl Fr {
 }
 impl crate::ff::SqrtField for Fr {
     fn legendre(&self) -> crate::ff::LegendreSymbol {
-        let s = self.pow([9223372034707292160u64, 0u64]);
+        let s = self.pow([9223372034707292160u64]);
         if s == Self::zero() {
             crate::ff::LegendreSymbol::Zero
         } else if s == Self::one() {
@@ -490,8 +490,8 @@ impl crate::ff::SqrtField for Fr {
             crate::ff::LegendreSymbol::QuadraticNonResidue => None,
             crate::ff::LegendreSymbol::QuadraticResidue => {
                 let mut c = Fr(ROOT_OF_UNITY);
-                let mut r = self.pow([2147483648u64, 0u64]);
-                let mut t = self.pow([4294967295u64, 0u64]);
+                let mut r = self.pow([2147483648u64]);
+                let mut t = self.pow([4294967295u64]);
                 let mut m = S;
                 while t != Self::one() {
                     let mut i = 1;
@@ -595,7 +595,7 @@ mod tests {
     }
 
     #[test]
-    fn test_inv() {
+    fn gl_check_inv() {
         let mut rng = rand::thread_rng();
         let x = Fr::rand(&mut rng);
         let x_inversed = x.inverse().unwrap();
@@ -603,11 +603,19 @@ mod tests {
     }
 
     #[test]
-    fn test_neg() {
+    fn gl_check_neg() {
         let mut rng = rand::thread_rng();
         let mut x = Fr::rand(&mut rng);
         let y = x.clone();
         x.negate();
         assert_eq!(x + y, Fr::zero());
+    }
+
+    #[test]
+    fn gl_check_sqrt() {
+        let mut rng = rand::thread_rng();
+        let mut x = Fr::rand(&mut rng);
+        let sq_x = x.sqrt().unwrap();
+        assert_eq!(x, sq_x * sq_x);
     }
 }
