@@ -232,7 +232,7 @@ impl crate::ff::PrimeFieldRepr for FrRepr {
         }
         if carry > 0 {
             // 2**64 - (2**64 - 2**32 + 1)
-            self.add_nocarry(&R2);
+            self.0[0] = R2.0[0] + self.0[0];
         }
     }
     #[inline(always)]
@@ -579,10 +579,12 @@ mod tests {
     #[allow(clippy::eq_op)]
     fn gl_check_add() {
         let mut rng = ::rand::thread_rng();
-        let l = Fr::rand(&mut rng);
-        let added = l + l;
-        let double = l * Fr::from_str("2").unwrap();
-        assert_eq!(added, double);
+        for i in 0..320 {
+            let l = Fr::rand(&mut rng);
+            let added = l + l;
+            let double = l * Fr::from_str("2").unwrap();
+            assert_eq!(added, double);
+        }
     }
 
     #[test]
