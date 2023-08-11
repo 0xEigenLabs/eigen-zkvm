@@ -230,6 +230,10 @@ impl crate::ff::PrimeFieldRepr for FrRepr {
         for (a, b) in self.0.iter_mut().zip(other.0.iter()) {
             *a = crate::ff::adc(*a, *b, &mut carry);
         }
+        if carry > 0 {
+            // 2**64 - (2**64 - 2**32 + 1)
+            self.add_nocarry(&R2);
+        }
     }
     #[inline(always)]
     fn sub_noborrow(&mut self, other: &FrRepr) {
@@ -318,7 +322,7 @@ impl crate::ff::PrimeField for Fr {
     }
     fn into_repr(&self) -> FrRepr {
         let mut r = *self;
-        r.mont_reduce((self.0).0[0usize], 0, 0, 0);
+        r.mont_reduce((self.0).0[0usize], 0);
         r.0
     }
     fn into_raw_repr(&self) -> FrRepr {
@@ -421,7 +425,7 @@ impl crate::ff::Field for Fr {
     fn mul_assign(&mut self, other: &Fr) {
         let mut carry = 0;
         let r0 = crate::ff::mac_with_carry(0, (self.0).0[0usize], (other.0).0[0usize], &mut carry);
-        self.mont_reduce(r0, carry, 0, 0);
+        self.mont_reduce(r0, carry);
     }
     #[inline]
     fn square(&mut self) {
@@ -456,18 +460,16 @@ impl Fr {
         }
     }
     #[inline(always)]
-    fn mont_reduce(&mut self, r0: u64, mut r1: u64, mut r2: u64, mut r3: u64) {
+    fn mont_reduce(&mut self, r0: u64, mut r1: u64) {
         let k = r0.wrapping_mul(INV);
         let mut carry = 0;
         crate::ff::mac_with_carry(r0, k, MODULUS.0[0], &mut carry);
         r1 = crate::ff::mac_with_carry(r1, k, 0, &mut carry);
-        r2 = crate::ff::adc(r2, 0, &mut carry);
-        let carry2 = carry;
+        let mut r2 = crate::ff::adc(0, 0, &mut carry);
         let k = r1.wrapping_mul(INV);
         let mut carry = 0;
         crate::ff::mac_with_carry(r1, k, MODULUS.0[0], &mut carry);
         r2 = crate::ff::mac_with_carry(r2, k, 0, &mut carry);
-        r3 = crate::ff::adc(r3, carry2, &mut carry);
         (self.0).0[0usize] = r2;
         // (self.0).0[1usize] = r3;
         self.reduce();
