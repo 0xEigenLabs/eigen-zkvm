@@ -376,61 +376,51 @@ impl crate::ff::Field for Fr {
             self.0 = tmp;
         }
     }
+
+    /// borrow from https://github.com/facebook/winterfell/blob/main/math/src/field/f64/mod.rs#L142
+    #[inline]
     fn inverse(&self) -> Option<Self> {
-        if self.is_zero() {
-            None
-        } else {
-            let one = FrRepr::from(1);
-            let mut u = self.0;
-            let mut v = MODULUS;
-            let mut b = Fr(R2);
-            let mut c = Self::zero();
-            while u != one && v != one {
-                while u.is_even() {
-                    u.div2();
-                    if b.0.is_even() {
-                        b.0.div2();
-                    } else {
-                        b.0.add_nocarry(&MODULUS);
-                        b.0.div2();
-                    }
-                }
-                while v.is_even() {
-                    v.div2();
-                    if c.0.is_even() {
-                        c.0.div2();
-                    } else {
-                        c.0.add_nocarry(&MODULUS);
-                        c.0.div2();
-                    }
-                }
-                if v < u {
-                    u.sub_noborrow(&v);
-                    b.sub_assign(&c);
-                } else {
-                    v.sub_noborrow(&u);
-                    c.sub_assign(&b);
-                }
-            }
-            if u == one {
-                Some(b)
-            } else {
-                Some(c)
-            }
-        }
+        // compute base^(M - 2) using 72 multiplications
+        // M - 2 = 0b1111111111111111111111111111111011111111111111111111111111111111
+
+        // compute base^11
+        let mut sf = self.clone();
+        sf.square();
+        sf.mul_assign(&self);
+
+        // compute base^111
+        sf.square();
+        let t3 = sf * *self;
+
+        // compute base^111111 (6 ones)
+        let t6 = exp_acc::<3>(t3, t3);
+
+        // compute base^111111111111 (12 ones)
+        let t12 = exp_acc::<6>(t6, t6);
+
+        // compute base^111111111111111111111111 (24 ones)
+        let t24 = exp_acc::<12>(t12, t12);
+
+        // compute base^1111111111111111111111111111111 (31 ones)
+        let mut t30 = exp_acc::<6>(t24, t6);
+        t30.square();
+        let t31 = t30 * *self;
+
+        // compute base^111111111111111111111111111111101111111111111111111111111111111
+        let mut t63 = exp_acc::<32>(t31, t31);
+
+        // compute base^1111111111111111111111111111111011111111111111111111111111111111
+
+        t63.square();
+        Some(t63 * *self)
     }
+
     #[inline(always)]
     fn frobenius_map(&mut self, _: usize) {}
     #[inline]
     fn mul_assign(&mut self, other: &Fr) {
         let mut carry = 0;
         let r0 = crate::ff::mac_with_carry(0, (self.0).0[0usize], (other.0).0[0usize], &mut carry);
-        // let r1 = crate::ff::mac_with_carry(0, (self.0).0[0usize], (other.0).0[1usize], &mut carry);
-        // let r2 = carry;
-        // let mut carry = 0;
-        // let r1 = crate::ff::mac_with_carry(r1, (self.0).0[1usize], (other.0).0[0usize], &mut carry);
-        // let r2 = crate::ff::mac_with_carry(r2, (self.0).0[1usize], (other.0).0[1usize], &mut carry);
-        // let r3 = carry;
         self.mont_reduce(r0, carry, 0, 0);
     }
     #[inline]
@@ -557,6 +547,16 @@ impl std::ops::Sub for Fr {
     }
 }
 
+/// Squares the base N number of times and multiplies the result by the tail value.
+#[inline(always)]
+fn exp_acc<const N: usize>(base: Fr, tail: Fr) -> Fr {
+    let mut result = base;
+    for _ in 0..N {
+        result.square();
+    }
+    result * tail
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct GL;
 impl ScalarEngine for GL {
@@ -592,5 +592,22 @@ mod tests {
         let mut rhr = l.clone();
         rhr.square();
         assert_eq!(lhr, rhr * l);
+    }
+
+    #[test]
+    fn test_inv() {
+        let mut rng = rand::thread_rng();
+        let x = Fr::rand(&mut rng);
+        let x_inversed = x.inverse().unwrap();
+        assert_eq!(x * x_inversed, Fr::one());
+    }
+
+    #[test]
+    fn test_neg() {
+        let mut rng = rand::thread_rng();
+        let mut x = Fr::rand(&mut rng);
+        let y = x.clone();
+        x.negate();
+        assert_eq!(x + y, Fr::zero());
     }
 }
