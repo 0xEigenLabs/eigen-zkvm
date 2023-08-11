@@ -543,25 +543,28 @@ impl crate::ff::SqrtField for Fr {
 
 impl std::ops::Add for Fr {
     type Output = Self;
-    fn add(mut self, other: Self) -> Self {
-        self.add_assign(&other);
-        self
+    fn add(self, other: Self) -> Self {
+        let mut lhr = self.clone();
+        lhr.add_assign(&other);
+        lhr
     }
 }
 
 impl std::ops::Mul for Fr {
     type Output = Self;
-    fn mul(mut self, other: Self) -> Self {
-        self.mul_assign(&other);
-        self
+    fn mul(self, other: Self) -> Self {
+        let mut lhr = self.clone();
+        lhr.mul_assign(&other);
+        lhr
     }
 }
 
 impl std::ops::Sub for Fr {
     type Output = Self;
-    fn sub(mut self, other: Self) -> Self {
-        self.sub_assign(&other);
-        self
+    fn sub(self, other: Self) -> Self {
+        let mut lhr = self.clone();
+        lhr.sub_assign(&other);
+        lhr
     }
 }
 
@@ -585,9 +588,9 @@ mod tests {
     #[allow(clippy::eq_op)]
     fn gl_check_add() {
         let mut rng = ::rand::thread_rng();
-        let mut l = Fr::rand(&mut rng);
+        let l = Fr::rand(&mut rng);
         let added = l + l;
-        let double = l * Fr(FrRepr::from(2));
+        let double = l * Fr::from_str("2").unwrap();
 
         assert_eq!(added, double);
     }
