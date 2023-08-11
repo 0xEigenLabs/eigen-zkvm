@@ -3,7 +3,7 @@ use crate::ff::*;
 #[derive(Eq)]
 pub struct Fr(pub FrRepr);
 /// This is the modulus m of the prime field
-const MODULUS: FrRepr = FrRepr([18446744069414584321u64, 0u64]);
+const MODULUS: FrRepr = FrRepr([18446744069414584321u64]);
 /// The number of bits needed to represent the modulus.
 const MODULUS_BITS: u32 = 64u32;
 /// The number of bits that must be shaved from the beginning of
@@ -12,20 +12,20 @@ const REPR_SHAVE_BITS: u32 = 64u32;
 /// Precalculated mask to shave bits from the top limb in random sampling
 const TOP_LIMB_SHAVE_MASK: u64 = 0u64;
 /// 2^{limbs*64} mod m
-const R: FrRepr = FrRepr([18446744065119617025u64, 0u64]);
+const R: FrRepr = FrRepr([18446744065119617025u64]);
 /// 2^{limbs*64*2} mod m
-const R2: FrRepr = FrRepr([4294967295u64, 0u64]);
+const R2: FrRepr = FrRepr([4294967295u64]);
 /// -(m^{-1} mod m) mod m
 const INV: u64 = 18446744069414584319u64;
 /// Multiplicative generator of `MODULUS` - 1 order, also quadratic
 /// nonresidue.
-const GENERATOR: FrRepr = FrRepr([18446744039349813249u64, 0u64]);
+const GENERATOR: FrRepr = FrRepr([18446744039349813249u64]);
 /// 2^s * t = MODULUS - 1 with t odd
 const S: u32 = 32u32;
 /// 2^s root of unity computed by GENERATOR^t
-const ROOT_OF_UNITY: FrRepr = FrRepr([959634606461954525u64, 0u64]);
+const ROOT_OF_UNITY: FrRepr = FrRepr([959634606461954525u64]);
 #[derive(Eq)]
-pub struct FrRepr(pub [u64; 2usize]);
+pub struct FrRepr(pub [u64; 1usize]);
 #[automatically_derived]
 impl ::core::marker::Copy for FrRepr {}
 #[automatically_derived]
@@ -279,7 +279,7 @@ impl ::rand::Rand for Fr {
     fn rand<R: ::rand::Rng>(rng: &mut R) -> Self {
         loop {
             let mut tmp = Fr(FrRepr::rand(rng));
-            tmp.0.as_mut()[1usize] &= TOP_LIMB_SHAVE_MASK;
+            // tmp.0.as_mut()[1usize] &= TOP_LIMB_SHAVE_MASK;
             if tmp.is_valid() {
                 return tmp;
             }
@@ -318,7 +318,7 @@ impl crate::ff::PrimeField for Fr {
     }
     fn into_repr(&self) -> FrRepr {
         let mut r = *self;
-        r.mont_reduce((self.0).0[0usize], (self.0).0[1usize], 0, 0);
+        r.mont_reduce((self.0).0[0usize], 0, 0, 0);
         r.0
     }
     fn into_raw_repr(&self) -> FrRepr {
@@ -425,28 +425,17 @@ impl crate::ff::Field for Fr {
     fn mul_assign(&mut self, other: &Fr) {
         let mut carry = 0;
         let r0 = crate::ff::mac_with_carry(0, (self.0).0[0usize], (other.0).0[0usize], &mut carry);
-        let r1 = crate::ff::mac_with_carry(0, (self.0).0[0usize], (other.0).0[1usize], &mut carry);
-        let r2 = carry;
-        let mut carry = 0;
-        let r1 = crate::ff::mac_with_carry(r1, (self.0).0[1usize], (other.0).0[0usize], &mut carry);
-        let r2 = crate::ff::mac_with_carry(r2, (self.0).0[1usize], (other.0).0[1usize], &mut carry);
-        let r3 = carry;
-        self.mont_reduce(r0, r1, r2, r3);
+        // let r1 = crate::ff::mac_with_carry(0, (self.0).0[0usize], (other.0).0[1usize], &mut carry);
+        // let r2 = carry;
+        // let mut carry = 0;
+        // let r1 = crate::ff::mac_with_carry(r1, (self.0).0[1usize], (other.0).0[0usize], &mut carry);
+        // let r2 = crate::ff::mac_with_carry(r2, (self.0).0[1usize], (other.0).0[1usize], &mut carry);
+        // let r3 = carry;
+        self.mont_reduce(r0, carry, 0, 0);
     }
     #[inline]
     fn square(&mut self) {
-        let mut carry = 0;
-        let r1 = crate::ff::mac_with_carry(0, (self.0).0[0usize], (self.0).0[1usize], &mut carry);
-        let r2 = carry;
-        let r3 = r2 >> 63;
-        let r2 = (r2 << 1) | (r1 >> 63);
-        let r1 = r1 << 1;
-        let mut carry = 0;
-        let r0 = crate::ff::mac_with_carry(0, (self.0).0[0usize], (self.0).0[0usize], &mut carry);
-        let r1 = crate::ff::adc(r1, 0, &mut carry);
-        let r2 = crate::ff::mac_with_carry(r2, (self.0).0[1usize], (self.0).0[1usize], &mut carry);
-        let r3 = crate::ff::adc(r3, 0, &mut carry);
-        self.mont_reduce(r0, r1, r2, r3);
+        self.mul_assign(&self.clone());
     }
 }
 impl std::default::Default for Fr {
@@ -481,16 +470,16 @@ impl Fr {
         let k = r0.wrapping_mul(INV);
         let mut carry = 0;
         crate::ff::mac_with_carry(r0, k, MODULUS.0[0], &mut carry);
-        r1 = crate::ff::mac_with_carry(r1, k, MODULUS.0[1usize], &mut carry);
+        r1 = crate::ff::mac_with_carry(r1, k, 0, &mut carry);
         r2 = crate::ff::adc(r2, 0, &mut carry);
         let carry2 = carry;
         let k = r1.wrapping_mul(INV);
         let mut carry = 0;
         crate::ff::mac_with_carry(r1, k, MODULUS.0[0], &mut carry);
-        r2 = crate::ff::mac_with_carry(r2, k, MODULUS.0[1usize], &mut carry);
+        r2 = crate::ff::mac_with_carry(r2, k, 0, &mut carry);
         r3 = crate::ff::adc(r3, carry2, &mut carry);
         (self.0).0[0usize] = r2;
-        (self.0).0[1usize] = r3;
+        // (self.0).0[1usize] = r3;
         self.reduce();
     }
 }
@@ -576,13 +565,13 @@ impl ScalarEngine for GL {
 
 #[cfg(test)]
 mod tests {
-    use super::Fr;
-    use super::PrimeField;
     use super::Field;
+    use super::Fr;
+    use super::FrRepr;
+    use super::PrimeField;
     use crate::ff::*;
     use crate::rand::Rand;
     use std::ops::{Add, Mul, Sub};
-    use super::FrRepr;
 
     #[test]
     #[allow(clippy::eq_op)]
@@ -591,7 +580,17 @@ mod tests {
         let l = Fr::rand(&mut rng);
         let added = l + l;
         let double = l * Fr::from_str("2").unwrap();
-
         assert_eq!(added, double);
+    }
+
+    #[test]
+    #[allow(clippy::eq_op)]
+    fn gl_check_mul() {
+        let mut rng = ::rand::thread_rng();
+        let l = Fr::rand(&mut rng);
+        let lhr = l * l * l;
+        let mut rhr = l.clone();
+        rhr.square();
+        assert_eq!(lhr, rhr * l);
     }
 }
