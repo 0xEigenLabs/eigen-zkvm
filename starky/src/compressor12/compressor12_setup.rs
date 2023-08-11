@@ -6,7 +6,7 @@ use crate::polsarray;
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
 use crate::types::PIL;
 use plonky::circom_circuit::R1CS;
-use plonky::scalar_gl::GL;
+use plonky::field_gl::GL;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;

@@ -639,7 +639,7 @@ mod tests {
             Some(mut sq_x) => {
                 sq_x.square();
                 assert_eq!(x, sq_x);
-            },
+            }
             _ => {
                 assert_eq!(x.legendre(), crate::ff::LegendreSymbol::QuadraticNonResidue);
             }

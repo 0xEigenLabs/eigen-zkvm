@@ -18,7 +18,6 @@ pub mod field_gl;
 pub mod plonk;
 pub mod r1cs_file;
 pub mod reader;
-pub mod scalar_gl;
 pub mod witness;
 
 #[cfg(not(target_arch = "wasm32"))]

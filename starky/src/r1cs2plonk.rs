@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 use plonky::circom_circuit::Constraint;
 use plonky::circom_circuit::R1CS;
-use plonky::scalar_gl::{Fr, GL};
+use plonky::field_gl::{Fr, GL};
 use std::collections::HashMap;
 use std::ops::Neg;
 use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
@@ -247,8 +247,8 @@ pub mod tests {
     use crate::compressor12::compressor12_setup::{plonk_setup_render, Options};
     use crate::r1cs2plonk::r1cs2plonk;
     //use plonky::bellman_ce::bn256::Bn256;
+    use plonky::field_gl::GL;
     use plonky::reader::load_r1cs;
-    use plonky::scalar_gl::GL;
 
     #[test]
     #[ignore]
