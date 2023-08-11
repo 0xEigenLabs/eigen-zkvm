@@ -241,6 +241,9 @@ impl crate::ff::PrimeFieldRepr for FrRepr {
         for (a, b) in self.0.iter_mut().zip(other.0.iter()) {
             *a = crate::ff::sbb(*a, *b, &mut borrow);
         }
+        if borrow > 0 {
+            self.0[0] = MODULUS.0[0] + self.0[0];
+        }
     }
 }
 impl ::std::marker::Copy for Fr {}
@@ -589,6 +592,19 @@ mod tests {
 
     #[test]
     #[allow(clippy::eq_op)]
+    fn gl_check_sub() {
+        let mut rng = ::rand::thread_rng();
+        for i in 0..320 {
+            let l = Fr::rand(&mut rng);
+            let l2 = Fr::rand(&mut rng);
+            let lhr = l2 - l;
+            let rhr = lhr + l;
+            assert_eq!(l2, rhr);
+        }
+    }
+
+    #[test]
+    #[allow(clippy::eq_op)]
     fn gl_check_mul() {
         let mut rng = ::rand::thread_rng();
         let l = Fr::rand(&mut rng);
@@ -624,7 +640,8 @@ mod tests {
                 sq_x.square();
                 assert_eq!(x, sq_x);
             },
-            _ => (), // how it get failed?
+            //TODO https://github.com/consensys/gnark-crypto/blob/v0.11.1/field/goldilocks/element.go#L947
+            _ => ()
         }
     }
 }
