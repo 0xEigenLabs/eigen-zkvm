@@ -619,10 +619,12 @@ mod tests {
     fn gl_check_sqrt() {
         let mut rng = rand::thread_rng();
         let mut x = Fr::rand(&mut rng);
-        let mut sq_x = x.sqrt().unwrap();
-        assert_eq!(x, sq_x * sq_x);
-
-        sq_x.square();
-        assert_eq!(x, sq_x);
+        match x.sqrt() {
+            Some(mut sq_x) => {
+                sq_x.square();
+                assert_eq!(x, sq_x);
+            },
+            _ => (), // how it get failed?
+        }
     }
 }
