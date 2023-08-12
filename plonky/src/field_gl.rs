@@ -450,7 +450,7 @@ pub fn exp(base: Fr, power: PositiveInteger) -> Fr {
         b = b * base;
         // Constant-time branching
         let mask = -(((power >> i) & 1 == 1) as i64) as u64;
-        r.0.0[0] ^= mask & (r.0.0[0] ^ b.0.0[0]);
+        r.0 .0[0] ^= mask & (r.0 .0[0] ^ b.0 .0[0]);
     }
     r
 }

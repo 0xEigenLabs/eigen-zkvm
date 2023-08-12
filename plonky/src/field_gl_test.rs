@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
+    use crate::ff::*;
     use crate::field_gl::exp;
     use crate::field_gl::*;
-    use crate::ff::*;
     use crate::rand::Rand;
     use num_bigint::BigUint;
     use proptest::prelude::*;
@@ -47,7 +47,10 @@ mod tests {
         let mut a = MODULUS.clone();
         a.sub_noborrow(&FrRepr::from(2));
         let expected = Fr::from_str(&a.0[0].to_string()).unwrap();
-        assert_eq!(expected, Fr::from_str("3").unwrap() - Fr::from_str("5").unwrap());
+        assert_eq!(
+            expected,
+            Fr::from_str("3").unwrap() - Fr::from_str("5").unwrap()
+        );
     }
 
     #[test]
@@ -93,27 +96,24 @@ mod tests {
         a.add_nocarry(&FrRepr::from(1));
         a.div2();
         let t = Fr::from_str(&a.0[0].to_string()).unwrap();
-        assert_eq!(
-            Fr::one(),
-            t * Fr::from_str("2").unwrap()
-        );
+        assert_eq!(Fr::one(), t * Fr::from_str("2").unwrap());
     }
 
     #[test]
     fn exp_test() {
         let a = Fr::zero();
-        assert_eq!(exp(a,0), Fr::one());
-        assert_eq!(exp(a,1), Fr::zero());
+        assert_eq!(exp(a, 0), Fr::one());
+        assert_eq!(exp(a, 1), Fr::zero());
 
         let a = Fr::one();
-        assert_eq!(exp(a,0), Fr::one());
-        assert_eq!(exp(a,1), Fr::one());
-        assert_eq!(exp(a,3), Fr::one());
-        assert_eq!(exp(a,7), Fr::one());
+        assert_eq!(exp(a, 0), Fr::one());
+        assert_eq!(exp(a, 1), Fr::one());
+        assert_eq!(exp(a, 3), Fr::one());
+        assert_eq!(exp(a, 7), Fr::one());
 
         let mut rng = rand::thread_rng();
         let a = Fr::rand(&mut rng);
-        assert_eq!(exp(a,3), a * a * a);
+        assert_eq!(exp(a, 3), a * a * a);
     }
 
     #[test]
@@ -180,7 +180,7 @@ mod tests {
             let v2 = Fr::from_str(&b.to_string()).unwrap();
             let result = v1 - v2;
             let m = MODULUS.clone().0[0];
-            let a = a % m; 
+            let a = a % m;
             let b = b % m;
             let expected = if a < b { m - b + a } else { a - b };
 
@@ -202,7 +202,7 @@ mod tests {
             let v2 = Fr::from_str(&b.to_string()).unwrap();
             let result = v1 * v2;
             let m = MODULUS.clone().0[0];
-            
+
             let expected = ((a as u128) * (b as u128) % (m as u128))as u64;
             prop_assert_eq!(expected, result.as_int());
         }
@@ -220,7 +220,7 @@ mod tests {
         #[test]
         fn exp_proptest(a in any::<u64>(), b in any::<u64>()) {
             let result = exp(Fr::from_str(&a.to_string()).unwrap(), b);
-            
+
             let b = BigUint::from(b);
             let _m = MODULUS.clone().0[0];
             let m = BigUint::from(_m);
