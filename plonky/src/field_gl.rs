@@ -436,6 +436,22 @@ impl crate::ff::Field for Fr {
         self.mul_assign(&self.clone());
     }
 }
+type PositiveInteger = u64;
+#[inline(always)]
+pub fn exp(base: Fr, power: PositiveInteger) -> Fr {
+    let mut b: Fr;
+    let mut r = Fr::one();
+    for i in (0..64).rev() {
+        r.square();
+        b = r;
+        b = b * base;
+        // Constant-time branching
+        let mask = -(((power >> i) & 1 == 1) as i64) as u64;
+        r.0.0[0] ^= mask & (r.0.0[0] ^ b.0.0[0]);
+    }
+    r
+}
+
 impl std::default::Default for Fr {
     fn default() -> Self {
         Self::zero()

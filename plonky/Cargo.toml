@@ -21,6 +21,7 @@ byteorder = "1"
 franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = [ "plonk" ], version = "0.0.5"}
 #franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
 
+proptest = "1.1"
 hex-literal = "0.2.1"
 itertools = "0.8.1"
 log = "0.4.11"

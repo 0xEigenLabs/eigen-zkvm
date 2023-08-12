@@ -36,6 +36,9 @@ pub mod api;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod field_gl_test;
+
 #[cfg(target_arch = "wasm32")]
 extern crate wasm_bindgen;
 
