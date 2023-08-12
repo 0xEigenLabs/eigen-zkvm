@@ -1,17 +1,18 @@
 use criterion::*;
+use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
-use starky::merklehash_bn128::MerkleTree;
-use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
+use starky::merklehash_bn128::MerkleTreeBN128;
+use starky::traits::MerkleTree;
 mod perf;
 
-fn run_merklehash(pols: Vec<BaseElement>) {
+fn run_merklehash(pols: Vec<FGL>) {
     let n = 1 << 24;
     let idx = 32;
     let n_pols = 10;
 
     let now = std::time::Instant::now();
-    let tree = MerkleTree::merkelize(pols, n_pols, n).unwrap();
+    let mut tree: MerkleTreeBN128 = MerkleTree::new();
+    tree.merkelize(pols, n_pols, n).unwrap();
     println!("time cost: {}", now.elapsed().as_secs());
     let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
     let root = tree.root();
@@ -27,12 +28,12 @@ fn merklehash_group_bench(c: &mut Criterion) {
 
     let n = 1 << 24;
     let n_pols = 10;
-    let mut pols: Vec<BaseElement> = vec![BaseElement::ZERO; n_pols * n];
+    let mut pols: Vec<FGL> = vec![FGL::ZERO; n_pols * n];
 
     rayon::scope(|_s| {
         pols.par_chunks_mut(n).enumerate().for_each(|(i, bb)| {
             for j in 0..n {
-                bb[j] = BaseElement::from((j + i * n) as u64)
+                bb[j] = FGL::from((j + i * n) as u64)
             }
         });
     });

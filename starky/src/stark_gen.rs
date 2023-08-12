@@ -15,7 +15,6 @@ use crate::starkinfo_codegen::{Polynom, Segment};
 use crate::traits::{MerkleTree, Transcript};
 use crate::types::{StarkStruct, PIL};
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 use rayon::prelude::*;
 use std::collections::HashMap;
 

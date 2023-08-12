@@ -1,7 +1,6 @@
 #![allow(dead_code)]
-use core::mem;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use plonky::field_gl::{Fr, FrRepr};
+use plonky::field_gl::Fr;
 use plonky::Field;
 use rand::Rand;
 use std::hash::{Hash, Hasher};
@@ -595,7 +594,7 @@ impl F3G {
 #[cfg(test)]
 pub mod tests {
     use crate::f3g::F3G;
-    use plonky::field_gl::{Fr, FrRepr};
+    use plonky::field_gl::Fr;
     use plonky::to_hex;
     use plonky::Field;
     use plonky::PrimeField;

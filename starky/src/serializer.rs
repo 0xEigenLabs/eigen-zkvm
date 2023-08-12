@@ -7,7 +7,6 @@ use crate::helper;
 use crate::stark_gen::StarkProof;
 use crate::traits::MerkleTree;
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 
 impl Serialize for F3G {

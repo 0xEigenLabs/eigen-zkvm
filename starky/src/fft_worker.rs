@@ -1,6 +1,5 @@
 use crate::constant::MG;
 use crate::f3g::F3G;
-use plonky::Field;
 
 pub fn interpolate_prepare_block(
     buff: &mut [F3G],

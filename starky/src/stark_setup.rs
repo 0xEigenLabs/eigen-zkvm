@@ -8,7 +8,6 @@ use crate::traits::MerkleTree;
 use crate::types::{StarkStruct, PIL};
 use crate::ElementDigest;
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 use rayon::prelude::*;
 
 #[derive(Default)]
@@ -88,7 +87,6 @@ pub mod tests {
     use crate::ElementDigest;
     use ff::*;
     use plonky::field_gl::Fr as FGL;
-    use plonky::Field;
 
     #[test]
     fn test_stark_setup() {

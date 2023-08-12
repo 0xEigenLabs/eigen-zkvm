@@ -9,7 +9,6 @@ use std::io::{Read, Write};
 
 use crate::errors::Result;
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 
 #[derive(Default, Debug)]
 pub struct PolsArray {

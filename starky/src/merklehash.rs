@@ -7,7 +7,6 @@ use crate::linearhash::LinearHash;
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MerkleTree;
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 use rayon::prelude::*;
 use std::time::Instant;
 

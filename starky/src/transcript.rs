@@ -4,7 +4,6 @@ use crate::poseidon_opt::Poseidon;
 use crate::traits::Transcript;
 use num_bigint::BigUint;
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 
 pub struct TranscriptGL {
     state: [FGL; 4],

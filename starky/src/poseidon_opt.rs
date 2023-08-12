@@ -3,7 +3,6 @@ use crate::constant::POSEIDON_CONSTANTS_OPT;
 use crate::poseidon_constants_opt as constants;
 use plonky::field_gl::Fr as FGL;
 use plonky::Field;
-use std::ops::{AddAssign, MulAssign};
 
 #[derive(Debug)]
 pub struct Constants {

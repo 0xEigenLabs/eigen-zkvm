@@ -12,7 +12,6 @@ use crate::starkinfo_codegen::{Node, Section};
 use crate::traits::{MerkleTree, Transcript};
 use crate::types::StarkStruct;
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 use std::collections::HashMap;
 
 //FIXME it doesn't make sense to ask for a mutable program

@@ -3,7 +3,6 @@ use plonky::circom_circuit::Constraint;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::{Fr, GL};
-use plonky::Field;
 use std::collections::HashMap;
 use std::ops::Neg;
 

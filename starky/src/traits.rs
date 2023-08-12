@@ -2,7 +2,6 @@ use crate::digest::ElementDigest;
 use crate::errors::Result;
 use crate::f3g::F3G;
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 
 pub trait MerkleTree {
     type BaseField: Clone + std::default::Default + Into<crate::serializer::Input>;

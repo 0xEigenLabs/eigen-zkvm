@@ -3,7 +3,6 @@ use crate::errors::Result;
 use crate::poseidon_opt::Poseidon;
 use crate::ElementDigest;
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 
 #[derive(Default)]
 pub struct LinearHash {
@@ -98,7 +97,6 @@ mod tests {
     use crate::digest::ElementDigest;
     use crate::linearhash::LinearHash;
     use plonky::field_gl::Fr as FGL;
-    use plonky::Field;
 
     #[test]
     fn test_linearhash_gl_hash() {
