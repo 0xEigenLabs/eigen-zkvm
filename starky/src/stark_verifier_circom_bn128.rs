@@ -8,8 +8,8 @@ use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::Node;
 use crate::starkinfo_codegen::Section;
 use crate::types::{StarkStruct, PIL};
-use winter_math::FieldElement;
-use winter_math::StarkField;
+use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 
 fn header() -> String {
     let header = r#"pragma circom 2.0.6;

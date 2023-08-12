@@ -6,10 +6,9 @@ use crate::field_bn128::Fr;
 use crate::helper;
 use crate::stark_gen::StarkProof;
 use crate::traits::MerkleTree;
+use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
-use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
-use winter_math::StarkField;
 
 impl Serialize for F3G {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -38,9 +37,7 @@ impl Input {
         Input(e, hashtype)
     }
     pub fn is_dim_1(&self) -> bool {
-        self.0 .0[1] == self.0 .0[2]
-            && self.0 .0[1] == self.0 .0[3]
-            && self.0 .0[1] == BaseElement::ZERO
+        self.0 .0[1] == self.0 .0[2] && self.0 .0[1] == self.0 .0[3] && self.0 .0[1] == FGL::ZERO
     }
 }
 
@@ -76,10 +73,10 @@ impl From<Fr> for Input {
     }
 }
 
-impl From<BaseElement> for Input {
-    fn from(val: BaseElement) -> Self {
+impl From<FGL> for Input {
+    fn from(val: FGL) -> Self {
         Self(
-            ElementDigest::new([val, BaseElement::ZERO, BaseElement::ZERO, BaseElement::ZERO]),
+            ElementDigest::new([val, FGL::ZERO, FGL::ZERO, FGL::ZERO]),
             "".to_string(),
         )
     }

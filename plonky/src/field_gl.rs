@@ -1,18 +1,15 @@
-// FIXME: DON't use this library for scalar operation
-#![cfg(not(feature = "wasm"))]
 #![allow(unused_imports)]
-use crate::bellman_ce::ScalarEngine;
 use crate::ff::*;
-
-#[derive(Debug, Eq)]
+use core::ops::{Add, Div, Mul, Neg, Sub};
+#[derive(Eq)]
 pub struct Fr(pub FrRepr);
 /// This is the modulus m of the prime field
-const MODULUS: FrRepr = FrRepr([18446744069414584321u64]);
+pub const MODULUS: FrRepr = FrRepr([18446744069414584321u64]);
 /// The number of bits needed to represent the modulus.
 const MODULUS_BITS: u32 = 64u32;
 /// The number of bits that must be shaved from the beginning of
 /// the representation when randomly sampling.
-//const REPR_SHAVE_BITS: u32 = 0u32;
+const REPR_SHAVE_BITS: u32 = 64u32;
 /// Precalculated mask to shave bits from the top limb in random sampling
 const TOP_LIMB_SHAVE_MASK: u64 = 0u64;
 /// 2^{limbs*64} mod m
@@ -25,37 +22,56 @@ const INV: u64 = 18446744069414584319u64;
 /// nonresidue.
 const GENERATOR: FrRepr = FrRepr([18446744039349813249u64]);
 /// 2^s * t = MODULUS - 1 with t odd
-const S: u32 = 31u32;
+const S: u32 = 32u32;
 /// 2^s root of unity computed by GENERATOR^t
-const ROOT_OF_UNITY: FrRepr = FrRepr([959634606461954525u64]);
-
-#[derive(Debug, Eq)]
+pub const ROOT_OF_UNITY: FrRepr = FrRepr([959634606461954525u64]);
+#[derive(Eq)]
 pub struct FrRepr(pub [u64; 1usize]);
 #[automatically_derived]
-impl std::marker::Copy for FrRepr {}
+impl ::core::marker::Copy for FrRepr {}
 #[automatically_derived]
 impl std::clone::Clone for FrRepr {
     #[inline]
     fn clone(&self) -> FrRepr {
+        //let _: std::clone::AssertParamIsClone<[u64; 2usize]>;
         *self
     }
 }
-
-impl std::cmp::PartialEq for FrRepr {
+#[automatically_derived]
+impl ::core::cmp::PartialEq for FrRepr {
     #[inline]
     fn eq(&self, other: &FrRepr) -> bool {
         self.0 == other.0
     }
 }
-
+/*
 #[automatically_derived]
-impl std::default::Default for FrRepr {
+impl std::marker::StructuralEq for FrRepr {}
+#[automatically_derived]
+impl std::cmp::Eq for FrRepr {
     #[inline]
-    fn default() -> FrRepr {
-        FrRepr(std::default::Default::default())
+    #[doc(hidden)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: std::cmp::AssertParamIsEq<[u64; 2usize]>;
     }
 }
-
+*/
+#[automatically_derived]
+impl ::core::default::Default for FrRepr {
+    #[inline]
+    fn default() -> FrRepr {
+        FrRepr(::core::default::Default::default())
+    }
+}
+impl ::std::fmt::Debug for FrRepr {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        f.write_fmt(format_args!("0x"))?;
+        for i in self.0.iter().rev() {
+            f.write_fmt(format_args!("{0:016x}", *i))?;
+        }
+        Ok(())
+    }
+}
 impl ::rand::Rand for FrRepr {
     #[inline(always)]
     fn rand<R: ::rand::Rng>(rng: &mut R) -> Self {
@@ -64,7 +80,11 @@ impl ::rand::Rand for FrRepr {
 }
 impl ::std::fmt::Display for FrRepr {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "0x{}", self)
+        f.write_fmt(format_args!("0x"))?;
+        for i in self.0.iter().rev() {
+            f.write_fmt(format_args!("{0:016x}", *i))?;
+        }
+        Ok(())
     }
 }
 impl std::hash::Hash for FrRepr {
@@ -129,7 +149,7 @@ impl crate::ff::PrimeFieldRepr for FrRepr {
     }
     #[inline(always)]
     fn shr(&mut self, mut n: u32) {
-        if n as usize >= 64 * 1usize {
+        if n as usize >= 64 * 2usize {
             *self = Self::from(0);
             return;
         }
@@ -169,10 +189,13 @@ impl crate::ff::PrimeFieldRepr for FrRepr {
             *i |= last;
             last = tmp;
         }
+        if last > 0 {
+            self.0[0] = R2.0[0] + self.0[0];
+        }
     }
     #[inline(always)]
     fn shl(&mut self, mut n: u32) {
-        if n as usize >= 64 * 1usize {
+        if n as usize >= 64 * 2usize {
             *self = Self::from(0);
             return;
         }
@@ -195,7 +218,7 @@ impl crate::ff::PrimeFieldRepr for FrRepr {
     }
     #[inline(always)]
     fn num_bits(&self) -> u32 {
-        let mut ret = (1usize as u32) * 64;
+        let mut ret = (2usize as u32) * 64;
         for i in self.0.iter().rev() {
             let leading = i.leading_zeros();
             ret -= leading;
@@ -210,6 +233,10 @@ impl crate::ff::PrimeFieldRepr for FrRepr {
         let mut carry = 0;
         for (a, b) in self.0.iter_mut().zip(other.0.iter()) {
             *a = crate::ff::adc(*a, *b, &mut carry);
+        }
+        if carry > 0 {
+            // 2**64 - (2**64 - 2**32 + 1)
+            self.0[0] = R2.0[0] + self.0[0];
         }
     }
     #[inline(always)]
@@ -231,10 +258,16 @@ impl ::std::cmp::PartialEq for Fr {
         self.0 == other.0
     }
 }
+//impl ::std::cmp::Eq for Fr {}
+impl ::std::fmt::Debug for Fr {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        f.write_fmt(format_args!("{0}({1:?})", "Fr", self.into_repr()))
+    }
+}
 /// Elements are ordered lexicographically.
 impl Ord for Fr {
     #[inline(always)]
-    fn cmp(&self, other: &Fr) -> ::std::cmp::Ordering {
+    fn cmp(&self, other: &Fr) -> std::cmp::Ordering {
         self.into_repr().cmp(&other.into_repr())
     }
 }
@@ -246,7 +279,7 @@ impl PartialOrd for Fr {
 }
 impl ::std::fmt::Display for Fr {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "0x{}", self.0)
+        f.write_fmt(format_args!("{0}({1})", "Fr", self.into_repr()))
     }
 }
 impl ::rand::Rand for Fr {
@@ -254,7 +287,7 @@ impl ::rand::Rand for Fr {
     fn rand<R: ::rand::Rng>(rng: &mut R) -> Self {
         loop {
             let mut tmp = Fr(FrRepr::rand(rng));
-            tmp.0.as_mut()[0usize] &= TOP_LIMB_SHAVE_MASK;
+            // tmp.0.as_mut()[1usize] &= TOP_LIMB_SHAVE_MASK;
             if tmp.is_valid() {
                 return tmp;
             }
@@ -275,17 +308,19 @@ impl crate::ff::PrimeField for Fr {
             Ok(r)
         } else {
             Err(crate::ff::PrimeFieldDecodingError::NotInField({
-                format!("{}", r.0)
+                let res = std::fmt::format(format_args!("{0}", r.0));
+                res
             }))
         }
     }
     fn from_raw_repr(r: FrRepr) -> Result<Self, crate::ff::PrimeFieldDecodingError> {
-        let r = Fr(r);
+        let mut r = Fr(r);
         if r.is_valid() {
             Ok(r)
         } else {
             Err(crate::ff::PrimeFieldDecodingError::NotInField({
-                format!("{}", r.0)
+                let res = std::fmt::format(format_args!("{0}", r.0));
+                res
             }))
         }
     }
@@ -337,7 +372,10 @@ impl crate::ff::Field for Fr {
     #[inline]
     fn sub_assign(&mut self, other: &Fr) {
         if other.0 > self.0 {
-            self.0.add_nocarry(&MODULUS);
+            let mut tmp = MODULUS;
+            tmp.sub_noborrow(&other.0);
+            self.0.add_nocarry(&tmp);
+            return;
         }
         self.0.sub_noborrow(&other.0);
     }
@@ -349,67 +387,74 @@ impl crate::ff::Field for Fr {
             self.0 = tmp;
         }
     }
+
+    /// borrow from https://github.com/facebook/winterfell/blob/main/math/src/field/f64/mod.rs#L142
+    #[inline]
     fn inverse(&self) -> Option<Self> {
-        if self.is_zero() {
-            None
-        } else {
-            let one = FrRepr::from(1);
-            let mut u = self.0;
-            let mut v = MODULUS;
-            let mut b = Fr(R2);
-            let mut c = Self::zero();
-            while u != one && v != one {
-                while u.is_even() {
-                    u.div2();
-                    if b.0.is_even() {
-                        b.0.div2();
-                    } else {
-                        b.0.add_nocarry(&MODULUS);
-                        b.0.div2();
-                    }
-                }
-                while v.is_even() {
-                    v.div2();
-                    if c.0.is_even() {
-                        c.0.div2();
-                    } else {
-                        c.0.add_nocarry(&MODULUS);
-                        c.0.div2();
-                    }
-                }
-                if v < u {
-                    u.sub_noborrow(&v);
-                    b.sub_assign(&c);
-                } else {
-                    v.sub_noborrow(&u);
-                    c.sub_assign(&b);
-                }
-            }
-            if u == one {
-                Some(b)
-            } else {
-                Some(c)
-            }
-        }
+        // compute base^(M - 2) using 72 multiplications
+        // M - 2 = 0b1111111111111111111111111111111011111111111111111111111111111111
+
+        // compute base^11
+        let mut sf = self.clone();
+        sf.square();
+        sf.mul_assign(&self);
+
+        // compute base^111
+        sf.square();
+        let t3 = sf * *self;
+
+        // compute base^111111 (6 ones)
+        let t6 = exp_acc::<3>(t3, t3);
+
+        // compute base^111111111111 (12 ones)
+        let t12 = exp_acc::<6>(t6, t6);
+
+        // compute base^111111111111111111111111 (24 ones)
+        let t24 = exp_acc::<12>(t12, t12);
+
+        // compute base^1111111111111111111111111111111 (31 ones)
+        let mut t30 = exp_acc::<6>(t24, t6);
+        t30.square();
+        let t31 = t30 * *self;
+
+        // compute base^111111111111111111111111111111101111111111111111111111111111111
+        let mut t63 = exp_acc::<32>(t31, t31);
+
+        // compute base^1111111111111111111111111111111011111111111111111111111111111111
+
+        t63.square();
+        Some(t63 * *self)
     }
+
     #[inline(always)]
     fn frobenius_map(&mut self, _: usize) {}
     #[inline]
     fn mul_assign(&mut self, other: &Fr) {
         let mut carry = 0;
         let r0 = crate::ff::mac_with_carry(0, (self.0).0[0usize], (other.0).0[0usize], &mut carry);
-        let r1 = carry;
-        self.mont_reduce(r0, r1);
+        self.mont_reduce(r0, carry);
     }
     #[inline]
     fn square(&mut self) {
-        let r1 = 0;
-        let mut carry = 0;
-        let r0 = crate::ff::mac_with_carry(0, (self.0).0[0usize], (self.0).0[0usize], &mut carry);
-        let r1 = crate::ff::adc(r1, 0, &mut carry);
-        self.mont_reduce(r0, r1);
+        self.mul_assign(&self.clone());
     }
 }
+type PositiveInteger = u64;
+#[inline(always)]
+pub fn exp(base: Fr, power: PositiveInteger) -> Fr {
+    let mut b: Fr;
+    let mut r = Fr::one();
+    for i in (0..64).rev() {
+        r.square();
+        b = r;
+        b = b * base;
+        // Constant-time branching
+        let mask = -(((power >> i) & 1 == 1) as i64) as u64;
+        r.0 .0[0] ^= mask & (r.0 .0[0] ^ b.0 .0[0]);
+    }
+    r
+}
+
 impl std::default::Default for Fr {
     fn default() -> Self {
         Self::zero()
@@ -422,6 +467,14 @@ impl std::hash::Hash for Fr {
         }
     }
 }
+
+impl From<u64> for Fr {
+    #[inline(always)]
+    fn from(val: u64) -> Fr {
+        Fr::from_repr(FrRepr::from(val)).unwrap()
+    }
+}
+
 impl Fr {
     /// Determines if the element is really in the field. This is only used
     /// internally.
@@ -442,14 +495,26 @@ impl Fr {
         let k = r0.wrapping_mul(INV);
         let mut carry = 0;
         crate::ff::mac_with_carry(r0, k, MODULUS.0[0], &mut carry);
-        r1 = crate::ff::adc(r1, 0, &mut carry);
-        (self.0).0[0usize] = r1;
+        r1 = crate::ff::mac_with_carry(r1, k, 0, &mut carry);
+        let mut r2 = crate::ff::adc(0, 0, &mut carry);
+        let k = r1.wrapping_mul(INV);
+        let mut carry = 0;
+        crate::ff::mac_with_carry(r1, k, MODULUS.0[0], &mut carry);
+        r2 = crate::ff::mac_with_carry(r2, k, 0, &mut carry);
+        (self.0).0[0usize] = r2;
+        // (self.0).0[1usize] = r3;
         self.reduce();
+    }
+
+    pub const ZERO: Self = Self(FrRepr([0]));
+    pub const ONE: Self = Self(R);
+    pub fn as_int(&self) -> u64 {
+        self.into_repr().0[0]
     }
 }
 impl crate::ff::SqrtField for Fr {
     fn legendre(&self) -> crate::ff::LegendreSymbol {
-        let s = self.pow([4611686017353646080u64]);
+        let s = self.pow([9223372034707292160u64]);
         if s == Self::zero() {
             crate::ff::LegendreSymbol::Zero
         } else if s == Self::one() {
@@ -494,8 +559,147 @@ impl crate::ff::SqrtField for Fr {
     }
 }
 
+impl Add for Fr {
+    type Output = Self;
+    #[inline]
+    fn add(self, other: Self) -> Self {
+        let mut lhs = self.clone();
+        lhs.add_assign(&other);
+        lhs
+    }
+}
+
+impl Mul for Fr {
+    type Output = Self;
+    #[inline]
+    fn mul(self, other: Self) -> Self {
+        let mut lhs = self.clone();
+        lhs.mul_assign(&other);
+        lhs
+    }
+}
+
+impl Sub for Fr {
+    type Output = Self;
+    #[inline]
+    fn sub(self, other: Self) -> Self {
+        let mut lhs = self.clone();
+        lhs.sub_assign(&other);
+        lhs
+    }
+}
+
+impl Div for Fr {
+    type Output = Self;
+
+    #[inline]
+    #[allow(clippy::suspicious_arithmetic_impl)]
+    fn div(self, rhs: Self) -> Self {
+        self * rhs.inverse().unwrap()
+    }
+}
+
+impl Neg for Fr {
+    type Output = Self;
+
+    #[inline]
+    fn neg(self) -> Self {
+        let mut tmp = self;
+        tmp.negate();
+        tmp
+    }
+}
+
+/// Squares the base N number of times and multiplies the result by the tail value.
+#[inline(always)]
+fn exp_acc<const N: usize>(base: Fr, tail: Fr) -> Fr {
+    let mut result = base;
+    for _ in 0..N {
+        result.square();
+    }
+    result * tail
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct GL;
 impl ScalarEngine for GL {
     type Fr = Fr;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Field;
+    use super::Fr;
+    use super::FrRepr;
+    use super::PrimeField;
+    use crate::ff::*;
+    use crate::rand::Rand;
+    use proptest::prelude::*;
+    use std::ops::{Add, Div, Mul, Neg, Sub};
+
+    proptest! {
+        #[test]
+        fn gl_check_add(a in any::<u64>()) {
+            let v = Fr::from_str(&a.to_string()).unwrap();
+            let added = v + v;
+            let double = v * Fr::from_str("2").unwrap();
+            prop_assert_eq!(added, double);
+        }
+
+        #[test]
+        fn gl_check_sub(a in any::<u64>(), b in any::<u64>()) {
+            let v1 = Fr::from_str(&a.to_string()).unwrap();
+            let v2 = Fr::from_str(&b.to_string()).unwrap();
+            let lhs = v2 - v1;
+            let rhs = lhs + v1;
+            prop_assert_eq!(v2, rhs);
+        }
+
+        #[test]
+        fn gl_check_mul(a in any::<u64>()) {
+            let v = Fr::from_str(&a.to_string()).unwrap();
+            let lhs = v * v * v;
+            let mut rhs = v.clone();
+            rhs.square();
+            prop_assert_eq!(lhs, rhs * v);
+        }
+
+        #[test]
+        fn gl_check_inv(a in any::<u64>()) {
+            let v = Fr::from_str(&a.to_string()).unwrap();
+            let v_inversed = v.inverse().unwrap();
+            prop_assert_eq!(v * v_inversed, Fr::one());
+        }
+
+        #[test]
+        fn gl_check_div(a in any::<u64>(), b in any::<u64>()){
+            let v1 = Fr::from_str(&a.to_string()).unwrap();
+            let v2 = Fr::from_str(&b.to_string()).unwrap();
+            let result = v1 / v2;
+            prop_assert_eq!(result * v2, v1);
+        }
+
+        #[test]
+        fn gl_check_neg(a in any::<u64>()){
+            let mut v1 = Fr::from_str(&a.to_string()).unwrap();
+            let v2 = v1.clone();
+            v1.negate();
+            prop_assert_eq!(v1+v2, Fr::zero());
+        }
+
+        #[test]
+        fn gl_check_sqrt(a in any::<u64>()) {
+            let v = Fr::from_str(&a.to_string()).unwrap();
+            match v.sqrt() {
+                Some(mut sq_v) => {
+                    sq_v.square();
+                    prop_assert_eq!(v, sq_v);
+                }
+                _ => {
+                    prop_assert_eq!(v.legendre(), crate::ff::LegendreSymbol::QuadraticNonResidue);
+                }
+            }
+        }
+
+    }
 }

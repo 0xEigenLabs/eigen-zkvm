@@ -3,21 +3,20 @@ use crate::f3g::F3G;
 use crate::poseidon_opt::Poseidon;
 use crate::traits::Transcript;
 use num_bigint::BigUint;
-use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
-use winter_math::StarkField;
+use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 
 pub struct TranscriptGL {
-    state: [BaseElement; 4],
+    state: [FGL; 4],
     poseidon: Poseidon,
-    pending: Vec<BaseElement>,
-    out: Vec<BaseElement>,
+    pending: Vec<FGL>,
+    out: Vec<FGL>,
 }
 
 impl TranscriptGL {
     fn update_state(&mut self) -> Result<()> {
         while self.pending.len() < 8 {
-            self.pending.push(BaseElement::ZERO);
+            self.pending.push(FGL::ZERO);
         }
         self.out = self.poseidon.hash(&self.pending, &self.state, 12)?;
 
@@ -25,7 +24,7 @@ impl TranscriptGL {
         self.state.copy_from_slice(&self.out[0..4]);
         Ok(())
     }
-    fn add_1(&mut self, e: &BaseElement) -> Result<()> {
+    fn add_1(&mut self, e: &FGL) -> Result<()> {
         log::debug!("add_1: {}", e);
         self.out = Vec::new();
         self.pending.push(e.clone());
@@ -39,7 +38,7 @@ impl TranscriptGL {
 impl Transcript for TranscriptGL {
     fn new() -> Self {
         Self {
-            state: [BaseElement::ZERO; 4],
+            state: [FGL::ZERO; 4],
             poseidon: Poseidon::new(),
             pending: Vec::new(),
             out: Vec::new(),
@@ -53,7 +52,7 @@ impl Transcript for TranscriptGL {
         F3G::new(a, b, c)
     }
 
-    fn get_fields1(&mut self) -> Result<BaseElement> {
+    fn get_fields1(&mut self) -> Result<FGL> {
         if self.out.len() > 0 {
             let v = self.out[0];
             self.out.remove(0);
@@ -63,7 +62,7 @@ impl Transcript for TranscriptGL {
         self.get_fields1()
     }
 
-    fn put(&mut self, es: &[Vec<BaseElement>]) -> Result<()> {
+    fn put(&mut self, es: &[Vec<FGL>]) -> Result<()> {
         for e in es.iter() {
             for t in e {
                 self.add_1(t)?;

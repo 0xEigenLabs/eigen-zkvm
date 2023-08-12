@@ -284,13 +284,6 @@ pub fn pil_code_gen(
     res_id: usize,
     muladd: bool,
 ) -> Result<()> {
-    log::debug!(
-        "pil_code_gen: {} {}, {} {}",
-        exp_id,
-        prime,
-        res_type,
-        res_id
-    );
     let prime_idx = if prime { "expsPrime" } else { "exps" };
     if ctx.calculated.get(&(prime_idx, exp_id)).is_some() {
         if res_type.len() > 0 {
@@ -362,7 +355,6 @@ pub fn pil_code_gen(
     if code_ctx.tmp_used > ctx.tmp_used {
         ctx.tmp_used = code_ctx.tmp_used;
     }
-    log::debug!("ctx.calculated: {:?}", ctx.calculated);
     Ok(())
 }
 
@@ -370,14 +362,12 @@ fn find_muladd(exp: &Expression) -> Expression {
     if exp.values.is_some() {
         let values = exp.values.as_ref().unwrap();
         if exp.op.as_str() == "add" && values[0].op.as_str() == "mul" {
-            log::debug!("exp: {:?}", exp);
             let value_of_values = values[0].values.as_ref().unwrap();
             let a = find_muladd(&value_of_values[0]);
             let b = find_muladd(&value_of_values[1]);
             let c = find_muladd(&values[1]);
             return Expression::new("muladd".to_string(), 0, None, None, Some(vec![a, b, c]));
         } else if exp.op.as_str() == "add" && values[1].op.as_str() == "mul" {
-            log::debug!("exp: 1 {:?}", exp);
             let value_of_values = values[1].values.as_ref().unwrap();
             let a = find_muladd(&value_of_values[0]);
             let b = find_muladd(&value_of_values[1]);
@@ -489,6 +479,7 @@ pub fn eval_exp(
         }
         "mulc" => {
             let a = eval_exp(code_ctx, pil, &values[0], prime)?;
+            println!("mulc: {:?}", exp);
             let b = Node::new(
                 "number".to_string(),
                 0,

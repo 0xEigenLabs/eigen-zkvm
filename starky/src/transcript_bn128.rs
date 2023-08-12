@@ -2,22 +2,22 @@
 use crate::digest::ElementDigest;
 use crate::errors::Result;
 use crate::f3g::F3G;
+use crate::ff::Field;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::helper::{biguint_to_be, fr_to_biguint};
 use crate::poseidon_bn128_opt::Poseidon;
 use crate::traits::Transcript;
 use ff::*;
 use num_bigint::BigUint;
+use plonky::field_gl::Fr as FGL;
 use std::collections::VecDeque;
-use winter_math::fields::f64::BaseElement;
-use winter_math::StarkField;
 
 pub struct TranscriptBN128 {
     state: Fr,
     poseidon: Poseidon,
     pending: Vec<Fr>,
     out: VecDeque<Fr>,
-    out3: VecDeque<BaseElement>,
+    out3: VecDeque<FGL>,
 }
 
 impl TranscriptBN128 {
@@ -68,7 +68,7 @@ impl Transcript for TranscriptBN128 {
         F3G::new(a, b, c)
     }
 
-    fn get_fields1(&mut self) -> Result<BaseElement> {
+    fn get_fields1(&mut self) -> Result<FGL> {
         if self.out3.len() > 0 {
             log::debug!("get_fields1 {},", self.out3[0]);
             return Ok(self.out3.pop_front().unwrap());
@@ -87,7 +87,7 @@ impl Transcript for TranscriptBN128 {
         self.get_fields1()
     }
 
-    fn put(&mut self, es: &[Vec<BaseElement>]) -> Result<()> {
+    fn put(&mut self, es: &[Vec<FGL>]) -> Result<()> {
         for e in es.iter() {
             let e: Fr = match e.len() {
                 1 => Fr::from_repr(FrRepr::from(e[0].as_int())).unwrap(),

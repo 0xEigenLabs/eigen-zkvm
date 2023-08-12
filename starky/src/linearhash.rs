@@ -2,9 +2,8 @@
 use crate::errors::Result;
 use crate::poseidon_opt::Poseidon;
 use crate::ElementDigest;
-//use rayon::prelude::*;
-use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
+use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 
 #[derive(Default)]
 pub struct LinearHash {
@@ -18,10 +17,10 @@ impl LinearHash {
 
     pub fn hash_element_matrix(
         &self,
-        vals: &Vec<Vec<BaseElement>>,
+        vals: &Vec<Vec<FGL>>,
         batch_size: usize,
     ) -> Result<ElementDigest> {
-        let mut flatvals: Vec<BaseElement> = vec![];
+        let mut flatvals: Vec<FGL> = vec![];
         for col in vals.iter() {
             for elem in col.iter() {
                 flatvals.push(*elem);
@@ -30,13 +29,13 @@ impl LinearHash {
         self.hash(&flatvals, batch_size)
     }
 
-    pub fn hash(&self, flatvals: &[BaseElement], batch_size: usize) -> Result<ElementDigest> {
+    pub fn hash(&self, flatvals: &[FGL], batch_size: usize) -> Result<ElementDigest> {
         let mut bs = batch_size;
         if bs == 0 {
             bs = core::cmp::max(8, (flatvals.len() + 3) / 4);
         }
 
-        let mut st = [BaseElement::ZERO; 4];
+        let mut st = [FGL::ZERO; 4];
         if flatvals.len() <= 4 {
             for (i, v) in flatvals.iter().enumerate() {
                 st[i] = *v;
@@ -45,13 +44,13 @@ impl LinearHash {
         }
 
         let hsz = (flatvals.len() + bs - 1) / bs;
-        let mut hashes: Vec<BaseElement> = vec![BaseElement::ZERO; hsz * 4];
+        let mut hashes: Vec<FGL> = vec![FGL::ZERO; hsz * 4];
         // NOTE flatsvals.len <= hashes.len
         hashes
             .chunks_mut(4)
             .zip(flatvals.chunks(bs))
             .for_each(|(outs, inps)| {
-                let hv: [BaseElement; 4] = self._hash(inps).unwrap().into();
+                let hv: [FGL; 4] = self._hash(inps).unwrap().into();
                 outs[0..hv.len()].copy_from_slice(&hv);
             });
 
@@ -65,8 +64,8 @@ impl LinearHash {
         }
     }
 
-    pub fn _hash(&self, flatvals: &[BaseElement]) -> Result<ElementDigest> {
-        let mut st = [BaseElement::ZERO; 4];
+    pub fn _hash(&self, flatvals: &[FGL]) -> Result<ElementDigest> {
+        let mut st = [FGL::ZERO; 4];
         if flatvals.len() <= 4 {
             for (i, v) in flatvals.iter().enumerate() {
                 st[i] = *v;
@@ -74,7 +73,7 @@ impl LinearHash {
             return Ok(ElementDigest::from(st));
         }
 
-        let mut inhashes: Vec<BaseElement> = vec![];
+        let mut inhashes: Vec<FGL> = vec![];
         for v in flatvals.iter() {
             inhashes.push(*v);
             if inhashes.len() == 8 {
@@ -85,7 +84,7 @@ impl LinearHash {
         }
         if inhashes.len() > 0 {
             while inhashes.len() < 8 {
-                inhashes.push(BaseElement::ZERO);
+                inhashes.push(FGL::ZERO);
             }
             let t = self.h.hash(&inhashes, &st, 4).unwrap();
             st.copy_from_slice(&t);
@@ -98,31 +97,32 @@ impl LinearHash {
 mod tests {
     use crate::digest::ElementDigest;
     use crate::linearhash::LinearHash;
-    use winter_math::fields::f64::BaseElement;
+    use plonky::field_gl::Fr as FGL;
+    use plonky::Field;
 
     #[test]
     fn test_linearhash_gl_hash() {
         let lh = LinearHash::new();
-        let raw_inputs = (1u32..28)
-            .collect::<Vec<u32>>()
+        let raw_inputs = (1u64..28)
+            .collect::<Vec<u64>>()
             .chunks(3)
-            .collect::<Vec<&[u32]>>()
+            .collect::<Vec<&[u64]>>()
             .iter()
             .map(|ea| {
-                let mut res: Vec<BaseElement> = vec![];
+                let mut res: Vec<FGL> = vec![];
                 for e in ea.iter() {
-                    res.push(BaseElement::from(*e));
+                    res.push(FGL::from(*e));
                 }
                 res
             })
-            .collect::<Vec<Vec<BaseElement>>>();
+            .collect::<Vec<Vec<FGL>>>();
 
         let res = lh.hash_element_matrix(&raw_inputs, 0).unwrap();
         let expected = ElementDigest::from([
-            BaseElement::from(17618903473682537397u64),
-            BaseElement::from(11844743283521766961u64),
-            BaseElement::from(185773432536380223u64),
-            BaseElement::from(6083210164459944430u64),
+            FGL::from(17618903473682537397u64),
+            FGL::from(11844743283521766961u64),
+            FGL::from(185773432536380223u64),
+            FGL::from(6083210164459944430u64),
         ]);
         assert_eq!(expected, res);
     }
@@ -130,26 +130,26 @@ mod tests {
     #[test]
     fn test_linearhash_corner_case() {
         let lh = LinearHash::new();
-        let raw_inputs = (1u32..4)
-            .collect::<Vec<u32>>()
+        let raw_inputs = (1u64..4)
+            .collect::<Vec<u64>>()
             .chunks(3)
-            .collect::<Vec<&[u32]>>()
+            .collect::<Vec<&[u64]>>()
             .iter()
             .map(|ea| {
-                let mut res: Vec<BaseElement> = vec![];
+                let mut res: Vec<FGL> = vec![];
                 for e in ea.iter() {
-                    res.push(BaseElement::from(*e));
+                    res.push(FGL::from(*e));
                 }
                 res
             })
-            .collect::<Vec<Vec<BaseElement>>>();
+            .collect::<Vec<Vec<FGL>>>();
 
         let res = lh.hash_element_matrix(&raw_inputs, 0).unwrap();
         let expected = ElementDigest::from([
-            BaseElement::from(1u32),
-            BaseElement::from(2u32),
-            BaseElement::from(3u32),
-            BaseElement::from(0u32),
+            FGL::from(1u64),
+            FGL::from(2u64),
+            FGL::from(3u64),
+            FGL::from(0u64),
         ]);
         assert_eq!(expected, res);
     }

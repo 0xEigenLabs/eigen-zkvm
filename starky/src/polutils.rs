@@ -1,7 +1,7 @@
 use crate::constant::SHIFT;
 use crate::f3g::F3G;
 use crate::fft::FFT;
-use winter_math::FieldElement;
+use plonky::Field;
 
 pub fn pol_mul_axi(p: &mut Vec<F3G>, init: F3G, acc: &F3G) {
     let mut r = init;

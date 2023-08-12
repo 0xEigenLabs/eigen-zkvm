@@ -4,8 +4,9 @@ use crate::field_bn128::Fr;
 use crate::poseidon_bn128::{load_constants, Constants};
 use crate::poseidon_bn128_opt::load_constants as load_constants_opt;
 use ff::*;
+use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 use std::collections::HashMap;
-use winter_math::{fields::f64::BaseElement, FieldElement};
 
 lazy_static::lazy_static! {
     pub static ref OFFSET_2_64: Fr = Fr::from_str("18446744073709551616").unwrap();
@@ -24,10 +25,10 @@ lazy_static::lazy_static! {
         m
     };
 
-    pub static ref SHIFT: F3G = F3G::from(BaseElement::from(49u32));
+    pub static ref SHIFT: F3G = F3G::from(FGL::from(49u64));
     pub static ref SHIFT_INV: F3G = F3G::inv(SHIFT.clone());
     pub static ref MG: (Vec<F3G>, Vec<F3G>) = {
-        let nqr = F3G::from(BaseElement::from(7u32));
+        let nqr = F3G::from(FGL::from(7u64));
         let rem = 2usize.pow(32) - 1;
         let s = 32usize;
         let mut w = vec![F3G::ZERO; s+1];

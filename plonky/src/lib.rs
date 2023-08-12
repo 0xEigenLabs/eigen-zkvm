@@ -14,10 +14,10 @@ extern crate rand;
 
 pub mod circom_circuit;
 pub mod errors;
+pub mod field_gl;
 pub mod plonk;
 pub mod r1cs_file;
 pub mod reader;
-pub mod scalar_gl;
 pub mod witness;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -35,6 +35,9 @@ pub mod api;
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod field_gl_test;
 
 #[cfg(target_arch = "wasm32")]
 extern crate wasm_bindgen;

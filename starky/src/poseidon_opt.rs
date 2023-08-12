@@ -1,47 +1,47 @@
 #![allow(non_snake_case)]
 use crate::constant::POSEIDON_CONSTANTS_OPT;
 use crate::poseidon_constants_opt as constants;
+use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 use std::ops::{AddAssign, MulAssign};
-use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
 
 #[derive(Debug)]
 pub struct Constants {
-    pub c: Vec<BaseElement>,
-    pub m: Vec<Vec<BaseElement>>,
-    pub p: Vec<Vec<BaseElement>>,
-    pub s: Vec<BaseElement>,
+    pub c: Vec<FGL>,
+    pub m: Vec<Vec<FGL>>,
+    pub p: Vec<Vec<FGL>>,
+    pub s: Vec<FGL>,
     pub n_rounds_f: usize,
     pub n_rounds_p: usize,
 }
 
 pub fn load_constants() -> Constants {
     let (c_str, m_str, p_str, s_str) = constants::constants();
-    let mut c: Vec<BaseElement> = Vec::new();
+    let mut c: Vec<FGL> = Vec::new();
     for v1 in c_str {
-        c.push(BaseElement::from(v1));
+        c.push(FGL::from(v1));
     }
-    let mut m: Vec<Vec<BaseElement>> = Vec::new();
+    let mut m: Vec<Vec<FGL>> = Vec::new();
     for v1 in m_str {
-        let mut mi: Vec<BaseElement> = Vec::new();
+        let mut mi: Vec<FGL> = Vec::new();
         for v2 in v1 {
-            mi.push(BaseElement::from(v2));
+            mi.push(FGL::from(v2));
         }
         m.push(mi);
     }
 
-    let mut p: Vec<Vec<BaseElement>> = Vec::new();
+    let mut p: Vec<Vec<FGL>> = Vec::new();
     for v1 in p_str {
-        let mut mi: Vec<BaseElement> = Vec::new();
+        let mut mi: Vec<FGL> = Vec::new();
         for v2 in v1 {
-            mi.push(BaseElement::from(v2));
+            mi.push(FGL::from(v2));
         }
         p.push(mi);
     }
 
-    let mut s: Vec<BaseElement> = Vec::new();
+    let mut s: Vec<FGL> = Vec::new();
     for v1 in s_str {
-        s.push(BaseElement::from(v1));
+        s.push(FGL::from(v1));
     }
 
     Constants {
@@ -68,29 +68,24 @@ impl Poseidon {
     }
 
     #[inline(always)]
-    fn pow7(x: &mut BaseElement) {
+    fn pow7(x: &mut FGL) {
         let aux = *x;
-        *x = x.square();
-        x.mul_assign(aux);
-        *x = x.square();
-        x.mul_assign(aux);
+        x.square();
+        x.mul_assign(&aux);
+        x.square();
+        x.mul_assign(&aux);
     }
 
-    pub fn hash(
-        &self,
-        inp: &Vec<BaseElement>,
-        init_state: &[BaseElement],
-        out: usize,
-    ) -> Result<Vec<BaseElement>, String> {
+    pub fn hash(&self, inp: &Vec<FGL>, init_state: &[FGL], out: usize) -> Result<Vec<FGL>, String> {
         self.hash_inner(inp, init_state, out)
     }
 
     fn hash_inner(
         &self,
-        inp: &Vec<BaseElement>,
-        init_state: &[BaseElement],
+        inp: &Vec<FGL>,
+        init_state: &[FGL],
         out: usize,
-    ) -> Result<Vec<BaseElement>, String> {
+    ) -> Result<Vec<FGL>, String> {
         if inp.len() != 8 {
             return Err(format!("Wrong inputs length {} != 8", inp.len(),));
         }
@@ -103,7 +98,7 @@ impl Poseidon {
         let M = &POSEIDON_CONSTANTS_OPT.m;
         let P = &POSEIDON_CONSTANTS_OPT.p;
 
-        let mut state = vec![BaseElement::ZERO; t];
+        let mut state = vec![FGL::ZERO; t];
         if init_state.len() != 4 {
             return Err(format!("Capacity inputs length {} != 4", init_state.len(),));
         }
@@ -114,22 +109,22 @@ impl Poseidon {
         state
             .iter_mut()
             .enumerate()
-            .for_each(|(i, a)| a.add_assign(C[i]));
+            .for_each(|(i, a)| a.add_assign(&C[i]));
 
-        let mut tmp_state = vec![BaseElement::ZERO; t];
+        let mut tmp_state = vec![FGL::ZERO; t];
         for r in 0..(n_rounds_f / 2 - 1) {
             state.iter_mut().for_each(|e| Self::pow7(e));
             state.iter_mut().enumerate().for_each(|(i, a)| {
-                a.add_assign(C[(r + 1) * t + i]);
+                a.add_assign(&C[(r + 1) * t + i]);
             });
 
             let sz = state.len();
             tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
-                let mut acc = BaseElement::ZERO;
+                let mut acc = FGL::ZERO;
                 for j in 0..sz {
                     let mut tmp = M[j][i];
-                    tmp.mul_assign(state[j]);
-                    acc.add_assign(tmp);
+                    tmp.mul_assign(&state[j]);
+                    acc.add_assign(&tmp);
                 }
                 *out = acc;
             });
@@ -143,16 +138,16 @@ impl Poseidon {
 
         state.iter_mut().for_each(|e| Self::pow7(e));
         state.iter_mut().enumerate().for_each(|(i, a)| {
-            a.add_assign(C[(n_rounds_f / 2 - 1 + 1) * t + i]);
+            a.add_assign(&C[(n_rounds_f / 2 - 1 + 1) * t + i]);
         }); //opt
 
         let sz = state.len();
         tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
-            let mut acc = BaseElement::ZERO;
+            let mut acc = FGL::ZERO;
             for j in 0..sz {
                 let mut tmp = P[j][i];
-                tmp.mul_assign(state[j]);
-                acc.add_assign(tmp);
+                tmp.mul_assign(&state[j]);
+                acc.add_assign(&tmp);
             }
             *out = acc;
         });
@@ -165,20 +160,20 @@ impl Poseidon {
 
         for r in 0..n_rounds_p {
             Self::pow7(&mut state[0]);
-            state[0].add_assign(C[(n_rounds_f / 2 + 1) * t + r]);
+            state[0].add_assign(&C[(n_rounds_f / 2 + 1) * t + r]);
 
             let sz = state.len();
-            let mut s0 = BaseElement::ZERO;
+            let mut s0 = FGL::ZERO;
             for j in 0..sz {
                 let mut tmp = S[(t * 2 - 1) * r + j];
-                tmp.mul_assign(state[j]);
-                s0.add_assign(tmp);
+                tmp.mul_assign(&state[j]);
+                s0.add_assign(&tmp);
             }
 
             for k in 1..t {
                 let mut tmp = S[(t * 2 - 1) * r + t + k - 1];
-                tmp.mul_assign(state[0]);
-                state[k].add_assign(tmp);
+                tmp.mul_assign(&state[0]);
+                state[k].add_assign(&tmp);
             }
 
             state[0] = s0;
@@ -187,16 +182,16 @@ impl Poseidon {
         for r in 0..(n_rounds_f / 2 - 1) {
             state.iter_mut().for_each(|e| Self::pow7(e));
             state.iter_mut().enumerate().for_each(|(i, a)| {
-                a.add_assign(C[(n_rounds_f / 2 + 1) * t + n_rounds_p + r * t + i]);
+                a.add_assign(&C[(n_rounds_f / 2 + 1) * t + n_rounds_p + r * t + i]);
             });
 
             let sz = state.len();
             tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
-                let mut acc = BaseElement::ZERO;
+                let mut acc = FGL::ZERO;
                 for j in 0..sz {
                     let mut tmp = M[j][i];
-                    tmp.mul_assign(state[j]);
-                    acc.add_assign(tmp);
+                    tmp.mul_assign(&state[j]);
+                    acc.add_assign(&tmp);
                 }
                 *out = acc;
             });
@@ -211,11 +206,11 @@ impl Poseidon {
         state.iter_mut().for_each(|e| Self::pow7(e));
         let sz = state.len();
         tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
-            let mut acc = BaseElement::ZERO;
+            let mut acc = FGL::ZERO;
             for j in 0..sz {
                 let mut tmp = M[j][i];
-                tmp.mul_assign(state[j]);
-                acc.add_assign(tmp);
+                tmp.mul_assign(&state[j]);
+                acc.add_assign(&tmp);
             }
             *out = acc;
         });
@@ -228,12 +223,13 @@ impl Poseidon {
 #[cfg(test)]
 mod tests {
     use crate::poseidon_opt::*;
-    use rand_utils::rand_value;
-    use winter_math::fields::f64::BaseElement;
+    use plonky::field_gl::Fr as FGL;
+    use rand::Rand;
 
     #[test]
     fn test_pow7() {
-        let mut x = rand_value::<BaseElement>();
+        let mut rng = rand::thread_rng();
+        let mut x = FGL::rand(&mut rng);
         let x7 = x * x * x * x * x * x * x;
         Poseidon::pow7(&mut x);
         assert_eq!(x, x7);
@@ -242,14 +238,14 @@ mod tests {
     #[test]
     fn test_poseidon_opt_hash_all_0() {
         let poseidon = Poseidon::new();
-        let input = vec![BaseElement::ZERO; 8];
-        let state = vec![BaseElement::ZERO; 4];
+        let input = vec![FGL::ZERO; 8];
+        let state = vec![FGL::ZERO; 4];
         let res = poseidon.hash(&input, &state, 4).unwrap();
         let expected = vec![
-            BaseElement::from(0x3c18a9786cb0b359u64),
-            BaseElement::from(0xc4055e3364a246c3u64),
-            BaseElement::from(0x7953db0ab48808f4u64),
-            BaseElement::from(0xc71603f33a1144cau64),
+            FGL::from(0x3c18a9786cb0b359u64),
+            FGL::from(0xc4055e3364a246c3u64),
+            FGL::from(0x7953db0ab48808f4u64),
+            FGL::from(0xc71603f33a1144cau64),
         ];
         assert_eq!(res, expected);
     }
@@ -257,20 +253,20 @@ mod tests {
     #[test]
     fn test_poseidon_opt_hash_1_11() {
         let poseidon = Poseidon::new();
-        let input = (0u32..8)
+        let input = (0u64..8)
             .into_iter()
-            .map(|e| BaseElement::from(e))
-            .collect::<Vec<BaseElement>>();
-        let state = (8u32..12)
+            .map(|e| FGL::from(e))
+            .collect::<Vec<FGL>>();
+        let state = (8u64..12)
             .into_iter()
-            .map(|e| BaseElement::from(e))
-            .collect::<Vec<BaseElement>>();
+            .map(|e| FGL::from(e))
+            .collect::<Vec<FGL>>();
         let res = poseidon.hash(&input, &state, 4).unwrap();
         let expected = vec![
-            BaseElement::from(0xd64e1e3efc5b8e9eu64),
-            BaseElement::from(0x53666633020aaa47u64),
-            BaseElement::from(0xd40285597c6a8825u64),
-            BaseElement::from(0x613a4f81e81231d2u64),
+            FGL::from(0xd64e1e3efc5b8e9eu64),
+            FGL::from(0x53666633020aaa47u64),
+            FGL::from(0xd40285597c6a8825u64),
+            FGL::from(0x613a4f81e81231d2u64),
         ];
         assert_eq!(res, expected);
     }
@@ -278,15 +274,15 @@ mod tests {
     #[test]
     fn test_poseidon_opt_hash_all_neg_1() {
         let poseidon = Poseidon::new();
-        let init = BaseElement::ZERO - BaseElement::ONE;
+        let init = FGL::ZERO - FGL::ONE;
         let input = vec![init; 8];
         let state = vec![init; 4];
         let res = poseidon.hash(&input, &state, 4).unwrap();
         let expected = vec![
-            BaseElement::from(0xbe0085cfc57a8357u64),
-            BaseElement::from(0xd95af71847d05c09u64),
-            BaseElement::from(0xcf55a13d33c1c953u64),
-            BaseElement::from(0x95803a74f4530e82u64),
+            FGL::from(0xbe0085cfc57a8357u64),
+            FGL::from(0xd95af71847d05c09u64),
+            FGL::from(0xcf55a13d33c1c953u64),
+            FGL::from(0x95803a74f4530e82u64),
         ];
         assert_eq!(res, expected);
     }

@@ -6,10 +6,10 @@ use std::fs::File;
 use crate::f3g::F3G;
 
 use std::io::{Read, Write};
-use winter_math::StarkField;
 
 use crate::errors::Result;
-use winter_math::fields::f64::BaseElement;
+use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 
 #[derive(Default, Debug)]
 pub struct PolsArray {
@@ -17,7 +17,7 @@ pub struct PolsArray {
     // nameSpace, namePol, defArray's index,
     pub def: HashMap<String, HashMap<String, Vec<usize>>>,
     pub defArray: Vec<Pol>,
-    pub array: Vec<Vec<BaseElement>>,
+    pub array: Vec<Vec<FGL>>,
     pub n: usize,
 }
 
@@ -45,9 +45,9 @@ impl PolsArray {
 
         let mut def: HashMap<String, HashMap<String, Vec<usize>>> = HashMap::new();
         let mut defArray: Vec<Pol> = vec![Pol::default(); nPols];
-        let mut array: Vec<Vec<BaseElement>> = vec![Vec::new(); nPols];
+        let mut array: Vec<Vec<FGL>> = vec![Vec::new(); nPols];
         for i in 0..array.len() {
-            array[i] = vec![BaseElement::default(); nPols];
+            array[i] = vec![FGL::default(); nPols];
         }
         for (refName, ref_) in pil.references.iter() {
             if (ref_.type_ == "cmP" && kind == PolKind::Commit)
@@ -79,7 +79,7 @@ impl PolsArray {
                             polDeg: ref_.polDeg,
                         };
                         arrayPols[i] = ref_.id + i;
-                        array[ref_.id + i] = vec![BaseElement::default(); ref_.polDeg];
+                        array[ref_.id + i] = vec![FGL::default(); ref_.polDeg];
                     }
                     ns.insert(namePols, arrayPols);
                     def.insert(nameSpace, ns);
@@ -98,7 +98,7 @@ impl PolsArray {
                     let mut ns: HashMap<String, Vec<usize>> = HashMap::new();
                     ns.insert(namePols, arrayPols);
                     def.insert(nameSpace, ns);
-                    array[ref_.id] = vec![BaseElement::default(); ref_.polDeg];
+                    array[ref_.id] = vec![FGL::default(); ref_.polDeg];
                 }
             }
         }
@@ -118,7 +118,7 @@ impl PolsArray {
         }
     }
 
-    pub fn get_mut<'arr>(&mut self, ns: &String, np: &String) -> &mut Vec<BaseElement> {
+    pub fn get_mut<'arr>(&mut self, ns: &String, np: &String) -> &mut Vec<FGL> {
         let namespace = self.def.get(ns);
         if namespace.is_none() {
             //retrun Err(EigenError::Unknown(format!("Invalid namespace:{}", ns)));
@@ -134,7 +134,7 @@ impl PolsArray {
     }
 
     /*
-    pub fn set(&mut self, ns: &String, np: &String, val: &Vec<Vec<BaseElement>>) {
+    pub fn set(&mut self, ns: &String, np: &String, val: &Vec<Vec<FGL>>) {
         let idx = self.def
     }
     */
@@ -172,7 +172,7 @@ impl PolsArray {
             };
             n = rs / 8;
             for l in 0..n {
-                self.array[i][j] = BaseElement::from(buff[l]);
+                self.array[i][j] = FGL::from(buff[l]);
                 i += 1;
                 if i == self.nPols {
                     i = 0;

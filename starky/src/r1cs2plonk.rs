@@ -1,21 +1,22 @@
 #![allow(non_snake_case)]
 use plonky::circom_circuit::Constraint;
 use plonky::circom_circuit::R1CS;
-use plonky::scalar_gl::{Fr, GL};
+use plonky::field_gl::Fr as FGL;
+use plonky::field_gl::{Fr, GL};
+use plonky::Field;
 use std::collections::HashMap;
 use std::ops::Neg;
-use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
 #[derive(Debug)]
 pub struct PlonkGate(
     pub usize,
     pub usize,
     pub usize,
-    pub BaseElement,
-    pub BaseElement,
-    pub BaseElement,
-    pub BaseElement,
-    pub BaseElement,
+    pub FGL,
+    pub FGL,
+    pub FGL,
+    pub FGL,
+    pub FGL,
 );
 
 impl std::fmt::Display for PlonkGate {
@@ -42,7 +43,7 @@ impl PlonkGate {
 }
 
 #[derive(Debug)]
-pub struct PlonkAdd(pub usize, pub usize, pub BaseElement, pub BaseElement);
+pub struct PlonkAdd(pub usize, pub usize, pub FGL, pub FGL);
 impl std::fmt::Display for PlonkAdd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {}, {}, {})", self.0, self.1, self.2, self.3)
@@ -54,50 +55,47 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
     let mut plonk_constraints: Vec<PlonkGate> = vec![];
     let mut plonk_additions: Vec<PlonkAdd> = vec![];
 
-    let normalize = |lc: &mut HashMap<usize, BaseElement>| {
-        lc.retain(|_, v| *v != BaseElement::ZERO);
+    let normalize = |lc: &mut HashMap<usize, FGL>| {
+        lc.retain(|_, v| *v != FGL::ZERO);
     };
 
-    let join = |lc1: &HashMap<usize, BaseElement>,
-                k: &BaseElement,
-                lc2: &HashMap<usize, BaseElement>|
-     -> HashMap<usize, BaseElement> {
-        let mut res: HashMap<usize, BaseElement> = HashMap::new();
-        for (key, val) in lc1.iter() {
-            if res.get(&key).is_none() {
-                res.insert(*key, *k * (*val));
-            } else {
-                let tmp = res[key];
-                res.insert(*key, *k * (*val) + tmp);
+    let join =
+        |lc1: &HashMap<usize, FGL>, k: &FGL, lc2: &HashMap<usize, FGL>| -> HashMap<usize, FGL> {
+            let mut res: HashMap<usize, FGL> = HashMap::new();
+            for (key, val) in lc1.iter() {
+                if res.get(&key).is_none() {
+                    res.insert(*key, *k * (*val));
+                } else {
+                    let tmp = res[key];
+                    res.insert(*key, *k * (*val) + tmp);
+                }
             }
-        }
 
-        for (key, val) in lc2.iter() {
-            if res.get(&key).is_none() {
-                res.insert(*key, *val);
-            } else {
-                let tmp = res[key];
-                res.insert(*key, *val + tmp);
+            for (key, val) in lc2.iter() {
+                if res.get(&key).is_none() {
+                    res.insert(*key, *val);
+                } else {
+                    let tmp = res[key];
+                    res.insert(*key, *val + tmp);
+                }
             }
-        }
-        normalize(&mut res);
-        res
-    };
+            normalize(&mut res);
+            res
+        };
 
-    let reduce_coefs = |lc: &HashMap<usize, BaseElement>,
+    let reduce_coefs = |lc: &HashMap<usize, FGL>,
                         max_c: usize,
                         pc: &mut Vec<PlonkGate>,
                         pa: &mut Vec<PlonkAdd>,
                         n_var: &mut usize|
-     -> (BaseElement, Vec<usize>, Vec<BaseElement>) {
+     -> (FGL, Vec<usize>, Vec<FGL>) {
         // (k, s, coefs)
-        let mut res: (BaseElement, Vec<usize>, Vec<BaseElement>) =
-            (BaseElement::ZERO, vec![], vec![]);
-        let mut cs: Vec<(usize, BaseElement)> = vec![];
+        let mut res: (FGL, Vec<usize>, Vec<FGL>) = (FGL::ZERO, vec![], vec![]);
+        let mut cs: Vec<(usize, FGL)> = vec![];
         for (key, val) in lc.iter() {
             if *key == 0 {
                 res.0 = res.0 + *val;
-            } else if *val != BaseElement::ZERO {
+            } else if *val != FGL::ZERO {
                 cs.push((*key, *val));
             }
         }
@@ -111,17 +109,17 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
             let so = *n_var;
             *n_var += 1;
 
-            let qm = BaseElement::ZERO;
+            let qm = FGL::ZERO;
             let ql = c1.1.neg();
             let qr = c2.1.neg();
-            let qo = BaseElement::ONE;
-            let qc = BaseElement::ZERO;
+            let qo = FGL::ONE;
+            let qc = FGL::ZERO;
 
             pc.push(PlonkGate(sl, sr, so, qm, ql, qr, qo, qc));
             pa.push(PlonkAdd(sl, sr, c1.1, c2.1));
             cs.remove(0);
             cs.remove(0);
-            cs.push((so, BaseElement::ONE));
+            cs.push((so, FGL::ONE));
         }
         for c in cs.iter() {
             res.1.push(c.0);
@@ -129,14 +127,14 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
         }
         while res.2.len() < max_c {
             res.1.push(0);
-            res.2.push(BaseElement::ZERO);
+            res.2.push(FGL::ZERO);
         }
         res
     };
 
-    let add_constraint_mul = |la: &HashMap<usize, BaseElement>,
-                              lb: &HashMap<usize, BaseElement>,
-                              lc: &HashMap<usize, BaseElement>,
+    let add_constraint_mul = |la: &HashMap<usize, FGL>,
+                              lb: &HashMap<usize, FGL>,
+                              lc: &HashMap<usize, FGL>,
                               pc: &mut Vec<PlonkGate>,
                               pa: &mut Vec<PlonkAdd>,
                               n_var: &mut usize| {
@@ -155,7 +153,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
         pc.push(PlonkGate(sl, sr, so, qm, ql, qr, qo, qc));
     };
 
-    let add_constraint_sum = |lc: &HashMap<usize, BaseElement>,
+    let add_constraint_sum = |lc: &HashMap<usize, FGL>,
                               pc: &mut Vec<PlonkGate>,
                               pa: &mut Vec<PlonkAdd>,
                               n_var: &mut usize| {
@@ -163,7 +161,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
         let sl = C.1[0];
         let sr = C.1[1];
         let so = C.1[2];
-        let qm = BaseElement::ZERO;
+        let qm = FGL::ZERO;
         let ql = C.2[0];
         let qr = C.2[1];
         let qo = C.2[2];
@@ -171,20 +169,20 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
         pc.push(PlonkGate(sl, sr, so, qm, ql, qr, qo, qc));
     };
 
-    let to_be_map = |lc: &Vec<(usize, Fr)>| -> HashMap<usize, BaseElement> {
-        let mut res: HashMap<usize, BaseElement> = HashMap::new();
+    let to_be_map = |lc: &Vec<(usize, Fr)>| -> HashMap<usize, FGL> {
+        let mut res: HashMap<usize, FGL> = HashMap::new();
         for c in lc.iter() {
             assert!(res.get(&c.0).is_none());
-            res.insert(c.0, BaseElement::from(c.1 .0 .0[0]));
+            res.insert(c.0, FGL::from(c.1 .0 .0[0]));
         }
         res
     };
 
-    let get_lc_type = |lc: &mut HashMap<usize, BaseElement>| -> String {
-        let mut k = BaseElement::ZERO;
+    let get_lc_type = |lc: &mut HashMap<usize, FGL>| -> String {
+        let mut k = FGL::ZERO;
         let mut n = 0;
         for (key, val) in lc.iter() {
-            if *val == BaseElement::ZERO {
+            if *val == FGL::ZERO {
                 //delete
             } else if *key == 0 {
                 k = k + *val;
@@ -192,13 +190,13 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
                 n += 1;
             }
         }
-        lc.retain(|_, v| *v != BaseElement::ZERO);
+        lc.retain(|_, v| *v != FGL::ZERO);
         //println!("get_lc_type lc.size {}", lc.len());
 
         if n > 0 {
             return format!("{}", n);
         }
-        if k != BaseElement::ZERO {
+        if k != FGL::ZERO {
             return format!("k");
         }
         format!("0")
@@ -247,8 +245,8 @@ pub mod tests {
     use crate::compressor12::compressor12_setup::{plonk_setup_render, Options};
     use crate::r1cs2plonk::r1cs2plonk;
     //use plonky::bellman_ce::bn256::Bn256;
+    use plonky::field_gl::GL;
     use plonky::reader::load_r1cs;
-    use plonky::scalar_gl::GL;
 
     #[test]
     #[ignore]
