@@ -4,7 +4,7 @@ use core::ops::{Add, Div, Mul, Neg, Sub};
 #[derive(Eq)]
 pub struct Fr(pub FrRepr);
 /// This is the modulus m of the prime field
-const MODULUS: FrRepr = FrRepr([18446744069414584321u64]);
+pub const MODULUS: FrRepr = FrRepr([18446744069414584321u64]);
 /// The number of bits needed to represent the modulus.
 const MODULUS_BITS: u32 = 64u32;
 /// The number of bits that must be shaved from the beginning of
@@ -24,7 +24,7 @@ const GENERATOR: FrRepr = FrRepr([18446744039349813249u64]);
 /// 2^s * t = MODULUS - 1 with t odd
 const S: u32 = 32u32;
 /// 2^s root of unity computed by GENERATOR^t
-const ROOT_OF_UNITY: FrRepr = FrRepr([959634606461954525u64]);
+pub const ROOT_OF_UNITY: FrRepr = FrRepr([959634606461954525u64]);
 #[derive(Eq)]
 pub struct FrRepr(pub [u64; 1usize]);
 #[automatically_derived]
@@ -634,84 +634,72 @@ mod tests {
     use super::PrimeField;
     use crate::ff::*;
     use crate::rand::Rand;
-    use std::ops::{Add, Div, Mul, Sub};
+    use proptest::prelude::*;
+    use std::ops::{Add, Div, Mul, Neg, Sub};
 
-    #[test]
-    #[allow(clippy::eq_op)]
-    fn gl_check_add() {
-        let mut rng = ::rand::thread_rng();
-        for i in 0..320 {
-            let l = Fr::rand(&mut rng);
-            let added = l + l;
-            let double = l * Fr::from_str("2").unwrap();
-            assert_eq!(added, double);
+    proptest! {
+        #[test]
+        fn gl_check_add(a in any::<u64>()) {
+            let v = Fr::from_str(&a.to_string()).unwrap();
+            let added = v + v;
+            let double = v * Fr::from_str("2").unwrap();
+            prop_assert_eq!(added, double);
         }
-    }
 
-    #[test]
-    #[allow(clippy::eq_op)]
-    fn gl_check_sub() {
-        let mut rng = ::rand::thread_rng();
-        for i in 0..320 {
-            let l = Fr::rand(&mut rng);
-            let l2 = Fr::rand(&mut rng);
-            let lhs = l2 - l;
-            let rhs = lhs + l;
-            assert_eq!(l2, rhs);
+        #[test]
+        fn gl_check_sub(a in any::<u64>(), b in any::<u64>()) {
+            let v1 = Fr::from_str(&a.to_string()).unwrap();
+            let v2 = Fr::from_str(&b.to_string()).unwrap();
+            let lhs = v2 - v1;
+            let rhs = lhs + v1;
+            prop_assert_eq!(v2, rhs);
         }
-    }
 
-    #[test]
-    #[allow(clippy::eq_op)]
-    fn gl_check_mul() {
-        let mut rng = ::rand::thread_rng();
-        let l = Fr::rand(&mut rng);
-        let lhs = l * l * l;
-        let mut rhs = l.clone();
-        rhs.square();
-        assert_eq!(lhs, rhs * l);
-    }
-
-    #[test]
-    fn gl_check_inv() {
-        let mut rng = rand::thread_rng();
-        let x = Fr::rand(&mut rng);
-        let x_inversed = x.inverse().unwrap();
-        assert_eq!(x * x_inversed, Fr::one());
-    }
-
-    #[test]
-    fn gl_check_div() {
-        for i in 0..320 {
-            let mut rng = rand::thread_rng();
-            let x = Fr::rand(&mut rng);
-            let y = Fr::rand(&mut rng);
-            let z = x / y;
-            assert_eq!(z * y, x);
+        #[test]
+        fn gl_check_mul(a in any::<u64>()) {
+            let v = Fr::from_str(&a.to_string()).unwrap();
+            let lhs = v * v * v;
+            let mut rhs = v.clone();
+            rhs.square();
+            prop_assert_eq!(lhs, rhs * v);
         }
-    }
 
-    #[test]
-    fn gl_check_neg() {
-        let mut rng = rand::thread_rng();
-        let mut x = Fr::rand(&mut rng);
-        let y = x.clone();
-        x.negate();
-        assert_eq!(x + y, Fr::zero());
-    }
+        #[test]
+        fn gl_check_inv(a in any::<u64>()) {
+            let v = Fr::from_str(&a.to_string()).unwrap();
+            let v_inversed = v.inverse().unwrap();
+            prop_assert_eq!(v * v_inversed, Fr::one());
+        }
 
-    #[test]
-    fn gl_check_sqrt() {
-        let mut rng = rand::thread_rng();
-        let mut x = Fr::rand(&mut rng);
-        match x.sqrt() {
-            Some(mut sq_x) => {
-                sq_x.square();
-                assert_eq!(x, sq_x);
-            }
-            _ => {
-                assert_eq!(x.legendre(), crate::ff::LegendreSymbol::QuadraticNonResidue);
+        #[test]
+        fn gl_check_div(a in any::<u64>(), b in any::<u64>()){
+            let v1 = Fr::from_str(&a.to_string()).unwrap();
+            let v2 = Fr::from_str(&b.to_string()).unwrap();
+            let result = v1 / v2;
+            prop_assert_eq!(result * v2, v1);
+        }
+
+        #[test]
+        fn gl_check_neg(a in any::<u64>()){
+            let mut v1 = Fr::from_str(&a.to_string()).unwrap();
+            let v2 = v1.clone();
+            v1.negate();
+            prop_assert_eq!(v1+v2, Fr::zero());
+        }
+
+        #[test]
+        fn gl_check_sqrt(a in any::<u64>()) {
+            let v = Fr::from_str(&a.to_string()).unwrap();
+            match v.sqrt() {
+                Some(mut sq_v) => {
+                    sq_v.square();
+                    prop_assert_eq!(v, sq_v);
+                }
+                _ => {
+                    prop_assert_eq!(v.legendre(), crate::ff::LegendreSymbol::QuadraticNonResidue);
+                }
             }
         }
+
     }
 }

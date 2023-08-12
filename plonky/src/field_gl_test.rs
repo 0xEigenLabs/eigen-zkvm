@@ -6,8 +6,7 @@ mod tests {
     use crate::rand::Rand;
     use num_bigint::BigUint;
     use proptest::prelude::*;
-    const MODULUS: FrRepr = FrRepr([18446744069414584321u64]);
-    const ROOT_OF_UNITY: FrRepr = FrRepr([959634606461954525u64]);
+
     #[test]
     #[allow(clippy::eq_op)]
     fn add() {
@@ -23,7 +22,7 @@ mod tests {
         );
 
         // test overflow
-        let mut a: FrRepr = MODULUS.clone();
+        let mut a: FrRepr = crate::field_gl::MODULUS.clone();
         a.sub_noborrow(&FrRepr::from(1));
         let t = Fr::from_str(&a.0[0].to_string()).unwrap();
         assert_eq!(Fr::zero(), t + Fr::one());
@@ -44,7 +43,7 @@ mod tests {
         );
 
         // test underflow
-        let mut a = MODULUS.clone();
+        let mut a = crate::field_gl::MODULUS.clone();
         a.sub_noborrow(&FrRepr::from(2));
         let expected = Fr::from_str(&a.0[0].to_string()).unwrap();
         assert_eq!(
@@ -56,7 +55,7 @@ mod tests {
     #[test]
     fn neg() {
         assert_eq!(Fr::zero(), -Fr::zero());
-        let mut a = MODULUS.clone();
+        let mut a = crate::field_gl::MODULUS.clone();
         a.sub_noborrow(&FrRepr::from(1));
         let t = Fr::from_str(&a.0[0].to_string()).unwrap();
         assert_eq!(t, -Fr::one());
@@ -81,7 +80,7 @@ mod tests {
         );
 
         // test overflow
-        let mut a = MODULUS.clone();
+        let mut a = crate::field_gl::MODULUS.clone();
         a.sub_noborrow(&FrRepr::from(1));
         let t1 = Fr::from_str(&a.0[0].to_string()).unwrap();
         assert_eq!(Fr::one(), t1 * t1);
@@ -92,7 +91,7 @@ mod tests {
         let t3 = Fr::from_str(&a.0[0].to_string()).unwrap();
         assert_eq!(t3, t1 * Fr::from_str("4").unwrap());
 
-        a = MODULUS.clone();
+        a = crate::field_gl::MODULUS.clone();
         a.add_nocarry(&FrRepr::from(1));
         a.div2();
         let t = Fr::from_str(&a.0[0].to_string()).unwrap();
@@ -129,17 +128,17 @@ mod tests {
         let b = a as u64;
         let v = u64::MAX - b + 1;
         let e = Fr::from_str(&v.to_string()).unwrap();
-        assert_eq!(v % MODULUS.0[0], e.as_int());
+        assert_eq!(v % crate::field_gl::MODULUS.0[0], e.as_int());
 
         let e1 = Fr::zero();
-        let e2: Fr = Fr::from_str(&MODULUS.0[0].to_string()).unwrap();
+        let e2: Fr = Fr::from_str(&crate::field_gl::MODULUS.0[0].to_string()).unwrap();
         assert_eq!(e1.as_int(), e2.as_int());
     }
 
     #[test]
     fn equals() {
         let a = Fr::one();
-        let mut m: FrRepr = MODULUS.clone();
+        let mut m: FrRepr = crate::field_gl::MODULUS.clone();
         m.sub_noborrow(&FrRepr::from(1));
         let t = Fr::from_str(&m.0[0].to_string()).unwrap();
         let b = t * t;
@@ -156,7 +155,7 @@ mod tests {
     #[test]
     fn get_root_of_unity() {
         let root = Fr::root_of_unity();
-        assert_eq!(Fr(ROOT_OF_UNITY), root);
+        assert_eq!(Fr(crate::field_gl::ROOT_OF_UNITY), root);
         assert_eq!(Fr::one(), exp(root, 1u64 << 32));
     }
 
@@ -169,7 +168,7 @@ mod tests {
             let v1 = Fr::from_str(&a.to_string()).unwrap();
             let v2 = Fr::from_str(&b.to_string()).unwrap();
             let result = v1 + v2;
-            let m = MODULUS.clone().0[0];
+            let m = crate::field_gl::MODULUS.clone().0[0];
             let expected = (((a as u128) + (b as u128)) % (m as u128)) as u64;
             prop_assert_eq!(expected, result.as_int());
         }
@@ -179,7 +178,7 @@ mod tests {
             let v1 = Fr::from_str(&a.to_string()).unwrap();
             let v2 = Fr::from_str(&b.to_string()).unwrap();
             let result = v1 - v2;
-            let m = MODULUS.clone().0[0];
+            let m = crate::field_gl::MODULUS.clone().0[0];
             let a = a % m;
             let b = b % m;
             let expected = if a < b { m - b + a } else { a - b };
@@ -190,7 +189,7 @@ mod tests {
         #[test]
         fn neg_proptest(a in any::<u64>()) {
             let v = Fr::from_str(&a.to_string()).unwrap();
-            let m = MODULUS.clone().0[0];
+            let m = crate::field_gl::MODULUS.clone().0[0];
             let expected = m - (a % m);
 
             prop_assert_eq!(expected, (-v).as_int());
@@ -201,7 +200,7 @@ mod tests {
             let v1 = Fr::from_str(&a.to_string()).unwrap();
             let v2 = Fr::from_str(&b.to_string()).unwrap();
             let result = v1 * v2;
-            let m = MODULUS.clone().0[0];
+            let m = crate::field_gl::MODULUS.clone().0[0];
 
             let expected = ((a as u128) * (b as u128) % (m as u128))as u64;
             prop_assert_eq!(expected, result.as_int());
@@ -211,7 +210,7 @@ mod tests {
         fn double_proptest(x in any::<u64>()) {
             let mut v = Fr::from_str(&x.to_string()).unwrap();
             v.double();
-            let m = MODULUS.clone().0[0];
+            let m = crate::field_gl::MODULUS.clone().0[0];
 
             let expected = (((x as u128) * 2) % m as u128) as u64;
             prop_assert_eq!(v.as_int(), expected);
@@ -222,7 +221,7 @@ mod tests {
             let result = exp(Fr::from_str(&a.to_string()).unwrap(), b);
 
             let b = BigUint::from(b);
-            let _m = MODULUS.clone().0[0];
+            let _m = crate::field_gl::MODULUS.clone().0[0];
             let m = BigUint::from(_m);
             let expected = BigUint::from(a).modpow(&b, &m).to_u64_digits()[0];
             prop_assert_eq!(expected, result.as_int());
@@ -240,14 +239,14 @@ mod tests {
         #[test]
         fn element_as_int_proptest(a in any::<u64>()) {
             let e = Fr::from_str(&a.to_string()).unwrap();
-            let m = MODULUS.clone().0[0];
+            let m = crate::field_gl::MODULUS.clone().0[0];
             prop_assert_eq!(a % m, e.as_int());
         }
 
         #[test]
         fn from_u128_proptest(v in any::<u128>()) {
             let e = Fr::from_str(&v.to_string()).unwrap();
-            let m = MODULUS.clone().0[0];
+            let m = crate::field_gl::MODULUS.clone().0[0];
             assert_eq!((v % m as u128) as u64, e.as_int());
         }
     }
