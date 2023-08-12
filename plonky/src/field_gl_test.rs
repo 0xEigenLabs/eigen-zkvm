@@ -124,16 +124,16 @@ mod tests {
     }
 
     #[test]
-    fn element_as_u64() {
+    fn element_as_int() {
         let a = u32::MAX;
         let b = a as u64;
         let v = u64::MAX - b + 1;
         let e = Fr::from_str(&v.to_string()).unwrap();
-        assert_eq!(v % MODULUS.0[0], e.into_repr().0[0]);
+        assert_eq!(v % MODULUS.0[0], e.as_int());
 
         let e1 = Fr::zero();
         let e2: Fr = Fr::from_str(&MODULUS.0[0].to_string()).unwrap();
-        assert_eq!(e1.into_repr().0[0], e2.into_repr().0[0]);
+        assert_eq!(e1.as_int(), e2.as_int());
     }
 
     #[test]
@@ -146,7 +146,7 @@ mod tests {
 
         // elements are equal
         assert_eq!(a, b);
-        assert_eq!(a.into_repr().0[0], b.into_repr().0[0]);
+        assert_eq!(a.as_int(), b.as_int());
         // assert_eq!(a.to_bytes(), b.to_bytes());
     }
 
@@ -171,7 +171,7 @@ mod tests {
             let result = v1 + v2;
             let m = MODULUS.clone().0[0];
             let expected = (((a as u128) + (b as u128)) % (m as u128)) as u64;
-            prop_assert_eq!(expected, result.into_repr().0[0]);
+            prop_assert_eq!(expected, result.as_int());
         }
 
         #[test]
@@ -184,7 +184,7 @@ mod tests {
             let b = b % m;
             let expected = if a < b { m - b + a } else { a - b };
 
-            prop_assert_eq!(expected, result.into_repr().0[0]);
+            prop_assert_eq!(expected, result.as_int());
         }
 
         #[test]
@@ -193,7 +193,7 @@ mod tests {
             let m = MODULUS.clone().0[0];
             let expected = m - (a % m);
 
-            prop_assert_eq!(expected, (-v).into_repr().0[0]);
+            prop_assert_eq!(expected, (-v).as_int());
         }
 
         #[test]
@@ -204,17 +204,17 @@ mod tests {
             let m = MODULUS.clone().0[0];
             
             let expected = ((a as u128) * (b as u128) % (m as u128))as u64;
-            prop_assert_eq!(expected, result.into_repr().0[0]);
+            prop_assert_eq!(expected, result.as_int());
         }
 
         #[test]
         fn double_proptest(x in any::<u64>()) {
             let mut v = Fr::from_str(&x.to_string()).unwrap();
-            v.0.mul2();
+            v.double();
             let m = MODULUS.clone().0[0];
 
             let expected = (((x as u128) * 2) % m as u128) as u64;
-            prop_assert_eq!(expected, v.into_repr().0[0]);
+            prop_assert_eq!(v.as_int(), expected);
         }
 
         #[test]
@@ -225,7 +225,7 @@ mod tests {
             let _m = MODULUS.clone().0[0];
             let m = BigUint::from(_m);
             let expected = BigUint::from(a).modpow(&b, &m).to_u64_digits()[0];
-            prop_assert_eq!(expected, result.into_repr().0[0]);
+            prop_assert_eq!(expected, result.as_int());
         }
 
         #[test]
@@ -241,14 +241,14 @@ mod tests {
         fn element_as_int_proptest(a in any::<u64>()) {
             let e = Fr::from_str(&a.to_string()).unwrap();
             let m = MODULUS.clone().0[0];
-            prop_assert_eq!(a % m, e.into_repr().0[0]);
+            prop_assert_eq!(a % m, e.as_int());
         }
 
         #[test]
         fn from_u128_proptest(v in any::<u128>()) {
             let e = Fr::from_str(&v.to_string()).unwrap();
             let m = MODULUS.clone().0[0];
-            assert_eq!((v % m as u128) as u64, e.into_repr().0[0]);
+            assert_eq!((v % m as u128) as u64, e.as_int());
         }
     }
 }

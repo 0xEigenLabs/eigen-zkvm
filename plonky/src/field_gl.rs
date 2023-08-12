@@ -189,6 +189,9 @@ impl crate::ff::PrimeFieldRepr for FrRepr {
             *i |= last;
             last = tmp;
         }
+        if last > 0 {
+            self.0[0] = R2.0[0] + self.0[0];
+        }
     }
     #[inline(always)]
     fn shl(&mut self, mut n: u32) {
