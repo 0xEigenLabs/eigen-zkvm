@@ -7,11 +7,6 @@ pub struct Fr(pub FrRepr);
 pub const MODULUS: FrRepr = FrRepr([18446744069414584321u64]);
 /// The number of bits needed to represent the modulus.
 const MODULUS_BITS: u32 = 64u32;
-/// The number of bits that must be shaved from the beginning of
-/// the representation when randomly sampling.
-const REPR_SHAVE_BITS: u32 = 64u32;
-/// Precalculated mask to shave bits from the top limb in random sampling
-const TOP_LIMB_SHAVE_MASK: u64 = 0u64;
 /// 2^{limbs*64} mod m
 const R: FrRepr = FrRepr([18446744065119617025u64]);
 /// 2^{limbs*64*2} mod m
@@ -286,8 +281,7 @@ impl ::rand::Rand for Fr {
     /// Computes a uniformly random element using rejection sampling.
     fn rand<R: ::rand::Rng>(rng: &mut R) -> Self {
         loop {
-            let mut tmp = Fr(FrRepr::rand(rng));
-            // tmp.0.as_mut()[1usize] &= TOP_LIMB_SHAVE_MASK;
+            let tmp = Fr(FrRepr::rand(rng));
             if tmp.is_valid() {
                 return tmp;
             }
@@ -314,7 +308,7 @@ impl crate::ff::PrimeField for Fr {
         }
     }
     fn from_raw_repr(r: FrRepr) -> Result<Self, crate::ff::PrimeFieldDecodingError> {
-        let mut r = Fr(r);
+        let r = Fr(r);
         if r.is_valid() {
             Ok(r)
         } else {

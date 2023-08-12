@@ -277,7 +277,6 @@ mod tests {
     use crate::traits::MerkleTree;
     use ff::PrimeField;
     use plonky::field_gl::Fr as FGL;
-    use plonky::Field;
 
     #[test]
     fn test_merklehash() {

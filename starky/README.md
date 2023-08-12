@@ -97,7 +97,6 @@ Because the nExtBits reaches up to 24 so this step would be very slow. Consider 
 - [x] Parallel reduce for polynomial evaluation
 - [x] Recursive FRI
 - [x] Poseidon Hash on GPU/Multicore for BN128
-- [] Arithimization acceleration
 
 ## Profiling
 

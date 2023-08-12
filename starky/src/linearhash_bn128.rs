@@ -131,7 +131,6 @@ impl LinearHashBN128 {
 mod tests {
     use crate::linearhash_bn128::LinearHashBN128;
     use plonky::field_gl::Fr as FGL;
-    use plonky::Field;
 
     #[test]
     fn test_linearhash_matrix_bn128() {

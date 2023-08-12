@@ -5,7 +5,6 @@ use crate::poseidon_bn128::{load_constants, Constants};
 use crate::poseidon_bn128_opt::load_constants as load_constants_opt;
 use ff::*;
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 use std::collections::HashMap;
 
 lazy_static::lazy_static! {
