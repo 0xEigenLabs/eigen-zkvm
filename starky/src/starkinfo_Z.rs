@@ -325,7 +325,10 @@ impl StarkInfo {
                     &E::add(
                         &E::add(
                             &E::exp(ci_pols[i], None),
-                            &E::mul(&E::mul(&beta, &E::number(ks[i - 1].to_string())), &E::x()),
+                            &E::mul(
+                                &E::mul(&beta, &E::number(ks[i - 1].as_int().to_string())),
+                                &E::x(),
+                            ),
                         ),
                         &gamma,
                     ),

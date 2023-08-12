@@ -11,8 +11,9 @@ use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::{Node, Section};
 use crate::traits::{MerkleTree, Transcript};
 use crate::types::StarkStruct;
+use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 use std::collections::HashMap;
-use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
 //FIXME it doesn't make sense to ask for a mutable program
 pub fn stark_verify<M: MerkleTree, T: Transcript>(
@@ -37,7 +38,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
             .as_elements()
             .iter()
             .map(|e| vec![e.clone()])
-            .collect::<Vec<Vec<BaseElement>>>();
+            .collect::<Vec<Vec<FGL>>>();
         transcript.put(&b[..])?;
     }
 
@@ -58,7 +59,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
             .as_elements()
             .iter()
             .map(|e| vec![e.clone()])
-            .collect::<Vec<Vec<BaseElement>>>();
+            .collect::<Vec<Vec<FGL>>>();
         transcript.put(&b[..])?;
     }
 
@@ -87,7 +88,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
 
     let fri = FRI::new(stark_struct);
     let check_query =
-        |query: &Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)>, idx: usize| -> Result<Vec<F3G>> {
+        |query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>, idx: usize| -> Result<Vec<F3G>> {
             log::info!("Query: {}", idx);
             let tree = M::new();
             let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
@@ -140,7 +141,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
 fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
     let mut tmp: HashMap<usize, F3G> = HashMap::new();
 
-    let extract_val = |arr: &Vec<BaseElement>, pos: usize, dim: usize| -> F3G {
+    let extract_val = |arr: &Vec<FGL>, pos: usize, dim: usize| -> F3G {
         match dim {
             1 => F3G::from(arr[pos]),
             3 => {

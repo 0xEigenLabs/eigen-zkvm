@@ -14,10 +14,10 @@ use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{Polynom, Segment};
 use crate::traits::{MerkleTree, Transcript};
 use crate::types::{StarkStruct, PIL};
+use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 use rayon::prelude::*;
 use std::collections::HashMap;
-use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
 
 pub struct StarkContext {
     pub nbits: usize,
@@ -43,8 +43,8 @@ pub struct StarkContext {
     pub const_n: Vec<F3G>,
     pub const_2ns: Vec<F3G>,
     pub publics: Vec<F3G>,
-    pub xDivXSubXi: Vec<BaseElement>,
-    pub xDivXSubWXi: Vec<BaseElement>,
+    pub xDivXSubXi: Vec<FGL>,
+    pub xDivXSubWXi: Vec<FGL>,
     pub evals: Vec<F3G>,
 
     pub exps_n: Vec<F3G>,
@@ -52,15 +52,16 @@ pub struct StarkContext {
 
     pub Z: F3G,
     pub Zp: F3G,
-    pub tree1: Vec<BaseElement>,
-    pub tree2: Vec<BaseElement>,
-    pub tree3: Vec<BaseElement>,
-    pub tree4: Vec<BaseElement>,
-    pub consts: Vec<BaseElement>,
+    pub tree1: Vec<FGL>,
+    pub tree2: Vec<FGL>,
+    pub tree3: Vec<FGL>,
+    pub tree4: Vec<FGL>,
+    pub consts: Vec<FGL>,
 }
 
 impl std::fmt::Debug for StarkContext {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        /*
         writeln!(f, "n {}", self.N)?;
         writeln!(f, "nBits {}", self.nbits)?;
         writeln!(f, "nBitsExt {}", self.nbits_ext)?;
@@ -84,6 +85,7 @@ impl std::fmt::Debug for StarkContext {
         writeln!(f, "q_2ns {}", pretty_print_array(&self.q_2ns))?;
         writeln!(f, "f_2ns {}", pretty_print_array(&self.f_2ns))?;
         writeln!(f, "tmp {}", pretty_print_array(&self.tmp))?;
+        */
         Ok(())
     }
 }
@@ -134,7 +136,7 @@ impl Default for StarkContext {
 }
 
 impl StarkContext {
-    pub fn get_mut_base(&mut self, section: &str) -> &mut Vec<BaseElement> {
+    pub fn get_mut_base(&mut self, section: &str) -> &mut Vec<FGL> {
         match section {
             "xDivXSubXi" => &mut self.xDivXSubXi,
             "xDivXSubWXi" => &mut self.xDivXSubWXi,
@@ -263,7 +265,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                 .as_elements()
                 .iter()
                 .map(|e| vec![e.clone()])
-                .collect::<Vec<Vec<BaseElement>>>();
+                .collect::<Vec<Vec<FGL>>>();
             transcript.put(&b[..])?;
         }
 
@@ -402,8 +404,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         let mut LEv = vec![F3G::ZERO; ctx.N];
         let mut LpEv = vec![F3G::ZERO; ctx.N];
-        LEv[0] = F3G::from(BaseElement::from(1u64));
-        LpEv[0] = F3G::from(BaseElement::from(1u64));
+        LEv[0] = F3G::from(FGL::from(1u64));
+        LpEv[0] = F3G::from(FGL::from(1u64));
 
         let xis = ctx.challenge[7] / SHIFT.clone();
         let wxis = (ctx.challenge[7] * MG.0[ctx.nbits]) / SHIFT.clone();
@@ -456,7 +458,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                 .as_elements()
                 .iter()
                 .map(|e| vec![e.clone()])
-                .collect::<Vec<Vec<BaseElement>>>();
+                .collect::<Vec<Vec<FGL>>>();
             transcript.put(&b)?;
         }
 
@@ -472,8 +474,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         let extend_size = N << extend_bits;
 
-        ctx.xDivXSubXi = vec![BaseElement::ZERO; extend_size * 3];
-        ctx.xDivXSubWXi = vec![BaseElement::ZERO; extend_size * 3];
+        ctx.xDivXSubXi = vec![FGL::ZERO; extend_size * 3];
+        ctx.xDivXSubWXi = vec![FGL::ZERO; extend_size * 3];
         let mut tmp_den = vec![F3G::ZERO; extend_size];
         let mut tmp_denw = vec![F3G::ZERO; extend_size];
 
@@ -520,7 +522,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             );
         });
 
-        let query_pol = |idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)> {
+        let query_pol = |idx: usize| -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)> {
             vec![
                 tree1.get_group_proof(idx).unwrap(),
                 tree2.get_group_proof(idx).unwrap(),
@@ -690,7 +692,7 @@ pub fn extend_and_merkelize<M: MerkleTree>(
     let mut result = vec![F3G::ZERO; (1 << nBitsExt) * n_pols];
     let p = ctx.get_mut(section_name);
     interpolate(p, n_pols, nBits, &mut result, nBitsExt);
-    let mut p_be = vec![BaseElement::ZERO; result.len()];
+    let mut p_be = vec![FGL::ZERO; result.len()];
     p_be.par_iter_mut()
         .zip(result)
         .for_each(|(be_out, f3g_in)| {
@@ -709,7 +711,7 @@ pub fn merkelize<M: MerkleTree>(
     let nBitsExt = ctx.nbits_ext;
     let n_pols = starkinfo.map_sectionsN.get(section_name);
     let p = ctx.get_mut(section_name);
-    let mut p_be = vec![BaseElement::ZERO; p.len()];
+    let mut p_be = vec![FGL::ZERO; p.len()];
     p_be.par_iter_mut().zip(p).for_each(|(be_out, f3g_in)| {
         *be_out = f3g_in.to_be();
     });
@@ -979,7 +981,7 @@ pub fn calculate_exps_parallel(
             if si.name.as_str() == "xDivXSubXi" || si.name.as_str() == "xDivXSubWXi" {
                 let tmp = tmp_ctx.get_mut_base(si.name.as_str());
                 // for GL(2)
-                *tmp = vec![BaseElement::ZERO; (cur_n + next) * si.width];
+                *tmp = vec![FGL::ZERO; (cur_n + next) * si.width];
                 let ori_sec = ctx.get_mut_base(si.name.as_str());
                 for j in 0..(cur_n * si.width) {
                     tmp[j] = ori_sec[i * si.width + j]

@@ -6,10 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-winter-utils = { version = "0.4", package = "winter-utils", default-features = false, features = ["concurrent"] }
-rand-utils = { version = "0.4", package = "winter-rand-utils" }
-winter-math = { version = "0.4" , features = ["concurrent"] }
-
 num-bigint = "0.4"
 num-traits = "0.2"
 num-integer = "0.1"

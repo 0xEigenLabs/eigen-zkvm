@@ -6,12 +6,12 @@ use crate::polsarray;
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
 use crate::types::PIL;
 use plonky::circom_circuit::R1CS;
+use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
+use plonky::Field;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
-use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
 
 pub struct Options {
     pub force_bits: usize,
@@ -19,26 +19,26 @@ pub struct Options {
 
 #[derive(Default, Debug)]
 pub struct Compressor {
-    pub Qm: Vec<BaseElement>,
-    pub Ql: Vec<BaseElement>,
-    pub Qr: Vec<BaseElement>,
-    pub Qo: Vec<BaseElement>,
-    pub Qk: Vec<BaseElement>,
-    pub QCMul: Vec<BaseElement>,
-    pub QMDS: Vec<BaseElement>,
-    pub S: Vec<Vec<BaseElement>>,
+    pub Qm: Vec<FGL>,
+    pub Ql: Vec<FGL>,
+    pub Qr: Vec<FGL>,
+    pub Qo: Vec<FGL>,
+    pub Qk: Vec<FGL>,
+    pub QCMul: Vec<FGL>,
+    pub QMDS: Vec<FGL>,
+    pub S: Vec<Vec<FGL>>,
 }
 
 impl Compressor {
     pub fn new(sz: usize) -> Self {
         Compressor {
-            Qm: vec![BaseElement::ZERO; sz],
-            Ql: vec![BaseElement::ZERO; sz],
-            Qr: vec![BaseElement::ZERO; sz],
-            Qo: vec![BaseElement::ZERO; sz],
-            Qk: vec![BaseElement::ZERO; sz],
-            QCMul: vec![BaseElement::ZERO; sz],
-            QMDS: vec![BaseElement::ZERO; sz],
+            Qm: vec![FGL::ZERO; sz],
+            Ql: vec![FGL::ZERO; sz],
+            Qr: vec![FGL::ZERO; sz],
+            Qo: vec![FGL::ZERO; sz],
+            Qk: vec![FGL::ZERO; sz],
+            QCMul: vec![FGL::ZERO; sz],
+            QMDS: vec![FGL::ZERO; sz],
             S: vec![Vec::new(); sz],
         }
     }
@@ -242,8 +242,8 @@ pub fn plonk_setup_fix_compressor(
             compressor.Qr[r] = c.5.clone();
             compressor.Qo[r] = c.6.clone();
             compressor.Qk[r] = c.7.clone();
-            compressor.QCMul[r] = BaseElement::ZERO;
-            compressor.QMDS[r] = BaseElement::ZERO;
+            compressor.QCMul[r] = FGL::ZERO;
+            compressor.QMDS[r] = FGL::ZERO;
             s_map[0][r] = c.0 as u64;
             s_map[1][r] = c.1 as u64;
             s_map[2][r] = c.2 as u64;
@@ -276,20 +276,20 @@ pub fn plonk_setup_fix_compressor(
                 s_map[i][r] = cgu.signals[i];
                 s_map[i][r + 1] = cgu.signals[i + 12];
             }
-            compressor.Qm[r] = BaseElement::ZERO;
-            compressor.Ql[r] = BaseElement::ZERO;
-            compressor.Qr[r] = BaseElement::ZERO;
-            compressor.Qo[r] = BaseElement::ZERO;
-            compressor.Qk[r] = BaseElement::ZERO;
-            compressor.QCMul[r] = BaseElement::ZERO;
-            compressor.QMDS[r] = BaseElement::ONE;
-            compressor.Qm[r + 1] = BaseElement::ZERO;
-            compressor.Ql[r + 1] = BaseElement::ZERO;
-            compressor.Qr[r + 1] = BaseElement::ZERO;
-            compressor.Qo[r + 1] = BaseElement::ZERO;
-            compressor.Qk[r + 1] = BaseElement::ZERO;
-            compressor.QCMul[r + 1] = BaseElement::ZERO;
-            compressor.QMDS[r + 1] = BaseElement::ZERO;
+            compressor.Qm[r] = FGL::ZERO;
+            compressor.Ql[r] = FGL::ZERO;
+            compressor.Qr[r] = FGL::ZERO;
+            compressor.Qo[r] = FGL::ZERO;
+            compressor.Qk[r] = FGL::ZERO;
+            compressor.QCMul[r] = FGL::ZERO;
+            compressor.QMDS[r] = FGL::ONE;
+            compressor.Qm[r + 1] = FGL::ZERO;
+            compressor.Ql[r + 1] = FGL::ZERO;
+            compressor.Qr[r + 1] = FGL::ZERO;
+            compressor.Qo[r + 1] = FGL::ZERO;
+            compressor.Qk[r + 1] = FGL::ZERO;
+            compressor.QCMul[r + 1] = FGL::ZERO;
+            compressor.QMDS[r + 1] = FGL::ZERO;
 
             r += 2;
         } else if cgu.id == aux.custom_gates_info.cmul_id {
@@ -299,13 +299,13 @@ pub fn plonk_setup_fix_compressor(
             for i in 9..12 {
                 s_map[i][r] = 0;
             }
-            compressor.Qm[r] = BaseElement::ZERO;
-            compressor.Ql[r] = BaseElement::ZERO;
-            compressor.Qr[r] = BaseElement::ZERO;
-            compressor.Qo[r] = BaseElement::ZERO;
-            compressor.Qk[r] = BaseElement::ZERO;
-            compressor.QCMul[r] = BaseElement::ONE;
-            compressor.QMDS[r] = BaseElement::ZERO;
+            compressor.Qm[r] = FGL::ZERO;
+            compressor.Ql[r] = FGL::ZERO;
+            compressor.Qr[r] = FGL::ZERO;
+            compressor.Qo[r] = FGL::ZERO;
+            compressor.Qk[r] = FGL::ZERO;
+            compressor.QCMul[r] = FGL::ONE;
+            compressor.QMDS[r] = FGL::ZERO;
 
             r += 1;
         }
@@ -313,10 +313,10 @@ pub fn plonk_setup_fix_compressor(
 
     // Calculate S Polynomials
     let ks = crate::helper::get_ks(11);
-    let mut w = BaseElement::ONE;
+    let mut w = FGL::ONE;
     compressor.S = vec![Vec::new(); 12];
     for i in 0..12 {
-        compressor.S[i] = vec![BaseElement::ZERO; aux.plonkinfo.N];
+        compressor.S[i] = vec![FGL::ZERO; aux.plonkinfo.N];
     }
     for i in 0..aux.plonkinfo.N {
         if (i % 10000) == 0 {
@@ -361,13 +361,13 @@ pub fn plonk_setup_fix_compressor(
         if (r % 100000) == 0 {
             println!("Empty gates... {}/{}", r, aux.plonkinfo.N);
         }
-        compressor.Qm[r] = BaseElement::ZERO;
-        compressor.Ql[r] = BaseElement::ZERO;
-        compressor.Qr[r] = BaseElement::ZERO;
-        compressor.Qo[r] = BaseElement::ZERO;
-        compressor.Qk[r] = BaseElement::ZERO;
-        compressor.QCMul[r] = BaseElement::ZERO;
-        compressor.QMDS[r] = BaseElement::ZERO;
+        compressor.Qm[r] = FGL::ZERO;
+        compressor.Ql[r] = FGL::ZERO;
+        compressor.Qr[r] = FGL::ZERO;
+        compressor.Qo[r] = FGL::ZERO;
+        compressor.Qk[r] = FGL::ZERO;
+        compressor.QCMul[r] = FGL::ZERO;
+        compressor.QMDS[r] = FGL::ZERO;
         r += 1;
     }
 
@@ -375,9 +375,9 @@ pub fn plonk_setup_fix_compressor(
     for i in 0..n_public_rows {
         let L = const_pols.get_mut(&"Global".to_string(), &format!("L{}", i + 1));
         for i in 0..aux.plonkinfo.N {
-            L[i] = BaseElement::ZERO;
+            L[i] = FGL::ZERO;
         }
-        L[i] = BaseElement::ONE;
+        L[i] = FGL::ONE;
     }
 
     (

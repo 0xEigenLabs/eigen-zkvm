@@ -2,7 +2,7 @@
 use crate::constant::MG;
 use crate::f3g::F3G;
 use crate::helper::log2_any;
-use winter_math::FieldElement;
+use plonky::Field;
 
 pub struct FFT {
     pub roots: Vec<Vec<F3G>>,

@@ -4,8 +4,9 @@ use crate::stark_gen::StarkContext;
 use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::Node;
 use crate::starkinfo_codegen::Section;
+use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 use std::fmt;
-use winter_math::{FieldElement, StarkField};
 
 #[derive(Clone, Debug)]
 pub enum Ops {

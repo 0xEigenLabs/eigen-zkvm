@@ -3,9 +3,10 @@ use crate::field_bn128::Fr;
 use ff::*;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
+use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 use std::fmt::Write;
 use std::ops::Mul;
-use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 
 ///exports.getKs = function getKs(Fr, n) {
 ///    const ks = [Fr.k];
@@ -14,9 +15,9 @@ use winter_math::{fields::f64::BaseElement, FieldElement, StarkField};
 ///    }
 ///    return ks;
 ///}
-pub fn get_ks(n: usize) -> Vec<BaseElement> {
-    let mut ks: Vec<BaseElement> = vec![BaseElement::ZERO; n];
-    ks[0] = BaseElement::from(12275445934081160404u64);
+pub fn get_ks(n: usize) -> Vec<FGL> {
+    let mut ks: Vec<FGL> = vec![FGL::ZERO; n];
+    ks[0] = FGL::from(12275445934081160404u64);
     for i in 1..n {
         ks[i] = ks[i - 1].mul(ks[0])
     }
@@ -59,10 +60,10 @@ pub fn fr_to_biguint(f: &Fr) -> BigUint {
 }
 
 #[inline(always)]
-pub fn biguint_to_be(f: &BigUint) -> BaseElement {
+pub fn biguint_to_be(f: &BigUint) -> FGL {
     let module = BigUint::from(0xFFFFFFFF00000001u64);
     let f = f % module;
-    BaseElement::from(f.to_u64().unwrap())
+    FGL::from(f.to_u64().unwrap())
 }
 
 #[inline(always)]
@@ -70,7 +71,7 @@ pub fn biguint_to_fr(f: &BigUint) -> Fr {
     Fr::from_str(&f.to_string()).unwrap()
 }
 
-pub fn pretty_print_array<T: FieldElement + StarkField>(cols: &Vec<T>) -> String {
+pub fn pretty_print_array<T: Field>(cols: &Vec<T>) -> String {
     let mut msg = String::new();
     writeln!(&mut msg, "array size: {}", cols.len()).unwrap();
     writeln!(&mut msg, "[").unwrap();

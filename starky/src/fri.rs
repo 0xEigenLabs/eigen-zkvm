@@ -7,8 +7,8 @@ use crate::helper::log2_any;
 use crate::polutils::{eval_pol, pol_mul_axi};
 use crate::traits::{MerkleTree, Transcript};
 use crate::types::{StarkStruct, Step};
-use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
+use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 
 #[derive(Debug)]
 pub struct FRI {
@@ -20,7 +20,7 @@ pub struct FRI {
 
 #[derive(Debug, Default, Clone)]
 pub struct Query<MB: Clone + std::default::Default> {
-    pub pol_queries: Vec<Vec<(Vec<BaseElement>, Vec<Vec<MB>>)>>,
+    pub pol_queries: Vec<Vec<(Vec<FGL>, Vec<Vec<MB>>)>>,
     pub root: ElementDigest,
 }
 
@@ -53,7 +53,7 @@ impl FRI {
         &mut self,
         transcript: &mut T,
         pol: &Vec<F3G>,
-        mut query_pol: impl FnMut(usize) -> Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)>,
+        mut query_pol: impl FnMut(usize) -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
     ) -> Result<FRIProof<M>> {
         let mut pol = pol.clone();
         let mut standard_fft = FFT::new();
@@ -128,7 +128,7 @@ impl FRI {
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
         /*
         let query_pol_fn =
-            |si: usize, idx: usize| -> Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)> {
+            |si: usize, idx: usize| -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)> {
                 log::debug!("query_pol_fn: si:{}, idx:{}", si, idx);
                 vec![tree[si].get_group_proof(idx).unwrap()]
             };
@@ -157,10 +157,7 @@ impl FRI {
         &self,
         transcript: &mut T,
         proof: &FRIProof<M>,
-        mut check_query: impl FnMut(
-            &Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)>,
-            usize,
-        ) -> Result<Vec<F3G>>,
+        mut check_query: impl FnMut(&Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>, usize) -> Result<Vec<F3G>>,
     ) -> Result<bool> {
         let tree = M::new();
         let mut standard_fft = FFT::new();
@@ -173,7 +170,7 @@ impl FRI {
                 //let group_size = (1 << self.steps[si].nBits) / n_groups;
                 transcript.put(&[proof.queries[si + 1].root.as_elements().to_vec()])?;
             } else {
-                let mut pp: Vec<Vec<BaseElement>> = vec![];
+                let mut pp: Vec<Vec<FGL>> = vec![];
                 for e in proof.last.iter() {
                     let elems = e.as_elements();
                     pp.push(vec![elems[0]]);
@@ -191,7 +188,7 @@ impl FRI {
         let mut shift = SHIFT.clone();
 
         let check_query_fn = |si: usize,
-                              query: &Vec<(Vec<BaseElement>, Vec<Vec<M::BaseField>>)>,
+                              query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
                               idx: usize|
          -> Result<Vec<F3G>> {
             let res =
@@ -272,11 +269,11 @@ impl FRI {
     }
 }
 
-fn get_transposed_buffer(pol: &Vec<F3G>, transpose_bits: usize) -> Vec<BaseElement> {
+fn get_transposed_buffer(pol: &Vec<F3G>, transpose_bits: usize) -> Vec<FGL> {
     let n = pol.len();
     let w = 1 << transpose_bits;
     let h = n / w;
-    let mut res: Vec<BaseElement> = vec![BaseElement::ZERO; n * 3];
+    let mut res: Vec<FGL> = vec![FGL::ZERO; n * 3];
     for i in 0..w {
         for j in 0..h {
             let di = i * h * 3 + j * 3;
@@ -291,11 +288,11 @@ fn get_transposed_buffer(pol: &Vec<F3G>, transpose_bits: usize) -> Vec<BaseEleme
     res
 }
 
-fn get3(arr: &Vec<BaseElement>, idx: usize) -> F3G {
+fn get3(arr: &Vec<FGL>, idx: usize) -> F3G {
     F3G::new(arr[idx * 3], arr[idx * 3 + 1], arr[idx * 3 + 2])
 }
 
-fn split3(arr: &Vec<BaseElement>) -> Vec<F3G> {
+fn split3(arr: &Vec<FGL>) -> Vec<F3G> {
     let mut res: Vec<F3G> = Vec::new();
     for i in (0..arr.len()).step_by(3) {
         res.push(F3G::new(arr[i], arr[i + 1], arr[i + 2]));
@@ -303,11 +300,13 @@ fn split3(arr: &Vec<BaseElement>) -> Vec<F3G> {
     return res;
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use crate::f3g::F3G;
     use crate::polutils::eval_pol;
     use winter_math::polynom;
+
 
     #[test]
     fn test_eval_pol() {
@@ -321,3 +320,4 @@ mod tests {
         assert_eq!(eval_pol(&p, &xi), expected);
     }
 }
+*/

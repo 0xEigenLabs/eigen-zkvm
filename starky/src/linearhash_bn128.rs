@@ -6,8 +6,7 @@ use crate::ElementDigest;
 use ff::*;
 //use rayon::prelude::*;
 use crate::constant::{OFFSET_2_128, OFFSET_2_64};
-use winter_math::fields::f64::BaseElement;
-use winter_math::{FieldElement, StarkField};
+use plonky::field_gl::Fr as FGL;
 
 #[derive(Default)]
 pub struct LinearHashBN128 {
@@ -19,7 +18,7 @@ impl LinearHashBN128 {
         LinearHashBN128 { h: Poseidon::new() }
     }
 
-    pub fn hash_element_matrix(&self, columns: &Vec<Vec<BaseElement>>) -> Result<Fr> {
+    pub fn hash_element_matrix(&self, columns: &Vec<Vec<FGL>>) -> Result<Fr> {
         let mut st = Fr::zero();
         let mut vals3: Vec<Fr> = vec![];
 
@@ -68,7 +67,7 @@ impl LinearHashBN128 {
 
     /// convert to BN128 in montgomery
     #[inline(always)]
-    pub fn to_bn128_mont(st64: [BaseElement; 4]) -> [BaseElement; 4] {
+    pub fn to_bn128_mont(st64: [FGL; 4]) -> [FGL; 4] {
         let bn: Fr = ElementDigest::new(st64).into();
         let bn_mont = match Fr::from_repr(bn.into_raw_repr()) {
             Ok(x) => x,
@@ -96,8 +95,8 @@ impl LinearHashBN128 {
         Ok(ElementDigest::from(&digest))
     }
 
-    pub fn hash_element_array(&self, vals: &[BaseElement]) -> Result<ElementDigest> {
-        let mut st64 = [BaseElement::ZERO; 4];
+    pub fn hash_element_array(&self, vals: &[FGL]) -> Result<ElementDigest> {
+        let mut st64 = [FGL::ZERO; 4];
         let mut digest: Fr = Fr::zero();
         if vals.len() <= 4 {
             for (i, v) in vals.iter().enumerate() {
@@ -113,7 +112,7 @@ impl LinearHashBN128 {
             .zip(tmp_buf.iter_mut())
             .for_each(|(ein, eout)| {
                 // padding zero to 4
-                let mut ein_4 = [BaseElement::ZERO; 4];
+                let mut ein_4 = [FGL::ZERO; 4];
                 ein_4[..ein.len()].copy_from_slice(ein);
                 *eout = ElementDigest::to_bn128(&ein_4);
             });
@@ -131,18 +130,19 @@ impl LinearHashBN128 {
 #[cfg(test)]
 mod tests {
     use crate::linearhash_bn128::LinearHashBN128;
-    use winter_math::fields::f64::BaseElement;
+    use plonky::field_gl::Fr as FGL;
+    use plonky::Field;
 
     #[test]
     fn test_linearhash_matrix_bn128() {
         let inputs: Vec<_> = (0..100).collect::<Vec<u64>>();
-        let inputs: Vec<Vec<BaseElement>> = inputs
+        let inputs: Vec<Vec<FGL>> = inputs
             .iter()
             .map(|e: &u64| {
                 vec![
-                    BaseElement::from(e.clone()),
-                    BaseElement::from(e * 1000),
-                    BaseElement::from(e * 1000000),
+                    FGL::from(e.clone()),
+                    FGL::from(e * 1000),
+                    FGL::from(e * 1000000),
                 ]
             })
             .collect();
@@ -157,28 +157,28 @@ mod tests {
     #[test]
     fn test_linearhash_corner_case() {
         let input = vec![
-            BaseElement::from(6188675464075253840u64),
-            BaseElement::from(2608530331018891925u64),
+            FGL::from(6188675464075253840u64),
+            FGL::from(2608530331018891925u64),
         ];
 
         let lh = LinearHashBN128::new();
         let result = lh.hash_element_array(&input).unwrap();
         log::debug!("out {}", result);
-        assert_eq!(result.0[0], BaseElement::from(15714769047018385385u64));
-        assert_eq!(result.0[1], BaseElement::from(14080511166848616671u64));
-        assert_eq!(result.0[2], BaseElement::from(11411897157942048316u64));
-        assert_eq!(result.0[3], BaseElement::from(1802287360671936077u64));
+        assert_eq!(result.0[0], FGL::from(15714769047018385385u64));
+        assert_eq!(result.0[1], FGL::from(14080511166848616671u64));
+        assert_eq!(result.0[2], FGL::from(11411897157942048316u64));
+        assert_eq!(result.0[3], FGL::from(1802287360671936077u64));
 
         let input = vec![
-            BaseElement::from(18440682777423237490u64),
-            BaseElement::from(1156220815552880681u64),
+            FGL::from(18440682777423237490u64),
+            FGL::from(1156220815552880681u64),
         ];
 
         let result = lh.hash_element_array(&input).unwrap();
         log::debug!("out {}", result);
-        assert_eq!(result.0[0], BaseElement::from(12850950522295690944u64));
-        assert_eq!(result.0[1], BaseElement::from(15045028186447136619u64));
-        assert_eq!(result.0[2], BaseElement::from(11701297961637547631u64));
-        assert_eq!(result.0[3], BaseElement::from(875058675367281598u64));
+        assert_eq!(result.0[0], FGL::from(12850950522295690944u64));
+        assert_eq!(result.0[1], FGL::from(15045028186447136619u64));
+        assert_eq!(result.0[2], FGL::from(11701297961637547631u64));
+        assert_eq!(result.0[3], FGL::from(875058675367281598u64));
     }
 }

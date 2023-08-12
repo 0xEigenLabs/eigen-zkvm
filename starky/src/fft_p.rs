@@ -4,8 +4,8 @@ use crate::f3g::F3G;
 use crate::fft_worker::{fft_block, interpolate_prepare_block};
 use crate::helper::log2_any;
 use core::cmp::min;
+use plonky::Field;
 use rayon::prelude::*;
-use winter_math::FieldElement;
 
 pub fn BR(x: usize, domain_pow: usize) -> usize {
     assert_eq!(domain_pow <= 32, true);
@@ -323,7 +323,7 @@ mod tests {
     use crate::fft::FFT;
     use crate::fft_p::{fft, ifft, interpolate, BR};
     use crate::polutils::extend_pol;
-    use winter_math::FieldElement;
+    use plonky::Field;
 
     #[test]
     fn test_BR() {

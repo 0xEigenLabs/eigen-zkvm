@@ -7,8 +7,9 @@ use crate::starkinfo::{self, Program, StarkInfo};
 use crate::traits::MerkleTree;
 use crate::types::{StarkStruct, PIL};
 use crate::ElementDigest;
+use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 use rayon::prelude::*;
-use winter_math::{fields::f64::BaseElement, FieldElement};
 
 #[derive(Default)]
 pub struct StarkSetup<M: MerkleTree> {
@@ -31,7 +32,7 @@ impl<M: MerkleTree> StarkSetup<M> {
         let nBitsExt = stark_struct.nBitsExt;
         assert_eq!(const_pol.nPols, pil.nConstants);
 
-        let mut p: Vec<Vec<BaseElement>> = vec![Vec::new(); const_pol.nPols];
+        let mut p: Vec<Vec<FGL>> = vec![Vec::new(); const_pol.nPols];
         for i in 0..const_pol.nPols {
             for j in 0..const_pol.n {
                 p[i].push(const_pol.array[i][j])
@@ -41,7 +42,7 @@ impl<M: MerkleTree> StarkSetup<M> {
         let const_buff = const_pol.write_buff();
         //extend and merkelize
         let mut const_pols_array_e = vec![F3G::ZERO; (1 << nBitsExt) * pil.nConstants];
-        let mut const_pols_array_e_be = vec![BaseElement::ZERO; (1 << nBitsExt) * pil.nConstants];
+        let mut const_pols_array_e_be = vec![FGL::ZERO; (1 << nBitsExt) * pil.nConstants];
 
         interpolate(
             &const_buff,
@@ -86,7 +87,8 @@ pub mod tests {
     use crate::merklehash_bn128::MerkleTreeBN128;
     use crate::ElementDigest;
     use ff::*;
-    use winter_math::fields::f64::BaseElement;
+    use plonky::field_gl::Fr as FGL;
+    use plonky::Field;
 
     #[test]
     fn test_stark_setup() {
@@ -114,10 +116,10 @@ pub mod tests {
         let setup = StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct).unwrap();
 
         let expect_root = ElementDigest::from([
-            BaseElement::from(15302509084042343527u64),
-            BaseElement::from(985081440042889555u64),
-            BaseElement::from(14692153289195851822u64),
-            BaseElement::from(1611894784155222896u64),
+            FGL::from(15302509084042343527u64),
+            FGL::from(985081440042889555u64),
+            FGL::from(14692153289195851822u64),
+            FGL::from(1611894784155222896u64),
         ]);
         assert_eq!(expect_root, setup.const_root);
     }

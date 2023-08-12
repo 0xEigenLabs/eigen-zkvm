@@ -8,14 +8,13 @@ use crate::linearhash_bn128::LinearHashBN128;
 use crate::poseidon_bn128_opt::Poseidon;
 use crate::traits::MerkleTree;
 use ff::Field;
+use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use std::time::Instant;
-use winter_math::fields::f64::BaseElement;
-use winter_math::FieldElement;
 
 #[derive(Default)]
 pub struct MerkleTreeBN128 {
-    pub elements: Vec<BaseElement>,
+    pub elements: Vec<FGL>,
     pub width: usize,
     pub height: usize,
     pub nodes: Vec<ElementDigest>,
@@ -138,7 +137,7 @@ impl MerkleTreeBN128 {
         &self,
         mp: &Vec<Vec<Fr>>,
         idx: usize,
-        vals: &Vec<BaseElement>,
+        vals: &Vec<FGL>,
     ) -> Result<ElementDigest> {
         let h = self.h.hash_element_matrix(&vec![vals.to_vec()])?;
         self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::from(&h), 0)
@@ -172,7 +171,7 @@ impl MerkleTree for MerkleTreeBN128 {
             });
     }
 
-    fn merkelize(&mut self, buff: Vec<BaseElement>, width: usize, height: usize) -> Result<()> {
+    fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()> {
         let max_workers = get_max_workers();
 
         let mut n_per_thread_f = (height - 1) / max_workers + 1;
@@ -231,19 +230,19 @@ impl MerkleTree for MerkleTreeBN128 {
         Ok(())
     }
 
-    fn get_element(&self, idx: usize, sub_idx: usize) -> BaseElement {
+    fn get_element(&self, idx: usize, sub_idx: usize) -> FGL {
         self.elements[self.width * idx + sub_idx]
     }
 
     // the path always returns 2-dim array likes [[x..14..x], ...]
-    fn get_group_proof(&self, idx: usize) -> Result<(Vec<BaseElement>, Vec<Vec<Fr>>)> {
+    fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<Fr>>)> {
         if idx >= self.height {
             return Err(EigenError::MerkleTreeError(
                 "access invalid node".to_string(),
             ));
         }
 
-        let mut v = vec![BaseElement::ZERO; self.width];
+        let mut v = vec![FGL::ZERO; self.width];
         for i in 0..self.width {
             v[i] = self.get_element(idx, i);
         }
@@ -260,7 +259,7 @@ impl MerkleTree for MerkleTreeBN128 {
         root: &ElementDigest,
         mp: &Vec<Vec<Fr>>,
         idx: usize,
-        group_elements: &Vec<BaseElement>,
+        group_elements: &Vec<FGL>,
     ) -> Result<bool> {
         let c_root = self.calculate_root_from_group_proof(mp, idx, group_elements)?;
         Ok(self.eq_root(root, &c_root))
@@ -277,8 +276,8 @@ mod tests {
     use crate::merklehash_bn128::MerkleTreeBN128;
     use crate::traits::MerkleTree;
     use ff::PrimeField;
-    use winter_math::fields::f64::BaseElement;
-    use winter_math::FieldElement;
+    use plonky::field_gl::Fr as FGL;
+    use plonky::Field;
 
     #[test]
     fn test_merklehash() {
@@ -287,10 +286,10 @@ mod tests {
         let idx = 3;
         let n_pols = 9;
 
-        let mut cols: Vec<BaseElement> = vec![BaseElement::ZERO; n_pols * n];
+        let mut cols: Vec<FGL> = vec![FGL::ZERO; n_pols * n];
         for i in 0..n {
             for j in 0..n_pols {
-                cols[i * n_pols + j] = BaseElement::from((i + j * 1000) as u64);
+                cols[i * n_pols + j] = FGL::from((i + j * 1000) as u64);
             }
         }
 
@@ -315,10 +314,10 @@ mod tests {
         let n = 256;
         let idx = 3;
         let n_pols = 9;
-        let mut pols: Vec<BaseElement> = vec![BaseElement::ZERO; n_pols * n];
+        let mut pols: Vec<FGL> = vec![FGL::ZERO; n_pols * n];
         for i in 0..n {
             for j in 0..n_pols {
-                pols[i * n_pols + j] = BaseElement::from((i + j * 1000) as u32);
+                pols[i * n_pols + j] = FGL::from((i + j * 1000) as u64);
             }
         }
 
@@ -338,10 +337,10 @@ mod tests {
         let n = 33;
         let idx = 32;
         let n_pols = 6;
-        let mut pols: Vec<BaseElement> = vec![BaseElement::ZERO; n_pols * n];
+        let mut pols: Vec<FGL> = vec![FGL::ZERO; n_pols * n];
         for i in 0..n {
             for j in 0..n_pols {
-                pols[i * n_pols + j] = BaseElement::from((i + j * 1000) as u32);
+                pols[i * n_pols + j] = FGL::from((i + j * 1000) as u64);
             }
         }
 
@@ -361,10 +360,10 @@ mod tests {
         let n = 1 << 16;
         let idx = 32;
         let n_pols = 50;
-        let mut pols: Vec<BaseElement> = vec![BaseElement::ZERO; n_pols * n];
+        let mut pols: Vec<FGL> = vec![FGL::ZERO; n_pols * n];
         for i in 0..n {
             for j in 0..n_pols {
-                pols[i * n_pols + j] = BaseElement::from((i + j * 1000) as u32);
+                pols[i * n_pols + j] = FGL::from((i + j * 1000) as u64);
             }
         }
 
