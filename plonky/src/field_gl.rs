@@ -448,6 +448,14 @@ impl std::hash::Hash for Fr {
         }
     }
 }
+
+impl From<u64> for Fr {
+    #[inline(always)]
+    fn from(val: u64) -> Fr {
+        Fr::from_repr(FrRepr::from(val)).unwrap()
+    }
+}
+
 impl Fr {
     /// Determines if the element is really in the field. This is only used
     /// internally.
@@ -477,6 +485,12 @@ impl Fr {
         (self.0).0[0usize] = r2;
         // (self.0).0[1usize] = r3;
         self.reduce();
+    }
+
+    pub const ZERO: Self = Self(FrRepr([0]));
+    pub const ONE: Self = Self(R);
+    pub fn as_int(&self) -> u64 {
+        self.into_repr().0[0]
     }
 }
 impl crate::ff::SqrtField for Fr {
