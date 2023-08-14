@@ -12,6 +12,7 @@ use crate::starkinfo_codegen::{Node, Section};
 use crate::traits::{MerkleTree, Transcript};
 use crate::types::StarkStruct;
 use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 use std::collections::HashMap;
 
 //FIXME it doesn't make sense to ask for a mutable program
@@ -67,7 +68,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
 
     let x_n = ctx.challenge[7].exp(ctx.N);
     ctx.Z = x_n - F3G::ONE;
-    ctx.Zp = (ctx.challenge[7] * MG.0[ctx.nbits]).pow(ctx.N) - F3G::ONE;
+    ctx.Zp = (ctx.challenge[7] * MG.0[ctx.nbits]).exp(ctx.N) - F3G::ONE;
 
     log::debug!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);

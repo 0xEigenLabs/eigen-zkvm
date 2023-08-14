@@ -8,6 +8,7 @@ use crate::polutils::{eval_pol, pol_mul_axi};
 use crate::traits::{MerkleTree, Transcript};
 use crate::types::{StarkStruct, Step};
 use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 
 #[derive(Debug)]
 pub struct FRI {

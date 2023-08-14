@@ -5,6 +5,7 @@ use crate::poseidon_bn128::{load_constants, Constants};
 use crate::poseidon_bn128_opt::load_constants as load_constants_opt;
 use ff::*;
 use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 use std::collections::HashMap;
 
 lazy_static::lazy_static! {
@@ -32,12 +33,12 @@ lazy_static::lazy_static! {
         let s = 32usize;
         let mut w = vec![F3G::ZERO; s+1];
         let mut wi = vec![F3G::ZERO; s+1];
-        w[s] = nqr.pow(rem);
+        w[s] = nqr.exp(rem);
         wi[s] = w[s].inv();
 
         for n in (0..s).rev() {
-            w[n] = w[n+1].square();
-            wi[n] = wi[n+1].square();
+            w[n] = w[n+1] * w[n+1];
+            wi[n] = wi[n+1] * wi[n+1];
         }
         (w, wi)
     };

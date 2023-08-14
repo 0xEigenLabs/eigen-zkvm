@@ -2,7 +2,6 @@
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use plonky::field_gl::Fr;
 use plonky::Field;
-use rand::Rand;
 use std::hash::{Hash, Hasher};
 use std::slice;
 
@@ -32,15 +31,6 @@ impl F3G {
         }
     }
 
-    pub const ZERO3: Self = Self {
-        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
-        dim: 3,
-    };
-    pub const ONE3: Self = Self {
-        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
-        dim: 3,
-    };
-
     #[inline(always)]
     pub fn to_be(&self) -> Fr {
         assert_eq!(self.dim, 1);
@@ -57,11 +47,6 @@ impl F3G {
     }
 
     #[inline]
-    pub fn double(self) -> Self {
-        self + self
-    }
-
-    #[inline]
     pub fn mul_scalar(self, b: usize) -> Self {
         let b = Fr::from(b as u64);
         let elems = self.as_elements();
@@ -69,37 +54,6 @@ impl F3G {
             Self::from(elems[0] * b)
         } else {
             Self::new(elems[0] * b, elems[1] * b, elems[2] * b)
-        }
-    }
-
-    #[inline]
-    pub fn square(self) -> Self {
-        match self.dim {
-            3 => {
-                let a = self.cube;
-                let aa = (a[0] + a[1]) * (a[0] + a[1]);
-                let bb = (a[0] + a[2]) * (a[0] + a[2]);
-                let cc = (a[1] + a[2]) * (a[1] + a[2]);
-                let dd = a[0] * a[0];
-                let ee = a[1] * a[1];
-                let ff = a[2] * a[2];
-                let gg = dd - ee;
-                Self {
-                    cube: [cc + gg - ff, aa + cc - ee - ee - dd, bb - gg],
-                    dim: 3,
-                }
-            }
-            1 => {
-                let mut tmp = self.to_be();
-                tmp.square();
-                Self {
-                    cube: [tmp, Fr::ZERO, Fr::ZERO],
-                    dim: 1,
-                }
-            }
-            _ => {
-                panic!("Invalid dim");
-            }
         }
     }
 
@@ -152,19 +106,6 @@ impl F3G {
     }
 
     #[inline]
-    pub fn is_zero(self) -> bool {
-        match self.dim {
-            1 => self.eq(&Self::ZERO),
-            _ => self.eq(&Self::ZERO3),
-        }
-    }
-
-    pub fn random() -> Self {
-        let mut rng = ::rand::thread_rng();
-        Self::from(Fr::rand(&mut rng))
-    }
-
-    #[inline]
     pub fn exp(self, e_: usize) -> Self {
         let mut e = e_;
         if e == 0 {
@@ -187,17 +128,12 @@ impl F3G {
 
         let mut res = self;
         for i in (0..bits.len() - 1).rev() {
-            res = res.square();
+            res.square();
             if bits[i] == 1 {
                 res = res.mul(self);
             }
         }
         res
-    }
-
-    #[inline]
-    pub fn pow(self, e: usize) -> Self {
-        self.exp(e)
     }
 
     #[inline]
@@ -219,6 +155,104 @@ impl F3G {
         }
         res[0] = z;
         res
+    }
+}
+
+impl ::rand::Rand for F3G {
+    fn rand<R: rand::Rng>(rng: &mut R) -> Self {
+        Self::from(Fr::rand(rng))
+    }
+}
+
+impl plonky::Field for F3G {
+    #[inline(always)]
+    fn zero() -> Self {
+        F3G {
+            cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
+            dim: 3,
+        }
+    }
+
+    #[inline(always)]
+    fn one() -> Self {
+        F3G {
+            cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
+            dim: 3,
+        }
+    }
+
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        match self.dim {
+            1 => self.eq(&Self::ZERO),
+            _ => self.eq(&Self::zero()),
+        }
+    }
+
+    #[inline(always)]
+    fn square(&mut self) {
+        match self.dim {
+            3 => {
+                let a = self.cube;
+                let aa = (a[0] + a[1]) * (a[0] + a[1]);
+                let bb = (a[0] + a[2]) * (a[0] + a[2]);
+                let cc = (a[1] + a[2]) * (a[1] + a[2]);
+                let dd = a[0] * a[0];
+                let ee = a[1] * a[1];
+                let ff = a[2] * a[2];
+                let gg = dd - ee;
+                *self = F3G {
+                    cube: [cc + gg - ff, aa + cc - ee - ee - dd, bb - gg],
+                    dim: 3,
+                }
+            }
+            1 => {
+                let mut tmp = self.to_be();
+                tmp.square();
+                *self = F3G {
+                    cube: [tmp, Fr::ZERO, Fr::ZERO],
+                    dim: 1,
+                }
+            }
+            _ => {
+                panic!("Invalid dim");
+            }
+        }
+    }
+
+    #[inline(always)]
+    fn double(&mut self) {
+        *self = *self + *self;
+    }
+
+    #[inline(always)]
+    fn negate(&mut self) {
+        *self = self.neg();
+    }
+
+    #[inline(always)]
+    fn add_assign(&mut self, other: &Self) {
+        *self = *self + *other
+    }
+
+    #[inline(always)]
+    fn sub_assign(&mut self, other: &Self) {
+        *self = *self - *other;
+    }
+
+    #[inline(always)]
+    fn mul_assign(&mut self, other: &Self) {
+        *self = *self * *other;
+    }
+
+    #[inline(always)]
+    fn inverse(&self) -> Option<Self> {
+        Some(self.inv())
+    }
+
+    #[inline(always)]
+    fn frobenius_map(&mut self, _power: usize) {
+        panic!("frobenius_map is not supported for F3G.");
     }
 }
 
@@ -595,18 +629,16 @@ impl F3G {
 pub mod tests {
     use crate::f3g::F3G;
     use plonky::field_gl::Fr;
-    use plonky::to_hex;
     use plonky::Field;
-    use plonky::PrimeField;
     use std::ops::{Add, Mul};
 
     #[test]
     fn test_f3g_add() {
-        let f1 = F3G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64));
+        let mut f1 = F3G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64));
         let f2 = f1.add(f1);
 
-        let f22 = f1.double();
-        assert_eq!(f2, f22);
+        f1.double();
+        assert_eq!(f2, f1);
 
         let f1 = F3G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64));
         let f2 = F3G::new(
@@ -672,7 +704,8 @@ pub mod tests {
 
     #[test]
     fn test_f3g_inv() {
-        let tmp = F3G::random();
+        let mut rng = ::rand::thread_rng();
+        let tmp = <F3G as rand::Rand>::rand(&mut rng);
         let inv_tmp = tmp.inv();
         assert_eq!(tmp * inv_tmp, F3G::ONE);
     }
@@ -697,6 +730,6 @@ pub mod tests {
 
         let b = a.inv();
         let c = a.mul(b);
-        assert_eq!(c, F3G::ONE3);
+        assert_eq!(c, F3G::one());
     }
 }
