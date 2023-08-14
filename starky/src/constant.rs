@@ -30,11 +30,10 @@ lazy_static::lazy_static! {
     pub static ref MG: (Vec<F3G>, Vec<F3G>) = {
         let nqr = F3G::from(FGL::from(7u64));
         let rem = 2usize.pow(32) - 1;
-        let rem_as_vec = vec![rem as u64];
         let s = 32usize;
         let mut w = vec![F3G::ZERO; s+1];
         let mut wi = vec![F3G::ZERO; s+1];
-        w[s] = nqr.pow(rem_as_vec);
+        w[s] = nqr.exp(rem);
         wi[s] = w[s].inv();
 
         for n in (0..s).rev() {

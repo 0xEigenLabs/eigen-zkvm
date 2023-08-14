@@ -481,8 +481,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let mut x_buff = vec![F3G::ZERO; extend_size];
 
         x_buff.par_iter_mut().enumerate().for_each(|(k, xb)| {
-            let k_as_vec = vec![k as u64];
-            *xb = SHIFT.clone() * (MG.0[ctx.nbits + extend_bits].pow(k_as_vec));
+            *xb = SHIFT.clone() * (MG.0[ctx.nbits + extend_bits].exp(k));
         });
 
         tmp_den

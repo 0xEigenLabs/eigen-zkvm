@@ -68,8 +68,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
 
     let x_n = ctx.challenge[7].exp(ctx.N);
     ctx.Z = x_n - F3G::ONE;
-    let ctx_N_as_vec = vec![ctx.N as u64];
-    ctx.Zp = (ctx.challenge[7] * MG.0[ctx.nbits]).pow(ctx_N_as_vec) - F3G::ONE;
+    ctx.Zp = (ctx.challenge[7] * MG.0[ctx.nbits]).exp(ctx.N) - F3G::ONE;
 
     log::debug!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);

@@ -179,7 +179,7 @@ impl plonky::Field for F3G {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn is_zero(&self) -> bool {
         match self.dim {
             1 => self.eq(&Self::ZERO),
@@ -187,7 +187,7 @@ impl plonky::Field for F3G {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn square(&mut self) {
         match self.dim {
             3 => {
@@ -218,36 +218,42 @@ impl plonky::Field for F3G {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn double(&mut self) {
         *self = self.clone() + self.clone();
     }
 
+    #[inline(always)]
     fn negate(&mut self) {
-        let _ = self.clone();
+        *self = self.neg();
     }
 
+    #[inline(always)]
     fn add_assign(&mut self, other: &Self) {
         *self = *self + *other
     }
 
+    #[inline(always)]
     fn sub_assign(&mut self, other: &Self) {
         *self = *self - *other;
     }
 
+    #[inline(always)]
     fn mul_assign(&mut self, other: &Self) {
         *self = *self * *other;
     }
 
+    #[inline(always)]
     fn inverse(&self) -> Option<Self> {
         Some(self.inv())
     }
 
+    #[inline(always)]
     fn frobenius_map(&mut self, _power: usize) {
         panic!("frobenius_map is not supported for F3G.");
     }
 
-    #[inline]
+    #[inline(always)]
     fn pow<S: AsRef<[u64]>>(&self, exp: S) -> Self {
         let slice = exp.as_ref();
         if slice.len() != 1 {
