@@ -222,7 +222,7 @@ impl plonky::Field for F3G {
 
     #[inline(always)]
     fn double(&mut self) {
-        *self = self.clone() + self.clone();
+        *self = *self + *self;
     }
 
     #[inline(always)]
@@ -253,19 +253,6 @@ impl plonky::Field for F3G {
     #[inline(always)]
     fn frobenius_map(&mut self, _power: usize) {
         panic!("frobenius_map is not supported for F3G.");
-    }
-
-    #[inline(always)]
-    fn pow<S: AsRef<[u64]>>(&self, exp: S) -> Self {
-        let slice = exp.as_ref();
-        if slice.len() != 1 {
-            panic!("Expected only a single u64 value");
-        }
-        if slice[0] > usize::MAX as u64 {
-            panic!("Value too large to fit into usize");
-        }
-        let value_as_usize = slice[0] as usize;
-        self.exp(value_as_usize)
     }
 }
 
