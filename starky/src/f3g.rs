@@ -57,8 +57,8 @@ impl F3G {
     }
 
     #[inline]
-    pub fn double(self) -> Self {
-        self + self
+    pub fn double(&mut self) -> Self {
+        self.clone() + self.clone()
     }
 
     #[inline]
@@ -73,7 +73,7 @@ impl F3G {
     }
 
     #[inline]
-    pub fn square(self) -> Self {
+    pub fn square(&mut self) -> Self {
         match self.dim {
             3 => {
                 let a = self.cube;
@@ -221,6 +221,80 @@ impl F3G {
         res
     }
 }
+
+impl ::rand::Rand for F3G {
+    fn rand<R: rand::Rng>(_rng: &mut R) -> Self {
+        F3G::random()
+    }
+}
+
+impl plonky::Field for F3G {
+    fn zero() -> Self {
+        F3G::ZERO3
+    }
+
+    fn one() -> Self {
+        F3G::ONE3
+    }
+
+    fn is_zero(&self) -> bool {
+        F3G::is_zero(*self)
+    }
+
+    fn square(&mut self) {
+        *self = self.square();
+    }
+
+    fn double(&mut self) {
+        *self = self.double();
+    }
+
+    fn negate(&mut self) {
+        let _ = self.clone();
+    }
+
+    fn add_assign(&mut self, _other: &Self) { 
+        panic!("add_assign is not supported for F3G."); 
+    }
+    
+    fn sub_assign(&mut self, _other: &Self) { 
+        panic!("sub_assign is not supported for F3G."); 
+    }
+    
+    fn mul_assign(&mut self, _other: &Self) { 
+        panic!("mul_assign is not supported for F3G."); 
+    }
+    
+    // Field properties
+    fn inverse(&self) -> Option<Self> { 
+        panic!("inverse is not supported for F3G."); 
+    }
+    
+    fn frobenius_map(&mut self, _power: usize) { 
+        panic!("frobenius_map is not supported for F3G."); 
+    }
+
+    fn pow<S: AsRef<[u64]>>(&self, exp: S) -> Self {
+        let mut result = F3G::one();
+        let mut base = *self;
+
+        if std::mem::size_of::<usize>() == 8 { // 64-bit architecture
+            let exp_val = exp.as_ref()[0] as usize;
+            result = F3G::pow(base, exp_val);
+        } else { // 32-bit architecture
+            for &byte in exp.as_ref() {
+                for i in 0..64 {
+                    if (byte & (1 << i)) != 0 {
+                        result *= base;
+                    }
+                    base.square();
+                }
+            }
+        }
+    result
+    }
+}
+
 
 impl Add for F3G {
     type Output = Self;
@@ -602,7 +676,7 @@ pub mod tests {
 
     #[test]
     fn test_f3g_add() {
-        let f1 = F3G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64));
+        let mut f1 = F3G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64));
         let f2 = f1.add(f1);
 
         let f22 = f1.double();
