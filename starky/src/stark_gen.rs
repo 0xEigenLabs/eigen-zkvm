@@ -15,6 +15,7 @@ use crate::starkinfo_codegen::{Polynom, Segment};
 use crate::traits::{MerkleTree, Transcript};
 use crate::types::{StarkStruct, PIL};
 use plonky::field_gl::Fr as FGL;
+use plonky::Field;
 use rayon::prelude::*;
 use std::collections::HashMap;
 
@@ -60,7 +61,6 @@ pub struct StarkContext {
 
 impl std::fmt::Debug for StarkContext {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        /*
         writeln!(f, "n {}", self.N)?;
         writeln!(f, "nBits {}", self.nbits)?;
         writeln!(f, "nBitsExt {}", self.nbits_ext)?;
@@ -84,7 +84,7 @@ impl std::fmt::Debug for StarkContext {
         writeln!(f, "q_2ns {}", pretty_print_array(&self.q_2ns))?;
         writeln!(f, "f_2ns {}", pretty_print_array(&self.f_2ns))?;
         writeln!(f, "tmp {}", pretty_print_array(&self.tmp))?;
-        */
+
         Ok(())
     }
 }
@@ -481,7 +481,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let mut x_buff = vec![F3G::ZERO; extend_size];
 
         x_buff.par_iter_mut().enumerate().for_each(|(k, xb)| {
-            *xb = SHIFT.clone() * (MG.0[ctx.nbits + extend_bits].pow(k));
+            let k_as_vec = vec![k as u64];
+            *xb = SHIFT.clone() * (MG.0[ctx.nbits + extend_bits].pow(k_as_vec));
         });
 
         tmp_den
@@ -644,7 +645,7 @@ fn calculate_Z(num: Vec<F3G>, den: Vec<F3G>) -> Vec<F3G> {
     }
 
     let check_val = z[N - 1] * (num[N - 1] * den_inv[N - 1]);
-    assert_eq!(check_val.eq(&F3G::ONE3), true);
+    assert_eq!(check_val.eq(&F3G::one()), true);
     z
 }
 
