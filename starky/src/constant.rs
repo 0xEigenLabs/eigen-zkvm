@@ -37,12 +37,8 @@ lazy_static::lazy_static! {
         wi[s] = w[s].inv();
 
         for n in (0..s).rev() {
-            let mut tmp = w[n+1].clone();
-            tmp.square();
-            w[n] =tmp;
-            let mut tmp1 = wi[n+1].clone();
-            tmp1.square();
-            wi[n] = tmp1;
+            w[n] = w[n+1] * w[n+1];
+            wi[n] = wi[n+1] * wi[n+1];
         }
         (w, wi)
     };
