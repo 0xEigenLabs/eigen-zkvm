@@ -165,6 +165,7 @@ impl ::rand::Rand for F3G {
 }
 
 impl plonky::Field for F3G {
+    #[inline(always)]
     fn zero() -> Self {
         F3G {
             cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
@@ -172,6 +173,7 @@ impl plonky::Field for F3G {
         }
     }
 
+    #[inline(always)]
     fn one() -> Self {
         F3G {
             cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
