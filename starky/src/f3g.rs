@@ -253,35 +253,37 @@ impl plonky::Field for F3G {
         let _ = self.clone();
     }
 
-    fn add_assign(&mut self, _other: &Self) { 
-        panic!("add_assign is not supported for F3G."); 
+    fn add_assign(&mut self, _other: &Self) {
+        panic!("add_assign is not supported for F3G.");
     }
-    
-    fn sub_assign(&mut self, _other: &Self) { 
-        panic!("sub_assign is not supported for F3G."); 
+
+    fn sub_assign(&mut self, _other: &Self) {
+        panic!("sub_assign is not supported for F3G.");
     }
-    
-    fn mul_assign(&mut self, _other: &Self) { 
-        panic!("mul_assign is not supported for F3G."); 
+
+    fn mul_assign(&mut self, _other: &Self) {
+        panic!("mul_assign is not supported for F3G.");
     }
-    
+
     // Field properties
-    fn inverse(&self) -> Option<Self> { 
-        panic!("inverse is not supported for F3G."); 
+    fn inverse(&self) -> Option<Self> {
+        panic!("inverse is not supported for F3G.");
     }
-    
-    fn frobenius_map(&mut self, _power: usize) { 
-        panic!("frobenius_map is not supported for F3G."); 
+
+    fn frobenius_map(&mut self, _power: usize) {
+        panic!("frobenius_map is not supported for F3G.");
     }
 
     fn pow<S: AsRef<[u64]>>(&self, exp: S) -> Self {
         let mut result = F3G::one();
         let mut base = *self;
 
-        if std::mem::size_of::<usize>() == 8 { // 64-bit architecture
+        if std::mem::size_of::<usize>() == 8 {
+            // 64-bit architecture
             let exp_val = exp.as_ref()[0] as usize;
             result = F3G::pow(base, exp_val);
-        } else { // 32-bit architecture
+        } else {
+            // 32-bit architecture
             for &byte in exp.as_ref() {
                 for i in 0..64 {
                     if (byte & (1 << i)) != 0 {
@@ -291,10 +293,9 @@ impl plonky::Field for F3G {
                 }
             }
         }
-    result
+        result
     }
 }
-
 
 impl Add for F3G {
     type Output = Self;
