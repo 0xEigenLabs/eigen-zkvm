@@ -18,6 +18,7 @@ pub struct Public {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Reference {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub polType: Option<String>,
     #[serde(rename = "type")]
     pub type_: String,
