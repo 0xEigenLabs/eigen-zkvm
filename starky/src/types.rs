@@ -108,9 +108,7 @@ pub struct PlookupIdentity {
     pub f: Option<Vec<usize>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub t: Option<Vec<usize>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub selF: Option<usize>, //selector
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub selT: Option<usize>,
     pub fileName: String,
     pub line: usize,
@@ -122,9 +120,7 @@ pub struct PermutationIdentity {
     pub f: Option<Vec<usize>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub t: Option<Vec<usize>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub selF: Option<usize>, //selector
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub selT: Option<usize>,
     pub fileName: String,
     pub line: usize,
