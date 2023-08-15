@@ -115,11 +115,11 @@ impl StarkInfo {
             let z = E::cm(pu_ctx.z_id, None);
             let zp = E::cm(pu_ctx.z_id, Some(true));
 
-            if pil.references.get(&"Global.L1".to_string()).is_none() {
-                log::warn!("Global.L1 must be defined");
+            if pil.references.get(&"first_step".to_string()).is_none() {
+                panic!("first_step must be defined");
             }
 
-            let l1 = E::const_(pil.references[&"Global.L1".to_string()].id, None);
+            let l1 = E::const_(pil.references[&"first_step".to_string()].id, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 
@@ -207,10 +207,10 @@ impl StarkInfo {
             let z = E::cm(self.pe_ctx[i].z_id, None);
             let zp = E::cm(self.pe_ctx[i].z_id, Some(true));
 
-            if pil.references.get(&"Global.L1".to_string()).is_none() {
-                panic!("Global.L1 must be defined");
+            if pil.references.get(&"first_step".to_string()).is_none() {
+                panic!("first_step must be defined");
             }
-            let l1 = E::const_(pil.references[&"Global.L1".to_string()].id, None);
+            let l1 = E::const_(pil.references[&"first_step".to_string()].id, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 
@@ -364,10 +364,10 @@ impl StarkInfo {
             let z = E::cm(ci_ctx.z_id, None);
             let zp = E::cm(ci_ctx.z_id, Some(true));
 
-            if pil.references.get(&"Global.L1".to_string()).is_none() {
-                panic!("Global.L1 must be defined");
+            if pil.references.get(&"first_step".to_string()).is_none() {
+                panic!("first_step must be defined");
             }
-            let l1 = E::const_(pil.references[&"Global.L1".to_string()].id, None);
+            let l1 = E::const_(pil.references[&"first_step".to_string()].id, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 
