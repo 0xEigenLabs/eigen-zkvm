@@ -116,7 +116,7 @@ impl StarkInfo {
             let zp = E::cm(pu_ctx.z_id, Some(true));
 
             if pil.references.get(&"Global.L1".to_string()).is_none() {
-                log::warning!("Global.L1 must be defined");
+                log::warn!("Global.L1 must be defined");
             }
 
             let l1 = E::const_(pil.references[&"Global.L1".to_string()].id, None);
