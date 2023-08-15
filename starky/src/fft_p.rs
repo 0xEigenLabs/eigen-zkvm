@@ -160,6 +160,9 @@ pub fn _fft(
     }
     (bin, bout) = (bout, bin);
 
+    if n_pols <= 0 {
+        return;
+    }
     rayon::scope(|_s| {
         for i in (0..nbits).step_by(blockbits) {
             let s_inc = min(blockbits, nbits - i);
