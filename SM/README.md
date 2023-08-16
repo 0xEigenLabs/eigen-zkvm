@@ -3,7 +3,11 @@ State Machine zkVM prototype extracted from [zkevm-proverjs](https://github.com/
 
 # Example
 
-### Arithmetization
+### Generate TX batch
+
+[gen-txs.js](tools/gen-input-executor/README.md)
+
+### Generate zkvm input
 ```
 npm run buildrom
 npm run buildstoragerom
