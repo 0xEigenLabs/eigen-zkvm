@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+#![allow(dead_code)]
 use crate::compressor12::compressor12_pil;
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
 use plonky::circom_circuit::R1CS;
