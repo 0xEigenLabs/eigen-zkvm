@@ -120,7 +120,7 @@ impl From<ElementDigest> for [FGL; DIGEST_SIZE] {
 pub mod tests {
     use crate::digest::ElementDigest;
     use crate::field_bn128::Fr;
-    use ff::{Field, PrimeField};
+    use ff::PrimeField;
     use plonky::field_gl::Fr as FGL;
     use rand::Rand;
 

@@ -1047,7 +1047,7 @@ pub mod tests {
     use crate::types::load_json;
     use crate::types::{StarkStruct, PIL};
 
-    use crate::field_bn128::{Fr, FrRepr};
+    use crate::field_bn128::Fr;
 
     #[test]
     fn test_stark_gen() {

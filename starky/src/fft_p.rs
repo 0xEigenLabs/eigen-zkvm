@@ -97,7 +97,7 @@ pub fn interpolate_prepare(buff: &mut Vec<F3G>, n_pols: usize, nbits: usize) {
         interpolate_prepare_block(&mut bb, n_pols, start, SHIFT.clone(), i, n);
     }
     */
-    let mut tmp_buff = &mut buff[0..(n * n_pols)];
+    let tmp_buff = &mut buff[0..(n * n_pols)];
     tmp_buff
         .par_chunks_mut(n_per_thread_f * n_pols)
         .enumerate()
@@ -160,9 +160,6 @@ pub fn _fft(
     }
     (bin, bout) = (bout, bin);
 
-    if n_pols <= 0 {
-        return;
-    }
     rayon::scope(|_s| {
         for i in (0..nbits).step_by(blockbits) {
             let s_inc = min(blockbits, nbits - i);

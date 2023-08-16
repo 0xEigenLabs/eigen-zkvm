@@ -254,6 +254,6 @@ pub mod tests {
         let (pc, pa) = r1cs2plonk(&r1cs);
         println!("pc {}, pa {}", pc.len(), pa.len());
         let opts = Options { force_bits: 0 };
-        let plonksetupinfo = plonk_setup_render(&r1cs, &opts, "/tmp/c12.pil");
+        let _plonksetupinfo = plonk_setup_render(&r1cs, &opts, "/tmp/c12.pil");
     }
 }

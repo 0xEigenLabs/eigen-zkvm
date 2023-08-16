@@ -1,4 +1,5 @@
 #![allow(non_snake_case, dead_code)]
+use crate::constant::GLOBAL_L1;
 use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::helper::get_ks;
@@ -13,11 +14,14 @@ impl StarkInfo {
         ctx: &mut Context,
         pil: &mut PIL,
         program: &mut Program,
+        global_l1: Option<String>,
     ) -> Result<()> {
+        let global_l1_value = global_l1.unwrap_or((&GLOBAL_L1).to_string());
+
         self.generate_permutation_LC(ctx, pil)?;
-        self.generate_plonk_Z(ctx, pil)?;
-        self.generate_permutation_Z(ctx, pil)?;
-        self.generate_connections_Z(ctx, pil)?;
+        self.generate_plonk_Z(ctx, pil, &global_l1_value)?;
+        self.generate_permutation_Z(ctx, pil, &global_l1_value)?;
+        self.generate_connections_Z(ctx, pil, &global_l1_value)?;
 
         program.step3prev = build_code(ctx, pil);
         //log::debug!("step3prev {}", program.step3prev);
@@ -100,7 +104,12 @@ impl StarkInfo {
     }
 
     // paper: https://eprint.iacr.org/2020/315.pdf
-    pub fn generate_plonk_Z(&mut self, ctx: &mut Context, pil: &mut PIL) -> Result<()> {
+    pub fn generate_plonk_Z(
+        &mut self,
+        ctx: &mut Context,
+        pil: &mut PIL,
+        global_l1: &str,
+    ) -> Result<()> {
         for i in 0..pil.plookupIdentities.len() {
             let pu_ctx = &mut self.pu_ctx[i];
             pu_ctx.z_id = pil.nCommitments;
@@ -115,11 +124,11 @@ impl StarkInfo {
             let z = E::cm(pu_ctx.z_id, None);
             let zp = E::cm(pu_ctx.z_id, Some(true));
 
-            if pil.references.get(&"main.first_step".to_string()).is_none() {
-                panic!("main.first_step must be defined: {:?}", pil.references);
+            if pil.references.get(global_l1).is_none() {
+                panic!("{} must be defined: {:?}", global_l1, pil.references);
             }
 
-            let l1 = E::const_(pil.references[&"main.first_step".to_string()].id, None);
+            let l1 = E::const_(pil.references[global_l1].id, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 
@@ -191,7 +200,12 @@ impl StarkInfo {
         Ok(())
     }
 
-    pub fn generate_permutation_Z(&mut self, ctx: &mut Context, pil: &mut PIL) -> Result<()> {
+    pub fn generate_permutation_Z(
+        &mut self,
+        ctx: &mut Context,
+        pil: &mut PIL,
+        global_l1: &str,
+    ) -> Result<()> {
         let ppi = match &pil.permutationIdentities {
             Some(x) => x.clone(),
             _ => Vec::new(),
@@ -207,10 +221,10 @@ impl StarkInfo {
             let z = E::cm(self.pe_ctx[i].z_id, None);
             let zp = E::cm(self.pe_ctx[i].z_id, Some(true));
 
-            if pil.references.get(&"main.first_step".to_string()).is_none() {
-                panic!("main.first_step must be defined");
+            if pil.references.get(global_l1).is_none() {
+                panic!("{} must be defined", global_l1);
             }
-            let l1 = E::const_(pil.references[&"main.first_step".to_string()].id, None);
+            let l1 = E::const_(pil.references[global_l1].id, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 
@@ -268,7 +282,12 @@ impl StarkInfo {
         Ok(())
     }
 
-    pub fn generate_connections_Z(&mut self, ctx: &mut Context, pil: &mut PIL) -> Result<()> {
+    pub fn generate_connections_Z(
+        &mut self,
+        ctx: &mut Context,
+        pil: &mut PIL,
+        global_l1: &str,
+    ) -> Result<()> {
         let cii = match &pil.connectionIdentities {
             Some(x) => x.clone(),
             _ => Vec::new(),
@@ -364,10 +383,10 @@ impl StarkInfo {
             let z = E::cm(ci_ctx.z_id, None);
             let zp = E::cm(ci_ctx.z_id, Some(true));
 
-            if pil.references.get(&"main.first_step".to_string()).is_none() {
-                panic!("main.first_step must be defined");
+            if pil.references.get(global_l1).is_none() {
+                panic!("{} must be defined", global_l1);
             }
-            let l1 = E::const_(pil.references[&"main.first_step".to_string()].id, None);
+            let l1 = E::const_(pil.references[global_l1].id, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
             c1.deg = 2;
 

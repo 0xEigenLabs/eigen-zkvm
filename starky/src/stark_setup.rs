@@ -65,7 +65,7 @@ impl<M: MerkleTree> StarkSetup<M> {
             const_pol.n << (nBitsExt - nBits),
         )?;
 
-        let starkinfo = starkinfo::StarkInfo::new(pil, stark_struct)?;
+        let starkinfo = starkinfo::StarkInfo::new(pil, stark_struct, None)?;
         Ok(StarkSetup {
             const_root: const_tree.root(),
             const_tree: const_tree,

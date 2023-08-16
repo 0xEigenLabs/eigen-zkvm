@@ -5,7 +5,6 @@ use crate::poseidon_bn128::{load_constants, Constants};
 use crate::poseidon_bn128_opt::load_constants as load_constants_opt;
 use ff::*;
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 use std::collections::HashMap;
 
 lazy_static::lazy_static! {
@@ -56,6 +55,7 @@ lazy_static::lazy_static! {
 
 pub const MIN_OPS_PER_THREAD: usize = 1 << 12;
 pub const MAX_OPS_PER_THREAD: usize = 1 << 18;
+pub const GLOBAL_L1: &str = "Global.L1";
 
 pub fn get_max_workers() -> usize {
     num_cpus::get() - 1
