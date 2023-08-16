@@ -283,7 +283,6 @@ mod tests {
     use crate::merklehash::MerkleTreeGL;
     use crate::traits::MerkleTree;
     use plonky::field_gl::Fr as FGL;
-    use plonky::Field;
 
     #[test]
     fn test_merklehash_gl_simple() {

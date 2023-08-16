@@ -1,14 +1,10 @@
 #![allow(non_snake_case)]
+#![allow(dead_code)]
 use crate::compressor12::compressor12_pil;
-use crate::errors::{EigenError, Result};
-use crate::f3g::F3G;
-use crate::polsarray;
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
-use crate::types::PIL;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
-use plonky::Field;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
@@ -95,8 +91,8 @@ struct CustomGateInfo {
 
 fn get_custom_gate_info(
     r1cs: &R1CS<GL>,
-    pa: &Vec<PlonkGate>,
-    pc: &Vec<PlonkAdd>,
+    _pa: &Vec<PlonkGate>,
+    _pc: &Vec<PlonkAdd>,
 ) -> CustomGateInfo {
     let mut cmul_id = 0;
     let mut cmds_id = 0;
@@ -127,7 +123,7 @@ fn get_custom_gate_info(
 
     let mut n_cmul = 0;
     let mut n_mds = 0;
-    for (i, c) in r1cs.custom_gates_uses.iter().enumerate() {
+    for (_i, c) in r1cs.custom_gates_uses.iter().enumerate() {
         if c.id == cmul_id {
             n_cmul += 1;
         } else if c.id == cmds_id {
