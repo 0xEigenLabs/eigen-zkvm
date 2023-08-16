@@ -26,6 +26,7 @@ impl<M: MerkleTree> StarkSetup<M> {
         const_pol: &PolsArray,
         pil: &mut PIL,
         stark_struct: &StarkStruct,
+        global_l1: Option<String>,
     ) -> Result<StarkSetup<M>> {
         let nBits = stark_struct.nBits;
         let nBitsExt = stark_struct.nBitsExt;
@@ -65,7 +66,7 @@ impl<M: MerkleTree> StarkSetup<M> {
             const_pol.n << (nBitsExt - nBits),
         )?;
 
-        let starkinfo = starkinfo::StarkInfo::new(pil, stark_struct, None)?;
+        let starkinfo = starkinfo::StarkInfo::new(pil, stark_struct, global_l1)?;
         Ok(StarkSetup {
             const_root: const_tree.root(),
             const_tree: const_tree,
@@ -96,7 +97,7 @@ pub mod tests {
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
         let setup =
-            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let root: Fr = setup.const_root.into();
 
         let expect_root =
@@ -111,7 +112,8 @@ pub mod tests {
         const_pol.load("data/fib.const.gl").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.gl").unwrap();
-        let setup = StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+        let setup =
+            StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
 
         let expect_root = ElementDigest::from([
             FGL::from(15302509084042343527u64),
