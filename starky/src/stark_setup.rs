@@ -22,7 +22,7 @@ pub struct StarkSetup<M: MerkleTree> {
 ///
 ///  calculate the trace polynomial over extended field, return the new polynomial's coefficient.
 impl<M: MerkleTree> StarkSetup<M> {
-    //  https://github.com/0xEigenLabs/eigen-zkvm/pull/91
+    // global_l1: https://github.com/0xEigenLabs/eigen-zkvm/pull/91
     pub fn new(
         const_pol: &PolsArray,
         pil: &mut PIL,
