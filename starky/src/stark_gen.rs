@@ -376,12 +376,14 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             cur_s = cur_s * shift_in;
         }
 
-        fft(
-            &qq2,
-            starkinfo.q_dim * starkinfo.q_deg,
-            ctx.nbits_ext,
-            &mut ctx.cm4_2ns,
-        );
+        if starkinfo.q_deg > 0 {
+            fft(
+                &qq2,
+                starkinfo.q_dim * starkinfo.q_deg,
+                ctx.nbits_ext,
+                &mut ctx.cm4_2ns,
+            );
+        }
 
         log::info!("Merkelizing 4....");
         let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
