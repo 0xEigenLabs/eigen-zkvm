@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+use serde::ser::SerializeMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
@@ -143,6 +144,7 @@ pub struct PIL {
     pub nIm: usize,
     pub nConstants: usize,
     pub publics: Vec<Public>,
+    #[serde(serialize_with = "ordered_map")]
     pub references: HashMap<String, Reference>,
     pub expressions: Vec<Expression>,
     pub polIdentities: Vec<PolIdentity>,
@@ -154,6 +156,26 @@ pub struct PIL {
     pub cm_dims: Vec<usize>,
     #[serde(skip)]
     pub q2exp: Vec<usize>,
+}
+
+/// Sorted serialization of HashMap.
+///
+/// For use with serde's [serialize_with] attribute.
+fn ordered_map<S, K: Ord + Serialize, V: Serialize>(
+    value: &HashMap<K, V>,
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let mut ordered = value.iter().collect::<Vec<_>>();
+    ordered.sort_by_key(|(k, _)| *k);
+
+    let mut map = serializer.serialize_map(Some(ordered.len()))?;
+    for (k, v) in ordered {
+        map.serialize_entry(k, v)?;
+    }
+    map.end()
 }
 
 impl fmt::Display for PIL {
