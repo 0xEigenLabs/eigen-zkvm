@@ -200,7 +200,6 @@ fn _calculate_im_pols(
                     eb = e2;
                     ed = d1 + d2;
                 } else {
-                    //if Object.keys(e2).length < Object.keys(eb).length {
                     if e2.as_ref().unwrap().len() < eb.as_ref().unwrap().len() {
                         eb = e2;
                         ed = d1 + d2;
@@ -208,7 +207,6 @@ fn _calculate_im_pols(
                 }
             }
             if eb.is_some() {
-                //if (Object.keys(eb).length == Object.keys(imExpressions).length) return [eb, ed]; // Cannot o it better.
                 if im_expressions.is_some()
                     && eb.as_ref().unwrap().len() == im_expressions.as_ref().unwrap().len()
                 {
@@ -283,16 +281,16 @@ pub fn get_exp_dim(pil: &PIL, exp: &Expression) -> i32 {
 
 pub fn calculate_im_pols(
     pil: &mut PIL,
-    _exp: &Expression,
+    exp: &Expression,
     max_deg: usize,
 ) -> Result<(Option<HashMap<usize, bool>>, i32)> {
-    //log::debug!("calculate_im_pols: {} {}", _exp, max_deg);
+    //log::debug!("calculate_im_pols: {} {}", exp, max_deg);
 
     let mut abs_max_d = 0;
     let im_expressions: HashMap<usize, bool> = HashMap::new();
     let (re, rd) = _calculate_im_pols(
         pil,
-        _exp,
+        exp,
         &Some(im_expressions),
         max_deg,
         max_deg,
