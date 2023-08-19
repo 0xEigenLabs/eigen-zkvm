@@ -1,4 +1,4 @@
-#![allow(non_snake_case, dead_code)]
+#![allow(non_snake_case)]
 use crate::field_bn128::{Fr, FrRepr};
 use crate::helper::fr_to_biguint;
 use core::slice;
@@ -85,7 +85,7 @@ impl ElementDigest {
     }
 
     // for debug only
-    fn to_gl(f: &Fr) -> [FGL; 4] {
+    fn _to_gl(f: &Fr) -> [FGL; 4] {
         let mut f = fr_to_biguint(f);
         let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();
         let mut result = [FGL::ZERO; 4];
@@ -160,7 +160,7 @@ pub mod tests {
         // to Montgomery
         let f1 = Fr::from_repr(f1.into_raw_repr()).unwrap();
 
-        let e1 = ElementDigest::to_gl(&f1);
+        let e1 = ElementDigest::_to_gl(&f1);
         let expected: [FGL; 4] = vec![
             10593660675180540444u64,
             2538813791642109216,

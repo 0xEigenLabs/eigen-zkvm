@@ -31,8 +31,8 @@ FINAL_CIRCUIT=$CIRCUIT.final
 input0=$CUR_DIR/aggregation/0/${RECURSIVE_CIRCUIT} && mkdir -p $input0
 input1=$CUR_DIR/aggregation/1/${RECURSIVE_CIRCUIT} && mkdir -p $input1
 
-mkdir -p ./aggregation/$RECURSIVE2_CIRCUIT 
-mkdir -p ./aggregation/$FINAL_CIRCUIT
+mkdir -p $CUR_DIR/aggregation/$RECURSIVE2_CIRCUIT
+mkdir -p $CUR_DIR/aggregation/$FINAL_CIRCUIT
 
 # test poseidon
 #CIRCUIT="poseidon"
@@ -92,7 +92,7 @@ echo "5. generate recursive2 proof"
 $ZKIT stark_prove -s ../starky/data/r2.starkStruct.json \
     -p $WORKSPACE/$RECURSIVE_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE_CIRCUIT.const \
-    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom --i ./aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json  --norm_stage
+    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom --i $CUR_DIR/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json  --norm_stage
 
 aggregation_end=$(date +%s)
 
@@ -119,7 +119,7 @@ fi
 echo "3. generate the commit polynomicals files "
 node $RUNDIR/src/compressor12/main_compressor12_exec.js \
     -w $WORKSPACE/$RECURSIVE2_CIRCUIT"_js"/$RECURSIVE2_CIRCUIT.wasm  \
-    -i ./aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json   \
+    -i $CUR_DIR/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json   \
     -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil  \
     -e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec \
     -m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm
@@ -130,7 +130,7 @@ echo "4. generate final proof  "
 $ZKIT stark_prove -s ../starky/data/final.starkStruct.bn128.json \
     -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
-    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $RUNDIR/circuits/$FINAL_CIRCUIT.circom --i ./aggregation/$FINAL_CIRCUIT/final_input.zkin.json  --norm_stage 
+    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $RUNDIR/circuits/$FINAL_CIRCUIT.circom --i $CUR_DIR/aggregation/$FINAL_CIRCUIT/final_input.zkin.json  --norm_stage
 
 final_end=$(date +%s)
 
