@@ -12,13 +12,13 @@ pub trait MerkleTree {
     fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<Self::BaseField>>)>;
     fn verify_group_proof(
         &self,
-        root: &ElementDigest,
+        root: &ElementDigest<4>,
         mp: &Vec<Vec<Self::BaseField>>,
         idx: usize,
         group_elements: &Vec<FGL>,
     ) -> Result<bool>;
-    fn root(&self) -> ElementDigest;
-    fn eq_root(&self, r1: &ElementDigest, r2: &ElementDigest) -> bool;
+    fn root(&self) -> ElementDigest<4>;
+    fn eq_root(&self, r1: &ElementDigest<4>, r2: &ElementDigest<4>) -> bool;
     fn element_size(&self) -> usize;
 }
 

@@ -29,10 +29,10 @@ impl Serialize for F3G {
     }
 }
 
-pub struct Input(ElementDigest, String);
+pub struct Input(ElementDigest<4>, String);
 
 impl Input {
-    pub fn new(e: ElementDigest, hashtype: String) -> Self {
+    pub fn new(e: ElementDigest<4>, hashtype: String) -> Self {
         Input(e, hashtype)
     }
     pub fn is_dim_1(&self) -> bool {

@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 use crate::field_bn128::{Fr, FrRepr};
 use crate::helper::fr_to_biguint;
-use core::slice;
 use ff::*;
 use plonky::field_gl::Fr as FGL;
 use std::fmt::Display;
@@ -10,65 +9,56 @@ use num_bigint::BigUint;
 use num_traits::Num;
 use num_traits::ToPrimitive;
 
-const DIGEST_SIZE: usize = 4;
+// bn254
+// const DIGEST_SIZE: usize = 4;
+// bls12-381
+// const BLS12381_DIGEST_SIZE: usize = 6;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct ElementDigest(pub [FGL; DIGEST_SIZE]);
+pub struct ElementDigest<const N: usize>(pub [FGL; N]);
 
-impl ElementDigest {
-    pub fn new(value: [FGL; DIGEST_SIZE]) -> Self {
+impl<const N: usize> ElementDigest<N> {
+    pub fn new(value: [FGL; N]) -> Self {
         Self(value)
     }
 
     pub fn as_elements(&self) -> &[FGL] {
         &self.0
     }
-
-    pub fn _digests_as_elements(digests: &[Self]) -> &[FGL] {
-        let p = digests.as_ptr();
-        let len = digests.len() * DIGEST_SIZE;
-        unsafe { slice::from_raw_parts(p as *const FGL, len) }
-    }
 }
 
-impl Display for ElementDigest {
+impl<const N: usize> Display for ElementDigest<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}\n{}\n{}\n{}",
-            self.0[0].as_int(),
-            self.0[1].as_int(),
-            self.0[2].as_int(),
-            self.0[3].as_int()
-        )
+        for i in 0..N {
+            write!(f, "{}\n", self.0[i].as_int())?;
+        }
+        Ok(())
     }
 }
 
 /// Fr always consists of [u64; limbs], here for bn128, the limbs is 4.
-impl From<&Fr> for ElementDigest {
+impl<const N: usize> From<&Fr> for ElementDigest<N> {
     fn from(e: &Fr) -> Self {
-        let mut result = [FGL::ZERO; DIGEST_SIZE];
-        result[0] = FGL::from(e.0 .0[0]);
-        result[1] = FGL::from(e.0 .0[1]);
-        result[2] = FGL::from(e.0 .0[2]);
-        result[3] = FGL::from(e.0 .0[3]);
+        let mut result = [FGL::ZERO; N];
+        for i in 0..N {
+            result[i] = FGL::from(e.0 .0[i]);
+        }
         ElementDigest::new(result)
     }
 }
 
-impl Into<Fr> for ElementDigest {
+impl<const N: usize> Into<Fr> for ElementDigest<N> {
     fn into(self) -> Fr {
         let mut result = Fr::zero();
-        result.0 .0[0] = self.0[0].as_int() as u64;
-        result.0 .0[1] = self.0[1].as_int() as u64;
-        result.0 .0[2] = self.0[2].as_int() as u64;
-        result.0 .0[3] = self.0[3].as_int() as u64;
+        for i in 0..N {
+            result.0 .0[i] = self.0[i].as_int();
+        }
         result
     }
 }
 
-impl ElementDigest {
+impl<const N: usize> ElementDigest<N> {
     #[inline(always)]
     pub fn to_bn128(e: &[FGL; 4]) -> Fr {
         let mut buf: Vec<u8> = vec![0u8; 32];
@@ -98,20 +88,20 @@ impl ElementDigest {
     }
 }
 
-impl Default for ElementDigest {
+impl<const N: usize> Default for ElementDigest<N> {
     fn default() -> Self {
-        ElementDigest([FGL::ZERO; DIGEST_SIZE])
+        ElementDigest::<N>([FGL::ZERO; N])
     }
 }
 
-impl From<[FGL; DIGEST_SIZE]> for ElementDigest {
-    fn from(value: [FGL; DIGEST_SIZE]) -> Self {
+impl<const N: usize> From<[FGL; N]> for ElementDigest<N> {
+    fn from(value: [FGL; N]) -> Self {
         Self(value)
     }
 }
 
-impl From<ElementDigest> for [FGL; DIGEST_SIZE] {
-    fn from(value: ElementDigest) -> Self {
+impl<const N: usize> From<ElementDigest<N>> for [FGL; N] {
+    fn from(value: ElementDigest<N>) -> Self {
         value.0
     }
 }
@@ -136,7 +126,7 @@ pub mod tests {
         let b4 = ElementDigest::new(b4.try_into().unwrap());
         let f1: Fr = b4.into();
 
-        let b4_: ElementDigest = ElementDigest::from(&f1);
+        let b4_: ElementDigest<4> = ElementDigest::from(&f1);
         assert_eq!(b4, b4_);
 
         let f: Fr = Fr::from_str(
@@ -144,7 +134,7 @@ pub mod tests {
         )
         .unwrap();
 
-        let e = ElementDigest::from(&f);
+        let e = ElementDigest::<4>::from(&f);
         let f2: Fr = e.into();
         assert_eq!(f, f2);
     }
@@ -155,12 +145,12 @@ pub mod tests {
             .iter()
             .map(|e| FGL::from(e.clone()))
             .collect();
-        let f1: Fr = ElementDigest::to_bn128(&b4[..].try_into().unwrap());
+        let f1: Fr = ElementDigest::<4>::to_bn128(&b4[..].try_into().unwrap());
 
         // to Montgomery
         let f1 = Fr::from_repr(f1.into_raw_repr()).unwrap();
 
-        let e1 = ElementDigest::_to_gl(&f1);
+        let e1 = ElementDigest::<4>::_to_gl(&f1);
         let expected: [FGL; 4] = vec![
             10593660675180540444u64,
             2538813791642109216,

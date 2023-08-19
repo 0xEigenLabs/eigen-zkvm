@@ -17,7 +17,7 @@ pub struct MerkleTreeBN128 {
     pub elements: Vec<FGL>,
     pub width: usize,
     pub height: usize,
-    pub nodes: Vec<ElementDigest>,
+    pub nodes: Vec<ElementDigest<4>>,
     h: LinearHashBN128,
     poseidon: Poseidon,
 }
@@ -52,8 +52,8 @@ impl MerkleTreeBN128 {
             .enumerate()
             .map(|(i, bb)| self.do_merklize_level(bb, i, n_ops).unwrap())
             .reduce(
-                || Vec::<ElementDigest>::new(),
-                |mut a: Vec<ElementDigest>, mut b: Vec<ElementDigest>| {
+                || Vec::<ElementDigest<4>>::new(),
+                |mut a: Vec<ElementDigest<4>>, mut b: Vec<ElementDigest<4>>| {
                     a.append(&mut b);
                     a
                 },
@@ -68,10 +68,10 @@ impl MerkleTreeBN128 {
 
     fn do_merklize_level(
         &self,
-        buff_in: &[ElementDigest],
+        buff_in: &[ElementDigest<4>],
         _st_i: usize,
         _st_n: usize,
-    ) -> Result<Vec<ElementDigest>> {
+    ) -> Result<Vec<ElementDigest<4>>> {
         log::debug!(
             "merklizing bn128 hash start.... {}/{}, buff size {}",
             _st_i,
@@ -79,7 +79,7 @@ impl MerkleTreeBN128 {
             buff_in.len()
         );
         let n_ops = buff_in.len() / 16;
-        let mut buff_out64: Vec<ElementDigest> = vec![ElementDigest::default(); n_ops];
+        let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
         buff_out64
             .iter_mut()
             .zip((0..n_ops).into_iter())
@@ -115,9 +115,9 @@ impl MerkleTreeBN128 {
         &self,
         mp: &Vec<Vec<Fr>>,
         idx: usize,
-        value: &ElementDigest,
+        value: &ElementDigest<4>,
         offset: usize,
-    ) -> Result<ElementDigest> {
+    ) -> Result<ElementDigest<4>> {
         if mp.len() == offset {
             return Ok(value.clone());
         }
@@ -129,7 +129,7 @@ impl MerkleTreeBN128 {
         }
         let init = Fr::zero();
         let next_value = self.poseidon.hash(&vals, &init)?;
-        let next_value = ElementDigest::from(&next_value);
+        let next_value = ElementDigest::<4>::from(&next_value);
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
@@ -138,9 +138,9 @@ impl MerkleTreeBN128 {
         mp: &Vec<Vec<Fr>>,
         idx: usize,
         vals: &Vec<FGL>,
-    ) -> Result<ElementDigest> {
+    ) -> Result<ElementDigest<4>> {
         let h = self.h.hash_element_matrix(&vec![vals.to_vec()])?;
-        self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::from(&h), 0)
+        self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::<4>::from(&h), 0)
     }
 }
 
@@ -185,7 +185,7 @@ impl MerkleTree for MerkleTreeBN128 {
         if n_per_thread_f > MAX_OPS_PER_THREAD {
             n_per_thread_f = MAX_OPS_PER_THREAD;
         }
-        let mut nodes = vec![ElementDigest::default(); get_n_nodes(height)];
+        let mut nodes = vec![ElementDigest::<4>::default(); get_n_nodes(height)];
         let now = Instant::now();
         if buff.len() > 0 {
             nodes
@@ -250,13 +250,13 @@ impl MerkleTree for MerkleTreeBN128 {
         Ok((v, mp))
     }
 
-    fn eq_root(&self, r1: &ElementDigest, r2: &ElementDigest) -> bool {
+    fn eq_root(&self, r1: &ElementDigest<4>, r2: &ElementDigest<4>) -> bool {
         r1 == r2
     }
 
     fn verify_group_proof(
         &self,
-        root: &ElementDigest,
+        root: &ElementDigest<4>,
         mp: &Vec<Vec<Fr>>,
         idx: usize,
         group_elements: &Vec<FGL>,
@@ -265,7 +265,7 @@ impl MerkleTree for MerkleTreeBN128 {
         Ok(self.eq_root(root, &c_root))
     }
 
-    fn root(&self) -> ElementDigest {
+    fn root(&self) -> ElementDigest<4> {
         self.nodes[self.nodes.len() - 1]
     }
 }

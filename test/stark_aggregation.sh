@@ -61,7 +61,7 @@ fi
 echo "2. combine input1.zkin.json with input2.zkin.json "
 node $RUNDIR/src/recursive/main_joinzkin.js --starksetup ../starky/data/c12.starkStruct.json --zkin1 $input0/input.zkin.json --zkin2 $input1/input.zkin.json  --zkinout $input0/r1_input.zkin.json
 
-echo "3. generate the pil files and  const polynomicals files "
+echo "3. generate the pil files and const polynomicals files "
 # generate the pil files and  const polynomicals files
 # input files :  $C12_VERIFIER.r1cs
 # output files : $C12_VERIFIER.const  $C12_VERIFIER.pil  $C12_VERIFIER.exec

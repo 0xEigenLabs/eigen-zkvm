@@ -1,6 +1,6 @@
 #![allow(unused_imports)]
-use ff::*;
 use core::ops::{Add, Div, Mul, Neg, Sub};
+use ff::*;
 
 #[derive(PrimeField)]
 #[PrimeFieldModulus = "52435875175126190479447740508185965837690552500527637822603658699938581184513"]
@@ -11,10 +11,10 @@ pub struct Fr(pub FrRepr);
 mod tests {
     use crate::field_bls12381::*;
     use ff::*;
-    use rand::Rand;
     use ff::{Field, PrimeField};
-    use std::ops::{Add, Mul, Sub, Neg};
     use num_bigint::BigInt;
+    use rand::Rand;
+    use std::ops::{Add, Mul, Neg, Sub};
     #[test]
     fn test_ff_bls12381() {
         assert_eq!(
@@ -48,19 +48,22 @@ mod tests {
             0xb308836c14e22279,
             0x699e887f96bff372,
             0x84ecc7e76c11ad,
-        ])).unwrap();
+        ]))
+        .unwrap();
         let f2 = Fr::from_repr(FrRepr([
             0x71875719b422efb8,
             0x43658e68a93612,
             0x9fa756be2011e833,
             0xaa2b2cb08dac497,
-        ])).unwrap();
+        ]))
+        .unwrap();
         let f3 = Fr::from_repr(FrRepr([
             0x3999bd14f553edc4,
             0xb34be8fa7d8b588c,
             0x945df3db6d1dba5,
             0xb279f92f046d645,
-        ])).unwrap();
+        ]))
+        .unwrap();
         f1.add_assign(&f2);
         assert_eq!(f1, f3);
     }

@@ -173,14 +173,14 @@ impl StarkContext {
 }
 
 pub struct StarkProof<M: MerkleTree> {
-    pub root1: ElementDigest,
-    pub root2: ElementDigest,
-    pub root3: ElementDigest,
-    pub root4: ElementDigest,
+    pub root1: ElementDigest<4>,
+    pub root2: ElementDigest<4>,
+    pub root3: ElementDigest<4>,
+    pub root4: ElementDigest<4>,
     pub fri_proof: FRIProof<M>,
     pub evals: Vec<F3G>,
     pub publics: Vec<F3G>,
-    pub rootC: Option<ElementDigest>,
+    pub rootC: Option<ElementDigest<4>>,
     pub stark_struct: StarkStruct,
 }
 

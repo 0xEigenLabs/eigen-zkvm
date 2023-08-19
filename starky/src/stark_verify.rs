@@ -17,7 +17,7 @@ use std::collections::HashMap;
 //FIXME it doesn't make sense to ask for a mutable program
 pub fn stark_verify<M: MerkleTree, T: Transcript>(
     proof: &StarkProof<M>,
-    const_root: &ElementDigest,
+    const_root: &ElementDigest<4>,
     starkinfo: &StarkInfo,
     stark_struct: &StarkStruct,
     program: &mut Program,

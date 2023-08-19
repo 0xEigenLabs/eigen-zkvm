@@ -819,7 +819,7 @@ fn stark_verifier(
     starkinfo: &StarkInfo,
     pil: &PIL,
     stark_struct: &StarkStruct,
-    const_root: &ElementDigest,
+    const_root: &ElementDigest<4>,
     options: &StarkOption,
 ) -> String {
     let mut res = format!(
@@ -1853,7 +1853,7 @@ pub fn render(
     prorgam: &Program,
     pil: &PIL,
     stark_struct: &StarkStruct,
-    const_root: &ElementDigest,
+    const_root: &ElementDigest<4>,
     options: &StarkOption,
 ) -> String {
     let mut res = header();

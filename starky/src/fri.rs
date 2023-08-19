@@ -21,7 +21,7 @@ pub struct FRI {
 #[derive(Debug, Default, Clone)]
 pub struct Query<MB: Clone + std::default::Default> {
     pub pol_queries: Vec<Vec<(Vec<FGL>, Vec<Vec<MB>>)>>,
-    pub root: ElementDigest,
+    pub root: ElementDigest<4>,
 }
 
 #[derive(Debug, Clone)]
