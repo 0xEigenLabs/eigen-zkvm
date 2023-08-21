@@ -19,6 +19,11 @@ const argv = require("yargs")
     .alias("m", "commit")
     .argv;
 
+
+//# generate the pil files and  const polynomicals files
+//# input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
+//# output files :  $C12_VERIFIER.exec
+
 async function run() {
     const F = new F1Field();
 
@@ -42,9 +47,12 @@ async function run() {
     const pil = await compile(F, pilFile, null, pilConfig);
     await fs.promises.writeFile(pilFile+ ".json", JSON.stringify(pil, null, 1) + "\n", "utf8");
 
+//    todo-cyj Replace
+// 1. pil -> cm
     const cmPols = newCommitPolsArray(pil);
-
+//2. wasm -> wc
     const wc = await WitnessCalculatorBuilder(wasm);
+//    inptu -> w
     const w = await wc.calculateWitness(input);
 
     for (let i=0; i<nAdds; i++) {

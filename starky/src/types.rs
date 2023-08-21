@@ -139,6 +139,7 @@ pub struct ConnectionIdentity {
     pub line: usize,
 }
 
+// pil.json?
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PIL {
     pub nCommitments: usize,

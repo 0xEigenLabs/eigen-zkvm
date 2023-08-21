@@ -2,13 +2,15 @@
 use crate::compressor12::compressor12_pil;
 use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
-use crate::polsarray;
+use crate::polsarray::PolsArray;
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
 use crate::types::PIL;
+use crate::{pilcom, polsarray};
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
-use plonky::Field;
+use plonky::reader::load_r1cs;
+use plonky::{reader, Field};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
@@ -173,6 +175,10 @@ pub fn plonk_setup_render(r1cs: &R1CS<GL>, opts: &Options, out_pil: &str) -> Plo
     let com_pil = compressor12_pil::render(n_bits, n_publics);
     let mut file = File::create(out_pil).unwrap();
     write!(file, "{}", com_pil).unwrap();
+
+    // let pil = crate::pilcom::compile(com_pil);
+    // let const_pols = PolsArray::new();
+
     PlonkSetupInfo {
         n_used,
         n_bits,
@@ -183,6 +189,33 @@ pub fn plonk_setup_render(r1cs: &R1CS<GL>, opts: &Options, out_pil: &str) -> Plo
         plonkinfo,
     }
 }
+
+// pub fn setup(circuit_file: &String, opts: &Options, out_pil: &str) -> Result<()> {
+//     // // a.generate plonk circuit pil file.
+//     // // b.compile(pil) to construct .cm file.
+//     // const res = await plonkSetup(r1cs, options);
+//     //
+//
+//     let r1cs = load_r1cs::<GL>(circuit_file);
+//     let (pc, pa) = r1cs2plonk(&r1cs);
+//     println!("pc {}, pa {}", pc.len(), pa.len());
+//     let opts = Options { force_bits: 0 };
+//     let plonksetupinfo = plonk_setup_render(&r1cs, &opts, out_pil);
+//
+//     // await fs.promises.writeFile(pilFile, res.pilStr, "utf8");
+//     //
+//     // await res.constPols.saveToFile(constFile);
+//     //
+//     // await writeExecFile(execFile,res.plonkAdditions,  res.sMap);
+//
+//     let ser_proof_str = serde_json::to_string_pretty(&serialized_proof)?;
+//     let ser_inputs_str = serde_json::to_string_pretty(&inputs)?;
+//
+//     std::fs::write(proof_json, ser_proof_str.as_bytes())?;
+//     std::fs::write(public_json, ser_inputs_str.as_bytes())?;
+//
+//     Result::Ok(())
+// }
 
 /*
 pub fn plonk_setup_fix_compressor(

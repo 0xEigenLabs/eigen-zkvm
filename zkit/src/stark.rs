@@ -46,6 +46,9 @@ pub fn prove(
                 &stark_struct,
             )
             .unwrap();
+
+            // todo verify twice? 1. in starkjs.pil_verifier.generate 2. verify here.
+            // they are the same one.
             println!("verify the proof...");
             let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
                 &starkproof,

@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/bin/zsh
 set -ex
 
 ## build
 cargo build --release
 
 export NODE_OPTIONS="--max-old-space-size=81920"
-source ~/.bashrc
+source ~/.zshrc
 
 BIG_POWER=26
 NUM_PROOF=2
@@ -38,6 +38,8 @@ mkdir -p ./aggregation/$FINAL_CIRCUIT
 #CIRCUIT="poseidon"
 #PILEXECJS="poseidon/main_poseidon.js"
 
+
+# Recursive 1.
 c12_start=$(date +%s)
 cd ${CUR_DIR} && npm i
 for (( i=0; i<$NUM_PROOF; i++ ))
@@ -63,8 +65,8 @@ node $RUNDIR/src/recursive/main_joinzkin.js --starksetup ../starky/data/c12.star
 
 echo "3. generate the pil files and  const polynomicals files "
 # generate the pil files and  const polynomicals files
-# input files :  $C12_VERIFIER.r1cs
-# output files : $C12_VERIFIER.const  $C12_VERIFIER.pil  $C12_VERIFIER.exec
+# input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
+# output files :  $C12_VERIFIER.exec
 if [ ! -f "$WORKSPACE/$RECURSIVE_CIRCUIT.pil" ]; then
     node $RUNDIR/src/compressor12/main_compressor12_setup.js \
         -r $WORKSPACE/$RECURSIVE_CIRCUIT.r1cs \
@@ -75,7 +77,7 @@ fi
 
 echo "4. generate the commit polynomicals files  "
 # generate the commit polynomicals files 
-# input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil /$C12_VERIFIER.exec
+# input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil  $C12_VERIFIER.exec
 # output files :  $C12_VERIFIER.cm
 node $RUNDIR/src/compressor12/main_compressor12_exec.js \
     -w $WORKSPACE/$RECURSIVE_CIRCUIT"_js"/$RECURSIVE_CIRCUIT.wasm  \

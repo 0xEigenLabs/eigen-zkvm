@@ -53,6 +53,7 @@ pub mod r1cs2plonk;
 
 pub mod pil2circom;
 pub mod serializer;
+pub mod pilcom;
 
 #[macro_use]
 extern crate serde_json;

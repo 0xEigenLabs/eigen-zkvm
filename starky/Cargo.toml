@@ -31,6 +31,10 @@ env_logger = "0.10"
 # R1CS and Goldilocks
 plonky = { package="plonky", path = "../plonky", version = "0.0.2" }
 
+#powdr pil compile tool
+compiler = {git = "https://github.com/powdr-labs/powdr.git",rev = "91b677d3", package = "compiler"}
+
+
 [dev-dependencies]
 criterion = "0.4"
 pprof = { version = "0.3", features = ["flamegraph"] }

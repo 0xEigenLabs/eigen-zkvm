@@ -9,6 +9,9 @@ PILCACHE=$WORKSPACE/$TASK_NO/$CIRCUIT
 PILEXECJS=$4
 GENERATE_PROOF_TYPE=$5
 RUST_LOG=info
+#  CIRCUIT="fibonacci"
+#  PILEXECJS="fibonacci/fibonacci.js"
+#    ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "stark"
 
 mkdir -p $WORKSPACE/$TASK_NO
 mkdir -p $RUNDIR/circuits/$TASK_NO
@@ -16,14 +19,27 @@ mkdir -p $RUNDIR/circuits/$TASK_NO
 C12_VERIFIER=$TASK_NO/${CIRCUIT}".c12"
 RECURSIVE1_VERIFIER=$TASK_NO/${CIRCUIT}".recursive1"
 
+
+##### PIL-STARK Setup Phase
+
+# Compilation With PILCOM
+# compile .pil file into .pil.json by pilcom.
+# input files :  .pil file
+# output files :  .pil.json, .const, .cm
 mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TASK_NO --pc $PILCACHE
 
+# generate .circom file.
+# input files :  .pil json & starkStruct.json.gl
+# output files : .circom
 ../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
     -p $WORKSPACE/$TASK_NO/$CIRCUIT.pil.json \
     --o $WORKSPACE/$TASK_NO/$CIRCUIT.const \
     --m $WORKSPACE/$TASK_NO/$CIRCUIT.cm -c $RUNDIR/circuits/$C12_VERIFIER.circom --i $RUNDIR/circuits/$C12_VERIFIER.zkin.json
 
 ../target/release/eigen-zkit compile -p goldilocks -i $RUNDIR/circuits/$C12_VERIFIER.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/$TASK_NO
+
+# below also happened in start_aggregation.sh step4
+# todo seem like powdr::verify_pil can replace bow.
 
 # generate the pil files and  const polynomicals files
 # input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
