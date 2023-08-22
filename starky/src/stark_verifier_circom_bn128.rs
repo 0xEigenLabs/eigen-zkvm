@@ -504,11 +504,23 @@ template VerifyEvaluations() {{
     }}"#,
         stark_struct.nBits - 1,
         starkinfo.q_deg,
-        starkinfo.q_deg - 1,
+        if starkinfo.q_deg > 0 {
+            starkinfo.q_deg - 1
+        } else {
+            0
+        },
         starkinfo.q_deg,
         starkinfo.q_deg,
-        starkinfo.ev_idx.cm.get(&(0, starkinfo.qs[0])).unwrap(),
-        starkinfo.ev_idx.cm.get(&(0, starkinfo.qs[0])).unwrap(),
+        if starkinfo.q_deg > 0 {
+            starkinfo.ev_idx.cm.get(&(0, starkinfo.qs[0])).unwrap()
+        } else {
+            &0
+        },
+        if starkinfo.q_deg > 0 {
+            starkinfo.ev_idx.cm.get(&(0, starkinfo.qs[0])).unwrap()
+        } else {
+            &0
+        },
     ));
 
     res.push_str(&format!(
@@ -526,7 +538,11 @@ template VerifyEvaluations() {{
     enable * normC.out[2] === 0;
 }}
         "#,
-        starkinfo.q_deg - 1,
+        if starkinfo.q_deg > 0 {
+            starkinfo.q_deg - 1
+        } else {
+            0
+        },
         evalP,
         evalP,
         evalP
