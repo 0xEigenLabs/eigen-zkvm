@@ -479,11 +479,12 @@ template VerifyEvaluations() {{
         stark_struct.nBits - 1,
     ));
 
-    let (tmpCode, evalP) = unrollCode(&program.verifier_code.first, starkinfo);
-    res.push_str(&tmpCode);
+    if starkinfo.q_deg > 0 {
+        let (tmpCode, evalP) = unrollCode(&program.verifier_code.first, starkinfo);
+        res.push_str(&tmpCode);
 
-    res.push_str(&format!(
-        r#"
+        res.push_str(&format!(
+            r#"
     signal xN[3] <== zMul[{}].out;
 
     signal xAcc[{}][3];
@@ -502,28 +503,15 @@ template VerifyEvaluations() {{
             qAcc[i][2] <== qAcc[i-1][2] + qStep[i-1][2];
         }}
     }}"#,
-        stark_struct.nBits - 1,
-        starkinfo.q_deg,
-        if starkinfo.q_deg > 0 {
-            starkinfo.q_deg - 1
-        } else {
-            0
-        },
-        starkinfo.q_deg,
-        starkinfo.q_deg,
-        if starkinfo.q_deg > 0 {
-            starkinfo.ev_idx.cm.get(&(0, starkinfo.qs[0])).unwrap()
-        } else {
-            &0
-        },
-        if starkinfo.q_deg > 0 {
-            starkinfo.ev_idx.cm.get(&(0, starkinfo.qs[0])).unwrap()
-        } else {
-            &0
-        },
-    ));
+            stark_struct.nBits - 1,
+            starkinfo.q_deg,
+            starkinfo.q_deg - 1,
+            starkinfo.q_deg,
+            starkinfo.q_deg,
+            starkinfo.ev_idx.cm.get(&(0, starkinfo.qs[0])).unwrap(),
+            starkinfo.ev_idx.cm.get(&(0, starkinfo.qs[0])).unwrap(),
+        ));
 
-    if starkinfo.q_deg > 0 {
         res.push_str(&format!(
             r#"
     signal qZ[3] <== GLCMul()(qAcc[{}], Z);
@@ -545,7 +533,7 @@ template VerifyEvaluations() {{
     }
     res.push_str(
         r#"
-+}}"#,
+}"#,
     );
     res
 }
