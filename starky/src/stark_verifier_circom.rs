@@ -548,17 +548,15 @@ template VerifyEvaluations() {{
 // Final Verification
     enable * ({}[0] - qZ[0]) === 0;
     enable * ({}[1] - qZ[1]) === 0;
-    enable * ({}[2] - qZ[2]) === 0;"#,
+    enable * ({}[2] - qZ[2]) === 0;
+}}
+    "#,
             starkinfo.q_deg - 1,
             evalP,
             evalP,
             evalP
         ));
     }
-    res.push_str(
-        r#"
-}"#,
-    );
     res
 }
 

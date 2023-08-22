@@ -524,17 +524,15 @@ template VerifyEvaluations() {{
 
     enable * normC.out[0] === 0;
     enable * normC.out[1] === 0;
-    enable * normC.out[2] === 0;"#,
+    enable * normC.out[2] === 0;
+}}
+    "#,
             starkinfo.q_deg - 1,
             evalP,
             evalP,
             evalP
         ));
     }
-    res.push_str(
-        r#"
-}"#,
-    );
     res
 }
 
