@@ -552,8 +552,9 @@ template VerifyEvaluations() {{
         },
     ));
 
-    res.push_str(&format!(
-        r#"
+    if starkinfo.q_deg > 0 {
+        res.push_str(&format!(
+            r#"
     signal qZ[3] <== CMul()(qAcc[{}], Z);
 
 // Final Verification
@@ -562,15 +563,12 @@ template VerifyEvaluations() {{
     enable * ({}[2] - qZ[2]) === 0;
 }}
         "#,
-        if starkinfo.q_deg > 0 {
-            starkinfo.q_deg - 1
-        } else {
-            0
-        },
-        evalP,
-        evalP,
-        evalP
-    ));
+            starkinfo.q_deg - 1,
+            evalP,
+            evalP,
+            evalP
+        ));
+    }
     res
 }
 

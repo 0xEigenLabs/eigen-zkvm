@@ -523,8 +523,9 @@ template VerifyEvaluations() {{
         },
     ));
 
-    res.push_str(&format!(
-        r#"
+    if starkinfo.q_deg > 0 {
+        res.push_str(&format!(
+            r#"
     signal qZ[3] <== GLCMul()(qAcc[{}], Z);
 
 // Final Verification
@@ -538,15 +539,12 @@ template VerifyEvaluations() {{
     enable * normC.out[2] === 0;
 }}
         "#,
-        if starkinfo.q_deg > 0 {
-            starkinfo.q_deg - 1
-        } else {
-            0
-        },
-        evalP,
-        evalP,
-        evalP
-    ));
+            starkinfo.q_deg - 1,
+            evalP,
+            evalP,
+            evalP
+        ));
+    }
     res
 }
 
