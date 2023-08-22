@@ -70,19 +70,20 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     ctx.Zp = (ctx.challenge[7] * MG.0[ctx.nbits]).exp(ctx.N) - F3G::ONE;
 
     log::debug!("verifier_code {}", program.verifier_code);
-    let res = execute_code(&mut ctx, &mut program.verifier_code.first);
+    if starkinfo.q_deg > 0 {
+        let res = execute_code(&mut ctx, &mut program.verifier_code.first);
+        let mut x_acc = F3G::ONE;
+        let mut q = F3G::ZERO;
+        for i in 0..starkinfo.q_deg {
+            q = q + x_acc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
+            x_acc = x_acc * x_n;
+        }
+        let q_z = q * ctx.Z;
 
-    let mut x_acc = F3G::ONE;
-    let mut q = F3G::ZERO;
-    for i in 0..starkinfo.q_deg {
-        q = q + x_acc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
-        x_acc = x_acc * x_n;
-    }
-    let q_z = q * ctx.Z;
-
-    if !res.eq(&q_z) {
-        log::error!("not equal: res {} != q_z {}", res, q_z);
-        return Ok(false);
+        if !res.eq(&q_z) {
+            log::error!("Evaluation Q polynomial mismatch: res {}, q_z {}", res, q_z);
+            return Ok(false);
+        }
     }
 
     let fri = FRI::new(stark_struct);

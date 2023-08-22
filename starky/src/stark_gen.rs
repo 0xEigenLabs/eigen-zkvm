@@ -556,7 +556,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
     ) -> F3G {
         ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
-        log::info!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
+        log::debug!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
 
         let res = t.eval(ctx, idx); // just let public codegen run multiple times
                                     //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
@@ -731,7 +731,7 @@ pub fn calculate_exps(
 ) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    log::info!(
+    log::debug!(
         "calculate_exps compile_code {} ctx.first:\n{}",
         step,
         c_first
