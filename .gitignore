@@ -29,6 +29,8 @@ keys/setup_*.ptau
 **/circuits/
 **/package-lock.json
 witness.wtns
+test/powdr
+test/test_regression
 
 artifacts
 cache
