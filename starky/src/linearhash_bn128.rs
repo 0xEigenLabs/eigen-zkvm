@@ -118,7 +118,7 @@ impl LinearHashBN128 {
                 // padding zero to 4
                 let mut ein_4 = [FGL::ZERO; 4];
                 ein_4[..ein.len()].copy_from_slice(ein);
-                *eout = ElementDigest::<4>::to_bn128(&ein_4);
+                *eout = crate::digest::to_bn128(&ein_4);
             });
 
         // hash on each 16
