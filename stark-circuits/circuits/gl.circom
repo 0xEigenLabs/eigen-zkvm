@@ -20,17 +20,17 @@ template GLNorm() {
     (in+16*p) === k*p + out;
 }
 
-template GLCNorm(n_limb) {
-    signal input in[n_limb];
-    signal output out[n_limb];
+template GLCNorm() {
+    signal input in[5];
+    signal output out[5];
 
-    signal k[n_limb];
-    component n2bK[n_limb];
-    component n2bO[n_limb];
+    signal k[5];
+    component n2bK[5];
+    component n2bO[5];
 
     var p=0xFFFFFFFF00000001;
 
-    for (var i=0; i<n_limb; i++) {
+    for (var i=0; i<5; i++) {
         k[i] <-- (in[i]+16*p)\p;
         out[i] <-- (in[i]+16*p) - k[i]*p;
         n2bK[i] = Num2Bits(10);
@@ -89,15 +89,15 @@ template GLMulAdd() {
 }
 
 
-template GLCMul(n_limb) {
-    signal input ina[n_limb];
-    signal input inb[n_limb];
-    signal output out[n_limb];
+template GLCMul() {
+    signal input ina[5];
+    signal input inb[5];
+    signal output out[5];
 
     var p=0xFFFFFFFF00000001;
 
     signal A,B,C,D,E,F,G;
-    signal m[3];
+    signal m[5];
 
     A <== ((ina[0]+16*p) + (ina[1]+16*p))  * ((inb[0]+16*p) + (inb[1]+16*p));
     B <== ((ina[0]+16*p) + (ina[2]+16*p))  * ((inb[0]+16*p) + (inb[2]+16*p));
