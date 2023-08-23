@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 use crate::field_bn128::{Fr, FrRepr};
+use crate::traits::MTNodeType;
 use ff::*;
 use plonky::field_gl::Fr as FGL;
 use std::fmt::Display;
@@ -13,13 +14,38 @@ use std::fmt::Display;
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct ElementDigest<const N: usize>(pub [FGL; N]);
 
-impl<const N: usize> ElementDigest<N> {
-    pub fn new(value: [FGL; N]) -> Self {
-        Self(value)
+impl<const N: usize> MTNodeType for ElementDigest<N> {
+    #[inline(always)]
+    fn new(value: &[FGL]) -> Self {
+        assert_eq!(value.len() >= N, true);
+        let mut fv = [FGL::ZERO; N];
+        for i in 0..N {
+            fv[i] = value[i];
+        }
+        Self(fv)
     }
 
-    pub fn as_elements(&self) -> &[FGL] {
+    fn as_elements(&self) -> &[FGL] {
         &self.0
+    }
+
+    fn from_scalar<T: PrimeField>(e: &T) -> Self {
+        let mut result = [FGL::ZERO; N];
+        let ee = e.into_raw_repr();
+        let eee = ee.as_ref();
+        for i in 0..N {
+            result[i] = FGL::from(eee[i]);
+        }
+        ElementDigest::new(&result)
+    }
+
+    // TODO generic implement
+    fn as_bn128(self) -> Fr {
+        let mut result = Fr::zero();
+        for i in 0..N {
+            result.0 .0[i] = self.0[i].as_int();
+        }
+        result
     }
 }
 
@@ -32,42 +58,9 @@ impl<const N: usize> Display for ElementDigest<N> {
     }
 }
 
-/// Fr always consists of [u64; limbs], here for bn128, the limbs is 4.
-impl<const N: usize> From<&Fr> for ElementDigest<N> {
-    fn from(e: &Fr) -> Self {
-        let mut result = [FGL::ZERO; N];
-        for i in 0..N {
-            result[i] = FGL::from(e.0 .0[i]);
-        }
-        ElementDigest::new(result)
-    }
-}
-
-impl<const N: usize> Into<Fr> for ElementDigest<N> {
-    fn into(self) -> Fr {
-        let mut result = Fr::zero();
-        for i in 0..N {
-            result.0 .0[i] = self.0[i].as_int();
-        }
-        result
-    }
-}
-
 impl<const N: usize> Default for ElementDigest<N> {
     fn default() -> Self {
         ElementDigest::<N>([FGL::ZERO; N])
-    }
-}
-
-impl<const N: usize> From<[FGL; N]> for ElementDigest<N> {
-    fn from(value: [FGL; N]) -> Self {
-        Self(value)
-    }
-}
-
-impl<const N: usize> From<ElementDigest<N>> for [FGL; N] {
-    fn from(value: ElementDigest<N>) -> Self {
-        value.0
     }
 }
 
@@ -92,6 +85,7 @@ mod tests {
     use crate::digest::ElementDigest;
     use crate::field_bn128::Fr;
     use crate::helper::fr_to_biguint;
+    use crate::traits::MTNodeType;
     use ff::PrimeField;
     use num_bigint::BigUint;
     use num_traits::Num;
@@ -108,10 +102,10 @@ mod tests {
             FGL::rand(&mut rng),
             FGL::rand(&mut rng),
         ];
-        let b4 = ElementDigest::new(b4.try_into().unwrap());
-        let f1: Fr = b4.into();
+        let b4 = ElementDigest::new(&b4);
+        let f1: Fr = b4.as_bn128();
 
-        let b4_: ElementDigest<4> = ElementDigest::from(&f1);
+        let b4_: ElementDigest<4> = ElementDigest::from_scalar(&f1);
         assert_eq!(b4, b4_);
 
         let f: Fr = Fr::from_str(
@@ -119,8 +113,8 @@ mod tests {
         )
         .unwrap();
 
-        let e = ElementDigest::<4>::from(&f);
-        let f2: Fr = e.into();
+        let e = ElementDigest::<4>::from_scalar(&f);
+        let f2: Fr = e.as_bn128();
         assert_eq!(f, f2);
     }
 

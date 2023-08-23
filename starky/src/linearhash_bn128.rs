@@ -2,6 +2,7 @@
 use crate::errors::Result;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::poseidon_bn128_opt::Poseidon;
+use crate::traits::MTNodeType;
 use crate::ElementDigest;
 use ff::*;
 //use rayon::prelude::*;
@@ -68,7 +69,7 @@ impl LinearHashBN128 {
     /// convert to BN128 in montgomery
     #[inline(always)]
     pub fn to_bn128_mont(st64: [FGL; 4]) -> [FGL; 4] {
-        let bn: Fr = ElementDigest::<4>::new(st64).into();
+        let bn: Fr = ElementDigest::<4>::new(&st64).as_bn128();
         let bn_mont = match Fr::from_repr(bn.into_raw_repr()) {
             Ok(x) => x,
             _ => {
@@ -84,7 +85,10 @@ impl LinearHashBN128 {
                 r
             }
         };
-        ElementDigest::<4>::from(&bn_mont).into()
+        ElementDigest::<4>::from_scalar(&bn_mont)
+            .as_elements()
+            .try_into()
+            .unwrap()
     }
 
     #[inline(always)]
@@ -94,9 +98,9 @@ impl LinearHashBN128 {
         init_state: &Fr,
     ) -> Result<ElementDigest<4>> {
         assert_eq!(elems.len(), 16);
-        let elems = elems.iter().map(|e| (*e).into()).collect::<Vec<Fr>>();
+        let elems = elems.iter().map(|e| (*e).as_bn128()).collect::<Vec<Fr>>();
         let digest = self.h.hash(&elems, init_state)?;
-        Ok(ElementDigest::<4>::from(&digest))
+        Ok(ElementDigest::<4>::from_scalar(&digest))
     }
 
     pub fn hash_element_array(&self, vals: &[FGL]) -> Result<ElementDigest<4>> {
@@ -107,7 +111,7 @@ impl LinearHashBN128 {
                 st64[i] = *v;
             }
             let gl_mont = Self::to_bn128_mont(st64);
-            return Ok(ElementDigest::<4>::from(gl_mont));
+            return Ok(ElementDigest::<4>::new(&gl_mont));
         }
 
         // group into 3 * 4
@@ -127,7 +131,7 @@ impl LinearHashBN128 {
             digest = self.h.hash(&tmp_buf[i..(i + in_sz)].to_vec(), &digest)?;
         }
 
-        Ok(ElementDigest::<4>::from(&digest))
+        Ok(ElementDigest::<4>::from_scalar(&digest))
     }
 }
 

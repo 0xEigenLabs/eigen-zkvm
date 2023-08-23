@@ -5,6 +5,7 @@ use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
 use crate::linearhash::LinearHash;
 use crate::poseidon_opt::Poseidon;
+use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
@@ -135,7 +136,7 @@ impl MerkleTreeGL {
             inhash[4..8].copy_from_slice(&one);
         }
         let next = self.poseidon.hash(&inhash, &init, 4)?;
-        next_value = ElementDigest::<4>::new(next.try_into().unwrap());
+        next_value = ElementDigest::<4>::new(&next);
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
@@ -152,6 +153,7 @@ impl MerkleTreeGL {
 
 impl MerkleTree for MerkleTreeGL {
     type BaseField = FGL;
+    type MTNode = ElementDigest<4>;
 
     fn new() -> Self {
         Self {
@@ -264,7 +266,7 @@ impl MerkleTree for MerkleTreeGL {
 
     fn verify_group_proof(
         &self,
-        root: &ElementDigest<4>,
+        root: &Self::MTNode,
         mp: &Vec<Vec<FGL>>,
         idx: usize,
         group_elements: &Vec<FGL>,
@@ -281,6 +283,7 @@ impl MerkleTree for MerkleTreeGL {
 #[cfg(test)]
 mod tests {
     use crate::merklehash::MerkleTreeGL;
+    use crate::traits::MTNodeType;
     use crate::traits::MerkleTree;
     use plonky::field_gl::Fr as FGL;
 

@@ -1,11 +1,10 @@
 // input json of plonk
 #![allow(non_snake_case)]
-use crate::digest::ElementDigest;
 use crate::f3g::F3G;
 use crate::field_bn128::Fr;
 use crate::helper;
 use crate::stark_gen::StarkProof;
-use crate::traits::MerkleTree;
+use crate::traits::{MTNodeType, MerkleTree};
 use plonky::field_gl::Fr as FGL;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 
@@ -29,33 +28,35 @@ impl Serialize for F3G {
     }
 }
 
-pub struct Input(ElementDigest<4>, String);
+pub struct Input<T: MTNodeType>(T, String);
 
-impl Input {
-    pub fn new(e: ElementDigest<4>, hashtype: String) -> Self {
+impl<T: MTNodeType> Input<T> {
+    pub fn new(e: T, hashtype: String) -> Self {
         Input(e, hashtype)
     }
     pub fn is_dim_1(&self) -> bool {
-        self.0 .0[1] == self.0 .0[2] && self.0 .0[1] == self.0 .0[3] && self.0 .0[1] == FGL::ZERO
+        let e = self.0.as_elements();
+        e[1] == e[2] && e[1] == e[3] && e[1] == FGL::ZERO
     }
 }
 
-impl Serialize for Input {
+impl<T: MTNodeType + Clone> Serialize for Input<T> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
+        let e = self.0.as_elements();
         if self.is_dim_1() {
-            return serializer.serialize_str(&self.0 .0[0].as_int().to_string());
+            return serializer.serialize_str(&e[0].as_int().to_string());
         }
         match self.1.as_str() {
             "BN128" => {
-                let r: Fr = self.0.into();
+                let r: Fr = self.0.clone().as_bn128();
                 serializer.serialize_str(&helper::fr_to_biguint(&r).to_string())
             }
             "GL" => {
                 let mut seq = serializer.serialize_seq(Some(4))?;
-                for v in self.0 .0.iter() {
+                for v in e.iter() {
                     seq.serialize_element(&v.as_int().to_string())?;
                 }
                 seq.end()
@@ -65,17 +66,17 @@ impl Serialize for Input {
     }
 }
 
-impl From<Fr> for Input {
+impl<T: MTNodeType> From<Fr> for Input<T> {
     fn from(val: Fr) -> Self {
-        let e = ElementDigest::from(&val);
+        let e = T::from_scalar(&val);
         Self(e, "".to_string())
     }
 }
 
-impl From<FGL> for Input {
+impl<T: MTNodeType> From<FGL> for Input<T> {
     fn from(val: FGL) -> Self {
         Self(
-            ElementDigest::new([val, FGL::ZERO, FGL::ZERO, FGL::ZERO]),
+            T::new(&[val, FGL::ZERO, FGL::ZERO, FGL::ZERO]),
             "".to_string(),
         )
     }
@@ -91,16 +92,31 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         let mut map = serializer.serialize_map(Some(len))?;
 
         let hashtype = &self.stark_struct.verificationHashType;
-        match self.rootC {
+        match &self.rootC {
             Some(value) => {
-                map.serialize_entry("rootC", &Input::new(value, hashtype.clone()))?;
+                map.serialize_entry(
+                    "rootC",
+                    &Input::<M::MTNode>::new(value.clone(), hashtype.clone()),
+                )?;
             }
             None => {}
         }
-        map.serialize_entry("root1", &Input::new(self.root1, hashtype.clone()))?;
-        map.serialize_entry("root2", &Input::new(self.root2, hashtype.clone()))?;
-        map.serialize_entry("root3", &Input::new(self.root3, hashtype.clone()))?;
-        map.serialize_entry("root4", &Input::new(self.root4, hashtype.clone()))?;
+        map.serialize_entry(
+            "root1",
+            &Input::<M::MTNode>::new(self.root1, hashtype.clone()),
+        )?;
+        map.serialize_entry(
+            "root2",
+            &Input::<M::MTNode>::new(self.root2, hashtype.clone()),
+        )?;
+        map.serialize_entry(
+            "root3",
+            &Input::<M::MTNode>::new(self.root3, hashtype.clone()),
+        )?;
+        map.serialize_entry(
+            "root4",
+            &Input::<M::MTNode>::new(self.root4, hashtype.clone()),
+        )?;
         map.serialize_entry("evals", &self.evals)?;
 
         for i in 1..(self.fri_proof.queries.len()) {
@@ -109,7 +125,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                 &Input::new(self.fri_proof.queries[i].root, hashtype.clone()),
             )?;
             let mut vals: Vec<Vec<F3G>> = vec![];
-            let mut sibs: Vec<Vec<Vec<Input>>> = vec![];
+            let mut sibs: Vec<Vec<Vec<Input<M::MTNode>>>> = vec![];
             for q in 0..self.fri_proof.queries[0].pol_queries.len() {
                 let qe = &self.fri_proof.queries[i].pol_queries[q];
                 vals.push(qe[0].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
@@ -120,13 +136,13 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .map(|e| {
                             e.iter()
                                 .map(|ee| {
-                                    let mut res: Input = ee.clone().into();
+                                    let mut res: Input<M::MTNode> = ee.clone().into();
                                     res.1 = hashtype.clone();
                                     res
                                 })
-                                .collect::<Vec<Input>>()
+                                .collect::<Vec<Input<M::MTNode>>>()
                         })
-                        .collect::<Vec<Vec<Input>>>(),
+                        .collect::<Vec<Vec<Input<M::MTNode>>>>(),
                 );
             }
             map.serialize_entry(&format!("s{}_vals", i), &vals)?;
@@ -138,11 +154,11 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         let mut s0_vals3: Vec<Vec<F3G>> = vec![];
         let mut s0_vals4: Vec<Vec<F3G>> = vec![];
         let mut s0_valsC: Vec<Vec<F3G>> = vec![];
-        let mut s0_siblings1: Vec<Vec<Vec<Input>>> = vec![];
-        let mut s0_siblings2: Vec<Vec<Vec<Input>>> = vec![];
-        let mut s0_siblings3: Vec<Vec<Vec<Input>>> = vec![];
-        let mut s0_siblings4: Vec<Vec<Vec<Input>>> = vec![];
-        let mut s0_siblingsC: Vec<Vec<Vec<Input>>> = vec![];
+        let mut s0_siblings1: Vec<Vec<Vec<Input<M::MTNode>>>> = vec![];
+        let mut s0_siblings2: Vec<Vec<Vec<Input<M::MTNode>>>> = vec![];
+        let mut s0_siblings3: Vec<Vec<Vec<Input<M::MTNode>>>> = vec![];
+        let mut s0_siblings4: Vec<Vec<Vec<Input<M::MTNode>>>> = vec![];
+        let mut s0_siblingsC: Vec<Vec<Vec<Input<M::MTNode>>>> = vec![];
 
         for i in 0..self.fri_proof.queries[0].pol_queries.len() {
             //(leaf, path) represents each query
@@ -155,13 +171,13 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                     .map(|e| {
                         e.iter()
                             .map(|ee| {
-                                let mut res: Input = ee.clone().into();
+                                let mut res: Input<M::MTNode> = ee.clone().into();
                                 res.1 = hashtype.clone();
                                 res
                             })
-                            .collect::<Vec<Input>>()
+                            .collect::<Vec<Input<M::MTNode>>>()
                     })
-                    .collect::<Vec<Vec<Input>>>(),
+                    .collect::<Vec<Vec<Input<M::MTNode>>>>(),
             );
 
             if qe[1].0.len() > 0 {
@@ -173,13 +189,13 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .map(|e| {
                             e.iter()
                                 .map(|ee| {
-                                    let mut res: Input = ee.clone().into();
+                                    let mut res: Input<M::MTNode> = ee.clone().into();
                                     res.1 = hashtype.clone();
                                     res
                                 })
-                                .collect::<Vec<Input>>()
+                                .collect::<Vec<Input<M::MTNode>>>()
                         })
-                        .collect::<Vec<Vec<Input>>>(),
+                        .collect::<Vec<Vec<Input<M::MTNode>>>>(),
                 );
             }
 
@@ -192,13 +208,13 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .map(|e| {
                             e.iter()
                                 .map(|ee| {
-                                    let mut res: Input = ee.clone().into();
+                                    let mut res: Input<M::MTNode> = ee.clone().into();
                                     res.1 = hashtype.clone();
                                     res
                                 })
-                                .collect::<Vec<Input>>()
+                                .collect::<Vec<Input<M::MTNode>>>()
                         })
-                        .collect::<Vec<Vec<Input>>>(),
+                        .collect::<Vec<Vec<Input<M::MTNode>>>>(),
                 );
             }
 
@@ -212,13 +228,13 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .map(|e| {
                             e.iter()
                                 .map(|ee| {
-                                    let mut res: Input = ee.clone().into();
+                                    let mut res: Input<M::MTNode> = ee.clone().into();
                                     res.1 = hashtype.clone();
                                     res
                                 })
-                                .collect::<Vec<Input>>()
+                                .collect::<Vec<Input<M::MTNode>>>()
                         })
-                        .collect::<Vec<Vec<Input>>>(),
+                        .collect::<Vec<Vec<Input<M::MTNode>>>>(),
                 );
             }
 
@@ -231,13 +247,13 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .map(|e| {
                             e.iter()
                                 .map(|ee| {
-                                    let mut res: Input = ee.clone().into();
+                                    let mut res: Input<M::MTNode> = ee.clone().into();
                                     res.1 = hashtype.clone();
                                     res
                                 })
-                                .collect::<Vec<Input>>()
+                                .collect::<Vec<Input<M::MTNode>>>()
                         })
-                        .collect::<Vec<Vec<Input>>>(),
+                        .collect::<Vec<Vec<Input<M::MTNode>>>>(),
                 );
             }
         }

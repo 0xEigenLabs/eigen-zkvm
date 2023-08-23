@@ -6,6 +6,7 @@ use crate::f3g::F3G;
 use crate::field_bn128::Fr;
 use crate::linearhash_bn128::LinearHashBN128;
 use crate::poseidon_bn128_opt::Poseidon;
+use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use ff::Field;
 use plonky::field_gl::Fr as FGL;
@@ -101,7 +102,7 @@ impl MerkleTreeBN128 {
         let mut sibs: Vec<Fr> = vec![];
 
         for i in 0..16 {
-            let sib = self.nodes[offset + (si + i)].into();
+            let sib: Fr = self.nodes[offset + (si + i)].as_bn128();
             sibs.push(sib);
         }
 
@@ -129,7 +130,7 @@ impl MerkleTreeBN128 {
         }
         let init = Fr::zero();
         let next_value = self.poseidon.hash(&vals, &init)?;
-        let next_value = ElementDigest::<4>::from(&next_value);
+        let next_value = ElementDigest::<4>::from_scalar(&next_value);
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
@@ -140,12 +141,13 @@ impl MerkleTreeBN128 {
         vals: &Vec<FGL>,
     ) -> Result<ElementDigest<4>> {
         let h = self.h.hash_element_matrix(&vec![vals.to_vec()])?;
-        self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::<4>::from(&h), 0)
+        self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::<4>::from_scalar(&h), 0)
     }
 }
 
 impl MerkleTree for MerkleTreeBN128 {
     type BaseField = Fr;
+    type MTNode = ElementDigest<4>;
 
     fn new() -> Self {
         Self {
@@ -256,7 +258,7 @@ impl MerkleTree for MerkleTreeBN128 {
 
     fn verify_group_proof(
         &self,
-        root: &ElementDigest<4>,
+        root: &Self::MTNode,
         mp: &Vec<Vec<Fr>>,
         idx: usize,
         group_elements: &Vec<FGL>,
@@ -274,6 +276,7 @@ impl MerkleTree for MerkleTreeBN128 {
 mod tests {
     use crate::field_bn128::Fr;
     use crate::merklehash_bn128::MerkleTreeBN128;
+    use crate::traits::MTNodeType;
     use crate::traits::MerkleTree;
     use ff::PrimeField;
     use plonky::field_gl::Fr as FGL;
@@ -294,7 +297,7 @@ mod tests {
 
         let mut tree = MerkleTreeBN128::new();
         tree.merkelize(cols, n_pols, n).unwrap();
-        let root: Fr = tree.root().into();
+        let root: Fr = tree.root().as_bn128();
         assert_eq!(
             root,
             Fr::from_str(
