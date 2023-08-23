@@ -25,10 +25,12 @@ impl<const N: usize> MTNodeType for ElementDigest<N> {
         Self(fv)
     }
 
+    #[inline(always)]
     fn as_elements(&self) -> &[FGL] {
         &self.0
     }
 
+    #[inline(always)]
     fn from_scalar<T: PrimeField>(e: &T) -> Self {
         let mut result = [FGL::ZERO; N];
         let ee = e.into_raw_repr();
@@ -40,6 +42,7 @@ impl<const N: usize> MTNodeType for ElementDigest<N> {
     }
 
     // TODO generic implement
+    #[inline(always)]
     fn as_bn128(self) -> Fr {
         let mut result = Fr::zero();
         for i in 0..N {
@@ -59,6 +62,7 @@ impl<const N: usize> Display for ElementDigest<N> {
 }
 
 impl<const N: usize> Default for ElementDigest<N> {
+    #[inline(always)]
     fn default() -> Self {
         ElementDigest::<N>([FGL::ZERO; N])
     }
