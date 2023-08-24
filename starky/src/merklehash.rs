@@ -195,7 +195,7 @@ impl MerkleTree for MerkleTreeGL {
             n_per_thread_f = min_corrected;
         }
 
-        let mut nodes = vec![ElementDigest::<4>::default(); get_n_nodes(height)];
+        let mut nodes = vec![Self::MTNode::default(); get_n_nodes(height)];
         let now = Instant::now();
         if buff.len() > 0 {
             nodes
@@ -260,7 +260,7 @@ impl MerkleTree for MerkleTreeGL {
         Ok((v, mp))
     }
 
-    fn eq_root(&self, r1: &ElementDigest<4>, r2: &ElementDigest<4>) -> bool {
+    fn eq_root(&self, r1: &Self::MTNode, r2: &Self::MTNode) -> bool {
         r1 == r2
     }
 
@@ -275,7 +275,7 @@ impl MerkleTree for MerkleTreeGL {
         Ok(self.eq_root(root, &c_root))
     }
 
-    fn root(&self) -> ElementDigest<4> {
+    fn root(&self) -> Self::MTNode {
         self.nodes[self.nodes.len() - 1]
     }
 }

@@ -83,8 +83,9 @@ The solver can be found [here](https://www.polymathlove.com/polymonials/midpoint
 
 Observe that the multiplication and inversion for scalar field in bn254 and bls12-381 is quite different, so we can implement two templates for each operator, and choose the right one when rendering the `stark_verifier`.
 
+### Merkle
+
 
 ## ElementDigest
 
 the struct `ElementDigest` stands for the value of node in Merkle tree. For bn254, each node, including the root, contains 4 Godilocks elements, while bls12-381 is 6.
-The ElementDigest is used by trait MerkleTree, an [associated type in trait](https://doc.rust-lang.org/book/ch19-03-advanced-traits.html), like `type ELEM_SIZE` to indicate the Godilocks element number for the big field element.

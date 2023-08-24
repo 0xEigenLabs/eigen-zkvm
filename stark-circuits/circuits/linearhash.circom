@@ -7,7 +7,7 @@ template LinearHash(nInputs, eSize) {
     signal input in[nInputs][eSize];
     signal output out;
 
-    var nElements256 = (nInputs*eSize - 1)\3 +1;
+    var nElements256 = (nInputs*eSize - 1)\5 +1;
 
     var sAc = 0;
     var nAc =0;
@@ -50,7 +50,7 @@ template LinearHash(nInputs, eSize) {
             for (var j=0; j<eSize; j++) {
                 sAc = sAc + 2**(64*nAc) * in[i][j];
                 nAc ++;
-                if (nAc == 3) {
+                if (nAc == 5) {
                     if (curHash == nHashes - 1) {
                         lastHash.inputs[curHashIdx] <== sAc;
                     } else {

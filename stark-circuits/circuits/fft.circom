@@ -48,10 +48,10 @@ template parallel FFT(nBits, inv) {
     var p = 0xFFFFFFFF00000001;
     var N = 1<<nBits;
 
-    signal input in[N][3];
-    signal output out[N][3];
+    signal input in[N][5];
+    signal output out[N][5];
 
-    signal k[N][3];
+    signal k[N][5];
 
     var w;
     var ws[N];
@@ -68,7 +68,7 @@ template parallel FFT(nBits, inv) {
 
     var sum[N][3];
     for (var i=0; i<N; i++) {
-        for (var e=0; e<3; e++) {
+        for (var e=0; e<5; e++) {
             sum[i][e] = 0;
             for (var j=0; j<N; j++) {
                 sum[i][e] = sum[i][e] + ws[(i*j)%N]* in[j][e];
@@ -76,10 +76,10 @@ template parallel FFT(nBits, inv) {
         }
     }
 
-    component n2bK[N][3];
-    component n2bO[N][3];
+    component n2bK[N][5];
+    component n2bO[N][5];
     for (var i=0; i<N; i++) {
-        for (var e=0; e<3; e++) {
+        for (var e=0; e<5; e++) {
             k[i][e] <-- sum[i][e] \ p;
             out[i][e] <-- sum[i][e] % p;
 

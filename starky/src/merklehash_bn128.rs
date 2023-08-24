@@ -252,7 +252,7 @@ impl MerkleTree for MerkleTreeBN128 {
         Ok((v, mp))
     }
 
-    fn eq_root(&self, r1: &ElementDigest<4>, r2: &ElementDigest<4>) -> bool {
+    fn eq_root(&self, r1: &Self::MTNode, r2: &Self::MTNode) -> bool {
         r1 == r2
     }
 
@@ -267,7 +267,7 @@ impl MerkleTree for MerkleTreeBN128 {
         Ok(self.eq_root(root, &c_root))
     }
 
-    fn root(&self) -> ElementDigest<4> {
+    fn root(&self) -> Self::MTNode {
         self.nodes[self.nodes.len() - 1]
     }
 }
