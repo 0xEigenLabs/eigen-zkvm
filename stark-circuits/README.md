@@ -85,6 +85,8 @@ Observe that the multiplication and inversion for scalar field in bn254 and bls1
 
 ### Merkle
 
+For the Merkel Circuit, each leaf is N-elements on GL field, where N is 4 for bn254, and 6 for bls12-381. Before we calculate the merkle root, we need convert the N-elements to one element in big field.
+As a refernece, [to\_bn128](https://github.com/0xEigenLabs/eigen-zkvm/blob/main/starky/src/digest.rs#L73) is present, and same conversion should be applied to bls-12381.
 
 ## ElementDigest
 

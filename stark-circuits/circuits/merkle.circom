@@ -3,6 +3,7 @@ pragma circom 2.0.2;
 include "poseidon.circom";
 
 template Merkle(keyBits) {
+    // FIXME: should 6 * 4
     var arity = 16;
     var nLevels = 0;
     var n = 1 << keyBits;
