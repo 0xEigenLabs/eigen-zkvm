@@ -35,7 +35,8 @@ pub fn prove(
     match stark_struct.verificationHashType.as_str() {
         "BN128" => {
             let mut setup =
-                StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+                StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None)
+                    .unwrap();
             let mut starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
                 &cm_pol,
                 &const_pol,
@@ -93,7 +94,7 @@ pub fn prove(
         }
         "GL" => {
             let mut setup =
-                StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+                StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
             let mut starkproof = StarkProof::<MerkleTreeGL>::stark_gen::<TranscriptGL>(
                 &cm_pol,
                 &const_pol,

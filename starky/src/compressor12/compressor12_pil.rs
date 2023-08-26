@@ -1,4 +1,4 @@
-pub fn render(nBits: usize, nPublics: usize) -> String {
+pub fn render(n_bits: usize, n_publics: usize) -> String {
     let mut res = String::from("");
     res.push_str(&format!(
         r#"
@@ -7,9 +7,9 @@ constant %N = 2**{};
 namespace Global(%N);
     pol constant L1;
 "#,
-        nBits
+        n_bits
     ));
-    for i in (12..nPublics).step_by(12) {
+    for i in (12..n_publics).step_by(12) {
         res.push_str(&format!(
             r#"
     pol constant L{};
@@ -27,7 +27,7 @@ namespace Compressor(%N);
             "#
     ));
 
-    for i in 0..nPublics {
+    for i in 0..n_publics {
         res.push_str(&format!(
             r#"
     public pub{} = a[{}]({});
@@ -38,7 +38,7 @@ namespace Compressor(%N);
         ));
     }
 
-    for i in 0..nPublics {
+    for i in 0..n_publics {
         res.push_str(&format!(
             r#"
     Global.L{} * (a[{}] - :pub{}) = 0;

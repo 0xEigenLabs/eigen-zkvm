@@ -285,6 +285,7 @@ impl WitnessCalculator {
     }
 }
 
+#[allow(dead_code)]
 pub fn value_to_bigint(v: Value) -> BigInt {
     match v {
         Value::String(inner) => BigInt::from_str(&inner).unwrap(),

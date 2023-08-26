@@ -248,7 +248,11 @@ impl fmt::Display for StarkInfo {
 }
 
 impl StarkInfo {
-    pub fn new(pil: &mut PIL, stark_struct: &StarkStruct) -> Result<(StarkInfo, Program)> {
+    pub fn new(
+        pil: &mut PIL,
+        stark_struct: &StarkStruct,
+        global_l1: Option<String>,
+    ) -> Result<(StarkInfo, Program)> {
         let pil_deg = pil.references.values().nth(0).unwrap().polDeg;
 
         let stark_deg = 2usize.pow(stark_struct.nBits as u32);
@@ -337,7 +341,7 @@ impl StarkInfo {
         info.generate_step2(&mut ctx, pil, &mut program)?; // H1, H2
 
         log::info!("generate_step3");
-        info.generate_step3(&mut ctx, pil, &mut program)?; // Z Polynonmial and LC of the permutation checks
+        info.generate_step3(&mut ctx, pil, &mut program, global_l1)?; // Z Polynonmial and LC of the permutation checks
 
         log::info!("generate_constraint_polynomial");
         info.generate_constraint_polynomial(

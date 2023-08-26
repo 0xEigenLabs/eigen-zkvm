@@ -376,12 +376,14 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             cur_s = cur_s * shift_in;
         }
 
-        fft(
-            &qq2,
-            starkinfo.q_dim * starkinfo.q_deg,
-            ctx.nbits_ext,
-            &mut ctx.cm4_2ns,
-        );
+        if starkinfo.q_deg > 0 {
+            fft(
+                &qq2,
+                starkinfo.q_dim * starkinfo.q_deg,
+                ctx.nbits_ext,
+                &mut ctx.cm4_2ns,
+            );
+        }
 
         log::info!("Merkelizing 4....");
         let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
@@ -1047,7 +1049,7 @@ pub mod tests {
     use crate::types::load_json;
     use crate::types::{StarkStruct, PIL};
 
-    use crate::field_bn128::{Fr, FrRepr};
+    use crate::field_bn128::Fr;
 
     #[test]
     fn test_stark_gen() {
@@ -1061,7 +1063,7 @@ pub mod tests {
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
         let mut setup =
-            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let fr_root: Fr = setup.const_root.into();
         log::info!("setup {}", fr_root);
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
@@ -1099,7 +1101,7 @@ pub mod tests {
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
         let mut setup =
-            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             &cm_pol,
             &const_pol,
@@ -1133,7 +1135,7 @@ pub mod tests {
         cm_pol.load("data/plookup.cm").unwrap();
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
         let mut setup =
-            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             &cm_pol,
             &const_pol,
@@ -1165,7 +1167,7 @@ pub mod tests {
         cm_pol.load("data/connection.cm").unwrap();
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
         let mut setup =
-            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             &cm_pol,
             &const_pol,
@@ -1197,7 +1199,7 @@ pub mod tests {
         cm_pol.load("data/plookup.cm.gl").unwrap();
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.gl").unwrap();
         let mut setup =
-            StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct).unwrap();
+            StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let starkproof = StarkProof::<MerkleTreeGL>::stark_gen::<TranscriptGL>(
             &cm_pol,
             &const_pol,
