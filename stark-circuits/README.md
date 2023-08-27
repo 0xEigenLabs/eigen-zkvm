@@ -1,8 +1,10 @@
 # Stark Circuit
 
-Stark circuit is the valilla Stark verifier implementation over both BN254 and BLS12-381 by Circom 2. We call the scalar field of bn254 or BLS12-381 as big field for short.
-This code orignals from [Hermez pil-stark](https://github.com/0xPolygonHermez/pil-stark), and here we generalize the basic blocks for big fields, using `n_limb` as the number of Godilocks elements to indicate one of big field.
-To be specific, one BN254 element can contain 3 Godilocks elements, and one BLS12-381 contains 5.
+Stark circuit is the valilla Stark verifier implementation atop both BN254 and BLS12-381 by Circom 2. We call the scalar field of bn254 or BLS12-381 as big field for short.
+This code orignals from [Hermez pil-stark](https://github.com/0xPolygonHermez/pil-stark), and here we generalize the basic blocks for big fields, using `eSize` as the number of Godilocks elements to indicate one of big field.
+
+
+For the [recursion-aggregation-composition architechure](../docs/recursion-aggregation-composition.png)(source: p14, [proof-recursion](https://github.com/0xPolygonHermez/zkevm-techdocs/blob/main/proof-recursion/v.1.1/proof-recursion.pdf)), the final stage is generated atop big field for final verification on L1, like Ethereum or Cardano, which means that before final stage, all computation are atop Godilocks, when into the final stage, it verifys the Snark proof of stark's verification computation atop big field.
 
 ## Basic Blocks
 
@@ -21,25 +23,21 @@ To be specific, one BN254 element can contain 3 Godilocks elements, and one BLS1
 ### Irreducible polinomial
 
 For the element mapping from Goldilocks field to Scalar field of BLS12-381, a field switch is need.
-The scalar field of bls381 could be presented by 5-64bits, by refering to the switch for Godilocks-BN254, we choose the valilla Irreducible Polynomail atop GF(2^5).
+The scalar field of bls381 could be presented by 5-64bits, by refering to the switch for Godilocks-BN254, we choose the valilla Irreducible Polynomail atop [$GF_{p^5}$](https://github.com/pornin/ecgfp5).
 
-* BN254: `x^3 - x + 1`
-* BLS12-381: `x^5 - x^2 + 1`
+* BN254: `x^3 - x - 1`
+* BLS12-381: `x^5 - 3`
 
 use sage to verify this:
 
 ```
-sage: p = 2
+sage: p = 2**64 - 2**32 + 1
 sage: R.<x> = GF(p)[]
-sage: (x^5 -x^2 + 1).is_irreducible()
+sage: (x^3 -x - 1).is_irreducible()
 True
 sage: (x^5 - 3).is_irreducible()
-False
-sage: (x^3 + x + 1).is_irreducible()
 True
 ```
-
-Read [more](https://www.partow.net/programming/polynomials/index.html).
 
 ### Arithmetic
 
@@ -52,22 +50,23 @@ Given `p = 2^64 - 2^32 + 1`,
 For BN254
 
 ```
-pa * pb = (a, b, c) * (d, e, f) = (a*d+b*f+c*e, a*e+b*d+b*f+c*e+c*f, a*f+b*e+c*d+c*f) mod p
+pa * pb = (a, b, c) * (d, e, f) = (ad+bf+ce, ae+bd+bf+ce+cf, af+be+cd+cf) mod p
 ```
 
 For BLS12-381
 
 
 ```
-pa * pb = (a, b, c, d, e) * (f, g, h, i, j) = ((a + bx + cx^2 + dx^3 + ex^4)*(f + gx + hx^2 + ix^3 + jx^4)) % (x^5 - x^2 + 1)
+pa * pb = (a, b, c, d, e) * (f, g, h, i, j) = ((a + bx + cx^2 + dx^3 + ex^4)*(f + gx + hx^2 + ix^3 + jx^4)) % (x^5 - 3)
         = (
-        af + eg + dh + ci + (bj + ej),
-        bf + ag + eh + di + cj,
-        cf + (bg + eg) + (bh + dh) + (ci + ei) + (bj + dj + ej),
-        df + cg + (bh + eh) + (ai + di) + (cj + ej),
-        ef + dg + ch + (bi + ei) + (aj + dj),
+            _,
+            _,
+            _,
+            _
         )
 ```
+
+where x^5 = 3, x^6 = 3x, x^7 = 3x^2, x^8 = 3x^3, x^9 = 3x^4, x^10 = 9 mod (x^5 - 3)
 
 * Inv
 
@@ -76,9 +75,9 @@ Using a * b = 1 to solve `a^-1`. For a multivariable polynomial, it's the soluti
 For BN254, it just need to solve below multivariable polynomial to get `d, e, f`.
 
 ```
-f*a+b*e+d*c+c*f = 0
-d*b+e*a+c*f+b*f+e*c=0
-a*d+b*f+e*c=1
+fa+be+dc+cf = 0
+db+ea+cf+bf+ec=0
+ad+bf+ec=1
 ```
 
 The solver can be found [here](https://www.polymathlove.com/polymonials/midpoint-of-a-line/symbolic-equation-solving.html#c=solve_algstepsequationsolvesystem&v247=d%252Ce%252Cf&v248=3&v249=f*a%2Bb*e%2Bd*c%2B%2520c*f%2520%253D%25200&v250=d*b%2Be*a%2Bc*f%2Bb*f%2Be*c%253D0&v251=a*d%2Bb*f%2Be*c%253D1).
