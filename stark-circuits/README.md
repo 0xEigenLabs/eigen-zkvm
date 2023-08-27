@@ -1,7 +1,7 @@
 # Stark Circuit
 
 Stark circuit is the valilla Stark verifier implementation over both BN254 and BLS12-381 by Circom 2. We call the scalar field of bn254 or BLS12-381 as big field for short.
-This code orignals from Hermez pil-stark, and here we generalize the basic blocks for big fields, using `n_limb` as the number of Godilocks elements to indicate one of big field.
+This code orignals from [Hermez pil-stark](https://github.com/0xPolygonHermez/pil-stark), and here we generalize the basic blocks for big fields, using `n_limb` as the number of Godilocks elements to indicate one of big field.
 To be specific, one BN254 element can contain 3 Godilocks elements, and one BLS12-381 contains 5.
 
 ## Basic Blocks
