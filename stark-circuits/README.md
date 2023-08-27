@@ -26,6 +26,19 @@ The scalar field of bls381 could be presented by 5-64bits, by refering to the sw
 * BN254: `x^3 - x + 1`
 * BLS12-381: `x^5 - x^2 + 1`
 
+use sage to verify this:
+
+```
+sage: p = 2
+sage: R.<x> = GF(p)[]
+sage: (x^5 -x^2 + 1).is_irreducible()
+True
+sage: (x^5 - 3).is_irreducible()
+False
+sage: (x^3 + x + 1).is_irreducible()
+True
+```
+
 Read [more](https://www.partow.net/programming/polynomials/index.html).
 
 ### Arithmetic
