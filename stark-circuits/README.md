@@ -59,14 +59,15 @@ For BLS12-381
 ```
 pa * pb = (a, b, c, d, e) * (f, g, h, i, j) = ((a + bx + cx^2 + dx^3 + ex^4)*(f + gx + hx^2 + ix^3 + jx^4)) % (x^5 - 3)
         = (
-            _,
-            _,
-            _,
-            _
+            af + 3eg + 3dh + 3ci + 3bj,
+            bf + ag  + 3eh + 3di + 3ci,
+            cf + bg  + ah  + 3ei + 3dj,
+            df + cg  + bh  + ai  + 3ej,
+            ef + dg  + ch  + bi  + aj
         )
 ```
 
-where x^5 = 3, x^6 = 3x, x^7 = 3x^2, x^8 = 3x^3, x^9 = 3x^4, x^10 = 9 mod (x^5 - 3)
+where x^5 = 3, x^6 = 3x, x^7 = 3x^2, x^8 = 3x^3 mod (x^5 - 3)
 
 * Inv
 
@@ -85,11 +86,11 @@ The solver can be found [here](https://www.polymathlove.com/polymonials/midpoint
 For BLS12-381,
 
 ```
-af + eg + dh + ci + (bj + ej) = 1
-bf + ag + eh + di + cj = 0
-cf + (bg + eg) + (bh + dh) + (ci + ei) + (bj + dj + ej) = 0
-df + cg + (bh + eh) + (ai + di) + (cj + ej) = 0
-ef + dg + ch + (bi + ei) + (aj + dj) = 0
+af + 3eg + 3dh + 3ci + 3bj = 1
+bf + ag  + 3eh + 3di + 3ci = 0
+cf + bg  + ah  + 3ei + 3dj = 0
+df + cg  + bh  + ai  + 3ej = 0
+ef + dg  + ch  + bi  + aj = 0
 ```
 
 The solver can be found [here](https://www.polymathlove.com/polymonials/midpoint-of-a-line/symbolic-equation-solving.html#c=solve_algstepsequationsolvesystem&v247=f%252Cg%252Ch%252Ci%252Cj&v248=5&v249=af%2520%2B%2520eg%2520%2B%2520dh%2520%2B%2520ci%2520%2B%2520%2528bj%2520%2B%2520ej%2529%2520%253D%25201&v250=bf%2520%2B%2520ag%2520%2B%2520eh%2520%2B%2520di%2520%2B%2520cj%2520%253D%25200&v251=cf%2520%2B%2520%2528bg%2520%2B%2520eg%2529%2520%2B%2520%2528bh%2520%2B%2520dh%2529%2520%2B%2520%2528ci%2520%2B%2520ei%2529%2520%2B%2520%2528bj%2520%2B%2520dj%2520%2B%2520ej%2529%2520%253D%25200&v252=df%2520%2B%2520cg%2520%2B%2520%2528bh%2520%2B%2520eh%2529%2520%2B%2520%2528ai%2520%2B%2520di%2529%2520%2B%2520%2528cj%2520%2B%2520ej%2529%2520%253D%25200&v253=ef%2520%2B%2520dg%2520%2B%2520ch%2520%2B%2520%2528bi%2520%2B%2520ei%2529%2520%2B%2520%2528aj%2520%2B%2520dj%2529%2520%253D%25200)
