@@ -1,5 +1,5 @@
 extern crate clap;
-use clap::Parser;
+use clap::{command, Parser};
 use plonky::api::{
     aggregation_check, aggregation_prove, aggregation_verify, analyse, calculate_witness,
     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
@@ -273,6 +273,11 @@ enum Command {
 
     #[command(name = "analyse")]
     Analyse(AnalyseOpt),
+
+    #[command!(name="main_compressor12_setup")]
+    Compresor12Setup(Compresor12SetupOpt),
+    #[command!(name="main_compressor12_exec")]
+    Compresor12Exec(Compresor12ExecOpt),
 }
 
 #[derive(Parser, Debug)]
