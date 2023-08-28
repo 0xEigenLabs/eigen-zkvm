@@ -5,7 +5,6 @@ use crate::pilcom::compile_pil;
 // const pil = await compile(F, pilFile, null, pilConfig);
 // await fs.promises.writeFile(pilFile+ ".json", JSON.stringify(pil, null, 1) + "\n", "utf8");
 
-
 // 2. pil -> cm
 // const cmPols = newCommitPolsArray(pil);
 // 3. wasm -> wc

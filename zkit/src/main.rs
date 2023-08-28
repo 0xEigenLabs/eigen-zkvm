@@ -240,6 +240,41 @@ struct AggregationCheckOpt {
     new_proof: String,
 }
 
+// .usage("node main_compressor12_setup.js -r <verifier.c12.r1cs> -p <verifier.c12.pil> -c <verifier.c12.const> -e <verifier.c12.exec> [--forceNBits=23]")
+#[derive(Parser, Debug)]
+struct Compresor12SetupOpt {
+    #[arg(long = "r", default_value = "mycircuit.verifier.r1cs")]
+    r1cs_file: String,
+    #[arg(long = "c", default_value = "mycircuit.c12.const")]
+    const_file: String, // Output file required to build the constants
+    #[arg(long = "p", default_value = "mycircuit.c12.pil")]
+    pil_file: String, // Proposed PIL
+    #[arg(long = "e", default_value = "mycircuit.c12.exec")]
+    exec_file: String, // File required to execute
+    #[arg(short, default_value = "23")]
+    force_n_bits: usize,
+}
+
+// generate the pil files and  const polynomicals files
+// .usage("node main_compressor12_exec.js -r <r1cs.circom> -p <pil.json> [-P <pilconfig.json] -v <verification_key.json>")
+#[derive(Parser, Debug)]
+struct Compresor12ExecOpt {
+    // input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
+    #[arg(long = "i", default_value = "mycircuit.proof.zkin.json")]
+    input_file: String,
+    #[arg(long = "w", default_value = "mycircuit.verifier.wasm")]
+    wasm_file: String,
+    #[arg(long = "p", default_value = "mycircuit.c12.pil")]
+    pil_file: String,
+    #[arg(long = "pc", default_value = "")]
+    pil_config_file: String,
+    // output files :  $C12_VERIFIER.exec
+    #[arg(long = "e", default_value = "mycircuit.c12.exec")]
+    exec_file: String,
+    #[arg(long = "cm", default_value = "mycircuit.c12.exec")]
+    commit_file: String,
+}
+
 #[derive(Parser, Debug)]
 enum Command {
     #[command(name = "setup")]
@@ -274,9 +309,9 @@ enum Command {
     #[command(name = "analyse")]
     Analyse(AnalyseOpt),
 
-    #[command!(name="main_compressor12_setup")]
+    #[command(name = "main_compressor12_setup")]
     Compresor12Setup(Compresor12SetupOpt),
-    #[command!(name="main_compressor12_exec")]
+    #[command(name = "main_compressor12_exec")]
     Compresor12Exec(Compresor12ExecOpt),
 }
 
@@ -406,6 +441,8 @@ fn main() {
         .map_err(|e| EigenError::from(format!("stark prove error {:?}", e))),
 
         Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
+        Command::Compresor12Setup(args) => todo!(),
+        Command::Compresor12Exec(args) => todo!(),
     };
     match exec_result {
         Err(x) => {

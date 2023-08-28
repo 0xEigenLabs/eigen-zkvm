@@ -52,8 +52,8 @@ pub mod transcript_bn128;
 pub mod r1cs2plonk;
 
 pub mod pil2circom;
-pub mod serializer;
 pub mod pilcom;
+pub mod serializer;
 
 #[macro_use]
 extern crate serde_json;

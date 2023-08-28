@@ -152,7 +152,11 @@ pub struct PlonkSetupInfo {
     plonkinfo: NormalPlonkInfo,
 }
 
-pub fn plonk_setup_render(r1cs: &R1CS<GL>, opts: &Options, out_pil: &str) -> PlonkSetupInfo {
+pub fn plonk_setup_render(
+    r1cs: &R1CS<GL>,
+    opts: &Options,
+    out_pil: &str,
+) -> (PlonkSetupInfo, String) {
     let pc = r1cs2plonk(r1cs);
     let plonkinfo = get_normal_plonkinfo(r1cs, &pc.0, &pc.1);
     let custom_gates_info = get_custom_gate_info(r1cs, &pc.0, &pc.1);
@@ -169,49 +173,64 @@ pub fn plonk_setup_render(r1cs: &R1CS<GL>, opts: &Options, out_pil: &str) -> Plo
         n_bits = opts.force_bits;
     }
     let com_pil = compressor12_pil::render(n_bits, n_publics);
-    let mut file = File::create(out_pil).unwrap();
+    let mut file = File::create(out_pil.clone()).unwrap();
     write!(file, "{}", com_pil).unwrap();
 
+    // todo
     // let pil = crate::pilcom::compile(com_pil);
     // let const_pols = PolsArray::new();
 
-    PlonkSetupInfo {
-        n_used,
-        n_bits,
-        n_publics,
-        pg: pc.0,
-        pa: pc.1,
-        custom_gates_info,
-        plonkinfo,
-    }
+    (
+        PlonkSetupInfo {
+            n_used,
+            n_bits,
+            n_publics,
+            pg: pc.0,
+            pa: pc.1,
+            custom_gates_info,
+            plonkinfo,
+        },
+        com_pil,
+    )
 }
 
-// pub fn setup(circuit_file: &String, opts: &Options, out_pil: &str) -> Result<()> {
-//     // // a.generate plonk circuit pil file.
-//     // // b.compile(pil) to construct .cm file.
-//     // const res = await plonkSetup(r1cs, options);
-//     //
-//
-//     let r1cs = load_r1cs::<GL>(circuit_file);
-//     let (pc, pa) = r1cs2plonk(&r1cs);
-//     println!("pc {}, pa {}", pc.len(), pa.len());
-//     let opts = Options { force_bits: 0 };
-//     let plonksetupinfo = plonk_setup_render(&r1cs, &opts, out_pil);
-//
-//     // await fs.promises.writeFile(pilFile, res.pilStr, "utf8");
-//     //
-//     // await res.constPols.saveToFile(constFile);
-//     //
-//     // await writeExecFile(execFile,res.plonkAdditions,  res.sMap);
-//
-//     let ser_proof_str = serde_json::to_string_pretty(&serialized_proof)?;
-//     let ser_inputs_str = serde_json::to_string_pretty(&inputs)?;
-//
-//     std::fs::write(proof_json, ser_proof_str.as_bytes())?;
-//     std::fs::write(public_json, ser_inputs_str.as_bytes())?;
-//
-//     Result::Ok(())
-// }
+// todo async
+pub fn setup(
+    r1cs_file: &String,
+    const_file: &String,
+    pil_file: &String,
+    exec_file: &String,
+    force_n_bits: usize,
+) -> Result<()> {
+    let opts = Options {
+        force_bits: force_n_bits,
+    };
+
+    // 0. load r1cs
+    let r1cs = load_r1cs::<GL>(circuit_file);
+    // 1. generate plonk circuit pil file.
+    let (plonk_setup_info, pil_str) = plonk_setup_render(r1cs, opts, pil_file);
+
+    // 2. compile(pil) to construct .cm file.
+    // let pil_json =
+
+    // 3. construct .const file
+    let mut pil = load_json::<PIL>(pil_file.as_str()).unwrap();
+    let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
+    const_pol.load(const_pol_file.as_str()).unwrap();
+
+    // 4. construct and write .exec file
+    // await writeExecFile(execFile,res.plonkAdditions,  res.sMap);
+
+    // write tool.
+    // let ser_proof_str = serde_json::to_string_pretty(&serialized_proof)?;
+    // let ser_inputs_str = serde_json::to_string_pretty(&inputs)?;
+    //
+    // std::fs::write(proof_json, ser_proof_str.as_bytes())?;
+    // std::fs::write(public_json, ser_inputs_str.as_bytes())?;
+
+    Result::Ok(())
+}
 
 /*
 pub fn plonk_setup_fix_compressor(
