@@ -14,6 +14,7 @@ use std::path::Path;
 //  output files :  $C12_VERIFIER.const, $C12_VERIFIER.pil,  $C12_VERIFIER.cm
 //
 // NOTE: Compare the raw one, here we skip the .exec file, produce the .const and .cm file together.
+// todo: How to deal with the input file?
 pub fn setup(
     r1cs_file: &String,
     const_file: &String,
