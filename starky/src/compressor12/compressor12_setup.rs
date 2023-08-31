@@ -6,7 +6,6 @@ use crate::{pilcom, polsarray};
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
-use plonky::reader::load_r1cs;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
@@ -176,10 +175,6 @@ pub fn plonk_setup_render(
     let mut file = File::create(out_pil.clone()).unwrap();
     write!(file, "{}", com_pil).unwrap();
 
-    // todo
-    // let pil = crate::pilcom::compile(com_pil);
-    // let const_pols = PolsArray::new();
-
     (
         PlonkSetupInfo {
             n_used,
@@ -192,44 +187,6 @@ pub fn plonk_setup_render(
         },
         com_pil,
     )
-}
-
-// todo async
-pub fn setup(
-    r1cs_file: &String,
-    const_file: &String,
-    pil_file: &String,
-    exec_file: &String,
-    force_n_bits: usize,
-) -> Result<()> {
-    let opts = Options {
-        force_bits: force_n_bits,
-    };
-
-    // 0. load r1cs
-    let r1cs = load_r1cs::<GL>(circuit_file);
-    // 1. generate plonk circuit pil file.
-    let (plonk_setup_info, pil_str) = plonk_setup_render(r1cs, opts, pil_file);
-
-    // 2. compile(pil) to construct .cm file.
-    // let pil_json =
-
-    // 3. construct .const file
-    let mut pil = load_json::<PIL>(pil_file.as_str()).unwrap();
-    let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
-    const_pol.load(const_pol_file.as_str()).unwrap();
-
-    // 4. construct and write .exec file
-    // await writeExecFile(execFile,res.plonkAdditions,  res.sMap);
-
-    // write tool.
-    // let ser_proof_str = serde_json::to_string_pretty(&serialized_proof)?;
-    // let ser_inputs_str = serde_json::to_string_pretty(&inputs)?;
-    //
-    // std::fs::write(proof_json, ser_proof_str.as_bytes())?;
-    // std::fs::write(public_json, ser_inputs_str.as_bytes())?;
-
-    Result::Ok(())
 }
 
 /*

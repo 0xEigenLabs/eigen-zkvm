@@ -47,7 +47,6 @@ async function run() {
     const pil = await compile(F, pilFile, null, pilConfig);
     await fs.promises.writeFile(pilFile+ ".json", JSON.stringify(pil, null, 1) + "\n", "utf8");
 
-//    todo-cyj Replace
 // 1. pil -> cm
     const cmPols = newCommitPolsArray(pil);
 //2. wasm -> wc
