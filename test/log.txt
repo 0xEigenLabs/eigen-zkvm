@@ -1,5 +1,0 @@
-]2;BIG_POWER=26 ]1;]2;NUM_PROOF=2 ]1;]2;NUM_INPUT=2 ]1;]2;CUR_DIR=$(cd $(dirname $0);pwd) ]1;]2;ZKIT="${CUR_DIR}/../target/release/eigen-zkit" ]1;]2;CIRCUIT="fibonacci" ]1;]2;PILEXECJS="fibonacci/fibonacci.js" ]1;]2;RUNDIR="${CUR_DIR}/../starkjs" ]1;]2;WORKSPACE=/tmp/aggregation_$CIRCUIT ]1;]2;first_run=${1-no} ]1;]2;CURVE=${2-bn128} ]1;]2;if [ $first_run = "yes" ]; then; rm -rf $WORKSPACE && mkdir -p $WORKSPACE; fi]1;]2;RECURSIVE_CIRCUIT=$CIRCUIT.recursive1 ]1;]2;RECURSIVE2_CIRCUIT=$CIRCUIT.recursive2 ]1;]2;FINAL_CIRCUIT=$CIRCUIT.final ]1;]2;input0=$CUR_DIR/aggregation/0/${RECURSIVE_CIRCUIT}  && mkdir -p $input0]1;]2;input1=$CUR_DIR/aggregation/1/${RECURSIVE_CIRCUIT}  && mkdir -p $input1]1;]2;mkdir -p ./aggregation/$RECURSIVE2_CIRCUIT]1;]2;mkdir -p ./aggregation/$FINAL_CIRCUIT]1;]2;c12_start=$(date +%s) ]1;]2;cd ${CUR_DIR} && npm i]1;
-up to date, audited 2 packages in 3s
-
-found 0 vulnerabilities
-]2;for ((i=0; i<$NUM_PROOF; i++ )) do; ./recursive_proof_to_snark.sh $i  $CIRCUI]1;

@@ -1,3 +1,4 @@
+mod compressor12_exec;
 pub mod compressor12_pil;
 pub mod compressor12_setup;
 
@@ -9,6 +10,13 @@ use plonky::reader::load_r1cs;
 use std::path::Path;
 
 // todo async
+// the inputs here include r1cs and it's input, c12 pil. And output the const file and exec file (this means that comments in the script are not correct), the process basically likes
+//
+// The r1cs is the constraints of the Stark Verifier, and will be converted to Plonk gate;
+// Generate the Pil code for the Plonk gate;
+// Generate the const polynomial and commit polynomial for the Pil code. but here it does not output all the commit directly, cause it still need the c12a.pil to contrain somes computation, like poseidon, fft etc.
+//
+//
 // generate the pil files,  const polynomials files, the commit files
 //  input files :  $C12_VERIFIER.r1cs
 //  output files :  $C12_VERIFIER.const, $C12_VERIFIER.pil,  $C12_VERIFIER.cm
