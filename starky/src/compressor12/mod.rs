@@ -5,6 +5,7 @@ pub mod compressor12_setup;
 use crate::compressor12_setup::{plonk_setup_render, Options};
 use crate::pilcom::{compile_pil, BackendType};
 use crate::types::{load_json, PIL};
+use plonky::api::calculate_witness;
 use plonky::field_gl::GL;
 use plonky::reader::load_r1cs;
 use std::path::Path;
@@ -23,6 +24,7 @@ use std::path::Path;
 //
 // NOTE: Compare the raw one, here we skip the .exec file, produce the .const and .cm file together.
 // todo: How to deal with the input file?
+#[deprecated]
 pub fn setup(
     r1cs_file: &String,
     const_file: &String,

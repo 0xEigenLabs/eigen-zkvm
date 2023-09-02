@@ -28,9 +28,7 @@ async function run() {
     const options = {
         forceNBits: argv.forceNBits
     };
-    // todo replacing with r1cs2plonk::test_r1cs2plonk
-    // a.generate plonk circuit pil file.
-    // b.compile(pil) to construct .cm file.
+
     const res = await plonkSetup(r1cs, options);
 
     await fs.promises.writeFile(pilFile, res.pilStr, "utf8");

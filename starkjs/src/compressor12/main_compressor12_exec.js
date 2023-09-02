@@ -20,9 +20,9 @@ const argv = require("yargs")
     .argv;
 
 
-//# generate the pil files and  const polynomicals files
-//# input files :  $C12_VERIFIER.r1cs, zkin.json(input file), $C12_VERIFIER.const  $C12_VERIFIER.pil
-//# output files :  $C12_VERIFIER.exec
+// generate the pil files and  const polynomials files,
+// input files : .wasm, .exec,  .pil, zkin.json(input file),
+// output files : .cm
 async function run() {
     const F = new F1Field();
 
@@ -46,17 +46,18 @@ async function run() {
     const pil = await compile(F, pilFile, null, pilConfig);
     await fs.promises.writeFile(pilFile+ ".json", JSON.stringify(pil, null, 1) + "\n", "utf8");
 
-    // 1. pil -> cm
+    // 1. .pil -> cm
     const cmPols = newCommitPolsArray(pil);
-    //2. wasm -> wc
+    // 2. wasm -> wc
     const wc = await WitnessCalculatorBuilder(wasm);
-    //    inptut + wc -> w
+    // 3. input + wc -> w
     const w = await wc.calculateWitness(input);
 
     for (let i=0; i<nAdds; i++) {
         w.push( F.add( F.mul( w[addsBuff[i*4]], addsBuff[i*4 + 2]), F.mul( w[addsBuff[i*4+1]],  addsBuff[i*4+3]  )));
     }
 
+    // 4. w + cm + exec.addition -> final cm
     const N = cmPols.Compressor.a[0].length;
 
     for (let i=0; i<nSMap; i++) {

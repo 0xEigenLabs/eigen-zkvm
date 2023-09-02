@@ -6,6 +6,7 @@ use crate::{pilcom, polsarray};
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
+use plonky::reader::load_r1cs;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
@@ -145,10 +146,10 @@ pub struct PlonkSetupInfo {
     n_used: usize,
     n_bits: usize,
     n_publics: usize,
-    pg: Vec<PlonkGate>,
-    pa: Vec<PlonkAdd>,
+    pub(crate) pg: Vec<PlonkGate>,
+    pub(crate) pa: Vec<PlonkAdd>,
     custom_gates_info: CustomGateInfo,
-    plonkinfo: NormalPlonkInfo,
+    pub(crate) plonkinfo: NormalPlonkInfo,
 }
 
 pub fn plonk_setup_render(
@@ -187,6 +188,55 @@ pub fn plonk_setup_render(
         },
         com_pil,
     )
+}
+
+// setup phase:
+// input: .r1cs
+// output: .pil, .const, .exec,
+pub fn setup(
+    r1cs_file: &String,
+    pil_file: &String,
+    const_file: &String,
+    exec_file: &String,
+    force_n_bits: usize,
+) -> Result<Ok(), Err()> {
+    let opts = Options {
+        force_bits: force_n_bits,
+    };
+
+    // const r1cs = await readR1cs(r1csFile, {F: F, logger:console });
+
+    // const options = {
+    //     forceNBits: argv.forceNBits
+    // };
+
+    // const res = await plonkSetup(r1cs, options);
+    //
+    // await fs.promises.writeFile(pilFile, res.pilStr, "utf8");
+    //
+    // await res.constPols.saveToFile(constFile);
+    //
+    // await writeExecFile(execFile,res.plonkAdditions,  res.sMap);
+
+    // 0. load r1cs
+    let r1cs = load_r1cs::<GL>(r1cs_file);
+    // 1. plonk setup: generate plonk circuit, the pil file.
+    // 1.1 And write it into pil_file.
+    let (plonk_setup_info, pil_str) = plonk_setup_render(&r1cs, &opts, pil_file);
+
+    let res = plonk_setup_info.plonkinfo;
+    // 1.2. write const pols
+    let mut file = File::create(const_file).unwrap();
+    write!(file, "{}", r1cs.constraints).unwrap();
+
+    // 1.3. writeExecFile: plonk additions + sMap -> BigUint64Array
+    plonk_setup_info.pa; // plonk additions.
+                         // todo what is sMap.
+    let mut file = File::create(exec_file).unwrap();
+
+    // write!(file, "{}", r1cs.constraints).unwrap();
+
+    Ok(())
 }
 
 /*

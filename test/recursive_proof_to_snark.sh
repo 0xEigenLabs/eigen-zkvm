@@ -41,16 +41,16 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
 # below also happened in start_aggregation.sh step4
 # todo seem like powdr::verify_pil can replace bow.
 
-# generate the pil files and  const polynomicals files
-# input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
-# output files :  $C12_VERIFIER.exec
+# generate the pil files and  const constant polynomial files
+# input files :  $C12_VERIFIER.r1cs
+# output files :  $C12_VERIFIER.exec, $C12_VERIFIER.const  $C12_VERIFIER.pil
 node $RUNDIR/src/compressor12/main_compressor12_setup.js \
     -r $WORKSPACE/$C12_VERIFIER.r1cs \
     -c $WORKSPACE/$C12_VERIFIER.const \
     -p $WORKSPACE/$C12_VERIFIER.pil \
     -e $WORKSPACE/$C12_VERIFIER.exec
 
-# generate the commit polynomicals files 
+# generate the commit polynomials files
 # input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil  $C12_VERIFIER.exec
 # output files :  $C12_VERIFIER.cm
 node $RUNDIR/src/compressor12/main_compressor12_exec.js \
