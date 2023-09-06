@@ -7,6 +7,7 @@ use crate::pil2circom::StarkOption;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::Node;
 use crate::starkinfo_codegen::Section;
+use crate::traits::MTNodeType;
 use crate::types::{StarkStruct, PIL};
 
 fn header() -> String {
@@ -819,7 +820,7 @@ fn stark_verifier(
     starkinfo: &StarkInfo,
     pil: &PIL,
     stark_struct: &StarkStruct,
-    const_root: &ElementDigest,
+    const_root: &ElementDigest<4>,
     options: &StarkOption,
 ) -> String {
     let mut res = format!(
@@ -841,7 +842,7 @@ template StarkVerifier() {{
 "#
         ));
     } else {
-        let c: Fr = (*const_root).into();
+        let c: Fr = (*const_root).as_bn128();
         res.push_str(&format!(
             r#"
     signal rootC;
@@ -1853,7 +1854,7 @@ pub fn render(
     prorgam: &Program,
     pil: &PIL,
     stark_struct: &StarkStruct,
-    const_root: &ElementDigest,
+    const_root: &ElementDigest<4>,
     options: &StarkOption,
 ) -> String {
     let mut res = header();

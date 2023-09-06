@@ -1,0 +1,1044 @@
+pragma circom 2.0.6;
+
+include "gl.circom";
+include "poseidon.circom";
+include "bitify.circom";
+include "sha256/sha256.circom";
+include "fft.circom";
+include "merklehash.circom";
+include "evalpol.circom";
+include "treeselector.circom";
+include "bn1togl3.circom";
+include "compconstant64.circom";
+
+<%
+class Transcript {
+    constructor() {
+        this.state = "0";
+        this.pending = [];
+        this.out = [];
+        this.out3 = [];
+        this.stCnt =0;
+        this.hCnt =0;
+        this.n2bCnt =0;
+        this.bn1togl3Cnt =0;
+
+        this.code = [];
+    }
+
+
+    getField(v) {
+        this.code.push(`${v}[0] <== ${this.getFields1()};`);
+        this.code.push(`${v}[1] <== ${this.getFields1()};`);
+        this.code.push(`${v}[2] <== ${this.getFields1()};`);
+    }
+
+    getFields1() {
+        if (this.out3.length > 0) {
+            return this.out3.shift();
+        }
+        if (this.out.length > 0) {
+            const cName = `bn1togl3_${this.bn1togl3Cnt++}`;
+            this.code.push(`component ${cName} = BN1toGL3();`);
+            this.code.push(`${cName}.in <== ${this.out.shift()};`);
+            this.out3.push(`${cName}.out[0]`);
+            this.out3.push(`${cName}.out[1]`);
+            this.out3.push(`${cName}.out[2]`);
+            return this.getFields1();
+        }
+        this.updateState();
+        return this.getFields1();
+    }
+
+    getFields253() {
+        if (this.out.length > 0) {
+            return this.out.shift();
+        }
+        this.updateState();
+        return this.getFields253();
+
+    }
+
+    updateState() {
+        while (this.pending.length<16) {
+            this.pending.push("0");
+        }
+        this.code.push(`component tcHahs_${this.hCnt++} = PoseidonEx(16,17);`);
+        for (let i=0; i<16; i++) {
+            this.code.push(`tcHahs_${this.hCnt-1}.inputs[${i}] <== ${this.pending[i]};`);
+        }
+        for (let i=0; i<17; i++) {
+            this.out[i] = `tcHahs_${this.hCnt-1}.out[${i}]`;
+        }
+        this.out3 = [];
+        this.code.push(`tcHahs_${this.hCnt-1}.initialState <== ${this.state};`);
+        this.state = `tcHahs_${this.hCnt-1}.out[0]`;
+        this.pending = [];
+    }
+
+
+    put(a, l) {
+        if (typeof l !== "undefined") {
+            for (let i=0; i<l; i++) {
+                this._add1(`${a}[${i}]`);
+            }
+        } else {
+            this._add1(a);
+        }
+    }
+
+    _add1(a) {
+        this.out = [];
+        this.out3 = [];
+        this.pending.push(a);
+        if (this.pending.length == 16) {
+            this.updateState();
+        }
+    }
+
+    getPermutations(v, n, nBits) {
+        const totalBits = n*nBits;
+        const NFields = Math.floor((totalBits - 1)/253)+1;
+        const n2b = [];
+        for (let i=0; i<NFields; i++) {
+            const f = this.getFields253();
+            n2b[i] = `tcN2b_${this.n2bCnt++}`;
+            this.code.push(`component ${n2b[i]} = Num2Bits_strict();`);
+            this.code.push(`${n2b[i]}.in <== ${f};`);
+        }
+        let curField =0;
+        let curBit =0n;
+        for (let i=0; i<n; i++) {
+            let a = 0;
+            for (let j=0; j<nBits; j++) {
+                this.code.push(`${v}[${i}][${j}] <== ${n2b[curField]}.out[${curBit}];`);
+                curBit ++;
+                if (curBit == 253) {
+                    curBit = 0n;
+                    curField ++;
+                }
+            }
+        }
+    }
+
+    getCode() {
+        for (let i=0; i<this.code.length; i++) this.code[i] = "    "+this.code[i];
+        return this.code.join("\n");
+    }
+
+}
+
+-%>
+
+
+<% function unrollCode(code) {                                                          -%>
+<%
+    function ref(r) {
+        if (r.type == "eval") {
+            return "evals[" + r.id + "]";
+        } else if (r.type == "challenge") {
+            return "challenges[" + r.id + "]";
+        } else if (r.type == "public") {
+            return "publics[" + r.id + "]";
+        } else if (r.type == "x") {
+            return "challenges[7]";
+        } else if (r.type == "Z") {
+            return "Z";
+        } else if (r.type == "xDivXSubXi") {
+            return "xDivXSubXi.out";
+        } else if (r.type == "xDivXSubWXi") {
+            return "xDivXSubWXi.out";
+        } else if (r.type == "tmp") {
+            return "tmp_"+r.id;
+        } else if (r.type == "tree1") {
+            return "mapValues.tree1_" + r.id;
+        } else if (r.type == "tree2") {
+            return "mapValues.tree2_" + (r.id - starkInfo.nCm1);
+        } else if (r.type == "tree3") {
+            return "mapValues.tree3_" + (r.id - starkInfo.nCm1 - starkInfo.nCm2);
+        } else if (r.type == "tree4") {
+            return "mapValues.tree4_" + (r.id - starkInfo.nCm1 - starkInfo.nCm2 - starkInfo.nCm3);
+        } else if (r.type == "const") {
+            return "consts[" + r.id + "]";
+        } else if (r.type == "number") {
+            return r.value;
+        } else {
+            throw new Error("Invalid Ref: " +r.type);
+        }
+    }
+-%>
+<% var tmpNameId = 0;                                                                   -%>
+<% for(let i=0; i<code.length; i++) {                                 -%>
+<%      let inst = code[i];                                           -%>
+<%      if (inst.dest.type == "tmp") {                                                  -%>
+<%          if (inst.dest.dim == 1) {                                                   -%>
+    signal tmp_<%- inst.dest.id %>;
+<%          } else if (inst.dest.dim == 3)  {                                           -%>
+    signal tmp_<%- inst.dest.id %>[3];
+<%          } else throw new Error("Invalid dimension");                                -%>
+<%      }                                                                               -%>
+
+<%      if (inst.op == "add") {                                                         -%>
+<%          if ((inst.src[0].dim==1) && (inst.src[1].dim==1)) {                         -%>
+    <%- ref(inst.dest) %> <== <%- ref(inst.src[0]) %> + <%- ref(inst.src[1]) %>;
+<%          } else if ((inst.src[0].dim==1) && (inst.src[1].dim==3)) {                  -%>
+    <%- ref(inst.dest) %>[0] <== <%- ref(inst.src[0]) %> + <%- ref(inst.src[1]) %>[0];
+    <%- ref(inst.dest) %>[1] <== <%- ref(inst.src[1]) %>[1];
+    <%- ref(inst.dest) %>[2] <== <%- ref(inst.src[1]) %>[2];
+<%          } else if ((inst.src[0].dim==3) && (inst.src[1].dim==1)) {                  -%>
+    <%- ref(inst.dest) %>[0] <== <%- ref(inst.src[0]) %>[0] + <%- ref(inst.src[1]) %>;
+    <%- ref(inst.dest) %>[1] <== <%- ref(inst.src[0]) %>[1];
+    <%- ref(inst.dest) %>[2] <== <%- ref(inst.src[0]) %>[2];
+<%          } else if ((inst.src[0].dim==3) && (inst.src[1].dim==3)) {                  -%>
+    <%- ref(inst.dest) %>[0] <== <%- ref(inst.src[0]) %>[0] + <%- ref(inst.src[1]) %>[0];
+    <%- ref(inst.dest) %>[1] <== <%- ref(inst.src[0]) %>[1] + <%- ref(inst.src[1]) %>[1];
+    <%- ref(inst.dest) %>[2] <== <%- ref(inst.src[0]) %>[2] + <%- ref(inst.src[1]) %>[2];
+<%          } else throw new Error("Invalid src dimmensions");                          -%>
+<%      } else if (inst.op == "sub") {                                                  -%>
+<%          if ((inst.src[0].dim==1) && (inst.src[1].dim==1)) {                         -%>
+    <%- ref(inst.dest) %> <== <%- ref(inst.src[0]) %> - <%- ref(inst.src[1]) %>;
+<%          } else if ((inst.src[0].dim==1) && (inst.src[1].dim==3)) {                  -%>
+    <%- ref(inst.dest) %>[0] <== <%- ref(inst.src[0]) %> - <%- ref(inst.src[1]) %>[0] + p;
+    <%- ref(inst.dest) %>[1] <== -<%- ref(inst.src[1]) %>[1] + p;
+    <%- ref(inst.dest) %>[2] <== -<%- ref(inst.src[1]) %>[2] + p;
+<%          } else if ((inst.src[0].dim==3) && (inst.src[1].dim==1)) {                  -%>
+    <%- ref(inst.dest) %>[0] <== <%- ref(inst.src[0]) %>[0] - <%- ref(inst.src[1]) %> + p;
+    <%- ref(inst.dest) %>[1] <== <%- ref(inst.src[0]) %>[1];
+    <%- ref(inst.dest) %>[2] <== <%- ref(inst.src[0]) %>[2];
+<%          } else if ((inst.src[0].dim==3) && (inst.src[1].dim==3)) {                  -%>
+    <%- ref(inst.dest) %>[0] <== <%- ref(inst.src[0]) %>[0] - <%- ref(inst.src[1]) %>[0] + p;
+    <%- ref(inst.dest) %>[1] <== <%- ref(inst.src[0]) %>[1] - <%- ref(inst.src[1]) %>[1] + p;
+    <%- ref(inst.dest) %>[2] <== <%- ref(inst.src[0]) %>[2] - <%- ref(inst.src[1]) %>[2] + p;
+<%          } else throw new Error("Invalid src dimmensions");                          -%>
+<%      } else if (inst.op == "mul") {                                                  -%>
+<%          if ((inst.src[0].dim==1) && (inst.src[1].dim==1)) {                         -%>
+    component <%- cmpName%> = GLMul1();
+    <%- cmpName %>.ina <== <%- ref(inst.src[0]) %>;
+    <%- cmpName %>.inb <== <%- ref(inst.src[1]) %>;
+    <%- ref(inst.dest) %> <== <%- cmpName %>.out;
+<%          } else if ((inst.src[0].dim==1) && (inst.src[1].dim==3)) {                  -%>
+    <%              const cmpName = "cmul_" + tmpNameId++;                                  -%>
+    component <%- cmpName%> = GLCMul();
+    <%- cmpName %>.ina[0] <== <%- ref(inst.src[0]) %>;
+    <%- cmpName %>.ina[1] <== 0;
+    <%- cmpName %>.ina[2] <== 0;
+    <%- cmpName %>.inb[0] <== <%- ref(inst.src[1]) %>[0];
+    <%- cmpName %>.inb[1] <== <%- ref(inst.src[1]) %>[1];
+    <%- cmpName %>.inb[2] <== <%- ref(inst.src[1]) %>[2];
+    <%- ref(inst.dest) %>[0] <== <%- cmpName %>.out[0];
+    <%- ref(inst.dest) %>[1] <== <%- cmpName %>.out[1];
+    <%- ref(inst.dest) %>[2] <== <%- cmpName %>.out[2];
+<%          } else if ((inst.src[0].dim==3) && (inst.src[1].dim==1)) {                  -%>
+    <%              const cmpName = "cmul_" + tmpNameId++;                                  -%>
+    component <%- cmpName%> = GLCMul();
+    <%- cmpName %>.ina[0] <== <%- ref(inst.src[0]) %>[0];
+    <%- cmpName %>.ina[1] <== <%- ref(inst.src[0]) %>[1];
+    <%- cmpName %>.ina[2] <== <%- ref(inst.src[0]) %>[2];
+    <%- cmpName %>.inb[0] <== <%- ref(inst.src[1]) %>;
+    <%- cmpName %>.inb[1] <== 0;
+    <%- cmpName %>.inb[2] <== 0;
+    <%- ref(inst.dest) %>[0] <== <%- cmpName %>.out[0];
+    <%- ref(inst.dest) %>[1] <== <%- cmpName %>.out[1];
+    <%- ref(inst.dest) %>[2] <== <%- cmpName %>.out[2];
+<%          } else if ((inst.src[0].dim==3) && (inst.src[1].dim==3)) {                  -%>
+<%              const cmpName = "cmul_" + tmpNameId++;                                  -%>
+    component <%- cmpName%> = GLCMul();
+    <%- cmpName %>.ina[0] <== <%- ref(inst.src[0]) %>[0];
+    <%- cmpName %>.ina[1] <== <%- ref(inst.src[0]) %>[1];
+    <%- cmpName %>.ina[2] <== <%- ref(inst.src[0]) %>[2];
+    <%- cmpName %>.inb[0] <== <%- ref(inst.src[1]) %>[0];
+    <%- cmpName %>.inb[1] <== <%- ref(inst.src[1]) %>[1];
+    <%- cmpName %>.inb[2] <== <%- ref(inst.src[1]) %>[2];
+    <%- ref(inst.dest) %>[0] <== <%- cmpName %>.out[0];
+    <%- ref(inst.dest) %>[1] <== <%- cmpName %>.out[1];
+    <%- ref(inst.dest) %>[2] <== <%- cmpName %>.out[2];
+<%          } else throw new Error("Invalid src dimmensions");                          -%>
+<%      } else if (inst.op == "copy") {                                                 -%>
+<%          if (inst.src[0].dim==1) {                                                   -%>
+    <%- ref(inst.dest) %> <== <%- ref(inst.src[0]) %>;
+<%          } else if (inst.src[0].dim==3) {                                            -%>
+    <%- ref(inst.dest) %>[0] <== <%- ref(inst.src[0]) %>[0];
+    <%- ref(inst.dest) %>[1] <== <%- ref(inst.src[0]) %>[1];
+    <%- ref(inst.dest) %>[2] <== <%- ref(inst.src[0]) %>[2];
+<%          } else throw new Error("Invalid src dimmensions");                          -%>
+<%      } else if (inst.op == "muladd") {                                                   -%>
+<%              if ((inst.src[0].dim==1) && (inst.src[1].dim==1)) {                         -%>
+<%                  const cmpName = "muladd_" + tmpNameId++;                               -%>
+    component <%- cmpName%> = GLMulAdd();
+    <%- cmpName %>.ina <== <%- ref(inst.src[0]) %>;
+    <%- cmpName %>.inb <== <%- ref(inst.src[1]) %>;
+<%                  if (inst.src[2].dim==1) {                                                -%>
+    <%- cmpName %>.inc <== <%- ref(inst.src[2]) %>;
+    <%- ref(inst.dest) %> <== <%- cmpName %>.out;
+<%                  } else {                                                                 -%>
+    <%- cmpName %>.inc <== <%- ref(inst.src[2]) %>[0];
+    <%- ref(inst.dest) %>[0] <== <%- cmpName %>.out;
+    <%- ref(inst.dest) %>[1] <== <%- ref(inst.src[2]) %>[1];
+    <%- ref(inst.dest) %>[2] <== <%- ref(inst.src[2]) %>[2];
+<%                  }                                                                       -%>
+<%              } else {                                                                    -%>
+<%                  const cmpName = "cmuladd_" + tmpNameId++;                               -%>
+    component <%- cmpName%> = GLCMulAdd();
+<%                  if (inst.src[0].dim==1) {                                               -%>
+    <%- cmpName %>.ina[0] <== <%- ref(inst.src[0]) %>;
+    <%- cmpName %>.ina[1] <== 0;
+    <%- cmpName %>.ina[2] <== 0;
+<%                  } else {                                                                -%>
+    <%- cmpName %>.ina[0] <== <%- ref(inst.src[0]) %>[0];
+    <%- cmpName %>.ina[1] <== <%- ref(inst.src[0]) %>[1];
+    <%- cmpName %>.ina[2] <== <%- ref(inst.src[0]) %>[2];
+<%                  }                                                                       -%>
+<%                  if (inst.src[1].dim==1) {                                               -%>
+    <%- cmpName %>.inb[0] <== <%- ref(inst.src[1]) %>;
+    <%- cmpName %>.inb[1] <== 0;
+    <%- cmpName %>.inb[2] <== 0;
+<%                  } else {                                                                -%>
+    <%- cmpName %>.inb[0] <== <%- ref(inst.src[1]) %>[0];
+    <%- cmpName %>.inb[1] <== <%- ref(inst.src[1]) %>[1];
+    <%- cmpName %>.inb[2] <== <%- ref(inst.src[1]) %>[2];
+<%                  }                                                                       -%>
+<%                  if (inst.src[2].dim==1) {                                               -%>
+    <%- cmpName %>.inc[0] <== <%- ref(inst.src[2]) %>;
+    <%- cmpName %>.inc[1] <== 0;
+    <%- cmpName %>.inc[2] <== 0;
+<%                  } else {                                                                -%>
+    <%- cmpName %>.inc[0] <== <%- ref(inst.src[2]) %>[0];
+    <%- cmpName %>.inc[1] <== <%- ref(inst.src[2]) %>[1];
+    <%- cmpName %>.inc[2] <== <%- ref(inst.src[2]) %>[2];
+<%                  }                                                                       -%>
+    <%- ref(inst.dest) %>[0] <== <%- cmpName %>.out[0];
+    <%- ref(inst.dest) %>[1] <== <%- cmpName %>.out[1];
+    <%- ref(inst.dest) %>[2] <== <%- cmpName %>.out[2];
+<%              }                                                                           -%>
+<%      } else throw new Error("Invalid op");                                           -%>
+//    log(<%- i %>);
+<% }                                                                                    -%>
+<% return ref(code[code.length-1].dest);                                                -%>
+<% }                                                                                    -%>
+
+
+template VerifyEvaluations() {
+    signal input challenges[8][3];
+    signal input evals[<%- starkInfo.evMap.length %>][3];
+    signal input publics[<%- pil.publics.length %>];
+    signal input enable;
+
+    var p = 0xFFFFFFFF00000001;
+
+    component zMul[<%- starkStruct.nBits %>];
+    for (var i=0; i< <%- starkStruct.nBits %> ; i++) {
+        zMul[i] = GLCMul();
+        if (i==0) {
+            zMul[i].ina[0] <== challenges[7][0];
+            zMul[i].ina[1] <== challenges[7][1];
+            zMul[i].ina[2] <== challenges[7][2];
+            zMul[i].inb[0] <== challenges[7][0];
+            zMul[i].inb[1] <== challenges[7][1];
+            zMul[i].inb[2] <== challenges[7][2];
+        } else {
+            zMul[i].ina[0] <== zMul[i-1].out[0];
+            zMul[i].ina[1] <== zMul[i-1].out[1];
+            zMul[i].ina[2] <== zMul[i-1].out[2];
+            zMul[i].inb[0] <== zMul[i-1].out[0];
+            zMul[i].inb[1] <== zMul[i-1].out[1];
+            zMul[i].inb[2] <== zMul[i-1].out[2];
+        }
+    }
+
+    signal Z[3];
+
+    Z[0] <== zMul[<%- starkStruct.nBits -1%>].out[0] -1 + p;
+    Z[1] <== zMul[<%- starkStruct.nBits -1%>].out[1];
+    Z[2] <== zMul[<%- starkStruct.nBits -1%>].out[2];
+
+<% const evalP = unrollCode(starkInfo.verifierCode.first) -%>
+
+
+    signal xN[3] <== zMul[<%- starkStruct.nBits -1%>].out;
+
+    signal xAcc[<%- starkInfo.qDeg %>][3];
+    signal qStep[<%- starkInfo.qDeg-1 %>][3];
+    signal qAcc[<%- starkInfo.qDeg %>][3];
+    for (var i=0; i< <%- starkInfo.qDeg %>; i++) {
+        if (i==0) {
+            xAcc[0] <== [1, 0, 0];
+            qAcc[0] <== evals[<%- starkInfo.evIdx.cm[0][starkInfo.qs[0]] %>+i];
+        } else {
+            xAcc[i] <== GLCMul()(xAcc[i-1], xN);
+            qStep[i-1] <== GLCMul()(xAcc[i], evals[<%- starkInfo.evIdx.cm[0][starkInfo.qs[0]] %>+i]);
+
+            qAcc[i][0] <== qAcc[i-1][0] + qStep[i-1][0];
+            qAcc[i][1] <== qAcc[i-1][1] + qStep[i-1][1];
+            qAcc[i][2] <== qAcc[i-1][2] + qStep[i-1][2];
+        }
+    }
+
+    signal qZ[3] <== GLCMul()(qAcc[<%- starkInfo.qDeg-1 %>], Z);
+
+
+// Final Verification
+    component normC = GLCNorm();
+    normC.in[0] <== <%- evalP %>[0] - qZ[0];
+    normC.in[1] <== <%- evalP %>[1] - qZ[1];
+    normC.in[2] <== <%- evalP %>[2] - qZ[2];
+
+    enable * normC.out[0] === 0;
+    enable * normC.out[1] === 0;
+    enable * normC.out[2] === 0;
+
+}
+
+template parallel VerifyQuery() {
+    signal input ys[<%- starkStruct.steps[0].nBits %>];
+    signal input challenges[8][3];
+    signal input evals[<%- starkInfo.evMap.length %>][3];
+    signal input tree1[<%- starkInfo.mapSectionsN.cm1_2ns %>];
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+    signal input tree2[<%- starkInfo.mapSectionsN.cm2_2ns %>];
+<% }                                         %>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+    signal input tree3[<%- starkInfo.mapSectionsN.cm3_2ns %>];
+<% }                                         %>
+    signal input tree4[<%- starkInfo.mapSectionsN.cm4_2ns %>];
+    signal input consts[<%- starkInfo.nConstants %>];
+    signal output out[3];
+
+///////////
+// Mapping
+///////////
+    component mapValues = MapValues();
+
+    for (var i=0; i< <%- starkInfo.mapSectionsN.cm1_2ns %>; i++ ) {
+        mapValues.vals1[i] <== tree1[i];
+    }
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { -%>
+    for (var i=0; i< <%- starkInfo.mapSectionsN.cm2_2ns %>; i++ ) {
+        mapValues.vals2[i] <== tree2[i];
+    }
+<% }                                         -%>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { -%>
+    for (var i=0; i< <%- starkInfo.mapSectionsN.cm3_2ns %>; i++ ) {
+        mapValues.vals3[i] <== tree3[i];
+    }
+<% }                                         -%>
+    for (var i=0; i< <%- starkInfo.mapSectionsN.cm4_2ns %>; i++ ) {
+        mapValues.vals4[i] <== tree4[i];
+    }
+
+
+    var p = 0xFFFFFFFF00000001;
+
+    component xacc[<%- starkStruct.steps[0].nBits %>-1];
+    for (var i=1; i<<%- starkStruct.steps[0].nBits %>; i++ ) {
+        xacc[i-1] = GLMul();
+        if (i==1) {
+            xacc[i-1].ina <== ys[0]*(<%- F.shift %> * roots(<%- starkStruct.steps[0].nBits %>)-<%- F.shift %>) + <%- F.shift %>;
+        } else {
+            xacc[i-1].ina <== xacc[i-2].out;
+        }
+        xacc[i-1].inb <== ys[i]*(roots(<%- starkStruct.steps[0].nBits %> - i) - 1) +1;
+    }
+
+<% if (starkStruct.steps[0].nBits>1) {  -%>
+    signal X <== xacc[<%- starkStruct.steps[0].nBits -2 %>].out;
+<% } else {                             -%>
+    signal X <== ys[0]*(<%- F.shift %> * roots(<%- starkStruct.steps[0].nBits %>)-<%- F.shift %>) + <%- F.shift %>;
+<% }                                    -%>
+
+
+    component den1inv = GLCInv();
+    den1inv.in[0] <== X - challenges[7][0] + p;
+    den1inv.in[1] <== -challenges[7][1] + p;
+    den1inv.in[2] <== -challenges[7][2] + p;
+
+
+    component xDivXSubXi = GLCMul();
+    xDivXSubXi.ina[0] <== X;
+    xDivXSubXi.ina[1] <== 0;
+    xDivXSubXi.ina[2] <== 0;
+    xDivXSubXi.inb[0] <== den1inv.out[0];
+    xDivXSubXi.inb[1] <== den1inv.out[1];
+    xDivXSubXi.inb[2] <== den1inv.out[2];
+
+    component wXi = GLCMul();
+    wXi.ina[0] <== roots(<%- starkStruct.nBits %>);
+    wXi.ina[1] <== 0;
+    wXi.ina[2] <== 0;
+    wXi.inb[0] <== challenges[7][0];
+    wXi.inb[1] <== challenges[7][1];
+    wXi.inb[2] <== challenges[7][2];
+
+
+    component den2inv = GLCInv();
+    den2inv.in[0] <== X - wXi.out[0] + p;
+    den2inv.in[1] <== -wXi.out[1] + p;
+    den2inv.in[2] <== -wXi.out[2] + p;
+
+    component xDivXSubWXi = GLCMul();
+    xDivXSubWXi.ina[0] <== X;
+    xDivXSubWXi.ina[1] <== 0;
+    xDivXSubWXi.ina[2] <== 0;
+    xDivXSubWXi.inb[0] <== den2inv.out[0];
+    xDivXSubWXi.inb[1] <== den2inv.out[1];
+    xDivXSubWXi.inb[2] <== den2inv.out[2];
+
+    <% const evalQ = unrollCode(starkInfo.verifierQueryCode.first) -%>
+
+
+    // Final Normalization
+    component normC = GLCNorm();
+    normC.in[0] <== <%- evalQ %>[0];
+    normC.in[1] <== <%- evalQ %>[1];
+    normC.in[2] <== <%- evalQ %>[2];
+
+    out[0] <== normC.out[0];
+    out[1] <== normC.out[1];
+    out[2] <== normC.out[2];
+}
+
+
+template MapValues() {
+    signal input vals1[<%- starkInfo.mapSectionsN.cm1_2ns %>];
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { -%>
+    signal input vals2[<%- starkInfo.mapSectionsN.cm2_2ns %>];
+<% }                                         -%>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { -%>
+    signal input vals3[<%- starkInfo.mapSectionsN.cm3_2ns %>];
+<% }                                         -%>
+    signal input vals4[<%- starkInfo.mapSectionsN.cm4_2ns  %>];
+
+<% const sNames = [null, "cm1_2ns", "cm2_2ns", "cm3_2ns", "cm4_2ns"];              -%>
+<% for (let t = 1; t<=4; t++) {                                                  -%>
+<%      for (let i=0; i< starkInfo.mapSections[sNames[t]].length; i++) {        -%>
+<%          const p = starkInfo.varPolMap[starkInfo.mapSections[sNames[t]][i]];  -%>
+<%          if (p.dim == 1) {                                                    -%>
+    signal output tree<%- t %>_<%- i %>;
+<%          } else if (p.dim == 3) {                                             -%>
+    signal output tree<%- t %>_<%- i %>[3];
+<%          } else throw new Error("Invalid dim")                                -%>
+<%      }                                                                        -%>
+<% }                                                                             -%>
+
+<% for (let t = 1; t<=4; t++) {                                                   -%>
+<%      for (let i=0; i< starkInfo.mapSections[sNames[t]].length; i++) {        -%>
+<%          const p = starkInfo.varPolMap[starkInfo.mapSections[sNames[t]][i]];  -%>
+<%          if (p.dim == 1) {                                                    -%>
+    tree<%- t %>_<%- i %> <== vals<%- t %>[<%- p.sectionPos %>];
+<%          } else if (p.dim == 3) {                                             -%>
+    tree<%- t %>_<%- i %>[0] <== vals<%- t %>[<%- p.sectionPos %>];
+    tree<%- t %>_<%- i %>[1] <== vals<%- t %>[<%- p.sectionPos + 1 %>];
+    tree<%- t %>_<%- i %>[2] <== vals<%- t %>[<%- p.sectionPos + 2 %>];
+<%          } else throw new Error("Invalid dim")                                -%>
+<%      }                                                                        -%>
+<% }                                                                             -%>
+}
+
+
+template StarkVerifier() {
+    signal input publics[<%- pil.publics.length %>];
+    signal input root1;
+    signal input root2;
+    signal input root3;
+    signal input root4;
+
+    <% if (options.verkeyInput) {  -%>
+        signal input rootC;
+    <% } else { -%>
+        signal rootC;
+        rootC <== <%- constRoot %>;
+    <% } %>
+
+    signal input evals[<%- starkInfo.evMap.length %>][3];
+
+    signal input s0_vals1[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm1_2ns %>];
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+    signal input s0_vals2[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm2_2ns %>];
+<% }                                         %>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+    signal input s0_vals3[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm3_2ns %>];
+<% }                                         %>
+    signal input s0_vals4[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm4_2ns %>];
+    signal input s0_valsC[<%- starkStruct.nQueries %>][<%- starkInfo.nConstants%>];
+    signal input s0_siblings1[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/4)+1 %>][16];
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+    signal input s0_siblings2[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/4)+1 %>][16];
+<% }                                         %>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+    signal input s0_siblings3[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/4)+1 %>][16];
+<% }                                         %>
+    signal input s0_siblings4[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/4)+1 %>][16];
+    signal input s0_siblingsC[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/4)+1 %>][16];
+
+<% for (let s=0; s<starkStruct.steps.length-1; s++) {   -%>
+    signal input s<%- s+1 %>_root;
+<% }                                                     -%>
+
+<% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
+    signal input s<%- s %>_vals[<%- starkStruct.nQueries %>][<%- (1 << (starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits))*3 %>];
+    signal input s<%- s %>_siblings[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[s].nBits -1) /4) +1 %>][16];
+<% }                                                  -%>
+
+    signal input finalPol[<%- 1 << starkStruct.steps[starkStruct.steps.length-1].nBits %>][3];
+
+<% if (options.enableInput) { -%>
+    signal input enable;
+    enable * (enable -1 ) === 0;
+<% } else { -%>
+    signal enable;
+    enable <== 1;
+<% } -%>
+
+    signal challenges[8][3];
+<% for (let s=0; s<starkStruct.steps.length; s++) {   -%>
+    signal s<%- s %>_specialX[3];
+<% }                                                    -%>
+
+    signal ys[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
+
+    var p = 0xFFFFFFFF00000001;
+
+///////////
+// challenge calculation
+///////////
+
+<%
+const transcript = new Transcript();
+transcript.put("publics", pil.publics.length);
+transcript.put("root1");
+transcript.getField("challenges[0]", 3);
+transcript.getField("challenges[1]", 3);
+transcript.put("root2");
+transcript.getField("challenges[2]", 3);
+transcript.getField("challenges[3]", 3);
+transcript.put("root3");
+transcript.getField("challenges[4]", 3);
+transcript.put("root4");
+transcript.getField("challenges[7]", 3);
+for (let i=0; i<starkInfo.evMap.length; i++) {
+    transcript.put(`evals[${i}]`, 3);
+}
+transcript.getField("challenges[5]", 3);
+transcript.getField("challenges[6]", 3);
+for (let si=0; si<starkStruct.steps.length; si++) {
+    transcript.getField(`s${si}_specialX`, 3);
+    if (si < starkStruct.steps.length-1) {
+        transcript.put(`s${si+1}_root`);
+    } else {
+        for (let j=0; j< 1<<starkStruct.steps[starkStruct.steps.length-1].nBits; j++ ) {
+            transcript.put(`finalPol[${j}]`, 3);
+        }
+    }
+}
+transcript.getPermutations("ys", starkStruct.nQueries, starkStruct.steps[0].nBits);
+
+-%>
+
+<%- transcript.getCode() %>
+
+///////////
+// Constrain polynomial check in vauations
+///////////
+    component verifyEvaluations = VerifyEvaluations();
+    verifyEvaluations.enable <== enable;
+    for (var i=0; i<8; i++) {
+        for (var k=0; k<3; k++) {
+            verifyEvaluations.challenges[i][k] <== challenges[i][k];
+        }
+    }
+    for (var i=0; i<<%- pil.publics.length %>; i++) {
+        verifyEvaluations.publics[i] <== publics[i];
+    }
+    for (var i=0; i<<%- starkInfo.evMap.length %>; i++) {
+        for (var k=0; k<3; k++) {
+            verifyEvaluations.evals[i][k] <== evals[i][k];
+        }
+    }
+
+///////////
+// Step0 Check and evaluate queries
+///////////
+
+    component verifyQueries[<%- starkStruct.nQueries %>];
+    component s0_merkle1[<%- starkStruct.nQueries %>];
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+    component s0_merkle2[<%- starkStruct.nQueries %>];
+<% }                                         %>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+    component s0_merkle3[<%- starkStruct.nQueries %>];
+<% }                                         %>
+    component s0_merkle4[<%- starkStruct.nQueries %>];
+    component s0_merkleC[<%- starkStruct.nQueries %>];
+    component s0_lowValues[<%- starkStruct.nQueries %>];
+
+    for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
+        verifyQueries[q] = VerifyQuery();
+        s0_merkle1[q] = MerkleHash(1, <%- starkInfo.mapSectionsN.cm1_2ns %>, <%- 1 << starkStruct.steps[0].nBits %>);
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+        s0_merkle2[q] = MerkleHash(1, <%- starkInfo.mapSectionsN.cm2_2ns %>, <%- 1 << starkStruct.steps[0].nBits %>);
+<% }                                         %>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+        s0_merkle3[q] = MerkleHash(1, <%- starkInfo.mapSectionsN.cm3_2ns %>, <%- 1 << starkStruct.steps[0].nBits %>);
+<% }                                         %>
+        s0_merkle4[q] = MerkleHash(1, <%- starkInfo.mapSectionsN.cm4_2ns %>, <%- 1 << starkStruct.steps[0].nBits %>);
+        s0_merkleC[q] = MerkleHash(1, <%- starkInfo.nConstants %>, <%- 1 << starkStruct.steps[0].nBits %>);
+        s0_lowValues[q] = TreeSelector(<%- starkStruct.steps[0].nBits - ((0< starkStruct.steps.length-1) ? starkStruct.steps[1].nBits : 0)  %>, 3) ;
+
+        for (var i=0; i<<%- starkStruct.steps[0].nBits %>; i++ ) {
+            verifyQueries[q].ys[i] <== ys[q][i];
+            s0_merkle1[q].key[i] <== ys[q][i];
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+            s0_merkle2[q].key[i] <== ys[q][i];
+<% }                                         %>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+            s0_merkle3[q].key[i] <== ys[q][i];
+<% }                                         %>
+            s0_merkle4[q].key[i] <== ys[q][i];
+            s0_merkleC[q].key[i] <== ys[q][i];
+        }
+        for (var i=0; i<<%- starkInfo.mapSectionsN.cm1_2ns %>; i++ ) {
+            verifyQueries[q].tree1[i] <== s0_vals1[q][i];
+            s0_merkle1[q].values[i][0] <== s0_vals1[q][i];
+        }
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+        for (var i=0; i<<%- starkInfo.mapSectionsN.cm2_2ns %>; i++ ) {
+            verifyQueries[q].tree2[i] <== s0_vals2[q][i];
+            s0_merkle2[q].values[i][0] <== s0_vals2[q][i];
+        }
+<% }                                         %>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+        for (var i=0; i<<%- starkInfo.mapSectionsN.cm3_2ns %>; i++ ) {
+            verifyQueries[q].tree3[i] <== s0_vals3[q][i];
+            s0_merkle3[q].values[i][0] <== s0_vals3[q][i];
+        }
+<% }                                         %>
+        for (var i=0; i<<%- starkInfo.mapSectionsN.cm4_2ns %>; i++ ) {
+            verifyQueries[q].tree4[i] <== s0_vals4[q][i];
+            s0_merkle4[q].values[i][0] <== s0_vals4[q][i];
+        }
+        for (var i=0; i<<%- starkInfo.nConstants %>; i++ ) {
+            verifyQueries[q].consts[i] <== s0_valsC[q][i];
+            s0_merkleC[q].values[i][0] <== s0_valsC[q][i];
+        }
+        for (var i=0; i<8; i++) {
+            for (var e=0; e<3; e++) {
+                verifyQueries[q].challenges[i][e] <== challenges[i][e];
+            }
+        }
+        for (var i=0; i<<%- starkInfo.evMap.length %>; i++) {
+            for (var e=0; e<3; e++) {
+                verifyQueries[q].evals[i][e] <== evals[i][e];
+            }
+        }
+        for (var i=0; i<<%- Math.floor((starkStruct.steps[0].nBits - 1)/4)+1 %>;i++) {
+            for (var j=0; j<16; j++) {
+                s0_merkle1[q].siblings[i][j] <== s0_siblings1[q][i][j];
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+                s0_merkle2[q].siblings[i][j] <== s0_siblings2[q][i][j];
+<% }                                         %>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+                s0_merkle3[q].siblings[i][j] <== s0_siblings3[q][i][j];
+<% }                                         %>
+                s0_merkle4[q].siblings[i][j] <== s0_siblings4[q][i][j];
+                s0_merkleC[q].siblings[i][j] <== s0_siblingsC[q][i][j];
+            }
+        }
+
+<% if (0 < starkStruct.steps.length-1) {            -%>
+        for (var i=0; i<<%- 1 << (starkStruct.steps[0].nBits - starkStruct.steps[1].nBits) %>; i++) {
+            for (var e=0; e<3; e++) {
+                s0_lowValues[q].values[i][e] <== s1_vals[q][i*3+e];
+            }
+        }
+        for (var i=0; i<<%- (starkStruct.steps[0].nBits - starkStruct.steps[1].nBits) %>; i++) {
+            s0_lowValues[q].key[i] <== ys[q][i + <%- starkStruct.steps[1].nBits %>];
+        }
+<% } else { -%>
+        for (var i=0; i<<%- 1 << (starkStruct.steps[0].nBits) %>; i++) {
+            for (var e=0; e<3; e++) {
+                s0_lowValues[q].values[i][e] <== finalPol[i][e];
+            }
+        }
+        for (var i=0; i<<%- (starkStruct.steps[0].nBits) %>; i++) {
+            s0_lowValues[q].key[i] <== ys[q][i];
+        }
+<% }      -%>
+
+    }
+
+<% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
+    component s<%- s %>_merkle[<%- starkStruct.nQueries %>];
+    component s<%- s %>_fft[<%- starkStruct.nQueries %>];
+    component s<%- s %>_evalPol[<%- starkStruct.nQueries %>];
+    component s<%- s %>_lowValues[<%- starkStruct.nQueries %>];
+    component s<%- s %>_cNorm[<%- starkStruct.nQueries %>];
+    component s<%- s %>_sx[<%- starkStruct.nQueries %>][<%- starkStruct.steps[s].nBits - 1%>];
+    component s<%- s %>_evalXprime[<%- starkStruct.nQueries %>];
+    signal s<%- s %>_X[<%- starkStruct.nQueries %>];
+
+    for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
+        s<%- s %>_merkle[q] = MerkleHash(3, <%- 1 << (starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits) %>, <%- 1 << starkStruct.steps[s].nBits %>);
+        s<%- s %>_fft[q] = FFT(<%- starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits %>, 1);
+        s<%- s %>_evalPol[q] = EvalPol(<%- 1 << starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits %>);
+        s<%- s %>_lowValues[q] = TreeSelector(<%- starkStruct.steps[s].nBits - ((s< starkStruct.steps.length-1) ? starkStruct.steps[s+1].nBits : 0)  %>, 3) ;
+        for (var i=0; i< <%- 1 << (starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits) %>; i++) {
+            for (var e=0; e<3; e++) {
+                s<%- s %>_merkle[q].values[i][e] <== s<%- s %>_vals[q][i*3+e];
+                s<%- s %>_fft[q].in[i][e] <== s<%- s %>_vals[q][i*3+e];
+            }
+        }
+        for (var i=0; i<<%- Math.floor((starkStruct.steps[s].nBits -1) /4)+1 %>; i++) {
+            for (var j=0; j<16; j++) {
+                s<%- s %>_merkle[q].siblings[i][j] <== s<%- s %>_siblings[q][i][j];
+            }
+        }
+        for (var i=0; i<<%- starkStruct.steps[s].nBits %>; i++) {
+            s<%- s %>_merkle[q].key[i] <== ys[q][i];
+        }
+
+        for (var i=1; i<<%- starkStruct.steps[s].nBits %>; i++ ) {
+            s<%- s %>_sx[q][i-1] = GLMul();
+            if (i==1) {
+<%
+                const e1 = F.inv( F.mul(
+                    F.exp(F.shift, 1 << (starkStruct.nBitsExt -starkStruct.steps[s-1].nBits) ),
+                    F.w[starkStruct.steps[s-1].nBits]
+                ));
+                const e0 = F.inv(F.exp(F.shift, 1 << (starkStruct.nBitsExt -starkStruct.steps[s-1].nBits) ) );
+-%>
+                s<%- s %>_sx[q][i-1].ina <== ys[q][0] * (<%- e1 %> - <%- e0 %>) + <%- e0 %>;
+            } else {
+                s<%- s %>_sx[q][i-1].ina <== s<%- s %>_sx[q][i-2].out;
+            }
+            s<%- s %>_sx[q][i-1].inb <== ys[q][i] * (_inv1(roots(<%- starkStruct.steps[s-1].nBits %> -i)) -1) +1;
+        }
+
+<% if (starkStruct.steps[0].nBits>1) {  -%>
+        s<%- s %>_X[q] <== s<%- s %>_sx[q][<%- starkStruct.steps[s].nBits -2 %>].out;
+<% } else {                             -%>
+        s<%- s %>_X[q] <== <%- F.inv(F.exp(F.shift, 1 << (starkStruct.nBitsExt -starkStruct.steps[s-1].nBits) ) ) %> *  ( ys[q][0] * <%- F.sub(F.inv(F.w[starkStruct.steps[s-1].nBits]), 1n) %> +1);
+<% }                                    -%>
+
+/*
+        s<%- s %>_sx[q][0] <==  <%- F.inv(F.exp(F.shift, 1 << (starkStruct.nBitsExt -starkStruct.steps[s-1].nBits) ) ) %> *  ( ys[q][0] * <%- F.sub(F.inv(F.w[starkStruct.steps[s-1].nBits]), 1n) %> +1);
+        for (var i=1; i<<%- starkStruct.steps[s].nBits %>; i++) {
+            s<%- s %>_sx[q][i] <== s<%- s %>_sx[q][i-1] *  ( ys[q][i] * ((1/roots(<%- starkStruct.steps[s-1].nBits %> -i)) -1) +1);
+        }
+*/
+
+        for (var i=0; i< <%- 1 << (starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits) %>; i++) {
+            for (var e=0; e<3; e++) {
+                s<%- s %>_evalPol[q].pol[i][e] <== s<%- s %>_fft[q].out[i][e];
+            }
+        }
+
+        s<%- s %>_evalXprime[q] = GLCMul();
+        s<%- s %>_evalXprime[q].ina[0] <== s<%- s %>_specialX[0];
+        s<%- s %>_evalXprime[q].ina[1] <== s<%- s %>_specialX[1];
+        s<%- s %>_evalXprime[q].ina[2] <== s<%- s %>_specialX[2];
+        s<%- s %>_evalXprime[q].inb[0] <== s<%- s %>_X[q];
+        s<%- s %>_evalXprime[q].inb[1] <== 0;
+        s<%- s %>_evalXprime[q].inb[2] <== 0;
+        for (var e=0; e<3; e++) {
+            s<%- s %>_evalPol[q].x[e] <== s<%- s %>_evalXprime[q].out[e];
+        }
+<% if (s < starkStruct.steps.length-1) {            -%>
+        for (var i=0; i<<%- 1 << (starkStruct.steps[s].nBits - starkStruct.steps[s+1].nBits) %>; i++) {
+            for (var e=0; e<3; e++) {
+                s<%- s %>_lowValues[q].values[i][e] <== s<%- s+1 %>_vals[q][i*3+e];
+            }
+        }
+        for (var i=0; i<<%- (starkStruct.steps[s].nBits - starkStruct.steps[s+1].nBits) %>; i++) {
+            s<%- s %>_lowValues[q].key[i] <== ys[q][i + <%- starkStruct.steps[s+1].nBits %>];
+        }
+<% } else { -%>
+        for (var i=0; i<<%- 1 << (starkStruct.steps[s].nBits) %>; i++) {
+            for (var e=0; e<3; e++) {
+                s<%- s %>_lowValues[q].values[i][e] <== finalPol[i][e];
+            }
+        }
+        for (var i=0; i<<%- (starkStruct.steps[s].nBits) %>; i++) {
+            s<%- s %>_lowValues[q].key[i] <== ys[q][i];
+        }
+<% }      -%>
+        s<%- s %>_cNorm[q] = GLCNorm();
+        for (var e=0; e<3; e++) {
+            s<%- s %>_cNorm[q].in[e] <== s<%- s %>_evalPol[q].out[e] - s<%- s %>_lowValues[q].out[e] + p;
+        }
+    }
+<% }                                                  -%>
+
+
+/// Checks
+    for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
+        enable * (s0_merkle1[q].root - root1) === 0;
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+        enable * (s0_merkle2[q].root - root2) === 0;
+<% }                                         %>
+<% if (starkInfo.mapSectionsN.cm2_3ns > 0) { %>
+        enable * (s0_merkle3[q].root - root3) === 0;
+<% }                                         %>
+        enable * (s0_merkle4[q].root - root4) === 0;
+
+        enable * (s0_merkleC[q].root - rootC) === 0;
+
+        for (var e=0; e<3; e++) {
+            enable * (s0_lowValues[q].out[e] - verifyQueries[q].out[e]) === 0;
+        }
+
+    }
+
+<% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
+    for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
+        for (var e=0; e<3; e++) {
+            enable * s<%- s %>_cNorm[q].out[e] === 0;
+        }
+
+        enable * (s<%- s %>_merkle[q].root - s<%- s %>_root) === 0;
+
+    }
+<% }                                                  -%>
+
+///////
+// Check Degree last pol
+///////
+// Last FFT
+<% const nLastBits = starkStruct.steps[ starkStruct.steps.length-1].nBits;  -%>
+<% const maxDegBits =  nLastBits -  (starkStruct.nBitsExt - starkStruct.nBits); -%>
+    component lastIFFT = FFT(<%- nLastBits %>, 1 );
+
+    for (var k=0; k< <%- 1 << nLastBits %>; k++ ){
+        for (var e=0; e<3; e++) {
+            lastIFFT.in[k][e] <== finalPol[k][e];
+        }
+    }
+
+    for (var k= <%- 1 << maxDegBits %>; k< <%- 1 << nLastBits %>; k++ ) {
+        for (var e=0; e<3; e++) {
+            enable * lastIFFT.out[k][e] === 0;
+        }
+    }
+
+}
+
+<% if (!options.skipMain) {  -%>
+
+template Main() {
+    signal input proverAddr;
+    signal output publicsHash;
+
+    signal input publics[<%- pil.publics.length %>];
+    signal input root1;
+    signal input root2;
+    signal input root3;
+    signal input root4;
+    signal input evals[<%- starkInfo.evMap.length %>][3];
+
+    signal input s0_vals1[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm1_2ns %>];
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+    signal input s0_vals2[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm2_2ns %>];
+<% }                                         %>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+    signal input s0_vals3[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm3_2ns %>];
+<% }                                         %>
+    signal input s0_vals4[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm4_2ns %>];
+    signal input s0_valsC[<%- starkStruct.nQueries %>][<%- starkInfo.nConstants%>];
+    signal input s0_siblings1[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/4)+1 %>][16];
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+    signal input s0_siblings2[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/4)+1 %>][16];
+<% }                                         %>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+    signal input s0_siblings3[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/4)+1 %>][16];
+<% }                                         %>
+    signal input s0_siblings4[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/4)+1 %>][16];
+    signal input s0_siblingsC[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/4)+1 %>][16];
+
+<% for (let s=0; s<starkStruct.steps.length-1; s++) {   -%>
+    signal input s<%- s+1 %>_root;
+<% }                                                     -%>
+
+<% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
+    signal input s<%- s %>_vals[<%- starkStruct.nQueries %>][<%- (1 << (starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits))*3 %>];
+    signal input s<%- s %>_siblings[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[s].nBits -1) /4) +1 %>][16];
+<% }                                                  -%>
+
+    signal input finalPol[<%- 1 << starkStruct.steps[starkStruct.steps.length-1].nBits %>][3];
+
+
+    component sv = StarkVerifier();
+
+    sv.publics <== publics;
+    sv.root1 <== root1;
+    sv.root2 <== root2;
+    sv.root3 <== root3;
+    sv.root4 <== root4;
+    sv.evals <== evals;
+
+
+    sv.s0_vals1 <== s0_vals1;
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+    sv.s0_vals2 <== s0_vals2;
+<% }                                         %>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+    sv.s0_vals3 <== s0_vals3;
+<% }                                         %>
+    sv.s0_vals4 <== s0_vals4;
+    sv.s0_valsC <== s0_valsC;
+    sv.s0_siblings1 <== s0_siblings1;
+<% if (starkInfo.mapSectionsN.cm2_2ns > 0) { %>
+    sv.s0_siblings2 <== s0_siblings2;
+<% }                                         %>
+<% if (starkInfo.mapSectionsN.cm3_2ns > 0) { %>
+    sv.s0_siblings3 <== s0_siblings3;
+<% }                                         %>
+    sv.s0_siblings4 <== s0_siblings4;
+    sv.s0_siblingsC <== s0_siblingsC;
+
+<% for (let s=0; s<starkStruct.steps.length-1; s++) {   -%>
+    sv.s<%- s+1 %>_root <== s<%- s+1 %>_root;
+<% }                                                     -%>
+
+<% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
+    sv.s<%- s %>_vals <== s<%- s %>_vals;
+    sv.s<%- s %>_siblings <== s<%- s %>_siblings;
+<% }                                                  -%>
+    sv.finalPol <== finalPol;
+
+//////
+// Calculate Publics Hash
+//////
+
+    component publicsHasher = Sha256(<%- 160 + 64*pil.publics.length %>);
+    component n2bProverAddr = Num2Bits(160);
+    component n2bPublics[<%- pil.publics.length %> ];
+    component cmpPublics[<%- pil.publics.length %> ];
+
+    n2bProverAddr.in <== proverAddr;
+    for (var i=0; i<160; i++) {
+        publicsHasher.in[160 - 1 -i] <== n2bProverAddr.out[i];
+    }
+
+    var offset = 160;
+
+    for (var i=0; i<<%- pil.publics.length %>; i++) {
+        n2bPublics[i] = Num2Bits(64);
+        cmpPublics[i] = CompConstant64(0xFFFFFFFF00000000);
+        n2bPublics[i].in <== publics[i];
+        for (var j=0; j<64; j++) {
+            publicsHasher.in[offset + 64 - 1 -j] <== n2bPublics[i].out[j];
+            cmpPublics[i].in[j] <== n2bPublics[i].out[j];
+        }
+        cmpPublics[i].out === 0;
+        offset += 64;
+    }
+
+    component n2bPublicsHash = Bits2Num(256);
+    for (var i = 0; i < 256; i++) {
+        n2bPublicsHash.in[i] <== publicsHasher.out[255-i];
+    }
+
+    publicsHash <== n2bPublicsHash.out;
+}
+
+component main = Main();
+<% } -%>
+

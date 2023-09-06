@@ -13,7 +13,7 @@ pub struct StarkOption {
 
 pub fn pil2circom(
     pil: &PIL,
-    const_root: &ElementDigest,
+    const_root: &ElementDigest<4>,
     stark_struct: &StarkStruct,
     starkinfo: &mut StarkInfo,
     program: &mut Program,
