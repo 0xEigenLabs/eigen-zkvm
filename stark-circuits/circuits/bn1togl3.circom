@@ -18,7 +18,7 @@ template BN1toGL5() {
         for (var j=0; j<64; j++) {
             b2n[i].in[j] <== n2b.out[64*i+j];
         }
+        log(b2n[i].out);
         out[i] <== b2n[i].out;
     }
-
 }

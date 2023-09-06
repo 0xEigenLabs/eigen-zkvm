@@ -4,17 +4,32 @@
   "description": "Stark Verifier by Circom 2",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npm run clean && npm i && ./node_modules/.bin/tsc",
+    "clean": "rm -rf build dist typechain cache artifacts",
+    "lint": "./node_modules/.bin/eslint --fix --ext .ts test",
+    "test": "npm run build && mocha dist"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/0xEigenLabs/eigen-zkvm.git"
   },
   "devDependencies": {
+    "@eslint/create-config": "^0.1.2",
+    "@types/chai": "^4.3.4",
+    "@types/mocha": "^9.1.0",
+    "@typescript-eslint/eslint-plugin": "^6.6.0",
+    "@typescript-eslint/parser": "^6.6.0",
     "circom_tester": "^0.0.19",
     "circomlib": "^2.0.5",
     "circomlibjs": "^0.1.6",
-    "snarkjs": "^0.6.1"
+    "eslint": "^8.9.0",
+    "ethers": "^5.7.2",
+    "mocha": "^10.2.0",
+    "snarkjs": "^0.6.1",
+    "temp": "^0.9.4",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.5",
+    "typescript-eslint-parser": "^22.0.0"
   },
   "keywords": [
     "stark",
