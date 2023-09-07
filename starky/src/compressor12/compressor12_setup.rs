@@ -200,43 +200,54 @@ pub fn setup(
     exec_file: &String,
     force_n_bits: usize,
 ) -> Result<Ok(), Err()> {
+    // 0. readR1cs
+    let r1cs = load_r1cs::<GL>(r1cs_file);
     let opts = Options {
         force_bits: force_n_bits,
     };
-
-    // const r1cs = await readR1cs(r1csFile, {F: F, logger:console });
-
-    // const options = {
-    //     forceNBits: argv.forceNBits
-    // };
-
-    // const res = await plonkSetup(r1cs, options);
-    //
-    // await fs.promises.writeFile(pilFile, res.pilStr, "utf8");
-    //
-    // await res.constPols.saveToFile(constFile);
-    //
-    // await writeExecFile(execFile,res.plonkAdditions,  res.sMap);
-
-    // 0. load r1cs
-    let r1cs = load_r1cs::<GL>(r1cs_file);
     // 1. plonk setup: generate plonk circuit, the pil file.
-    // 1.1 And write it into pil_file.
-    let (plonk_setup_info, pil_str) = plonk_setup_render(&r1cs, &opts, pil_file);
+    let res = PlonkSetup::plonk_setup(&r1cs, &opts);
 
-    let res = plonk_setup_info.plonkinfo;
-    // 1.2. write const pols
+    // 2. And write it into pil_file.
+    //      todo- this is a little redunction. as the pil_file has been save in plonk_setup
+    let mut file = File::create(pil_file).unwrap();
+    write!(file, "{}", res.pil_str).unwrap();
+
+    // 3. write const pols file
     let mut file = File::create(const_file).unwrap();
-    write!(file, "{}", r1cs.constraints).unwrap();
+    write!(file, "{}", res.constraints).unwrap();
 
-    // 1.3. writeExecFile: plonk additions + sMap -> BigUint64Array
-    plonk_setup_info.pa; // plonk additions.
-                         // todo what is sMap.
-    let mut file = File::create(exec_file).unwrap();
-
-    // write!(file, "{}", r1cs.constraints).unwrap();
+    // 4. construct and save ExecFile: plonk additions + sMap -> BigUint64Array
+    write_exec_file(exec_file, res, res);
 
     Ok(())
+}
+
+// construct and save ExecFile: plonk additions + sMap -> BigUint64Array
+fn write_exec_file(exec_file: &String, adds: vec![vec![]], s_map: vec![vec![]]) {
+    todo!()
+    // const size = 2 + adds.length*4 + sMap.length*sMap[0].length;
+    // const buff = new BigUint64Array(size);
+    //
+    // buff[0] = BigInt(adds.length);
+    // buff[1] = BigInt(sMap[0].length);
+    //
+    // for (let i=0; i< adds.length; i++) {
+    //     buff[2 + i*4     ] = BigInt(adds[i][0]);
+    //     buff[2 + i*4 + 1 ] = BigInt(adds[i][1]);
+    //     buff[2 + i*4 + 2 ] = adds[i][2];
+    //     buff[2 + i*4 + 3 ] = adds[i][3];
+    // }
+    //
+    // for (let i=0; i<sMap[0].length; i++) {
+    //     for (let c=0; c<12; c++) {
+    //         buff[2 + adds.length*4 + 12*i + c] = BigInt(sMap[c][i]);
+    //     }
+    // }
+    //
+    // const fd =await fs.promises.open(execFile, "w+");
+    // await fd.write(buff);
+    // await fd.close();
 }
 
 /*

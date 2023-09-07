@@ -6,35 +6,51 @@ use std::path::Path;
 // input files: .wasm, .exec,  .pil, zkin.json(input file),
 // output: .cm
 pub fn exec(
-    wasm_file: &String,
-    exec_file: &String,
-    pil_file: &String,
     input_file: &String,
+    wasm_file: &String,
+    pil_file: &String,
+    exec_file: &String,
     commit_file: &String,
 ) -> Result<Ok(), Err()> {
-    // 1. .pil -> cm
-    //    Compiles a .pil file to its json form
-    //    and generate constants and committed polynomials to file.(under the output_file_dir)
-    let output_file_dir = Path::new(commit_file).parent()?;
-    let _ = compile_pil(
-        Path::new(pil_file),
-        &output_file_dir,
-        None,
-        Some(BackendType::PilcomCli),
-    );
+    // 0. load input_file, wasm_file, pil_file, exec_file,
 
-    // // 2. wasm -> wc
+    read_exec_file(execFile);
+
+    // 1. Compiles a .pil file to its json form
+    //      And save it.
+    // todo-the pil file has been compiled in setup-plonk_setup phase.
+
+    // 2. construct cmPol: .pil.json -> .cm
+    // const cmPols = newCommitPolsArray(pil);
+
+    // 3. calculate witness. wasm+input->witness
     // const wc = await WitnessCalculatorBuilder(wasm);
-    // // 3. input + wc -> w
     // const w = await wc.calculateWitness(input);
-    calculate_witness(wasm_file, input_file, commit_file);
+    // calculate_witness(wasm_file, input_file, commit_file);
 
-    //
-    // for (let i=0; i<nAdds; i++) {
-    //     w.push( F.add( F.mul( w[addsBuff[i*4]], addsBuff[i*4 + 2]), F.mul( w[addsBuff[i*4+1]],  addsBuff[i*4+3]  )));
-    // }
-    //
-    // 4. w + cm + exec.addition -> final cm
+    // 4. compress cmPol
+
+    // 5. save cmPol to file.
 
     Result::Ok(())
+}
+
+fn read_exec_file(exec_file: &String) {
+
+    // const fd =await fs.promises.open(execFile, "r");
+    // const buffH = new BigUint64Array(2);
+    // await fd.read(buffH, 0, 2*8);
+    // const nAdds= Number(buffH[0]);
+    // const nSMap= Number(buffH[1]);
+    //
+    //
+    // const addsBuff = new BigUint64Array(nAdds*4);
+    // await fd.read(addsBuff, 0, nAdds*4*8);
+    //
+    // const sMapBuff = new BigUint64Array(nSMap*12);
+    // await fd.read(sMapBuff, 0, nSMap*12*8);
+    //
+    // await fd.close();
+    //
+    // return { nAdds, nSMap, addsBuff, sMapBuff };
 }
