@@ -5,6 +5,7 @@ use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
 use crate::linearhash::LinearHash;
 use crate::poseidon_opt::Poseidon;
+use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
@@ -15,7 +16,7 @@ pub struct MerkleTreeGL {
     pub elements: Vec<FGL>,
     pub width: usize,
     pub height: usize,
-    pub nodes: Vec<ElementDigest>,
+    pub nodes: Vec<ElementDigest<4>>,
     h: LinearHash,
     poseidon: Poseidon,
 }
@@ -64,8 +65,8 @@ impl MerkleTreeGL {
             .enumerate()
             .map(|(i, bb)| self.do_merklize_level(bb, i, n_ops).unwrap())
             .reduce(
-                || Vec::<ElementDigest>::new(),
-                |mut a: Vec<ElementDigest>, mut b: Vec<ElementDigest>| {
+                || Vec::<ElementDigest<4>>::new(),
+                |mut a: Vec<ElementDigest<4>>, mut b: Vec<ElementDigest<4>>| {
                     a.append(&mut b);
                     a
                 },
@@ -80,10 +81,10 @@ impl MerkleTreeGL {
 
     fn do_merklize_level(
         &self,
-        buff_in: &[ElementDigest],
+        buff_in: &[ElementDigest<4>],
         _st_i: usize,
         _st_n: usize,
-    ) -> Result<Vec<ElementDigest>> {
+    ) -> Result<Vec<ElementDigest<4>>> {
         log::debug!(
             "merklizing GL hash start.... {}/{}, buff size {}",
             _st_i,
@@ -91,7 +92,7 @@ impl MerkleTreeGL {
             buff_in.len()
         );
         let n_ops = buff_in.len() / 2;
-        let mut buff_out64: Vec<ElementDigest> = vec![ElementDigest::default(); n_ops];
+        let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
         buff_out64
             .iter_mut()
             .zip((0..n_ops).into_iter())
@@ -110,9 +111,9 @@ impl MerkleTreeGL {
         &self,
         mp: &Vec<Vec<FGL>>,
         idx: usize,
-        value: &ElementDigest,
+        value: &ElementDigest<4>,
         offset: usize,
-    ) -> Result<ElementDigest> {
+    ) -> Result<ElementDigest<4>> {
         if mp.len() == offset {
             return Ok(value.clone());
         }
@@ -135,7 +136,7 @@ impl MerkleTreeGL {
             inhash[4..8].copy_from_slice(&one);
         }
         let next = self.poseidon.hash(&inhash, &init, 4)?;
-        next_value = ElementDigest::new(next.try_into().unwrap());
+        next_value = ElementDigest::<4>::new(&next);
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
@@ -144,7 +145,7 @@ impl MerkleTreeGL {
         mp: &Vec<Vec<FGL>>,
         idx: usize,
         vals: &Vec<FGL>,
-    ) -> Result<ElementDigest> {
+    ) -> Result<ElementDigest<4>> {
         let h = self.h.hash(vals, 0)?;
         self.merkle_calculate_root_from_proof(mp, idx, &h, 0)
     }
@@ -152,6 +153,7 @@ impl MerkleTreeGL {
 
 impl MerkleTree for MerkleTreeGL {
     type BaseField = FGL;
+    type MTNode = ElementDigest<4>;
 
     fn new() -> Self {
         Self {
@@ -193,7 +195,7 @@ impl MerkleTree for MerkleTreeGL {
             n_per_thread_f = min_corrected;
         }
 
-        let mut nodes = vec![ElementDigest::default(); get_n_nodes(height)];
+        let mut nodes = vec![Self::MTNode::default(); get_n_nodes(height)];
         let now = Instant::now();
         if buff.len() > 0 {
             nodes
@@ -258,13 +260,13 @@ impl MerkleTree for MerkleTreeGL {
         Ok((v, mp))
     }
 
-    fn eq_root(&self, r1: &ElementDigest, r2: &ElementDigest) -> bool {
+    fn eq_root(&self, r1: &Self::MTNode, r2: &Self::MTNode) -> bool {
         r1 == r2
     }
 
     fn verify_group_proof(
         &self,
-        root: &ElementDigest,
+        root: &Self::MTNode,
         mp: &Vec<Vec<FGL>>,
         idx: usize,
         group_elements: &Vec<FGL>,
@@ -273,7 +275,7 @@ impl MerkleTree for MerkleTreeGL {
         Ok(self.eq_root(root, &c_root))
     }
 
-    fn root(&self) -> ElementDigest {
+    fn root(&self) -> Self::MTNode {
         self.nodes[self.nodes.len() - 1]
     }
 }
@@ -281,6 +283,7 @@ impl MerkleTree for MerkleTreeGL {
 #[cfg(test)]
 mod tests {
     use crate::merklehash::MerkleTreeGL;
+    use crate::traits::MTNodeType;
     use crate::traits::MerkleTree;
     use plonky::field_gl::Fr as FGL;
 

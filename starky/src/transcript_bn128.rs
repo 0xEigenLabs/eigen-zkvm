@@ -6,6 +6,7 @@ use crate::ff::Field;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::helper::{biguint_to_be, fr_to_biguint};
 use crate::poseidon_bn128_opt::Poseidon;
+use crate::traits::MTNodeType;
 use crate::traits::Transcript;
 use ff::*;
 use num_bigint::BigUint;
@@ -92,8 +93,8 @@ impl Transcript for TranscriptBN128 {
             let e: Fr = match e.len() {
                 1 => Fr::from_repr(FrRepr::from(e[0].as_int())).unwrap(),
                 4 => {
-                    let ie = ElementDigest::new([e[0], e[1], e[2], e[3]]);
-                    ie.into()
+                    let ie: ElementDigest<4> = ElementDigest::new(&[e[0], e[1], e[2], e[3]]);
+                    ie.as_bn128()
                 }
                 _ => panic!("Invalid elements as inputs to transcript"),
             };

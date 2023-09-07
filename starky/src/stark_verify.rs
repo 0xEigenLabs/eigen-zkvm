@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 use crate::constant::{MG, SHIFT};
-use crate::digest::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::f3g::F3G;
 use crate::fri::FRI;
@@ -9,7 +8,7 @@ use crate::stark_gen::StarkProof;
 use crate::starkinfo::Program;
 use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::{Node, Section};
-use crate::traits::{MerkleTree, Transcript};
+use crate::traits::{MTNodeType, MerkleTree, Transcript};
 use crate::types::StarkStruct;
 use plonky::field_gl::Fr as FGL;
 use std::collections::HashMap;
@@ -17,7 +16,7 @@ use std::collections::HashMap;
 //FIXME it doesn't make sense to ask for a mutable program
 pub fn stark_verify<M: MerkleTree, T: Transcript>(
     proof: &StarkProof<M>,
-    const_root: &ElementDigest,
+    const_root: &M::MTNode,
     starkinfo: &StarkInfo,
     stark_struct: &StarkStruct,
     program: &mut Program,
@@ -106,7 +105,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
             if !res {
                 return Err(FRIVerifierFailed);
             }
-            let res = tree.verify_group_proof(&const_root, &query[4].1, idx, &query[4].0)?;
+            let res = tree.verify_group_proof(const_root, &query[4].1, idx, &query[4].0)?;
             if !res {
                 return Err(FRIVerifierFailed);
             }

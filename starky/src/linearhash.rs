@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 use crate::errors::Result;
 use crate::poseidon_opt::Poseidon;
+use crate::traits::MTNodeType;
 use crate::ElementDigest;
 use plonky::field_gl::Fr as FGL;
 
@@ -18,7 +19,7 @@ impl LinearHash {
         &self,
         vals: &Vec<Vec<FGL>>,
         batch_size: usize,
-    ) -> Result<ElementDigest> {
+    ) -> Result<ElementDigest<4>> {
         let mut flatvals: Vec<FGL> = vec![];
         for col in vals.iter() {
             for elem in col.iter() {
@@ -28,7 +29,7 @@ impl LinearHash {
         self.hash(&flatvals, batch_size)
     }
 
-    pub fn hash(&self, flatvals: &[FGL], batch_size: usize) -> Result<ElementDigest> {
+    pub fn hash(&self, flatvals: &[FGL], batch_size: usize) -> Result<ElementDigest<4>> {
         let mut bs = batch_size;
         if bs == 0 {
             bs = core::cmp::max(8, (flatvals.len() + 3) / 4);
@@ -39,7 +40,7 @@ impl LinearHash {
             for (i, v) in flatvals.iter().enumerate() {
                 st[i] = *v;
             }
-            return Ok(ElementDigest::from(st));
+            return Ok(ElementDigest::<4>::new(&st));
         }
 
         let hsz = (flatvals.len() + bs - 1) / bs;
@@ -49,7 +50,8 @@ impl LinearHash {
             .chunks_mut(4)
             .zip(flatvals.chunks(bs))
             .for_each(|(outs, inps)| {
-                let hv: [FGL; 4] = self._hash(inps).unwrap().into();
+                let hv = self._hash(inps).unwrap();
+                let hv: &[FGL] = hv.as_elements();
                 outs[0..hv.len()].copy_from_slice(&hv);
             });
 
@@ -57,19 +59,19 @@ impl LinearHash {
             for (i, v) in hashes.iter().enumerate() {
                 st[i] = *v;
             }
-            Ok(ElementDigest::from(st))
+            Ok(ElementDigest::<4>::new(&st))
         } else {
             self._hash(&hashes)
         }
     }
 
-    pub fn _hash(&self, flatvals: &[FGL]) -> Result<ElementDigest> {
+    pub fn _hash(&self, flatvals: &[FGL]) -> Result<ElementDigest<4>> {
         let mut st = [FGL::ZERO; 4];
         if flatvals.len() <= 4 {
             for (i, v) in flatvals.iter().enumerate() {
                 st[i] = *v;
             }
-            return Ok(ElementDigest::from(st));
+            return Ok(ElementDigest::<4>::new(&st));
         }
 
         let mut inhashes: Vec<FGL> = vec![];
@@ -88,7 +90,7 @@ impl LinearHash {
             let t = self.h.hash(&inhashes, &st, 4).unwrap();
             st.copy_from_slice(&t);
         }
-        Ok(ElementDigest::from(st))
+        Ok(ElementDigest::<4>::new(&st))
     }
 }
 
@@ -96,6 +98,7 @@ impl LinearHash {
 mod tests {
     use crate::digest::ElementDigest;
     use crate::linearhash::LinearHash;
+    use crate::traits::MTNodeType;
     use plonky::field_gl::Fr as FGL;
 
     #[test]
@@ -116,7 +119,7 @@ mod tests {
             .collect::<Vec<Vec<FGL>>>();
 
         let res = lh.hash_element_matrix(&raw_inputs, 0).unwrap();
-        let expected = ElementDigest::from([
+        let expected = ElementDigest::<4>::new(&[
             FGL::from(17618903473682537397u64),
             FGL::from(11844743283521766961u64),
             FGL::from(185773432536380223u64),
@@ -143,7 +146,7 @@ mod tests {
             .collect::<Vec<Vec<FGL>>>();
 
         let res = lh.hash_element_matrix(&raw_inputs, 0).unwrap();
-        let expected = ElementDigest::from([
+        let expected = ElementDigest::<4>::new(&[
             FGL::from(1u64),
             FGL::from(2u64),
             FGL::from(3u64),
