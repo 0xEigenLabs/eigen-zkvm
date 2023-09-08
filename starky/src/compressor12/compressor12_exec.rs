@@ -1,6 +1,10 @@
+use crate::errors::EigenError;
 use crate::pilcom::{compile_pil, BackendType};
+use crate::types::load_json;
 use plonky::api::calculate_witness;
 use std::path::Path;
+
+pub type Result<T> = std::result::Result<T, EigenError>;
 
 // exec phase:
 // input files: .wasm, .exec,  .pil, zkin.json(input file),
@@ -11,10 +15,10 @@ pub fn exec(
     pil_file: &String,
     exec_file: &String,
     commit_file: &String,
-) -> Result<Ok(), Err()> {
+) -> Result<()> {
     // 0. load input_file, wasm_file, pil_file, exec_file,
 
-    read_exec_file(execFile);
+    // let (num_adds, num_s_map, adds_buff, s_map_buff) = read_exec_file(execFile);
 
     // 1. Compiles a .pil file to its json form
     //      And save it.
@@ -36,7 +40,12 @@ pub fn exec(
 }
 
 fn read_exec_file(exec_file: &String) {
-
+    // let mut buf = load_json(exec_file).unwrap();
+    //
+    // let mut buff = Vec::with_capacity(2);
+    //
+    // buff[0] = adds_len;
+    // buff[1] = s_map.len();
     // const fd =await fs.promises.open(execFile, "r");
     // const buffH = new BigUint64Array(2);
     // await fd.read(buffH, 0, 2*8);

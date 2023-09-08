@@ -1,3 +1,4 @@
+// todo need bugfix
 pub fn render(n_bits: usize, n_publics: usize) -> String {
     let mut res = String::from("");
     res.push_str(&format!(
