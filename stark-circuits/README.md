@@ -107,3 +107,20 @@ As a refernece, [to\_bn128](https://github.com/0xEigenLabs/eigen-zkvm/blob/main/
 ## ElementDigest
 
 the struct `ElementDigest` stands for the value of node in Merkle tree. For BN254, each node, including the root, contains 4 Godilocks elements, while BLS12-381 is 6.
+
+## ToDo 
+### Stark Genreation 
+
+- [ ] F5G
+- [ ] linearhash_bls12381
+- [ ] merkle_hash_bls12381
+- [ ] transcripts_bls12381
+- [ ] poseidon_bls12381 
+- [ ] update stark_setup,stark_gen,stark_verify to support bls12-381 curve 
+- [ ] update zkit main
+
+### Stark Verify Circuit 
+- [ ] merklehash.circom 
+- [ ] linerhash.circom 
+- [ ] BN1toGL5.circom 
+- [ ] stark_verify.circom 
