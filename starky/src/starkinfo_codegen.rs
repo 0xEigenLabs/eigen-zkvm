@@ -177,7 +177,7 @@ impl Index {
             "cm4_2ns" => self.cm4_2ns,
             "tmpexp_n" => self.tmpexp_n,
             "q_2ns" => self.q_2ns,
-            "f_2ns" => self.q_2ns,
+            "f_2ns" => self.f_2ns,
             _ => usize::MAX,
         }
     }
