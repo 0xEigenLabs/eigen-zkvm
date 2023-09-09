@@ -98,3 +98,20 @@ namespace Compressor(%N);
 "#));
     res
 }
+
+#[cfg(test)]
+mod test {
+    use crate::compressor12_pil::render;
+    use std::fs::File;
+    use std::io::Write;
+    use std::path::Path;
+    use std::process::Command;
+
+    #[test]
+    fn test_render() {
+        let pil_string = render(5, 5);
+
+        let mut file = File::create(Path::new("./render_pil_rs.pil")).unwrap();
+        file.write(pil_string.as_bytes());
+    }
+}

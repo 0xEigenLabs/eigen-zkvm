@@ -1,5 +1,5 @@
 use crate::errors::EigenError;
-use crate::pilcom::{compile_pil, BackendType};
+use crate::pilcom::compile_pil;
 use crate::types::load_json;
 use plonky::api::calculate_witness;
 use std::path::Path;

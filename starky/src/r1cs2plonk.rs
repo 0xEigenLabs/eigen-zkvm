@@ -244,7 +244,7 @@ pub mod tests {
     use crate::compressor12::compressor12_setup::Options;
     use crate::r1cs2plonk::r1cs2plonk;
     //use plonky::bellman_ce::bn256::Bn256;
-    use crate::compressor12::plonk_setup::plonk_setup_render;
+    use crate::compressor12::plonk_setup::*;
     use plonky::field_gl::GL;
     use plonky::reader::load_r1cs;
 
@@ -255,6 +255,6 @@ pub mod tests {
         let (pc, pa) = r1cs2plonk(&r1cs);
         println!("pc {}, pa {}", pc.len(), pa.len());
         let opts = Options { force_bits: 0 };
-        let _plonksetupinfo = plonk_setup_render(&r1cs, &opts, "/tmp/c12.pil");
+        // let _plonksetupinfo = plonk_setup_render(&r1cs, &opts, "/tmp/c12.pil");
     }
 }

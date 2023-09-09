@@ -18,7 +18,7 @@ pub struct PlonkSetup {
     pub(crate) pil_str: String,
     pub(crate) const_pols: PolsArray,
     pub(crate) s_map: Vec<Vec<u64>>,
-    pub(crate) plonk_additions: Vec<Vec<usize>>,
+    pub(crate) plonk_additions: Vec<PlonkAdd>,
 }
 
 impl PlonkSetup {
@@ -42,7 +42,7 @@ impl PlonkSetup {
             pil_str,
             const_pols,
             s_map,
-            plonk_additions: plonk_additions.plonk_additions,
+            plonk_additions: plonk_setup_info.pa,
         }
     }
 }
@@ -177,7 +177,7 @@ pub struct PlonkSetupRenderInfo {
     pub(crate) pg: Vec<PlonkGate>,
     pub(crate) pa: Vec<PlonkAdd>,
     custom_gates_info: CustomGateInfo,
-    pub(crate) plonkinfo: NormalPlonkInfo,
+    pub(crate) plonk_info: NormalPlonkInfo,
 }
 
 impl PlonkSetupRenderInfo {
@@ -186,7 +186,7 @@ impl PlonkSetupRenderInfo {
         let (plonk_constrains, plonk_additions) = r1cs2plonk(r1cs);
 
         // 2. get normal plonk info
-        let plonkinfo = NormalPlonkInfo::new(r1cs, &plonk_constrains, &plonk_additions);
+        let plonk_info = NormalPlonkInfo::new(r1cs, &plonk_constrains, &plonk_additions);
         // 3. get custom gate info
         let custom_gates_info = CustomGateInfo::from_r1cs(r1cs);
 
@@ -194,7 +194,7 @@ impl PlonkSetupRenderInfo {
         let n_publics = r1cs.num_inputs + r1cs.num_outputs;
         let n_public_rows = (n_publics - 1) / 12 + 1;
         let n_used = n_public_rows
-            + plonkinfo.N as usize
+            + plonk_info.N as usize
             + custom_gates_info.n_cmul as usize
             + custom_gates_info.n_mds as usize * 2;
         let mut n_bits = crate::helper::log2_any(n_used - 1) + 1;
@@ -209,7 +209,7 @@ impl PlonkSetupRenderInfo {
             pg: plonk_constrains,
             pa: plonk_additions,
             custom_gates_info,
-            plonkinfo,
+            plonk_info,
         }
     }
 }
@@ -372,9 +372,9 @@ pub fn plonk_setup_compressor(
     // for i in 0..12 {
     //     compressor.S[i] = vec![FGL::ZERO; aux.plonkinfo.N];
     // }
-    for i in 0..aux.plonkinfo.N {
+    for i in 0..aux.plonk_info.N {
         if (i % 10000) == 0 {
-            println!("Preparing S... {}/{}", i, aux.plonkinfo.N);
+            println!("Preparing S... {}/{}", i, aux.plonk_info.N);
         }
         compressor.S[0][i] = w;
         for j in 1..12 {
@@ -410,9 +410,9 @@ pub fn plonk_setup_compressor(
     }
 
     // 6. Fill unused rows.
-    while r < aux.plonkinfo.N {
+    while r < aux.plonk_info.N {
         if (r % 100000) == 0 {
-            println!("Empty gates... {}/{}", r, aux.plonkinfo.N);
+            println!("Empty gates... {}/{}", r, aux.plonk_info.N);
         }
         compressor.Qm[r] = FGL::ZERO;
         compressor.Ql[r] = FGL::ZERO;
@@ -426,7 +426,7 @@ pub fn plonk_setup_compressor(
 
     for i in 0..n_public_rows {
         let L = const_pols.get_mut(&"Global".to_string(), &format!("L{}", i + 1));
-        for i in 0..aux.plonkinfo.N {
+        for i in 0..aux.plonk_info.N {
             L[i] = FGL::ZERO;
         }
         L[i] = FGL::ONE;
