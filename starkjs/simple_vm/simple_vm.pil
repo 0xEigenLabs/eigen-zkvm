@@ -1,0 +1,36 @@
+
+
+namespace SimpleVM(%N);
+    pol constant ROM;
+    pol commit inFree, sel_b, sel_c, sel_d, sel_ins, sel_A, sel_B, set_b, set_c, set_d, set_A, set_B, const, jmpz, inv_op, addr, free, position, PC;
+    b'=set_b*(free-b) + b
+    c'=set_c*(free-c) + c
+    d'=set_d*(free-d) + d
+    A'=set_A*(free-A) + A
+    B'=set_B*(free-B) + B
+    ins'=set_ins*(free-ins) + ins
+
+    sel_b * (1 - sel_b) = 0
+    sel_c * (1 - sel_c) = 0
+    sel_d * (1 - sel_d) = 0
+    sel_ins * (1 - sel_ins) = 0
+    sel_A * (1 - sel_B) = 0
+    sel_B * (1 - sel_B) = 0
+    set_b * (1 - set_b) = 0
+    set_c * (1 - set_c) = 0
+    set_d * (1 - set_d) = 0
+    set_ins * (1 - set_ins) = 0
+    set_A * (1 - set_B) = 0
+    set_B * (1 - set_B) = 0
+    inFree * (1 - inFree) = 0
+    jmpz * (1 - jmpz) = 0
+
+    pol op = set_b * b +  set_c * c +  set_d * d + const + set_ins * instruct  + free * inFree + A * set_A;
+
+    PC' = PC + 1 + jmpz*(1 - op * op_inv) * (addr - PC - 1);
+
+    pol instruction =  2^{13+32}*const + 2^13*addr + 2^12*jmpz +2^11*set_b + 2^10*set_c + 2^9*set_d + 2^8*set_ins + 2^7*set_A + 2^6*set_B + 2^6*inFree + 2^5*sel_b + 2^4*sel_c + 2^3*sel_d + 2^2*sel_ins + 2*sel_A + sel_B
+
+    pol insTrace = 2^{45} * PC + instruction;
+    { const, addr, position, PC, insTrace} in {ROM.const, ROM.addr, ROM.position, ROM.PC, ROM.instruction} ; // in means lookup argument.
+
