@@ -70,6 +70,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
 
     log::debug!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);
+    log::debug!("starkinfo: {}", starkinfo);
 
     let mut x_acc = F3G::ONE;
     let mut q = F3G::ZERO;
@@ -80,7 +81,8 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     let q_z = q * ctx.Z;
 
     if !res.eq(&q_z) {
-        log::error!("not equal: res {} != q_z {}", res, q_z);
+        // CHeck Eq.30 in estark paper
+        log::error!("Q != C * P: res {} != q_z {}", res, q_z);
         return Ok(false);
     }
 

@@ -5,6 +5,7 @@ namespace Plookup(%N);
 
     pol constant SEL, A, B;
     pol commit cc;
+    public out = cc(%N-1);
 
     sel {a, b', a*b'} in SEL { A, B, cc};
 

@@ -106,7 +106,7 @@ impl Block {
         let mut i = 0usize;
         while i < length {
             let expr = &self.exprs[i];
-            //log::debug!("op@{} is {}", i, expr);
+            // log::debug!("op@{} is {}", i, expr);
             i += 1;
             match expr.op {
                 Ops::Ret => {
