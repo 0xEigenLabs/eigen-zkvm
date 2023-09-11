@@ -2,6 +2,7 @@ use crate::errors::EigenError;
 use crate::pilcom::compile_pil;
 use crate::types::load_json;
 use plonky::api::calculate_witness;
+use std::fs::File;
 use std::path::Path;
 
 pub type Result<T> = std::result::Result<T, EigenError>;
@@ -40,10 +41,11 @@ pub fn exec(
 }
 
 fn read_exec_file(exec_file: &String) {
-    // let mut buf = load_json(exec_file).unwrap();
-    //
-    // let mut buff = Vec::with_capacity(2);
-    //
+    let mut buf = load_json(exec_file).unwrap();
+    let mut file = File::open(exec_file)?;
+    let mut data = String::new();
+    file.read(&mut data)?;
+
     // buff[0] = adds_len;
     // buff[1] = s_map.len();
     // const fd =await fs.promises.open(execFile, "r");

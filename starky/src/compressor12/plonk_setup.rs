@@ -82,6 +82,7 @@ pub(crate) struct NormalPlonkInfo {
 }
 
 impl NormalPlonkInfo {
+    // need check
     pub(crate) fn new(r1cs: &R1CS<GL>, pa: &Vec<PlonkGate>, pc: &Vec<PlonkAdd>) -> Self {
         let mut uses: HashMap<String, usize> = HashMap::new();
         for (i, c) in pa.iter().enumerate() {
@@ -122,6 +123,7 @@ pub(crate) struct CustomGateInfo {
 }
 
 impl CustomGateInfo {
+    // need check
     fn from_r1cs(r1cs: &R1CS<GL>) -> Self {
         let mut cmul_id = 0;
         let mut cmds_id = 0;
@@ -181,6 +183,7 @@ pub struct PlonkSetupRenderInfo {
 }
 
 impl PlonkSetupRenderInfo {
+    // need check
     pub fn plonk_setup_render(r1cs: &R1CS<GL>, opts: &Options) -> Self {
         // 1. r1cs to plonk
         let (plonk_constrains, plonk_additions) = r1cs2plonk(r1cs);

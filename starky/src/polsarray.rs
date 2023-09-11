@@ -18,6 +18,7 @@ pub struct PolsArray {
     pub defArray: Vec<Pol>,
     pub array: Vec<Vec<FGL>>,
     pub n: usize,
+    // compressor: Option<Compressor>, todo
 }
 
 #[derive(Debug, Default, Clone)]

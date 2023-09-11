@@ -32,7 +32,8 @@ env_logger = "0.10"
 plonky = { package="plonky", path = "../plonky", version = "0.0.2" }
 
 #powdr pil compile tool
-compiler = {git = "https://github.com/powdr-labs/powdr.git",rev = "91b677d3", package = "compiler"}
+compiler = {git = "https://github.com/powdr-labs/powdr.git",rev = "stark-via-eigen", package = "compiler"}
+backend = {git = "https://github.com/powdr-labs/powdr.git", branch = "stark-via-eigen", package = "backend"}
 
 
 [dev-dependencies]
