@@ -31,6 +31,7 @@ pub use digest::ElementDigest;
 mod constant;
 mod expressionops;
 pub mod f3g;
+pub mod f5g;
 mod fft;
 pub mod fft_p;
 mod fft_worker;
