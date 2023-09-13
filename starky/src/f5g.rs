@@ -38,9 +38,7 @@ impl F5G {
 
     #[inline(always)]
     pub fn as_elements(&self) -> Vec<Fr> {
-        // 创建了一个包含 self.cube 数组的引用的切片 elements
         let elements = &[self.cube];
-        // 这一行获取了 elements 切片的指针，也就是 self.cube 数组的指针
         let ptr = elements.as_ptr();
         let len = elements.len() * self.dim;
         let elems: &[Fr] = unsafe { slice::from_raw_parts(ptr as *const Fr, len) };
