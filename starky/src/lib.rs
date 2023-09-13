@@ -21,6 +21,11 @@ mod poseidon_constants_opt;
 pub mod poseidon_opt;
 
 mod field_bls12381;
+mod matrix;
+mod mds;
+mod round_constants;
+mod poseidon_bls12381_constants;
+pub mod poseidon_bls12381;
 
 pub mod merklehash;
 pub mod merklehash_bn128;
