@@ -2,11 +2,11 @@
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use plonky::field_gl::Fr;
 use plonky::Field;
-use std::fmt::write;
 use std::hash::{Hash, Hasher};
 use std::slice;
 
 use core::fmt::{Display, Formatter};
+/// Prime: 0xFFFFFFFF00000001
 /// Irreducible polynomial: x^5-3
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
@@ -342,6 +342,13 @@ impl Add for F5G {
                 panic!("Invalid dim");
             }
         }
+    }
+}
+
+impl AddAssign for F5G {
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs
     }
 }
 
