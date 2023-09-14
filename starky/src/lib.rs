@@ -21,6 +21,8 @@ mod poseidon_constants_opt;
 pub mod poseidon_opt;
 
 mod field_bls12381;
+mod poseidon_bls12381;
+mod poseidon_bls12381_constants;
 
 pub mod merklehash;
 pub mod merklehash_bn128;

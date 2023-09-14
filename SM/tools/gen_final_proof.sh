@@ -24,6 +24,7 @@ ${ZKIT} compile -i ../circuits/$CIRCUIT.circom -l "../node_modules/pil-stark/cir
 
 echo "2. Generate witness"
 node ${WORKSPACE}/${CIRCUIT}_js/generate_witness.js ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm  ../circuits/${CIRCUIT}.zkin.json $WORKSPACE/witness.wtns
+${ZKIT} calculate_witness -w ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm  -i ../circuits/${CIRCUIT}.zkin.json -o $WORKSPACE/witness.wtns
 
 echo "3. Export verification key"
 ${ZKIT} export_verification_key -s ${SRS}  -c $WORKSPACE/$CIRCUIT.r1cs --v $WORKSPACE/vk.bin
