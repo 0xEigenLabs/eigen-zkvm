@@ -75,10 +75,10 @@ impl F5G {
                     && rhs.cube[4] == Fr::ZERO
             } else {
                 self.cube[0] == rhs.cube[0]
-                    || (self.cube[1] == Fr::ZERO)
-                    || (self.cube[2] == Fr::ZERO)
-                    || (self.cube[3] == Fr::ZERO)
-                    || (self.cube[4] == Fr::ZERO)
+                    && (self.cube[1] == Fr::ZERO)
+                    && (self.cube[2] == Fr::ZERO)
+                    && (self.cube[3] == Fr::ZERO)
+                    && (self.cube[4] == Fr::ZERO)
             }
         }
     }

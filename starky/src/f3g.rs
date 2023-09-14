@@ -66,8 +66,8 @@ impl F3G {
                 self.cube[0] == rhs.cube[0] && rhs.cube[1] == Fr::ZERO && rhs.cube[2] == Fr::ZERO
             } else {
                 self.cube[0] == rhs.cube[0]
-                    || (self.cube[1] == Fr::ZERO)
-                    || (self.cube[2] == Fr::ZERO)
+                    && (self.cube[1] == Fr::ZERO)
+                    && (self.cube[2] == Fr::ZERO)
             }
         }
     }
