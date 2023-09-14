@@ -571,17 +571,6 @@ impl From<[u8; 8]> for F5G {
     }
 }
 
-// FIXME
-impl From<u128> for F5G {
-    /// Converts a 128-bit value into a field element.
-    fn from(_: u128) -> Self {
-        //const R3: u128 = 1 (= 2^192 mod M );// thus we get that mont_red_var((mont_red_var(x) as u128) * R3) becomes
-        //Self(mont_red_var(mont_red_var(x) as u128))  // Variable time implementation
-        //Self(mont_red_cst(mont_red_cst(x) as u128)) // Constant time implementation
-        panic!("Unimplement");
-    }
-}
-
 /// Number of bytes needed to represent field element
 const ELEMENT_BYTES: usize = core::mem::size_of::<u64>();
 
