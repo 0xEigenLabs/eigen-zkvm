@@ -197,66 +197,45 @@ namespace Compressor(%N);
     );
 
     // CMulAdd
-    #[deny(clippy::too_many_arguments)]
-    fn c_mul_add(
-        r0: &str,
-        r1: &str,
-        r2: &str,
-        a0: &str,
-        a1: &str,
-        a2: &str,
-        b0: &str,
-        b1: &str,
-        b2: &str,
-        c0: &str,
-        c1: &str,
-        c2: &str,
-    ) -> String {
-        let mut code = vec![];
-        code.push(&format!(r#"pol {r0}_A = ({a0} + {a1})  * ({b0} + {b1});"#));
-        code.push(&format!(r#"pol {r0}_B = ({a0} + {a2})  * ({b0} + {b2});"#));
-        code.push(&format!(r#"pol {r0}_C = ({a1} + {a2})  * ({b1} + {b2});"#));
-        code.push(&format!(r#"pol {r0}_D = {a0} * {b0};"#));
-        code.push(&format!(r#"pol {r0}_E = {a1} * {b1};"#));
-        code.push(&format!(r#"pol {r0}_F = {a2} * {b2};"#));
-        code.push(&format!(
-            r#"pol {r0} = {r0}_C + {r0}_D - {r0}_E - {r0}_F + {c0};"#
-        ));
-        code.push(&format!(
-            r#"pol {r1} = {r0}_A + {r0}_C - 2*{r0}_E - {r0}_D + {c1};"#
-        ));
-        code.push(&format!(r#"pol {r2} = {r0}_B - {r0}_D + {r0}_E + {c2};"#));
+    let mut c_mul_add = |r0: &str,
+                         r1: &str,
+                         r2: &str,
+                         a0: &str,
+                         a1: &str,
+                         a2: &str,
+                         b0: &str,
+                         b1: &str,
+                         b2: &str,
+                         c0: &str,
+                         c1: &str,
+                         c2: &str| {
+        // let mut code = vec![];
+        res.push_str(format!(r#"pol {r0}_A = ({a0} + {a1})  * ({b0} + {b1});"#).as_str());
+        res.push_str(format!(r#"pol {r0}_B = ({a0} + {a2})  * ({b0} + {b2});"#).as_str());
+        res.push_str(format!(r#"pol {r0}_C = ({a1} + {a2})  * ({b1} + {b2}.as_str());"#).as_str());
+        res.push_str(format!(r#"pol {r0}_D = {a0} * {b0};"#).as_str());
+        res.push_str(format!(r#"pol {r0}_E = {a1} * {b1};"#).as_str());
+        res.push_str(format!(r#"pol {r0}_F = {a2} * {b2};"#).as_str());
+        res.push_str(format!(r#"pol {r0} = {r0}_C + {r0}_D - {r0}_E - {r0}_F + {c0};"#).as_str());
+        res.push_str(format!(r#"pol {r1} = {r0}_A + {r0}_C - 2*{r0}_E - {r0}_D + {c1};"#).as_str());
+        res.push_str(format!(r#"pol {r2} = {r0}_B - {r0}_D + {r0}_E + {c2};"#).as_str());
+    };
 
-        code.join("\n")
-    }
-
-    res.push_str(
-        c_mul_add(
-            "acc1_0", "acc1_1", "acc1_2", "a[0]'", "a[1]'", "a[2]'", "a[3]'", "a[4]'", "a[5]'",
-            "a[9]", "a[10]", "a[11]",
-        )
-        .as_str(),
+    c_mul_add(
+        "acc1_0", "acc1_1", "acc1_2", "a[0]'", "a[1]'", "a[2]'", "a[3]'", "a[4]'", "a[5]'", "a[9]",
+        "a[10]", "a[11]",
     );
-    res.push_str(
-        c_mul_add(
-            "acc2_0", "acc2_1", "acc2_2", "acc1_0", "acc1_1", "acc1_2", "a[3]'", "a[4]'", "a[5]'",
-            "a[6]", "a[7]", "a[8]",
-        )
-        .as_str(),
+    c_mul_add(
+        "acc2_0", "acc2_1", "acc2_2", "acc1_0", "acc1_1", "acc1_2", "a[3]'", "a[4]'", "a[5]'",
+        "a[6]", "a[7]", "a[8]",
     );
-    res.push_str(
-        c_mul_add(
-            "acc3_0", "acc3_1", "acc3_2", "acc2_0", "acc2_1", "acc2_2", "a[3]'", "a[4]'", "a[5]'",
-            "a[3]", "a[4]", "a[5]",
-        )
-        .as_str(),
+    c_mul_add(
+        "acc3_0", "acc3_1", "acc3_2", "acc2_0", "acc2_1", "acc2_2", "a[3]'", "a[4]'", "a[5]'",
+        "a[3]", "a[4]", "a[5]",
     );
-    res.push_str(
-        c_mul_add(
-            "acc4_0", "acc4_1", "acc4_2", "acc3_0", "acc3_1", "acc3_2", "a[3]'", "a[4]'", "a[5]'",
-            "a[0]", "a[1]", "a[2]",
-        )
-        .as_str(),
+    c_mul_add(
+        "acc4_0", "acc4_1", "acc4_2", "acc3_0", "acc3_1", "acc3_2", "a[3]'", "a[4]'", "a[5]'",
+        "a[0]", "a[1]", "a[2]",
     );
 
     // EVPOL4
@@ -287,6 +266,7 @@ macro_rules! c_mul_add {
 #[cfg(test)]
 mod test {
     use crate::compressor12_pil::render;
+    use crate::pilcom;
     use std::fs::File;
     use std::io::Write;
     use std::path::Path;
@@ -296,6 +276,17 @@ mod test {
     fn test_render() {
         let pil_string = render(5, 5);
 
+        let mut file = File::create(Path::new("./render_pil_rs.pil")).unwrap();
+        file.write(pil_string.as_bytes());
+    }
+
+    #[test]
+    fn test_render_and_compile() {
+        let pil_string = render(5, 5);
+
+        let pil_json = pilcom::compile_pil_from_str(&pil_string);
+
+        // todo-check
         let mut file = File::create(Path::new("./render_pil_rs.pil")).unwrap();
         file.write(pil_string.as_bytes());
     }

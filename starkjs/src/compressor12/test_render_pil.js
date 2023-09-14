@@ -2,6 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
 
+// test render_pil_js.
+// node run test_render_pil.js
 async function run() {
 
     const template = await fs.promises.readFile(path.join(__dirname, "compressor12.pil.ejs"), "utf8");

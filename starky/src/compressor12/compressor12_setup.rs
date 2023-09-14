@@ -66,8 +66,8 @@ fn write_exec_file(exec_file: &String, adds: Vec<PlonkAdd>, s_map: Vec<Vec<u64>>
     for i in 0..adds_len {
         buff[2 + i * 4] = adds[i].0;
         buff[2 + i * 4 + 1] = adds[i].1;
-        buff[2 + i * 4 + 2] = adds[i].2;
-        buff[2 + i * 4 + 3] = adds[i].3;
+        // buff[2 + i * 4 + 2] = adds[i].2;
+        // buff[2 + i * 4 + 3] = adds[i].3;
     }
 
     for i in 0..s_map.len() {

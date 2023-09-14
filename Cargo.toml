@@ -4,3 +4,7 @@ members = [
   "plonky",
   "starky",
 ]
+
+
+#[patch."https://github.com/0xEigenLabs/eigen-zkvm.git"]
+#starky = { path = "./starky" }

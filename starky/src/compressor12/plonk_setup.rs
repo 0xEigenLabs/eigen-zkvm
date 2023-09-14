@@ -1,6 +1,6 @@
 use crate::compressor12::compressor12_pil;
 use crate::compressor12_setup::Options;
-use crate::pilcom::compile_pil;
+use crate::pilcom::compile_pil_from_str;
 use crate::polsarray::PolsArray;
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
 use crate::types::PIL;
@@ -33,7 +33,7 @@ impl PlonkSetup {
         // write!(file, "{}", pil_str).unwrap();
 
         // 3. compile pil to pil_json
-        let pil_json = compile_pil(&pil_str);
+        let pil_json = compile_pil_from_str(&pil_str);
 
         //4. plonk_setup_fix_compressor phase
         let (const_pols, s_map) = plonk_setup_compressor(r1cs, &pil_json, &plonk_setup_info);
@@ -261,20 +261,21 @@ pub fn plonk_setup_compressor(
             println!("Processing constraint... {}/{}", i, plonk_constraints.len())
         };
         let k = c.str_key();
-        let pr = partial_rows.get_mut(&k);
+        let pr = partial_rows.get(&k);
         if pr.is_some() {
             let pr = pr.unwrap();
             s_map[pr.n_used * 3][pr.row] = c.0 as u64;
             s_map[pr.n_used * 3 + 1][pr.row] = c.1 as u64;
             s_map[pr.n_used * 3 + 2][pr.row] = c.2 as u64;
-            pr.n_used += 1;
+            // pr.n_used += 1;
             if pr.n_used == 2 {
                 half_rows.push(pr);
-                partial_rows.remove(&k);
+            //     partial_rows.remove(&k);
             } else if pr.n_used == 4 {
-                partial_rows.remove(&k);
+                //     partial_rows.remove(&k);
             }
-        } else if half_rows.len() > 0 {
+
+            // } else if half_rows.len() > 0 {
             // todo
             // const pr = halfRows.shift();
             // constPols.Compressor.C[9][pr.row] = c[3];
@@ -302,7 +303,7 @@ pub fn plonk_setup_compressor(
             s_map[1][r] = c.1 as u64;
             s_map[2][r] = c.2 as u64;
 
-            partial_rows.insert(k, ParRow { row: r, n_used: 1 });
+            // partial_rows.insert(k, ParRow { row: r, n_used: 1 });
             r += 1;
         }
     }
