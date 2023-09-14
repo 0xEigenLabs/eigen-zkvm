@@ -66,8 +66,8 @@ impl F3G {
                 self.cube[0] == rhs.cube[0] && rhs.cube[1] == Fr::ZERO && rhs.cube[2] == Fr::ZERO
             } else {
                 self.cube[0] == rhs.cube[0]
-                    || (self.cube[1] == Fr::ZERO)
-                    || (self.cube[2] == Fr::ZERO)
+                    && (self.cube[1] == Fr::ZERO)
+                    && (self.cube[2] == Fr::ZERO)
             }
         }
     }
@@ -80,7 +80,7 @@ impl F3G {
         match self.dim {
             3 => {
                 (les[0] > res[0])
-                    || ((les[0] == res[0]) && (les[1] == res[1]))
+                    || ((les[0] == res[0]) && (les[1] > res[1]))
                     || ((les[0] == res[0]) && (les[1] == res[1]) && (les[2] > res[2]))
             }
             1 => les[0] > res[0],
