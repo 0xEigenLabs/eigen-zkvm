@@ -80,7 +80,7 @@ impl F3G {
         match self.dim {
             3 => {
                 (les[0] > res[0])
-                    || ((les[0] == res[0]) && (les[1] == res[1]))
+                    || ((les[0] == res[0]) && (les[1] > res[1]))
                     || ((les[0] == res[0]) && (les[1] == res[1]) && (les[2] > res[2]))
             }
             1 => les[0] > res[0],
