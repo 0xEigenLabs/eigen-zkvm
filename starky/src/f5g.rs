@@ -7,7 +7,7 @@ use std::hash::{Hash, Hasher};
 use std::slice;
 
 use core::fmt::{Display, Formatter};
-/// Irreducible polynomial: x5-3
+/// Irreducible polynomial: x^5-3
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 pub struct F5G {
@@ -95,21 +95,12 @@ impl F5G {
                     && (les[2] == res[2])
                     && (les[3] == res[3])
                     && (les[4] == res[4]))
-                    || ((les[0] == res[0])
-                        && (les[1] > res[1])
-                        && (les[2] == res[2])
-                        && (les[3] == res[3])
-                        && (les[4] == res[4]))
-                    || ((les[0] == res[0])
-                        && (les[1] == res[1])
-                        && (les[2] > res[2])
-                        && (les[3] == res[3])
-                        && (les[4] == res[4]))
+                    || ((les[0] == res[0]) && (les[1] > res[1]))
+                    || ((les[0] == res[0]) && (les[1] == res[1]) && (les[2] > res[2]))
                     || ((les[0] == res[0])
                         && (les[1] == res[1])
                         && (les[2] == res[2])
-                        && (les[3] > res[3])
-                        && (les[4] == res[4]))
+                        && (les[3] > res[3]))
                     || ((les[0] == res[0])
                         && (les[1] == res[1])
                         && (les[2] == res[2])
