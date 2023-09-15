@@ -49,7 +49,7 @@ pub fn load_constants() -> Constants {
         s: Vec::new(),
         n_rounds_f: 8,
         n_rounds_p: vec![
-            55, 55, 56, 56, 56, 56, 57, 57, 57, 57, 57, 57, 57, 57, 59, 59,
+            56, 57, 56, 60, 60, 63, 64, 63, 60, 66, 60, 65, 70, 60, 64, 68,
         ],
     }
 }
@@ -106,8 +106,8 @@ impl Poseidon {
     /// Hash function
     /// init_state would be Fr::zero() initially
     pub fn hash(&self, inp: &Vec<Fr>, init_state: &Fr) -> Result<Fr, String> {
-        let result = self.hash_inner(inp, init_state, 2)?;
-        Ok(result[1])
+        let result = self.hash_inner(inp, init_state, 1)?;
+        Ok(result[0])
     }
 
     pub fn hash_ex(&self, inp: &Vec<Fr>, init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
@@ -149,19 +149,19 @@ mod tests {
         let cons = load_constants();
         assert_eq!(
             cons.c[0][0].to_string(),
-            "Fr(0x525dd14d753a142ba9f083211a71385591c3aa1c56b69c6a35ffe039e9c9b72e)"
+            "Fr(0x6267f5556c88257324c1c8b00d5871b2eba13cc39d72aa10dde6b69bc44c41c7)"
         );
         assert_eq!(
             cons.c[cons.c.len() - 1][0].to_string(),
-            "Fr(0x110ba2bc11394ebdc472727c9683ed70624a37009ffed519b77bcea2c051b459)"
+            "Fr(0x13100d2b1511c87a14eb5fd8412a134abb770736d90f135e699360b9ba852335)"
         );
         assert_eq!(
             cons.m[0][0][0].to_string(),
-            "Fr(0x39f6d3a994cebea4199cec0404d0ec02a9ded2017fff2dff7fffffff80000001)"
+            "Fr(0x1e6d0cd936714f2124fc4c78321266174fe2855e689c6511a36ecadc3cccc268)"
         );
         assert_eq!(
             cons.m[cons.m.len() - 1][0][0].to_string(),
-            "Fr(0x1b46fa31af7059b6a2a432d4b6f8e788c868db4bffff9d2cf0f0f0f0b4b4b4b5)"
+            "Fr(0x2afb03f1f7a6085f9bf017982ed578fe6185c0355d4affd686b77f84f582f3c3)"
         );
     }
 
@@ -179,49 +179,43 @@ mod tests {
         let h = poseidon.hash(&vec![b1], &is).unwrap();
         assert_eq!(
             h.to_string(),
-            "Fr(0x164efff6c8a32ef98836c868f8c8dedcbe3068d16ba6098f282a6d185edb551f)"
+            "Fr(0x49a66f6b01dbc6440d1a5f920e027b94429916f2c821a920cf6203ad3de56cea)"
         );
 
-        let h = poseidon.hash(&vec![b1, b0], &is).unwrap();
+        let h = poseidon.hash(&vec![b1, b2], &is).unwrap();
         assert_eq!(
             h.to_string(),
-            "Fr(0x59220c0fc5748e83c141c7bb8dae0a2bd5bbb227c778ede87296ba07960ec3d8)"
-        );
-
-        let h = poseidon.hash(&vec![b1, b0, b0], &is).unwrap();
-        assert_eq!(
-            h.to_string(),
-            "Fr(0x73584296b068384db6028b55d995108518d4483ab177197274effe979b91526e)"
+            "Fr(0x28ce19420fc246a05553ad1e8c98f5c9d67166be2c18e9e4cb4b4e317dd2a78a)"
         );
 
         let h = poseidon.hash(&vec![b1, b2, b0, b0, b0], &is).unwrap();
         assert_eq!(
             h.to_string(),
-            "Fr(0x385acd94e53a8c6f981809c2201582beceaec12250200f1e75ba93e6cf5ec736)"
+            "Fr(0x38a4dfeeb62c8ddc28f907fff9658ad10495c587433646531f57d7741c372226)"
         );
 
         let h = poseidon.hash(&vec![b1, b2, b0, b0, b0, b0], &is).unwrap();
         assert_eq!(
             h.to_string(),
-            "Fr(0x023dd8aecc0967c0588754eebd39af39bdae2bbf4195fee1208613c909aaa29b)"
+            "Fr(0x4a300ef0358077f7277ded221e20d5967013c62a653bee2db65e162b6143321c)"
         );
 
         let h = poseidon.hash(&vec![b3, b4, b0, b0, b0], &is).unwrap();
         assert_eq!(
             h.to_string(),
-            "Fr(0x19c96d726da9e3df4e5d0da19f324f7bf376dc7bf97efbf37082473f7fa24af8)"
+            "Fr(0x631d5456b4cf350c218dfb3c8de41ae9d05ede09f46be5982eed8d3f1d6c7c2a)"
         );
 
         let h = poseidon.hash(&vec![b3, b4, b0, b0, b0, b0], &is).unwrap();
         assert_eq!(
             h.to_string(),
-            "Fr(0x0cb7b1761b9abe661847a10701c6eae7c631ff580c5b7f3ac2f8be1088d22bba)"
+            "Fr(0x4946ee12005b4c8f9fc919b4768499cfeccb4d35168c1db4509eae7ea5055483)"
         );
 
         let h = poseidon.hash(&vec![b1, b2, b3, b4], &is).unwrap();
         assert_eq!(
             h.to_string(),
-            "Fr(0x6f5f297b0ab0d1e7400501b9bdd4c3be2fe676b6a05deb845143b87355167a8d)"
+            "Fr(0x2a918b9c9f9bd7bb509331c81e297b5707f6fc7393dcee1b13901a0b22202e18)"
         );
     }
 
@@ -239,7 +233,7 @@ mod tests {
         let h = poseidon.hash(&inp, &is).unwrap();
         assert_eq!(
             h.to_string(),
-            "Fr(0x12d374bbdb8d3c1c0230b20b8fe1572f1e652a616d16e834718a982574106405)",
+            "Fr(0x193396627b6574b4dd5285df3191bcc692f69a9fd7d4d1d7fe98063b2e7cd3a8)",
         );
     }
 }
