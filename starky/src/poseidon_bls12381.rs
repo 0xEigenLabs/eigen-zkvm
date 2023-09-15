@@ -54,6 +54,10 @@ pub fn load_constants() -> Constants {
     }
 }
 
+#[deprecated(
+    since = "0.1.0",
+    note = "please use `poseidon_bls12381_opt::Poseidon` instead"
+)]
 pub struct Poseidon;
 
 impl Default for Poseidon {
