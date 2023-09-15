@@ -19,7 +19,7 @@ impl StarkInfo {
         let global_l1_value = global_l1.unwrap_or((&GLOBAL_L1).to_string());
 
         self.generate_permutation_LC(ctx, pil)?;
-        self.generate_plonk_Z(ctx, pil, &global_l1_value)?;
+        self.generate_plookup_Z(ctx, pil, &global_l1_value)?;
         self.generate_permutation_Z(ctx, pil, &global_l1_value)?;
         self.generate_connections_Z(ctx, pil, &global_l1_value)?;
 
@@ -104,7 +104,7 @@ impl StarkInfo {
     }
 
     // paper: https://eprint.iacr.org/2020/315.pdf
-    pub fn generate_plonk_Z(
+    pub fn generate_plookup_Z(
         &mut self,
         ctx: &mut Context,
         pil: &mut PIL,
