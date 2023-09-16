@@ -132,11 +132,25 @@ impl PolsArray {
         &mut self.array[idx]
     }
 
-    /*
-    pub fn set(&mut self, ns: &String, np: &String, val: &Vec<Vec<FGL>>) {
-        let idx = self.def
+    /// set the ns.np[i][j] = value, where ns.np[i] is the (ref.id + i)-th element in defArray
+    pub fn set(&mut self, ns: &String, np: &String, i: usize, j: usize, value: FGL) {
+        // this.$$def[nameSpace][namePol][i] = this.$$defArray[ref.id + i];
+        let namespace = self.def.get_mut(ns);
+        if namespace.is_none() {
+            self.def.insert(ns.clone(), HashMap::new());
+            return self.set(ns, np, i, j, value);
+        }
+        let namespace = namespace.unwrap();
+
+        let namepols = namespace.get_mut(np);
+        if namepols.is_none() {
+            namespace.insert(np.clone(), vec![0; self.n]);
+            return self.set(ns, np, i, j, value);
+        }
+        let namepols = namepols.unwrap();
+        let np_id = namepols[i];
+        self.array[np_id][j] = value;
     }
-    */
 
     pub fn load(&mut self, fileName: &str) -> Result<()> {
         let mut f = File::open(fileName)?;
