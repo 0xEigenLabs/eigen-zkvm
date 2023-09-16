@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 use crate::ff::*;
 use core::ops::{Add, Div, Mul, Neg, Sub};
-#[derive(Eq)]
+#[derive(Eq, Serialize, Deserialize)]
 pub struct Fr(pub FrRepr);
 /// This is the modulus m of the prime field
 pub const MODULUS: FrRepr = FrRepr([18446744069414584321u64]);
@@ -20,7 +20,7 @@ const GENERATOR: FrRepr = FrRepr([18446744039349813249u64]);
 const S: u32 = 32u32;
 /// 2^s root of unity computed by GENERATOR^t
 pub const ROOT_OF_UNITY: FrRepr = FrRepr([959634606461954525u64]);
-#[derive(Eq)]
+#[derive(Eq, Serialize, Deserialize)]
 pub struct FrRepr(pub [u64; 1usize]);
 #[automatically_derived]
 impl ::core::marker::Copy for FrRepr {}

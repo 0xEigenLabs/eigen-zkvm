@@ -5,12 +5,13 @@ use std::fs::File;
 
 use crate::f3g::F3G;
 
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 
 use crate::errors::Result;
 use plonky::field_gl::Fr as FGL;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct PolsArray {
     pub nPols: usize,
     // nameSpace, namePol, defArray's index,
@@ -21,7 +22,7 @@ pub struct PolsArray {
     // compressor: Option<Compressor>, todo
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Pol {
     pub name: String,
     pub id: usize,
@@ -133,11 +134,29 @@ impl PolsArray {
         &mut self.array[idx]
     }
 
-    /*
-    pub fn set(&mut self, ns: &String, np: &String, val: &Vec<Vec<FGL>>) {
-        let idx = self.def
+    /// Set the ns.np[i][j] = value, where ns.np[i] is the (ref.id + i)-th element(column) in self.array
+    /// j would be 0 by default for non-array reference, e.g. For JS statement, constPols.Compressor.C[7][pr.row] = c[5], i is 7 and j is pr.row.
+    /// Before calling this function, you must ensure that this polsarray has been initialized
+    pub fn set(&mut self, ns: &String, np: &String, i: usize, j: usize, value: FGL) {
+        let namespace = self.def.get_mut(ns);
+        /*
+        if namespace.is_none() {
+            self.def.insert(ns.clone(), HashMap::new());
+            return self.set(ns, np, i, j, value);
+        }
+        */
+        let namespace = namespace.unwrap();
+        let namepols = namespace.get_mut(np);
+        /*
+        if namepols.is_none() {
+            namespace.insert(np.clone(), vec![0; self.n]);
+            return self.set(ns, np, i, j, value);
+        }
+        */
+        let namepols = namepols.unwrap();
+        let np_id = namepols[i];
+        self.array[np_id][j] = value;
     }
-    */
 
     pub fn load(&mut self, fileName: &str) -> Result<()> {
         let mut f = File::open(fileName)?;
@@ -234,8 +253,14 @@ impl PolsArray {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::polsarray::{PolKind, PolsArray};
+    use super::*;
+    use crate::compressor12_pil::render;
+    use crate::pilcom::compile_pil_from_str;
     use crate::types::{self, PIL};
+    use std::fs::File;
+    use std::io::Write;
+    use std::path::Path;
+
     #[test]
     fn test_load_polsarray() {
         let pil = types::load_json::<PIL>("data/fib.pil.json").unwrap();
@@ -246,5 +271,18 @@ pub mod tests {
         let mut cmp = PolsArray::new(&pil, PolKind::Commit);
         cmp.load("data/fib.exec").unwrap();
         cmp.save("data/fib.exec.cp").unwrap();
+    }
+
+    #[test]
+    fn test_dump_pols_array() {
+        let pil_string = render(5, 5);
+
+        let pil_json = compile_pil_from_str(&pil_string);
+
+        let pols_array = PolsArray::new(&pil_json, PolKind::Constant);
+
+        let input = serde_json::to_string_pretty(&pols_array).unwrap();
+        let mut file = File::create(Path::new("./test_pols_array.json")).unwrap();
+        write!(file, "{}", input);
     }
 }

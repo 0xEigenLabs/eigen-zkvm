@@ -59,7 +59,6 @@ fn write_exec_file(exec_file: &String, adds: Vec<PlonkAdd>, s_map: Vec<Vec<u64>>
     let size = 2 + adds_len * 4 + s_map_len * s_map[0].len();
 
     let mut buff = Vec::with_capacity(size);
-    let buff = vec![];
 
     buff[0] = adds_len as u64;
     buff[1] = s_map_len as u64;

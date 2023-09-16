@@ -1,18 +1,13 @@
 use crate::compressor12::compressor12_pil;
 use crate::compressor12_setup::Options;
 use crate::pilcom::compile_pil_from_str;
-use crate::polsarray::PolsArray;
+use crate::polsarray::{PolKind, PolsArray};
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
 use crate::types::PIL;
-use crate::{pilcom, polsarray};
-use ff::PrimeField;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
-use plonky::reader::load_r1cs;
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::Write;
 
 #[derive(Default)]
 pub struct PlonkSetup {
@@ -71,12 +66,12 @@ impl NormalPlonkInfo {
 
             uses.entry(k.clone())
                 .and_modify(|e| *e += 1)
-                .or_insert_with(1);
+                .or_insert_with(|| 1);
         }
-        let mut result = uses.values().collect::<Vec<usize>>();
+        let mut result = uses.values().collect::<Vec<_>>();
         result.sort(); // sort by asc
 
-        let mut N = result.iter().fold(0, |acc, &x| acc + (x - 1) / 4 + 1);
+        let mut N = result.iter().fold(0, |acc, x| acc + (**x - 1) / 4 + 1);
         N = (N - 1) / 2 + 1;
 
         Self {
@@ -88,10 +83,10 @@ impl NormalPlonkInfo {
     }
 }
 
-pub(crate) struct CustomGateInfo<F: PrimeField> {
+pub(crate) struct CustomGateInfo {
     pub(crate) poseidon_id: u64,
     pub(crate) c_mul_add_id: u64,
-    pub(crate) fft_params: Vec<F>,
+    pub(crate) fft_params: Vec<Vec<FGL>>, // todo check is this? Vec<E::Fr>
     pub(crate) ev_pol_id: u64,
 
     pub(crate) n_poseidon: u64,
@@ -100,54 +95,63 @@ pub(crate) struct CustomGateInfo<F: PrimeField> {
     pub(crate) n_ev_pol: u64,
 }
 
-impl<F: PrimeField> CustomGateInfo<F> {
-    fn from_r1cs(r1cs: &R1CS<GL>) -> Self {
-        let mut c_mul_add_id = None;
-        let mut poseidon_id = None;
-        let mut ev_pol_id = None;
-        let mut fft_params = None;
+impl CustomGateInfo {
+    // equal to `typeof customGatesInfo.FFT4Parameters[cgu.id] !== "undefined"` in js
+    // Defined: properer index and has value.
+    pub fn check_fft_param_defined(fft_params: &Vec<Vec<FGL>>, index: u64) -> bool {
+        (index >= 0 && index < fft_params.len() as u64) && !fft_params[index].is_empty()
+    }
 
-        let mut n_c_mul_add = 0;
-        let mut n_poseidon = 0;
-        let mut n_fft = 0;
-        let mut n_ev_pol = 0;
+    fn from_r1cs(r1cs: &R1CS<GL>) -> Self {
+        let mut c_mul_add_id = 0;
+        let mut poseidon_id = 0;
+        let mut ev_pol_id = 0;
+        let mut fft_params = vec![];
 
         for (i, c) in r1cs.custom_gates.iter().enumerate() {
-            assert!(c.parameters.len() == 0);
             match c.template_name.as_str() {
                 "CMulAdd" => {
-                    if None == c_mul_add_id {
-                        c_mul_add_id = Some(i as u64);
-                    }
-                    n_c_mul_add += 1;
+                    c_mul_add_id = i as u64;
+                    assert!(c.parameters.len() == 0);
                 }
                 "Poseidon12" => {
-                    if None == poseidon_id {
-                        poseidon_id = Some(i as u64);
-                    }
-                    n_poseidon += 1;
+                    poseidon_id = i as u64;
+                    assert!(c.parameters.len() == 0);
                 }
                 "EvPol4" => {
-                    if None == ev_pol_id {
-                        ev_pol_id = Some(i as u64);
-                    }
-                    n_ev_pol += 1;
+                    ev_pol_id = i as u64;
+                    assert!(c.parameters.len() == 0);
                 }
                 "FFT4" => {
-                    if None == fft_params {
-                        fft_params = Some(c.parameters.clone());
-                    }
-                    n_fft += 1;
+                    fft_params[i] = c.parameters.clone();
                 }
                 _ => panic!("Invalid custom gate {}", c.template_name),
             }
         }
 
+        let mut n_c_mul_add = 0;
+        let mut n_poseidon = 0;
+        let mut n_fft = 0;
+        let mut n_ev_pol = 0;
+        for c in r1cs.custom_gates_uses.iter() {
+            if c.id == c_mul_add_id {
+                n_c_mul_add += 1;
+            } else if c.id == poseidon_id {
+                n_poseidon += 1;
+            } else if Self::check_fft_param_defined(&fft_params, c.id) {
+                n_fft += 1;
+            } else if c.id == ev_pol_id {
+                n_ev_pol += 1;
+            } else {
+                panic!("Custom gate not defined {}", c.id);
+            }
+        }
+
         Self {
-            poseidon_id: poseidon_id.unwrap_or(0),
-            c_mul_add_id: c_mul_add_id.unwrap_or(0),
-            fft_params: fft_params.unwrap_or(vec![]),
-            ev_pol_id: ev_pol_id.unwrap_or(0),
+            poseidon_id,
+            c_mul_add_id,
+            fft_params,
+            ev_pol_id,
             n_poseidon,
             n_c_mul_add,
             n_fft,
@@ -156,18 +160,17 @@ impl<F: PrimeField> CustomGateInfo<F> {
     }
 }
 
-// todo field type F3G?
-pub struct PlonkSetupRenderInfo<F: PrimeField> {
+pub struct PlonkSetupRenderInfo {
     n_used: usize,
     n_bits: usize,
     n_publics: usize,
     pub(crate) pg: Vec<PlonkGate>,
     pub(crate) pa: Vec<PlonkAdd>,
-    custom_gates_info: CustomGateInfo<F>,
+    custom_gates_info: CustomGateInfo,
     pub(crate) plonk_info: NormalPlonkInfo,
 }
 
-impl<F: PrimeField> PlonkSetupRenderInfo<F> {
+impl PlonkSetupRenderInfo {
     pub fn plonk_setup_render(r1cs: &R1CS<GL>, opts: &Options) -> Self {
         // 1. r1cs to plonk
         let (plonk_constrains, plonk_additions) = r1cs2plonk(r1cs);
@@ -183,10 +186,10 @@ impl<F: PrimeField> PlonkSetupRenderInfo<F> {
 
         let n_used = n_public_rows
             + plonk_info.N
-            + custom_gates_info.n_c_mul_add
-            + custom_gates_info.n_poseidon * 31
-            + custom_gates_info.n_fft * 2
-            + custom_gates_info.n_ev_pol * 2;
+            + (custom_gates_info.n_c_mul_add
+                + custom_gates_info.n_poseidon * 31
+                + custom_gates_info.n_fft * 2
+                + custom_gates_info.n_ev_pol * 2) as usize;
 
         let mut n_bits = crate::helper::log2_any(n_used - 1) + 1;
         if opts.force_bits > 0 {
@@ -205,13 +208,13 @@ impl<F: PrimeField> PlonkSetupRenderInfo<F> {
     }
 }
 
-pub fn plonk_setup_compressor<F: PrimeField>(
+pub fn plonk_setup_compressor(
     r1cs: &R1CS<GL>,
     pil: &PIL,
-    plonk_setup_info: &PlonkSetupRenderInfo<F>,
+    plonk_setup_info: &PlonkSetupRenderInfo,
 ) -> (PolsArray, Vec<Vec<u64>>) {
     // 1. construct init ConstantPolsArray
-    let mut const_pols = PolsArray::new(pil, polsarray::PolKind::Constant);
+    let mut const_pols = PolsArray::new(pil, PolKind::Constant);
 
     let n_used = plonk_setup_info.n_used;
     let n_publics = plonk_setup_info.n_publics;
@@ -234,7 +237,7 @@ pub fn plonk_setup_compressor<F: PrimeField>(
         // constPols.Compressor.PARTIAL[r+i] = 0n;
         // constPols.Compressor.FFT4[r+i] = 0n;
         for j in 0..12 {
-            // compressor.QMDS[r] = FGL::ZERO;
+            // constPols.Compressor.C[k][r+i] = 0n;
         }
     }
     for i in 0..n_publics {
@@ -246,10 +249,12 @@ pub fn plonk_setup_compressor<F: PrimeField>(
     r += n_public_rows;
 
     // 3. Paste plonk constraints.
+    #[derive(Copy, Clone)]
     struct ParRow {
         row: usize,
         n_used: usize,
     };
+    // Paste plonk constraints.
     let mut partial_rows: HashMap<String, ParRow> = HashMap::new();
     let mut half_rows: Vec<ParRow> = vec![];
     let plonk_constraints = &plonk_setup_info.pg;
@@ -272,7 +277,7 @@ pub fn plonk_setup_compressor<F: PrimeField>(
                 partial_rows.remove(&k);
             }
         } else if half_rows.len() > 0 {
-            // todo
+            // todo how to shift.
             let mut pr = ParRow { row: 0, n_used: 0 };
             // const pr = halfRows.shift();
             // constPols.Compressor.C[9][pr.row] = c[3];
@@ -286,15 +291,20 @@ pub fn plonk_setup_compressor<F: PrimeField>(
             s_map[pr.n_used * 3 + 1][pr.row] = c.1 as u64;
             s_map[pr.n_used * 3 + 2][pr.row] = c.2 as u64;
             pr.n_used += 1;
-            partial_rows.insert(k, pr.clone());
+            partial_rows.insert(k, pr);
         } else {
-            // compressor.Qm[r] = c.3.clone();
-            // compressor.Ql[r] = c.4.clone();
-            // compressor.Qr[r] = c.5.clone();
-            // compressor.Qo[r] = c.6.clone();
-            // compressor.Qk[r] = c.7.clone();
-            // compressor.QCMul[r] = FGL::ZERO;
-            // compressor.QMDS[r] = FGL::ZERO;
+            // constPols.Compressor.C[3][r] = c[3];
+            // constPols.Compressor.C[0][r] = c[4];
+            // constPols.Compressor.C[1][r] = c[5];
+            // constPols.Compressor.C[2][r] = c[6];
+            // constPols.Compressor.C[4][r] = c[7];
+            // constPols.Compressor.C[5][r] = 0n;
+            // constPols.Compressor.GATE[r] = 1n;
+            // constPols.Compressor.POSEIDON12[r] = 0n;
+            // constPols.Compressor.PARTIAL[r] = 0n;
+            // constPols.Compressor.CMULADD[r] = 0n;
+            // constPols.Compressor.EVPOL4[r] = 0n;
+            // constPols.Compressor.FFT4[r] = 0n;
 
             s_map[0][r] = c.0 as u64;
             s_map[1][r] = c.1 as u64;
@@ -311,7 +321,7 @@ pub fn plonk_setup_compressor<F: PrimeField>(
             s_map[4][pr.row] = s_map[1][pr.row];
             s_map[5][pr.row] = s_map[2][pr.row];
             pr.n_used += 1;
-            half_rows.push(pr.clone());
+            half_rows.push(*pr);
         } else if pr.n_used == 3 {
             s_map[9][pr.row] = s_map[6][pr.row];
             s_map[10][pr.row] = s_map[7][pr.row];
@@ -353,36 +363,40 @@ pub fn plonk_setup_compressor<F: PrimeField>(
                     s_map[k][r + j] = cgu.signals[i * 12 + k];
                     // constPols.Compressor.C[j][r+i] = CPOSEIDON[i*12+j];
                 }
-                // compressor.Qm[r] = FGL::ZERO;
-                // compressor.Ql[r] = FGL::ZERO;
-                // compressor.Qr[r] = FGL::ZERO;
-                // compressor.Qo[r] = FGL::ZERO;
-                // compressor.Qk[r] = FGL::ZERO;
-                // compressor.QCMul[r] = FGL::ZERO;
-                // compressor.QMDS[r] = FGL::ONE;
-                // compressor.Qm[r + 1] = FGL::ZERO;
-                // compressor.Ql[r + 1] = FGL::ZERO;
-                // compressor.Qr[r + 1] = FGL::ZERO;
-                // compressor.Qo[r + 1] = FGL::ZERO;
-                // compressor.Qk[r + 1] = FGL::ZERO;
-                // compressor.QCMul[r + 1] = FGL::ZERO;
-                // compressor.QMDS[r + 1] = FGL::ZERO;
+                // constPols.Compressor.GATE[r+i] = 0n;
+                // constPols.Compressor.POSEIDON12[r+i] = i<30 ? 1n : 0n;
+                // constPols.Compressor.PARTIAL[r+i] = i<30 ? ((i<4)||(i>=26) ? 0n : 1n) : 0n;
+                // constPols.Compressor.CMULADD[r+i] = 0n;
+                // constPols.Compressor.EVPOL4[r+i] = 0n;
+                // constPols.Compressor.FFT4[r+i] = 0n;
             }
             r += 31;
         } else if cgu.id == custom_gates_info.c_mul_add_id {
             for j in 0..12 {
                 s_map[j][r] = cgu.signals[j];
             }
-            // compressor.Qm[r] = FGL::ZERO;
-            // compressor.Ql[r] = FGL::ZERO;
-            // compressor.Qr[r] = FGL::ZERO;
-            // compressor.Qo[r] = FGL::ZERO;
-            // compressor.Qk[r] = FGL::ZERO;
-            // compressor.QCMul[r] = FGL::ONE;
-            // compressor.QMDS[r] = FGL::ZERO;
+            // constPols.Compressor.CMULADD[r] = 1n;
+            // constPols.Compressor.GATE[r] = 0n;
+            // constPols.Compressor.POSEIDON12[r] = 0n;
+            // constPols.Compressor.PARTIAL[r] = 0n;
+            // constPols.Compressor.EVPOL4[r] = 0n;
+            // constPols.Compressor.FFT4[r] = 0n;
+            // constPols.Compressor.C[0][r] = 0n;
+            // constPols.Compressor.C[1][r] = 0n;
+            // constPols.Compressor.C[2][r] = 0n;
+            // constPols.Compressor.C[3][r] = 0n;
+            // constPols.Compressor.C[4][r] = 0n;
+            // constPols.Compressor.C[5][r] = 0n;
+            // constPols.Compressor.C[6][r] = 0n;
+            // constPols.Compressor.C[7][r] = 0n;
+            // constPols.Compressor.C[8][r] = 0n;
+            // constPols.Compressor.C[9][r] = 1n;
+            // constPols.Compressor.C[10][r] = 1n;
+            // constPols.Compressor.C[11][r] = 0n;
 
             r += 1;
-        } else if (custom_gates_info.fft_params.len() as u64) < cgu.id {
+        // } else if ( typeof customGatesInfo.FFT4Parameters[cgu.id] !== "undefined") {
+        } else if CustomGateInfo::check_fft_param_defined(&custom_gates_info.fft_params, cgu.id) {
             for j in 0..12 {
                 s_map[j][r] = cgu.signals[j];
             }
@@ -403,25 +417,69 @@ pub fn plonk_setup_compressor<F: PrimeField>(
             // constPols.Compressor.FFT4[r+1] = 0n;
 
             // todo check.
+            let t = custom_gates_info.fft_params[cgu.id][3];
+            let scale = custom_gates_info.fft_params[cgu.id][2];
+            let incW = custom_gates_info.fft_params[cgu.id][1];
+            let firstW = custom_gates_info.fft_params[cgu.id][0];
+            // let firstW2 = F.square(firstW);
+
+            // if t == 4n {
+            // constPols.Compressor.C[0][r] = scale;
+            // constPols.Compressor.C[1][r] = F.mul(scale, firstW2);
+            // constPols.Compressor.C[2][r] = F.mul(scale, firstW);
+            // constPols.Compressor.C[3][r] = F.mul(scale, F.mul(firstW, firstW2));
+            // constPols.Compressor.C[4][r] = F.mul(scale, F.mul(firstW, incW));
+            // constPols.Compressor.C[5][r] = F.mul(F.mul(scale,firstW), F.mul(firstW2, incW));
+            // constPols.Compressor.C[6][r] = 0n;
+            // constPols.Compressor.C[7][r] = 0n;
+            // constPols.Compressor.C[8][r] = 0n;
+            // } else if (t == 2n) {
+            // constPols.Compressor.C[0][r] = 0n;
+            // constPols.Compressor.C[1][r] = 0n;
+            // constPols.Compressor.C[2][r] = 0n;
+            // constPols.Compressor.C[3][r] = 0n;
+            // constPols.Compressor.C[4][r] = 0n;
+            // constPols.Compressor.C[5][r] = 0n;
+            // constPols.Compressor.C[6][r] = scale;
+            // constPols.Compressor.C[7][r] = F.mul(scale, firstW);
+            // constPols.Compressor.C[8][r] = F.mul(scale, F.mul(firstW, incW));
+
+            // } else {
+            //     panic!("invalit FFT4 type: {}", cgu.parameters[0]);
+            // }
+
+            // constPols.Compressor.C[9][r] = 0n;
+            // constPols.Compressor.C[10][r] = 0n;
+            // constPols.Compressor.C[11][r] = 0n;
+            for k in 0..12 {
+                // constPols.Compressor.C[k][r+1] = 0n;
+            }
+
             r += 2;
         } else if cgu.id == custom_gates_info.ev_pol_id {
             for j in 0..12 {
                 s_map[j][r] = cgu.signals[j];
-                // constPols.Compressor.C[j][r+i] = CPOSEIDON[i*12+j];
+                // constPols.Compressor.C[i][r] = 0n;
             }
             for j in 0..9 {
                 s_map[j][r + 1] = cgu.signals[12 + j];
-                // constPols.Compressor.C[j][r+i] = CPOSEIDON[i*12+j];
+                // constPols.Compressor.C[i][r+1] = 0n;
             }
             for j in 9..12 {
                 s_map[j][r + 1] = 0;
-                // constPols.Compressor.C[j][r+i] = CPOSEIDON[i*12+j];
+                // constPols.Compressor.C[i][r+1] = 0n;
             }
-
+            // constPols.Compressor.EVPOL4[r] = 1n;
+            // constPols.Compressor.CMULADD[r] = 0n;
+            // constPols.Compressor.GATE[r] = 0n;
+            // constPols.Compressor.POSEIDON12[r] = 0n;
+            // constPols.Compressor.PARTIAL[r] = 0n;
+            // constPols.Compressor.FFT4[r] = 0n;
+            // constPols.Compressor.EVPOL4[r+1] = 0n;
+            // constPols.Compressor.CMULADD[r+1] = 0n;
             // constPols.Compressor.GATE[r+1] = 0n;
             // constPols.Compressor.POSEIDON12[r+1] = 0n;
             // constPols.Compressor.PARTIAL[r+1] = 0n;
-            // constPols.Compressor.EVPOL4[r+1] = 0n;
             // constPols.Compressor.FFT4[r+1] = 0n;
             r += 2
         } else {
@@ -472,15 +530,14 @@ pub fn plonk_setup_compressor<F: PrimeField>(
         if (r % 100000) == 0 {
             log::info!("Empty gates... {}/{}", r, N);
         }
-        // compressor.Qm[r] = FGL::ZERO;
-        // compressor.Ql[r] = FGL::ZERO;
-        // compressor.Qr[r] = FGL::ZERO;
-        // compressor.Qo[r] = FGL::ZERO;
-        // compressor.Qk[r] = FGL::ZERO;
-        // compressor.QCMul[r] = FGL::ZERO;
-        // compressor.QMDS[r] = FGL::ZERO;
+        // constPols.Compressor.EVPOL4[r] = 0n;
+        // constPols.Compressor.CMULADD[r] = 0n;
+        // constPols.Compressor.GATE[r] = 0n;
+        // constPols.Compressor.POSEIDON12[r] = 0n;
+        // constPols.Compressor.PARTIAL[r] = 0n;
+        // constPols.Compressor.FFT4[r] = 0n;
         for j in 0..12 {
-            // compressor.QMDS[r] = FGL::ZERO;
+            // constPols.Compressor.C[k][r] = 0n;
         }
         r += 1;
     }
