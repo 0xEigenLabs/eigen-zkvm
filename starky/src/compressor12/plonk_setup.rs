@@ -5,6 +5,7 @@ use crate::polsarray::PolsArray;
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
 use crate::types::PIL;
 use crate::{pilcom, polsarray};
+use ff::PrimeField;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
@@ -47,143 +48,126 @@ impl PlonkSetup {
     }
 }
 
-#[derive(Default, Debug)]
-pub struct Compressor {
-    pub Qm: Vec<FGL>,
-    pub Ql: Vec<FGL>,
-    pub Qr: Vec<FGL>,
-    pub Qo: Vec<FGL>,
-    pub Qk: Vec<FGL>,
-    pub QCMul: Vec<FGL>,
-    pub QMDS: Vec<FGL>,
-    pub S: Vec<Vec<FGL>>,
-}
-
-impl Compressor {
-    pub fn new(sz: usize) -> Self {
-        Compressor {
-            Qm: vec![FGL::ZERO; sz],
-            Ql: vec![FGL::ZERO; sz],
-            Qr: vec![FGL::ZERO; sz],
-            Qo: vec![FGL::ZERO; sz],
-            Qk: vec![FGL::ZERO; sz],
-            QCMul: vec![FGL::ZERO; sz],
-            QMDS: vec![FGL::ZERO; sz],
-            S: vec![Vec::new(); sz],
-        }
-    }
-}
-
 pub(crate) struct NormalPlonkInfo {
     pub N: usize,
-    pub nConstaints: usize,
-    pub nPlonkGates: usize,
-    pub nPlonkAdds: usize,
+    pub n_constaints: usize,
+    pub n_plonk_gates: usize,
+    pub n_plonk_adds: usize,
 }
 
 impl NormalPlonkInfo {
-    // need check
-    pub(crate) fn new(r1cs: &R1CS<GL>, pa: &Vec<PlonkGate>, pc: &Vec<PlonkAdd>) -> Self {
+    pub(crate) fn new(
+        r1cs: &R1CS<GL>,
+        plonk_constrains: &Vec<PlonkGate>,
+        plonk_additions: &Vec<PlonkAdd>,
+    ) -> Self {
         let mut uses: HashMap<String, usize> = HashMap::new();
-        for (i, c) in pa.iter().enumerate() {
+        let plonk_constrains_len = plonk_constrains.len();
+        for (i, c) in plonk_constrains.iter().enumerate() {
             if (i % 10000) == 0 {
-                println!("Plonk info constraint processing... {}/{}", i, pa.len());
+                log::info!("Plonk info constraint processing... {i}/{plonk_constrains_len}");
             }
             let k = c.str_key();
-            if uses.get(&k).is_none() {
-                uses.insert(k.clone(), 0);
-            }
-            *uses.get_mut(&k).unwrap() += 1;
-        }
-        let mut result = uses
-            .iter()
-            .map(|(k, v)| (k.clone(), *v))
-            .collect::<Vec<(String, usize)>>();
-        result.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
-        let mut N = 0;
-        result.iter().for_each(|e| {
-            N += (e.1 - 1) / 4 + 1;
-        });
+            uses.entry(k.clone())
+                .and_modify(|e| *e += 1)
+                .or_insert_with(1);
+        }
+        let mut result = uses.values().collect::<Vec<usize>>();
+        result.sort(); // sort by asc
+
+        let mut N = result.iter().fold(0, |acc, &x| acc + (x - 1) / 4 + 1);
+        N = (N - 1) / 2 + 1;
 
         Self {
             N,
-            nConstaints: r1cs.constraints.len(),
-            nPlonkGates: pa.len(),
-            nPlonkAdds: pc.len(),
+            n_constaints: r1cs.constraints.len(),
+            n_plonk_gates: plonk_constrains_len,
+            n_plonk_adds: plonk_additions.len(),
         }
     }
 }
 
-pub(crate) struct CustomGateInfo {
-    pub cmul_id: u64,
-    pub cmds_id: u64,
-    pub n_cmul: u64,
-    pub n_mds: u64,
+pub(crate) struct CustomGateInfo<F: PrimeField> {
+    pub(crate) poseidon_id: u64,
+    pub(crate) c_mul_add_id: u64,
+    pub(crate) fft_params: Vec<F>,
+    pub(crate) ev_pol_id: u64,
+
+    pub(crate) n_poseidon: u64,
+    pub(crate) n_c_mul_add: u64,
+    pub(crate) n_fft: u64,
+    pub(crate) n_ev_pol: u64,
 }
 
-impl CustomGateInfo {
-    // need check
+impl<F: PrimeField> CustomGateInfo<F> {
     fn from_r1cs(r1cs: &R1CS<GL>) -> Self {
-        let mut cmul_id = 0;
-        let mut cmds_id = 0;
-        let mut bcmul = false;
-        let mut bcmds = false;
-        assert_eq!(r1cs.custom_gates.len(), 2);
+        let mut c_mul_add_id = None;
+        let mut poseidon_id = None;
+        let mut ev_pol_id = None;
+        let mut fft_params = None;
+
+        let mut n_c_mul_add = 0;
+        let mut n_poseidon = 0;
+        let mut n_fft = 0;
+        let mut n_ev_pol = 0;
+
         for (i, c) in r1cs.custom_gates.iter().enumerate() {
+            assert!(c.parameters.len() == 0);
             match c.template_name.as_str() {
-                "CMul" => {
-                    cmul_id = i as u64;
-                    bcmul = true;
-                    assert!(c.parameters.len() == 0);
+                "CMulAdd" => {
+                    if None == c_mul_add_id {
+                        c_mul_add_id = Some(i as u64);
+                    }
+                    n_c_mul_add += 1;
                 }
-                "MDS" => {
-                    cmds_id = i as u64;
-                    bcmds = true;
-                    assert!(c.parameters.len() == 0);
+                "Poseidon12" => {
+                    if None == poseidon_id {
+                        poseidon_id = Some(i as u64);
+                    }
+                    n_poseidon += 1;
+                }
+                "EvPol4" => {
+                    if None == ev_pol_id {
+                        ev_pol_id = Some(i as u64);
+                    }
+                    n_ev_pol += 1;
+                }
+                "FFT4" => {
+                    if None == fft_params {
+                        fft_params = Some(c.parameters.clone());
+                    }
+                    n_fft += 1;
                 }
                 _ => panic!("Invalid custom gate {}", c.template_name),
             }
         }
-        if !bcmul {
-            panic!("CMul custom gate not defined");
-        }
-        if !bcmds {
-            panic!("cmds_id custom gate not defined");
-        }
 
-        let mut n_cmul = 0;
-        let mut n_mds = 0;
-        for (_i, c) in r1cs.custom_gates_uses.iter().enumerate() {
-            if c.id == cmul_id {
-                n_cmul += 1;
-            } else if c.id == cmds_id {
-                n_mds += 1;
-            } else {
-                panic!("Custom gate not defined {}", c.id);
-            }
-        }
         Self {
-            cmul_id,
-            cmds_id,
-            n_cmul,
-            n_mds,
+            poseidon_id: poseidon_id.unwrap_or(0),
+            c_mul_add_id: c_mul_add_id.unwrap_or(0),
+            fft_params: fft_params.unwrap_or(vec![]),
+            ev_pol_id: ev_pol_id.unwrap_or(0),
+            n_poseidon,
+            n_c_mul_add,
+            n_fft,
+            n_ev_pol,
         }
     }
 }
 
-pub struct PlonkSetupRenderInfo {
+// todo field type F3G?
+pub struct PlonkSetupRenderInfo<F: PrimeField> {
     n_used: usize,
     n_bits: usize,
     n_publics: usize,
     pub(crate) pg: Vec<PlonkGate>,
     pub(crate) pa: Vec<PlonkAdd>,
-    custom_gates_info: CustomGateInfo,
+    custom_gates_info: CustomGateInfo<F>,
     pub(crate) plonk_info: NormalPlonkInfo,
 }
 
-impl PlonkSetupRenderInfo {
-    // need check
+impl<F: PrimeField> PlonkSetupRenderInfo<F> {
     pub fn plonk_setup_render(r1cs: &R1CS<GL>, opts: &Options) -> Self {
         // 1. r1cs to plonk
         let (plonk_constrains, plonk_additions) = r1cs2plonk(r1cs);
@@ -196,10 +180,14 @@ impl PlonkSetupRenderInfo {
         // 4. calculate columns,rows,constraints info.
         let n_publics = r1cs.num_inputs + r1cs.num_outputs;
         let n_public_rows = (n_publics - 1) / 12 + 1;
+
         let n_used = n_public_rows
-            + plonk_info.N as usize
-            + custom_gates_info.n_cmul as usize
-            + custom_gates_info.n_mds as usize * 2;
+            + plonk_info.N
+            + custom_gates_info.n_c_mul_add
+            + custom_gates_info.n_poseidon * 31
+            + custom_gates_info.n_fft * 2
+            + custom_gates_info.n_ev_pol * 2;
+
         let mut n_bits = crate::helper::log2_any(n_used - 1) + 1;
         if opts.force_bits > 0 {
             n_bits = opts.force_bits;
@@ -217,29 +205,38 @@ impl PlonkSetupRenderInfo {
     }
 }
 
-pub fn plonk_setup_compressor(
+pub fn plonk_setup_compressor<F: PrimeField>(
     r1cs: &R1CS<GL>,
     pil: &PIL,
-    aux: &PlonkSetupRenderInfo,
+    plonk_setup_info: &PlonkSetupRenderInfo<F>,
 ) -> (PolsArray, Vec<Vec<u64>>) {
     // 1. construct init ConstantPolsArray
-    let mut const_pols = polsarray::PolsArray::new(pil, polsarray::PolKind::Constant);
+    let mut const_pols = PolsArray::new(pil, polsarray::PolKind::Constant);
 
-    let n_used = aux.n_used;
-    let n_publics = aux.n_publics;
+    let n_used = plonk_setup_info.n_used;
+    let n_publics = plonk_setup_info.n_publics;
     let n_public_rows = (n_publics - 1) / 12 + 1;
 
     // 2. init sMap and construct it.
-    let mut s_map: Vec<Vec<u64>> = vec![Vec::new(); 12];
-    for i in 0..12 {
-        s_map[i] = vec![0u64; n_used];
-    }
+    let mut s_map: Vec<Vec<u64>> = vec![vec![0u64; n_used]; 12];
+    // for i in 0..12 {
+    //     s_map[i] = vec![0u64; n_used];
+    // }
 
     let mut r = 0;
 
-    // Paste public inputs. todo check
-    let mut compressor: Compressor = Compressor::new(n_public_rows + r);
-
+    // Paste public inputs.
+    for i in 0..n_public_rows {
+        // constPols.Compressor.EVPOL4[r+i] = 0n;
+        // constPols.Compressor.CMULADD[r+i] = 0n;
+        // constPols.Compressor.GATE[r+i] = 0n;
+        // constPols.Compressor.POSEIDON12[r+i] = 0n;
+        // constPols.Compressor.PARTIAL[r+i] = 0n;
+        // constPols.Compressor.FFT4[r+i] = 0n;
+        for j in 0..12 {
+            // compressor.QMDS[r] = FGL::ZERO;
+        }
+    }
     for i in 0..n_publics {
         s_map[i % 12][r + i / 12] = 1 + i as u64;
     }
@@ -254,29 +251,29 @@ pub fn plonk_setup_compressor(
         n_used: usize,
     };
     let mut partial_rows: HashMap<String, ParRow> = HashMap::new();
-    let mut half_rows = vec![];
-    let plonk_constraints = &aux.pg;
+    let mut half_rows: Vec<ParRow> = vec![];
+    let plonk_constraints = &plonk_setup_info.pg;
     for (i, c) in plonk_constraints.iter().enumerate() {
         if (i % 10000) == 0 {
-            println!("Processing constraint... {}/{}", i, plonk_constraints.len())
+            log::info!("Processing constraint... {}/{}", i, plonk_constraints.len())
         };
         let k = c.str_key();
-        let pr = partial_rows.get(&k);
+        let pr = partial_rows.get_mut(&k);
         if pr.is_some() {
             let pr = pr.unwrap();
             s_map[pr.n_used * 3][pr.row] = c.0 as u64;
             s_map[pr.n_used * 3 + 1][pr.row] = c.1 as u64;
             s_map[pr.n_used * 3 + 2][pr.row] = c.2 as u64;
-            // pr.n_used += 1;
+            pr.n_used += 1;
             if pr.n_used == 2 {
-                half_rows.push(pr);
-            //     partial_rows.remove(&k);
+                half_rows.push(*pr);
+                partial_rows.remove(&k);
             } else if pr.n_used == 4 {
-                //     partial_rows.remove(&k);
+                partial_rows.remove(&k);
             }
-
-            // } else if half_rows.len() > 0 {
+        } else if half_rows.len() > 0 {
             // todo
+            let mut pr = ParRow { row: 0, n_used: 0 };
             // const pr = halfRows.shift();
             // constPols.Compressor.C[9][pr.row] = c[3];
             // constPols.Compressor.C[6][pr.row] = c[4];
@@ -285,106 +282,166 @@ pub fn plonk_setup_compressor(
             // constPols.Compressor.C[10][pr.row] = c[7];
             // constPols.Compressor.C[11][pr.row] = 0n;
             //
-            // sMap[pr.nUsed*3][pr.row] = c[0];
-            // sMap[pr.nUsed*3+1][pr.row] = c[1];
-            // sMap[pr.nUsed*3+2][pr.row] = c[2];
-            // pr.nUsed ++;
-            // partialRows[k] = pr;
+            s_map[pr.n_used * 3][pr.row] = c.0 as u64;
+            s_map[pr.n_used * 3 + 1][pr.row] = c.1 as u64;
+            s_map[pr.n_used * 3 + 2][pr.row] = c.2 as u64;
+            pr.n_used += 1;
+            partial_rows.insert(k, pr.clone());
         } else {
-            compressor.Qm[r] = c.3.clone();
-            compressor.Ql[r] = c.4.clone();
-            compressor.Qr[r] = c.5.clone();
-            compressor.Qo[r] = c.6.clone();
-            compressor.Qk[r] = c.7.clone();
-            compressor.QCMul[r] = FGL::ZERO;
-            compressor.QMDS[r] = FGL::ZERO;
+            // compressor.Qm[r] = c.3.clone();
+            // compressor.Ql[r] = c.4.clone();
+            // compressor.Qr[r] = c.5.clone();
+            // compressor.Qo[r] = c.6.clone();
+            // compressor.Qk[r] = c.7.clone();
+            // compressor.QCMul[r] = FGL::ZERO;
+            // compressor.QMDS[r] = FGL::ZERO;
 
             s_map[0][r] = c.0 as u64;
             s_map[1][r] = c.1 as u64;
             s_map[2][r] = c.2 as u64;
-
-            // partial_rows.insert(k, ParRow { row: r, n_used: 1 });
+            partial_rows.insert(k, ParRow { row: r, n_used: 1 });
             r += 1;
         }
     }
 
     // Terminate the empty rows (Copyn the same constraint)
-    // toco check
-    for (k, pr) in partial_rows.iter() {
-        for j in pr.n_used..4 {
-            s_map[j * 3][pr.row] = s_map[0][pr.row];
-            s_map[j * 3 + 1][pr.row] = s_map[1][pr.row];
-            s_map[j * 3 + 2][pr.row] = s_map[2][pr.row];
+    for (_, pr) in partial_rows.iter_mut() {
+        if pr.n_used == 1 {
+            s_map[3][pr.row] = s_map[0][pr.row];
+            s_map[4][pr.row] = s_map[1][pr.row];
+            s_map[5][pr.row] = s_map[2][pr.row];
+            pr.n_used += 1;
+            half_rows.push(pr.clone());
+        } else if pr.n_used == 3 {
+            s_map[9][pr.row] = s_map[6][pr.row];
+            s_map[10][pr.row] = s_map[7][pr.row];
+            s_map[11][pr.row] = s_map[8][pr.row];
+        } else {
+            panic!(" meet error when terminate the empty rows")
         }
     }
 
+    for hr in half_rows.iter() {
+        s_map[6][hr.row] = 0;
+        s_map[7][hr.row] = 0;
+        s_map[8][hr.row] = 0;
+        s_map[9][hr.row] = 0;
+        s_map[10][hr.row] = 0;
+        s_map[11][hr.row] = 0;
+        // constPols.Compressor.C[9][pr.row] = 0n;
+        // constPols.Compressor.C[6][pr.row] = 0n;
+        // constPols.Compressor.C[7][pr.row] = 0n;
+        // constPols.Compressor.C[8][pr.row] = 0n;
+        // constPols.Compressor.C[10][pr.row] = 0n;
+        // constPols.Compressor.C[11][pr.row] = 0n;
+    }
+
     // 4. Generate Custom Gates
-    // todo need append.
+    let custom_gates_info = &plonk_setup_info.custom_gates_info;
     for (i, cgu) in r1cs.custom_gates_uses.iter().enumerate() {
         if (i % 10000) == 0 {
-            println!(
+            log::info!(
                 "Processing custom gates... {}/{}",
                 i,
                 r1cs.custom_gates_uses.len()
             );
         }
-        if cgu.id == aux.custom_gates_info.cmds_id {
-            assert_eq!(cgu.signals.len(), 24);
-            for i in 0..12 {
-                s_map[i][r] = cgu.signals[i];
-                s_map[i][r + 1] = cgu.signals[i + 12];
+        if cgu.id == custom_gates_info.poseidon_id {
+            assert_eq!(cgu.signals.len(), 31 * 12);
+            for j in 0..31 {
+                for k in 0..12 {
+                    s_map[k][r + j] = cgu.signals[i * 12 + k];
+                    // constPols.Compressor.C[j][r+i] = CPOSEIDON[i*12+j];
+                }
+                // compressor.Qm[r] = FGL::ZERO;
+                // compressor.Ql[r] = FGL::ZERO;
+                // compressor.Qr[r] = FGL::ZERO;
+                // compressor.Qo[r] = FGL::ZERO;
+                // compressor.Qk[r] = FGL::ZERO;
+                // compressor.QCMul[r] = FGL::ZERO;
+                // compressor.QMDS[r] = FGL::ONE;
+                // compressor.Qm[r + 1] = FGL::ZERO;
+                // compressor.Ql[r + 1] = FGL::ZERO;
+                // compressor.Qr[r + 1] = FGL::ZERO;
+                // compressor.Qo[r + 1] = FGL::ZERO;
+                // compressor.Qk[r + 1] = FGL::ZERO;
+                // compressor.QCMul[r + 1] = FGL::ZERO;
+                // compressor.QMDS[r + 1] = FGL::ZERO;
             }
-            compressor.Qm[r] = FGL::ZERO;
-            compressor.Ql[r] = FGL::ZERO;
-            compressor.Qr[r] = FGL::ZERO;
-            compressor.Qo[r] = FGL::ZERO;
-            compressor.Qk[r] = FGL::ZERO;
-            compressor.QCMul[r] = FGL::ZERO;
-            compressor.QMDS[r] = FGL::ONE;
-            compressor.Qm[r + 1] = FGL::ZERO;
-            compressor.Ql[r + 1] = FGL::ZERO;
-            compressor.Qr[r + 1] = FGL::ZERO;
-            compressor.Qo[r + 1] = FGL::ZERO;
-            compressor.Qk[r + 1] = FGL::ZERO;
-            compressor.QCMul[r + 1] = FGL::ZERO;
-            compressor.QMDS[r + 1] = FGL::ZERO;
-
-            r += 2;
-        } else if cgu.id == aux.custom_gates_info.cmul_id {
-            for i in 0..9 {
-                s_map[i][r] = cgu.signals[i];
+            r += 31;
+        } else if cgu.id == custom_gates_info.c_mul_add_id {
+            for j in 0..12 {
+                s_map[j][r] = cgu.signals[j];
             }
-            for i in 9..12 {
-                s_map[i][r] = 0;
-            }
-            compressor.Qm[r] = FGL::ZERO;
-            compressor.Ql[r] = FGL::ZERO;
-            compressor.Qr[r] = FGL::ZERO;
-            compressor.Qo[r] = FGL::ZERO;
-            compressor.Qk[r] = FGL::ZERO;
-            compressor.QCMul[r] = FGL::ONE;
-            compressor.QMDS[r] = FGL::ZERO;
+            // compressor.Qm[r] = FGL::ZERO;
+            // compressor.Ql[r] = FGL::ZERO;
+            // compressor.Qr[r] = FGL::ZERO;
+            // compressor.Qo[r] = FGL::ZERO;
+            // compressor.Qk[r] = FGL::ZERO;
+            // compressor.QCMul[r] = FGL::ONE;
+            // compressor.QMDS[r] = FGL::ZERO;
 
             r += 1;
+        } else if (custom_gates_info.fft_params.len() as u64) < cgu.id {
+            for j in 0..12 {
+                s_map[j][r] = cgu.signals[j];
+            }
+            for j in 0..12 {
+                s_map[j][r + 1] = cgu.signals[12 + j];
+            }
+            // constPols.Compressor.CMULADD[r] = 0n;
+            // constPols.Compressor.GATE[r] = 0n;
+            // constPols.Compressor.POSEIDON12[r] = 0n;
+            // constPols.Compressor.PARTIAL[r] = 0n;
+            // constPols.Compressor.EVPOL4[r] = 0n;
+            // constPols.Compressor.FFT4[r] = 1n;
+            // constPols.Compressor.CMULADD[r+1] = 0n;
+            // constPols.Compressor.GATE[r+1] = 0n;
+            // constPols.Compressor.POSEIDON12[r+1] = 0n;
+            // constPols.Compressor.PARTIAL[r+1] = 0n;
+            // constPols.Compressor.EVPOL4[r+1] = 0n;
+            // constPols.Compressor.FFT4[r+1] = 0n;
+
+            // todo check.
+            r += 2;
+        } else if cgu.id == custom_gates_info.ev_pol_id {
+            for j in 0..12 {
+                s_map[j][r] = cgu.signals[j];
+                // constPols.Compressor.C[j][r+i] = CPOSEIDON[i*12+j];
+            }
+            for j in 0..9 {
+                s_map[j][r + 1] = cgu.signals[12 + j];
+                // constPols.Compressor.C[j][r+i] = CPOSEIDON[i*12+j];
+            }
+            for j in 9..12 {
+                s_map[j][r + 1] = 0;
+                // constPols.Compressor.C[j][r+i] = CPOSEIDON[i*12+j];
+            }
+
+            // constPols.Compressor.GATE[r+1] = 0n;
+            // constPols.Compressor.POSEIDON12[r+1] = 0n;
+            // constPols.Compressor.PARTIAL[r+1] = 0n;
+            // constPols.Compressor.EVPOL4[r+1] = 0n;
+            // constPols.Compressor.FFT4[r+1] = 0n;
+            r += 2
+        } else {
+            panic!("Custom gate not defined: {}", cgu.id);
         }
     }
 
     // 5. Calculate S Polynomials
+    let N = 1 << plonk_setup_info.n_bits;
     let ks = crate::helper::get_ks(11);
     let mut w = FGL::ONE;
-    compressor.S = vec![Vec::new(); 12];
-    // for i in 0..12 {
-    //     compressor.S[i] = vec![FGL::ZERO; aux.plonkinfo.N];
-    // }
-    for i in 0..aux.plonk_info.N {
+    for i in 0..N {
         if (i % 10000) == 0 {
-            println!("Preparing S... {}/{}", i, aux.plonk_info.N);
+            log::info!("Preparing S... {}/{}", i, plonk_setup_info.plonk_info.N);
         }
-        compressor.S[0][i] = w;
+        // compressor.S[0][i] = w;
         for j in 1..12 {
-            compressor.S[j][i] = w * ks[j - 1];
+            // compressor.S[j][i] = w * ks[j - 1];
         }
-        w = w * (crate::constant::MG.0[aux.n_bits].to_be());
+        w = w * (crate::constant::MG.0[plonk_setup_info.n_bits].to_be());
     }
 
     struct Grid {
@@ -394,43 +451,43 @@ pub fn plonk_setup_compressor(
     let mut last_signal: HashMap<u64, Grid> = HashMap::new();
     for i in 0..r {
         if (i % 10000) == 0 {
-            println!("Connection S... {}/{}", i, r);
+            log::info!("Connection S... {}/{}", i, r);
         }
         for j in 0..12 {
-            if s_map[j][i] > 0 {
-                let ls = last_signal.get(&s_map[j][i]);
+            let key = s_map[j][i];
+            if key > 0 {
+                let ls = last_signal.get(&key);
                 if ls.is_some() {
                     let ls = ls.unwrap();
                     //connect(&mut compressor.S[ls.col], ls.row, &mut compressor.S[j], i);
-                    let tmp = compressor.S[j][i];
-                    let tmp2 = compressor.S[ls.col][ls.row];
-                    compressor.S[ls.col][ls.row] = tmp;
-                    compressor.S[j][i] = tmp2;
                 } else {
-                    last_signal.insert(s_map[j][i], Grid { col: j, row: i });
+                    last_signal.insert(key, Grid { col: j, row: i });
                 }
             }
         }
     }
 
     // 6. Fill unused rows.
-    while r < aux.plonk_info.N {
+    while r < N {
         if (r % 100000) == 0 {
-            println!("Empty gates... {}/{}", r, aux.plonk_info.N);
+            log::info!("Empty gates... {}/{}", r, N);
         }
-        compressor.Qm[r] = FGL::ZERO;
-        compressor.Ql[r] = FGL::ZERO;
-        compressor.Qr[r] = FGL::ZERO;
-        compressor.Qo[r] = FGL::ZERO;
-        compressor.Qk[r] = FGL::ZERO;
-        compressor.QCMul[r] = FGL::ZERO;
-        compressor.QMDS[r] = FGL::ZERO;
+        // compressor.Qm[r] = FGL::ZERO;
+        // compressor.Ql[r] = FGL::ZERO;
+        // compressor.Qr[r] = FGL::ZERO;
+        // compressor.Qo[r] = FGL::ZERO;
+        // compressor.Qk[r] = FGL::ZERO;
+        // compressor.QCMul[r] = FGL::ZERO;
+        // compressor.QMDS[r] = FGL::ZERO;
+        for j in 0..12 {
+            // compressor.QMDS[r] = FGL::ZERO;
+        }
         r += 1;
     }
-
+    // construct Lagrange Basis Polynomial: Li(x)
     for i in 0..n_public_rows {
         let L = const_pols.get_mut(&"Global".to_string(), &format!("L{}", i + 1));
-        for i in 0..aux.plonk_info.N {
+        for i in 0..N {
             L[i] = FGL::ZERO;
         }
         L[i] = FGL::ONE;

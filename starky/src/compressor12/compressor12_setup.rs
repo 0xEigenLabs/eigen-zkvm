@@ -54,25 +54,27 @@ pub fn setup(
 // construct and save ExecFile: plonk additions + sMap -> BigUint64Array
 fn write_exec_file(exec_file: &String, adds: Vec<PlonkAdd>, s_map: Vec<Vec<u64>>) {
     let adds_len = adds.len();
+    let s_map_len = s_map.len();
 
-    let size = 2 + adds_len * 4 + s_map.len() * s_map[0].len();
+    let size = 2 + adds_len * 4 + s_map_len * s_map[0].len();
 
     let mut buff = Vec::with_capacity(size);
-    // const buff = new BigUint64Array(size);
+    let buff = vec![];
 
-    buff[0] = adds_len;
-    buff[1] = s_map.len();
+    buff[0] = adds_len as u64;
+    buff[1] = s_map_len as u64;
 
     for i in 0..adds_len {
-        buff[2 + i * 4] = adds[i].0;
-        buff[2 + i * 4 + 1] = adds[i].1;
+        buff[2 + i * 4] = adds[i].0 as u64;
+        buff[2 + i * 4 + 1] = adds[i].1 as u64;
+        // todo check. type error
         // buff[2 + i * 4 + 2] = adds[i].2;
         // buff[2 + i * 4 + 3] = adds[i].3;
     }
 
-    for i in 0..s_map.len() {
+    for i in 0..s_map_len {
         for c in 0..12 {
-            buff[2 + adds_len * 4 + 12 * i + c] = s_map[c][i] as usize;
+            buff[2 + adds_len * 4 + 12 * i + c] = s_map[c][i];
         }
     }
 
