@@ -7,7 +7,6 @@ constant %N = 2**{n_bits};
 
 namespace Global(%N);
     pol constant L1;
-    
     "#
     ));
     for i in (12..n_publics).step_by(12) {
@@ -59,7 +58,7 @@ namespace Compressor(%N);
     // Normal plonk gate
     res.push_str(
         r#"
-    // Normal plonk ecuations
+    // Normal plonk gates
     pol a01 = a[0]*a[1];
     pol g012 = C[3]*a01 + C[0]*a[0] + C[1]*a[1] + C[2]*a[2] + C[4];
     g012*GATE = 0;
@@ -75,6 +74,8 @@ namespace Compressor(%N);
     pol a910 = a[9]*a[10];
     pol g91011 = C[9]*a910 + C[6]*a[9] + C[7]*a[10] + C[8]*a[11] + C[10];
     g91011*GATE = 0;
+    
+    // POSEIDON12 GATE
     "#,
     );
 
@@ -82,7 +83,7 @@ namespace Compressor(%N);
     for i in 0..12 {
         res.push_str(&format!(
             r#"
-    pol a{i}_1 = a[{i}] * C[{i}];
+    pol a{i}_1 = a[{i}] + C[{i}];
         "#
         ));
 
@@ -122,7 +123,6 @@ namespace Compressor(%N);
     }
     res.push_str(
         r#"
-    // POSEIDON12  
     POSEIDON12 * (a[ 0]' - (25*a0_R + 15*a1_R + 41*a2_R + 16*a3_R +  2*a4_R + 28*a5_R + 13*a6_R + 13*a7_R + 39*a8_R + 18*a9_R + 34*a10_R + 20*a11_R)) = 0;
     POSEIDON12 * (a[ 1]' - (20*a0_R + 17*a1_R + 15*a2_R + 41*a3_R + 16*a4_R +  2*a5_R + 28*a6_R + 13*a7_R + 13*a8_R + 39*a9_R + 18*a10_R + 34*a11_R)) = 0;
     POSEIDON12 * (a[ 2]' - (34*a0_R + 20*a1_R + 17*a2_R + 15*a3_R + 41*a4_R + 16*a5_R +  2*a6_R + 28*a7_R + 13*a8_R + 13*a9_R + 39*a10_R + 18*a11_R)) = 0;
@@ -162,8 +162,8 @@ namespace Compressor(%N);
     CMULADD * (ca10 - (cA + cC - 2*cE - cD) - ca7) = 0;
     CMULADD * (ca11 - (cB - cD + cE) - ca8) = 0;
 
-
     // FFT4
+    
     pol g0 = C[0]*a[0] + C[1]*a[3] + C[2]*a[6] + C[3]*a[9]  + C[6]*a[0] + C[7]*a[3];
     pol g1 = C[0]*a[1] + C[1]*a[4] + C[2]*a[7] + C[3]*a[10] + C[6]*a[1] + C[7]*a[4];
     pol g2 = C[0]*a[2] + C[1]*a[5] + C[2]*a[8] + C[3]*a[11] + C[6]*a[2] + C[7]*a[5];
@@ -209,16 +209,78 @@ namespace Compressor(%N);
                          c0: &str,
                          c1: &str,
                          c2: &str| {
-        // let mut code = vec![];
-        res.push_str(format!(r#"pol {r0}_A = ({a0} + {a1})  * ({b0} + {b1});"#).as_str());
-        res.push_str(format!(r#"pol {r0}_B = ({a0} + {a2})  * ({b0} + {b2});"#).as_str());
-        res.push_str(format!(r#"pol {r0}_C = ({a1} + {a2})  * ({b1} + {b2}.as_str());"#).as_str());
-        res.push_str(format!(r#"pol {r0}_D = {a0} * {b0};"#).as_str());
-        res.push_str(format!(r#"pol {r0}_E = {a1} * {b1};"#).as_str());
-        res.push_str(format!(r#"pol {r0}_F = {a2} * {b2};"#).as_str());
-        res.push_str(format!(r#"pol {r0} = {r0}_C + {r0}_D - {r0}_E - {r0}_F + {c0};"#).as_str());
-        res.push_str(format!(r#"pol {r1} = {r0}_A + {r0}_C - 2*{r0}_E - {r0}_D + {c1};"#).as_str());
-        res.push_str(format!(r#"pol {r2} = {r0}_B - {r0}_D + {r0}_E + {c2};"#).as_str());
+        res.push_str(
+            format!(
+                r#"
+        pol {r0}_A = ({a0} + {a1})  * ({b0} + {b1});
+            "#
+            )
+            .as_str(),
+        );
+        res.push_str(
+            format!(
+                r#"
+        pol {r0}_B = ({a0} + {a2})  * ({b0} + {b2});
+            "#
+            )
+            .as_str(),
+        );
+        res.push_str(
+            format!(
+                r#"
+        pol {r0}_C = ({a1} + {a2})  * ({b1} + {b2});
+            "#
+            )
+            .as_str(),
+        );
+        res.push_str(
+            format!(
+                r#"
+        pol {r0}_D = {a0} * {b0};
+        "#
+            )
+            .as_str(),
+        );
+        res.push_str(
+            format!(
+                r#"
+        pol {r0}_E = {a1} * {b1};
+        "#
+            )
+            .as_str(),
+        );
+        res.push_str(
+            format!(
+                r#"
+        pol {r0}_F = {a2} * {b2};
+        "#
+            )
+            .as_str(),
+        );
+        res.push_str(
+            format!(
+                r#"
+        pol {r0} = {r0}_C + {r0}_D - {r0}_E - {r0}_F + {c0};
+        "#
+            )
+            .as_str(),
+        );
+        res.push_str(
+            format!(
+                r#"
+        pol {r1} = {r0}_A + {r0}_C - 2*{r0}_E - {r0}_D + {c1};
+        "#
+            )
+            .as_str(),
+        );
+        res.push_str(
+            format!(
+                r#"
+        pol {r2} = {r0}_B - {r0}_D + {r0}_E + {c2};
+        "#
+            )
+            .as_str(),
+        );
     };
 
     c_mul_add(
@@ -241,13 +303,12 @@ namespace Compressor(%N);
     // EVPOL4
     res.push_str(
         r#"
-
     EVPOL4 * (a[6]' - acc4_0 ) = 0;
     EVPOL4 * (a[7]' - acc4_1 ) = 0;
     EVPOL4 * (a[8]' - acc4_2 ) = 0;
 
     // Connection equations
-    \{a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11]} connect
+    {a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11]} connect
         {S[0], S[1], S[2], S[3], S[4], S[5], S[6], S[7], S[8], S[9], S[10], S[11]};
 
     "#,
@@ -284,10 +345,9 @@ mod test {
     fn test_render_and_compile() {
         let pil_string = render(5, 5);
 
-        let pil_json = pilcom::compile_pil_from_str(&pil_string);
-
-        // todo-check
         let mut file = File::create(Path::new("./render_pil_rs.pil")).unwrap();
-        file.write(pil_string.as_bytes());
+        write!(file, "{}", pil_string);
+        // Manually compare with the result `render_pil_js.pil` generated by `test_render_pil.js`
+        // For now it's been checked.
     }
 }
