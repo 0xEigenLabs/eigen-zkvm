@@ -132,21 +132,25 @@ impl PolsArray {
         &mut self.array[idx]
     }
 
-    /// set the ns.np[i][j] = value, where ns.np[i] is the (ref.id + i)-th element in defArray
+    /// Set the ns.np[i][j] = value, where ns.np[i] is the (ref.id + i)-th element(column) in self.array
+    /// j would be 0 by default for non-array reference, e.g. constPols.Compressor.C[7][pr.row] = c[5];
+    /// Before calling this function, you must ensure that this pols array has been initialized
     pub fn set(&mut self, ns: &String, np: &String, i: usize, j: usize, value: FGL) {
-        // this.$$def[nameSpace][namePol][i] = this.$$defArray[ref.id + i];
         let namespace = self.def.get_mut(ns);
+        /*
         if namespace.is_none() {
             self.def.insert(ns.clone(), HashMap::new());
             return self.set(ns, np, i, j, value);
         }
+        */
         let namespace = namespace.unwrap();
-
         let namepols = namespace.get_mut(np);
+        /*
         if namepols.is_none() {
             namespace.insert(np.clone(), vec![0; self.n]);
             return self.set(ns, np, i, j, value);
         }
+        */
         let namepols = namepols.unwrap();
         let np_id = namepols[i];
         self.array[np_id][j] = value;
