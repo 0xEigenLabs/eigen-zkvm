@@ -53,6 +53,7 @@ pub mod transcript_bn128;
 
 pub mod r1cs2plonk;
 
+mod io_utils;
 pub mod pil2circom;
 pub mod pilcom;
 pub mod serializer;

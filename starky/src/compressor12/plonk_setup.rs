@@ -99,7 +99,7 @@ impl CustomGateInfo {
     // equal to `typeof customGatesInfo.FFT4Parameters[cgu.id] !== "undefined"` in js
     // Defined: properer index and has value.
     pub fn check_fft_param_defined(fft_params: &Vec<Vec<FGL>>, index: u64) -> bool {
-        (index >= 0 && index < fft_params.len() as u64) && !fft_params[index].is_empty()
+        (index >= 0 && index < fft_params.len() as u64) && !fft_params[index as usize].is_empty()
     }
 
     fn from_r1cs(r1cs: &R1CS<GL>) -> Self {
@@ -417,10 +417,10 @@ pub fn plonk_setup_compressor(
             // constPols.Compressor.FFT4[r+1] = 0n;
 
             // todo check.
-            let t = custom_gates_info.fft_params[cgu.id][3];
-            let scale = custom_gates_info.fft_params[cgu.id][2];
-            let incW = custom_gates_info.fft_params[cgu.id][1];
-            let firstW = custom_gates_info.fft_params[cgu.id][0];
+            let t = custom_gates_info.fft_params[cgu.id as usize][3];
+            let scale = custom_gates_info.fft_params[cgu.id as usize][2];
+            let incW = custom_gates_info.fft_params[cgu.id as usize][1];
+            let firstW = custom_gates_info.fft_params[cgu.id as usize][0];
             // let firstW2 = F.square(firstW);
 
             // if t == 4n {

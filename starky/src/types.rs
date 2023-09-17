@@ -217,18 +217,22 @@ where
     Ok(serde_json::from_str(&data)?)
 }
 
-#[test]
-pub fn test_read_pil() {
-    load_json::<PIL>("data/fib.pil.json").unwrap();
-    log::info!(
-        "arrays.pil.json: {:?}",
-        load_json::<PIL>("data/arrays.pil.json").unwrap()
-    );
-}
+#[cfg(test)]
+mod test {
+    use super::*;
 
-#[test]
-pub fn test_read_struct() {
-    let json_str = r#"
+    #[test]
+    pub fn test_read_pil() {
+        load_json::<PIL>("data/fib.pil.json").unwrap();
+        log::info!(
+            "arrays.pil.json: {:?}",
+            load_json::<PIL>("data/arrays.pil.json").unwrap()
+        );
+    }
+
+    #[test]
+    pub fn test_read_struct() {
+        let json_str = r#"
     {
         "nBits": 23,
         "nBitsExt": 24,
@@ -252,5 +256,6 @@ pub fn test_read_struct() {
         }
         ]
     }"#;
-    read_json::<StarkStruct>(json_str.to_string()).unwrap();
+        read_json::<StarkStruct>(json_str.to_string()).unwrap();
+    }
 }

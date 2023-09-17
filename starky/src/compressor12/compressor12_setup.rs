@@ -2,6 +2,7 @@
 use crate::compressor12::compressor12_pil;
 use crate::compressor12::plonk_setup::PlonkSetup;
 use crate::errors::EigenError;
+use crate::io_utils::write_vec_to_file;
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
 use crate::{pilcom, polsarray};
 use plonky::circom_circuit::R1CS;
@@ -46,22 +47,24 @@ pub fn setup(
     // write!(file, "{}", res.const_pols).unwrap();
 
     // 4. construct and save ExecFile: plonk additions + sMap -> BigUint64Array
-    write_exec_file(exec_file, res.plonk_additions, res.s_map);
+    write_exec_file(exec_file, &res.plonk_additions, &res.s_map);
 
     Ok(())
 }
 
 // construct and save ExecFile: plonk additions + sMap -> BigUint64Array
-fn write_exec_file(exec_file: &String, adds: Vec<PlonkAdd>, s_map: Vec<Vec<u64>>) {
+pub(super) fn write_exec_file(exec_file: &String, adds: &Vec<PlonkAdd>, s_map: &Vec<Vec<u64>>) {
     let adds_len = adds.len();
-    let s_map_len = s_map.len();
+    let s_map_row_len = s_map.len();
+    let s_map_column_len = s_map[0].len();
 
-    let size = 2 + adds_len * 4 + s_map_len * s_map[0].len();
+    assert_eq!(s_map_row_len, 12, "s_map should have 12 rows");
+    let size = 2 + adds_len * 4 + s_map_row_len * s_map_column_len;
 
-    let mut buff = Vec::with_capacity(size);
+    let mut buff = vec![0; size];
 
     buff[0] = adds_len as u64;
-    buff[1] = s_map_len as u64;
+    buff[1] = s_map_column_len as u64;
 
     for i in 0..adds_len {
         buff[2 + i * 4] = adds[i].0 as u64;
@@ -69,14 +72,16 @@ fn write_exec_file(exec_file: &String, adds: Vec<PlonkAdd>, s_map: Vec<Vec<u64>>
         // todo check. type error
         // buff[2 + i * 4 + 2] = adds[i].2;
         // buff[2 + i * 4 + 3] = adds[i].3;
+        buff[2 + i * 4 + 2] = 1;
+        buff[2 + i * 4 + 3] = 2;
     }
 
-    for i in 0..s_map_len {
-        for c in 0..12 {
+    // TODO: Should this be fixed?
+    for c in 0..12 {
+        for i in 0..s_map_column_len {
             buff[2 + adds_len * 4 + 12 * i + c] = s_map[c][i];
         }
     }
 
-    let mut file = File::create(exec_file).unwrap();
-    write!(file, "{:?}", buff).unwrap();
+    write_vec_to_file(exec_file, &buff).unwrap();
 }

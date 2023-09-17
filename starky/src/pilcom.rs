@@ -4,9 +4,15 @@ mod expression_counter;
 
 use crate::types::{read_json, PIL};
 use number::GoldilocksField;
+use std::path::Path;
 
 pub fn compile_pil_from_str(pil_str: &String) -> PIL {
     let analyze = pil_analyzer::analyze_string::<GoldilocksField>(pil_str);
+
+    export::export(&analyze)
+}
+pub fn compile_pil_from_path(pil_path: &String) -> PIL {
+    let analyze = pil_analyzer::analyze::<GoldilocksField>(Path::new(pil_path));
 
     export::export(&analyze)
 }
@@ -26,12 +32,10 @@ mod test {
         let path = Path::new("../starkjs/fibonacci/fibonacci.pil")
             .canonicalize()
             .unwrap();
-        println!("{:?}", path.to_str());
 
-        let contents = fs::read_to_string(path.clone()).unwrap();
-
-        let actual = compile_pil_from_str(&contents);
-
+        let pil_str = fs::read_to_string(path.clone()).unwrap();
+        // The target and actual pil_json
+        let actual = compile_pil_from_str(&pil_str);
         let target = load_json::<PIL>("data/fib.pil.json").unwrap();
 
         // This will meet error, as the polArray.name are different.
