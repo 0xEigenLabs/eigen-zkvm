@@ -69,14 +69,11 @@ pub(super) fn write_exec_file(exec_file: &String, adds: &Vec<PlonkAdd>, s_map: &
     for i in 0..adds_len {
         buff[2 + i * 4] = adds[i].0 as u64;
         buff[2 + i * 4 + 1] = adds[i].1 as u64;
-        // todo check. type error
-        // buff[2 + i * 4 + 2] = adds[i].2;
-        // buff[2 + i * 4 + 3] = adds[i].3;
-        buff[2 + i * 4 + 2] = 1;
-        buff[2 + i * 4 + 3] = 2;
+        buff[2 + i * 4 + 2] = adds[i].2.into();
+        buff[2 + i * 4 + 3] = adds[i].3.into();
     }
 
-    // TODO: Should this be fixed?
+    // TODO: Should this be a fixed constant or use the s_map_row_len.
     for c in 0..12 {
         for i in 0..s_map_column_len {
             buff[2 + adds_len * 4 + 12 * i + c] = s_map[c][i];
