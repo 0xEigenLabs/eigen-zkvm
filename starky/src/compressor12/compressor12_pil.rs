@@ -6,11 +6,16 @@ pub enum CompressorNameSpace {
 pub enum CompressorPolName {
     // pols name under namespace `Global`
     L1,
-    L(usize),
+    Li(usize),
     // pols name under namespace `Compressor`
-    S(usize),
-    C(usize),
-    a(usize),
+    // The Si is adopt with pil_template.
+    // The S is adopt with the pol_name in PolyArray.def.
+    Si(usize),
+    Ci(usize),
+    ai(usize),
+    S,
+    C,
+    a,
     PARTIAL,
     POSEIDON12,
     GATE,
@@ -24,10 +29,13 @@ impl ToString for CompressorPolName {
     fn to_string(&self) -> String {
         match self {
             Self::L1 => format!("L1"),
-            Self::L(i) => format!("L{i}"),
-            Self::C(i) => format!("C[{i}]"),
-            Self::S(i) => format!("S[{i}]"),
-            Self::a(i) => format!("a[{i}]"),
+            Self::Li(i) => format!("L{i}"),
+            Self::Ci(i) => format!("C[{i}]"),
+            Self::Si(i) => format!("S[{i}]"),
+            Self::ai(i) => format!("a[{i}]"),
+            Self::S => String::from("S"),
+            Self::C => String::from("C"),
+            Self::a => String::from("a"),
             Self::PARTIAL => String::from("PARTIAL"),
             Self::POSEIDON12 => String::from("POSEIDON12"),
             Self::GATE => String::from("GATE"),
@@ -416,15 +424,15 @@ namespace Compressor(%N);
     pol constant {};
     pol commit {};
             "#,
-            S(12).to_string(),
-            C(12).to_string(),
+            Si(12).to_string(),
+            Ci(12).to_string(),
             PARTIAL.to_string(),
             POSEIDON12.to_string(),
             GATE.to_string(),
             CMULADD.to_string(),
             EVPOL4.to_string(),
             FFT4.to_string(),
-            a(12).to_string(),
+            ai(12).to_string(),
         );
 
         let target = format!(

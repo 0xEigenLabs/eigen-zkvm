@@ -330,7 +330,7 @@ module.exports = async function plonkSetup(r1cs, options) {
             constPols.Compressor.PARTIAL[r+1] = 0n;
             constPols.Compressor.EVPOL4[r+1] = 0n;
             constPols.Compressor.FFT4[r+1] = 0n;
-            // todo
+
             const t = customGatesInfo.FFT4Parameters[cgu.id][3];
             const scale = customGatesInfo.FFT4Parameters[cgu.id][2];
             const firstW = customGatesInfo.FFT4Parameters[cgu.id][0];

@@ -134,9 +134,12 @@ impl PolsArray {
     }
 
     /// Set the ns.np[i][j] = value, where ns.np[i] is the (ref.id + i)-th element(column) in self.array
-    /// j would be 0 by default for non-array reference, e.g. For JS statement, constPols.Compressor.C[7][pr.row] = c[5], i is 7 and j is pr.row.
+    /// j would be 0 by default for non-array reference.
+    ///
+    /// e.g. For JS statement, constPols.Compressor.C[7][pr.row] = c[5], i is 7 and j is pr.row.
+    ///
     /// Before calling this function, you must ensure that this polsarray has been initialized
-    pub fn set(&mut self, ns: &String, np: &String, i: usize, j: usize, value: FGL) {
+    pub fn set_matrix(&mut self, ns: &String, np: &String, i: usize, j: usize, value: FGL) {
         let namespace = self.def.get_mut(ns);
         /*
         if namespace.is_none() {
@@ -155,6 +158,9 @@ impl PolsArray {
         let namepols = namepols.unwrap();
         let np_id = namepols[i];
         self.array[np_id][j] = value;
+    }
+    pub fn set_array(&mut self, ns: &String, np: &String, i: usize, value: FGL) {
+        self.set_matrix(ns, np, i, 0, value);
     }
 
     pub fn load(&mut self, fileName: &str) -> Result<()> {
