@@ -266,8 +266,6 @@ struct Compresor12ExecOpt {
     wasm_file: String,
     #[arg(long = "p", default_value = "mycircuit.c12.pil")]
     pil_file: String,
-    #[arg(long = "pc", default_value = "")]
-    pil_config_file: String,
     // output files :  $C12_VERIFIER.exec
     #[arg(long = "e", default_value = "mycircuit.c12.exec")]
     exec_file: String,
@@ -441,8 +439,20 @@ fn main() {
         .map_err(|e| EigenError::from(format!("stark prove error {:?}", e))),
 
         Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
-        Command::Compresor12Setup(args) => todo!(),
-        Command::Compresor12Exec(args) => todo!(),
+        Command::Compresor12Setup(args) => starky::compressor12_setup::setup(
+            &args.r1cs_file,
+            &args.pil_file,
+            &args.const_file,
+            &args.exec_file,
+            args.force_n_bits,
+        ),
+        Command::Compresor12Exec(args) => starky::compressor12_exec::exec(
+            &args.input_file,
+            &args.wasm_file,
+            &args.pil_file,
+            &args.exec_file,
+            &args.commit_file,
+        ),
     };
     match exec_result {
         Err(x) => {

@@ -29,7 +29,7 @@ will generate the PIL json, Commitment Polynomial file and Constant Polynomial f
 #    --O2=full \
 #    -o /tmp/
 
-
+// todo test 
 // Circom to Stark  
 node src/compressor12/main_compressor12_setup.js \
     -r /tmp/fib.verifier.r1cs \

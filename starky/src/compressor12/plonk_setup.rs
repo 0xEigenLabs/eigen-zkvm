@@ -1,4 +1,5 @@
 use crate::compressor12::compressor12_pil;
+use crate::compressor12::constants::CPOSEIDON;
 use crate::compressor12_pil::CompressorNameSpace::*;
 use crate::compressor12_pil::CompressorPolName::*;
 use crate::compressor12_setup::Options;
@@ -10,7 +11,6 @@ use array_tool::vec::Shift;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
-use plonky::Field;
 use std::collections::HashMap;
 
 #[derive(Default)]
@@ -253,7 +253,7 @@ pub fn plonk_setup_compressor(
     r += n_public_rows;
 
     // 3. Paste plonk constraints.
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Eq, PartialEq)]
     struct ParRow {
         row: usize,
         n_used: usize,
@@ -372,15 +372,13 @@ pub fn plonk_setup_compressor(
             for j in 0..31 {
                 let index = r + j;
                 for k in 0..12 {
-                    s_map[k][r + j] = cgu.signals[i * 12 + k];
-                    // constPols.Compressor.C[j][r+i] = CPOSEIDON[i*12+j];
-                    // todo poserdon constants
+                    s_map[k][r + j] = cgu.signals[j * 12 + k];
                     const_pols.set_matrix(
                         &Compressor.to_string(),
                         &C.to_string(),
                         k,
                         index,
-                        FGL::ZERO,
+                        CPOSEIDON[j * 12 + k],
                     );
                 }
                 for pol_name in vec![GATE, CMULADD, EVPOL4, FFT4] {

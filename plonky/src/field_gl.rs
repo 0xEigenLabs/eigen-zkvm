@@ -469,6 +469,12 @@ impl From<u64> for Fr {
     }
 }
 
+impl Into<u64> for Fr {
+    fn into(self) -> u64 {
+        self.0 .0[0]
+    }
+}
+
 impl Fr {
     /// Determines if the element is really in the field. This is only used
     /// internally.
