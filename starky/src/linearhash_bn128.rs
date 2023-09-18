@@ -69,7 +69,7 @@ impl LinearHashBN128 {
     /// convert to BN128 in montgomery
     #[inline(always)]
     pub fn to_bn128_mont(st64: [FGL; 4]) -> [FGL; 4] {
-        let bn: Fr = ElementDigest::<4>::new(&st64).as_bn128();
+        let bn: Fr = Fr(ElementDigest::<4>::new(&st64).as_scalar::<Fr>());
         let bn_mont = match Fr::from_repr(bn.into_raw_repr()) {
             Ok(x) => x,
             _ => {
@@ -98,7 +98,10 @@ impl LinearHashBN128 {
         init_state: &Fr,
     ) -> Result<ElementDigest<4>> {
         assert_eq!(elems.len(), 16);
-        let elems = elems.iter().map(|e| (*e).as_bn128()).collect::<Vec<Fr>>();
+        let elems = elems
+            .iter()
+            .map(|e| Fr((*e).as_scalar::<Fr>()))
+            .collect::<Vec<Fr>>();
         let digest = self.h.hash(&elems, init_state)?;
         Ok(ElementDigest::<4>::from_scalar(&digest))
     }
