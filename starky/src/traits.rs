@@ -7,7 +7,7 @@ pub trait MTNodeType {
     fn as_elements(&self) -> &[FGL];
     fn new(value: &[FGL]) -> Self;
     fn from_scalar<T: PrimeField>(e: &T) -> Self;
-    fn as_bn128(self) -> crate::field_bn128::Fr;
+    fn as_scalar<T: PrimeField>(self) -> T::Repr;
 }
 
 pub trait MerkleTree {

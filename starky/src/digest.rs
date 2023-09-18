@@ -41,14 +41,15 @@ impl<const N: usize> MTNodeType for ElementDigest<N> {
         ElementDigest::new(&result)
     }
 
-    // TODO generic implement
+    /// This function may return a invalid T due to it's just a container for T's inner elements.
     #[inline(always)]
-    fn as_bn128(self) -> Fr {
-        let mut result = Fr::zero();
+    fn as_scalar<T: PrimeField>(self) -> T::Repr {
+        let mut y = T::Repr::default();
+        let t = y.as_mut();
         for i in 0..N {
-            result.0 .0[i] = self.0[i].as_int();
+            t[i] = self.0[i].as_int();
         }
-        result
+        y
     }
 }
 
@@ -107,7 +108,7 @@ mod tests {
             FGL::rand(&mut rng),
         ];
         let b4 = ElementDigest::new(&b4);
-        let f1: Fr = b4.as_bn128();
+        let f1: Fr = Fr(b4.as_scalar::<Fr>());
 
         let b4_: ElementDigest<4> = ElementDigest::from_scalar(&f1);
         assert_eq!(b4, b4_);
@@ -118,7 +119,7 @@ mod tests {
         .unwrap();
 
         let e = ElementDigest::<4>::from_scalar(&f);
-        let f2: Fr = e.as_bn128();
+        let f2: Fr = Fr(e.as_scalar::<Fr>());
         assert_eq!(f, f2);
     }
 

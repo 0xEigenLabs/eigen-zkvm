@@ -94,7 +94,7 @@ impl Transcript for TranscriptBN128 {
                 1 => Fr::from_repr(FrRepr::from(e[0].as_int())).unwrap(),
                 4 => {
                     let ie: ElementDigest<4> = ElementDigest::new(&[e[0], e[1], e[2], e[3]]);
-                    ie.as_bn128()
+                    Fr(ie.as_scalar::<Fr>())
                 }
                 _ => panic!("Invalid elements as inputs to transcript"),
             };

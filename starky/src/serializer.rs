@@ -51,7 +51,7 @@ impl<T: MTNodeType + Clone> Serialize for Input<T> {
         }
         match self.1.as_str() {
             "BN128" => {
-                let r: Fr = self.0.clone().as_bn128();
+                let r: Fr = Fr(self.0.clone().as_scalar::<Fr>());
                 serializer.serialize_str(&helper::fr_to_biguint(&r).to_string())
             }
             "GL" => {
