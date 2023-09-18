@@ -6,7 +6,7 @@ use crate::f3g::F3G;
 use crate::field_bn128::Fr;
 use crate::linearhash_bn128::LinearHashBN128;
 use crate::poseidon_bn128_opt::Poseidon;
-use crate::traits::MTNodeType;
+use crate::traits::{MTNodeType, PoseidonTrait,MerkleTreeBase};
 use crate::traits::MerkleTree;
 use ff::Field;
 use plonky::field_gl::Fr as FGL;
@@ -14,7 +14,7 @@ use rayon::prelude::*;
 use std::time::Instant;
 
 #[derive(Default)]
-pub struct MerkleTreeBN128 {
+pub struct MerkleTreeBN128{
     pub elements: Vec<FGL>,
     pub width: usize,
     pub height: usize,
@@ -39,9 +39,13 @@ fn get_n_nodes(n_: usize) -> usize {
     acc
 }
 
-impl MerkleTreeBN128 {
+impl MerkleTreeBase for MerkleTreeBN128 {
+    type BaseField = Fr;
+    type PoseidonType = Poseidon;
+    type MTNode = ElementDigest<4>;
+
     #[inline]
-    pub fn merklize_level(&mut self, p_in: usize, n_ops: usize, p_out: usize) -> Result<()> {
+    fn merklize_level(&mut self, p_in: usize, n_ops: usize, p_out: usize) -> Result<()> {
         let mut n_ops_per_thread = (n_ops - 1) / (get_max_workers() * 16) + 1;
         if n_ops_per_thread < MIN_OPS_PER_THREAD {
             n_ops_per_thread = MIN_OPS_PER_THREAD;
@@ -53,8 +57,8 @@ impl MerkleTreeBN128 {
             .enumerate()
             .map(|(i, bb)| self.do_merklize_level(bb, i, n_ops).unwrap())
             .reduce(
-                || Vec::<ElementDigest<4>>::new(),
-                |mut a: Vec<ElementDigest<4>>, mut b: Vec<ElementDigest<4>>| {
+                || Vec::<Self::MTNode>::new(),
+                |mut a: Vec<Self::MTNode>, mut b: Vec<Self::MTNode>| {
                     a.append(&mut b);
                     a
                 },
@@ -69,10 +73,10 @@ impl MerkleTreeBN128 {
 
     fn do_merklize_level(
         &self,
-        buff_in: &[ElementDigest<4>],
+        buff_in: &[Self::MTNode],
         _st_i: usize,
         _st_n: usize,
-    ) -> Result<Vec<ElementDigest<4>>> {
+    ) -> Result<Vec<Self::MTNode>> {
         log::debug!(
             "merklizing bn128 hash start.... {}/{}, buff size {}",
             _st_i,
@@ -80,7 +84,7 @@ impl MerkleTreeBN128 {
             buff_in.len()
         );
         let n_ops = buff_in.len() / 16;
-        let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
+        let mut buff_out64: Vec<Self::MTNode> = vec![ElementDigest::<4>::default(); n_ops];
         buff_out64
             .iter_mut()
             .zip((0..n_ops).into_iter())
@@ -116,9 +120,9 @@ impl MerkleTreeBN128 {
         &self,
         mp: &Vec<Vec<Fr>>,
         idx: usize,
-        value: &ElementDigest<4>,
+        value: &Self::MTNode,
         offset: usize,
-    ) -> Result<ElementDigest<4>> {
+    ) -> Result<Self::MTNode> {
         if mp.len() == offset {
             return Ok(value.clone());
         }
@@ -129,25 +133,25 @@ impl MerkleTreeBN128 {
             vals.push(mp[offset][i]);
         }
         let init = Fr::zero();
-        let next_value = self.poseidon.hash(&vals, &init)?;
-        let next_value = ElementDigest::<4>::from_scalar(&next_value);
+        // let next_value = self.poseidon.hash(&vals, &init)?;
+        let next_value = self.poseidon.poseidon_hash(&vals, &[init],1)?;
+        let next_value = ElementDigest::<4>::from_scalar(&next_value[0]);
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
+
 
     fn calculate_root_from_group_proof(
         &self,
         mp: &Vec<Vec<Fr>>,
         idx: usize,
         vals: &Vec<FGL>,
-    ) -> Result<ElementDigest<4>> {
+    ) -> Result<Self::MTNode> {
         let h = self.h.hash_element_matrix(&vec![vals.to_vec()])?;
         self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::<4>::from_scalar(&h), 0)
     }
 }
 
 impl MerkleTree for MerkleTreeBN128 {
-    type BaseField = Fr;
-    type MTNode = ElementDigest<4>;
 
     fn new() -> Self {
         Self {
@@ -156,7 +160,7 @@ impl MerkleTree for MerkleTreeBN128 {
             h: LinearHashBN128::new(),
             width: 0,
             height: 0,
-            poseidon: Poseidon::new(),
+            poseidon: Self::PoseidonType::new(),
         }
     }
 

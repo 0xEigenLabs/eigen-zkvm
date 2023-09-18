@@ -5,7 +5,7 @@ use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
 use crate::linearhash::LinearHash;
 use crate::poseidon_opt::Poseidon;
-use crate::traits::MTNodeType;
+use crate::traits::{MTNodeType ,MerkleTreeBase};
 use crate::traits::MerkleTree;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
@@ -37,8 +37,12 @@ fn get_n_nodes(n_: usize) -> usize {
     acc
 }
 
-impl MerkleTreeGL {
-    fn merkle_gen_merkle_proof(&self, idx: usize, offset: usize, n: usize) -> Vec<Vec<FGL>> {
+impl MerkleTreeBase for MerkleTreeGL {
+    type MTNode = ElementDigest<4>;
+    type BaseField = FGL;
+    type PoseidonType = Poseidon;
+
+    fn merkle_gen_merkle_proof(&self, idx: usize, offset: usize, n: usize) -> Vec<Vec<Self::BaseField>> {
         if n <= 1 {
             return vec![];
         }
@@ -152,8 +156,6 @@ impl MerkleTreeGL {
 }
 
 impl MerkleTree for MerkleTreeGL {
-    type BaseField = FGL;
-    type MTNode = ElementDigest<4>;
 
     fn new() -> Self {
         Self {

@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 use crate::constant::POSEIDON_CONSTANTS_OPT;
 use crate::poseidon_constants_opt as constants;
+use crate::traits::PoseidonTrait;
 use plonky::field_gl::Fr as FGL;
 use plonky::Field;
 
@@ -219,6 +220,21 @@ impl Poseidon {
     }
 }
 
+
+impl PoseidonTrait for Poseidon {
+    type BaseField = FGL;
+    fn new() -> Poseidon {
+        Self {}
+    }
+
+    /// Hash function
+    /// init_state would be Fr::zero() initially
+    fn poseidon_hash(&self, inp: &Vec<FGL>, init_state: &[FGL], out: usize) -> Result<Vec<FGL>, String> {
+        let result = self.hash_inner(inp, &init_state, out)?;
+        Ok(result)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::poseidon_opt::*;
@@ -277,6 +293,22 @@ mod tests {
         let input = vec![init; 8];
         let state = vec![init; 4];
         let res = poseidon.hash(&input, &state, 4).unwrap();
+        let expected = vec![
+            FGL::from(0xbe0085cfc57a8357u64),
+            FGL::from(0xd95af71847d05c09u64),
+            FGL::from(0xcf55a13d33c1c953u64),
+            FGL::from(0x95803a74f4530e82u64),
+        ];
+        assert_eq!(res, expected);
+    }
+
+    #[test]
+    fn test_poseidon_trait() {
+        let poseidon = Poseidon::new();
+        let init = FGL::ZERO - FGL::ONE;
+        let input = vec![init; 8];
+        let state = vec![init; 4];
+        let res = poseidon.poseidon_hash(&input, &state, 4).unwrap();
         let expected = vec![
             FGL::from(0xbe0085cfc57a8357u64),
             FGL::from(0xd95af71847d05c09u64),

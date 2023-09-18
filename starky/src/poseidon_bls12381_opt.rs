@@ -3,6 +3,7 @@ use crate::constant::POSEIDON_BLS12381_CONSTANTS_OPT;
 use crate::field_bls12381::Fr;
 use crate::poseidon_bls12381::Constants;
 use crate::poseidon_bls12381_constants_opt as constants;
+use crate::traits::PoseidonTrait;
 use ff::{from_hex, Field};
 
 pub fn load_constants() -> Constants {
@@ -232,6 +233,22 @@ impl Poseidon {
     }
 }
 
+const OUTSIZE:usize = 2;
+impl PoseidonTrait for Poseidon {
+    type BaseField = Fr;
+    fn new() -> Poseidon {
+        Self {}
+    }
+
+    /// Hash function
+    /// init_state would be Fr::zero() initially
+    fn poseidon_hash(&self, inp: &Vec<Fr>, init_state: &[Fr], out: usize) -> Result<Vec<Fr>, String> {
+        let result = self.hash_inner(inp, &init_state[0], OUTSIZE)?;
+        Ok(result)
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use crate::field_bls12381::Fr;
@@ -312,6 +329,24 @@ mod tests {
         let h = poseidon.hash(&inp, &is).unwrap();
         assert_eq!(
             h.to_string(),
+            "Fr(0x12d374bbdb8d3c1c0230b20b8fe1572f1e652a616d16e834718a982574106405)",
+        );
+    }
+
+    #[test]
+    fn test_poseidon_trait() {
+        let poseidon = Poseidon::new();
+
+        let inputs: Vec<_> = (0..16).collect::<Vec<u64>>();
+        let inp: Vec<Fr> = inputs
+            .iter()
+            .map(|e| Fr::from_str(&e.to_string()).unwrap())
+            .collect();
+
+        let is = Fr::zero();
+        let h = poseidon.poseidon_hash(&inp, &[is],2).unwrap();
+        assert_eq!(
+            h[1].to_string(),
             "Fr(0x12d374bbdb8d3c1c0230b20b8fe1572f1e652a616d16e834718a982574106405)",
         );
     }
