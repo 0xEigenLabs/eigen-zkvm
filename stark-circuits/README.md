@@ -15,8 +15,9 @@ For the [recursion-aggregation-composition architechure](../docs/recursion-aggre
 * treeselector.circom: select the leaf node on Merkle Tree
 * compconstant64.circom: comparison operators for Godilocks
 * fft.circom:
-* linearhash.circom: calculathe the hash of arbitrary vector by Poseidon Hash.
+* linearhash.circom: calculate the hash of arbitrary vector by Poseidon Hash.
 * merklehash.circom: merkelization
+* poseidon_bls12381.circom:  calculate the Poseidon hash over the BLS12381 curve
 
 ## Rationale
 
@@ -121,7 +122,7 @@ the struct `ElementDigest` stands for the value of node in Merkle tree. For BN25
 
 ### Stark Verify Circuit 
 - [ ] merklehash.circom 
-- [ ] poseidon.circom for bls12381
+- [x] poseidon.circom for bls12381
 - [ ] linerhash.circom 
 - [ ] BN1toGL5.circom 
 - [ ] stark_verify.circom 

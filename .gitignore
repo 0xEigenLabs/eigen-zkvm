@@ -26,7 +26,7 @@ yarn.lock
 keys/setup_*.key
 keys/setup_*.ptau
 **/circuits.*/
-**/circuits/
+starkjs/circuits/
 **/package-lock.json
 witness.wtns
 
