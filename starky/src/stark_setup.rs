@@ -99,7 +99,7 @@ pub mod tests {
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
         let setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
-        let root: Fr = setup.const_root.as_bn128();
+        let root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
 
         let expect_root =
             "4658128321472362347225942316135505030498162093259225938328465623672244875764";

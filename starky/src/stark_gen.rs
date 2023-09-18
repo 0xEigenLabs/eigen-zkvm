@@ -1063,7 +1063,7 @@ pub mod tests {
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
         let mut setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
-        let fr_root: Fr = setup.const_root.as_bn128();
+        let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
         log::info!("setup {}", fr_root);
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             &cm_pol,
