@@ -117,7 +117,7 @@ impl PolsArray {
         }
     }
 
-    pub fn get_mut<'arr>(&mut self, ns: &String, np: &String, i: usize, j: usize) -> FGL {
+    pub fn get(&mut self, ns: &String, np: &String, i: usize, j: usize) -> FGL {
         let namespace = self.def.get(ns);
         if namespace.is_none() {
             //retrun Err(EigenError::Unknown(format!("Invalid namespace:{}", ns)));
