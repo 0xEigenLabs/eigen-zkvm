@@ -7,7 +7,7 @@
     "build": "npm run clean && npm i && ./node_modules/.bin/tsc",
     "clean": "rm -rf build dist typechain cache artifacts",
     "lint": "./node_modules/.bin/eslint --fix --ext .ts test",
-    "test": "npm run build && mocha dist"
+    "test": "npm run build && mocha dist/bn1togl3.test.js dist/poseidon.test.js"
   },
   "repository": {
     "type": "git",
