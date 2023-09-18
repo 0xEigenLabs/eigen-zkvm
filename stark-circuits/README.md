@@ -122,7 +122,7 @@ the struct `ElementDigest` stands for the value of node in Merkle tree. For BN25
 
 ### Stark Verify Circuit 
 - [ ] merklehash.circom 
-- [ ] poseidon.circom for bls12381
+- [x] poseidon.circom for bls12381
 - [ ] linerhash.circom 
 - [ ] BN1toGL5.circom 
 - [ ] stark_verify.circom 

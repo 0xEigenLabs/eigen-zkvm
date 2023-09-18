@@ -53,6 +53,8 @@ pub fn load_constants() -> Constants {
         }
         s.push(cci);
     }
+    // The n_rounds_p values are chosen based on the recommendations from the Neptune project.
+    // For more details, please refer to: https://github.com/lurk-lab/neptune/blob/main/src/round_numbers.rs
     Constants {
         c,
         m,
@@ -90,6 +92,11 @@ impl Poseidon {
     /// init_state would be Fr::zero() initially
     pub fn hash(&self, inp: &Vec<Fr>, init_state: &Fr) -> Result<Fr, String> {
         let result = self.hash_inner(inp, init_state, 2)?;
+        // Return the second element of the result based on Neptune project's specifications.
+        // -------------------------------------------------------
+        // In accordance with Neptune project guidelines, the second element of the result vector
+        // is chosen as the final hash output.
+        // For more details, refer to https://github.com/lurk-lab/neptune/blob/main/src/poseidon_alt.rs.
         Ok(result[1])
     }
 
