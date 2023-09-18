@@ -2,11 +2,11 @@ use crate::compressor12::compressor12_pil;
 use crate::compressor12_pil::CompressorNameSpace::*;
 use crate::compressor12_pil::CompressorPolName::*;
 use crate::compressor12_setup::Options;
-use crate::fft::FFT;
 use crate::pilcom::compile_pil_from_str;
 use crate::polsarray::{PolKind, PolsArray};
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
 use crate::types::PIL;
+use array_tool::vec::Shift;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
@@ -281,8 +281,7 @@ pub fn plonk_setup_compressor(
                 partial_rows.remove(&k);
             }
         } else if half_rows.len() > 0 {
-            // todo how to shift.
-            let mut pr = ParRow { row: 0, n_used: 0 };
+            let mut pr = half_rows.shift().unwrap();
             // const pr = halfRows.shift();
             let index = pr.row;
             for (i, value) in vec![9_usize, 6, 7, 8, 10, 11]
