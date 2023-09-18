@@ -196,10 +196,10 @@ template Poseidon(nInputs) {
     signal input inputs[nInputs];
     signal output out;
 
-    component pEx = PoseidonEx(nInputs, 1);
+    component pEx = PoseidonEx(nInputs, 2);
     pEx.initialState <== 0;
     for (var i=0; i<nInputs; i++) {
         pEx.inputs[i] <== inputs[i];
     }
-    out <== pEx.out[0];
+    out <== pEx.out[1];
 }
