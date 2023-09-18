@@ -618,8 +618,19 @@ pub fn plonk_setup_compressor(
                 let ls = last_signal.get(&key);
                 if ls.is_some() {
                     let ls = ls.unwrap();
-                    // todo obtain compressor value.
-                    //connect(&mut compressor.S[ls.col], ls.row, &mut compressor.S[j], i);
+                    // connect and swap the value.
+                    let left =
+                        const_pols.get(&Compressor.to_string(), &S.to_string(), ls.col, ls.row);
+                    let right = const_pols.get(&Compressor.to_string(), &S.to_string(), j, i);
+
+                    const_pols.set_matrix(&Compressor.to_string(), &S.to_string(), j, i, left);
+                    const_pols.set_matrix(
+                        &Compressor.to_string(),
+                        &S.to_string(),
+                        ls.col,
+                        ls.row,
+                        right,
+                    );
                 } else {
                     last_signal.insert(key, Grid { col: j, row: i });
                 }

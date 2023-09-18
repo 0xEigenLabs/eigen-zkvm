@@ -135,30 +135,30 @@ impl PolsArray {
 
     /// Set the ns.np[i][j] = value, where ns.np[i] is the (ref.id + i)-th element(column) in self.array
     /// j would be 0 by default for non-array reference.
+    pub fn get(&mut self, ns: &String, np: &String, i: usize, j: usize) -> FGL {
+        let np_id = self.get_np_index_of_array(ns, np, i);
+
+        self.array[np_id][j].clone()
+    }
+
+    /// Set the ns.np[i][j] = value, where ns.np[i] is the (ref.id + i)-th element(column) in self.array
+    /// j would be 0 by default for non-array reference.
     ///
     /// e.g. For JS statement, constPols.Compressor.C[7][pr.row] = c[5], i is 7 and j is pr.row.
     ///
     /// Before calling this function, you must ensure that this polsarray has been initialized
     pub fn set_matrix(&mut self, ns: &String, np: &String, i: usize, j: usize, value: FGL) {
-        let namespace = self.def.get_mut(ns);
-        /*
-        if namespace.is_none() {
-            self.def.insert(ns.clone(), HashMap::new());
-            return self.set(ns, np, i, j, value);
-        }
-        */
-        let namespace = namespace.unwrap();
-        let namepols = namespace.get_mut(np);
-        /*
-        if namepols.is_none() {
-            namespace.insert(np.clone(), vec![0; self.n]);
-            return self.set(ns, np, i, j, value);
-        }
-        */
-        let namepols = namepols.unwrap();
-        let np_id = namepols[i];
+        let np_id = self.get_np_index_of_array(ns, np, i);
+
         self.array[np_id][j] = value;
     }
+    pub(crate) fn get_np_index_of_array(&mut self, ns: &String, np: &String, i: usize) -> usize {
+        let namespace = self.def.get(ns).unwrap();
+        let namepols = namespace.get(np).unwrap();
+        let np_id = namepols[i];
+        np_id
+    }
+
     pub fn set_array(&mut self, ns: &String, np: &String, i: usize, value: FGL) {
         self.set_matrix(ns, np, i, 0, value);
     }

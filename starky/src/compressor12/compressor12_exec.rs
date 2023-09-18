@@ -51,9 +51,10 @@ pub fn exec(
     }
 
     // 4. compress cmPol
-    // todo get value.
-    // let N =
-    for c in 0..12 {
+    let a_np_index = cm_pols.get_np_index_of_array(&Compressor.to_string(), &a.to_string(), 0);
+    let N = cm_pols.array[a_np_index].len();
+
+    for c in 0..N {
         for i in 0..s_map_column_len {
             let s = s_map[c][i];
             let value = w[s];
