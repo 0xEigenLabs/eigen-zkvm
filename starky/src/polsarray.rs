@@ -117,7 +117,7 @@ impl PolsArray {
         }
     }
 
-    pub fn get_mut<'arr>(&mut self, ns: &String, np: &String) -> &mut Vec<FGL> {
+    pub fn get(&mut self, ns: &String, np: &String, i: usize, j: usize) -> FGL {
         let namespace = self.def.get(ns);
         if namespace.is_none() {
             //retrun Err(EigenError::Unknown(format!("Invalid namespace:{}", ns)));
@@ -128,15 +128,33 @@ impl PolsArray {
         if name_pol_index.is_none() {
             //retrun Err(EigenError::Unknown(format!("Invalid name pol:{}/{}", ns, np)));
         }
-        let idx = name_pol_index.unwrap()[0];
-        &mut self.array[idx]
+        let idx = name_pol_index.unwrap()[i];
+        self.array[idx][j]
     }
 
-    /*
-    pub fn set(&mut self, ns: &String, np: &String, val: &Vec<Vec<FGL>>) {
-        let idx = self.def
+    /// Set the ns.np[i][j] = value, where ns.np[i] is the (ref.id + i)-th element(column) in self.array
+    /// j would be 0 by default for non-array reference, e.g. For JS statement, constPols.Compressor.C[7][pr.row] = c[5], i is 7 and j is pr.row.
+    /// Before calling this function, you must ensure that this polsarray has been initialized
+    pub fn set(&mut self, ns: &String, np: &String, i: usize, j: usize, value: FGL) {
+        let namespace = self.def.get_mut(ns);
+        /*
+        if namespace.is_none() {
+            self.def.insert(ns.clone(), HashMap::new());
+            return self.set(ns, np, i, j, value);
+        }
+        */
+        let namespace = namespace.unwrap();
+        let namepols = namespace.get_mut(np);
+        /*
+        if namepols.is_none() {
+            namespace.insert(np.clone(), vec![0; self.n]);
+            return self.set(ns, np, i, j, value);
+        }
+        */
+        let namepols = namepols.unwrap();
+        let np_id = namepols[i];
+        self.array[np_id][j] = value;
     }
-    */
 
     pub fn load(&mut self, fileName: &str) -> Result<()> {
         let mut f = File::open(fileName)?;

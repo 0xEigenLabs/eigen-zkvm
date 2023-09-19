@@ -734,7 +734,6 @@ pub mod tests {
     use crate::f5g::F5G;
     use plonky::field_gl::Fr;
     use plonky::Field;
-    use rand::Rand;
     use std::ops::{Add, Mul};
 
     impl F5G {
