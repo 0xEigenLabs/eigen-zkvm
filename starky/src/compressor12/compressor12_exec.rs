@@ -31,7 +31,7 @@ pub fn exec(
     let pil_json = compile_pil_from_path(pil_file);
     let mut file = File::create(Path::new(&format!("{pil_file}.json"))).unwrap();
     let input = serde_json::to_string(&pil_json).unwrap();
-    write!(file, "{}", input);
+    write!(file, "{}", input).unwrap();
 
     // 2. construct cmPol: .pil.json -> .cm
     let mut cm_pols = PolsArray::new(&pil_json, PolKind::Commit);
@@ -42,11 +42,12 @@ pub fn exec(
     let mut w = wtns.calculate_witness(inputs, false).unwrap();
 
     for i in 0..adds_len {
-        let f_w = FGL::from(w[adds[i * 4]].to_u64_digits().1[0]) * FGL::from(adds[i * 4 + 2])
-            + FGL::from(w[adds[i * 4 + 1]].to_u64_digits().1[0]) * FGL::from(adds[i * 4 + 3]);
+        // let f_w = FGL::from(w[adds[i * 4]].to_u64_digits().1[0]) * FGL::from(adds[i * 4 + 2])
+        //     + FGL::from(w[adds[i * 4 + 1]].to_u64_digits().1[0]) * FGL::from(adds[i * 4 + 3]);
 
-        let wi = BigInt::from(f_w.as_int());
-        w.push(wi);
+        // todo
+        // let wi = BigInt::from(f_w.as_int());
+        // w.push(wi);
     }
 
     // 4. compress cmPol
@@ -63,7 +64,9 @@ pub fn exec(
                 c,
                 i,
                 if s != 0 {
-                    FGL::from(w[s].to_u64_digits().1[0])
+                    // todo
+                    // FGL::from(w[s].to_u64_digits().1[0])
+                    FGL::ZERO
                 } else {
                     FGL::ZERO
                 },
@@ -79,7 +82,7 @@ pub fn exec(
     // 5. save cmPol to file.
     let mut file = File::create(Path::new(commit_file)).unwrap();
     let input = serde_json::to_string_pretty(&cm_pols).unwrap();
-    write!(file, "{}", input);
+    write!(file, "{}", input).unwrap();
 
     log::info!("files Generated Correctly");
     Result::Ok(())

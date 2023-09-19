@@ -124,7 +124,7 @@ pub fn export<T: FieldElement>(analyzed: &Analyzed<T>) -> PIL {
             }
         }
     }
-    let mut pil = PIL {
+    let pil = PIL {
         nCommitments: analyzed.commitment_count(),
         nQ: exporter.number_q as usize,
         nIm: analyzed.intermediate_count(),

@@ -1,8 +1,7 @@
-use crate::compressor12::compressor12_pil;
-use crate::compressor12::constants::CPOSEIDON;
-use crate::compressor12_pil::CompressorNameSpace::*;
-use crate::compressor12_pil::CompressorPolName::*;
-use crate::compressor12_setup::Options;
+use super::{
+    compressor12_pil, compressor12_pil::CompressorNameSpace::*,
+    compressor12_pil::CompressorPolName::*, compressor12_setup::Options, constants::CPOSEIDON,
+};
 use crate::pilcom::compile_pil_from_str;
 use crate::polsarray::{PolKind, PolsArray};
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
@@ -378,7 +377,7 @@ pub fn plonk_setup_compressor(
                         &C.to_string(),
                         k,
                         index,
-                        CPOSEIDON[j * 12 + k],
+                        FGL::from(CPOSEIDON[j * 12 + k]),
                     );
                 }
                 for pol_name in vec![GATE, CMULADD, EVPOL4, FFT4] {
@@ -545,7 +544,6 @@ pub fn plonk_setup_compressor(
                 s_map[j][r] = cgu.signals[j];
                 const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), j, r, FGL::ZERO);
             }
-            let index = r + 1;
             for j in 0..9 {
                 s_map[j][r + 1] = cgu.signals[12 + j];
                 const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), j, r + 1, FGL::ZERO);

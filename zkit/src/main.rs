@@ -425,7 +425,6 @@ fn main() {
         Command::AggregationCheck(args) => {
             aggregation_check(&args.old_proof_list, &args.old_vk, &args.new_proof)
         }
-
         Command::StarkProve(args) => stark::prove(
             &args.stark_struct,
             &args.piljson,
@@ -445,14 +444,16 @@ fn main() {
             &args.const_file,
             &args.exec_file,
             args.force_n_bits,
-        ),
+        )
+        .map_err(|_| EigenError::from("compreesor12 setup error".to_string())),
         Command::Compresor12Exec(args) => starky::compressor12_exec::exec(
             &args.input_file,
             &args.wasm_file,
             &args.pil_file,
             &args.exec_file,
             &args.commit_file,
-        ),
+        )
+        .map_err(|_| EigenError::from("compreesor12 exec error".to_string())),
     };
     match exec_result {
         Err(x) => {
