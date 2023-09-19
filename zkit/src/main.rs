@@ -269,7 +269,7 @@ struct Compresor12ExecOpt {
     // output files :  $C12_VERIFIER.exec
     #[arg(long = "e", default_value = "mycircuit.c12.exec")]
     exec_file: String,
-    #[arg(long = "cm", default_value = "mycircuit.c12.exec")]
+    #[arg(long = "m", default_value = "mycircuit.c12.cm")]
     commit_file: String,
 }
 
@@ -307,9 +307,10 @@ enum Command {
     #[command(name = "analyse")]
     Analyse(AnalyseOpt),
 
-    #[command(name = "main_compressor12_setup")]
+    // todo opti command name.
+    #[command(name = "compressor12_setup")]
     Compresor12Setup(Compresor12SetupOpt),
-    #[command(name = "main_compressor12_exec")]
+    #[command(name = "compressor12_exec")]
     Compresor12Exec(Compresor12ExecOpt),
 }
 

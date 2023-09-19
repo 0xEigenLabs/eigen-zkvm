@@ -8,7 +8,7 @@ State Machine zkVM prototype extracted from [zkevm-proverjs](https://github.com/
 [gen-txs.js](tools/gen-input-executor/README.md)
 
 ### Generate zkvm input
-```
+```bash
 npm run buildrom
 npm run buildstoragerom
 npm run genstarkstruct
@@ -17,7 +17,7 @@ npm run vm
 
 ### Bottom Layer: FRI Proof
 
-```
+```bash
 ../target/release/eigen-zkit stark_prove -s ./build/proof/starkstruct.json \
     -p ./circuits/zkvm.pil.json \
     --o ./circuits/zkvm.const \
@@ -25,8 +25,7 @@ npm run vm
 ```
 
 ### Recursive Layer: FRI Proof
-
-```
+```bash
 ../target/release/eigen-zkit compile -p goldilocks -i circuits/zkvm.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
 node ../starkjs/src/compressor12/main_compressor12_setup.js \
@@ -49,7 +48,7 @@ node ../starkjs/src/compressor12/main_compressor12_exec.js \
 ```
 
 ### Top Layer: Snark proof
-```
+```bash
 bash -x ./tools/gen_final_proof.sh
 ```
 

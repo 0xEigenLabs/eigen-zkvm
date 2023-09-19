@@ -39,15 +39,16 @@ pub fn exec(
     // 3. calculate witness. wasm+input->witness
     let mut wtns = WitnessCalculator::new(wasm_file).unwrap();
     let inputs = load_input_for_witness(input_file);
-    let mut w = wtns.calculate_witness(inputs, false).unwrap();
+    let w = wtns.calculate_witness(inputs, false).unwrap();
+    let mut w = w
+        .iter()
+        .map(|wi| FGL::from(wi.to_u64_digits().1[0]))
+        .collect::<Vec<_>>();
 
     for i in 0..adds_len {
-        // let f_w = FGL::from(w[adds[i * 4]].to_u64_digits().1[0]) * FGL::from(adds[i * 4 + 2])
-        //     + FGL::from(w[adds[i * 4 + 1]].to_u64_digits().1[0]) * FGL::from(adds[i * 4 + 3]);
-
-        // todo
-        // let wi = BigInt::from(f_w.as_int());
-        // w.push(wi);
+        let f_w = w[adds[i * 4] as usize] * FGL::from(adds[i * 4 + 2])
+            + w[adds[i * 4 + 1] as usize] * FGL::from(adds[i * 4 + 3]);
+        w.push(f_w);
     }
 
     // 4. compress cmPol
@@ -56,20 +57,14 @@ pub fn exec(
 
     for i in 0..s_map_column_len {
         for c in 0..12 {
-            let s = s_map[i * 12 + c];
+            let s = s_map[i * 12 + c] as usize;
 
             cm_pols.set_matrix(
                 &Compressor.to_string(),
                 &a.to_string(),
                 c,
                 i,
-                if s != 0 {
-                    // todo
-                    // FGL::from(w[s].to_u64_digits().1[0])
-                    FGL::ZERO
-                } else {
-                    FGL::ZERO
-                },
+                if s != 0 { w[s] } else { FGL::ZERO },
             );
         }
     }
