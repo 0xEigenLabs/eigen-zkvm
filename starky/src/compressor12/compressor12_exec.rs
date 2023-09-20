@@ -138,4 +138,10 @@ mod test {
         // assert_eq!(s_map_column_len, s_map[0].len());
         // assert_eq!(target_s_map, s_map);
     }
+
+    #[test]
+    fn test_read_exec_file() {
+        let exec_file = String::from("/tmp/c12.exec");
+        read_exec_file(&exec_file);
+    }
 }

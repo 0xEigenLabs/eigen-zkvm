@@ -121,6 +121,7 @@ impl PolsArray {
     /// Set the ns.np[i][j] = value, where ns.np[i] is the (ref.id + i)-th element(column) in self.array
     /// j would be 0 by default for non-array reference.
     pub fn get(&mut self, ns: &String, np: &String, i: usize, j: usize) -> FGL {
+        println!("get");
         let np_id = self.get_np_index_of_array(ns, np, i);
 
         self.array[np_id][j].clone()
@@ -133,12 +134,14 @@ impl PolsArray {
     ///
     /// Before calling this function, you must ensure that this polsarray has been initialized
     pub fn set_matrix(&mut self, ns: &String, np: &String, i: usize, j: usize, value: FGL) {
+        println!("set_matrix");
         let np_id = self.get_np_index_of_array(ns, np, i);
 
         self.array[np_id][j] = value;
     }
     pub(crate) fn get_np_index_of_array(&mut self, ns: &String, np: &String, i: usize) -> usize {
         let namespace = self.def.get(ns).unwrap();
+        println!("self.def.len: {:?}    {ns}, {np}, np:{i}", self.def.len());
         let namepols = namespace.get(np).unwrap();
         let np_id = namepols[i];
         np_id

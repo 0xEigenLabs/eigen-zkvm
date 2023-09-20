@@ -14,6 +14,7 @@ will generate the PIL json, Commitment Polynomial file and Constant Polynomial f
 ### Bottom Layer: FRI Proof
 
 ```bash
+export CIRCUIT=fib
 ../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
     -p /tmp/$CIRCUIT.pil.json \
     --o /tmp/$CIRCUIT.const \
@@ -23,6 +24,7 @@ will generate the PIL json, Commitment Polynomial file and Constant Polynomial f
 ### Recursive Layer: FRI Proof
 test compressor12
 #### old script
+export CIRCUIT=fib
 ```bash
 ../target/release/eigen-zkit compile -p goldilocks -i circuits/$CIRCUIT.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
@@ -49,31 +51,20 @@ node src/compressor12/main_compressor12_exec.js \
 #### new script
 > rust version script
 ```bash
+export CIRCUIT=fib
 ../target/release/eigen-zkit compile -p goldilocks -i circuits/$CIRCUIT.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
 # Circom to Stark  
-../target/release/eigen-zkit compressor12_setup 
-    -r /tmp/$CIRCUIT.verifier.r1cs \
-    -c /tmp/c12.const \
-    -p /tmp/c12.pil \
-    -e /tmp/c12.exec
+../target/release/eigen-zkit compressor12_setup  --r /tmp/$CIRCUIT.verifier.r1cs --c /tmp/c12.const  --p /tmp/c12.pil   --e /tmp/c12.exec
 
-node src/compressor12/main_compressor12_exec.js \
-    -w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm  \
-    -i circuits/$CIRCUIT.verifier.zkin.json  \
-    -p /tmp/c12.pil  \
-    -e /tmp/c12.exec \
-    -m /tmp/c12.cm
+    
+../target/release/eigen-zkit compressor12_exec --w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm --i circuits/$CIRCUIT.verifier.zkin.json --p /tmp/c12.pil  --e /tmp/c12.exec --m /tmp/c12.cm
+
 ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json \
     -p /tmp/c12.pil.json \
     --o /tmp/c12.const \
     --m /tmp/c12.cm -c circuits/c12a.verifier.circom --i circuits/c12a.verifier.zkin.json --norm_stage
 ```
-
-
-
-
-
 
 ### Top Layer: Snark proof
 ```bash
@@ -82,7 +73,7 @@ bash -x ../test/test_fibonacci_verifier.sh
 
 ### Snark proof aggregation
 
-```
+```bash
 bash -x ../test/test_aggregation_verifier.sh
 ```
 

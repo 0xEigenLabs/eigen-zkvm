@@ -8,3 +8,4 @@ members = [
 
 #[patch."https://github.com/0xEigenLabs/eigen-zkvm.git"]
 #starky = { path = "./starky" }
+workspace.resolver = "2"

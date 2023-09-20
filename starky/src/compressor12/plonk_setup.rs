@@ -109,7 +109,7 @@ impl CustomGateInfo {
         let mut c_mul_add_id = 0;
         let mut poseidon_id = 0;
         let mut ev_pol_id = 0;
-        let mut fft_params = vec![];
+        let mut fft_params = vec![vec![]; r1cs.custom_gates.len()];
 
         for (i, c) in r1cs.custom_gates.iter().enumerate() {
             match c.template_name.as_str() {
@@ -654,11 +654,10 @@ pub fn plonk_setup_compressor(
     }
     // construct Lagrange Basis Polynomial: Li(x)
     for i in 0..n_public_rows {
-        let L = const_pols.get_mut(&"Global".to_string(), &format!("L{}", i + 1));
-        for i in 0..N {
-            L[i] = FGL::ZERO;
+        for j in 0..N {
+            const_pols.set_matrix(&Global.to_string(), &L.to_string(), i + 1, j, FGL::ZERO);
         }
-        L[i] = FGL::ONE;
+        const_pols.set_matrix(&Global.to_string(), &L.to_string(), i + 1, i, FGL::ONE);
     }
 
     (const_pols, s_map)

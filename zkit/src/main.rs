@@ -243,15 +243,15 @@ struct AggregationCheckOpt {
 // .usage("node main_compressor12_setup.js -r <verifier.c12.r1cs> -p <verifier.c12.pil> -c <verifier.c12.const> -e <verifier.c12.exec> [--forceNBits=23]")
 #[derive(Parser, Debug)]
 struct Compresor12SetupOpt {
-    #[arg(short = "r", default_value = "mycircuit.verifier.r1cs")]
+    #[arg(long = "r", default_value = "mycircuit.verifier.r1cs")]
     r1cs_file: String,
-    #[arg(short = "c", default_value = "mycircuit.c12.const")]
+    #[arg(long = "c", default_value = "mycircuit.c12.const")]
     const_file: String, // Output file required to build the constants
-    #[arg(short = "p", default_value = "mycircuit.c12.pil")]
+    #[arg(long = "p", default_value = "mycircuit.c12.pil")]
     pil_file: String, // Proposed PIL
-    #[arg(short = "e", default_value = "mycircuit.c12.exec")]
+    #[arg(long = "e", default_value = "mycircuit.c12.exec")]
     exec_file: String, // File required to execute
-    #[arg(short, default_value = "23")]
+    #[arg(long, default_value = "23")]
     force_n_bits: usize,
 }
 
@@ -260,16 +260,16 @@ struct Compresor12SetupOpt {
 #[derive(Parser, Debug)]
 struct Compresor12ExecOpt {
     // input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
-    #[arg(short = "i", default_value = "mycircuit.proof.zkin.json")]
+    #[arg(long = "i", default_value = "mycircuit.proof.zkin.json")]
     input_file: String,
-    #[arg(short = "w", default_value = "mycircuit.verifier.wasm")]
+    #[arg(long = "w", default_value = "mycircuit.verifier.wasm")]
     wasm_file: String,
-    #[arg(short = "p", default_value = "mycircuit.c12.pil")]
+    #[arg(long = "p", default_value = "mycircuit.c12.pil")]
     pil_file: String,
     // output files :  $C12_VERIFIER.exec
-    #[arg(short = "e", default_value = "mycircuit.c12.exec")]
+    #[arg(long = "e", default_value = "mycircuit.c12.exec")]
     exec_file: String,
-    #[arg(short = "m", default_value = "mycircuit.c12.cm")]
+    #[arg(long = "m", default_value = "mycircuit.c12.cm")]
     commit_file: String,
 }
 
