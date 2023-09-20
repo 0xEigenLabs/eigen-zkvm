@@ -555,7 +555,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
     ) -> F3G {
         ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
-        log::info!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
+        log::debug!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
 
         let res = t.eval(ctx, idx); // just let public codegen run multiple times
                                     //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
@@ -730,7 +730,7 @@ pub fn calculate_exps(
 ) {
     ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    log::info!(
+    log::debug!(
         "calculate_exps compile_code {} ctx.first:\n{}",
         step,
         c_first
@@ -970,7 +970,7 @@ pub fn calculate_exps_parallel(
         let cur_n = std::cmp::min(n_per_thread, n - i);
         let mut tmp_ctx = StarkContext::default();
         tmp_ctx.N = n;
-        tmp_ctx.Next = ctx.Next;
+        tmp_ctx.Next = next;
         tmp_ctx.nbits = ctx.nbits;
         tmp_ctx.nbits_ext = ctx.nbits_ext;
         tmp_ctx.evals = ctx.evals.clone();
@@ -980,7 +980,7 @@ pub fn calculate_exps_parallel(
         for si in &exec_info.input_sections {
             if si.name.as_str() == "xDivXSubXi" || si.name.as_str() == "xDivXSubWXi" {
                 let tmp = tmp_ctx.get_mut_base(si.name.as_str());
-                // for GL(2)
+                // for GL(p)
                 *tmp = vec![FGL::ZERO; (cur_n + next) * si.width];
                 let ori_sec = ctx.get_mut_base(si.name.as_str());
                 for j in 0..(cur_n * si.width) {
@@ -992,7 +992,7 @@ pub fn calculate_exps_parallel(
                 }
             } else {
                 let tmp = tmp_ctx.get_mut(si.name.as_str());
-                // for GL(2^3)
+                // for field extension GL(p^3)
                 *tmp = vec![F3G::ZERO; (cur_n + next) * si.width];
                 let ori_sec = ctx.get_mut(si.name.as_str());
                 for j in 0..(cur_n * si.width) {
@@ -1063,7 +1063,7 @@ pub mod tests {
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
         let mut setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
-        let fr_root: Fr = setup.const_root.as_bn128();
+        let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
         log::info!("setup {}", fr_root);
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             &cm_pol,

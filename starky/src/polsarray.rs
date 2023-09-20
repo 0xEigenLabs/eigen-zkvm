@@ -118,21 +118,6 @@ impl PolsArray {
         }
     }
 
-    pub fn get_mut<'arr>(&mut self, ns: &String, np: &String) -> &mut Vec<FGL> {
-        let namespace = self.def.get(ns);
-        if namespace.is_none() {
-            //retrun Err(EigenError::Unknown(format!("Invalid namespace:{}", ns)));
-        }
-        assert_eq!(namespace.is_some(), true);
-        let name_pol_index = namespace.unwrap().get(np);
-        assert_eq!(name_pol_index.is_some(), true);
-        if name_pol_index.is_none() {
-            //retrun Err(EigenError::Unknown(format!("Invalid name pol:{}/{}", ns, np)));
-        }
-        let idx = name_pol_index.unwrap()[0];
-        &mut self.array[idx]
-    }
-
     /// Set the ns.np[i][j] = value, where ns.np[i] is the (ref.id + i)-th element(column) in self.array
     /// j would be 0 by default for non-array reference.
     pub fn get(&mut self, ns: &String, np: &String, i: usize, j: usize) -> FGL {

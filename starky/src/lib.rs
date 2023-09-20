@@ -21,6 +21,10 @@ mod poseidon_constants_opt;
 pub mod poseidon_opt;
 
 mod field_bls12381;
+mod poseidon_bls12381;
+mod poseidon_bls12381_constants;
+mod poseidon_bls12381_constants_opt;
+pub mod poseidon_bls12381_opt;
 
 pub mod merklehash;
 pub mod merklehash_bn128;
@@ -31,6 +35,7 @@ pub use digest::ElementDigest;
 mod constant;
 mod expressionops;
 pub mod f3g;
+pub mod f5g;
 mod fft;
 pub mod fft_p;
 mod fft_worker;

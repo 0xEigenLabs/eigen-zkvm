@@ -102,7 +102,7 @@ impl MerkleTreeBN128 {
         let mut sibs: Vec<Fr> = vec![];
 
         for i in 0..16 {
-            let sib: Fr = self.nodes[offset + (si + i)].as_bn128();
+            let sib: Fr = Fr(self.nodes[offset + (si + i)].as_scalar::<Fr>());
             sibs.push(sib);
         }
 
@@ -297,7 +297,7 @@ mod tests {
 
         let mut tree = MerkleTreeBN128::new();
         tree.merkelize(cols, n_pols, n).unwrap();
-        let root: Fr = tree.root().as_bn128();
+        let root: Fr = Fr(tree.root().as_scalar::<Fr>());
         assert_eq!(
             root,
             Fr::from_str(

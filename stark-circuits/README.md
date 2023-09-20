@@ -15,8 +15,9 @@ For the [recursion-aggregation-composition architechure](../docs/recursion-aggre
 * treeselector.circom: select the leaf node on Merkle Tree
 * compconstant64.circom: comparison operators for Godilocks
 * fft.circom:
-* linearhash.circom: calculathe the hash of arbitrary vector by Poseidon Hash.
+* linearhash.circom: calculate the hash of arbitrary vector by Poseidon Hash.
 * merklehash.circom: merkelization
+* poseidon_bls12381.circom:  calculate the Poseidon hash over the BLS12381 curve
 
 ## Rationale
 
@@ -107,3 +108,21 @@ As a refernece, [to\_bn128](https://github.com/0xEigenLabs/eigen-zkvm/blob/main/
 ## ElementDigest
 
 the struct `ElementDigest` stands for the value of node in Merkle tree. For BN254, each node, including the root, contains 4 Godilocks elements, while BLS12-381 is 6.
+
+## ToDo 
+### Stark Genreation 
+
+- [x] F5G
+- [ ] linearhash_bls12381
+- [ ] merkle_hash_bls12381
+- [ ] transcripts_bls12381
+- [x] poseidon_bls12381 
+- [ ] update stark_setup,stark_gen,stark_verify to support bls12-381 curve 
+- [ ] update zkit main
+
+### Stark Verify Circuit 
+- [ ] merklehash.circom 
+- [x] poseidon.circom for bls12381
+- [ ] linerhash.circom 
+- [ ] BN1toGL5.circom 
+- [ ] stark_verify.circom 
