@@ -4,6 +4,7 @@ use crate::stark_gen::StarkContext;
 use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::Node;
 use crate::starkinfo_codegen::Section;
+use crate::traits::FnG;
 use std::fmt;
 
 #[derive(Clone, Debug)]
@@ -99,7 +100,7 @@ impl Block {
     /// example:
     /// let block = compile_code();
     /// block.eval(&mut ctx, i);
-    pub fn eval(&self, ctx: &mut StarkContext, arg_i: usize) -> F3G {
+    pub fn eval<F: FnG>(&self, ctx: &mut StarkContext<F>, arg_i: usize) -> F {
         let mut val_stack: Vec<F3G> = Vec::new();
         let length = self.exprs.len();
 
@@ -195,8 +196,8 @@ impl fmt::Display for Block {
     }
 }
 
-pub fn compile_code(
-    ctx: &StarkContext,
+pub fn compile_code<T: FnG>(
+    ctx: &StarkContext<T>,
     starkinfo: &StarkInfo,
     code: &Vec<Section>,
     dom: &str,
@@ -266,7 +267,7 @@ fn get_i(expr: &Expr, arg_i: usize) -> usize {
     offset + ((arg_i + next) % modulas) * size
 }
 
-fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
+fn get_value<F: FnG>(ctx: &mut StarkContext<F>, expr: &Expr, arg_i: usize) -> F3G {
     let addr = &expr.syms[0];
     match addr.as_str() {
         "tmp" | "cm1_n" | "cm1_2ns" | "cm2_n" | "cm2_2ns" | "cm3_n" | "cm3_2ns" | "cm4_n"
@@ -311,8 +312,8 @@ fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
     }
 }
 
-fn set_ref(
-    ctx: &StarkContext,
+fn set_ref<F :FnG>(
+    ctx: &StarkContext<F>,
     starkinfo: &StarkInfo,
     r: &Node,
     val: Expr,
@@ -396,8 +397,8 @@ fn set_ref(
         .push(Expr::new(Ops::Write, vec![], vec![e_dst], vec![]));
 }
 
-fn get_ref(
-    ctx: &StarkContext,
+fn get_ref<F: FnG>(
+    ctx: &StarkContext<F>,
     starkinfo: &StarkInfo,
     r: &Node,
     dom: &str,
@@ -533,8 +534,8 @@ fn get_ref(
     }
 }
 
-fn eval_map(
-    _ctx: &StarkContext,
+fn eval_map<F: FnG>(
+    _ctx: &StarkContext<F>,
     starkinfo: &StarkInfo,
     pol_id: usize,
     prime: bool,

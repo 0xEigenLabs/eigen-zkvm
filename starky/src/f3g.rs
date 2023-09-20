@@ -16,6 +16,9 @@ pub struct F3G {
     pub dim: usize,
 }
 
+unsafe impl Send for F3G {}
+unsafe impl Sync for F3G {}
+
 impl Hash for F3G {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.as_bytes().hash(state);

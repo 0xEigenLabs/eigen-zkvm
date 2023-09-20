@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use crate::f3g::F3G;
+use crate::field_bls12381::Fr as Bls_Fr;
 use crate::field_bn128::Fr;
 use crate::poseidon_bls12381::load_constants as load_constants_bls12381;
 use crate::poseidon_bls12381::Constants as ConstantsBls12381;
@@ -9,8 +9,13 @@ use crate::poseidon_bn128_opt::load_constants as load_constants_opt;
 use ff::*;
 use plonky::field_gl::Fr as FGL;
 use std::collections::HashMap;
+use crate::traits::FnG;
 
 lazy_static::lazy_static! {
+    pub static ref BLS_OFFSET_2_64: Bls_Fr = Bls_Fr::from_str("18446744073709551616").unwrap();
+    pub static ref BLS_OFFSET_2_128: Bls_Fr = Bls_Fr::from_str("340282366920938463463374607431768211456").unwrap();
+    pub static ref BLS_OFFSET_2_192: Bls_Fr = Bls_Fr::from_str("6277101735386680763835789423207666416102355444464034512896").unwrap();
+
     pub static ref OFFSET_2_64: Fr = Fr::from_str("18446744073709551616").unwrap();
     pub static ref OFFSET_2_128: Fr = Fr::from_str("340282366920938463463374607431768211456").unwrap();
     pub static ref OFFSET_2_192: Fr = Fr::from_str("6277101735386680763835789423207666416102355444464034512896").unwrap();
@@ -27,14 +32,14 @@ lazy_static::lazy_static! {
         m
     };
 
-    pub static ref SHIFT: F3G = F3G::from(FGL::from(49u64));
-    pub static ref SHIFT_INV: F3G = F3G::inv(SHIFT.clone());
-    pub static ref MG: (Vec<F3G>, Vec<F3G>) = {
-        let nqr = F3G::from(FGL::from(7u64));
+    pub static ref SHIFT: FGL = FGL::from(49u64);
+    pub static ref SHIFT_INV: FGL = FGL::inverse(SHIFT.clone());
+    pub static ref MG: (Vec<FGL>, Vec<FGL>) = {
+        let nqr = FGL::from(7u64);
         let rem = 2usize.pow(32) - 1;
         let s = 32usize;
-        let mut w = vec![F3G::ZERO; s+1];
-        let mut wi = vec![F3G::ZERO; s+1];
+        let mut w = vec![FGL::ZERO; s+1];
+        let mut wi = vec![FGL::ZERO; s+1];
         w[s] = nqr.exp(rem);
         wi[s] = w[s].inv();
 

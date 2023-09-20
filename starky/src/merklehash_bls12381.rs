@@ -2,10 +2,10 @@
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
 use crate::digest::ElementDigest;
 use crate::errors::{EigenError, Result};
-use crate::f3g::F3G;
-use crate::field_bn128::Fr;
-use crate::linearhash_bn128::LinearHashBN128;
-use crate::poseidon_bn128_opt::Poseidon;
+use crate::f5g::F5G;
+use crate::field_bls12381::Fr;
+use crate::linearhash_bls12381::LinearHashBLS12381;
+use crate::poseidon_bls12381_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use ff::Field;
@@ -13,13 +13,15 @@ use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use std::time::Instant;
 
+const ElementSize:usize = 6;
+
 #[derive(Default)]
-pub struct MerkleTreeBN128 {
+pub struct MerkleTreeBLS12381 {
     pub elements: Vec<FGL>,
     pub width: usize,
     pub height: usize,
-    pub nodes: Vec<ElementDigest<4>>,
-    h: LinearHashBN128,
+    pub nodes: Vec<ElementDigest<ElementSize>>,
+    h: LinearHashBLS12381,
     poseidon: Poseidon,
 }
 
@@ -39,7 +41,7 @@ fn get_n_nodes(n_: usize) -> usize {
     acc
 }
 
-impl MerkleTreeBN128 {
+impl MerkleTreeBLS12381 {
     #[inline]
     pub fn merklize_level(&mut self, p_in: usize, n_ops: usize, p_out: usize) -> Result<()> {
         let mut n_ops_per_thread = (n_ops - 1) / (get_max_workers() * 16) + 1;
@@ -53,8 +55,8 @@ impl MerkleTreeBN128 {
             .enumerate()
             .map(|(i, bb)| self.do_merklize_level(bb, i, n_ops).unwrap())
             .reduce(
-                || Vec::<ElementDigest<4>>::new(),
-                |mut a: Vec<ElementDigest<4>>, mut b: Vec<ElementDigest<4>>| {
+                || Vec::<ElementDigest<ElementSize>>::new(),
+                |mut a: Vec<ElementDigest<ElementSize>>, mut b: Vec<ElementDigest<ElementSize>>| {
                     a.append(&mut b);
                     a
                 },
@@ -69,10 +71,10 @@ impl MerkleTreeBN128 {
 
     fn do_merklize_level(
         &self,
-        buff_in: &[ElementDigest<4>],
+        buff_in: &[ElementDigest<ElementSize>],
         _st_i: usize,
         _st_n: usize,
-    ) -> Result<Vec<ElementDigest<4>>> {
+    ) -> Result<Vec<ElementDigest<ElementSize>>> {
         log::debug!(
             "merklizing bn128 hash start.... {}/{}, buff size {}",
             _st_i,
@@ -80,7 +82,7 @@ impl MerkleTreeBN128 {
             buff_in.len()
         );
         let n_ops = buff_in.len() / 16;
-        let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
+        let mut buff_out64: Vec<ElementDigest<ElementSize>> = vec![ElementDigest::<ElementSize>::default(); n_ops];
         buff_out64
             .iter_mut()
             .zip((0..n_ops).into_iter())
@@ -116,21 +118,21 @@ impl MerkleTreeBN128 {
         &self,
         mp: &Vec<Vec<Fr>>,
         idx: usize,
-        value: &ElementDigest<4>,
+        value: &ElementDigest<ElementSize>,
         offset: usize,
-    ) -> Result<ElementDigest<4>> {
+    ) -> Result<ElementDigest<ElementSize>> {
         if mp.len() == offset {
             return Ok(value.clone());
         }
         //let cur_idx = idx & 0xF;
-        let next_idx = idx >> 4;
+        let next_idx = idx >> ElementSize;
         let mut vals: Vec<Fr> = vec![];
         for i in 0..16 {
             vals.push(mp[offset][i]);
         }
         let init = Fr::zero();
         let next_value = self.poseidon.hash(&vals, &init)?;
-        let next_value = ElementDigest::<4>::from_scalar(&next_value);
+        let next_value = ElementDigest::<ElementSize>::from_scalar(&next_value);
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
@@ -139,22 +141,21 @@ impl MerkleTreeBN128 {
         mp: &Vec<Vec<Fr>>,
         idx: usize,
         vals: &Vec<FGL>,
-    ) -> Result<ElementDigest<4>> {
+    ) -> Result<ElementDigest<ElementSize>> {
         let h = self.h.hash_element_matrix(&vec![vals.to_vec()])?;
-        self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::<4>::from_scalar(&h), 0)
+        self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::<ElementSize>::from_scalar(&h), 0)
     }
 }
 
-impl MerkleTree for MerkleTreeBN128 {
+impl MerkleTree for MerkleTreeBLS12381 {
     type BaseField = Fr;
-    type MTNode = ElementDigest<4>;
-    type FNG = F3G;
-    
+    type MTNode = ElementDigest<ElementSize>;
+    type FNG = F5G;
     fn new() -> Self {
         Self {
             nodes: Vec::new(),
             elements: Vec::new(),
-            h: LinearHashBN128::new(),
+            h: LinearHashBLS12381::new(),
             width: 0,
             height: 0,
             poseidon: Poseidon::new(),
@@ -165,12 +166,12 @@ impl MerkleTree for MerkleTreeBN128 {
         return self.elements.len();
     }
 
-    fn to_fng(&self, p_be:&mut Vec<F3G>) {
+    fn to_fng(&self, p_be: &mut Vec<F5G>) {
         assert_eq!(p_be.len(), self.elements.len());
         p_be.par_iter_mut()
             .zip(&self.elements)
-            .for_each(|(be_out, f3g_in)| {
-                *be_out = F3G::from(*f3g_in);
+            .for_each(|(be_out, f5g_in)| {
+                *be_out = F5G::from(*f5g_in);
             });
     }
 
@@ -189,7 +190,7 @@ impl MerkleTree for MerkleTreeBN128 {
             n_per_thread_f = MAX_OPS_PER_THREAD;
         }
         // calculate the nodes of the specific height Merkle tree
-        let mut nodes = vec![ElementDigest::<4>::default(); get_n_nodes(height)];
+        let mut nodes = vec![ElementDigest::<ElementSize>::default(); get_n_nodes(height)];
         let now = Instant::now();
         if buff.len() > 0 {
             nodes

@@ -10,6 +10,7 @@ use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::{Node, Section};
 use crate::traits::{MTNodeType, MerkleTree, Transcript};
 use crate::types::StarkStruct;
+use crate::traits::FnG;
 use plonky::field_gl::Fr as FGL;
 use std::collections::HashMap;
 
@@ -138,7 +139,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     fri.verify(&mut transcript, &proof.fri_proof, check_query)
 }
 
-fn execute_code(ctx: &mut StarkContext, code: &mut Vec<Section>) -> F3G {
+fn execute_code<F:FnG>(ctx: &mut StarkContext<F>, code: &mut Vec<Section>) -> F3G {
     let mut tmp: HashMap<usize, F3G> = HashMap::new();
 
     let extract_val = |arr: &Vec<FGL>, pos: usize, dim: usize| -> F3G {

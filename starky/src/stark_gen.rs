@@ -13,44 +13,46 @@ use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{Polynom, Segment};
 use crate::traits::{MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, PIL};
+use plonky::bellman_ce::bls12_381::Fr;
 use plonky::field_gl::Fr as FGL;
 use plonky::Field;
 use rayon::prelude::*;
 use std::collections::HashMap;
+use crate::traits::FnG as FnGTrait;
 
-pub struct StarkContext {
+pub struct StarkContext<T: FnGTrait> {
     pub nbits: usize,
     pub nbits_ext: usize,
     pub N: usize,
     pub Next: usize,
-    pub challenge: Vec<F3G>,
-    pub tmp: Vec<F3G>,
-    pub cm1_n: Vec<F3G>,
-    pub cm2_n: Vec<F3G>,
-    pub cm3_n: Vec<F3G>,
-    pub cm4_n: Vec<F3G>,
-    pub tmpexp_n: Vec<F3G>,
-    pub cm1_2ns: Vec<F3G>,
-    pub cm2_2ns: Vec<F3G>,
-    pub cm3_2ns: Vec<F3G>,
-    pub cm4_2ns: Vec<F3G>,
-    pub q_2ns: Vec<F3G>,
-    pub f_2ns: Vec<F3G>,
-    pub x_n: Vec<F3G>,
-    pub x_2ns: Vec<F3G>,
-    pub Zi: Box<dyn Fn(usize) -> F3G>,
-    pub const_n: Vec<F3G>,
-    pub const_2ns: Vec<F3G>,
-    pub publics: Vec<F3G>,
+    pub challenge: Vec<T>,
+    pub tmp: Vec<T>,
+    pub cm1_n: Vec<T>,
+    pub cm2_n: Vec<T>,
+    pub cm3_n: Vec<T>,
+    pub cm4_n: Vec<T>,
+    pub tmpexp_n: Vec<T>,
+    pub cm1_2ns: Vec<T>,
+    pub cm2_2ns: Vec<T>,
+    pub cm3_2ns: Vec<T>,
+    pub cm4_2ns: Vec<T>,
+    pub q_2ns: Vec<T>,
+    pub f_2ns: Vec<T>,
+    pub x_n: Vec<T>,
+    pub x_2ns: Vec<T>,
+    pub Zi: Box<dyn Fn(usize) -> T>,
+    pub const_n: Vec<T>,
+    pub const_2ns: Vec<T>,
+    pub publics: Vec<T>,
     pub xDivXSubXi: Vec<FGL>,
     pub xDivXSubWXi: Vec<FGL>,
-    pub evals: Vec<F3G>,
+    pub evals: Vec<T>,
 
-    pub exps_n: Vec<F3G>,
-    pub exps_2ns: Vec<F3G>,
+    pub exps_n: Vec<T>,
+    pub exps_2ns: Vec<T>,
 
-    pub Z: F3G,
-    pub Zp: F3G,
+    pub Z: T,
+    pub Zp: T,
     pub tree1: Vec<FGL>,
     pub tree2: Vec<FGL>,
     pub tree3: Vec<FGL>,
@@ -58,7 +60,7 @@ pub struct StarkContext {
     pub consts: Vec<FGL>,
 }
 
-impl std::fmt::Debug for StarkContext {
+impl<T: FnGTrait> std::fmt::Debug for StarkContext<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "n {}", self.N)?;
         writeln!(f, "nBits {}", self.nbits)?;
@@ -88,17 +90,17 @@ impl std::fmt::Debug for StarkContext {
     }
 }
 
-unsafe impl Send for StarkContext {}
-unsafe impl Sync for StarkContext {}
+unsafe impl<T: FnGTrait> Send for StarkContext<T> {}
+unsafe impl<T: FnGTrait> Sync for StarkContext<T> {}
 
-impl Default for StarkContext {
+impl<T :FnGTrait> Default for StarkContext<T> {
     fn default() -> Self {
         StarkContext {
             nbits: 0,
             nbits_ext: 0,
             N: 0,
             Next: 0,
-            challenge: vec![F3G::ZERO; 8],
+            challenge: vec![T::ZERO; 8],
             tmp: Vec::new(),
             cm1_n: Vec::new(),
             cm2_n: Vec::new(),
@@ -113,7 +115,7 @@ impl Default for StarkContext {
             f_2ns: Vec::new(),
             x_n: Vec::new(),
             x_2ns: Vec::new(),
-            Zi: Box::new(|_: usize| F3G::ZERO),
+            Zi: Box::new(|_: usize| T::ZERO),
             const_n: Vec::new(),
             const_2ns: Vec::new(),
             publics: Vec::new(),
@@ -122,8 +124,8 @@ impl Default for StarkContext {
             evals: Vec::new(),
             exps_n: Vec::new(),
             exps_2ns: Vec::new(),
-            Z: F3G::ZERO,
-            Zp: F3G::ZERO,
+            Z: T::ZERO,
+            Zp: T::ZERO,
             tree1: Vec::new(),
             tree2: Vec::new(),
             tree3: Vec::new(),
@@ -133,7 +135,7 @@ impl Default for StarkContext {
     }
 }
 
-impl StarkContext {
+impl<T: FnGTrait> StarkContext<T> {
     pub fn get_mut_base(&mut self, section: &str) -> &mut Vec<FGL> {
         match section {
             "xDivXSubXi" => &mut self.xDivXSubXi,
@@ -177,8 +179,8 @@ pub struct StarkProof<M: MerkleTree> {
     pub root3: M::MTNode,
     pub root4: M::MTNode,
     pub fri_proof: FRIProof<M>,
-    pub evals: Vec<F3G>,
-    pub publics: Vec<F3G>,
+    pub evals: Vec<M::FNG>,
+    pub publics: Vec<M::FNG>,
     pub rootC: Option<M::MTNode>,
     pub stark_struct: StarkStruct,
 }
@@ -193,7 +195,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         _pil: &PIL,
         stark_struct: &StarkStruct,
     ) -> Result<StarkProof<M>> {
-        let mut ctx = StarkContext::default();
+        let mut ctx = StarkContext::<M::FNG>::default();
         //log::debug!("starkinfo: {}", starkinfo);
         //log::debug!("program: {}", program);
 
@@ -207,46 +209,50 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let mut n_cm = starkinfo.n_cm1;
 
         ctx.cm1_n = cm_pols.write_buff();
-        ctx.cm2_n = vec![F3G::ZERO; (starkinfo.map_sectionsN.cm2_n) * ctx.N];
-        ctx.cm3_n = vec![F3G::ZERO; (starkinfo.map_sectionsN.cm3_n) * ctx.N];
-        ctx.tmpexp_n = vec![F3G::ZERO; (starkinfo.map_sectionsN.tmpexp_n) * ctx.N];
+        ctx.cm2_n = vec![M::FNG::ZERO; (starkinfo.map_sectionsN.cm2_n) * ctx.N];
+        ctx.cm3_n = vec![M::FNG::ZERO; (starkinfo.map_sectionsN.cm3_n) * ctx.N];
+        ctx.tmpexp_n = vec![M::FNG::ZERO; (starkinfo.map_sectionsN.tmpexp_n) * ctx.N];
 
-        ctx.cm1_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm1_n * ctx.Next];
-        ctx.cm2_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm2_n * ctx.Next];
-        ctx.cm3_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm3_n * ctx.Next];
-        ctx.cm4_2ns = vec![F3G::ZERO; starkinfo.map_sectionsN.cm4_n * ctx.Next];
-        ctx.const_2ns = vec![F3G::ZERO; const_tree.element_size()];
+        ctx.cm1_2ns = vec![M::FNG::ZERO; starkinfo.map_sectionsN.cm1_n * ctx.Next];
+        ctx.cm2_2ns = vec![M::FNG::ZERO; starkinfo.map_sectionsN.cm2_n * ctx.Next];
+        ctx.cm3_2ns = vec![M::FNG::ZERO; starkinfo.map_sectionsN.cm3_n * ctx.Next];
+        ctx.cm4_2ns = vec![M::FNG::ZERO; starkinfo.map_sectionsN.cm4_n * ctx.Next];
+        ctx.const_2ns = vec![M::FNG::ZERO; const_tree.element_size()];
 
-        ctx.q_2ns = vec![F3G::ZERO; starkinfo.q_dim * ctx.Next];
-        ctx.f_2ns = vec![F3G::ZERO; 3 * ctx.Next];
+        ctx.q_2ns = vec![M::FNG::ZERO; starkinfo.q_dim * ctx.Next];
+        ctx.f_2ns = vec![M::FNG::ZERO; 3 * ctx.Next];
 
-        ctx.x_n = vec![F3G::ZERO; ctx.N];
-        let mut xx = F3G::ONE;
-        let w_nbits = MG.0[ctx.nbits];
+        ctx.x_n = vec![M::FNG::ZERO; ctx.N];
+
+
+        let mut xx = M::FNG::ONE;
+        // Using the precomputing value
+        let w_nbits: M::FNG = M::FNG::from(MG.0[ctx.nbits]);
         for i in 0..ctx.N {
             ctx.x_n[i] = xx;
             xx = xx * w_nbits;
         }
 
         let extend_bits = ctx.nbits_ext - ctx.nbits;
-        ctx.x_2ns = vec![F3G::ZERO; ctx.N << extend_bits];
-        let mut xx = SHIFT.clone();
+        ctx.x_2ns = vec![M::FNG::ZERO; ctx.N << extend_bits];
+
+        let mut xx : M::FNG = M::FNG::from(SHIFT);
         for i in 0..(ctx.N << extend_bits) {
             ctx.x_2ns[i] = xx;
-            xx = xx * MG.0[ctx.nbits_ext];
+            xx = xx *  M::FNG::from(MG.0[ctx.nbits_ext]);
         }
 
-        ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, 0);
+        ctx.Zi = build_Zh_Inv::<M::FNG>(ctx.nbits, extend_bits, 0);
 
         ctx.const_n = const_pols.write_buff();
-        const_tree.to_f3g(&mut ctx.const_2ns);
+        const_tree.to_fng(&mut ctx.const_2ns);
 
-        ctx.publics = vec![F3G::ZERO; starkinfo.publics.len()];
+        ctx.publics = vec![M::FNG::ZERO; starkinfo.publics.len()];
         for (i, pe) in starkinfo.publics.iter().enumerate() {
             if pe.polType.as_str() == "cmP" {
                 ctx.publics[i] = ctx.cm1_n[pe.idx * starkinfo.map_sectionsN.cm1_n + pe.polId];
             } else if pe.polType.as_str() == "imP" {
-                ctx.publics[i] = Self::calculate_exp_at_point(
+                ctx.publics[i] = Self::calculate_exp_at_point::<M::FNG>(
                     &mut ctx,
                     starkinfo,
                     &program.publics_code[i],
@@ -269,7 +275,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         log::info!("Merkelizing 1....");
         let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n")?;
-        tree1.to_f3g(&mut ctx.cm1_2ns);
+        tree1.to_fng(&mut ctx.cm1_2ns);
 
         log::info!(
             "tree1 root: {}",
@@ -547,8 +553,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         })
     }
 
-    pub fn calculate_exp_at_point(
-        ctx: &mut StarkContext,
+    pub fn calculate_exp_at_point<T: FnGTrait>(
+        ctx: &mut StarkContext<T>,
         starkinfo: &StarkInfo,
         seg: &Segment,
         idx: usize,
@@ -563,25 +569,25 @@ impl<'a, M: MerkleTree> StarkProof<M> {
     }
 }
 
-pub fn build_Zh_Inv(
+pub fn build_Zh_Inv<T: FnGTrait>(
     nBits: usize,
     extend_bits: usize,
     offset: usize,
-) -> Box<dyn Fn(usize) -> F3G + 'static> {
-    let mut w = F3G::ONE;
-    let mut sn = SHIFT.clone();
+) -> Box<dyn Fn(usize) -> T + 'static> {
+    let mut w = T::ONE;
+    let mut sn = T::from(SHIFT.clone());
     for _i in 0..nBits {
         sn = sn * sn;
     }
-    let mut ZHInv = vec![F3G::ZERO; 1 << extend_bits];
+    let mut ZHInv = vec![T::ZERO; 1 << extend_bits];
     for i in 0..(1 << extend_bits) {
-        ZHInv[i] = F3G::inv(sn * w - F3G::ONE);
+        ZHInv[i] = T::inv(sn * w - T::ONE);
         w = w * MG.0[extend_bits];
     }
     Box::new(move |i: usize| ZHInv[(i + offset) % ZHInv.len()].clone())
 }
 
-fn set_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: &usize, pol: Vec<F3G>) {
+fn set_pol<F: FnGTrait>(ctx: &mut StarkContext<F>, starkinfo: &StarkInfo, id_pol: &usize, pol: Vec<F>) {
     let id_pol = *id_pol;
     let p = get_pol_ref(ctx, starkinfo, id_pol);
     if p.dim == 1 {
@@ -606,9 +612,9 @@ fn set_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: &usize, pol: V
     }
 }
 
-fn calculate_H1H2(f: Vec<F3G>, t: Vec<F3G>) -> (Vec<F3G>, Vec<F3G>) {
-    let mut idx_t: HashMap<F3G, usize> = HashMap::new();
-    let mut s: Vec<(F3G, usize)> = vec![];
+fn calculate_H1H2<F: FnGTrait>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
+    let mut idx_t: HashMap<F, usize> = HashMap::new();
+    let mut s: Vec<(F, usize)> = vec![];
 
     for (i, e) in t.iter().enumerate() {
         idx_t.insert(*e, i);
@@ -625,8 +631,8 @@ fn calculate_H1H2(f: Vec<F3G>, t: Vec<F3G>) -> (Vec<F3G>, Vec<F3G>) {
 
     s.sort_by(|a, b| a.1.cmp(&b.1));
 
-    let mut h1 = vec![F3G::ZERO; f.len()];
-    let mut h2 = vec![F3G::ZERO; f.len()];
+    let mut h1 = vec![F::ZERO; f.len()];
+    let mut h2 = vec![F::ZERO; f.len()];
     for i in 0..f.len() {
         h1[i] = s[2 * i].0;
         h2[i] = s[2 * i + 1].0;
@@ -634,22 +640,22 @@ fn calculate_H1H2(f: Vec<F3G>, t: Vec<F3G>) -> (Vec<F3G>, Vec<F3G>) {
     (h1, h2)
 }
 
-fn calculate_Z(num: Vec<F3G>, den: Vec<F3G>) -> Vec<F3G> {
+fn calculate_Z<F: FnGTrait>(num: Vec<F>, den: Vec<F>) -> Vec<F> {
     let N = num.len();
     assert_eq!(N, den.len());
-    let den_inv = F3G::batch_inverse(&den);
-    let mut z = vec![F3G::ZERO; N];
-    z[0] = F3G::ONE;
+    let den_inv = F::batch_inverse(&den);
+    let mut z = vec![F::ZERO; N];
+    z[0] = F::ONE;
     for i in 1..N {
         z[i] = z[i - 1] * (num[i - 1] * den_inv[i - 1]);
     }
 
     let check_val = z[N - 1] * (num[N - 1] * den_inv[N - 1]);
-    assert_eq!(check_val.eq(&F3G::one()), true);
+    assert_eq!(check_val.eq(&F::one()), true);
     z
 }
 
-fn get_pol_ref<'a>(ctx: &'a mut StarkContext, starkinfo: &StarkInfo, id_pol: usize) -> Polynom<'a> {
+fn get_pol_ref<'a, F: FnGTrait>(ctx: &'a mut StarkContext<F>, starkinfo: &StarkInfo, id_pol: usize) -> Polynom<'a> {
     let p = &starkinfo.var_pol_map[id_pol];
     Polynom {
         buffer: ctx.get_mut(&p.section),
@@ -660,7 +666,7 @@ fn get_pol_ref<'a>(ctx: &'a mut StarkContext, starkinfo: &StarkInfo, id_pol: usi
     }
 }
 
-pub fn get_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: usize) -> Vec<F3G> {
+pub fn get_pol<F: FnGTrait>(ctx: &mut StarkContext<F>, starkinfo: &StarkInfo, id_pol: usize) -> Vec<F3G> {
     let p = get_pol_ref(ctx, starkinfo, id_pol);
     let mut res = vec![F3G::ZERO; p.deg];
     if p.dim == 1 {
@@ -682,7 +688,7 @@ pub fn get_pol(ctx: &mut StarkContext, starkinfo: &StarkInfo, id_pol: usize) -> 
 }
 
 pub fn extend_and_merkelize<M: MerkleTree>(
-    ctx: &mut StarkContext,
+    ctx: &mut StarkContext<M::FNG>,
     starkinfo: &StarkInfo,
     section_name: &'static str,
 ) -> Result<M> {
@@ -704,7 +710,7 @@ pub fn extend_and_merkelize<M: MerkleTree>(
 }
 
 pub fn merkelize<M: MerkleTree>(
-    ctx: &mut StarkContext,
+    ctx: &mut StarkContext<M::FNG>,
     starkinfo: &StarkInfo,
     section_name: &'static str,
 ) -> Result<M> {
@@ -720,15 +726,15 @@ pub fn merkelize<M: MerkleTree>(
     Ok(tree)
 }
 
-pub fn calculate_exps(
-    ctx: &mut StarkContext,
+pub fn calculate_exps<F: FnGTrait>(
+    ctx: &mut StarkContext<F>,
     starkinfo: &StarkInfo,
     seg: &Segment,
     dom: &str,
     step: &str,
     N: usize,
 ) {
-    ctx.tmp = vec![F3G::ZERO; seg.tmp_used];
+    ctx.tmp = vec![F::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
     log::debug!(
         "calculate_exps compile_code {} ctx.first:\n{}",
@@ -753,8 +759,8 @@ pub fn calculate_exps(
     }
 }
 
-pub fn calculate_exps_parallel(
-    ctx: &mut StarkContext,
+pub fn calculate_exps_parallel<F: FnGTrait>(
+    ctx: &mut StarkContext<F>,
     starkinfo: &StarkInfo,
     seg: &Segment,
     _dom: &str,
