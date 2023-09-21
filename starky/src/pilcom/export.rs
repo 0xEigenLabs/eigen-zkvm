@@ -4,12 +4,12 @@ use std::cmp;
 use std::collections::HashMap;
 
 use crate::types::{
-    self, ConnectionIdentity, Expression as StarkyExpr, PermutationIdentity, PlookupIdentity,
-    PolIdentity, Reference, PIL,
+    ConnectionIdentity, Expression as StarkyExpr, PermutationIdentity, PlookupIdentity,
+    PolIdentity, Public, Reference, PIL,
 };
 use ast::analyzed::{
     Analyzed, BinaryOperator, Expression, FunctionValueDefinition, IdentityKind, PolyID,
-    PolynomialReference, PolynomialType, StatementIdentifier, UnaryOperator,
+    PolynomialReference, PolynomialType, Reference::*, StatementIdentifier, UnaryOperator,
 };
 
 use super::expression_counter::compute_intermediate_expression_ids;
@@ -63,7 +63,7 @@ pub fn export<T: FieldElement>(analyzed: &Analyzed<T>) -> PIL {
                 let pub_def = &analyzed.public_declarations[name];
                 let (_, expr) = exporter.polynomial_reference_to_json(&pub_def.polynomial);
                 let id = publics.len();
-                publics.push(crate::types::Public {
+                publics.push(Public {
                     polType: polynomial_reference_type_to_type(&expr.op).to_string(),
                     polId: expr.id.unwrap(),
                     idx: pub_def.index as usize,
@@ -124,7 +124,7 @@ pub fn export<T: FieldElement>(analyzed: &Analyzed<T>) -> PIL {
             }
         }
     }
-    let pil = PIL {
+    PIL {
         nCommitments: analyzed.commitment_count(),
         nQ: exporter.number_q as usize,
         nIm: analyzed.intermediate_count(),
@@ -138,72 +138,7 @@ pub fn export<T: FieldElement>(analyzed: &Analyzed<T>) -> PIL {
         connectionIdentities: Some(connection_identities),
         cm_dims: Vec::new(),
         q2exp: Vec::new(),
-    };
-
-    /*
-    if pil.nIm == 0 {
-        pil.nIm = 1;
-
-        let zero =
-            types::Expression::new("number".to_string(), 0, None, Some("0".to_string()), None);
-
-        let zero_id = pil.expressions.len();
-        pil.expressions.push(zero);
-
-        pil.references.insert(
-            "main.dummy_im".to_string(),
-            Reference {
-                polType: None,
-                type_: "imP".to_string(),
-                id: zero_id,
-                polDeg: 4,
-                isArray: false,
-                elementType: None,
-                len: None,
-            },
-        );
-
-        let eq = types::Expression::new(
-            "sub".to_string(),
-            1,
-            None,
-            None,
-            Some(vec![
-                types::Expression::new("cm".to_string(), 1, Some(0), None, None),
-                types::Expression::new(
-                    "add".to_string(),
-                    1,
-                    None,
-                    None,
-                    Some(vec![
-                        types::Expression::new("cm".to_string(), 1, Some(0), None, None),
-                        types::Expression::new(
-                            "exp".to_string(),
-                            1,
-                            Some(zero_id),
-                            None,
-                            None,
-                        ),
-                    ]),
-                ),
-            ]),
-        );
-
-        pil.expressions.push(eq);
-        let eq_id = pil.expressions.len();
-
-        pil.polIdentities.push(PolIdentity {
-            //e: eq_id,
-            e: pil.polIdentities.len(),
-            fileName: "input".to_string(),
-            line: 0,
-        });
     }
-
-    println!("{pil}");
-    */
-
-    pil
 }
 
 fn polynomial_type_to_json_string(t: PolynomialType) -> &'static str {
@@ -302,10 +237,8 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
                     ..DEFAULT_EXPR
                 },
             ),
-            Expression::PolynomialReference(reference) => {
-                self.polynomial_reference_to_json(reference)
-            }
-            Expression::LocalVariableReference(_) => {
+            Expression::Reference(Poly(reference)) => self.polynomial_reference_to_json(reference),
+            Expression::Reference(LocalVar(_)) => {
                 panic!("No local variable references allowed here.")
             }
             Expression::PublicReference(name) => (
@@ -385,13 +318,14 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
                     UnaryOperator::LogicalNot => panic!("Operator {op} not allowed here."),
                 }
             }
-            Expression::FunctionCall(_, _) => {
-                panic!("No function calls allowed here.")
-            }
+            Expression::FunctionCall(_) => panic!("No function calls allowed here."),
             Expression::String(_) => panic!("Strings not allowed here."),
             Expression::Tuple(_) => panic!("Tuples not allowed here"),
             Expression::MatchExpression(_, _) => {
                 panic!("No match expressions allowed here.")
+            }
+            Expression::FreeInput(_) => {
+                panic!("No free input expressions allowed here.")
             }
         }
     }
