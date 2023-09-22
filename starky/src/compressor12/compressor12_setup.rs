@@ -40,8 +40,7 @@ pub fn setup(
     write!(file, "{}", res.pil_str).unwrap();
 
     // 3. write const pols file
-    let mut file = File::create(const_file).unwrap();
-    // write!(file, "{}", res.const_pols).unwrap();
+    res.const_pols.save(const_file)?;
 
     // 4. construct and save ExecFile: plonk additions + sMap -> BigUint64Array
     write_exec_file(exec_file, &res.plonk_additions, &res.s_map);

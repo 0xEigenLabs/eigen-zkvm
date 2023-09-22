@@ -4,6 +4,7 @@ use crate::errors::EigenError;
 use crate::io_utils::read_vec_from_file;
 use crate::pilcom::compile_pil_from_path;
 use crate::polsarray::{Pol, PolKind, PolsArray};
+use num_traits::Zero;
 use number::BigInt;
 use plonky::field_gl::Fr as FGL;
 use plonky::witness::{load_input_for_witness, WitnessCalculator};
@@ -42,7 +43,14 @@ pub fn exec(
     let w = wtns.calculate_witness(inputs, false).unwrap();
     let mut w = w
         .iter()
-        .map(|wi| FGL::from(wi.to_u64_digits().1[0]))
+        .map(|wi| {
+            if wi.is_zero() {
+                FGL::ZERO
+            } else {
+                assert_eq!(wi.to_u64_digits().1.len() < 2, true);
+                FGL::from(wi.to_u64_digits().1[0])
+            }
+        })
         .collect::<Vec<_>>();
 
     for i in 0..adds_len {
