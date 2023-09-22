@@ -71,8 +71,8 @@ pub fn biguint_to_fr(f: &BigUint) -> Fr {
     Fr::from_str(&f.to_string()).unwrap()
 }
 
-use std::fmt::Debug;
-pub fn pretty_print_array<T: Debug>(cols: &Vec<T>) -> String {
+use std::fmt::{Debug, Display};
+pub fn pretty_print_array<T: Debug + Display>(cols: &Vec<T>) -> String {
     let mut msg = String::new();
     writeln!(&mut msg, "array size: {}", cols.len()).unwrap();
     writeln!(&mut msg, "[").unwrap();

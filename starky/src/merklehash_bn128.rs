@@ -149,7 +149,7 @@ impl MerkleTree for MerkleTreeBN128 {
     type BaseField = Fr;
     type MTNode = ElementDigest<4>;
     type FNG = F3G;
-    
+
     fn new() -> Self {
         Self {
             nodes: Vec::new(),
@@ -165,7 +165,7 @@ impl MerkleTree for MerkleTreeBN128 {
         return self.elements.len();
     }
 
-    fn to_fng(&self, p_be:&mut Vec<F3G>) {
+    fn to_fng(&self, p_be: &mut Vec<F3G>) {
         assert_eq!(p_be.len(), self.elements.len());
         p_be.par_iter_mut()
             .zip(&self.elements)

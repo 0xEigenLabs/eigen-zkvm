@@ -8,9 +8,9 @@ use crate::stark_gen::StarkProof;
 use crate::starkinfo::Program;
 use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::{Node, Section};
+use crate::traits::FnG;
 use crate::traits::{MTNodeType, MerkleTree, Transcript};
 use crate::types::StarkStruct;
-use crate::traits::FnG;
 use plonky::field_gl::Fr as FGL;
 use std::collections::HashMap;
 
@@ -66,15 +66,15 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     ctx.challenge[6] = transcript.get_field(); // v2
 
     let x_n = ctx.challenge[7].exp(ctx.N);
-    ctx.Z = x_n - F3G::ONE;
-    ctx.Zp = (ctx.challenge[7] * MG.0[ctx.nbits]).exp(ctx.N) - F3G::ONE;
+    ctx.Z = x_n - M::FNG::ONE;
+    ctx.Zp = (ctx.challenge[7] * M::FNG::from(MG.0[ctx.nbits])).exp(ctx.N) - M::FNG::ONE;
 
     log::debug!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);
     log::debug!("starkinfo: {}", starkinfo);
 
-    let mut x_acc = F3G::ONE;
-    let mut q = F3G::ZERO;
+    let mut x_acc = M::FNG::ONE;
+    let mut q = M::FNG::ZERO;
     for i in 0..starkinfo.q_deg {
         q = q + x_acc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
         x_acc = x_acc * x_n;
@@ -89,7 +89,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
 
     let fri = FRI::new(stark_struct);
     let check_query =
-        |query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>, idx: usize| -> Result<Vec<F3G>> {
+        |query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>, idx: usize| -> Result<Vec<M::FNG>> {
             log::info!("Query: {}", idx);
             let tree = M::new();
             let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
@@ -123,10 +123,11 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
             ctx_query.publics = ctx.publics.clone();
             ctx_query.challenge = ctx.challenge.clone();
 
-            let x = SHIFT.clone() * (MG.0[ctx.nbits + extend_bits].exp(idx));
+            let x = M::FNG::from(SHIFT.clone())
+                * (M::FNG::from(MG.0[ctx.nbits + extend_bits]).exp(idx));
             ctx_query.xDivXSubXi = (x / (x - ctx_query.challenge[7])).as_elements();
             ctx_query.xDivXSubWXi =
-                (x / (x - (ctx_query.challenge[7] * MG.0[ctx.nbits]))).as_elements();
+                (x / (x - (ctx_query.challenge[7] * M::FNG::from(MG.0[ctx.nbits])))).as_elements();
 
             let vals = vec![execute_code(
                 &mut ctx_query,
@@ -139,21 +140,22 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     fri.verify(&mut transcript, &proof.fri_proof, check_query)
 }
 
-fn execute_code<F:FnG>(ctx: &mut StarkContext<F>, code: &mut Vec<Section>) -> F3G {
-    let mut tmp: HashMap<usize, F3G> = HashMap::new();
+fn execute_code<F: FnG>(ctx: &mut StarkContext<F>, code: &mut Vec<Section>) -> F {
+    let mut tmp: HashMap<usize, F> = HashMap::new();
 
-    let extract_val = |arr: &Vec<FGL>, pos: usize, dim: usize| -> F3G {
+    let extract_val = |arr: &Vec<FGL>, pos: usize, dim: usize| -> F {
         match dim {
-            1 => F3G::from(arr[pos]),
+            1 => F::from(arr[pos]),
             3 => {
                 let r = &arr[pos..(pos + 3)];
-                F3G::new(r[0], r[1], r[2])
+                F::from_vec(vec![r[0], r[1], r[2]])
             }
+            // TODO: Support F5G
             _ => panic!("Invalid dimension"),
         }
     };
 
-    let get_ref = |r: &Node, tmp: &HashMap<usize, F3G>| -> F3G {
+    let get_ref = |r: &Node, tmp: &HashMap<usize, F>| -> F {
         let t = match r.type_.as_str() {
             "tmp" => *tmp.get(&r.id).unwrap(),
             "tree1" => extract_val(&ctx.tree1, r.tree_pos, r.dim),
@@ -162,11 +164,20 @@ fn execute_code<F:FnG>(ctx: &mut StarkContext<F>, code: &mut Vec<Section>) -> F3
             "tree4" => extract_val(&ctx.tree4, r.tree_pos, r.dim),
             "const" => ctx.consts[r.id].into(),
             "eval" => ctx.evals[r.id],
-            "number" => F3G::from(r.value.clone().unwrap().parse::<u64>().unwrap()),
+            "number" => F::from(r.value.clone().unwrap().parse::<u64>().unwrap()),
             "public" => ctx.publics[r.id],
             "challenge" => ctx.challenge[r.id],
-            "xDivXSubXi" => F3G::new(ctx.xDivXSubXi[0], ctx.xDivXSubXi[1], ctx.xDivXSubXi[2]),
-            "xDivXSubWXi" => F3G::new(ctx.xDivXSubWXi[0], ctx.xDivXSubWXi[1], ctx.xDivXSubWXi[2]),
+            // TODO: Support F5G
+            "xDivXSubXi" => F::from_vec(vec![
+                ctx.xDivXSubXi[0],
+                ctx.xDivXSubXi[1],
+                ctx.xDivXSubXi[2],
+            ]),
+            "xDivXSubWXi" => F::from_vec(vec![
+                ctx.xDivXSubWXi[0],
+                ctx.xDivXSubWXi[1],
+                ctx.xDivXSubWXi[2],
+            ]),
             "x" => ctx.challenge[7],
             "Z" => {
                 if r.prime {
@@ -181,7 +192,7 @@ fn execute_code<F:FnG>(ctx: &mut StarkContext<F>, code: &mut Vec<Section>) -> F3
         t
     };
 
-    let set_ref = |r: &mut Node, val: F3G, tmp: &mut HashMap<usize, F3G>| match r.type_.as_str() {
+    let set_ref = |r: &mut Node, val: F, tmp: &mut HashMap<usize, F>| match r.type_.as_str() {
         "tmp" => {
             //log::debug!("verify set ref {} {}", r.id, val);
             tmp.insert(r.id, val);
@@ -192,7 +203,7 @@ fn execute_code<F:FnG>(ctx: &mut StarkContext<F>, code: &mut Vec<Section>) -> F3
     };
 
     for i in 0..code.len() {
-        let mut src: Vec<F3G> = vec![];
+        let mut src: Vec<F> = vec![];
         for s in code[i].src.iter() {
             src.push(get_ref(s, &tmp));
         }

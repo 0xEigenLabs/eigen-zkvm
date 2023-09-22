@@ -6,8 +6,8 @@ use crate::ff::Field;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::helper::{biguint_to_be, fr_to_biguint};
 use crate::poseidon_bn128_opt::Poseidon;
-use crate::traits::MTNodeType;
 use crate::traits::Transcript;
+use crate::traits::{FnG, MTNodeType};
 use ff::*;
 use num_bigint::BigUint;
 use plonky::field_gl::Fr as FGL;
@@ -52,6 +52,7 @@ impl TranscriptBN128 {
 }
 
 impl Transcript for TranscriptBN128 {
+    // TODO:Check the type F is equal to F3G
     fn new() -> Self {
         Self {
             state: Fr::zero(),
@@ -62,11 +63,11 @@ impl Transcript for TranscriptBN128 {
         }
     }
 
-    fn get_field(&mut self) -> F3G {
+    fn get_field<F: FnG>(&mut self) -> F {
         let a = self.get_fields1().unwrap();
         let b = self.get_fields1().unwrap();
         let c = self.get_fields1().unwrap();
-        F3G::new(a, b, c)
+        F::from_vec(vec![a, b, c])
     }
 
     fn get_fields1(&mut self) -> Result<FGL> {

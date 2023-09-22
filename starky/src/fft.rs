@@ -2,12 +2,13 @@
 use crate::constant::MG;
 use crate::f3g::F3G;
 use crate::helper::log2_any;
+use crate::traits::FnG;
 
-pub struct FFT {
-    pub roots: Vec<Vec<F3G>>,
+pub struct FFT<F: FnG> {
+    pub roots: Vec<Vec<F>>,
 }
 
-impl FFT {
+impl<F: FnG> FFT<F> {
     pub fn new() -> Self {
         let s = 32;
         let mut self_ = FFT {
@@ -20,12 +21,12 @@ impl FFT {
     fn set_roots(&mut self, s: usize) {
         let mut i = s;
         while !(i > self.roots.len() && self.roots[i].len() > 0) {
-            let mut r = F3G::ONE;
+            let mut r = F::ONE;
             let nroots = 1 << i;
-            self.roots[i] = vec![F3G::ZERO; nroots];
+            self.roots[i] = vec![F::ZERO; nroots];
             for j in 0..nroots {
                 self.roots[i][j] = r;
-                r = r * MG.0[i];
+                r = r * F::from(MG.0[i]);
             }
             if i == 0 {
                 break;
@@ -34,7 +35,7 @@ impl FFT {
         }
     }
 
-    pub fn fft(&mut self, p: &Vec<F3G>) -> Vec<F3G> {
+    pub fn fft(&mut self, p: &Vec<F>) -> Vec<F> {
         if p.len() <= 1 {
             return p.clone();
         }
@@ -45,7 +46,7 @@ impl FFT {
         if p.len() != n {
             panic!("Size must be multiple of 2")
         }
-        let mut buff = vec![F3G::ZERO; n];
+        let mut buff = vec![F::ZERO; n];
         for i in 0..p.len() {
             let r = (i as u32).reverse_bits() >> (32 - bits);
             buff[r as usize] = p[i];
@@ -56,7 +57,7 @@ impl FFT {
             let mdiv2 = m >> 1;
             let winc = self.roots[s][1];
             for k in (0..n).step_by(m) {
-                let mut w = F3G::ONE;
+                let mut w = F::ONE;
                 for j in 0..mdiv2 {
                     let t = w * buff[k + j + mdiv2];
                     let u = buff[k + j];
@@ -69,11 +70,11 @@ impl FFT {
         buff
     }
 
-    pub fn ifft(&mut self, p: &Vec<F3G>) -> Vec<F3G> {
+    pub fn ifft(&mut self, p: &Vec<F>) -> Vec<F> {
         let q = self.fft(p);
         let n = p.len();
-        let n2inv = F3G::from(p.len()).inv();
-        let mut res = vec![F3G::ZERO; q.len()];
+        let n2inv = F::from(p.len()).inv();
+        let mut res = vec![F::ZERO; q.len()];
         for i in 0..n {
             res[(n - i) % n] = q[i] * n2inv;
         }

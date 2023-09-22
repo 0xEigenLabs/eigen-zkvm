@@ -17,7 +17,7 @@ pub trait MerkleTree {
         + Default
         + core::fmt::Debug
         + Into<crate::serializer::Input<Self::MTNode>>;
-    type FNG:FnG;
+    type FNG: FnG;
     fn new() -> Self;
     fn to_fng(&self, p_be: &mut Vec<Self::FNG>);
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()>;
@@ -37,24 +37,54 @@ pub trait MerkleTree {
 
 pub trait Transcript {
     fn new() -> Self;
-    fn get_field(&mut self) -> F3G;
+    fn get_field<F: FnG>(&mut self) -> F;
     fn get_fields1(&mut self) -> Result<FGL>;
     fn put(&mut self, es: &[Vec<FGL>]) -> Result<()>;
     fn get_permutations(&mut self, n: usize, nbits: usize) -> Result<Vec<usize>>;
 }
 
-use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use ::rand::Rand;
-use std::hash::Hash;
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use plonky::field_gl::Fr;
 use plonky::Field;
-use std::fmt::Debug;
+use serde::ser::Serialize;
+use std::fmt::{Debug, Display};
+use std::hash::Hash;
 
-pub trait FnG: From<Fr> + From<u64> + From<i32> + From<usize> +  Debug + Hash + Copy + Clone + PartialEq + Eq + Default + Add + AddAssign+ Div + DivAssign + Mul<Output=Self> + MulAssign + Neg + Sub + SubAssign +Rand {
-// pub trait FnG:Field{
-    const ZERO:Self;
-    const ONE:Self;
-    // // fn new(a: Fr, b: Fr, c: Fr) -> Self;
+pub trait FnG:
+    From<Fr>
+    + From<u64>
+    + From<i32>
+    + From<usize>
+    + Debug
+    + Hash
+    + Copy
+    + Clone
+    + PartialEq
+    + Eq
+    + Default
+    + Add<Output = Self>
+    + AddAssign
+    + Div<Output = Self>
+    + DivAssign
+    + Mul<Output = Self>
+    + MulAssign
+    + Neg<Output = Self>
+    + Sub<Output = Self>
+    + SubAssign
+    + Rand
+    + Display
+    + Send
+    + Sync
+    + Field
+    + Serialize
+{
+    // pub trait FnG:Field{
+    const ZERO: Self;
+    const ONE: Self;
+    const NEW_SIZE: u64 = 0;
+    fn dim(&self) -> usize;
+    fn from_vec(values: Vec<Fr>) -> Self;
     fn to_be(&self) -> Fr;
     fn as_elements(&self) -> Vec<Fr>;
     fn mul_scalar(self, b: usize) -> Self;
@@ -69,6 +99,5 @@ pub trait FnG: From<Fr> + From<u64> + From<i32> + From<usize> +  Debug + Hash + 
     fn as_int(&self) -> u64;
     fn elements_as_bytes(elements: &[Self]) -> &[u8];
     fn as_bytes(&self) -> &[u8];
-    // Implement From Traits 
+    // Implement From Traits
 }
-

@@ -7,14 +7,14 @@ use crate::ElementDigest;
 use ff::*;
 //use rayon::prelude::*;
 // ToDo: how to make sure the OFFSET constant is correctly initialized
-use crate::constant::{BLS_OFFSET_2_192,BLS_OFFSET_2_128, BLS_OFFSET_2_64};
+use crate::constant::{BLS_OFFSET_2_128, BLS_OFFSET_2_192, BLS_OFFSET_2_64};
 use plonky::field_gl::Fr as FGL;
 
 #[derive(Default)]
 pub struct LinearHashBLS12381 {
     h: Poseidon,
 }
-const ElementSize:usize = 6;
+const ElementSize: usize = 6;
 impl LinearHashBLS12381 {
     pub fn new() -> Self {
         LinearHashBLS12381 { h: Poseidon::new() }
@@ -34,7 +34,7 @@ impl LinearHashBLS12381 {
                     e.mul_assign(&BLS_OFFSET_2_64);
                 } else if accN == 2 {
                     e.mul_assign(&BLS_OFFSET_2_128);
-                } else if accN == 3 { 
+                } else if accN == 3 {
                     e.mul_assign(&BLS_OFFSET_2_192);
                 }
                 // TODO: how to deal mul

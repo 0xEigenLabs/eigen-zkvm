@@ -7,6 +7,7 @@ use crate::pil2circom::StarkOption;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::Node;
 use crate::starkinfo_codegen::Section;
+use crate::traits::FnG;
 use crate::traits::MTNodeType;
 use crate::types::{StarkStruct, PIL};
 
@@ -1382,10 +1383,12 @@ template StarkVerifier() {{
             s
         ));
 
-        let e1 = (SHIFT.exp(1 << stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits)
-            * MG.0[stark_struct.steps[s - 1].nBits])
-            .inv();
-        let e0 = (SHIFT.exp(1 << (stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits))).inv();
+        let e1 = (F3G::from(SHIFT.clone()))
+            .exp(1 << stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits)
+            * F3G::from(MG.0[stark_struct.steps[s - 1].nBits].clone()).inv();
+        let e0 = (F3G::from(SHIFT.clone())
+            .exp(1 << (stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits)))
+        .inv();
 
         res.push_str(&format!(
             r#"
@@ -1425,8 +1428,10 @@ template StarkVerifier() {{
         s{}_X[q] <== {} *  ( ys[q][0] * {} +1);
         "#,
                 s,
-                (SHIFT.exp(1 << stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits)).inv(),
-                MG.0[stark_struct.steps[s - 1].nBits] - F3G::ONE
+                (F3G::from(SHIFT.clone())
+                    .exp(1 << stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits))
+                .inv(),
+                F3G::from(MG.0[stark_struct.steps[s - 1].nBits]) - F3G::ONE
             ));
         }
 

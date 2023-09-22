@@ -1,9 +1,10 @@
 #![allow(dead_code)]
+use crate::traits::FnG;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use plonky::field_gl::Fr;
 use plonky::Field;
 use std::hash::{Hash, Hasher};
-use std::slice;
+use std::{slice, usize};
 
 use core::fmt::{Display, Formatter};
 /// GF(2^3) implementation
@@ -33,15 +34,40 @@ impl F3G {
             dim: 3,
         }
     }
+}
+
+impl FnG for F3G {
+    const ZERO: Self = Self {
+        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
+        dim: 1,
+    };
+    const ONE: Self = Self {
+        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
+        dim: 1,
+    };
 
     #[inline(always)]
-    pub fn to_be(&self) -> Fr {
+    fn dim(&self) -> usize {
+        self.dim
+    }
+
+    #[inline(always)]
+    fn from_vec(values: Vec<Fr>) -> Self {
+        assert_eq!(values.len(), 3);
+        Self {
+            cube: [values[0], values[1], values[2]],
+            dim: 3,
+        }
+    }
+
+    #[inline(always)]
+    fn to_be(&self) -> Fr {
         assert_eq!(self.dim, 1);
         self.as_elements()[0]
     }
 
     #[inline(always)]
-    pub fn as_elements(&self) -> Vec<Fr> {
+    fn as_elements(&self) -> Vec<Fr> {
         let elements = &[self.cube];
         let ptr = elements.as_ptr();
         let len = elements.len() * self.dim;
@@ -50,7 +76,7 @@ impl F3G {
     }
 
     #[inline]
-    pub fn mul_scalar(self, b: usize) -> Self {
+    fn mul_scalar(self, b: usize) -> Self {
         let b = Fr::from(b as u64);
         let elems = self.as_elements();
         if self.dim == 1 {
@@ -76,7 +102,7 @@ impl F3G {
     }
 
     #[inline]
-    pub fn gt(self, rhs: &Self) -> bool {
+    fn gt(self, rhs: &Self) -> bool {
         assert_eq!(self.dim, rhs.dim); // FIXME: align with JS
         let les = self.as_elements();
         let res = rhs.as_elements();
@@ -94,22 +120,22 @@ impl F3G {
     }
 
     #[inline]
-    pub fn geq(self, rhs: &Self) -> bool {
+    fn geq(self, rhs: &Self) -> bool {
         self.eq(rhs) || self.gt(rhs)
     }
 
     #[inline]
-    pub fn lt(self, rhs: &Self) -> bool {
+    fn lt(self, rhs: &Self) -> bool {
         !self.geq(rhs)
     }
 
     #[inline]
-    pub fn leq(self, rhs: &Self) -> bool {
+    fn leq(self, rhs: &Self) -> bool {
         !self.gt(rhs)
     }
 
     #[inline]
-    pub fn exp(self, e_: usize) -> Self {
+    fn exp(self, e_: usize) -> Self {
         let mut e = e_;
         if e == 0 {
             return Self::ONE;
@@ -140,7 +166,22 @@ impl F3G {
     }
 
     #[inline]
-    pub fn batch_inverse(elems: &[Self]) -> Vec<Self> {
+    fn inv(self) -> Self {
+        self._inv()
+    }
+
+    #[inline]
+    fn as_int(&self) -> u64 {
+        self._as_int()
+    }
+
+    #[inline]
+    fn elements_as_bytes(elements: &[Self]) -> &[u8] {
+        Self::_elements_as_bytes(elements)
+    }
+
+    #[inline]
+    fn batch_inverse(elems: &[Self]) -> Vec<Self> {
         if elems.len() == 0 {
             return vec![];
         }
@@ -158,6 +199,11 @@ impl F3G {
         }
         res[0] = z;
         res
+    }
+
+    fn as_bytes(&self) -> &[u8] {
+        let self_ptr: *const Self = self;
+        unsafe { slice::from_raw_parts(self_ptr as *const u8, Self::ELEMENT_BYTES * self.dim) }
     }
 }
 
@@ -546,7 +592,7 @@ impl F3G {
     const IS_CANONICAL: bool = false;
 
     #[inline]
-    pub fn as_int(&self) -> u64 {
+    pub fn _as_int(&self) -> u64 {
         /*
         if self.dim == 1 {
             self.to_be().as_int()
@@ -557,7 +603,7 @@ impl F3G {
         self.as_elements()[0].as_int()
     }
 
-    pub fn inv(self) -> Self {
+    pub fn _inv(self) -> Self {
         match self.dim {
             3 => {
                 let a = self.cube;
@@ -596,7 +642,7 @@ impl F3G {
         }
     }
 
-    pub fn elements_as_bytes(elements: &[Self]) -> &[u8] {
+    pub fn _elements_as_bytes(elements: &[Self]) -> &[u8] {
         // TODO: take endianness into account.
         let p = elements.as_ptr();
         let len = elements.len() * Self::ELEMENT_BYTES;
@@ -621,16 +667,10 @@ impl Display for F3G {
     }
 }
 
-impl F3G {
-    fn as_bytes(&self) -> &[u8] {
-        let self_ptr: *const Self = self;
-        unsafe { slice::from_raw_parts(self_ptr as *const u8, Self::ELEMENT_BYTES * self.dim) }
-    }
-}
-
 #[cfg(test)]
 pub mod tests {
     use crate::f3g::F3G;
+    use crate::traits::FnG;
     use plonky::field_gl::Fr;
     use plonky::Field;
     use std::ops::{Add, Mul};

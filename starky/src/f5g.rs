@@ -1,10 +1,10 @@
 #![allow(dead_code)]
+use crate::traits::FnG;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use plonky::field_gl::Fr;
 use plonky::Field;
 use std::hash::{Hash, Hasher};
 use std::slice;
-use crate::traits::FnG;
 
 use core::fmt::{Display, Formatter};
 /// Prime: 0xFFFFFFFF00000001
@@ -41,6 +41,20 @@ impl FnG for F5G {
         cube: [Fr::ONE, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
         dim: 1,
     };
+
+    #[inline(always)]
+    fn dim(&self) -> usize {
+        self.dim
+    }
+
+    #[inline(always)]
+    fn from_vec(values: Vec<Fr>) -> Self {
+        assert_eq!(values.len(), 5);
+        Self {
+            cube: [values[0], values[1], values[2], values[3], values[4]],
+            dim: 5,
+        }
+    }
 
     #[inline(always)]
     fn to_be(&self) -> Fr {
@@ -179,12 +193,12 @@ impl FnG for F5G {
 
     #[inline]
     fn as_int(&self) -> u64 {
-        self.as_int()
+        self._as_int()
     }
 
     #[inline]
     fn elements_as_bytes(elements: &[Self]) -> &[u8] {
-        Self::elements_as_bytes(elements)
+        Self::_elements_as_bytes(elements)
     }
 
     #[inline]
@@ -614,7 +628,6 @@ impl From<[u8; 8]> for F5G {
 const ELEMENT_BYTES: usize = core::mem::size_of::<u64>();
 
 impl F5G {
-
     const ELEMENT_BYTES: usize = ELEMENT_BYTES;
     const IS_CANONICAL: bool = false;
 
@@ -756,6 +769,7 @@ impl F5G {
 #[cfg(test)]
 pub mod tests {
     use crate::f5g::F5G;
+    use crate::traits::FnG;
     use plonky::field_gl::Fr;
     use plonky::Field;
     use std::ops::{Add, Mul};
@@ -771,6 +785,7 @@ pub mod tests {
             )
         }
     }
+
     #[test]
     fn test_f5g_add() {
         let mut f1 = F5G::new(

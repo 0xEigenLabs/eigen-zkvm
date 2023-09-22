@@ -10,8 +10,8 @@ mod compressor12;
 pub use compressor12::*;
 
 pub mod linearhash;
-pub mod linearhash_bn128;
 pub mod linearhash_bls12381;
+pub mod linearhash_bn128;
 
 mod field_bn128;
 mod poseidon_bn128;
@@ -28,8 +28,8 @@ mod poseidon_bls12381_constants_opt;
 pub mod poseidon_bls12381_opt;
 
 pub mod merklehash;
-pub mod merklehash_bn128;
 pub mod merklehash_bls12381;
+pub mod merklehash_bn128;
 
 mod digest;
 pub use digest::ElementDigest;

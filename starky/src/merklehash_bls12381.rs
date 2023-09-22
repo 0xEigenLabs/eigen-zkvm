@@ -13,7 +13,7 @@ use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use std::time::Instant;
 
-const ElementSize:usize = 6;
+const ElementSize: usize = 6;
 
 #[derive(Default)]
 pub struct MerkleTreeBLS12381 {
@@ -82,7 +82,8 @@ impl MerkleTreeBLS12381 {
             buff_in.len()
         );
         let n_ops = buff_in.len() / 16;
-        let mut buff_out64: Vec<ElementDigest<ElementSize>> = vec![ElementDigest::<ElementSize>::default(); n_ops];
+        let mut buff_out64: Vec<ElementDigest<ElementSize>> =
+            vec![ElementDigest::<ElementSize>::default(); n_ops];
         buff_out64
             .iter_mut()
             .zip((0..n_ops).into_iter())
@@ -143,7 +144,12 @@ impl MerkleTreeBLS12381 {
         vals: &Vec<FGL>,
     ) -> Result<ElementDigest<ElementSize>> {
         let h = self.h.hash_element_matrix(&vec![vals.to_vec()])?;
-        self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::<ElementSize>::from_scalar(&h), 0)
+        self.merkle_calculate_root_from_proof(
+            mp,
+            idx,
+            &ElementDigest::<ElementSize>::from_scalar(&h),
+            0,
+        )
     }
 }
 

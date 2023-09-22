@@ -1,9 +1,7 @@
 #![allow(non_snake_case)]
-use crate::types::PIL;
+use crate::{traits::FnG, types::PIL};
 use std::collections::HashMap;
 use std::fs::File;
-
-use crate::f3g::F3G;
 
 use std::io::{Read, Write};
 
@@ -238,11 +236,11 @@ impl PolsArray {
         Ok(())
     }
 
-    pub fn write_buff(&self) -> Vec<F3G> {
-        let mut buff: Vec<F3G> = vec![];
+    pub fn write_buff<T: FnG>(&self) -> Vec<T> {
+        let mut buff: Vec<T> = vec![];
         for i in 0..self.n {
             for j in 0..self.nPols {
-                buff.push(F3G::from(self.array[j][i]));
+                buff.push(T::from(self.array[j][i]));
             }
         }
         buff

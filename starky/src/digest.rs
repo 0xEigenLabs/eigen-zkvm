@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
-use crate::field_bn128::{Fr, FrRepr};
 use crate::field_bls12381::{Fr as BlsFr, FrRepr as BlsFrRepr};
+use crate::field_bn128::{Fr, FrRepr};
 use crate::traits::MTNodeType;
 use ff::*;
 use plonky::field_gl::Fr as FGL;
