@@ -251,7 +251,7 @@ struct Compresor12SetupOpt {
     pil_file: String, // Proposed PIL
     #[arg(long = "e", default_value = "mycircuit.c12.exec")]
     exec_file: String, // File required to execute
-    #[arg(long, default_value = "23")]
+    #[arg(long, default_value = "0")]
     force_n_bits: usize,
 }
 

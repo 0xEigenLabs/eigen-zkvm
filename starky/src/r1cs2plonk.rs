@@ -3,7 +3,7 @@ use plonky::circom_circuit::Constraint;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::{Fr, GL};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::ops::Neg;
 
 #[derive(Debug)]
@@ -54,13 +54,13 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
     let mut plonk_constraints: Vec<PlonkGate> = vec![];
     let mut plonk_additions: Vec<PlonkAdd> = vec![];
 
-    let normalize = |lc: &mut HashMap<usize, FGL>| {
+    let normalize = |lc: &mut BTreeMap<usize, FGL>| {
         lc.retain(|_, v| *v != FGL::ZERO);
     };
 
     let join =
-        |lc1: &HashMap<usize, FGL>, k: &FGL, lc2: &HashMap<usize, FGL>| -> HashMap<usize, FGL> {
-            let mut res: HashMap<usize, FGL> = HashMap::new();
+        |lc1: &BTreeMap<usize, FGL>, k: &FGL, lc2: &BTreeMap<usize, FGL>| -> BTreeMap<usize, FGL> {
+            let mut res: BTreeMap<usize, FGL> = BTreeMap::new();
             for (key, val) in lc1.iter() {
                 if res.get(&key).is_none() {
                     res.insert(*key, *k * (*val));
@@ -82,7 +82,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
             res
         };
 
-    let reduce_coefs = |lc: &HashMap<usize, FGL>,
+    let reduce_coefs = |lc: &BTreeMap<usize, FGL>,
                         max_c: usize,
                         pc: &mut Vec<PlonkGate>,
                         pa: &mut Vec<PlonkAdd>,
@@ -131,9 +131,9 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
         res
     };
 
-    let add_constraint_mul = |la: &HashMap<usize, FGL>,
-                              lb: &HashMap<usize, FGL>,
-                              lc: &HashMap<usize, FGL>,
+    let add_constraint_mul = |la: &BTreeMap<usize, FGL>,
+                              lb: &BTreeMap<usize, FGL>,
+                              lc: &BTreeMap<usize, FGL>,
                               pc: &mut Vec<PlonkGate>,
                               pa: &mut Vec<PlonkAdd>,
                               n_var: &mut usize| {
@@ -152,7 +152,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
         pc.push(PlonkGate(sl, sr, so, qm, ql, qr, qo, qc));
     };
 
-    let add_constraint_sum = |lc: &HashMap<usize, FGL>,
+    let add_constraint_sum = |lc: &BTreeMap<usize, FGL>,
                               pc: &mut Vec<PlonkGate>,
                               pa: &mut Vec<PlonkAdd>,
                               n_var: &mut usize| {
@@ -168,16 +168,17 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
         pc.push(PlonkGate(sl, sr, so, qm, ql, qr, qo, qc));
     };
 
-    let to_be_map = |lc: &Vec<(usize, Fr)>| -> HashMap<usize, FGL> {
-        let mut res: HashMap<usize, FGL> = HashMap::new();
+    let to_be_map = |lc: &Vec<(usize, Fr)>| -> BTreeMap<usize, FGL> {
+        let mut res: BTreeMap<usize, FGL> = BTreeMap::new();
         for c in lc.iter() {
             assert!(res.get(&c.0).is_none());
-            res.insert(c.0, FGL::from(c.1 .0 .0[0]));
+            //res.insert(c.0, FGL::from(c.1 .0 .0[0]));
+            res.insert(c.0, c.1);
         }
         res
     };
 
-    let get_lc_type = |lc: &mut HashMap<usize, FGL>| -> String {
+    let get_lc_type = |lc: &mut BTreeMap<usize, FGL>| -> String {
         let mut k = FGL::ZERO;
         let mut n = 0;
         for (key, val) in lc.iter() {
@@ -206,10 +207,8 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
             let mut lc_a = to_be_map(&c.0);
             let mut lc_b = to_be_map(&c.1);
             let mut lc_c = to_be_map(&c.2);
-
             let lca = get_lc_type(&mut lc_a);
             let lcb = get_lc_type(&mut lc_b);
-            //println!("process {} {}", lca, lcb);
             if lca.as_str() == "0" || lcb.as_str() == "0" {
                 normalize(&mut lc_c);
                 add_constraint_sum(&lc_c, pc, pa, n_var);

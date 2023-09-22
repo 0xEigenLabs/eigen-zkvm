@@ -10,9 +10,10 @@ use array_tool::vec::Shift;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct PlonkSetup {
     pub(crate) pil_str: String,
     pub(crate) const_pols: PolsArray,
@@ -24,7 +25,6 @@ impl PlonkSetup {
     pub fn plonk_setup(r1cs: &R1CS<GL>, opts: &Options) -> Self {
         // 1. plonk_setup_render phase
         let plonk_setup_info = PlonkSetupRenderInfo::plonk_setup_render(r1cs, opts);
-
         // 2. render .pil file by template.
         // //      And save as a file.
         let pil_str = compressor12_pil::render(plonk_setup_info.n_bits, plonk_setup_info.n_publics);
@@ -46,6 +46,7 @@ impl PlonkSetup {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct NormalPlonkInfo {
     pub N: usize,
     pub n_constaints: usize,
@@ -86,10 +87,11 @@ impl NormalPlonkInfo {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct CustomGateInfo {
     pub(crate) poseidon_id: u64,
     pub(crate) c_mul_add_id: u64,
-    pub(crate) fft_params: Vec<Vec<FGL>>,
+    pub(crate) fft_params: BTreeMap<usize, Vec<FGL>>,
     pub(crate) ev_pol_id: u64,
 
     pub(crate) n_poseidon: u64,
@@ -101,15 +103,17 @@ pub(crate) struct CustomGateInfo {
 impl CustomGateInfo {
     // equal to `typeof customGatesInfo.FFT4Parameters[cgu.id] !== "undefined"` in js
     // Defined: properer index and has value.
-    pub fn check_fft_param_defined(fft_params: &Vec<Vec<FGL>>, index: u64) -> bool {
-        (index >= 0 && index < fft_params.len() as u64) && !fft_params[index as usize].is_empty()
+    #[inline(always)]
+    pub fn check_fft_param_defined(fft_params: &BTreeMap<usize, Vec<FGL>>, index: u64) -> bool {
+        fft_params.get(&(index as usize)).is_some()
     }
 
     fn from_r1cs(r1cs: &R1CS<GL>) -> Self {
         let mut c_mul_add_id = 0;
         let mut poseidon_id = 0;
         let mut ev_pol_id = 0;
-        let mut fft_params = vec![vec![]; r1cs.custom_gates.len()];
+        // let mut fft_params = vec![vec![]; r1cs.custom_gates.len()];
+        let mut fft_params: BTreeMap<usize, Vec<FGL>> = BTreeMap::new();
 
         for (i, c) in r1cs.custom_gates.iter().enumerate() {
             match c.template_name.as_str() {
@@ -126,7 +130,7 @@ impl CustomGateInfo {
                     assert!(c.parameters.len() == 0);
                 }
                 "FFT4" => {
-                    fft_params[i] = c.parameters.clone();
+                    fft_params.insert(i, c.parameters.clone());
                 }
                 _ => panic!("Invalid custom gate {}", c.template_name),
             }
@@ -392,23 +396,22 @@ pub fn plonk_setup_compressor(
                     &Compressor.to_string(),
                     &POSEIDON12.to_string(),
                     index,
-                    if index >= 4 && index < 26 {
-                        FGL::ONE
-                    } else {
-                        FGL::ZERO
-                    },
+                    if j < 30 { FGL::ONE } else { FGL::ZERO },
                 );
-                const_pols.set_array(
-                    &Compressor.to_string(),
-                    &PARTIAL.to_string(),
-                    index,
-                    if index < 30 { FGL::ONE } else { FGL::ZERO },
-                );
+                let tt = if (j < 4 || j >= 26) {
+                    FGL::ZERO
+                } else {
+                    FGL::ONE
+                };
+                let tt = if j < 30 { tt } else { FGL::ZERO };
+                const_pols.set_array(&Compressor.to_string(), &PARTIAL.to_string(), index, tt);
             }
             r += 31;
         } else if cgu.id == custom_gates_info.c_mul_add_id {
             for j in 0..12 {
-                s_map[j][r] = cgu.signals[j];
+                if r < n_used {
+                    s_map[j][r] = cgu.signals[j];
+                }
             }
             let index = r;
             for pol_name in vec![GATE, POSEIDON12, PARTIAL, EVPOL4, FFT4] {
@@ -449,7 +452,7 @@ pub fn plonk_setup_compressor(
                 s_map[j][r + 1] = cgu.signals[12 + j];
             }
             let index = r;
-            for pol_name in vec![GATE, POSEIDON12, CMULADD, PARTIAL, EVPOL4, FFT4] {
+            for pol_name in vec![GATE, POSEIDON12, CMULADD, PARTIAL, EVPOL4] {
                 const_pols.set_array(
                     &Compressor.to_string(),
                     &pol_name.to_string(),
@@ -457,6 +460,7 @@ pub fn plonk_setup_compressor(
                     FGL::ZERO,
                 );
             }
+            const_pols.set_array(&Compressor.to_string(), &FFT4.to_string(), index, FGL::ONE);
             let index = r + 1;
             for pol_name in vec![GATE, POSEIDON12, CMULADD, PARTIAL, EVPOL4, FFT4] {
                 const_pols.set_array(
@@ -467,10 +471,10 @@ pub fn plonk_setup_compressor(
                 );
             }
 
-            let t = custom_gates_info.fft_params[cgu.id as usize][3];
-            let scale = custom_gates_info.fft_params[cgu.id as usize][2];
-            let incW = custom_gates_info.fft_params[cgu.id as usize][1];
-            let firstW = custom_gates_info.fft_params[cgu.id as usize][0];
+            let t = custom_gates_info.fft_params[&(cgu.id as usize)][3];
+            let scale = custom_gates_info.fft_params[&(cgu.id as usize)][2];
+            let incW = custom_gates_info.fft_params[&(cgu.id as usize)][1];
+            let firstW = custom_gates_info.fft_params[&(cgu.id as usize)][0];
             let firstW2 = firstW * firstW;
 
             // if t == 4n {
@@ -589,7 +593,7 @@ pub fn plonk_setup_compressor(
     let mut w = FGL::ONE;
     for i in 0..N {
         if (i % 10000) == 0 {
-            log::info!("Preparing S... {}/{}", i, plonk_setup_info.plonk_info.N);
+            log::info!("Preparing S... {}/{}", i, N);
         }
         const_pols.set_matrix(&Compressor.to_string(), &S.to_string(), 0, i, w);
         for j in 1..12 {
@@ -603,6 +607,9 @@ pub fn plonk_setup_compressor(
         col: usize,
     };
     let mut last_signal: HashMap<u64, Grid> = HashMap::new();
+    if r > n_used {
+        r = n_used;
+    }
     for i in 0..r {
         if (i % 10000) == 0 {
             log::info!("Connection S... {}/{}", i, r);
