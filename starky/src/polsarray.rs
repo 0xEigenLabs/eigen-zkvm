@@ -132,6 +132,7 @@ impl PolsArray {
     /// e.g. For JS statement, constPols.Compressor.C[7][pr.row] = c[5], i is 7 and j is pr.row.
     ///
     /// Before calling this function, you must ensure that this polsarray has been initialized
+    #[inline(always)]
     pub fn set_matrix(&mut self, ns: &String, np: &String, i: usize, j: usize, value: FGL) {
         let namespace = self.def.get_mut(ns).unwrap();
 
@@ -148,6 +149,8 @@ impl PolsArray {
 
         self.array[np_id][j] = value;
     }
+
+    #[inline(always)]
     pub(crate) fn get_np_index_of_array(&mut self, ns: &String, np: &String, i: usize) -> usize {
         let namespace = self.def.get(ns).unwrap();
         let namepols = namespace.get(np).unwrap();
@@ -155,6 +158,7 @@ impl PolsArray {
         np_id
     }
 
+    #[inline(always)]
     pub fn set_array(&mut self, ns: &String, np: &String, i: usize, value: FGL) {
         self.set_matrix(ns, np, i, 0, value);
     }

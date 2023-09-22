@@ -1,24 +1,19 @@
+use plonky::bellman_ce::plonk::better_cs::keys::write_fr_vec;
 use std::fs::File;
 use std::io::Write;
 use std::io::{BufRead, BufReader};
 
 pub fn write_vec_to_file(path: &str, vec: &[u64]) -> std::io::Result<()> {
     let mut file = File::create(path)?;
-    for num in vec {
-        write!(file, "{}\n", num)?;
-    }
+    let input = serde_json::to_string(&vec)?;
+    write!(file, "{}", input)?;
     Ok(())
 }
 
-pub fn read_vec_from_file(path: &str) -> std::io::Result<Vec<u64>> {
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
-    let mut vec = Vec::new();
-    for line in reader.lines() {
-        let num: u64 = line.unwrap().parse().unwrap();
-        vec.push(num);
-    }
-    Ok(vec)
+pub fn read_vec_from_file(input_file: &str) -> std::io::Result<Vec<u64>> {
+    let inputs_str = std::fs::read_to_string(input_file).unwrap();
+    let output: Vec<u64> = serde_json::from_str(&inputs_str).unwrap();
+    Ok(output)
 }
 
 #[cfg(test)]

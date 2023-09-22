@@ -24,12 +24,12 @@ export CIRCUIT=fib
 ### Recursive Layer: FRI Proof
 test compressor12
 #### old script
-export CIRCUIT=fib
 ```bash
+export CIRCUIT=fib
 ../target/release/eigen-zkit compile -p goldilocks -i circuits/$CIRCUIT.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
 # Circom to Stark  
-node src/compressor12/main_compressor12_setup.js \
+time node src/compressor12/main_compressor12_setup.js \
     -r /tmp/$CIRCUIT.verifier.r1cs \
     -c /tmp/c12.const \
     -p /tmp/c12.pil \
