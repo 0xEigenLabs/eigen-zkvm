@@ -3,15 +3,11 @@ pub enum CompressorNameSpace {
     Compressor,
 }
 
+#[allow(non_camel_case_types)]
 pub enum CompressorPolName {
     // pols name under namespace `Global`
     L,
     // pols name under namespace `Compressor`
-    // The Si is adopt with pil_template.
-    // The S is adopt with the pol_name in PolyArray.def.
-    Si(usize),
-    Ci(usize),
-    ai(usize),
     S,
     C,
     a,
@@ -28,9 +24,6 @@ impl ToString for CompressorPolName {
     fn to_string(&self) -> String {
         match self {
             Self::L => format!("L"),
-            Self::Ci(i) => format!("C[{i}]"),
-            Self::Si(i) => format!("S[{i}]"),
-            Self::ai(i) => format!("a[{i}]"),
             Self::S => String::from("S"),
             Self::C => String::from("C"),
             Self::a => String::from("a"),

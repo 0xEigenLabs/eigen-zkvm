@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use super::{
     compressor12_pil, compressor12_pil::CompressorNameSpace::*,
     compressor12_pil::CompressorPolName::*, compressor12_setup::Options, constants::CPOSEIDON,
@@ -49,17 +50,14 @@ impl PlonkSetup {
 #[derive(Debug)]
 pub(crate) struct NormalPlonkInfo {
     pub N: usize,
-    pub n_constaints: usize,
-    pub n_plonk_gates: usize,
-    pub n_plonk_adds: usize,
+    // never used fileds
+    // pub n_constaints: usize,
+    // pub n_plonk_gates: usize,
+    // pub n_plonk_adds: usize,
 }
 
 impl NormalPlonkInfo {
-    pub(crate) fn new(
-        r1cs: &R1CS<GL>,
-        plonk_constrains: &Vec<PlonkGate>,
-        plonk_additions: &Vec<PlonkAdd>,
-    ) -> Self {
+    pub(crate) fn new(plonk_constrains: &Vec<PlonkGate>) -> Self {
         let mut uses: HashMap<String, usize> = HashMap::new();
         let plonk_constrains_len = plonk_constrains.len();
         for (i, c) in plonk_constrains.iter().enumerate() {
@@ -80,9 +78,9 @@ impl NormalPlonkInfo {
 
         Self {
             N,
-            n_constaints: r1cs.constraints.len(),
-            n_plonk_gates: plonk_constrains_len,
-            n_plonk_adds: plonk_additions.len(),
+            // n_constaints: r1cs.constraints.len(),
+            // n_plonk_gates: plonk_constrains_len,
+            // n_plonk_adds: plonk_additions.len(),
         }
     }
 }
@@ -174,7 +172,7 @@ pub struct PlonkSetupRenderInfo {
     pub(crate) pg: Vec<PlonkGate>,
     pub(crate) pa: Vec<PlonkAdd>,
     custom_gates_info: CustomGateInfo,
-    pub(crate) plonk_info: NormalPlonkInfo,
+    // pub(crate) plonk_info: NormalPlonkInfo, // Never used.
 }
 
 impl PlonkSetupRenderInfo {
@@ -183,7 +181,7 @@ impl PlonkSetupRenderInfo {
         let (plonk_constrains, plonk_additions) = r1cs2plonk(r1cs);
 
         // 2. get normal plonk info
-        let plonk_info = NormalPlonkInfo::new(r1cs, &plonk_constrains, &plonk_additions);
+        let plonk_info = NormalPlonkInfo::new(&plonk_constrains);
         // 3. get custom gate info
         let custom_gates_info = CustomGateInfo::from_r1cs(r1cs);
 
@@ -210,7 +208,6 @@ impl PlonkSetupRenderInfo {
             pg: plonk_constrains,
             pa: plonk_additions,
             custom_gates_info,
-            plonk_info,
         }
     }
 }
@@ -260,7 +257,7 @@ pub fn plonk_setup_compressor(
     struct ParRow {
         row: usize,
         n_used: usize,
-    };
+    }
     // Paste plonk constraints.
     let mut partial_rows: HashMap<String, ParRow> = HashMap::new();
     let mut half_rows: Vec<ParRow> = vec![];
@@ -268,7 +265,7 @@ pub fn plonk_setup_compressor(
     for (i, c) in plonk_constraints.iter().enumerate() {
         if (i % 10000) == 0 {
             log::info!("Processing constraint... {}/{}", i, plonk_constraints.len())
-        };
+        }
         let k = c.str_key();
         let pr = partial_rows.get_mut(&k);
         if pr.is_some() {
@@ -398,7 +395,7 @@ pub fn plonk_setup_compressor(
                     index,
                     if j < 30 { FGL::ONE } else { FGL::ZERO },
                 );
-                let tt = if (j < 4 || j >= 26) {
+                let tt = if j < 4 || j >= 26 {
                     FGL::ZERO
                 } else {
                     FGL::ONE
@@ -605,7 +602,7 @@ pub fn plonk_setup_compressor(
     struct Grid {
         row: usize,
         col: usize,
-    };
+    }
     let mut last_signal: HashMap<u64, Grid> = HashMap::new();
     if r > n_used {
         r = n_used;

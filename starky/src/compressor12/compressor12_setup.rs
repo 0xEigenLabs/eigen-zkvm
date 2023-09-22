@@ -1,12 +1,10 @@
 #![allow(non_snake_case)]
-use crate::compressor12::compressor12_pil;
 use crate::compressor12::plonk_setup::PlonkSetup;
 use crate::errors::EigenError;
 use crate::io_utils::write_vec_to_file;
-use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
+use crate::r1cs2plonk::PlonkAdd;
 use plonky::field_gl::GL;
 use plonky::reader::load_r1cs;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 

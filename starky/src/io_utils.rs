@@ -1,7 +1,5 @@
-use plonky::bellman_ce::plonk::better_cs::keys::write_fr_vec;
 use std::fs::File;
 use std::io::Write;
-use std::io::{BufRead, BufReader};
 
 pub fn write_vec_to_file(path: &str, vec: &[u64]) -> std::io::Result<()> {
     let mut file = File::create(path)?;

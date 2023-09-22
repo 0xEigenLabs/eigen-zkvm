@@ -1,11 +1,7 @@
 use crate::bellman_ce::pairing::bn256::Bn256;
 use crate::errors::{EigenError, Result};
-use crate::witness::{flat_array, load_input_for_witness, WitnessCalculator};
+use crate::witness::{load_input_for_witness, WitnessCalculator};
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
-use num_bigint::BigInt;
-use num_traits::{One, Zero};
-use serde_json::Value;
-use std::str::FromStr;
 
 #[cfg(not(feature = "wasm"))]
 use crate::{aggregation, verifier};

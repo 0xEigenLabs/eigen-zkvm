@@ -3,9 +3,8 @@ use crate::compressor12_pil::CompressorPolName::a;
 use crate::errors::EigenError;
 use crate::io_utils::read_vec_from_file;
 use crate::pilcom::compile_pil_from_path;
-use crate::polsarray::{Pol, PolKind, PolsArray};
+use crate::polsarray::{PolKind, PolsArray};
 use num_traits::Zero;
-use number::BigInt;
 use plonky::field_gl::Fr as FGL;
 use plonky::witness::{load_input_for_witness, WitnessCalculator};
 use std::fs::File;
@@ -101,8 +100,8 @@ fn read_exec_file(exec_file: &String) -> (usize, usize, Vec<u64>, Vec<u64>) {
     let size = adds_len * 4 + s_map_column_len * 12;
     assert_eq!(new_buff.len(), size);
 
-    let mut s_map = new_buff.split_off(adds_len * 4);
-    let mut adds = new_buff;
+    let s_map = new_buff.split_off(adds_len * 4);
+    let adds = new_buff;
 
     (adds_len, s_map_column_len, adds, s_map)
 }

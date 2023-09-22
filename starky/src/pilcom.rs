@@ -2,7 +2,7 @@
 mod export;
 mod expression_counter;
 
-use crate::types::{read_json, PIL};
+use crate::types::PIL;
 use number::GoldilocksField;
 use std::path::Path;
 
