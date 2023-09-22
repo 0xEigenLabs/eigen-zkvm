@@ -74,7 +74,7 @@ impl NormalPlonkInfo {
         let mut result = uses.values().collect::<Vec<_>>();
         result.sort(); // sort by asc
 
-        let mut N = result.iter().fold(0, |acc, x| acc + (**x - 1) / 4 + 1);
+        let mut N = result.iter().fold(0, |acc, x| acc + (**x - 1) / 2 + 1);
         N = (N - 1) / 2 + 1;
 
         Self {

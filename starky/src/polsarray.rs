@@ -134,14 +134,22 @@ impl PolsArray {
     ///
     /// Before calling this function, you must ensure that this polsarray has been initialized
     pub fn set_matrix(&mut self, ns: &String, np: &String, i: usize, j: usize, value: FGL) {
-        println!("set_matrix");
-        let np_id = self.get_np_index_of_array(ns, np, i);
+        let namespace = self.def.get_mut(ns).unwrap();
+
+        if !namespace.contains_key(np) {
+            namespace.insert(np.clone(), vec![0; self.n]);
+        }
+
+        let namepols = namespace.get_mut(np).unwrap();
+        if namepols.len() < self.n {
+            namepols.resize(self.n, 0);
+        }
+        let np_id = namepols[i];
 
         self.array[np_id][j] = value;
     }
     pub(crate) fn get_np_index_of_array(&mut self, ns: &String, np: &String, i: usize) -> usize {
         let namespace = self.def.get(ns).unwrap();
-        println!("self.def.len: {:?}    {ns}, {np}, np:{i}", self.def.len());
         let namepols = namespace.get(np).unwrap();
         let np_id = namepols[i];
         np_id

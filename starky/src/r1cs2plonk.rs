@@ -31,7 +31,7 @@ impl std::fmt::Display for PlonkGate {
 impl PlonkGate {
     pub fn str_key(&self) -> String {
         format!(
-            "{:X},{:X},{:X},{:X},{:X}",
+            "{:x},{:x},{:x},{:x},{:x}",
             self.3.as_int(),
             self.4.as_int(),
             self.5.as_int(),
