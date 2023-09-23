@@ -37,7 +37,12 @@ pub fn transpose<F: FieldExtension>(
     }
 }
 
-pub fn bit_reverse<F: FieldExtension>(buffdst: &mut Vec<F>, buffsrc: &Vec<F>, n_pols: usize, nbits: usize) {
+pub fn bit_reverse<F: FieldExtension>(
+    buffdst: &mut Vec<F>,
+    buffsrc: &Vec<F>,
+    n_pols: usize,
+    nbits: usize,
+) {
     let n = 1 << nbits;
     for i in 0..n {
         let ri = BR(i, nbits);
@@ -195,7 +200,12 @@ pub fn fft<F: FieldExtension>(buffsrc: &Vec<F>, n_pols: usize, nbits: usize, buf
     _fft(buffsrc, n_pols, nbits, buffdst, false)
 }
 
-pub fn ifft<F: FieldExtension>(buffsrc: &Vec<F>, n_pols: usize, nbits: usize, buffdst: &mut Vec<F>) {
+pub fn ifft<F: FieldExtension>(
+    buffsrc: &Vec<F>,
+    n_pols: usize,
+    nbits: usize,
+    buffdst: &mut Vec<F>,
+) {
     _fft(buffsrc, n_pols, nbits, buffdst, true)
 }
 

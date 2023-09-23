@@ -1,14 +1,13 @@
 use crate::errors::Result;
-use ff::PrimeField;
-use plonky::field_gl::Fr as FGL;
 use ::rand::Rand;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use ff::PrimeField;
+use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::Fr;
 use plonky::Field;
 use serde::ser::Serialize;
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
-
 
 pub trait MTNodeType {
     fn as_elements(&self) -> &[FGL];

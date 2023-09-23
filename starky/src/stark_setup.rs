@@ -3,7 +3,7 @@ use crate::errors::Result;
 use crate::fft_p::interpolate;
 use crate::polsarray::PolsArray;
 use crate::starkinfo::{self, Program, StarkInfo};
-use crate::traits::{MerkleTree,FieldExtension};
+use crate::traits::{FieldExtension, MerkleTree};
 use crate::types::{StarkStruct, PIL};
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
