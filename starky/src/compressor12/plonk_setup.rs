@@ -117,15 +117,15 @@ impl CustomGateInfo {
             match c.template_name.as_str() {
                 "CMulAdd" => {
                     c_mul_add_id = i as u64;
-                    assert!(c.parameters.len() == 0);
+                    assert!(c.parameters.is_empty());
                 }
                 "Poseidon12" => {
                     poseidon_id = i as u64;
-                    assert!(c.parameters.len() == 0);
+                    assert!(c.parameters.is_empty());
                 }
                 "EvPol4" => {
                     ev_pol_id = i as u64;
-                    assert!(c.parameters.len() == 0);
+                    assert!(c.parameters.is_empty());
                 }
                 "FFT4" => {
                     fft_params.insert(i, c.parameters.clone());
@@ -232,7 +232,7 @@ pub fn plonk_setup_compressor(
     // Paste public inputs.
     for i in 0..n_public_rows {
         let index = r + i;
-        for pol_name in vec![GATE, POSEIDON12, PARTIAL, CMULADD, EVPOL4, FFT4] {
+        for pol_name in [GATE, POSEIDON12, PARTIAL, CMULADD, EVPOL4, FFT4] {
             const_pols.set_array(
                 &Compressor.to_string(),
                 &pol_name.to_string(),
@@ -286,7 +286,7 @@ pub fn plonk_setup_compressor(
             let index = pr.row;
             for (i, value) in vec![9_usize, 6, 7, 8, 10, 11]
                 .iter()
-                .zip(vec![c.3, c.4, c.5, c.6, c.7, FGL::ZERO].iter())
+                .zip([c.3, c.4, c.5, c.6, c.7, FGL::ZERO].iter())
             {
                 const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), *i, index, *value);
             }
@@ -298,13 +298,13 @@ pub fn plonk_setup_compressor(
             partial_rows.insert(k, pr);
         } else {
             let index = r;
-            for (i, value) in vec![3_usize, 0, 1, 2, 4, 5]
+            for (i, value) in [3_usize, 0, 1, 2, 4, 5]
                 .iter()
-                .zip(vec![c.3, c.4, c.5, c.6, c.7, FGL::ZERO].iter())
+                .zip([c.3, c.4, c.5, c.6, c.7, FGL::ZERO].iter())
             {
                 const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), *i, index, *value);
             }
-            for pol_name in vec![POSEIDON12, PARTIAL, CMULADD, EVPOL4, FFT4] {
+            for pol_name in [POSEIDON12, PARTIAL, CMULADD, EVPOL4, FFT4] {
                 const_pols.set_array(
                     &Compressor.to_string(),
                     &pol_name.to_string(),
@@ -346,7 +346,7 @@ pub fn plonk_setup_compressor(
         s_map[9][hr.row] = 0;
         s_map[10][hr.row] = 0;
         s_map[11][hr.row] = 0;
-        for i in vec![9, 6, 7, 8, 10, 11] {
+        for i in [9, 6, 7, 8, 10, 11] {
             const_pols.set_matrix(
                 &Compressor.to_string(),
                 &C.to_string(),
@@ -381,7 +381,7 @@ pub fn plonk_setup_compressor(
                         FGL::from(CPOSEIDON[j * 12 + k]),
                     );
                 }
-                for pol_name in vec![GATE, CMULADD, EVPOL4, FFT4] {
+                for pol_name in [GATE, CMULADD, EVPOL4, FFT4] {
                     const_pols.set_array(
                         &Compressor.to_string(),
                         &pol_name.to_string(),
@@ -395,7 +395,7 @@ pub fn plonk_setup_compressor(
                     index,
                     if j < 30 { FGL::ONE } else { FGL::ZERO },
                 );
-                let tt = if j < 4 || j >= 26 {
+                let tt = if !(4..26).contains(&j) {
                     FGL::ZERO
                 } else {
                     FGL::ONE
@@ -411,7 +411,7 @@ pub fn plonk_setup_compressor(
                 }
             }
             let index = r;
-            for pol_name in vec![GATE, POSEIDON12, PARTIAL, EVPOL4, FFT4] {
+            for pol_name in [GATE, POSEIDON12, PARTIAL, EVPOL4, FFT4] {
                 const_pols.set_array(
                     &Compressor.to_string(),
                     &pol_name.to_string(),
@@ -449,7 +449,7 @@ pub fn plonk_setup_compressor(
                 s_map[j][r + 1] = cgu.signals[12 + j];
             }
             let index = r;
-            for pol_name in vec![GATE, POSEIDON12, CMULADD, PARTIAL, EVPOL4] {
+            for pol_name in [GATE, POSEIDON12, CMULADD, PARTIAL, EVPOL4] {
                 const_pols.set_array(
                     &Compressor.to_string(),
                     &pol_name.to_string(),
@@ -459,7 +459,7 @@ pub fn plonk_setup_compressor(
             }
             const_pols.set_array(&Compressor.to_string(), &FFT4.to_string(), index, FGL::ONE);
             let index = r + 1;
-            for pol_name in vec![GATE, POSEIDON12, CMULADD, PARTIAL, EVPOL4, FFT4] {
+            for pol_name in [GATE, POSEIDON12, CMULADD, PARTIAL, EVPOL4, FFT4] {
                 const_pols.set_array(
                     &Compressor.to_string(),
                     &pol_name.to_string(),
@@ -477,7 +477,7 @@ pub fn plonk_setup_compressor(
             // if t == 4n {
             let index = r;
             if t == FGL::from(4) {
-                for i in vec![6, 7, 8] {
+                for i in [6, 7, 8] {
                     const_pols.set_matrix(
                         &Compressor.to_string(),
                         &C.to_string(),
@@ -486,8 +486,8 @@ pub fn plonk_setup_compressor(
                         FGL::ZERO,
                     );
                 }
-                for (i, value) in vec![0, 1, 2, 3, 4, 5].iter().zip(
-                    vec![
+                for (i, value) in [0, 1, 2, 3, 4, 5].iter().zip(
+                    [
                         scale,
                         scale * firstW2,
                         scale * firstW,
@@ -506,7 +506,7 @@ pub fn plonk_setup_compressor(
                     );
                 }
             } else if t == FGL::from(2) {
-                for i in vec![0, 1, 2, 3, 4, 5] {
+                for i in [0, 1, 2, 3, 4, 5] {
                     const_pols.set_matrix(
                         &Compressor.to_string(),
                         &C.to_string(),
@@ -515,9 +515,9 @@ pub fn plonk_setup_compressor(
                         FGL::ZERO,
                     );
                 }
-                for (i, value) in vec![6, 7, 8]
+                for (i, value) in [6, 7, 8]
                     .iter()
-                    .zip(vec![scale, scale * firstW, scale * firstW * incW].iter())
+                    .zip([scale, scale * firstW, scale * firstW * incW].iter())
                 {
                     const_pols.set_matrix(
                         &Compressor.to_string(),
@@ -532,7 +532,7 @@ pub fn plonk_setup_compressor(
             }
 
             let index = r;
-            for i in vec![9, 10, 11] {
+            for i in [9, 10, 11] {
                 const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), i, index, FGL::ZERO);
             }
             for k in 0..12 {
@@ -554,7 +554,7 @@ pub fn plonk_setup_compressor(
                 const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), j, r + 1, FGL::ZERO);
             }
             let index = r;
-            for pol_name in vec![GATE, POSEIDON12, CMULADD, PARTIAL, FFT4] {
+            for pol_name in [GATE, POSEIDON12, CMULADD, PARTIAL, FFT4] {
                 const_pols.set_array(
                     &Compressor.to_string(),
                     &pol_name.to_string(),
@@ -570,7 +570,7 @@ pub fn plonk_setup_compressor(
             );
 
             let index = r + 1;
-            for pol_name in vec![GATE, POSEIDON12, CMULADD, PARTIAL, EVPOL4, FFT4] {
+            for pol_name in [GATE, POSEIDON12, CMULADD, PARTIAL, EVPOL4, FFT4] {
                 const_pols.set_array(
                     &Compressor.to_string(),
                     &pol_name.to_string(),
@@ -604,16 +604,15 @@ pub fn plonk_setup_compressor(
         col: usize,
     }
     let mut last_signal: HashMap<u64, Grid> = HashMap::new();
-    if r > n_used {
-        r = n_used;
-    }
+
     for i in 0..r {
         if (i % 10000) == 0 {
             log::info!("Connection S... {}/{}", i, r);
         }
         for j in 0..12 {
-            let key = s_map[j][i];
-            if key > 0 {
+            if i < n_used {
+                let key = s_map[j][i];
+
                 let ls = last_signal.get(&key);
                 if ls.is_some() {
                     let ls = ls.unwrap();
@@ -643,7 +642,7 @@ pub fn plonk_setup_compressor(
             log::info!("Empty gates... {}/{}", r, N);
         }
         let index = r;
-        for pol_name in vec![GATE, POSEIDON12, PARTIAL, CMULADD, EVPOL4, FFT4] {
+        for pol_name in [GATE, POSEIDON12, PARTIAL, CMULADD, EVPOL4, FFT4] {
             const_pols.set_array(
                 &Compressor.to_string(),
                 &pol_name.to_string(),
