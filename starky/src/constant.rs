@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 use crate::f3g::F3G;
 use crate::field_bn128::Fr;
+use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::poseidon_bls12381::load_constants as load_constants_bls12381;
 use crate::poseidon_bls12381::Constants as ConstantsBls12381;
 use crate::poseidon_bls12381_opt::load_constants as load_constants_bls12381_opt;
@@ -14,6 +15,9 @@ lazy_static::lazy_static! {
     pub static ref OFFSET_2_64: Fr = Fr::from_str("18446744073709551616").unwrap();
     pub static ref OFFSET_2_128: Fr = Fr::from_str("340282366920938463463374607431768211456").unwrap();
     pub static ref OFFSET_2_192: Fr = Fr::from_str("6277101735386680763835789423207666416102355444464034512896").unwrap();
+    pub static ref OFFSET_bls12381_2_64: Fr_bls12381 = Fr_bls12381::from_str("18446744073709551616").unwrap();
+    pub static ref OFFSET_bls12381_2_128: Fr_bls12381 = Fr_bls12381::from_str("340282366920938463463374607431768211456").unwrap();
+    pub static ref OFFSET_bls12381_2_192: Fr_bls12381 = Fr_bls12381::from_str("6277101735386680763835789423207666416102355444464034512896").unwrap();
     pub static ref CHALLENGE_MAP: HashMap<&'static str, usize> = {
         let mut m = HashMap::new();
         m.insert("u", 0);

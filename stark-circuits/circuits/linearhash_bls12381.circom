@@ -1,13 +1,12 @@
 pragma circom 2.0.6;
 
-include "poseidon.circom";
+include "poseidon_bls12381.circom";
 
-// FIXME
 template LinearHash(nInputs, eSize) {
     signal input in[nInputs][eSize];
     signal output out;
 
-    var nElements256 = (nInputs*eSize - 1)\5 +1;
+    var nElements256 = (nInputs*eSize - 1)\3 +1;
 
     var sAc = 0;
     var nAc =0;
@@ -33,12 +32,12 @@ template LinearHash(nInputs, eSize) {
 
 
     for (var i=0; i<nHashes-1; i++) {
-        hash[i] = PoseidonEx(16, 1);
+        hash[i] = PoseidonEx(16, 2);
     }
 
     if (nHashes>0) {
         nLastHash = nElements256 - (nHashes - 1)*16;
-        lastHash = PoseidonEx(nLastHash, 1);
+        lastHash = PoseidonEx(nLastHash, 2);
     }
 
     var curHash =0;
@@ -50,7 +49,7 @@ template LinearHash(nInputs, eSize) {
             for (var j=0; j<eSize; j++) {
                 sAc = sAc + 2**(64*nAc) * in[i][j];
                 nAc ++;
-                if (nAc == 5) {
+                if (nAc == 3) {
                     if (curHash == nHashes - 1) {
                         lastHash.inputs[curHashIdx] <== sAc;
                     } else {
@@ -83,16 +82,15 @@ template LinearHash(nInputs, eSize) {
             if (i==0) {
                 hash[i].initialState <== 0;
             } else {
-                hash[i].initialState <== hash[i-1].out[0];
+                hash[i].initialState <== hash[i-1].out[1];
             }
         }
         if (nHashes == 1) {
             lastHash.initialState <== 0;
         } else {
-            lastHash.initialState <== hash[nHashes-2].out[0];
+            lastHash.initialState <== hash[nHashes-2].out[1];
         }
 
-        out <== lastHash.out[0];
+        out <== lastHash.out[1];
     }
 }
-

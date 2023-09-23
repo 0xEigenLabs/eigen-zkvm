@@ -2,6 +2,7 @@
 #![allow(non_snake_case)]
 use crate::f3g::F3G;
 use crate::field_bn128::Fr;
+use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::helper;
 use crate::stark_gen::StarkProof;
 use crate::traits::{MTNodeType, MerkleTree};
@@ -54,6 +55,10 @@ impl<T: MTNodeType + Clone> Serialize for Input<T> {
                 let r: Fr = Fr(self.0.clone().as_scalar::<Fr>());
                 serializer.serialize_str(&helper::fr_to_biguint(&r).to_string())
             }
+            "BLS12381" => {
+                let r: Fr_bls12381 = Fr_bls12381(self.0.clone().as_scalar::<Fr_bls12381>());
+                serializer.serialize_str(&helper::fr_bls12381_to_biguint(&r).to_string())
+            }
             "GL" => {
                 let mut seq = serializer.serialize_seq(Some(4))?;
                 for v in e.iter() {
@@ -68,6 +73,13 @@ impl<T: MTNodeType + Clone> Serialize for Input<T> {
 
 impl<T: MTNodeType> From<Fr> for Input<T> {
     fn from(val: Fr) -> Self {
+        let e = T::from_scalar(&val);
+        Self(e, "".to_string())
+    }
+}
+
+impl<T: MTNodeType> From<Fr_bls12381> for Input<T> {
+    fn from(val: Fr_bls12381) -> Self {
         let e = T::from_scalar(&val);
         Self(e, "".to_string())
     }

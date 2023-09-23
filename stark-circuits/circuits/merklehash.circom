@@ -1,6 +1,6 @@
 pragma circom 2.0.6;
 
-include "linearhash.circom";
+include "linearhash_bls12381.circom";
 include "merkle.circom";
 include "utils.circom";
 

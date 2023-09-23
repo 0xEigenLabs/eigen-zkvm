@@ -11,6 +11,7 @@ pub use compressor12::*;
 
 pub mod linearhash;
 pub mod linearhash_bn128;
+pub mod linearhash_bls12381;
 
 mod field_bn128;
 mod poseidon_bn128;
@@ -28,6 +29,7 @@ pub mod poseidon_bls12381_opt;
 
 pub mod merklehash;
 pub mod merklehash_bn128;
+pub mod merklehash_bls12381;
 
 mod digest;
 pub use digest::ElementDigest;
