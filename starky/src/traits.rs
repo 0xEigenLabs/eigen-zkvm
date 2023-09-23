@@ -76,7 +76,6 @@ pub trait FieldExtension:
     + Field
     + Serialize
 {
-    // pub trait FnG:Field{
     const ZERO: Self;
     const ONE: Self;
     const NEW_SIZE: u64 = 0;
@@ -96,5 +95,4 @@ pub trait FieldExtension:
     fn as_int(&self) -> u64;
     fn elements_as_bytes(elements: &[Self]) -> &[u8];
     fn as_bytes(&self) -> &[u8];
-    // Implement From Traits
 }

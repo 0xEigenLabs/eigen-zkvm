@@ -51,7 +51,6 @@ impl TranscriptBN128 {
 }
 
 impl Transcript for TranscriptBN128 {
-    // TODO:Check the type F is equal to F3G
     fn new() -> Self {
         Self {
             state: Fr::zero(),
