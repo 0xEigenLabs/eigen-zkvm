@@ -1,5 +1,4 @@
 #![allow(non_snake_case)]
-use crate::field_bls12381::{Fr as BlsFr, FrRepr as BlsFrRepr};
 use crate::field_bn128::{Fr, FrRepr};
 use crate::traits::MTNodeType;
 use ff::*;
@@ -83,23 +82,6 @@ pub fn to_bn128(e: &[FGL; 4]) -> Fr {
     buf.resize(required_length, 0);
     repr.read_le(&buf[..]).unwrap();
     Fr::from_repr(repr).unwrap()
-}
-
-#[inline(always)]
-pub fn to_bls12381(e: &[FGL; 6]) -> BlsFr {
-    let mut buf: Vec<u8> = vec![0u8; 48];
-    // To be optimized: FGL doesn't return bytes with specific endian.
-    buf[0..8].copy_from_slice(&e[0].as_int().to_le_bytes());
-    buf[8..16].copy_from_slice(&e[1].as_int().to_le_bytes());
-    buf[16..24].copy_from_slice(&e[2].as_int().to_le_bytes());
-    buf[24..32].copy_from_slice(&e[3].as_int().to_le_bytes());
-    buf[32..40].copy_from_slice(&e[4].as_int().to_le_bytes());
-    buf[40..48].copy_from_slice(&e[5].as_int().to_le_bytes());
-    let mut repr = BlsFrRepr::default();
-    let required_length = repr.as_ref().len() * 8;
-    buf.resize(required_length, 0);
-    repr.read_le(&buf[..]).unwrap();
-    BlsFr::from_repr(repr).unwrap()
 }
 
 #[cfg(test)]
