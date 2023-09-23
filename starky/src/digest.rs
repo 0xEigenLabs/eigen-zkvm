@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
-use crate::field_bn128::{Fr, FrRepr};
 use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bls12381::FrRepr as FrRepr_bls12381;
+use crate::field_bn128::{Fr, FrRepr};
 use crate::traits::MTNodeType;
 use ff::*;
 use plonky::field_gl::Fr as FGL;
@@ -98,12 +98,12 @@ pub fn to_bls12381(e: &[FGL; 4]) -> Fr_bls12381 {
 
 #[cfg(test)]
 mod tests {
-    use crate::digest::to_bn128;
     use crate::digest::to_bls12381;
+    use crate::digest::to_bn128;
     use crate::digest::ElementDigest;
-    use crate::field_bn128::Fr;
     use crate::field_bls12381::Fr as Fr_bls12381;
-    use crate::helper::{fr_to_biguint, fr_bls12381_to_biguint};
+    use crate::field_bn128::Fr;
+    use crate::helper::{fr_bls12381_to_biguint, fr_to_biguint};
     use crate::traits::MTNodeType;
     use ff::PrimeField;
     use num_bigint::BigUint;

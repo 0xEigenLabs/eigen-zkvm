@@ -294,7 +294,7 @@ mod tests {
         let mut cols: Vec<FGL> = vec![FGL::ZERO; n_pols * n];
         for i in 0..n {
             for j in 0..n_pols {
-                cols[i * n_pols + j] = FGL::from((i + j * 10 +1) as u64);
+                cols[i * n_pols + j] = FGL::from((i + j * 10 + 1) as u64);
             }
         }
         let mut tree = MerkleTreeBLS12381::new();

@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 use crate::f3g::F3G;
-use crate::field_bn128::Fr;
 use crate::field_bls12381::Fr as Fr_bls12381;
+use crate::field_bn128::Fr;
 use crate::poseidon_bls12381::load_constants as load_constants_bls12381;
 use crate::poseidon_bls12381::Constants as ConstantsBls12381;
 use crate::poseidon_bls12381_opt::load_constants as load_constants_bls12381_opt;

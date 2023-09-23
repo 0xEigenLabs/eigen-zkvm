@@ -157,11 +157,13 @@ mod tests {
             })
             .collect();
 
-        let st = LinearHashBLS12381::new().hash_element_matrix(&inputs).unwrap();
+        let st = LinearHashBLS12381::new()
+            .hash_element_matrix(&inputs)
+            .unwrap();
         assert_eq!(
             st.to_string(),
             "Fr(0x1aea10165e8c452045633835341291832bf7d46ace4bd6e8b1a2ddb9f257c2be)",
-        );//12173687307340502514807899805788742433388743486605722425856884343695310570174
+        ); //12173687307340502514807899805788742433388743486605722425856884343695310570174
     }
 
     #[test]
@@ -180,11 +182,13 @@ mod tests {
         println!("{:?}", inputs[1][0].as_int());
         println!("{:?}", inputs[2][2].as_int());
 
-        let st = LinearHashBLS12381::new().hash_element_matrix(&inputs).unwrap();
+        let st = LinearHashBLS12381::new()
+            .hash_element_matrix(&inputs)
+            .unwrap();
         assert_eq!(
             st.to_string(),
             "Fr(0x683f0b0c6f1a15d7715cbac061ca80f1f30a28920d32993c2f9cd307aee7bcbb)",
-        );//47151923872170312558486671489594063022534199585560147550196414719559738047675
+        ); //47151923872170312558486671489594063022534199585560147550196414719559738047675
     }
 
     #[test]
