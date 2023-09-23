@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
-use crate::field_bls12381::Fr as Bls_Fr;
-use crate::field_bn128::Fr as Bn_Fr;
+
+use crate::field_bn128::Fr as Fr_bn128;
 use crate::poseidon_bls12381::load_constants as load_constants_bls12381;
 use crate::poseidon_bls12381::Constants as ConstantsBls12381;
 use crate::poseidon_bls12381_opt::load_constants as load_constants_bls12381_opt;
@@ -12,13 +12,9 @@ use plonky::Field;
 use std::collections::HashMap;
 
 lazy_static::lazy_static! {
-    pub static ref BLS_OFFSET_2_64: Bls_Fr = Bls_Fr::from_str("18446744073709551616").unwrap();
-    pub static ref BLS_OFFSET_2_128: Bls_Fr = Bls_Fr::from_str("340282366920938463463374607431768211456").unwrap();
-    pub static ref BLS_OFFSET_2_192: Bls_Fr = Bls_Fr::from_str("6277101735386680763835789423207666416102355444464034512896").unwrap();
-
-    pub static ref OFFSET_2_64: Bn_Fr = Bn_Fr::from_str("18446744073709551616").unwrap();
-    pub static ref OFFSET_2_128: Bn_Fr = Bn_Fr::from_str("340282366920938463463374607431768211456").unwrap();
-    pub static ref OFFSET_2_192: Bn_Fr = Bn_Fr::from_str("6277101735386680763835789423207666416102355444464034512896").unwrap();
+    pub static ref OFFSET_2_64: Fr_bn128 = Fr_bn128::from_str("18446744073709551616").unwrap();
+    pub static ref OFFSET_2_128: Fr_bn128 = Fr_bn128::from_str("340282366920938463463374607431768211456").unwrap();
+    pub static ref OFFSET_2_192: Fr_bn128 = Fr_bn128::from_str("6277101735386680763835789423207666416102355444464034512896").unwrap();
     pub static ref CHALLENGE_MAP: HashMap<&'static str, usize> = {
         let mut m = HashMap::new();
         m.insert("u", 0);
