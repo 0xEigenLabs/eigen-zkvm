@@ -118,6 +118,21 @@ module.exports = async function plonkSetup(r1cs, options) {
 
     const customGatesInfo = getCustomGatesInfo();
 
+    // test-dump data
+    fs.writeFileSync("plonk_constrains_js.json", JSON.stringify(plonkConstraints, (key, value) =>
+        typeof value === 'bigint' ? value.toString() :value
+    ));
+    fs.writeFileSync("plonk_additions_js.json", JSON.stringify(plonkAdditions, (key, value) =>
+        typeof value === 'bigint' ? value.toString() :value
+    ));
+    fs.writeFileSync("plonk_info_js.json", JSON.stringify(plonkInfo, (key, value) =>
+        typeof value === 'bigint' ? value.toString() :value
+    ));
+    fs.writeFileSync("custom_gates_info_js.json", JSON.stringify(customGatesInfo, (key, value) =>
+        typeof value === 'bigint' ? value.toString() :value
+    ));
+
+
     let nPublics = r1cs.nOutputs + r1cs.nPubInputs;
     const nPublicRows = Math.floor((nPublics - 1)/12) +1;
 
@@ -130,6 +145,21 @@ module.exports = async function plonkSetup(r1cs, options) {
         }
         nBits = options.forceNBits;
     }
+
+
+
+    // nPublics: 3
+    // nPublicRows: 1
+    // NUsed: 25037
+    // nBits: 15
+    // nConstraints: 13702
+    // PLONK nConstraints: 23096
+    // plonkAdditions: 9394
+    console.log("nPublics:", nPublics);
+    console.log("nPublicRows:", nPublicRows);
+    console.log("NUsed:", NUsed);
+    console.log("nBits:", nBits);
+
     const N = 1 << nBits;
 
     const template = await fs.promises.readFile(path.join(__dirname, "compressor12.pil.ejs"), "utf8");

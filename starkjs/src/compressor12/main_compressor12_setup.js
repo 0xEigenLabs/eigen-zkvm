@@ -75,4 +75,7 @@ async function writeExecFile(execFile, adds, sMap) {
     await fd.write(buff);
     await fd.close();
 
+    // const test_file =await fs.promises.open("s_map_js.json", "w+");
+    // await test_file.write(JSON.stringify( sMap));
+    // await test_file.close();
 }

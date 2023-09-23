@@ -3,10 +3,11 @@ use plonky::circom_circuit::Constraint;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::{Fr, GL};
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::ops::Neg;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PlonkGate(
     pub usize,
     pub usize,
@@ -41,7 +42,7 @@ impl PlonkGate {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PlonkAdd(pub usize, pub usize, pub FGL, pub FGL);
 impl std::fmt::Display for PlonkAdd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

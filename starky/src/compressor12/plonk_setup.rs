@@ -11,6 +11,7 @@ use array_tool::vec::Shift;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 
@@ -47,7 +48,7 @@ impl PlonkSetup {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct NormalPlonkInfo {
     pub N: usize,
     // never used fileds
@@ -85,7 +86,7 @@ impl NormalPlonkInfo {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct CustomGateInfo {
     pub(crate) poseidon_id: u64,
     pub(crate) c_mul_add_id: u64,
@@ -185,6 +186,23 @@ impl PlonkSetupRenderInfo {
         // 3. get custom gate info
         let custom_gates_info = CustomGateInfo::from_r1cs(r1cs);
 
+        // test-dump data
+        use std::fs::File;
+        use std::io::Write;
+        use std::path::Path;
+        let mut file = File::create(Path::new("plonk_constrains_rs.json")).unwrap();
+        let input = serde_json::to_string(&plonk_constrains).unwrap();
+        write!(file, "{}", input).unwrap();
+        let mut file = File::create(Path::new("plonk_additions_rs.json")).unwrap();
+        let input = serde_json::to_string(&plonk_additions).unwrap();
+        write!(file, "{}", input).unwrap();
+        let mut file = File::create(Path::new("plonk_info_rs.json")).unwrap();
+        let input = serde_json::to_string(&plonk_info).unwrap();
+        write!(file, "{}", input).unwrap();
+        let mut file = File::create(Path::new("custom_gates_info_rs.json")).unwrap();
+        let input = serde_json::to_string(&custom_gates_info).unwrap();
+        write!(file, "{}", input).unwrap();
+
         // 4. calculate columns,rows,constraints info.
         let n_publics = r1cs.num_inputs + r1cs.num_outputs;
         let n_public_rows = (n_publics - 1) / 12 + 1;
@@ -200,6 +218,21 @@ impl PlonkSetupRenderInfo {
         if opts.force_bits > 0 {
             n_bits = opts.force_bits;
         }
+
+        // n_publics:4
+        // n_public_rows:1
+        // n_used:25037
+        // n_bits:15
+        // n_constaints:13702
+        // n_plonk_gates:23096
+        // n_plonk_adds:9394
+        println!("n_publics:{n_publics}");
+        println!("n_public_rows:{n_public_rows}");
+        println!("n_used:{n_used}");
+        println!("n_bits:{n_bits}");
+        println!("n_constaints:{:?}", r1cs.constraints.len());
+        println!("n_plonk_gates:{:?}", plonk_constrains.len());
+        println!("n_plonk_adds:{:?}", plonk_additions.len());
 
         Self {
             n_used,

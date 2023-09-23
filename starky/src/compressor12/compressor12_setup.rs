@@ -75,4 +75,23 @@ pub(super) fn write_exec_file(exec_file: &String, adds: &Vec<PlonkAdd>, s_map: &
     }
 
     write_vec_to_file(exec_file, &buff).unwrap();
+
+    // // test smap file
+    // use std::path::Path;
+    // let mut file = File::create(Path::new("s_map_rs.json")).unwrap();
+    // let input = serde_json::to_string(&s_map).unwrap();
+    // write!(file, "{}", input).unwrap();
+    //
+    // // dump s_smap for js
+    // use std::collections::BTreeMap;
+    // let inputs_str = std::fs::read_to_string(Path::new("s_map_js.json")).unwrap();
+    // let inputs: Vec<BTreeMap<String, u64>> = serde_json::from_str(&inputs_str).unwrap();
+    // let mut target_s_map = vec![];
+    // for x in inputs {
+    //     let a = x.values().map(|x| *x).collect::<Vec<u64>>();
+    //     target_s_map.push(a);
+    // }
+    // let mut file = File::create(Path::new("s_map_js2.json")).unwrap();
+    // let input = serde_json::to_string(&target_s_map).unwrap();
+    // write!(file, "{}", input).unwrap();
 }
