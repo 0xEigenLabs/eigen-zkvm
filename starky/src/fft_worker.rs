@@ -1,8 +1,7 @@
 use crate::constant::MG;
-use crate::f3g::F3G;
-use crate::traits::FnG;
+use crate::traits::FieldExtension;
 
-pub fn interpolate_prepare_block<F: FnG>(
+pub fn interpolate_prepare_block<F: FieldExtension>(
     buff: &mut [F],
     width: usize,
     start: F,
@@ -22,7 +21,7 @@ pub fn interpolate_prepare_block<F: FnG>(
     log::info!("linear interpolatePrepare end.... {}/{}", st_i, st_n);
 }
 
-fn _fft_block<F: FnG>(
+fn _fft_block<F: FieldExtension>(
     buff: &mut [F],
     rel_pos: usize,
     start_pos: usize,
@@ -107,7 +106,7 @@ fn _fft_block<F: FnG>(
     }
 }
 
-pub fn fft_block<F: FnG>(
+pub fn fft_block<F: FieldExtension>(
     buff: &mut [F],
     start_pos: usize,
     n_pols: usize,

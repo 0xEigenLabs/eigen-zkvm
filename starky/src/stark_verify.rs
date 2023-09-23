@@ -1,14 +1,13 @@
 #![allow(dead_code)]
 use crate::constant::{MG, SHIFT};
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
-use crate::f3g::F3G;
 use crate::fri::FRI;
 use crate::stark_gen::StarkContext;
 use crate::stark_gen::StarkProof;
 use crate::starkinfo::Program;
 use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::{Node, Section};
-use crate::traits::FnG;
+use crate::traits::FieldExtension;
 use crate::traits::{MTNodeType, MerkleTree, Transcript};
 use crate::types::StarkStruct;
 use plonky::field_gl::Fr as FGL;
@@ -66,15 +65,15 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     ctx.challenge[6] = transcript.get_field(); // v2
 
     let x_n = ctx.challenge[7].exp(ctx.N);
-    ctx.Z = x_n - M::FNG::ONE;
-    ctx.Zp = (ctx.challenge[7] * M::FNG::from(MG.0[ctx.nbits])).exp(ctx.N) - M::FNG::ONE;
+    ctx.Z = x_n - M::FnG::ONE;
+    ctx.Zp = (ctx.challenge[7] * M::FnG::from(MG.0[ctx.nbits])).exp(ctx.N) - M::FnG::ONE;
 
     log::debug!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);
     log::debug!("starkinfo: {}", starkinfo);
 
-    let mut x_acc = M::FNG::ONE;
-    let mut q = M::FNG::ZERO;
+    let mut x_acc = M::FnG::ONE;
+    let mut q = M::FnG::ZERO;
     for i in 0..starkinfo.q_deg {
         q = q + x_acc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
         x_acc = x_acc * x_n;
@@ -89,7 +88,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
 
     let fri = FRI::new(stark_struct);
     let check_query =
-        |query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>, idx: usize| -> Result<Vec<M::FNG>> {
+        |query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>, idx: usize| -> Result<Vec<M::FnG>> {
             log::info!("Query: {}", idx);
             let tree = M::new();
             let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
@@ -123,11 +122,11 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
             ctx_query.publics = ctx.publics.clone();
             ctx_query.challenge = ctx.challenge.clone();
 
-            let x = M::FNG::from(SHIFT.clone())
-                * (M::FNG::from(MG.0[ctx.nbits + extend_bits]).exp(idx));
+            let x = M::FnG::from(SHIFT.clone())
+                * (M::FnG::from(MG.0[ctx.nbits + extend_bits]).exp(idx));
             ctx_query.xDivXSubXi = (x / (x - ctx_query.challenge[7])).as_elements();
             ctx_query.xDivXSubWXi =
-                (x / (x - (ctx_query.challenge[7] * M::FNG::from(MG.0[ctx.nbits])))).as_elements();
+                (x / (x - (ctx_query.challenge[7] * M::FnG::from(MG.0[ctx.nbits])))).as_elements();
 
             let vals = vec![execute_code(
                 &mut ctx_query,
@@ -140,7 +139,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     fri.verify(&mut transcript, &proof.fri_proof, check_query)
 }
 
-fn execute_code<F: FnG>(ctx: &mut StarkContext<F>, code: &mut Vec<Section>) -> F {
+fn execute_code<F: FieldExtension>(ctx: &mut StarkContext<F>, code: &mut Vec<Section>) -> F {
     let mut tmp: HashMap<usize, F> = HashMap::new();
 
     let extract_val = |arr: &Vec<FGL>, pos: usize, dim: usize| -> F {

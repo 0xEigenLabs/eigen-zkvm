@@ -156,7 +156,7 @@ impl MerkleTreeBLS12381 {
 impl MerkleTree for MerkleTreeBLS12381 {
     type BaseField = Fr;
     type MTNode = ElementDigest<ElementSize>;
-    type FNG = F5G;
+    type FnG = F5G;
     fn new() -> Self {
         Self {
             nodes: Vec::new(),

@@ -1,11 +1,9 @@
 #![allow(non_snake_case, dead_code)]
 use crate::errors::Result;
-use crate::f3g::F3G;
 use crate::fft_p::interpolate;
 use crate::polsarray::PolsArray;
 use crate::starkinfo::{self, Program, StarkInfo};
-use crate::traits::FnG;
-use crate::traits::MerkleTree;
+use crate::traits::{MerkleTree,FieldExtension};
 use crate::types::{StarkStruct, PIL};
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
@@ -42,7 +40,7 @@ impl<M: MerkleTree> StarkSetup<M> {
 
         let const_buff = const_pol.write_buff();
         //extend and merkelize
-        let mut const_pols_array_e = vec![M::FNG::ZERO; (1 << nBitsExt) * pil.nConstants];
+        let mut const_pols_array_e = vec![M::FnG::ZERO; (1 << nBitsExt) * pil.nConstants];
         let mut const_pols_array_e_be = vec![FGL::ZERO; (1 << nBitsExt) * pil.nConstants];
 
         interpolate(

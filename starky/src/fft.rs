@@ -1,14 +1,13 @@
 #![allow(dead_code)]
 use crate::constant::MG;
-use crate::f3g::F3G;
 use crate::helper::log2_any;
-use crate::traits::FnG;
+use crate::traits::FieldExtension;
 
-pub struct FFT<F: FnG> {
+pub struct FFT<F: FieldExtension> {
     pub roots: Vec<Vec<F>>,
 }
 
-impl<F: FnG> FFT<F> {
+impl<F: FieldExtension> FFT<F> {
     pub fn new() -> Self {
         let s = 32;
         let mut self_ = FFT {

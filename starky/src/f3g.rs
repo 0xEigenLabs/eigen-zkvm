@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::traits::FnG;
+use crate::traits::FieldExtension;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use plonky::field_gl::Fr;
 use plonky::Field;
@@ -36,7 +36,7 @@ impl F3G {
     }
 }
 
-impl FnG for F3G {
+impl FieldExtension for F3G {
     const ZERO: Self = Self {
         cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
         dim: 1,
@@ -670,7 +670,7 @@ impl Display for F3G {
 #[cfg(test)]
 pub mod tests {
     use crate::f3g::F3G;
-    use crate::traits::FnG;
+    use crate::traits::FieldExtension;
     use plonky::field_gl::Fr;
     use plonky::Field;
     use std::ops::{Add, Mul};

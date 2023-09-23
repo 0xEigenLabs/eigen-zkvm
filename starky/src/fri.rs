@@ -1,13 +1,11 @@
 use crate::constant::{MG, SHIFT, SHIFT_INV};
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
-use crate::f3g::F3G;
 use crate::fft::FFT;
 use crate::helper::log2_any;
 use crate::polutils::{eval_pol, pol_mul_axi};
-use crate::traits::{FnG, MTNodeType, MerkleTree, Transcript};
+use crate::traits::{FieldExtension, MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, Step};
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 
 #[derive(Debug)]
 pub struct FRI {
@@ -24,12 +22,12 @@ pub struct Query<MB: Clone + std::default::Default, MN: MTNodeType> {
 }
 
 #[derive(Debug, Clone)]
-pub struct FRIProof<F: FnG, M: MerkleTree<FNG = F>> {
+pub struct FRIProof<F: FieldExtension, M: MerkleTree<FnG = F>> {
     pub queries: Vec<Query<M::BaseField, M::MTNode>>,
     pub last: Vec<F>,
 }
 
-impl<F: FnG, M: MerkleTree<FNG = F>> FRIProof<F, M> {
+impl<F: FieldExtension, M: MerkleTree<FnG = F>> FRIProof<F, M> {
     pub fn new(qs: usize) -> Self {
         FRIProof {
             queries: vec![Query::<M::BaseField, M::MTNode>::default(); qs],
@@ -48,10 +46,10 @@ impl FRI {
         }
     }
 
-    pub fn prove<F: FnG, M: MerkleTree<FNG = F>, T: Transcript>(
+    pub fn prove<F: FieldExtension, M: MerkleTree<FnG = F>, T: Transcript>(
         &mut self,
         transcript: &mut T,
-        pol: &Vec<M::FNG>,
+        pol: &Vec<M::FnG>,
         mut query_pol: impl FnMut(usize) -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
     ) -> Result<FRIProof<F, M>> {
         let mut pol = pol.clone();
@@ -152,7 +150,7 @@ impl FRI {
         Ok(proof)
     }
 
-    pub fn verify<F: FnG, M: MerkleTree<FNG = F>, T: Transcript>(
+    pub fn verify<F: FieldExtension, M: MerkleTree<FnG = F>, T: Transcript>(
         &self,
         transcript: &mut T,
         proof: &FRIProof<F, M>,
@@ -268,7 +266,7 @@ impl FRI {
     }
 }
 
-fn get_transposed_buffer<F: FnG>(pol: &Vec<F>, transpose_bits: usize) -> Vec<FGL> {
+fn get_transposed_buffer<F: FieldExtension>(pol: &Vec<F>, transpose_bits: usize) -> Vec<FGL> {
     let n = pol.len();
     let w = 1 << transpose_bits;
     let h = n / w;
@@ -289,12 +287,12 @@ fn get_transposed_buffer<F: FnG>(pol: &Vec<F>, transpose_bits: usize) -> Vec<FGL
 }
 
 // TODO: Support F5G
-fn get3<F: FnG>(arr: &Vec<FGL>, idx: usize) -> F {
+fn get3<F: FieldExtension>(arr: &Vec<FGL>, idx: usize) -> F {
     F::from_vec(vec![arr[idx * 3], arr[idx * 3 + 1], arr[idx * 3 + 2]])
 }
 
 // TODO: Support F5G
-fn split3<F: FnG>(arr: &Vec<FGL>) -> Vec<F> {
+fn split3<F: FieldExtension>(arr: &Vec<FGL>) -> Vec<F> {
     let mut res: Vec<F> = Vec::new();
     for i in (0..arr.len()).step_by(3) {
         res.push(F::from_vec(vec![arr[i], arr[i + 1], arr[i + 2]]));

@@ -7,7 +7,7 @@ use crate::pil2circom::StarkOption;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::Node;
 use crate::starkinfo_codegen::Section;
-use crate::traits::FnG;
+use crate::traits::FieldExtension;
 use crate::traits::MTNodeType;
 use crate::types::{StarkStruct, PIL};
 

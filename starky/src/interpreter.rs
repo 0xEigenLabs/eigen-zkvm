@@ -1,14 +1,13 @@
 #![allow(non_snake_case, dead_code)]
-use crate::f3g::F3G;
 use crate::stark_gen::StarkContext;
 use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::Node;
 use crate::starkinfo_codegen::Section;
-use crate::traits::FnG;
+use crate::traits::FieldExtension;
 use std::fmt;
 
 #[derive(Clone, Debug)]
-pub enum Ops<T: FnG> {
+pub enum Ops<T: FieldExtension> {
     Vari(T), // instant value
     Add,     // add and push the result into stack
     Sub,     // sub and push the result into stack
@@ -24,14 +23,14 @@ pub enum Ops<T: FnG> {
 /// the symbol should the fields of the global context, have same name as Index.
 /// so the example would be Expr { op: Refer, syms: [ctx.const_n, i], defs: [Vari, Vari...] }
 #[derive(Clone, Debug)]
-pub struct Expr<T: FnG> {
+pub struct Expr<T: FieldExtension> {
     pub op: Ops<T>,
     pub syms: Vec<String>,  // symbol: tmp, q_2ns etc.
     pub defs: Vec<Expr<T>>, // values bound to the symbol
     pub addr: Vec<usize>,   // address, format: (offset, next, modulas, size)
 }
 
-impl<T: FnG> fmt::Display for Expr<T> {
+impl<T: FieldExtension> fmt::Display for Expr<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.op {
             Ops::Add | Ops::Mul | Ops::Sub => {
@@ -65,7 +64,7 @@ impl<T: FnG> fmt::Display for Expr<T> {
     }
 }
 
-impl<T: FnG> Expr<T> {
+impl<T: FieldExtension> Expr<T> {
     pub fn new(op: Ops<T>, syms: Vec<String>, defs: Vec<Expr<T>>, addr: Vec<usize>) -> Self {
         Self {
             op,
@@ -76,19 +75,19 @@ impl<T: FnG> Expr<T> {
     }
 }
 
-impl<T: FnG> From<T> for Expr<T> {
+impl<T: FieldExtension> From<T> for Expr<T> {
     fn from(v: T) -> Self {
         Expr::new(Ops::<T>::Vari(v), vec![], vec![], vec![])
     }
 }
 
 #[derive(Debug)]
-pub struct Block<T: FnG> {
+pub struct Block<T: FieldExtension> {
     pub namespace: String,
     pub exprs: Vec<Expr<T>>,
 }
 
-impl<T: FnG> Block<T> {
+impl<T: FieldExtension> Block<T> {
     fn codegen(&self, step: &str, codebuf: String) {
         use std::io::Write;
         let body = format!(r#"{}"#, codebuf);
@@ -187,7 +186,7 @@ impl<T: FnG> Block<T> {
     }
 }
 
-impl<T: FnG> fmt::Display for Block<T> {
+impl<T: FieldExtension> fmt::Display for Block<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for i in 0..self.exprs.len() {
             writeln!(f, "  {}", self.exprs[i])?;
@@ -196,7 +195,7 @@ impl<T: FnG> fmt::Display for Block<T> {
     }
 }
 
-pub fn compile_code<T: FnG>(
+pub fn compile_code<T: FieldExtension>(
     ctx: &StarkContext<T>,
     starkinfo: &StarkInfo,
     code: &Vec<Section>,
@@ -259,7 +258,7 @@ pub fn compile_code<T: FnG>(
 }
 
 #[inline(always)]
-fn get_i<T: FnG>(expr: &Expr<T>, arg_i: usize) -> usize {
+fn get_i<T: FieldExtension>(expr: &Expr<T>, arg_i: usize) -> usize {
     let offset = expr.addr[0];
     let next = expr.addr[1];
     let modulas = expr.addr[2];
@@ -267,7 +266,7 @@ fn get_i<T: FnG>(expr: &Expr<T>, arg_i: usize) -> usize {
     offset + ((arg_i + next) % modulas) * size
 }
 
-fn get_value<T: FnG>(ctx: &mut StarkContext<T>, expr: &Expr<T>, arg_i: usize) -> T {
+fn get_value<T: FieldExtension>(ctx: &mut StarkContext<T>, expr: &Expr<T>, arg_i: usize) -> T {
     let addr = &expr.syms[0];
     match addr.as_str() {
         "tmp" | "cm1_n" | "cm1_2ns" | "cm2_n" | "cm2_2ns" | "cm3_n" | "cm3_2ns" | "cm4_n"
@@ -324,7 +323,7 @@ fn get_value<T: FnG>(ctx: &mut StarkContext<T>, expr: &Expr<T>, arg_i: usize) ->
     }
 }
 
-fn set_ref<T: FnG>(
+fn set_ref<T: FieldExtension>(
     ctx: &StarkContext<T>,
     starkinfo: &StarkInfo,
     r: &Node,
@@ -409,7 +408,7 @@ fn set_ref<T: FnG>(
         .push(Expr::new(Ops::Write, vec![], vec![e_dst], vec![]));
 }
 
-fn get_ref<F: FnG>(
+fn get_ref<F: FieldExtension>(
     ctx: &StarkContext<F>,
     starkinfo: &StarkInfo,
     r: &Node,
@@ -546,7 +545,7 @@ fn get_ref<F: FnG>(
     }
 }
 
-fn eval_map<F: FnG>(
+fn eval_map<F: FieldExtension>(
     _ctx: &StarkContext<F>,
     starkinfo: &StarkInfo,
     pol_id: usize,

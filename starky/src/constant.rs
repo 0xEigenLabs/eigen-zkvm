@@ -6,9 +6,8 @@ use crate::poseidon_bls12381::Constants as ConstantsBls12381;
 use crate::poseidon_bls12381_opt::load_constants as load_constants_bls12381_opt;
 use crate::poseidon_bn128::{load_constants, Constants};
 use crate::poseidon_bn128_opt::load_constants as load_constants_opt;
-use crate::traits::FnG;
 use ff::*;
-use plonky::field_gl::{exp, Fr, FrRepr};
+use plonky::field_gl::{exp, Fr};
 use plonky::Field;
 use std::collections::HashMap;
 

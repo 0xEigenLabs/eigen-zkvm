@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use crate::{traits::FnG, types::PIL};
+use crate::{traits::FieldExtension, types::PIL};
 use std::collections::HashMap;
 use std::fs::File;
 
@@ -236,7 +236,7 @@ impl PolsArray {
         Ok(())
     }
 
-    pub fn write_buff<T: FnG>(&self) -> Vec<T> {
+    pub fn write_buff<T: FieldExtension>(&self) -> Vec<T> {
         let mut buff: Vec<T> = vec![];
         for i in 0..self.n {
             for j in 0..self.nPols {

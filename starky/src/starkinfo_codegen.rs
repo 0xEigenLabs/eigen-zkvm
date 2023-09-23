@@ -1,9 +1,8 @@
 #![allow(dead_code, non_snake_case)]
 use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps;
-use crate::f3g::F3G;
 use crate::starkinfo::StarkInfo;
-use crate::traits::FnG;
+use crate::traits::FieldExtension;
 use crate::types::Expression;
 use crate::types::PIL;
 use serde::Serialize;
@@ -232,7 +231,7 @@ pub struct PolType {
 }
 
 #[derive(Debug)]
-pub struct Polynom<'a, F: FnG> {
+pub struct Polynom<'a, F: FieldExtension> {
     pub buffer: &'a mut Vec<F>,
     pub deg: usize,
     pub offset: usize,

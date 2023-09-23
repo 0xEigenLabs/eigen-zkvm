@@ -1,11 +1,9 @@
 #![allow(dead_code, non_snake_case)]
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD, SHIFT};
-use crate::f3g::F3G;
 use crate::fft_worker::{fft_block, interpolate_prepare_block};
 use crate::helper::log2_any;
-use crate::traits::FnG;
+use crate::traits::FieldExtension;
 use core::cmp::min;
-use plonky::field_gl::{exp, Fr};
 use rayon::prelude::*;
 
 pub fn BR(x: usize, domain_pow: usize) -> usize {
@@ -18,7 +16,7 @@ pub fn BR(x: usize, domain_pow: usize) -> usize {
     (((x & 0xAAAAAAAA) >> 1) | ((x & 0x55555555) << 1)) >> (32 - domain_pow)
 }
 
-pub fn transpose<F: FnG>(
+pub fn transpose<F: FieldExtension>(
     buffdst: &mut Vec<F>,
     buffsrc: &Vec<F>,
     n_pols: usize,
@@ -39,7 +37,7 @@ pub fn transpose<F: FnG>(
     }
 }
 
-pub fn bit_reverse<F: FnG>(buffdst: &mut Vec<F>, buffsrc: &Vec<F>, n_pols: usize, nbits: usize) {
+pub fn bit_reverse<F: FieldExtension>(buffdst: &mut Vec<F>, buffsrc: &Vec<F>, n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
     for i in 0..n {
         let ri = BR(i, nbits);
@@ -49,7 +47,7 @@ pub fn bit_reverse<F: FnG>(buffdst: &mut Vec<F>, buffsrc: &Vec<F>, n_pols: usize
     }
 }
 
-pub fn interpolate_bit_reverse<F: FnG>(
+pub fn interpolate_bit_reverse<F: FieldExtension>(
     buffdst: &mut Vec<F>,
     buffsrc: &Vec<F>,
     n_pols: usize,
@@ -65,7 +63,7 @@ pub fn interpolate_bit_reverse<F: FnG>(
     }
 }
 
-pub fn inv_bit_reverse<F: FnG>(
+pub fn inv_bit_reverse<F: FieldExtension>(
     buffdst: &mut Vec<F>,
     buffsrc: &Vec<F>,
     n_pols: usize,
@@ -82,7 +80,7 @@ pub fn inv_bit_reverse<F: FnG>(
     }
 }
 
-pub fn interpolate_prepare<F: FnG>(buff: &mut Vec<F>, n_pols: usize, nbits: usize) {
+pub fn interpolate_prepare<F: FieldExtension>(buff: &mut Vec<F>, n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
     let inv_n = F::inv(F::from(n));
     let mut n_per_thread_f = (n - 1) / get_max_workers() + 1;
@@ -115,7 +113,7 @@ pub fn interpolate_prepare<F: FnG>(buff: &mut Vec<F>, n_pols: usize, nbits: usiz
         });
 }
 
-pub fn _fft<F: FnG>(
+pub fn _fft<F: FieldExtension>(
     buffsrc: &Vec<F>,
     n_pols: usize,
     nbits: usize,
@@ -193,15 +191,15 @@ pub fn _fft<F: FnG>(
     });
 }
 
-pub fn fft<F: FnG>(buffsrc: &Vec<F>, n_pols: usize, nbits: usize, buffdst: &mut Vec<F>) {
+pub fn fft<F: FieldExtension>(buffsrc: &Vec<F>, n_pols: usize, nbits: usize, buffdst: &mut Vec<F>) {
     _fft(buffsrc, n_pols, nbits, buffdst, false)
 }
 
-pub fn ifft<F: FnG>(buffsrc: &Vec<F>, n_pols: usize, nbits: usize, buffdst: &mut Vec<F>) {
+pub fn ifft<F: FieldExtension>(buffsrc: &Vec<F>, n_pols: usize, nbits: usize, buffdst: &mut Vec<F>) {
     _fft(buffsrc, n_pols, nbits, buffdst, true)
 }
 
-pub fn interpolate<F: FnG>(
+pub fn interpolate<F: FieldExtension>(
     buffsrc: &Vec<F>,
     n_pols: usize,
     nbits: usize,

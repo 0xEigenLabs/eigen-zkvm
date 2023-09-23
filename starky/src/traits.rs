@@ -1,8 +1,14 @@
 use crate::errors::Result;
-use crate::f3g::F3G;
-use crate::f5g::F5G;
 use ff::PrimeField;
 use plonky::field_gl::Fr as FGL;
+use ::rand::Rand;
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use plonky::field_gl::Fr;
+use plonky::Field;
+use serde::ser::Serialize;
+use std::fmt::{Debug, Display};
+use std::hash::Hash;
+
 
 pub trait MTNodeType {
     fn as_elements(&self) -> &[FGL];
@@ -17,9 +23,9 @@ pub trait MerkleTree {
         + Default
         + core::fmt::Debug
         + Into<crate::serializer::Input<Self::MTNode>>;
-    type FNG: FnG;
+    type FnG: FieldExtension;
     fn new() -> Self;
-    fn to_fng(&self, p_be: &mut Vec<Self::FNG>);
+    fn to_fng(&self, p_be: &mut Vec<Self::FnG>);
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()>;
     fn get_element(&self, idx: usize, sub_idx: usize) -> FGL;
     fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<Self::BaseField>>)>;
@@ -37,21 +43,13 @@ pub trait MerkleTree {
 
 pub trait Transcript {
     fn new() -> Self;
-    fn get_field<F: FnG>(&mut self) -> F;
+    fn get_field<F: FieldExtension>(&mut self) -> F;
     fn get_fields1(&mut self) -> Result<FGL>;
     fn put(&mut self, es: &[Vec<FGL>]) -> Result<()>;
     fn get_permutations(&mut self, n: usize, nbits: usize) -> Result<Vec<usize>>;
 }
 
-use ::rand::Rand;
-use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use plonky::field_gl::Fr;
-use plonky::Field;
-use serde::ser::Serialize;
-use std::fmt::{Debug, Display};
-use std::hash::Hash;
-
-pub trait FnG:
+pub trait FieldExtension:
     From<Fr>
     + From<u64>
     + From<i32>

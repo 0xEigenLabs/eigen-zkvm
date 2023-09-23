@@ -148,7 +148,7 @@ impl MerkleTreeBN128 {
 impl MerkleTree for MerkleTreeBN128 {
     type BaseField = Fr;
     type MTNode = ElementDigest<4>;
-    type FNG = F3G;
+    type FnG = F3G;
 
     fn new() -> Self {
         Self {

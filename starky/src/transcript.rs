@@ -1,7 +1,6 @@
 use crate::errors::Result;
-use crate::f3g::F3G;
 use crate::poseidon_opt::Poseidon;
-use crate::traits::FnG;
+use crate::traits::FieldExtension;
 use crate::traits::Transcript;
 use num_bigint::BigUint;
 use plonky::field_gl::Fr as FGL;
@@ -46,7 +45,7 @@ impl Transcript for TranscriptGL {
         }
     }
 
-    fn get_field<F: FnG>(&mut self) -> F {
+    fn get_field<F: FieldExtension>(&mut self) -> F {
         let a = self.get_fields1().unwrap();
         let b = self.get_fields1().unwrap();
         let c = self.get_fields1().unwrap();
