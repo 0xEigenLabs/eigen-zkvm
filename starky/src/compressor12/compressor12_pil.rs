@@ -411,33 +411,27 @@ namespace Compressor(%N);
     pol constant {};
     pol constant {};
     pol constant {};
-    pol constant {};
-    pol constant {};
-    pol commit {};
             "#,
-            Si(12).to_string(),
-            Ci(12).to_string(),
             PARTIAL.to_string(),
             POSEIDON12.to_string(),
             GATE.to_string(),
             CMULADD.to_string(),
             EVPOL4.to_string(),
             FFT4.to_string(),
-            ai(12).to_string(),
         );
 
         let target = format!(
             r#"
 namespace Compressor(%N);
-    pol constant S[12];
-    pol constant C[12];
+    // pol constant S[12];
+    // pol constant C[12];
     pol constant PARTIAL;
     pol constant POSEIDON12;
     pol constant GATE;
     pol constant CMULADD;
     pol constant EVPOL4;
     pol constant FFT4;
-    pol commit a[12];
+    // pol commit a[12];
             "#
         );
 

@@ -137,13 +137,13 @@ impl PolsArray {
         let namespace = self.def.get_mut(ns).unwrap();
 
         if !namespace.contains_key(np) {
-            namespace.insert(np.clone(), vec![0; self.nPols]);
+            namespace.insert(np.clone(), vec![0; self.n]);
         }
 
         let namepols = namespace.get_mut(np).unwrap();
         if namepols.len() <= i {
             // TODO: need optimize
-            namepols.resize(i + 1, 0);
+            namepols.resize(self.n, 0);
         }
         let np_id = namepols[i];
 

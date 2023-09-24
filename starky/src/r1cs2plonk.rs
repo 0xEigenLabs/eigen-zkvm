@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+use array_tool::vec::Shift;
 use plonky::circom_circuit::Constraint;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
@@ -24,7 +25,14 @@ impl std::fmt::Display for PlonkGate {
         write!(
             f,
             "({}, {}, {}, {}, {}, {}, {}, {})",
-            self.0, self.1, self.2, self.3, self.4, self.5, self.6, self.7
+            self.0,
+            self.1,
+            self.2,
+            self.3.as_int(),
+            self.4.as_int(),
+            self.5.as_int(),
+            self.6.as_int(),
+            self.7.as_int()
         )
     }
 }
@@ -46,7 +54,14 @@ impl PlonkGate {
 pub struct PlonkAdd(pub usize, pub usize, pub FGL, pub FGL);
 impl std::fmt::Display for PlonkAdd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}, {}, {}, {})", self.0, self.1, self.2, self.3)
+        write!(
+            f,
+            "({}, {}, {}, {})",
+            self.0,
+            self.1,
+            self.2.as_int(),
+            self.3.as_int()
+        )
     }
 }
 
@@ -101,8 +116,8 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
         }
 
         while cs.len() > max_c {
-            let c1 = cs[0];
-            let c2 = cs[1];
+            let c1 = cs.shift().unwrap();
+            let c2 = cs.shift().unwrap();
 
             let sl = c1.0;
             let sr = c2.0;
@@ -117,8 +132,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
 
             pc.push(PlonkGate(sl, sr, so, qm, ql, qr, qo, qc));
             pa.push(PlonkAdd(sl, sr, c1.1, c2.1));
-            cs.remove(0);
-            cs.remove(0);
+
             cs.push((so, FGL::ONE));
         }
         for c in cs.iter() {
@@ -182,25 +196,24 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
     let get_lc_type = |lc: &mut BTreeMap<usize, FGL>| -> String {
         let mut k = FGL::ZERO;
         let mut n = 0;
+
+        lc.retain(|_, v| *v != FGL::ZERO);
+
         for (key, val) in lc.iter() {
-            if *val == FGL::ZERO {
-                //delete
-            } else if *key == 0 {
+            if *key == 0 {
                 k = k + *val;
             } else {
                 n += 1;
             }
         }
-        lc.retain(|_, v| *v != FGL::ZERO);
-        //println!("get_lc_type lc.size {}", lc.len());
 
         if n > 0 {
             return format!("{}", n);
         }
         if k != FGL::ZERO {
-            return format!("k");
+            return String::from("k");
         }
-        format!("0")
+        String::from("0")
     };
 
     let process =
@@ -222,7 +235,6 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
             } else {
                 add_constraint_mul(&lc_a, &lc_b, &lc_c, pc, pa, n_var);
             }
-            //pc.iter().for_each(|c|println!("{}", c));
         };
 
     for (i, c) in r1cs.constraints.iter().enumerate() {
@@ -243,18 +255,31 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
 pub mod tests {
     use crate::compressor12::compressor12_setup::Options;
     use crate::r1cs2plonk::r1cs2plonk;
-    //use plonky::bellman_ce::bn256::Bn256;
-    use crate::compressor12::plonk_setup::*;
     use plonky::field_gl::GL;
     use plonky::reader::load_r1cs;
 
     #[test]
     #[ignore]
     fn test_r1cs2plonk() {
-        let r1cs = load_r1cs::<GL>("/tmp/circuit.gl.r1cs");
-        let (pc, pa) = r1cs2plonk(&r1cs);
-        println!("pc {}, pa {}", pc.len(), pa.len());
-        let opts = Options { force_bits: 0 };
-        // let _plonksetupinfo = plonk_setup_render(&r1cs, &opts, "/tmp/c12.pil");
+        let r1cs = load_r1cs::<GL>(&"/tmp/multiplier2.r1cs".to_string());
+        let (plonk_constrains, plonk_additions) = r1cs2plonk(&r1cs);
+
+        use std::fs::File;
+        use std::io::Write;
+        use std::path::Path;
+        // let mut file = File::create(Path::new("./test_plonk_constrains_rs.json")).unwrap();
+        // let input = serde_json::to_string(&plonk_constrains).unwrap();
+        // write!(file, "{}", input).unwrap();
+        //
+        // let mut file = File::create(Path::new("./test_plonk_additions_rs.json")).unwrap();
+        // let input = serde_json::to_string(&plonk_additions).unwrap();
+        // write!(file, "{}", input).unwrap();
+
+        println!("plonk_constrains, {:?}", plonk_constrains);
+        for pa in plonk_constrains {
+            println!("plonk_constrains: {}", pa);
+            let a = pa.to_string();
+            println!("plonk_constrains: {}", a);
+        }
     }
 }

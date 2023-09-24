@@ -13,7 +13,6 @@ use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::collections::HashMap;
 
 #[derive(Default, Debug)]
 pub struct PlonkSetup {
@@ -59,7 +58,7 @@ pub(crate) struct NormalPlonkInfo {
 
 impl NormalPlonkInfo {
     pub(crate) fn new(plonk_constrains: &Vec<PlonkGate>) -> Self {
-        let mut uses: HashMap<String, usize> = HashMap::new();
+        let mut uses: BTreeMap<String, usize> = BTreeMap::new();
         let plonk_constrains_len = plonk_constrains.len();
         for (i, c) in plonk_constrains.iter().enumerate() {
             if (i % 10000) == 0 {
@@ -191,20 +190,31 @@ impl PlonkSetupRenderInfo {
         use std::io::Write;
         use std::path::Path;
         let mut file = File::create(Path::new("plonk_constrains_rs.json")).unwrap();
-        let input = serde_json::to_string(&plonk_constrains).unwrap();
+        let input = plonk_constrains
+            .iter()
+            .map(|pa| pa.to_string())
+            .collect::<Vec<String>>();
+        let input = serde_json::to_string(&input).unwrap();
         write!(file, "{}", input).unwrap();
+
         let mut file = File::create(Path::new("plonk_additions_rs.json")).unwrap();
-        let input = serde_json::to_string(&plonk_additions).unwrap();
+        let input = plonk_additions
+            .iter()
+            .map(|pa| pa.to_string())
+            .collect::<Vec<String>>();
+        let input = serde_json::to_string(&input).unwrap();
         write!(file, "{}", input).unwrap();
+
         let mut file = File::create(Path::new("plonk_info_rs.json")).unwrap();
         let input = serde_json::to_string(&plonk_info).unwrap();
         write!(file, "{}", input).unwrap();
+
         let mut file = File::create(Path::new("custom_gates_info_rs.json")).unwrap();
         let input = serde_json::to_string(&custom_gates_info).unwrap();
         write!(file, "{}", input).unwrap();
 
         // 4. calculate columns,rows,constraints info.
-        let n_publics = r1cs.num_inputs + r1cs.num_outputs;
+        let n_publics = r1cs.num_inputs + r1cs.num_outputs - 1;
         let n_public_rows = (n_publics - 1) / 12 + 1;
 
         let n_used = n_public_rows
@@ -219,13 +229,19 @@ impl PlonkSetupRenderInfo {
             n_bits = opts.force_bits;
         }
 
-        // n_publics:4
+        // r1cs.num_inputs:4
+        // r1cs.num_outputs:0
+        // r1cs.num_variables:233756
+        // n_publics:3
         // n_public_rows:1
         // n_used:25037
         // n_bits:15
         // n_constaints:13702
         // n_plonk_gates:23096
         // n_plonk_adds:9394
+        println!("r1cs.num_inputs:{:?}", r1cs.num_inputs);
+        println!("r1cs.num_outputs:{:?}", r1cs.num_outputs);
+        println!("r1cs.num_variables:{:?}", r1cs.num_variables);
         println!("n_publics:{n_publics}");
         println!("n_public_rows:{n_public_rows}");
         println!("n_used:{n_used}");
@@ -292,7 +308,7 @@ pub fn plonk_setup_compressor(
         n_used: usize,
     }
     // Paste plonk constraints.
-    let mut partial_rows: HashMap<String, ParRow> = HashMap::new();
+    let mut partial_rows: BTreeMap<String, ParRow> = BTreeMap::new();
     let mut half_rows: Vec<ParRow> = vec![];
     let plonk_constraints = &plonk_setup_info.pg;
     for (i, c) in plonk_constraints.iter().enumerate() {
@@ -636,7 +652,7 @@ pub fn plonk_setup_compressor(
         row: usize,
         col: usize,
     }
-    let mut last_signal: HashMap<u64, Grid> = HashMap::new();
+    let mut last_signal: BTreeMap<u64, Grid> = BTreeMap::new();
 
     for i in 0..r {
         if (i % 10000) == 0 {
