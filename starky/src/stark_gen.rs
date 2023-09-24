@@ -175,9 +175,9 @@ pub struct StarkProof<M: MerkleTree> {
     pub root2: M::MTNode,
     pub root3: M::MTNode,
     pub root4: M::MTNode,
-    pub fri_proof: FRIProof<M::FnG, M>,
-    pub evals: Vec<M::FnG>,
-    pub publics: Vec<M::FnG>,
+    pub fri_proof: FRIProof<M::ExtendField, M>,
+    pub evals: Vec<M::ExtendField>,
+    pub publics: Vec<M::ExtendField>,
     pub rootC: Option<M::MTNode>,
     pub stark_struct: StarkStruct,
 }
@@ -192,7 +192,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         _pil: &PIL,
         stark_struct: &StarkStruct,
     ) -> Result<StarkProof<M>> {
-        let mut ctx = StarkContext::<M::FnG>::default();
+        let mut ctx = StarkContext::<M::ExtendField>::default();
         //log::debug!("starkinfo: {}", starkinfo);
         //log::debug!("program: {}", program);
 
@@ -206,49 +206,49 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let mut n_cm = starkinfo.n_cm1;
 
         ctx.cm1_n = cm_pols.write_buff();
-        ctx.cm2_n = vec![M::FnG::ZERO; (starkinfo.map_sectionsN.cm2_n) * ctx.N];
-        ctx.cm3_n = vec![M::FnG::ZERO; (starkinfo.map_sectionsN.cm3_n) * ctx.N];
-        ctx.tmpexp_n = vec![M::FnG::ZERO; (starkinfo.map_sectionsN.tmpexp_n) * ctx.N];
+        ctx.cm2_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.cm2_n) * ctx.N];
+        ctx.cm3_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.cm3_n) * ctx.N];
+        ctx.tmpexp_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.tmpexp_n) * ctx.N];
 
-        ctx.cm1_2ns = vec![M::FnG::ZERO; starkinfo.map_sectionsN.cm1_n * ctx.Next];
-        ctx.cm2_2ns = vec![M::FnG::ZERO; starkinfo.map_sectionsN.cm2_n * ctx.Next];
-        ctx.cm3_2ns = vec![M::FnG::ZERO; starkinfo.map_sectionsN.cm3_n * ctx.Next];
-        ctx.cm4_2ns = vec![M::FnG::ZERO; starkinfo.map_sectionsN.cm4_n * ctx.Next];
-        ctx.const_2ns = vec![M::FnG::ZERO; const_tree.element_size()];
+        ctx.cm1_2ns = vec![M::ExtendField::ZERO; starkinfo.map_sectionsN.cm1_n * ctx.Next];
+        ctx.cm2_2ns = vec![M::ExtendField::ZERO; starkinfo.map_sectionsN.cm2_n * ctx.Next];
+        ctx.cm3_2ns = vec![M::ExtendField::ZERO; starkinfo.map_sectionsN.cm3_n * ctx.Next];
+        ctx.cm4_2ns = vec![M::ExtendField::ZERO; starkinfo.map_sectionsN.cm4_n * ctx.Next];
+        ctx.const_2ns = vec![M::ExtendField::ZERO; const_tree.element_size()];
 
-        ctx.q_2ns = vec![M::FnG::ZERO; starkinfo.q_dim * ctx.Next];
-        ctx.f_2ns = vec![M::FnG::ZERO; 3 * ctx.Next];
+        ctx.q_2ns = vec![M::ExtendField::ZERO; starkinfo.q_dim * ctx.Next];
+        ctx.f_2ns = vec![M::ExtendField::ZERO; 3 * ctx.Next];
 
-        ctx.x_n = vec![M::FnG::ZERO; ctx.N];
+        ctx.x_n = vec![M::ExtendField::ZERO; ctx.N];
 
-        let mut xx = M::FnG::ONE;
+        let mut xx = M::ExtendField::ONE;
         // Using the precomputing value
-        let w_nbits: M::FnG = M::FnG::from(MG.0[ctx.nbits]);
+        let w_nbits: M::ExtendField = M::ExtendField::from(MG.0[ctx.nbits]);
         for i in 0..ctx.N {
             ctx.x_n[i] = xx;
             xx = xx * w_nbits;
         }
 
         let extend_bits = ctx.nbits_ext - ctx.nbits;
-        ctx.x_2ns = vec![M::FnG::ZERO; ctx.N << extend_bits];
+        ctx.x_2ns = vec![M::ExtendField::ZERO; ctx.N << extend_bits];
 
-        let mut xx: M::FnG = M::FnG::from(SHIFT.clone());
+        let mut xx: M::ExtendField = M::ExtendField::from(SHIFT.clone());
         for i in 0..(ctx.N << extend_bits) {
             ctx.x_2ns[i] = xx;
-            xx = xx * M::FnG::from(MG.0[ctx.nbits_ext]);
+            xx = xx * M::ExtendField::from(MG.0[ctx.nbits_ext]);
         }
 
-        ctx.Zi = build_Zh_Inv::<M::FnG>(ctx.nbits, extend_bits, 0);
+        ctx.Zi = build_Zh_Inv::<M::ExtendField>(ctx.nbits, extend_bits, 0);
 
         ctx.const_n = const_pols.write_buff();
         const_tree.to_fng(&mut ctx.const_2ns);
 
-        ctx.publics = vec![M::FnG::ZERO; starkinfo.publics.len()];
+        ctx.publics = vec![M::ExtendField::ZERO; starkinfo.publics.len()];
         for (i, pe) in starkinfo.publics.iter().enumerate() {
             if pe.polType.as_str() == "cmP" {
                 ctx.publics[i] = ctx.cm1_n[pe.idx * starkinfo.map_sectionsN.cm1_n + pe.polId];
             } else if pe.polType.as_str() == "imP" {
-                ctx.publics[i] = Self::calculate_exp_at_point::<M::FnG>(
+                ctx.publics[i] = Self::calculate_exp_at_point::<M::ExtendField>(
                     &mut ctx,
                     starkinfo,
                     &program.publics_code[i],
@@ -361,12 +361,12 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         calculate_exps_parallel(&mut ctx, starkinfo, &program.step42ns, "2ns", "step4");
 
-        let mut qq1 = vec![M::FnG::ZERO; ctx.q_2ns.len()];
-        let mut qq2 = vec![M::FnG::ZERO; starkinfo.q_dim * ctx.Next * starkinfo.q_deg];
+        let mut qq1 = vec![M::ExtendField::ZERO; ctx.q_2ns.len()];
+        let mut qq2 = vec![M::ExtendField::ZERO; starkinfo.q_dim * ctx.Next * starkinfo.q_deg];
         ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
 
-        let mut cur_s = M::FnG::ONE;
-        let shift_in = (M::FnG::inv(M::FnG::from(SHIFT.clone()))).exp(ctx.N);
+        let mut cur_s = M::ExtendField::ONE;
+        let shift_in = (M::ExtendField::inv(M::ExtendField::from(SHIFT.clone()))).exp(ctx.N);
         for p in 0..starkinfo.q_deg {
             for i in 0..ctx.N {
                 for k in 0..starkinfo.q_dim {
@@ -404,13 +404,14 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ///////////
         ctx.challenge[7] = transcript.get_field(); // xi
 
-        let mut LEv = vec![M::FnG::ZERO; ctx.N];
-        let mut LpEv = vec![M::FnG::ZERO; ctx.N];
-        LEv[0] = M::FnG::from(FGL::from(1u64));
-        LpEv[0] = M::FnG::from(FGL::from(1u64));
+        let mut LEv = vec![M::ExtendField::ZERO; ctx.N];
+        let mut LpEv = vec![M::ExtendField::ZERO; ctx.N];
+        LEv[0] = M::ExtendField::from(FGL::from(1u64));
+        LpEv[0] = M::ExtendField::from(FGL::from(1u64));
 
-        let xis = ctx.challenge[7] / M::FnG::from(SHIFT.clone());
-        let wxis = (ctx.challenge[7] * M::FnG::from(MG.0[ctx.nbits])) / M::FnG::from(SHIFT.clone());
+        let xis = ctx.challenge[7] / M::ExtendField::from(SHIFT.clone());
+        let wxis = (ctx.challenge[7] * M::ExtendField::from(MG.0[ctx.nbits]))
+            / M::ExtendField::from(SHIFT.clone());
 
         for i in 1..ctx.N {
             LEv[i] = LEv[i - 1] * xis;
@@ -420,7 +421,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let LEv = fftobj.ifft(&LEv);
         let LpEv = fftobj.ifft(&LpEv);
 
-        ctx.evals = vec![M::FnG::ZERO; starkinfo.ev_map.len()];
+        ctx.evals = vec![M::ExtendField::ZERO; starkinfo.ev_map.len()];
         let N = ctx.N;
         for (i, ev) in starkinfo.ev_map.iter().enumerate() {
             let p = match ev.type_.as_str() {
@@ -444,7 +445,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                     let v = match p.dim {
                         1 => p.buffer[(k << extend_bits) * (p.size) + (p.offset)],
                         // TODO: We need to support F5G
-                        _ => M::FnG::from_vec(vec![
+                        _ => M::ExtendField::from_vec(vec![
                             p.buffer[p.offset + (k << extend_bits) * (p.size)].to_be(),
                             p.buffer[p.offset + (k << extend_bits) * (p.size) + 1].to_be(),
                             p.buffer[p.offset + (k << extend_bits) * (p.size) + 2].to_be(),
@@ -452,7 +453,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                     };
                     v * l[k]
                 })
-                .reduce(|| M::FnG::ZERO, |a, b| a + b);
+                .reduce(|| M::ExtendField::ZERO, |a, b| a + b);
             ctx.evals[i] = acc;
         }
 
@@ -473,20 +474,20 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         // Calculate xDivXSubXi, xDivXSubWXi
         let xi = ctx.challenge[7];
-        let wxi = ctx.challenge[7] * M::FnG::from(MG.0[ctx.nbits]);
+        let wxi = ctx.challenge[7] * M::ExtendField::from(MG.0[ctx.nbits]);
 
         let extend_size = N << extend_bits;
 
         ctx.xDivXSubXi = vec![FGL::ZERO; extend_size * 3];
         ctx.xDivXSubWXi = vec![FGL::ZERO; extend_size * 3];
-        let mut tmp_den = vec![M::FnG::ZERO; extend_size];
-        let mut tmp_denw = vec![M::FnG::ZERO; extend_size];
+        let mut tmp_den = vec![M::ExtendField::ZERO; extend_size];
+        let mut tmp_denw = vec![M::ExtendField::ZERO; extend_size];
 
-        let mut x_buff = vec![M::FnG::ZERO; extend_size];
+        let mut x_buff = vec![M::ExtendField::ZERO; extend_size];
 
         x_buff.par_iter_mut().enumerate().for_each(|(k, xb)| {
-            *xb = M::FnG::from(SHIFT.clone())
-                * M::FnG::from(MG.0[ctx.nbits + extend_bits].clone()).exp(k);
+            *xb = M::ExtendField::from(SHIFT.clone())
+                * M::ExtendField::from(MG.0[ctx.nbits + extend_bits].clone()).exp(k);
         });
 
         tmp_den
@@ -498,8 +499,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                 *tdw = x_buff[k] - wxi;
             });
 
-        tmp_den = M::FnG::batch_inverse(&tmp_den);
-        tmp_denw = M::FnG::batch_inverse(&tmp_denw);
+        tmp_den = M::ExtendField::batch_inverse(&tmp_den);
+        tmp_denw = M::ExtendField::batch_inverse(&tmp_denw);
         ctx.xDivXSubXi
             .par_chunks_mut(3)
             .zip_eq(ctx.xDivXSubWXi.par_chunks_mut(3))
@@ -517,9 +518,9 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             });
         calculate_exps_parallel(&mut ctx, starkinfo, &program.step52ns, "2ns", "step5");
 
-        let mut fri_pol = vec![M::FnG::ZERO; N << extend_bits];
+        let mut fri_pol = vec![M::ExtendField::ZERO; N << extend_bits];
         fri_pol.par_iter_mut().enumerate().for_each(|(i, o)| {
-            *o = M::FnG::from_vec(vec![
+            *o = M::ExtendField::from_vec(vec![
                 ctx.f_2ns[i * 3].to_be(),
                 ctx.f_2ns[i * 3 + 1].to_be(),
                 ctx.f_2ns[i * 3 + 2].to_be(),
@@ -536,7 +537,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             ]
         };
         let mut fri = FRI::new(stark_struct);
-        let friProof = fri.prove::<M::FnG, M, T>(&mut transcript, &fri_pol, query_pol)?;
+        let friProof = fri.prove::<M::ExtendField, M, T>(&mut transcript, &fri_pol, query_pol)?;
 
         Ok(StarkProof {
             rootC: Some(const_tree.root()),
@@ -700,14 +701,14 @@ pub fn get_pol<F: FieldExtension>(
 }
 
 pub fn extend_and_merkelize<M: MerkleTree>(
-    ctx: &mut StarkContext<M::FnG>,
+    ctx: &mut StarkContext<M::ExtendField>,
     starkinfo: &StarkInfo,
     section_name: &'static str,
 ) -> Result<M> {
     let nBitsExt = ctx.nbits_ext;
     let nBits = ctx.nbits;
     let n_pols = starkinfo.map_sectionsN.get(section_name);
-    let mut result = vec![M::FnG::ZERO; (1 << nBitsExt) * n_pols];
+    let mut result = vec![M::ExtendField::ZERO; (1 << nBitsExt) * n_pols];
     let p = ctx.get_mut(section_name);
     interpolate(p, n_pols, nBits, &mut result, nBitsExt);
     let mut p_be = vec![FGL::ZERO; result.len()];
@@ -722,7 +723,7 @@ pub fn extend_and_merkelize<M: MerkleTree>(
 }
 
 pub fn merkelize<M: MerkleTree>(
-    ctx: &mut StarkContext<M::FnG>,
+    ctx: &mut StarkContext<M::ExtendField>,
     starkinfo: &StarkInfo,
     section_name: &'static str,
 ) -> Result<M> {

@@ -22,12 +22,12 @@ pub struct Query<MB: Clone + std::default::Default, MN: MTNodeType> {
 }
 
 #[derive(Debug, Clone)]
-pub struct FRIProof<F: FieldExtension, M: MerkleTree<FnG = F>> {
+pub struct FRIProof<F: FieldExtension, M: MerkleTree<ExtendField = F>> {
     pub queries: Vec<Query<M::BaseField, M::MTNode>>,
     pub last: Vec<F>,
 }
 
-impl<F: FieldExtension, M: MerkleTree<FnG = F>> FRIProof<F, M> {
+impl<F: FieldExtension, M: MerkleTree<ExtendField = F>> FRIProof<F, M> {
     pub fn new(qs: usize) -> Self {
         FRIProof {
             queries: vec![Query::<M::BaseField, M::MTNode>::default(); qs],
@@ -46,10 +46,10 @@ impl FRI {
         }
     }
 
-    pub fn prove<F: FieldExtension, M: MerkleTree<FnG = F>, T: Transcript>(
+    pub fn prove<F: FieldExtension, M: MerkleTree<ExtendField = F>, T: Transcript>(
         &mut self,
         transcript: &mut T,
-        pol: &Vec<M::FnG>,
+        pol: &Vec<M::ExtendField>,
         mut query_pol: impl FnMut(usize) -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
     ) -> Result<FRIProof<F, M>> {
         let mut pol = pol.clone();
@@ -150,7 +150,7 @@ impl FRI {
         Ok(proof)
     }
 
-    pub fn verify<F: FieldExtension, M: MerkleTree<FnG = F>, T: Transcript>(
+    pub fn verify<F: FieldExtension, M: MerkleTree<ExtendField = F>, T: Transcript>(
         &self,
         transcript: &mut T,
         proof: &FRIProof<F, M>,

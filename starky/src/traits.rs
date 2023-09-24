@@ -22,9 +22,9 @@ pub trait MerkleTree {
         + Default
         + core::fmt::Debug
         + Into<crate::serializer::Input<Self::MTNode>>;
-    type FnG: FieldExtension;
+    type ExtendField: FieldExtension;
     fn new() -> Self;
-    fn to_fng(&self, p_be: &mut Vec<Self::FnG>);
+    fn to_fng(&self, p_be: &mut Vec<Self::ExtendField>);
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()>;
     fn get_element(&self, idx: usize, sub_idx: usize) -> FGL;
     fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<Self::BaseField>>)>;

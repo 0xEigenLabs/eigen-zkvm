@@ -40,7 +40,7 @@ impl<M: MerkleTree> StarkSetup<M> {
 
         let const_buff = const_pol.write_buff();
         //extend and merkelize
-        let mut const_pols_array_e = vec![M::FnG::ZERO; (1 << nBitsExt) * pil.nConstants];
+        let mut const_pols_array_e = vec![M::ExtendField::ZERO; (1 << nBitsExt) * pil.nConstants];
         let mut const_pols_array_e_be = vec![FGL::ZERO; (1 << nBitsExt) * pil.nConstants];
 
         interpolate(

@@ -65,15 +65,16 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     ctx.challenge[6] = transcript.get_field(); // v2
 
     let x_n = ctx.challenge[7].exp(ctx.N);
-    ctx.Z = x_n - M::FnG::ONE;
-    ctx.Zp = (ctx.challenge[7] * M::FnG::from(MG.0[ctx.nbits])).exp(ctx.N) - M::FnG::ONE;
+    ctx.Z = x_n - M::ExtendField::ONE;
+    ctx.Zp =
+        (ctx.challenge[7] * M::ExtendField::from(MG.0[ctx.nbits])).exp(ctx.N) - M::ExtendField::ONE;
 
     log::debug!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);
     log::debug!("starkinfo: {}", starkinfo);
 
-    let mut x_acc = M::FnG::ONE;
-    let mut q = M::FnG::ZERO;
+    let mut x_acc = M::ExtendField::ONE;
+    let mut q = M::ExtendField::ZERO;
     for i in 0..starkinfo.q_deg {
         q = q + x_acc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
         x_acc = x_acc * x_n;
@@ -87,54 +88,56 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     }
 
     let fri = FRI::new(stark_struct);
-    let check_query =
-        |query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>, idx: usize| -> Result<Vec<M::FnG>> {
-            log::info!("Query: {}", idx);
-            let tree = M::new();
-            let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
-            if !res {
-                return Err(FRIVerifierFailed);
-            }
-            let res = tree.verify_group_proof(&proof.root2, &query[1].1, idx, &query[1].0)?;
-            if !res {
-                return Err(FRIVerifierFailed);
-            }
-            let res = tree.verify_group_proof(&proof.root3, &query[2].1, idx, &query[2].0)?;
-            if !res {
-                return Err(FRIVerifierFailed);
-            }
-            let res = tree.verify_group_proof(&proof.root4, &query[3].1, idx, &query[3].0)?;
-            if !res {
-                return Err(FRIVerifierFailed);
-            }
-            let res = tree.verify_group_proof(const_root, &query[4].1, idx, &query[4].0)?;
-            if !res {
-                return Err(FRIVerifierFailed);
-            }
-            let mut ctx_query = StarkContext::default();
-            ctx_query.tree1 = query[0].0.clone();
-            ctx_query.tree2 = query[1].0.clone();
-            ctx_query.tree3 = query[2].0.clone();
-            ctx_query.tree4 = query[3].0.clone();
-            ctx_query.consts = query[4].0.clone();
+    let check_query = |query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
+                       idx: usize|
+     -> Result<Vec<M::ExtendField>> {
+        log::info!("Query: {}", idx);
+        let tree = M::new();
+        let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
+        if !res {
+            return Err(FRIVerifierFailed);
+        }
+        let res = tree.verify_group_proof(&proof.root2, &query[1].1, idx, &query[1].0)?;
+        if !res {
+            return Err(FRIVerifierFailed);
+        }
+        let res = tree.verify_group_proof(&proof.root3, &query[2].1, idx, &query[2].0)?;
+        if !res {
+            return Err(FRIVerifierFailed);
+        }
+        let res = tree.verify_group_proof(&proof.root4, &query[3].1, idx, &query[3].0)?;
+        if !res {
+            return Err(FRIVerifierFailed);
+        }
+        let res = tree.verify_group_proof(const_root, &query[4].1, idx, &query[4].0)?;
+        if !res {
+            return Err(FRIVerifierFailed);
+        }
+        let mut ctx_query = StarkContext::default();
+        ctx_query.tree1 = query[0].0.clone();
+        ctx_query.tree2 = query[1].0.clone();
+        ctx_query.tree3 = query[2].0.clone();
+        ctx_query.tree4 = query[3].0.clone();
+        ctx_query.consts = query[4].0.clone();
 
-            ctx_query.evals = ctx.evals.clone();
-            ctx_query.publics = ctx.publics.clone();
-            ctx_query.challenge = ctx.challenge.clone();
+        ctx_query.evals = ctx.evals.clone();
+        ctx_query.publics = ctx.publics.clone();
+        ctx_query.challenge = ctx.challenge.clone();
 
-            let x = M::FnG::from(SHIFT.clone())
-                * (M::FnG::from(MG.0[ctx.nbits + extend_bits]).exp(idx));
-            ctx_query.xDivXSubXi = (x / (x - ctx_query.challenge[7])).as_elements();
-            ctx_query.xDivXSubWXi =
-                (x / (x - (ctx_query.challenge[7] * M::FnG::from(MG.0[ctx.nbits])))).as_elements();
+        let x = M::ExtendField::from(SHIFT.clone())
+            * (M::ExtendField::from(MG.0[ctx.nbits + extend_bits]).exp(idx));
+        ctx_query.xDivXSubXi = (x / (x - ctx_query.challenge[7])).as_elements();
+        ctx_query.xDivXSubWXi = (x
+            / (x - (ctx_query.challenge[7] * M::ExtendField::from(MG.0[ctx.nbits]))))
+        .as_elements();
 
-            let vals = vec![execute_code(
-                &mut ctx_query,
-                &mut program.verifier_query_code.first,
-            )];
+        let vals = vec![execute_code(
+            &mut ctx_query,
+            &mut program.verifier_query_code.first,
+        )];
 
-            Ok(vals)
-        };
+        Ok(vals)
+    };
 
     fri.verify(&mut transcript, &proof.fri_proof, check_query)
 }
