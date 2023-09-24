@@ -36,7 +36,22 @@ impl F3G {
     }
 }
 
+/// Field modulus = 2^64 - 2^32 + 1
+const M: u64 = 0xFFFFFFFF00000001;
+
+/// 2^128 mod M; this is used for conversion of elements into Montgomery representation.
+const R2: u64 = 0xFFFFFFFE00000001;
+
+/// 2^32 root of unity
+const G: u64 = 1753635133440165772;
+
+/// Number of bytes needed to represent field element
+const ELEMENT_BYTES: usize = core::mem::size_of::<u64>();
+
 impl FieldExtension for F3G {
+    const ELEMENT_BYTES: usize = ELEMENT_BYTES;
+    const IS_CANONICAL: bool = false;
+
     const ZERO: Self = Self {
         cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
         dim: 1,
@@ -166,18 +181,62 @@ impl FieldExtension for F3G {
     }
 
     #[inline]
-    fn inv(self) -> Self {
-        self._inv()
+    fn as_int(&self) -> u64 {
+        /*
+        if self.dim == 1 {
+            self.to_be().as_int()
+        } else {
+            panic!("Invalid as int: {:?}", *self);
+        }
+        */
+        self.as_elements()[0].as_int()
     }
 
-    #[inline]
-    fn as_int(&self) -> u64 {
-        self._as_int()
+    fn inv(self) -> Self {
+        match self.dim {
+            3 => {
+                let a = self.cube;
+                let aa = a[0] * a[0];
+                let ac = a[0] * a[2];
+                let ba = a[1] * a[0];
+                let bb = a[1] * a[1];
+                let bc = a[1] * a[2];
+                let cc = a[2] * a[2];
+
+                let aaa = aa * a[0];
+                let aac = aa * a[2];
+                let abc = ba * a[2];
+                let abb = ba * a[1];
+                let acc = ac * a[2];
+                let bbb = bb * a[1];
+                let bcc = bc * a[2];
+                let ccc = cc * a[2];
+
+                let t = -aaa - aac - aac + abc + abc + abc + abb - acc - bbb + bcc - ccc;
+                let tinv = t.inverse().unwrap();
+
+                let i1 = (-aa - ac - ac + bc + bb - cc) * tinv;
+                let i2 = (ba - cc) * tinv;
+                let i3 = (-bb + ac + cc) * tinv;
+
+                Self {
+                    cube: [i1, i2, i3],
+                    dim: 3,
+                }
+            }
+            1 => Self::from(self.to_be().inverse().unwrap()),
+            _ => {
+                panic!("Invalid dim");
+            }
+        }
     }
 
     #[inline]
     fn elements_as_bytes(elements: &[Self]) -> &[u8] {
-        Self::_elements_as_bytes(elements)
+        // TODO: take endianness into account.
+        let p = elements.as_ptr();
+        let len = elements.len() * Self::ELEMENT_BYTES;
+        unsafe { slice::from_raw_parts(p as *const u8, len) }
     }
 
     #[inline]
@@ -566,90 +625,6 @@ impl From<u128> for F3G {
     }
 }
 
-/// Field modulus = 2^64 - 2^32 + 1
-const M: u64 = 0xFFFFFFFF00000001;
-
-/// 2^128 mod M; this is used for conversion of elements into Montgomery representation.
-const R2: u64 = 0xFFFFFFFE00000001;
-
-/// 2^32 root of unity
-const G: u64 = 1753635133440165772;
-
-/// Number of bytes needed to represent field element
-const ELEMENT_BYTES: usize = core::mem::size_of::<u64>();
-
-impl F3G {
-    pub const ZERO: Self = Self {
-        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
-        dim: 1,
-    };
-    pub const ONE: Self = Self {
-        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
-        dim: 1,
-    };
-
-    const ELEMENT_BYTES: usize = ELEMENT_BYTES;
-    const IS_CANONICAL: bool = false;
-
-    #[inline]
-    pub fn _as_int(&self) -> u64 {
-        /*
-        if self.dim == 1 {
-            self.to_be().as_int()
-        } else {
-            panic!("Invalid as int: {:?}", *self);
-        }
-        */
-        self.as_elements()[0].as_int()
-    }
-
-    pub fn _inv(self) -> Self {
-        match self.dim {
-            3 => {
-                let a = self.cube;
-                let aa = a[0] * a[0];
-                let ac = a[0] * a[2];
-                let ba = a[1] * a[0];
-                let bb = a[1] * a[1];
-                let bc = a[1] * a[2];
-                let cc = a[2] * a[2];
-
-                let aaa = aa * a[0];
-                let aac = aa * a[2];
-                let abc = ba * a[2];
-                let abb = ba * a[1];
-                let acc = ac * a[2];
-                let bbb = bb * a[1];
-                let bcc = bc * a[2];
-                let ccc = cc * a[2];
-
-                let t = -aaa - aac - aac + abc + abc + abc + abb - acc - bbb + bcc - ccc;
-                let tinv = t.inverse().unwrap();
-
-                let i1 = (-aa - ac - ac + bc + bb - cc) * tinv;
-                let i2 = (ba - cc) * tinv;
-                let i3 = (-bb + ac + cc) * tinv;
-
-                Self {
-                    cube: [i1, i2, i3],
-                    dim: 3,
-                }
-            }
-            1 => Self::from(self.to_be().inverse().unwrap()),
-            _ => {
-                panic!("Invalid dim");
-            }
-        }
-    }
-
-    pub fn _elements_as_bytes(elements: &[Self]) -> &[u8] {
-        // TODO: take endianness into account.
-        let p = elements.as_ptr();
-        let len = elements.len() * Self::ELEMENT_BYTES;
-        unsafe { slice::from_raw_parts(p as *const u8, len) }
-    }
-}
-
 impl Display for F3G {
     fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
         let elems = self.as_elements();
@@ -665,6 +640,17 @@ impl Display for F3G {
             )
         }
     }
+}
+
+impl F3G {
+    pub const ZERO: Self = Self {
+        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
+        dim: 1,
+    };
+    pub const ONE: Self = Self {
+        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
+        dim: 1,
+    };
 }
 
 #[cfg(test)]

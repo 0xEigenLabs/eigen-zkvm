@@ -76,6 +76,8 @@ pub trait FieldExtension:
     + Field
     + Serialize
 {
+    const ELEMENT_BYTES: usize;
+    const IS_CANONICAL: bool = false;
     const ZERO: Self;
     const ONE: Self;
     const NEW_SIZE: u64 = 0;

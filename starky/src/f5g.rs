@@ -32,7 +32,13 @@ impl F5G {
     }
 }
 
+/// Number of bytes needed to represent field element
+const ELEMENT_BYTES: usize = core::mem::size_of::<u64>();
+
 impl FieldExtension for F5G {
+    const ELEMENT_BYTES: usize = ELEMENT_BYTES;
+    const IS_CANONICAL: bool = false;
+
     const ZERO: Self = Self {
         cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
         dim: 1,
@@ -193,12 +199,15 @@ impl FieldExtension for F5G {
 
     #[inline]
     fn as_int(&self) -> u64 {
-        self._as_int()
+        self.as_elements()[0].as_int()
     }
 
     #[inline]
     fn elements_as_bytes(elements: &[Self]) -> &[u8] {
-        Self::_elements_as_bytes(elements)
+        // TODO: take endianness into account.
+        let p = elements.as_ptr();
+        let len = elements.len() * Self::ELEMENT_BYTES;
+        unsafe { slice::from_raw_parts(p as *const u8, len) }
     }
 
     #[inline]
@@ -624,25 +633,7 @@ impl From<[u8; 8]> for F5G {
     }
 }
 
-/// Number of bytes needed to represent field element
-const ELEMENT_BYTES: usize = core::mem::size_of::<u64>();
-
 impl F5G {
-    const ELEMENT_BYTES: usize = ELEMENT_BYTES;
-    const IS_CANONICAL: bool = false;
-
-    #[inline]
-    pub fn _as_int(&self) -> u64 {
-        /*
-        if self.dim == 1 {
-            self.to_be().as_int()
-        } else {
-            panic!("Invalid as int: {:?}", *self);
-        }
-        */
-        self.as_elements()[0].as_int()
-    }
-
     // Frobenius operator (raise this value to the power p).
     #[inline]
     fn frob1(self) -> Self {
@@ -749,20 +740,6 @@ impl F5G {
                 panic!("Invalid dim");
             }
         }
-    }
-
-    pub fn _elements_as_bytes(elements: &[Self]) -> &[u8] {
-        // TODO: take endianness into account.
-        let p = elements.as_ptr();
-        let len = elements.len() * Self::ELEMENT_BYTES;
-        unsafe { slice::from_raw_parts(p as *const u8, len) }
-    }
-}
-
-impl F5G {
-    fn as_bytes(&self) -> &[u8] {
-        let self_ptr: *const Self = self;
-        unsafe { slice::from_raw_parts(self_ptr as *const u8, Self::ELEMENT_BYTES * self.dim) }
     }
 }
 
