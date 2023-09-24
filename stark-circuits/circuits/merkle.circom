@@ -1,6 +1,6 @@
 pragma circom 2.0.2;
 
-include "poseidon_bls12381.circom";
+include "poseidon.circom";
 
 template Merkle(keyBits) {
     var arity = 16;

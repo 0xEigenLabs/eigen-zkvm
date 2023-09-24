@@ -7,8 +7,8 @@ describe("Linear Hash Circuit Test", function () {
     this.timeout(1000000);
 
     before( async () => {
-        circuit = await test.genMain("circuits/linearhash_bls12381.circom","LinearHash", "", [9,3], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
-        circuit100 = await test.genMain("circuits/linearhash_bls12381.circom","LinearHash", "", [100,3], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
+        circuit = await test.genMain("circuits/linearhash.circom","LinearHash", "", [9,3], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
+        circuit100 = await test.genMain("circuits/linearhash.circom","LinearHash", "", [100,3], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
     });
 
     it("Should calculate linear hash of 9 complex elements", async () => {

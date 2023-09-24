@@ -16,7 +16,7 @@ describe("Merkle Hash Circuit Test", function () {
     this.timeout(1000000);
 
     before( async () => {
-        circuit = await test.genMain("circuits/merklehash_bls12381.circom","MerkleHash", "", [3, 1, 4], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
+        circuit = await test.genMain("circuits/merklehash.circom","MerkleHash", "", [3, 1, 4], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
     });
 
     it("Should calculate linear hash of 1 complex elements", async () => {

@@ -8,7 +8,7 @@ include "fft.circom";
 include "merklehash.circom";
 include "evalpol.circom";
 include "treeselector.circom";
-include "bn1togl3.circom";
+include "bls1togl3.circom";
 include "compconstant64.circom";
 
 <%
@@ -21,7 +21,7 @@ class Transcript {
         this.stCnt =0;
         this.hCnt =0;
         this.n2bCnt =0;
-        this.bn1togl3Cnt =0;
+        this.bls1togl3Cnt =0;
 
         this.code = [];
     }
@@ -38,8 +38,8 @@ class Transcript {
             return this.out3.shift();
         }
         if (this.out.length > 0) {
-            const cName = `bn1togl3_${this.bn1togl3Cnt++}`;
-            this.code.push(`component ${cName} = BN1toGL3();`);
+            const cName = `bls1togl3_${this.bls1togl3Cnt++}`;
+            this.code.push(`component ${cName} = BLS1toGL3();`);
             this.code.push(`${cName}.in <== ${this.out.shift()};`);
             this.out3.push(`${cName}.out[0]`);
             this.out3.push(`${cName}.out[1]`);
@@ -50,12 +50,12 @@ class Transcript {
         return this.getFields1();
     }
 
-    getFields253() {
+    getFields255() {
         if (this.out.length > 0) {
             return this.out.shift();
         }
         this.updateState();
-        return this.getFields253();
+        return this.getFields255();
 
     }
 
@@ -72,7 +72,7 @@ class Transcript {
         }
         this.out3 = [];
         this.code.push(`tcHahs_${this.hCnt-1}.initialState <== ${this.state};`);
-        this.state = `tcHahs_${this.hCnt-1}.out[0]`;
+        this.state = `tcHahs_${this.hCnt-1}.out[1]`;
         this.pending = [];
     }
 
@@ -98,12 +98,12 @@ class Transcript {
 
     getPermutations(v, n, nBits) {
         const totalBits = n*nBits;
-        const NFields = Math.floor((totalBits - 1)/253)+1;
+        const NFields = Math.floor((totalBits - 1)/255)+1;
         const n2b = [];
         for (let i=0; i<NFields; i++) {
-            const f = this.getFields253();
+            const f = this.getFields255();
             n2b[i] = `tcN2b_${this.n2bCnt++}`;
-            this.code.push(`component ${n2b[i]} = Num2Bits_strict();`);
+            this.code.push(`component ${n2b[i]} = Num2Bits(4 * 64);`);
             this.code.push(`${n2b[i]}.in <== ${f};`);
         }
         let curField =0;
@@ -113,7 +113,7 @@ class Transcript {
             for (let j=0; j<nBits; j++) {
                 this.code.push(`${v}[${i}][${j}] <== ${n2b[curField]}.out[${curBit}];`);
                 curBit ++;
-                if (curBit == 253) {
+                if (curBit == 255) {
                     curBit = 0n;
                     curField ++;
                 }

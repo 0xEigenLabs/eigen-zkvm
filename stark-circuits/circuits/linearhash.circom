@@ -1,6 +1,6 @@
 pragma circom 2.0.6;
 
-include "poseidon_bls12381.circom";
+include "poseidon.circom";
 
 template LinearHash(nInputs, eSize) {
     signal input in[nInputs][eSize];
