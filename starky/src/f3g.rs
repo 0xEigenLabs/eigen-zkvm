@@ -1,9 +1,10 @@
 #![allow(dead_code)]
+use crate::traits::FieldExtension;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use plonky::field_gl::Fr;
 use plonky::Field;
 use std::hash::{Hash, Hasher};
-use std::slice;
+use std::{slice, usize};
 
 use core::fmt::{Display, Formatter};
 /// GF(2^3) implementation
@@ -15,6 +16,9 @@ pub struct F3G {
     pub cube: [Fr; 3],
     pub dim: usize,
 }
+
+unsafe impl Send for F3G {}
+unsafe impl Sync for F3G {}
 
 impl Hash for F3G {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -30,15 +34,55 @@ impl F3G {
             dim: 3,
         }
     }
+}
+
+/// Field modulus = 2^64 - 2^32 + 1
+const M: u64 = 0xFFFFFFFF00000001;
+
+/// 2^128 mod M; this is used for conversion of elements into Montgomery representation.
+const R2: u64 = 0xFFFFFFFE00000001;
+
+/// 2^32 root of unity
+const G: u64 = 1753635133440165772;
+
+/// Number of bytes needed to represent field element
+const ELEMENT_BYTES: usize = core::mem::size_of::<u64>();
+
+impl FieldExtension for F3G {
+    const ELEMENT_BYTES: usize = ELEMENT_BYTES;
+    const IS_CANONICAL: bool = false;
+
+    const ZERO: Self = Self {
+        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
+        dim: 1,
+    };
+    const ONE: Self = Self {
+        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
+        dim: 1,
+    };
 
     #[inline(always)]
-    pub fn to_be(&self) -> Fr {
+    fn dim(&self) -> usize {
+        self.dim
+    }
+
+    #[inline(always)]
+    fn from_vec(values: Vec<Fr>) -> Self {
+        assert_eq!(values.len(), 3);
+        Self {
+            cube: [values[0], values[1], values[2]],
+            dim: 3,
+        }
+    }
+
+    #[inline(always)]
+    fn to_be(&self) -> Fr {
         assert_eq!(self.dim, 1);
         self.as_elements()[0]
     }
 
     #[inline(always)]
-    pub fn as_elements(&self) -> Vec<Fr> {
+    fn as_elements(&self) -> Vec<Fr> {
         let elements = &[self.cube];
         let ptr = elements.as_ptr();
         let len = elements.len() * self.dim;
@@ -47,7 +91,7 @@ impl F3G {
     }
 
     #[inline]
-    pub fn mul_scalar(self, b: usize) -> Self {
+    fn mul_scalar(self, b: usize) -> Self {
         let b = Fr::from(b as u64);
         let elems = self.as_elements();
         if self.dim == 1 {
@@ -73,7 +117,7 @@ impl F3G {
     }
 
     #[inline]
-    pub fn gt(self, rhs: &Self) -> bool {
+    fn gt(self, rhs: &Self) -> bool {
         assert_eq!(self.dim, rhs.dim); // FIXME: align with JS
         let les = self.as_elements();
         let res = rhs.as_elements();
@@ -91,22 +135,22 @@ impl F3G {
     }
 
     #[inline]
-    pub fn geq(self, rhs: &Self) -> bool {
+    fn geq(self, rhs: &Self) -> bool {
         self.eq(rhs) || self.gt(rhs)
     }
 
     #[inline]
-    pub fn lt(self, rhs: &Self) -> bool {
+    fn lt(self, rhs: &Self) -> bool {
         !self.geq(rhs)
     }
 
     #[inline]
-    pub fn leq(self, rhs: &Self) -> bool {
+    fn leq(self, rhs: &Self) -> bool {
         !self.gt(rhs)
     }
 
     #[inline]
-    pub fn exp(self, e_: usize) -> Self {
+    fn exp(self, e_: usize) -> Self {
         let mut e = e_;
         if e == 0 {
             return Self::ONE;
@@ -137,7 +181,66 @@ impl F3G {
     }
 
     #[inline]
-    pub fn batch_inverse(elems: &[Self]) -> Vec<Self> {
+    fn as_int(&self) -> u64 {
+        /*
+        if self.dim == 1 {
+            self.to_be().as_int()
+        } else {
+            panic!("Invalid as int: {:?}", *self);
+        }
+        */
+        self.as_elements()[0].as_int()
+    }
+
+    fn inv(self) -> Self {
+        match self.dim {
+            3 => {
+                let a = self.cube;
+                let aa = a[0] * a[0];
+                let ac = a[0] * a[2];
+                let ba = a[1] * a[0];
+                let bb = a[1] * a[1];
+                let bc = a[1] * a[2];
+                let cc = a[2] * a[2];
+
+                let aaa = aa * a[0];
+                let aac = aa * a[2];
+                let abc = ba * a[2];
+                let abb = ba * a[1];
+                let acc = ac * a[2];
+                let bbb = bb * a[1];
+                let bcc = bc * a[2];
+                let ccc = cc * a[2];
+
+                let t = -aaa - aac - aac + abc + abc + abc + abb - acc - bbb + bcc - ccc;
+                let tinv = t.inverse().unwrap();
+
+                let i1 = (-aa - ac - ac + bc + bb - cc) * tinv;
+                let i2 = (ba - cc) * tinv;
+                let i3 = (-bb + ac + cc) * tinv;
+
+                Self {
+                    cube: [i1, i2, i3],
+                    dim: 3,
+                }
+            }
+            1 => Self::from(self.to_be().inverse().unwrap()),
+            _ => {
+                panic!("Invalid dim");
+            }
+        }
+    }
+
+    #[inline]
+    fn elements_as_bytes(elements: &[Self]) -> &[u8] {
+        // TODO: take endianness into account.
+        let p = elements.as_ptr();
+        let len = elements.len() * Self::ELEMENT_BYTES;
+        unsafe { slice::from_raw_parts(p as *const u8, len) }
+    }
+
+    #[inline]
+    fn batch_inverse(elems: &[Self]) -> Vec<Self> {
         if elems.len() == 0 {
             return vec![];
         }
@@ -155,6 +258,11 @@ impl F3G {
         }
         res[0] = z;
         res
+    }
+
+    fn as_bytes(&self) -> &[u8] {
+        let self_ptr: *const Self = self;
+        unsafe { slice::from_raw_parts(self_ptr as *const u8, Self::ELEMENT_BYTES * self.dim) }
     }
 }
 
@@ -517,90 +625,6 @@ impl From<u128> for F3G {
     }
 }
 
-/// Field modulus = 2^64 - 2^32 + 1
-const M: u64 = 0xFFFFFFFF00000001;
-
-/// 2^128 mod M; this is used for conversion of elements into Montgomery representation.
-const R2: u64 = 0xFFFFFFFE00000001;
-
-/// 2^32 root of unity
-const G: u64 = 1753635133440165772;
-
-/// Number of bytes needed to represent field element
-const ELEMENT_BYTES: usize = core::mem::size_of::<u64>();
-
-impl F3G {
-    pub const ZERO: Self = Self {
-        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
-        dim: 1,
-    };
-    pub const ONE: Self = Self {
-        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
-        dim: 1,
-    };
-
-    const ELEMENT_BYTES: usize = ELEMENT_BYTES;
-    const IS_CANONICAL: bool = false;
-
-    #[inline]
-    pub fn as_int(&self) -> u64 {
-        /*
-        if self.dim == 1 {
-            self.to_be().as_int()
-        } else {
-            panic!("Invalid as int: {:?}", *self);
-        }
-        */
-        self.as_elements()[0].as_int()
-    }
-
-    pub fn inv(self) -> Self {
-        match self.dim {
-            3 => {
-                let a = self.cube;
-                let aa = a[0] * a[0];
-                let ac = a[0] * a[2];
-                let ba = a[1] * a[0];
-                let bb = a[1] * a[1];
-                let bc = a[1] * a[2];
-                let cc = a[2] * a[2];
-
-                let aaa = aa * a[0];
-                let aac = aa * a[2];
-                let abc = ba * a[2];
-                let abb = ba * a[1];
-                let acc = ac * a[2];
-                let bbb = bb * a[1];
-                let bcc = bc * a[2];
-                let ccc = cc * a[2];
-
-                let t = -aaa - aac - aac + abc + abc + abc + abb - acc - bbb + bcc - ccc;
-                let tinv = t.inverse().unwrap();
-
-                let i1 = (-aa - ac - ac + bc + bb - cc) * tinv;
-                let i2 = (ba - cc) * tinv;
-                let i3 = (-bb + ac + cc) * tinv;
-
-                Self {
-                    cube: [i1, i2, i3],
-                    dim: 3,
-                }
-            }
-            1 => Self::from(self.to_be().inverse().unwrap()),
-            _ => {
-                panic!("Invalid dim");
-            }
-        }
-    }
-
-    pub fn elements_as_bytes(elements: &[Self]) -> &[u8] {
-        // TODO: take endianness into account.
-        let p = elements.as_ptr();
-        let len = elements.len() * Self::ELEMENT_BYTES;
-        unsafe { slice::from_raw_parts(p as *const u8, len) }
-    }
-}
-
 impl Display for F3G {
     fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
         let elems = self.as_elements();
@@ -619,15 +643,20 @@ impl Display for F3G {
 }
 
 impl F3G {
-    fn as_bytes(&self) -> &[u8] {
-        let self_ptr: *const Self = self;
-        unsafe { slice::from_raw_parts(self_ptr as *const u8, Self::ELEMENT_BYTES * self.dim) }
-    }
+    pub const ZERO: Self = Self {
+        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
+        dim: 1,
+    };
+    pub const ONE: Self = Self {
+        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
+        dim: 1,
+    };
 }
 
 #[cfg(test)]
 pub mod tests {
     use crate::f3g::F3G;
+    use crate::traits::FieldExtension;
     use plonky::field_gl::Fr;
     use plonky::Field;
     use std::ops::{Add, Mul};
