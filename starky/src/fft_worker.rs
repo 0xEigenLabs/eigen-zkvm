@@ -1,11 +1,11 @@
 use crate::constant::MG;
-use crate::f3g::F3G;
+use crate::traits::FieldExtension;
 
-pub fn interpolate_prepare_block(
-    buff: &mut [F3G],
+pub fn interpolate_prepare_block<F: FieldExtension>(
+    buff: &mut [F],
     width: usize,
-    start: F3G,
-    inc: F3G,
+    start: F,
+    inc: F,
     st_i: usize,
     st_n: usize,
 ) {
@@ -21,8 +21,8 @@ pub fn interpolate_prepare_block(
     log::info!("linear interpolatePrepare end.... {}/{}", st_i, st_n);
 }
 
-fn _fft_block(
-    buff: &mut [F3G],
+fn _fft_block<F: FieldExtension>(
+    buff: &mut [F],
     rel_pos: usize,
     start_pos: usize,
     n_pols: usize,
@@ -83,16 +83,16 @@ fn _fft_block(
     }
 
     #[allow(unused_assignments)]
-    let mut w = F3G::ZERO;
+    let mut w = F::ZERO;
     if s > blockbits {
         let width = 1 << (s - layers);
         let heigth = n / width;
         let y = start_pos / heigth;
         let x = start_pos % heigth;
         let p = x * width + y;
-        w = MG.0[s].exp(p);
+        w = F::from(MG.0[s].exp(p as u64));
     } else {
-        w = F3G::ONE;
+        w = F::ONE;
     }
 
     for i in 0..md2 {
@@ -102,12 +102,12 @@ fn _fft_block(
             buff[(start_pos - rel_pos + i) * n_pols + j] = u + t;
             buff[(start_pos - rel_pos + md2 + i) * n_pols + j] = u - t;
         }
-        w = w * MG.0[layers]
+        w = w * F::from(MG.0[layers])
     }
 }
 
-pub fn fft_block(
-    buff: &mut [F3G],
+pub fn fft_block<F: FieldExtension>(
+    buff: &mut [F],
     start_pos: usize,
     n_pols: usize,
     nbits: usize,

@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use crate::traits::FieldExtension;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use plonky::field_gl::Fr;
 use plonky::Field;
@@ -29,15 +30,46 @@ impl F5G {
             dim: 5,
         }
     }
+}
+
+/// Number of bytes needed to represent field element
+const ELEMENT_BYTES: usize = core::mem::size_of::<u64>();
+
+impl FieldExtension for F5G {
+    const ELEMENT_BYTES: usize = ELEMENT_BYTES;
+    const IS_CANONICAL: bool = false;
+
+    const ZERO: Self = Self {
+        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
+        dim: 1,
+    };
+    const ONE: Self = Self {
+        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
+        dim: 1,
+    };
 
     #[inline(always)]
-    pub fn to_be(&self) -> Fr {
+    fn dim(&self) -> usize {
+        self.dim
+    }
+
+    #[inline(always)]
+    fn from_vec(values: Vec<Fr>) -> Self {
+        assert_eq!(values.len(), 5);
+        Self {
+            cube: [values[0], values[1], values[2], values[3], values[4]],
+            dim: 5,
+        }
+    }
+
+    #[inline(always)]
+    fn to_be(&self) -> Fr {
         assert_eq!(self.dim, 1);
         self.as_elements()[0]
     }
 
     #[inline(always)]
-    pub fn as_elements(&self) -> Vec<Fr> {
+    fn as_elements(&self) -> Vec<Fr> {
         let elements = &[self.cube];
         let ptr = elements.as_ptr();
         let len = elements.len() * self.dim;
@@ -46,7 +78,7 @@ impl F5G {
     }
 
     #[inline]
-    pub fn mul_scalar(self, b: usize) -> Self {
+    fn mul_scalar(self, b: usize) -> Self {
         let b = Fr::from(b as u64);
         let elems = self.as_elements();
         if self.dim == 1 {
@@ -84,7 +116,7 @@ impl F5G {
     }
 
     #[inline]
-    pub fn gt(self, rhs: &Self) -> bool {
+    fn gt(self, rhs: &Self) -> bool {
         assert_eq!(self.dim, rhs.dim); // FIXME: align with JS
         let les = self.as_elements();
         let res = rhs.as_elements();
@@ -115,22 +147,22 @@ impl F5G {
     }
 
     #[inline]
-    pub fn geq(self, rhs: &Self) -> bool {
+    fn geq(self, rhs: &Self) -> bool {
         self.eq(rhs) || self.gt(rhs)
     }
 
     #[inline]
-    pub fn lt(self, rhs: &Self) -> bool {
+    fn lt(self, rhs: &Self) -> bool {
         !self.gt(rhs) || self.lt(rhs)
     }
 
     #[inline]
-    pub fn leq(self, rhs: &Self) -> bool {
+    fn leq(self, rhs: &Self) -> bool {
         !self.gt(rhs)
     }
 
     #[inline]
-    pub fn exp(self, e_: usize) -> Self {
+    fn exp(self, e_: usize) -> Self {
         let mut e = e_;
         if e == 0 {
             return Self::ONE;
@@ -161,7 +193,25 @@ impl F5G {
     }
 
     #[inline]
-    pub fn batch_inverse(elems: &[Self]) -> Vec<Self> {
+    fn inv(self) -> Self {
+        self._inv()
+    }
+
+    #[inline]
+    fn as_int(&self) -> u64 {
+        self.as_elements()[0].as_int()
+    }
+
+    #[inline]
+    fn elements_as_bytes(elements: &[Self]) -> &[u8] {
+        // TODO: take endianness into account.
+        let p = elements.as_ptr();
+        let len = elements.len() * Self::ELEMENT_BYTES;
+        unsafe { slice::from_raw_parts(p as *const u8, len) }
+    }
+
+    #[inline]
+    fn batch_inverse(elems: &[Self]) -> Vec<Self> {
         if elems.len() == 0 {
             return vec![];
         }
@@ -179,6 +229,11 @@ impl F5G {
         }
         res[0] = z;
         res
+    }
+
+    fn as_bytes(&self) -> &[u8] {
+        let self_ptr: *const Self = self;
+        unsafe { slice::from_raw_parts(self_ptr as *const u8, Self::ELEMENT_BYTES * self.dim) }
     }
 }
 
@@ -578,34 +633,7 @@ impl From<[u8; 8]> for F5G {
     }
 }
 
-/// Number of bytes needed to represent field element
-const ELEMENT_BYTES: usize = core::mem::size_of::<u64>();
-
 impl F5G {
-    pub const ZERO: Self = Self {
-        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
-        dim: 1,
-    };
-    pub const ONE: Self = Self {
-        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
-        dim: 1,
-    };
-
-    const ELEMENT_BYTES: usize = ELEMENT_BYTES;
-    const IS_CANONICAL: bool = false;
-
-    #[inline]
-    pub fn as_int(&self) -> u64 {
-        /*
-        if self.dim == 1 {
-            self.to_be().as_int()
-        } else {
-            panic!("Invalid as int: {:?}", *self);
-        }
-        */
-        self.as_elements()[0].as_int()
-    }
-
     // Frobenius operator (raise this value to the power p).
     #[inline]
     fn frob1(self) -> Self {
@@ -642,7 +670,7 @@ impl F5G {
 
     // Invert this element. If this value is zero, then zero is returned.
     // Inv() function refers to the implementation of ecgfp5: https://github.com/pornin/ecgfp5/blob/ce059c6d1e1662db437aecbf3db6bb67fe63c716/python/ecGFp5.py#L751
-    pub fn inv(self) -> Self {
+    pub fn _inv(self) -> Self {
         match self.dim {
             5 => {
                 // We are using the method first described by Itoh and Tsujii.
@@ -713,25 +741,12 @@ impl F5G {
             }
         }
     }
-
-    pub fn elements_as_bytes(elements: &[Self]) -> &[u8] {
-        // TODO: take endianness into account.
-        let p = elements.as_ptr();
-        let len = elements.len() * Self::ELEMENT_BYTES;
-        unsafe { slice::from_raw_parts(p as *const u8, len) }
-    }
-}
-
-impl F5G {
-    fn as_bytes(&self) -> &[u8] {
-        let self_ptr: *const Self = self;
-        unsafe { slice::from_raw_parts(self_ptr as *const u8, Self::ELEMENT_BYTES * self.dim) }
-    }
 }
 
 #[cfg(test)]
 pub mod tests {
     use crate::f5g::F5G;
+    use crate::traits::FieldExtension;
     use plonky::field_gl::Fr;
     use plonky::Field;
     use std::ops::{Add, Mul};
@@ -747,6 +762,7 @@ pub mod tests {
             )
         }
     }
+
     #[test]
     fn test_f5g_add() {
         let mut f1 = F5G::new(
