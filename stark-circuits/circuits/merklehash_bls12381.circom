@@ -1,7 +1,7 @@
 pragma circom 2.0.6;
 
 include "linearhash_bls12381.circom";
-include "merkle.circom";
+include "merkle_bls12381.circom";
 include "utils.circom";
 
 template parallel MerkleHash(eSize, elementsInLinear, nLinears) {

@@ -56,6 +56,7 @@ mod starkinfo_fri_prover;
 mod starkinfo_fri_ver;
 mod starkinfo_map;
 pub mod transcript;
+pub mod transcript_bls12381;
 pub mod transcript_bn128;
 
 pub mod r1cs2plonk;

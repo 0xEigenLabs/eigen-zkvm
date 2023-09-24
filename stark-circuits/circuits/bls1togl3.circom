@@ -3,7 +3,7 @@ pragma circom 2.0.6;
 
 include "bitify.circom";
 
-template BN1toGL3() {
+template BLS1toGL3() {
     signal input in;
     signal output out[3];
 

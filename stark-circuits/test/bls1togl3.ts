@@ -1,7 +1,5 @@
 import * as test from "./test";
-
-// const { assert } = require("chai");
-const { buildBabyjub } = require("circomlibjs");
+const { buildBls12381 } = require("ffjavascript");
 
 function bits2Num(n, in1) {
     let lc1=0n;
@@ -24,7 +22,7 @@ function num2Bits(n, in1) {
     return out;
 }
 
-function bn1togl3(in1) {
+function bls1togl3(in1) {
     const out = new Array(3);
     const n2b = num2Bits(3 * 64, in1);
     for (let i = 0; i < 3; i ++) {
@@ -34,24 +32,28 @@ function bn1togl3(in1) {
 }
 
 /* globals describe, before, it */
-describe("Test BN to GL3", function() {
+describe("Test BLS to GL3", function() {
   let circuit;
-  let babyJub;
+  let bls12381;
 
   before(async () => {
-    babyJub = await buildBabyjub();
-    circuit = await test.genMain("circuits/bn1togl3.circom",
-      "BN1toGL3", "", [], {"include": "node_modules/circomlib/circuits", "prime": "bn128"});
+    circuit = await test.genMain("circuits/bls1togl3.circom",
+      "BLS1toGL3", "", [], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
+    bls12381 = await buildBls12381();
   })
 
-  it("BN1toGL3", async () => {
-    console.log(babyJub.F.p)
-    const in1 = babyJub.F.p - 1n;
+  it("BLS1toGL3", async () => {
+    console.log(bls12381.r)
+    const in1 = bls12381.r - 1n;
     const wtns = await test.executeCircuit(circuit, {
-          in: babyJub.F.p - 1n
+          in: bls12381.r - 1n
         });
-    const out = bn1togl3(in1);
+    const out = bls1togl3(in1);
     console.log("expected", out);
     await circuit.assertOut(wtns, { out: out });
   })
+
+  after( async() => {
+    bls12381.terminate();
+  });
 })

@@ -6,7 +6,7 @@ use crate::traits::MTNodeType;
 use crate::ElementDigest;
 use ff::*;
 //use rayon::prelude::*;
-use crate::constant::{OFFSET_bls12381_2_128, OFFSET_bls12381_2_64};
+use crate::constant::{OFFSET_BLS12381_2_128, OFFSET_BLS12381_2_64};
 use plonky::field_gl::Fr as FGL;
 
 #[derive(Default)]
@@ -30,9 +30,9 @@ impl LinearHashBLS12381 {
             for elem in col.iter() {
                 let mut e = Fr::from_repr(FrRepr::from(elem.as_int()))?;
                 if accN == 1 {
-                    e.mul_assign(&OFFSET_bls12381_2_64);
+                    e.mul_assign(&OFFSET_BLS12381_2_64);
                 } else if accN == 2 {
-                    e.mul_assign(&OFFSET_bls12381_2_128);
+                    e.mul_assign(&OFFSET_BLS12381_2_128);
                 }
                 acc.add_assign(&e);
                 accN += 1;
