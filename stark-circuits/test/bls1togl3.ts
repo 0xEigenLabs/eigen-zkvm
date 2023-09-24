@@ -37,8 +37,8 @@ describe("Test BLS to GL3", function() {
   let bls12381;
 
   before(async () => {
-    circuit = await test.genMain("circuits/bls1togl3.circom",
-      "BLS1toGL3", "", [], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
+    circuit = await test.genMain("circuits/bn1togl3.circom",
+      "BN1toGL3", "", [], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
     bls12381 = await buildBls12381();
   })
 

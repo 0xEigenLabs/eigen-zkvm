@@ -42,12 +42,12 @@ impl TranscriptBLS128 {
         Ok(())
     }
 
-    fn get_fields255(&mut self) -> Result<Fr> {
+    fn get_fields253(&mut self) -> Result<Fr> {
         if self.out.len() > 0 {
             return Ok(self.out.pop_front().unwrap());
         }
         self.update_state()?;
-        self.get_fields255()
+        self.get_fields253()
     }
 }
 
@@ -108,7 +108,7 @@ impl Transcript for TranscriptBLS128 {
         let n_fields = (total_bits - 1) / 253 + 1;
         let mut fields: Vec<BigUint> = Vec::new();
         for _i in 0..n_fields {
-            fields.push(fr_bls12381_to_biguint(&self.get_fields255()?));
+            fields.push(fr_bls12381_to_biguint(&self.get_fields253()?));
         }
         let mut res: Vec<usize> = vec![];
         let mut cur_field = 0;

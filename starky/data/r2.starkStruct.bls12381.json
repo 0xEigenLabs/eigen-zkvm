@@ -1,0 +1,14 @@
+{
+    "nBits": 20,
+    "nBitsExt": 21,
+    "nQueries": 8,
+    "verificationHashType": "BLS12381",
+    "steps": [
+      { "nBits": 21 },
+      { "nBits": 15 },
+      { "nBits": 11 },
+      { "nBits": 7 },
+      { "nBits": 4 }
+    ]
+  }
+  
