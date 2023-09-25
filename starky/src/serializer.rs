@@ -290,7 +290,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         map.serialize_entry("s0_siblingsC", &s0_siblingsC)?;
         map.serialize_entry("finalPol", &self.fri_proof.last)?;
         map.serialize_entry("publics", &self.publics)?;
-        if hashtype.as_str() == "BN128" {
+        if hashtype.as_str() == "BN128" || hashtype.as_str() == "BLS12381" {
             map.serialize_entry(
                 "proverAddr",
                 "273030697313060285579891744179749754319274977764",
