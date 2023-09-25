@@ -1,20 +1,19 @@
 #![allow(non_snake_case)]
-
-use crate::field_bn128::Fr as Fr_bn128;
+use crate::f3g::F3G;
+use crate::field_bn128::Fr;
 use crate::poseidon_bls12381::load_constants as load_constants_bls12381;
 use crate::poseidon_bls12381::Constants as ConstantsBls12381;
 use crate::poseidon_bls12381_opt::load_constants as load_constants_bls12381_opt;
 use crate::poseidon_bn128::{load_constants, Constants};
 use crate::poseidon_bn128_opt::load_constants as load_constants_opt;
 use ff::*;
-use plonky::field_gl::{exp, Fr};
-use plonky::Field;
+use plonky::field_gl::Fr as FGL;
 use std::collections::HashMap;
 
 lazy_static::lazy_static! {
-    pub static ref OFFSET_2_64: Fr_bn128 = Fr_bn128::from_str("18446744073709551616").unwrap();
-    pub static ref OFFSET_2_128: Fr_bn128 = Fr_bn128::from_str("340282366920938463463374607431768211456").unwrap();
-    pub static ref OFFSET_2_192: Fr_bn128 = Fr_bn128::from_str("6277101735386680763835789423207666416102355444464034512896").unwrap();
+    pub static ref OFFSET_2_64: Fr = Fr::from_str("18446744073709551616").unwrap();
+    pub static ref OFFSET_2_128: Fr = Fr::from_str("340282366920938463463374607431768211456").unwrap();
+    pub static ref OFFSET_2_192: Fr = Fr::from_str("6277101735386680763835789423207666416102355444464034512896").unwrap();
     pub static ref CHALLENGE_MAP: HashMap<&'static str, usize> = {
         let mut m = HashMap::new();
         m.insert("u", 0);
@@ -28,17 +27,16 @@ lazy_static::lazy_static! {
         m
     };
 
-    pub static ref SHIFT: Fr = Fr::from(49u64);
-    pub static ref SHIFT_INV : Fr= SHIFT.clone().inverse().unwrap();
-    pub static ref MG: (Vec<Fr>, Vec<Fr>) = {
-        let nqr = Fr::from(7u64);
-        let rem = 2u64.pow(32) - 1;
+    pub static ref SHIFT: F3G = F3G::from(FGL::from(49u64));
+    pub static ref SHIFT_INV: F3G = F3G::inv(SHIFT.clone());
+    pub static ref MG: (Vec<F3G>, Vec<F3G>) = {
+        let nqr = F3G::from(FGL::from(7u64));
+        let rem = 2usize.pow(32) - 1;
         let s = 32usize;
-        let mut w = vec![Fr::ZERO; s+1];
-        let mut wi = vec![Fr::ZERO; s+1];
-        // w[s] = nqr.exp(rem);
-        w[s] = exp(nqr,rem);
-        wi[s] = w[s].inverse().unwrap();
+        let mut w = vec![F3G::ZERO; s+1];
+        let mut wi = vec![F3G::ZERO; s+1];
+        w[s] = nqr.exp(rem);
+        wi[s] = w[s].inv();
 
         for n in (0..s).rev() {
             w[n] = w[n+1] * w[n+1];

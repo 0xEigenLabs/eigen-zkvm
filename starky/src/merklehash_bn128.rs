@@ -148,7 +148,6 @@ impl MerkleTreeBN128 {
 impl MerkleTree for MerkleTreeBN128 {
     type BaseField = Fr;
     type MTNode = ElementDigest<4>;
-    type ExtendField = F3G;
 
     fn new() -> Self {
         Self {
@@ -165,7 +164,7 @@ impl MerkleTree for MerkleTreeBN128 {
         return self.elements.len();
     }
 
-    fn to_fng(&self, p_be: &mut Vec<Self::ExtendField>) {
+    fn to_f3g(&self, p_be: &mut Vec<F3G>) {
         assert_eq!(p_be.len(), self.elements.len());
         p_be.par_iter_mut()
             .zip(&self.elements)
@@ -188,7 +187,6 @@ impl MerkleTree for MerkleTreeBN128 {
         if n_per_thread_f > MAX_OPS_PER_THREAD {
             n_per_thread_f = MAX_OPS_PER_THREAD;
         }
-        // calculate the nodes of the specific height Merkle tree
         let mut nodes = vec![ElementDigest::<4>::default(); get_n_nodes(height)];
         let now = Instant::now();
         if buff.len() > 0 {
