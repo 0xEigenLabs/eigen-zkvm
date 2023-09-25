@@ -154,7 +154,7 @@ impl MerkleTreeGL {
 impl MerkleTree for MerkleTreeGL {
     type BaseField = FGL;
     type MTNode = ElementDigest<4>;
-
+    type ExtendField = F3G;
     fn new() -> Self {
         Self {
             nodes: Vec::new(),
@@ -170,7 +170,7 @@ impl MerkleTree for MerkleTreeGL {
         return self.elements.len();
     }
 
-    fn to_f3g(&self, p_be: &mut Vec<F3G>) {
+    fn to_extend(&self, p_be: &mut Vec<F3G>) {
         assert_eq!(p_be.len(), self.elements.len());
         p_be.par_iter_mut()
             .zip(&self.elements)

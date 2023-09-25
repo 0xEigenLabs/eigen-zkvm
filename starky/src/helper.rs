@@ -5,7 +5,6 @@ use ff::*;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 use std::fmt::Write;
 use std::ops::Mul;
 
@@ -86,7 +85,8 @@ pub fn biguint_bls12381_to_fr(f: &BigUint) -> Fr_bls12381 {
     Fr_bls12381::from_str(&f.to_string()).unwrap()
 }
 
-pub fn pretty_print_array<T: Field>(cols: &Vec<T>) -> String {
+use std::fmt::{Debug, Display};
+pub fn pretty_print_array<T: Debug + Display>(cols: &Vec<T>) -> String {
     let mut msg = String::new();
     writeln!(&mut msg, "array size: {}", cols.len()).unwrap();
     writeln!(&mut msg, "[").unwrap();

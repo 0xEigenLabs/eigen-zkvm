@@ -148,6 +148,7 @@ impl MerkleTreeBLS12381 {
 impl MerkleTree for MerkleTreeBLS12381 {
     type BaseField = Fr;
     type MTNode = ElementDigest<4>;
+    type ExtendField = F3G;
 
     fn new() -> Self {
         Self {
@@ -164,7 +165,7 @@ impl MerkleTree for MerkleTreeBLS12381 {
         return self.elements.len();
     }
 
-    fn to_f3g(&self, p_be: &mut Vec<F3G>) {
+    fn to_extend(&self, p_be: &mut Vec<Self::ExtendField>) {
         assert_eq!(p_be.len(), self.elements.len());
         p_be.par_iter_mut()
             .zip(&self.elements)
