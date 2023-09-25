@@ -6,7 +6,6 @@ use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bn128::Fr;
 use crate::helper;
 use crate::stark_gen::StarkProof;
-use crate::traits::FieldExtension;
 use crate::traits::{MTNodeType, MerkleTree};
 use plonky::field_gl::Fr as FGL;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
@@ -20,26 +19,6 @@ impl Serialize for F3G {
         if self.dim == 1 {
             serializer.serialize_str(&elems[0].as_int().to_string())
         } else if self.dim == 3 {
-            let mut seq = serializer.serialize_seq(Some(elems.len()))?;
-            for v in elems.iter() {
-                seq.serialize_element(&v.as_int().to_string())?;
-            }
-            seq.end()
-        } else {
-            panic!("Invalid dim {}", self);
-        }
-    }
-}
-
-impl Serialize for F5G {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let elems = self.as_elements();
-        if self.dim == 1 {
-            serializer.serialize_str(&elems[0].as_int().to_string())
-        } else if self.dim == 5 {
             let mut seq = serializer.serialize_seq(Some(elems.len()))?;
             for v in elems.iter() {
                 seq.serialize_element(&v.as_int().to_string())?;

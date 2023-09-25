@@ -1,7 +1,9 @@
 #![allow(non_snake_case)]
-use crate::{traits::FieldExtension, types::PIL};
+use crate::types::PIL;
 use std::collections::HashMap;
 use std::fs::File;
+
+use crate::f3g::F3G;
 
 use std::io::{Read, Write};
 
@@ -236,11 +238,11 @@ impl PolsArray {
         Ok(())
     }
 
-    pub fn write_buff<T: FieldExtension>(&self) -> Vec<T> {
-        let mut buff: Vec<T> = vec![];
+    pub fn write_buff(&self) -> Vec<F3G> {
+        let mut buff: Vec<F3G> = vec![];
         for i in 0..self.n {
             for j in 0..self.nPols {
-                buff.push(T::from(self.array[j][i]));
+                buff.push(F3G::from(self.array[j][i]));
             }
         }
         buff

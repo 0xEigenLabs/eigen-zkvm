@@ -154,7 +154,7 @@ impl MerkleTreeGL {
 impl MerkleTree for MerkleTreeGL {
     type BaseField = FGL;
     type MTNode = ElementDigest<4>;
-    type ExtendField = F3G;
+
     fn new() -> Self {
         Self {
             nodes: Vec::new(),

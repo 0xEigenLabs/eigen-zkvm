@@ -1,19 +1,19 @@
 #![allow(non_snake_case, dead_code)]
+use crate::f3g::F3G;
 use crate::stark_gen::StarkContext;
 use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::Node;
 use crate::starkinfo_codegen::Section;
-use crate::traits::FieldExtension;
 use std::fmt;
 
 #[derive(Clone, Debug)]
-pub enum Ops<T: FieldExtension> {
-    Vari(T), // instant value
-    Add,     // add and push the result into stack
-    Sub,     // sub and push the result into stack
-    Mul,     // mul and push the result into stack
-    Copy_,   // push instant value into stack
-    Write,   // assign value from mem into an address. *op = val
+pub enum Ops {
+    Vari(F3G), // instant value
+    Add,       // add and push the result into stack
+    Sub,       // sub and push the result into stack
+    Mul,       // mul and push the result into stack
+    Copy_,     // push instant value into stack
+    Write,     // assign value from mem into an address. *op = val
     Refer, // format := [addr, [dim]], refer to a variable in memory with dimension dim, the index must be of format: offset + ((i+next)%N) * size.
     Ret,   // must return
 }
@@ -23,14 +23,14 @@ pub enum Ops<T: FieldExtension> {
 /// the symbol should the fields of the global context, have same name as Index.
 /// so the example would be Expr { op: Refer, syms: [ctx.const_n, i], defs: [Vari, Vari...] }
 #[derive(Clone, Debug)]
-pub struct Expr<T: FieldExtension> {
-    pub op: Ops<T>,
-    pub syms: Vec<String>,  // symbol: tmp, q_2ns etc.
-    pub defs: Vec<Expr<T>>, // values bound to the symbol
-    pub addr: Vec<usize>,   // address, format: (offset, next, modulas, size)
+pub struct Expr {
+    pub op: Ops,
+    pub syms: Vec<String>, // symbol: tmp, q_2ns etc.
+    pub defs: Vec<Expr>,   // values bound to the symbol
+    pub addr: Vec<usize>,  // address, format: (offset, next, modulas, size)
 }
 
-impl<T: FieldExtension> fmt::Display for Expr<T> {
+impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.op {
             Ops::Add | Ops::Mul | Ops::Sub => {
@@ -64,8 +64,8 @@ impl<T: FieldExtension> fmt::Display for Expr<T> {
     }
 }
 
-impl<T: FieldExtension> Expr<T> {
-    pub fn new(op: Ops<T>, syms: Vec<String>, defs: Vec<Expr<T>>, addr: Vec<usize>) -> Self {
+impl Expr {
+    pub fn new(op: Ops, syms: Vec<String>, defs: Vec<Expr>, addr: Vec<usize>) -> Self {
         Self {
             op,
             syms,
@@ -75,19 +75,19 @@ impl<T: FieldExtension> Expr<T> {
     }
 }
 
-impl<T: FieldExtension> From<T> for Expr<T> {
-    fn from(v: T) -> Self {
-        Expr::new(Ops::<T>::Vari(v), vec![], vec![], vec![])
+impl From<F3G> for Expr {
+    fn from(v: F3G) -> Self {
+        Expr::new(Ops::Vari(v), vec![], vec![], vec![])
     }
 }
 
 #[derive(Debug)]
-pub struct Block<T: FieldExtension> {
+pub struct Block {
     pub namespace: String,
-    pub exprs: Vec<Expr<T>>,
+    pub exprs: Vec<Expr>,
 }
 
-impl<T: FieldExtension> Block<T> {
+impl Block {
     fn codegen(&self, step: &str, codebuf: String) {
         use std::io::Write;
         let body = format!(r#"{}"#, codebuf);
@@ -99,8 +99,8 @@ impl<T: FieldExtension> Block<T> {
     /// example:
     /// let block = compile_code();
     /// block.eval(&mut ctx, i);
-    pub fn eval(&self, ctx: &mut StarkContext<T>, arg_i: usize) -> T {
-        let mut val_stack: Vec<T> = Vec::new();
+    pub fn eval(&self, ctx: &mut StarkContext, arg_i: usize) -> F3G {
+        let mut val_stack: Vec<F3G> = Vec::new();
         let length = self.exprs.len();
 
         let mut i = 0usize;
@@ -164,15 +164,15 @@ impl<T: FieldExtension> Block<T> {
                     let val = val_stack.pop().unwrap(); // get the value from stack
 
                     let val_addr = ctx.get_mut(addr.as_str());
-                    if val.dim() == 1 || addr.as_str() == "tmp" {
+                    if val.dim == 1 || addr.as_str() == "tmp" {
                         // TODO: need double confirm the condition
                         val_addr[id] = val;
                     } else {
                         // here we again unfold elements of GF(2^3) to 3-tuple(triple)
                         let vals = val.as_elements();
-                        val_addr[id] = T::from(vals[0]);
-                        val_addr[id + 1] = T::from(vals[1]);
-                        val_addr[id + 2] = T::from(vals[2]);
+                        val_addr[id] = F3G::from(vals[0]);
+                        val_addr[id + 1] = F3G::from(vals[1]);
+                        val_addr[id + 2] = F3G::from(vals[2]);
                     }
                 }
                 Ops::Refer => {
@@ -182,11 +182,11 @@ impl<T: FieldExtension> Block<T> {
                 }
             }
         }
-        T::ZERO
+        F3G::ZERO
     }
 }
 
-impl<T: FieldExtension> fmt::Display for Block<T> {
+impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for i in 0..self.exprs.len() {
             writeln!(f, "  {}", self.exprs[i])?;
@@ -195,13 +195,13 @@ impl<T: FieldExtension> fmt::Display for Block<T> {
     }
 }
 
-pub fn compile_code<T: FieldExtension>(
-    ctx: &StarkContext<T>,
+pub fn compile_code(
+    ctx: &StarkContext,
     starkinfo: &StarkInfo,
     code: &Vec<Section>,
     dom: &str,
     ret: bool,
-) -> Block<T> {
+) -> Block {
     let next = if dom == "n" {
         1
     } else {
@@ -216,13 +216,13 @@ pub fn compile_code<T: FieldExtension>(
     };
     let modulas = N;
 
-    let mut body: Block<T> = Block {
+    let mut body: Block = Block {
         namespace: "ctx".to_string(),
         exprs: Vec::new(),
     };
 
     for j in 0..code.len() {
-        let mut src: Vec<Expr<T>> = Vec::new();
+        let mut src: Vec<Expr> = Vec::new();
         for k in 0..code[j].src.len() {
             src.push(get_ref(ctx, starkinfo, &code[j].src[k], dom, next, modulas));
             //log::debug!("get_ref_src: {}", src[src.len() - 1]);
@@ -258,7 +258,7 @@ pub fn compile_code<T: FieldExtension>(
 }
 
 #[inline(always)]
-fn get_i<T: FieldExtension>(expr: &Expr<T>, arg_i: usize) -> usize {
+fn get_i(expr: &Expr, arg_i: usize) -> usize {
     let offset = expr.addr[0];
     let next = expr.addr[1];
     let modulas = expr.addr[2];
@@ -266,7 +266,7 @@ fn get_i<T: FieldExtension>(expr: &Expr<T>, arg_i: usize) -> usize {
     offset + ((arg_i + next) % modulas) * size
 }
 
-fn get_value<T: FieldExtension>(ctx: &mut StarkContext<T>, expr: &Expr<T>, arg_i: usize) -> T {
+fn get_value(ctx: &mut StarkContext, expr: &Expr, arg_i: usize) -> F3G {
     let addr = &expr.syms[0];
     match addr.as_str() {
         "tmp" | "cm1_n" | "cm1_2ns" | "cm2_n" | "cm2_2ns" | "cm3_n" | "cm3_2ns" | "cm4_n"
@@ -278,43 +278,31 @@ fn get_value<T: FieldExtension>(ctx: &mut StarkContext<T>, expr: &Expr<T>, arg_i
                 2 => expr.syms[1].parse::<usize>().unwrap(),
                 _ => 1,
             };
-
-            // TODO: I just add the
             match dim {
-                5 => T::from_vec(vec![
+                3 => F3G::new(
                     ctx_section[id].to_be(),
                     ctx_section[id + 1].to_be(),
                     ctx_section[id + 2].to_be(),
-                    ctx_section[id + 3].to_be(),
-                    ctx_section[id + 4].to_be(),
-                ]),
-                3 => T::from_vec(vec![
-                    ctx_section[id].to_be(),
-                    ctx_section[id + 1].to_be(),
-                    ctx_section[id + 2].to_be(),
-                ]),
-
+                ),
                 1 => ctx_section[id],
                 _ => panic!("Invalid dim"),
             }
         }
         "xDivXSubXi" => {
             let id = get_i(expr, arg_i);
-            // TODO: We need to Support F5G , FG
-            T::from_vec(vec![
+            F3G::new(
                 ctx.xDivXSubXi[id],
                 ctx.xDivXSubXi[id + 1],
                 ctx.xDivXSubXi[id + 2],
-            ])
+            )
         }
         "xDivXSubWXi" => {
             let id = get_i(expr, arg_i);
-            // TODO: We need to Support F5G , FG
-            T::from_vec(vec![
+            F3G::new(
                 ctx.xDivXSubWXi[id],
                 ctx.xDivXSubWXi[id + 1],
                 ctx.xDivXSubWXi[id + 2],
-            ])
+            )
         }
         "Zi" => (ctx.Zi)(arg_i),
         _ => {
@@ -323,15 +311,15 @@ fn get_value<T: FieldExtension>(ctx: &mut StarkContext<T>, expr: &Expr<T>, arg_i
     }
 }
 
-fn set_ref<T: FieldExtension>(
-    ctx: &StarkContext<T>,
+fn set_ref(
+    ctx: &StarkContext,
     starkinfo: &StarkInfo,
     r: &Node,
-    val: Expr<T>,
+    val: Expr,
     dom: &str,
     next: usize,
     modulas: usize,
-    body: &mut Block<T>,
+    body: &mut Block,
 ) {
     //log::debug!("set_ref: r {:?}  dom {} val {}", r, dom, val);
     let e_dst = match r.type_.as_str() {
@@ -408,14 +396,14 @@ fn set_ref<T: FieldExtension>(
         .push(Expr::new(Ops::Write, vec![], vec![e_dst], vec![]));
 }
 
-fn get_ref<F: FieldExtension>(
-    ctx: &StarkContext<F>,
+fn get_ref(
+    ctx: &StarkContext,
     starkinfo: &StarkInfo,
     r: &Node,
     dom: &str,
     next: usize,
     modulas: usize,
-) -> Expr<F> {
+) -> Expr {
     //log::debug!("get_ref: r {:?}  dom {} ", r, dom);
     match r.type_.as_str() {
         "tmp" => Expr::new(
@@ -481,7 +469,7 @@ fn get_ref<F: FieldExtension>(
             }
         }
         "number" => Expr::new(
-            Ops::Vari(F::from(r.value.clone().unwrap().parse::<u64>().unwrap())),
+            Ops::Vari(F3G::from(r.value.clone().unwrap().parse::<u64>().unwrap())),
             vec![],
             vec![],
             vec![],
@@ -545,14 +533,14 @@ fn get_ref<F: FieldExtension>(
     }
 }
 
-fn eval_map<F: FieldExtension>(
-    _ctx: &StarkContext<F>,
+fn eval_map(
+    _ctx: &StarkContext,
     starkinfo: &StarkInfo,
     pol_id: usize,
     prime: bool,
     next: usize,
     modulas: usize,
-) -> Expr<F> {
+) -> Expr {
     let p = &starkinfo.var_pol_map[pol_id];
     //log::debug!("eval_map: {:?}", p);
     let offset = p.section_pos;
