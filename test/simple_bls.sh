@@ -32,7 +32,6 @@ node src/compressor12/main_compressor12_exec.js \
 
 cd ../test
 
-SNARK_INPUT=$WORK_DIR/final_input.zkin.json 
 # FIXME 
 cp ../starkjs/circuits/c12a.verifier.zkin.json aggregation/c12a.verifier/final_input.zkin.json
 
