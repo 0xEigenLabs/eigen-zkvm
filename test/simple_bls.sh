@@ -33,6 +33,7 @@ node src/compressor12/main_compressor12_exec.js \
 cd ../test
 
 # FIXME 
+CUR_DIR=$(cd $(dirname $0);pwd)
 CIRCUIT_NAME=c12a.verifier
 WORK_DIR=${CUR_DIR}/aggregation/$CIRCUIT_NAME
 cp ../starkjs/circuits/c12a.verifier.zkin.json $WORK_DIR/final_input.zkin.json
