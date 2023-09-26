@@ -131,7 +131,7 @@ STARK_STRUCT=$CUR_DIR/../starky/data/final.starkStruct.bls12381.json
 if [ $CURVE = "bn128" ]; then
     STARK_STRUCT=$CUR_DIR/../starky/data/final.starkStruct.bn128.json
 fi
-$ZKIT stark_prove -s ../starky/data/final.starkStruct.bls12381.json \
+$ZKIT stark_prove -s $STARK_STRUCT \
     -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
     --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $RUNDIR/circuits/$FINAL_CIRCUIT.circom --i $WORKSPACE/aggregation/$FINAL_CIRCUIT/final_input.zkin.json  --norm_stage

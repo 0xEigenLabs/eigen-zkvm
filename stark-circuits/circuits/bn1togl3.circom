@@ -7,7 +7,7 @@ template BN1toGL3() {
     signal input in;
     signal output out[3];
 
-    component n2b = Num2Bits(4 * 64);
+    component n2b = Num2Bits(255);
 
     n2b.in <== in;
 
