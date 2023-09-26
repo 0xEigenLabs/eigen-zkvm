@@ -16,10 +16,9 @@ CIRCUIT="fibonacci"
 PILEXECJS="fibonacci/fibonacci.js"
 RUNDIR="${CUR_DIR}/../starkjs"
 
-WORKSPACE=/tmp/aggregation_$CIRCUIT
-
 first_run=${1-no}
 CURVE=${2-bn128}
+WORKSPACE=/tmp/aggregation_{CURVE}_$CIRCUIT
 if [ $first_run = "yes" ]; then
     rm -rf $WORKSPACE && mkdir -p $WORKSPACE
 fi

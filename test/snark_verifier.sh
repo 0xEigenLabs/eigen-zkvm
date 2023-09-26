@@ -12,10 +12,9 @@ CURVE=${3-bn128}
 POWER=22
 BIG_POWER=28
 SRS=${CUR_DIR}/../keys/setup_2^${POWER}.${CURVE}.ptau
-#BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
-BIG_SRS=/zkp/zkevm-proverjs/build/powersOfTau28_hez_final.ptau
+BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
 
-CIRCUIT_NAME=fibonacci.final
+CIRCUIT_NAME=c12a.verifier
 
 WORK_DIR=${CUR_DIR}/aggregation/$CIRCUIT_NAME
 
@@ -81,7 +80,7 @@ else
     fi
     if [ ! -f $BIG_SRS ]; then
         echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
-        curl wget -P build https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final.ptau -o $BIG_SRS
+        curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final.ptau -o $BIG_SRS
     fi
 
     echo ">>> fflonk scheme <<< "
