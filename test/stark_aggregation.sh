@@ -18,7 +18,7 @@ RUNDIR="${CUR_DIR}/../starkjs"
 
 first_run=${1-no}
 CURVE=${2-bn128}
-WORKSPACE=/tmp/aggregation_{CURVE}_$CIRCUIT
+WORKSPACE=/tmp/aggregation_${CURVE}_$CIRCUIT
 if [ $first_run = "yes" ]; then
     rm -rf $WORKSPACE && mkdir -p $WORKSPACE
 fi

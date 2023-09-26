@@ -35,7 +35,7 @@ cd ../test
 # FIXME 
 CUR_DIR=$(cd $(dirname $0);pwd)
 CIRCUIT_NAME=c12a.verifier
-WORK_DIR=${CUR_DIR}/aggregation/$CIRCUIT_NAME
-cp ../starkjs/circuits/c12a.verifier.zkin.json $WORK_DIR/final_input.zkin.json
+WORK_DIR=${CUR_DIR}/aggregation
+cp ../starkjs/circuits/c12a.verifier.zkin.json $WORK_DIR/$CIRCUIT_NAME/final_input.zkin.json
 
 bash -x ./snark_verifier.sh groth16 true bls12381 $WORK_DIR
