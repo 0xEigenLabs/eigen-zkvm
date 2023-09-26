@@ -1,6 +1,1 @@
-{
-  "N": 5785,
-  "nConstraints": 13702,
-  "nPlonkConstraints": 23096,
-  "nPlonkAdditions": 9394
-}
+{"N":5785,"nConstraints":13702,"nPlonkConstraints":23096,"nPlonkAdditions":9394}

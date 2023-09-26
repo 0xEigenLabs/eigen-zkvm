@@ -237,9 +237,17 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
             }
         };
 
+    // 232126
+    println!(
+        "r1cs_constraint_last {:?}",
+        r1cs.constraints.last().unwrap()
+    );
     for (i, c) in r1cs.constraints.iter().enumerate() {
         if i % 100000 == 0 {
             println!("processing constraints: {}/{}", i, r1cs.constraints.len());
+        }
+        if i == 20924 {
+            println!("r1cs_constraint {:?}", c);
         }
         process(
             c,

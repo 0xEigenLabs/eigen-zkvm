@@ -189,29 +189,44 @@ impl PlonkSetupRenderInfo {
         use std::fs::File;
         use std::io::Write;
         use std::path::Path;
-        let mut file = File::create(Path::new("plonk_constrains_rs.json")).unwrap();
-        let input = plonk_constrains
-            .iter()
-            .map(|pa| pa.to_string())
-            .collect::<Vec<String>>();
-        let input = serde_json::to_string(&input).unwrap();
-        write!(file, "{}", input).unwrap();
+        println!("start_print_r1cs_constrains_rs");
+        // let mut file = File::create(Path::new("r1cs_constrains_rs.json")).unwrap();
+        r1cs.constraints.iter().for_each(|pa| {
+            for x in pa.0.iter() {
+                println!("{}:{}", x.0, x.1.as_int());
+            }
+            for x in pa.1.iter() {
+                println!("{}:{}", x.0, x.1.as_int());
+            }
+            for x in pa.2.iter() {
+                println!("{}:{}", x.0, x.1.as_int());
+            }
+        });
+        println!("end_print_r1cs_constrains_rs");
 
-        let mut file = File::create(Path::new("plonk_additions_rs.json")).unwrap();
-        let input = plonk_additions
-            .iter()
-            .map(|pa| pa.to_string())
-            .collect::<Vec<String>>();
-        let input = serde_json::to_string(&input).unwrap();
-        write!(file, "{}", input).unwrap();
-
-        let mut file = File::create(Path::new("plonk_info_rs.json")).unwrap();
-        let input = serde_json::to_string(&plonk_info).unwrap();
-        write!(file, "{}", input).unwrap();
-
-        let mut file = File::create(Path::new("custom_gates_info_rs.json")).unwrap();
-        let input = serde_json::to_string(&custom_gates_info).unwrap();
-        write!(file, "{}", input).unwrap();
+        // let mut file = File::create(Path::new("plonk_constrains_rs.json")).unwrap();
+        // let input = plonk_constrains
+        //     .iter()
+        //     .map(|pa| pa.to_string())
+        //     .collect::<Vec<String>>();
+        // let input = serde_json::to_string(&input).unwrap();
+        // write!(file, "{}", input).unwrap();
+        //
+        // let mut file = File::create(Path::new("plonk_additions_rs.json")).unwrap();
+        // let input = plonk_additions
+        //     .iter()
+        //     .map(|pa| pa.to_string())
+        //     .collect::<Vec<String>>();
+        // let input = serde_json::to_string(&input).unwrap();
+        // write!(file, "{}", input).unwrap();
+        //
+        // let mut file = File::create(Path::new("plonk_info_rs.json")).unwrap();
+        // let input = serde_json::to_string(&plonk_info).unwrap();
+        // write!(file, "{}", input).unwrap();
+        //
+        // let mut file = File::create(Path::new("custom_gates_info_rs.json")).unwrap();
+        // let input = serde_json::to_string(&custom_gates_info).unwrap();
+        // write!(file, "{}", input).unwrap();
 
         // 4. calculate columns,rows,constraints info.
         let n_publics = r1cs.num_inputs + r1cs.num_outputs - 1;
@@ -278,6 +293,13 @@ pub fn plonk_setup_compressor(
 
     let mut r = 0;
 
+    let print_smap = |name: &str, m: &Vec<Vec<u64>>| {
+        println!("{}", name);
+        m.iter().for_each(|s| {
+            println!("{:?}", s);
+        });
+    };
+
     // Paste public inputs.
     for i in 0..n_public_rows {
         let index = r + i;
@@ -300,6 +322,7 @@ pub fn plonk_setup_compressor(
         s_map[i % 12][r + i / 12] = 0;
     }
     r += n_public_rows;
+    print_smap("init", &s_map);
 
     // 3. Paste plonk constraints.
     #[derive(Copy, Clone, Eq, PartialEq)]
@@ -311,7 +334,11 @@ pub fn plonk_setup_compressor(
     let mut partial_rows: BTreeMap<String, ParRow> = BTreeMap::new();
     let mut half_rows: Vec<ParRow> = vec![];
     let plonk_constraints = &plonk_setup_info.pg;
+    // todo bugfix. 这里出现问题。
     for (i, c) in plonk_constraints.iter().enumerate() {
+        if c.0 == 2 {
+            println!("plnonk_gate index: {i}");
+        }
         if (i % 10000) == 0 {
             log::info!("Processing constraint... {}/{}", i, plonk_constraints.len())
         }
@@ -319,6 +346,10 @@ pub fn plonk_setup_compressor(
         let pr = partial_rows.get_mut(&k);
         if pr.is_some() {
             let pr = pr.unwrap();
+
+            if i == 14243 || i == 20916 {
+                println!("1-smap:{},{}", pr.n_used * 3, pr.row);
+            }
             s_map[pr.n_used * 3][pr.row] = c.0 as u64;
             s_map[pr.n_used * 3 + 1][pr.row] = c.1 as u64;
             s_map[pr.n_used * 3 + 2][pr.row] = c.2 as u64;
@@ -331,7 +362,6 @@ pub fn plonk_setup_compressor(
             }
         } else if half_rows.len() > 0 {
             let mut pr = half_rows.shift().unwrap();
-            // const pr = halfRows.shift();
             let index = pr.row;
             for (i, value) in vec![9_usize, 6, 7, 8, 10, 11]
                 .iter()
@@ -340,6 +370,9 @@ pub fn plonk_setup_compressor(
                 const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), *i, index, *value);
             }
 
+            if i == 14243 || i == 20916 {
+                println!("2-smap:{},{}", pr.n_used * 3, pr.row);
+            }
             s_map[pr.n_used * 3][pr.row] = c.0 as u64;
             s_map[pr.n_used * 3 + 1][pr.row] = c.1 as u64;
             s_map[pr.n_used * 3 + 2][pr.row] = c.2 as u64;
@@ -363,6 +396,9 @@ pub fn plonk_setup_compressor(
             }
             const_pols.set_array(&Compressor.to_string(), &GATE.to_string(), index, FGL::ONE);
 
+            if i == 14243 || i == 20916 {
+                println!("3-smap:{},{}", 0, r);
+            }
             s_map[0][r] = c.0 as u64;
             s_map[1][r] = c.1 as u64;
             s_map[2][r] = c.2 as u64;
@@ -370,6 +406,7 @@ pub fn plonk_setup_compressor(
             r += 1;
         }
     }
+    print_smap("plonk", &s_map);
 
     // Terminate the empty rows (Copyn the same constraint)
     for (_, pr) in partial_rows.iter_mut() {

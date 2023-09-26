@@ -108,6 +108,8 @@ const CPOSEIDON = [
 
 module.exports = async function plonkSetup(r1cs, options) {
     const F = new F3G();
+
+    console.log("r1cs_constraint_last {}", r1cs.constraints[r1cs.constraints.length-1]);
     const [plonkConstraints, plonkAdditions] = r1cs2plonk(F, r1cs);
 
     const plonkInfo = getNormalPlonkInfo();
@@ -119,18 +121,21 @@ module.exports = async function plonkSetup(r1cs, options) {
     const customGatesInfo = getCustomGatesInfo();
 
     // test-dump data
-    fs.writeFileSync("plonk_constrains_js.json", JSON.stringify(plonkConstraints, (key, value) =>
+    fs.writeFileSync("r1cs_constrains_js.json", JSON.stringify(r1cs.constraints, (key, value) =>
         typeof value === 'bigint' ? value.toString() :value
     ));
-    fs.writeFileSync("plonk_additions_js.json", JSON.stringify(plonkAdditions, (key, value) =>
-        typeof value === 'bigint' ? value.toString() :value
-    ));
-    fs.writeFileSync("plonk_info_js.json", JSON.stringify(plonkInfo, (key, value) =>
-        typeof value === 'bigint' ? value.toString() :value
-    ));
-    fs.writeFileSync("custom_gates_info_js.json", JSON.stringify(customGatesInfo, (key, value) =>
-        typeof value === 'bigint' ? value.toString() :value
-    ));
+    // fs.writeFileSync("plonk_constrains_js.json", JSON.stringify(plonkConstraints, (key, value) =>
+    //     typeof value === 'bigint' ? value.toString() :value
+    // ));
+    // fs.writeFileSync("plonk_additions_js.json", JSON.stringify(plonkAdditions, (key, value) =>
+    //     typeof value === 'bigint' ? value.toString() :value
+    // ));
+    // fs.writeFileSync("plonk_info_js.json", JSON.stringify(plonkInfo, (key, value) =>
+    //     typeof value === 'bigint' ? value.toString() :value
+    // ));
+    // fs.writeFileSync("custom_gates_info_js.json", JSON.stringify(customGatesInfo, (key, value) =>
+    //     typeof value === 'bigint' ? value.toString() :value
+    // ));
 
 
     let nPublics = r1cs.nOutputs + r1cs.nPubInputs;
@@ -183,6 +188,20 @@ module.exports = async function plonkSetup(r1cs, options) {
         sMap[i] = new Uint32Array(NUsed);
     }
 
+    function  print_smap(name) {
+        console.log(name);
+        let n = sMap[0].length;
+        for (var i = 0; i < sMap.length; i ++) {
+            let t = sMap[i].slice(0, n);
+            let msg = "";
+            for (var j = 0; j < n; j++) {
+                msg += ", " + t[j];
+            }
+            console.log(msg.slice(2));
+
+        }
+    }
+
     let r=0;
 
     // Paste public inputs.
@@ -206,6 +225,7 @@ module.exports = async function plonkSetup(r1cs, options) {
         sMap[i%12][r+Math.floor(i/12)] = 0;
     }
     r += nPublicRows;
+    print_smap("init");
 
     // Paste plonk constraints.
     const partialRows = {};
@@ -213,9 +233,16 @@ module.exports = async function plonkSetup(r1cs, options) {
     for (let i=0; i<plonkConstraints.length; i++) {
         if ((i%10000) == 0) console.log(`Processing constraint... ${i}/${plonkConstraints.length}`);
         const c = plonkConstraints[i];
+        if (c[0] == 2) {
+            console.log("plnonk_gate index: {}", i);
+        }
         const k= c.slice(3, 8).map( a=> a.toString(16)).join(",");
         if (partialRows[k]) {
             const pr = partialRows[k];
+
+            if (i == 14243 || i == 20925) {
+                console.log("1-smap:{},{}", pr.nUsed * 3, pr.row);
+            }
             sMap[pr.nUsed*3][pr.row] = c[0];
             sMap[pr.nUsed*3+1][pr.row] = c[1];
             sMap[pr.nUsed*3+2][pr.row] = c[2];
@@ -235,6 +262,9 @@ module.exports = async function plonkSetup(r1cs, options) {
             constPols.Compressor.C[10][pr.row] = c[7];
             constPols.Compressor.C[11][pr.row] = 0n;
 
+            if (i == 14243 || i == 20925) {
+                console.log("2-smap:{},{}", pr.nUsed * 3, pr.row);
+            }
             sMap[pr.nUsed*3][pr.row] = c[0];
             sMap[pr.nUsed*3+1][pr.row] = c[1];
             sMap[pr.nUsed*3+2][pr.row] = c[2];
@@ -253,6 +283,9 @@ module.exports = async function plonkSetup(r1cs, options) {
             constPols.Compressor.CMULADD[r] = 0n;
             constPols.Compressor.EVPOL4[r] = 0n;
             constPols.Compressor.FFT4[r] = 0n;
+            if (i == 14243 || i == 20925) {
+                console.log("2-smap:{},{}",0, r);
+            }
             sMap[0][r] = c[0];
             sMap[1][r] = c[1];
             sMap[2][r] = c[2];
@@ -263,6 +296,8 @@ module.exports = async function plonkSetup(r1cs, options) {
             r ++;
         }
     }
+
+    print_smap("plonk");
 
     // Terminate the empty rows (Copy the same constraint)
     const openRows = Object.keys(partialRows);

@@ -17,8 +17,6 @@ const { BigBuffer, newConstantPolsArray, newCommitPolsArray, compile, verifyPil 
 
 module.exports = {
 
-    // todo-cyj all of this can ben replaced with compile::test::verify_pil
-
   async generate(workspace, pilFile, pilConfig, fileCachePil, builder, starkStruct, proverAddr, input) {
     let timer = []
     elapse("begin", timer);
@@ -29,14 +27,12 @@ module.exports = {
     if (typeof fileCachePil !== 'undefined' && fs.existsSync(fileCachePil)) {
       pil = JSON.parse(await fs.promises.readFile(fileCachePil, "utf8"));
     } else {
-    // todo-cyj 1.replacing here by with powdr::compiler::analyze_pil.(there is a demo generate_json_pair.)
       pil = await compile(FGL, pilFile, null, pilConfig);
       if (typeof fileCachePil !== "undefined") {
         await fs.promises.writeFile(fileCachePil + ".pil.json", JSON.stringify(pil, null, 1) + "\n", "utf8");
       }
     }
 
-//    todo-cyj 2. powdr::compile::compile_pil .pil -> .const .cm
     // 2. generate commit and constant, .pil -> .cm & .const
     let constPols = newConstantPolsArray(pil);
     await builder.buildConstants(constPols, input);
@@ -50,7 +46,6 @@ module.exports = {
     }
 
     // verify the input and trace constraints
-    // 3. verify pil. as same as
     const res = await verifyPil(FGL, pil, cmPols, constPols);
     assert(res.length == 0);
 

@@ -38,8 +38,6 @@ mkdir -p $CUR_DIR/aggregation/$FINAL_CIRCUIT
 #CIRCUIT="poseidon"
 #PILEXECJS="poseidon/main_poseidon.js"
 
-
-# Recursive 1.
 c12_start=$(date +%s)
 cd ${CUR_DIR} && npm i
 for (( i=0; i<$NUM_PROOF; i++ ))
