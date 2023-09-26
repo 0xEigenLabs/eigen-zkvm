@@ -158,7 +158,7 @@ impl Transcript {
             n2b.push(format!("tcN2b_{}", self.n2b_cnt));
             self.n2b_cnt += 1;
             self.code
-                .push(format!("component {} = Num2Bits(4 * 64);", n2b[i]));
+                .push(format!("component {} = Num2Bits(255);", n2b[i]));
             self.code.push(format!("{}.in <== {};", n2b[i], f));
         }
         let mut curField = 0;
