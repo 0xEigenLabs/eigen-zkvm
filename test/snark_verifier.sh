@@ -15,8 +15,7 @@ SRS=${CUR_DIR}/../keys/setup_2^${POWER}.${CURVE}.ptau
 BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
 
 CIRCUIT_NAME=c12a.verifier
-
-WORK_DIR=${CUR_DIR}/aggregation/$CIRCUIT_NAME
+WORK_DIR=$4/$CIRCUIT_NAME
 mkdir -p $WORK_DIR
 
 SNARK_CIRCOM=$WORK_DIR/$CIRCUIT_NAME.circom

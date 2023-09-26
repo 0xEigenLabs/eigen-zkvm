@@ -33,6 +33,8 @@ node src/compressor12/main_compressor12_exec.js \
 cd ../test
 
 # FIXME 
-cp ../starkjs/circuits/c12a.verifier.zkin.json aggregation/c12a.verifier/final_input.zkin.json
+CIRCUIT_NAME=c12a.verifier
+WORK_DIR=${CUR_DIR}/aggregation/$CIRCUIT_NAME
+cp ../starkjs/circuits/c12a.verifier.zkin.json $WORK_DIR/final_input.zkin.json
 
-bash -x ./snark_verifier.sh groth16 true bls12381
+bash -x ./snark_verifier.sh groth16 true bls12381 $WORK_DIR

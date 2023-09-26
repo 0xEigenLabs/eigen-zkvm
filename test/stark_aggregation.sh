@@ -139,10 +139,11 @@ final_end=$(date +%s)
 
 snark_start=$(date +%s)
 
+WORK_DIR=${WORKSPACE}/aggregation
 if [ $first_run = "yes" ]; then
-    $CUR_DIR/snark_verifier.sh groth16 true $CURVE
+    $CUR_DIR/snark_verifier.sh groth16 true $CURVE $WORK_DIR
 else
-    $CUR_DIR/snark_verifier.sh groth16 false $CURVE
+    $CUR_DIR/snark_verifier.sh groth16 false $CURVE $WORK_DIR
 fi
 
 snark_end=$(date +%s)
