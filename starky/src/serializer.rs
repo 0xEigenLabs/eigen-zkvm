@@ -1,7 +1,6 @@
 // input json of plonk
 #![allow(non_snake_case)]
 use crate::f3g::F3G;
-use crate::f5g::F5G;
 use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bn128::Fr;
 use crate::helper;
