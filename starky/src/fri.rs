@@ -1,11 +1,10 @@
 use crate::constant::{MG, SHIFT, SHIFT_INV};
-use crate::digest::ElementDigest;
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::f3g::F3G;
 use crate::fft::FFT;
 use crate::helper::log2_any;
 use crate::polutils::{eval_pol, pol_mul_axi};
-use crate::traits::{MerkleTree, Transcript};
+use crate::traits::{MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, Step};
 use plonky::field_gl::Fr as FGL;
 use plonky::Field;
@@ -19,21 +18,21 @@ pub struct FRI {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct Query<MB: Clone + std::default::Default> {
+pub struct Query<MB: Clone + std::default::Default, MN: MTNodeType> {
     pub pol_queries: Vec<Vec<(Vec<FGL>, Vec<Vec<MB>>)>>,
-    pub root: ElementDigest,
+    pub root: MN,
 }
 
 #[derive(Debug, Clone)]
 pub struct FRIProof<M: MerkleTree> {
-    pub queries: Vec<Query<M::BaseField>>,
+    pub queries: Vec<Query<M::BaseField, M::MTNode>>,
     pub last: Vec<F3G>,
 }
 
 impl<M: MerkleTree> FRIProof<M> {
     pub fn new(qs: usize) -> Self {
         FRIProof {
-            queries: vec![Query::<M::BaseField>::default(); qs],
+            queries: vec![Query::<M::BaseField, M::MTNode>::default(); qs],
             last: Vec::new(),
         }
     }

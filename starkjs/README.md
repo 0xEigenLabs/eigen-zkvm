@@ -6,7 +6,8 @@ PIL compiler and Circom transpiler. The stark prover is [starky](../starky).
 ### Arithmetization: Constraint Polynomial
 
 ```
-npm run fib
+export CIRCUIT=fib
+npm run $CIRCUIT
 ```
 will generate the PIL json, Commitment Polynomial file and Constant Polynomial file.
 
@@ -14,32 +15,26 @@ will generate the PIL json, Commitment Polynomial file and Constant Polynomial f
 
 ```
 ../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
-    -p /tmp/fib.pil.json \
-    --o /tmp/fib.const \
-    --m /tmp/fib.cm -c circuits/fib.verifier.circom --i circuits/fib.verifier.zkin.json
+    -p /tmp/$CIRCUIT.pil.json \
+    --o /tmp/$CIRCUIT.const \
+    --m /tmp/$CIRCUIT.cm -c circuits/$CIRCUIT.verifier.circom --i circuits/$CIRCUIT.verifier.zkin.json
 ```
 
 ### Recursive Layer: FRI Proof
 
 ```
-../target/release/eigen-zkit compile -p goldilocks -i circuits/fib.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
-## the above commands is equivalent to
-# circom --r1cs --wasm -p goldilocks circuits/fib.circom \
-#    -l node_modules/pil-stark/circuits.gl \
-#    --O2=full \
-#    -o /tmp/
-
+../target/release/eigen-zkit compile -p goldilocks -i circuits/$CIRCUIT.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
 // Circom to Stark  
 node src/compressor12/main_compressor12_setup.js \
-    -r /tmp/fib.verifier.r1cs \
+    -r /tmp/$CIRCUIT.verifier.r1cs \
     -c /tmp/c12.const \
     -p /tmp/c12.pil \
     -e /tmp/c12.exec
 
 node src/compressor12/main_compressor12_exec.js \
-    -w /tmp/fib.verifier_js/fib.verifier.wasm  \
-    -i circuits/fib.verifier.zkin.json  \
+    -w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm  \
+    -i circuits/$CIRCUIT.verifier.zkin.json  \
     -p /tmp/c12.pil  \
     -e /tmp/c12.exec \
     -m /tmp/c12.cm

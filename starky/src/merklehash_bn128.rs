@@ -6,6 +6,7 @@ use crate::f3g::F3G;
 use crate::field_bn128::Fr;
 use crate::linearhash_bn128::LinearHashBN128;
 use crate::poseidon_bn128_opt::Poseidon;
+use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use ff::Field;
 use plonky::field_gl::Fr as FGL;
@@ -17,7 +18,7 @@ pub struct MerkleTreeBN128 {
     pub elements: Vec<FGL>,
     pub width: usize,
     pub height: usize,
-    pub nodes: Vec<ElementDigest>,
+    pub nodes: Vec<ElementDigest<4>>,
     h: LinearHashBN128,
     poseidon: Poseidon,
 }
@@ -52,8 +53,8 @@ impl MerkleTreeBN128 {
             .enumerate()
             .map(|(i, bb)| self.do_merklize_level(bb, i, n_ops).unwrap())
             .reduce(
-                || Vec::<ElementDigest>::new(),
-                |mut a: Vec<ElementDigest>, mut b: Vec<ElementDigest>| {
+                || Vec::<ElementDigest<4>>::new(),
+                |mut a: Vec<ElementDigest<4>>, mut b: Vec<ElementDigest<4>>| {
                     a.append(&mut b);
                     a
                 },
@@ -68,10 +69,10 @@ impl MerkleTreeBN128 {
 
     fn do_merklize_level(
         &self,
-        buff_in: &[ElementDigest],
+        buff_in: &[ElementDigest<4>],
         _st_i: usize,
         _st_n: usize,
-    ) -> Result<Vec<ElementDigest>> {
+    ) -> Result<Vec<ElementDigest<4>>> {
         log::debug!(
             "merklizing bn128 hash start.... {}/{}, buff size {}",
             _st_i,
@@ -79,7 +80,7 @@ impl MerkleTreeBN128 {
             buff_in.len()
         );
         let n_ops = buff_in.len() / 16;
-        let mut buff_out64: Vec<ElementDigest> = vec![ElementDigest::default(); n_ops];
+        let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
         buff_out64
             .iter_mut()
             .zip((0..n_ops).into_iter())
@@ -101,7 +102,7 @@ impl MerkleTreeBN128 {
         let mut sibs: Vec<Fr> = vec![];
 
         for i in 0..16 {
-            let sib = self.nodes[offset + (si + i)].into();
+            let sib: Fr = Fr(self.nodes[offset + (si + i)].as_scalar::<Fr>());
             sibs.push(sib);
         }
 
@@ -115,9 +116,9 @@ impl MerkleTreeBN128 {
         &self,
         mp: &Vec<Vec<Fr>>,
         idx: usize,
-        value: &ElementDigest,
+        value: &ElementDigest<4>,
         offset: usize,
-    ) -> Result<ElementDigest> {
+    ) -> Result<ElementDigest<4>> {
         if mp.len() == offset {
             return Ok(value.clone());
         }
@@ -129,7 +130,7 @@ impl MerkleTreeBN128 {
         }
         let init = Fr::zero();
         let next_value = self.poseidon.hash(&vals, &init)?;
-        let next_value = ElementDigest::from(&next_value);
+        let next_value = ElementDigest::<4>::from_scalar(&next_value);
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
@@ -138,14 +139,15 @@ impl MerkleTreeBN128 {
         mp: &Vec<Vec<Fr>>,
         idx: usize,
         vals: &Vec<FGL>,
-    ) -> Result<ElementDigest> {
+    ) -> Result<ElementDigest<4>> {
         let h = self.h.hash_element_matrix(&vec![vals.to_vec()])?;
-        self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::from(&h), 0)
+        self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::<4>::from_scalar(&h), 0)
     }
 }
 
 impl MerkleTree for MerkleTreeBN128 {
     type BaseField = Fr;
+    type MTNode = ElementDigest<4>;
 
     fn new() -> Self {
         Self {
@@ -185,7 +187,7 @@ impl MerkleTree for MerkleTreeBN128 {
         if n_per_thread_f > MAX_OPS_PER_THREAD {
             n_per_thread_f = MAX_OPS_PER_THREAD;
         }
-        let mut nodes = vec![ElementDigest::default(); get_n_nodes(height)];
+        let mut nodes = vec![ElementDigest::<4>::default(); get_n_nodes(height)];
         let now = Instant::now();
         if buff.len() > 0 {
             nodes
@@ -250,13 +252,13 @@ impl MerkleTree for MerkleTreeBN128 {
         Ok((v, mp))
     }
 
-    fn eq_root(&self, r1: &ElementDigest, r2: &ElementDigest) -> bool {
+    fn eq_root(&self, r1: &Self::MTNode, r2: &Self::MTNode) -> bool {
         r1 == r2
     }
 
     fn verify_group_proof(
         &self,
-        root: &ElementDigest,
+        root: &Self::MTNode,
         mp: &Vec<Vec<Fr>>,
         idx: usize,
         group_elements: &Vec<FGL>,
@@ -265,7 +267,7 @@ impl MerkleTree for MerkleTreeBN128 {
         Ok(self.eq_root(root, &c_root))
     }
 
-    fn root(&self) -> ElementDigest {
+    fn root(&self) -> Self::MTNode {
         self.nodes[self.nodes.len() - 1]
     }
 }
@@ -274,6 +276,7 @@ impl MerkleTree for MerkleTreeBN128 {
 mod tests {
     use crate::field_bn128::Fr;
     use crate::merklehash_bn128::MerkleTreeBN128;
+    use crate::traits::MTNodeType;
     use crate::traits::MerkleTree;
     use ff::PrimeField;
     use plonky::field_gl::Fr as FGL;
@@ -294,7 +297,7 @@ mod tests {
 
         let mut tree = MerkleTreeBN128::new();
         tree.merkelize(cols, n_pols, n).unwrap();
-        let root: Fr = tree.root().into();
+        let root: Fr = Fr(tree.root().as_scalar::<Fr>());
         assert_eq!(
             root,
             Fr::from_str(

@@ -1,10 +1,21 @@
-use crate::digest::ElementDigest;
 use crate::errors::Result;
 use crate::f3g::F3G;
+use ff::PrimeField;
 use plonky::field_gl::Fr as FGL;
 
+pub trait MTNodeType {
+    fn as_elements(&self) -> &[FGL];
+    fn new(value: &[FGL]) -> Self;
+    fn from_scalar<T: PrimeField>(e: &T) -> Self;
+    fn as_scalar<T: PrimeField>(self) -> T::Repr;
+}
+
 pub trait MerkleTree {
-    type BaseField: Clone + std::default::Default + Into<crate::serializer::Input>;
+    type MTNode: Copy + std::fmt::Display + Clone + Default + MTNodeType + core::fmt::Debug;
+    type BaseField: Clone
+        + Default
+        + core::fmt::Debug
+        + Into<crate::serializer::Input<Self::MTNode>>;
     fn new() -> Self;
     fn to_f3g(&self, p_be: &mut Vec<F3G>);
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()>;
@@ -12,13 +23,13 @@ pub trait MerkleTree {
     fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<Self::BaseField>>)>;
     fn verify_group_proof(
         &self,
-        root: &ElementDigest,
+        root: &Self::MTNode,
         mp: &Vec<Vec<Self::BaseField>>,
         idx: usize,
         group_elements: &Vec<FGL>,
     ) -> Result<bool>;
-    fn root(&self) -> ElementDigest;
-    fn eq_root(&self, r1: &ElementDigest, r2: &ElementDigest) -> bool;
+    fn root(&self) -> Self::MTNode;
+    fn eq_root(&self, r1: &Self::MTNode, r2: &Self::MTNode) -> bool;
     fn element_size(&self) -> usize;
 }
 

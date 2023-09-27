@@ -6,14 +6,13 @@ use crate::polsarray::PolsArray;
 use crate::starkinfo::{self, Program, StarkInfo};
 use crate::traits::MerkleTree;
 use crate::types::{StarkStruct, PIL};
-use crate::ElementDigest;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
 
 #[derive(Default)]
 pub struct StarkSetup<M: MerkleTree> {
     pub const_tree: M,
-    pub const_root: ElementDigest,
+    pub const_root: M::MTNode,
     pub starkinfo: StarkInfo,
     pub program: Program,
 }
@@ -86,6 +85,7 @@ pub mod tests {
     use crate::field_bn128::Fr;
     use crate::merklehash::MerkleTreeGL;
     use crate::merklehash_bn128::MerkleTreeBN128;
+    use crate::traits::MTNodeType;
     use crate::ElementDigest;
     use ff::*;
     use plonky::field_gl::Fr as FGL;
@@ -99,7 +99,7 @@ pub mod tests {
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
         let setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
-        let root: Fr = setup.const_root.into();
+        let root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
 
         let expect_root =
             "4658128321472362347225942316135505030498162093259225938328465623672244875764";
@@ -116,7 +116,7 @@ pub mod tests {
         let setup =
             StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
 
-        let expect_root = ElementDigest::from([
+        let expect_root = ElementDigest::<4>::new(&[
             FGL::from(15302509084042343527u64),
             FGL::from(985081440042889555u64),
             FGL::from(14692153289195851822u64),

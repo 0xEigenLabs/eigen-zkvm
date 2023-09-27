@@ -1,6 +1,9 @@
 #![allow(non_snake_case)]
 use crate::f3g::F3G;
 use crate::field_bn128::Fr;
+use crate::poseidon_bls12381::load_constants as load_constants_bls12381;
+use crate::poseidon_bls12381::Constants as ConstantsBls12381;
+use crate::poseidon_bls12381_opt::load_constants as load_constants_bls12381_opt;
 use crate::poseidon_bn128::{load_constants, Constants};
 use crate::poseidon_bn128_opt::load_constants as load_constants_opt;
 use ff::*;
@@ -47,6 +50,12 @@ lazy_static::lazy_static! {
     };
     pub static ref POSEIDON_BN128_CONSTANTS: Constants = {
         load_constants()
+    };
+    pub static ref POSEIDON_BLS12381_CONSTANTS_OPT: ConstantsBls12381 = {
+        load_constants_bls12381_opt()
+    };
+    pub static ref POSEIDON_BLS12381_CONSTANTS: ConstantsBls12381 = {
+        load_constants_bls12381()
     };
     pub static ref POSEIDON_CONSTANTS_OPT: crate::poseidon_opt::Constants = {
         crate::poseidon_opt::load_constants()
