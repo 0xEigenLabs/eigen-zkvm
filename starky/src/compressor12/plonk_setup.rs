@@ -185,49 +185,6 @@ impl PlonkSetupRenderInfo {
         // 3. get custom gate info
         let custom_gates_info = CustomGateInfo::from_r1cs(r1cs);
 
-        // test-dump data
-        use std::fs::File;
-        use std::io::Write;
-        use std::path::Path;
-        println!("start_print_r1cs_constrains_rs");
-        // let mut file = File::create(Path::new("r1cs_constrains_rs.json")).unwrap();
-        r1cs.constraints.iter().for_each(|pa| {
-            for x in pa.0.iter() {
-                println!("{}:{}", x.0, x.1.as_int());
-            }
-            for x in pa.1.iter() {
-                println!("{}:{}", x.0, x.1.as_int());
-            }
-            for x in pa.2.iter() {
-                println!("{}:{}", x.0, x.1.as_int());
-            }
-        });
-        println!("end_print_r1cs_constrains_rs");
-
-        // let mut file = File::create(Path::new("plonk_constrains_rs.json")).unwrap();
-        // let input = plonk_constrains
-        //     .iter()
-        //     .map(|pa| pa.to_string())
-        //     .collect::<Vec<String>>();
-        // let input = serde_json::to_string(&input).unwrap();
-        // write!(file, "{}", input).unwrap();
-        //
-        // let mut file = File::create(Path::new("plonk_additions_rs.json")).unwrap();
-        // let input = plonk_additions
-        //     .iter()
-        //     .map(|pa| pa.to_string())
-        //     .collect::<Vec<String>>();
-        // let input = serde_json::to_string(&input).unwrap();
-        // write!(file, "{}", input).unwrap();
-        //
-        // let mut file = File::create(Path::new("plonk_info_rs.json")).unwrap();
-        // let input = serde_json::to_string(&plonk_info).unwrap();
-        // write!(file, "{}", input).unwrap();
-        //
-        // let mut file = File::create(Path::new("custom_gates_info_rs.json")).unwrap();
-        // let input = serde_json::to_string(&custom_gates_info).unwrap();
-        // write!(file, "{}", input).unwrap();
-
         // 4. calculate columns,rows,constraints info.
         let n_publics = r1cs.num_inputs + r1cs.num_outputs - 1;
         let n_public_rows = (n_publics - 1) / 12 + 1;
@@ -750,4 +707,35 @@ pub fn plonk_setup_compressor(
     }
 
     (const_pols, s_map)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use plonky::reader::load_r1cs;
+    use std::fs::File;
+    use std::io::Write;
+    use std::path::Path;
+
+    /// The js dump code as below:
+    /// ```js
+    /// fs.writeFileSync("custom_gates_info_js.json", JSON.stringify(customGatesInfo, (key, value) =>
+    ///     typeof value === 'bigint' ? value.toString() :value
+    /// ));
+    /// ```
+    #[test]
+    fn test_custom_gates_from_r1cs() {
+        let CIRCUIT: String = std::env::var("CIRCUIT")
+            .unwrap_or_else(|_| "fib".to_string())
+            .parse()
+            .expect("Cannot parse DEGREE env var as u32");
+        let r1cs_file = format!("/tmp/{CIRCUIT}.verifier.r1cs");
+        let r1cs = load_r1cs::<GL>(&r1cs_file);
+
+        let custom_gates_info = CustomGateInfo::from_r1cs(&r1cs);
+
+        let mut file = File::create(Path::new("/tmp/custom_gates_info_rs.json")).unwrap();
+        let input = serde_json::to_string(&custom_gates_info).unwrap();
+        write!(file, "{}", input).unwrap();
+    }
 }

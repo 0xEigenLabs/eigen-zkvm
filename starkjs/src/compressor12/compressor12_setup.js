@@ -121,9 +121,9 @@ module.exports = async function plonkSetup(r1cs, options) {
     const customGatesInfo = getCustomGatesInfo();
 
     // test-dump data
-    fs.writeFileSync("r1cs_constrains_js.json", JSON.stringify(r1cs.constraints, (key, value) =>
-        typeof value === 'bigint' ? value.toString() :value
-    ));
+    // fs.writeFileSync("r1cs_constrains_js.json", JSON.stringify(r1cs.constraints, (key, value) =>
+    //     typeof value === 'bigint' ? value.toString() :value
+    // ));
     // fs.writeFileSync("plonk_constrains_js.json", JSON.stringify(plonkConstraints, (key, value) =>
     //     typeof value === 'bigint' ? value.toString() :value
     // ));

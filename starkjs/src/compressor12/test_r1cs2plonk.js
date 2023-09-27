@@ -3,8 +3,7 @@ const r1cs2plonk = require("../../node_modules/pil-stark/src/r1cs2plonk");
 const {readR1cs} = require("r1csfile");
 const F1Field = require("../../node_modules/pil-stark/src/f3g.js");
 
-// test render_pil_js.
-// node run test_render_pil.js
+// node run test_r1cs2plonk.js
 async function run() {
     const F = new F1Field();
 
@@ -13,10 +12,10 @@ async function run() {
     const [plonkConstraints, plonkAdditions] = r1cs2plonk(F, r1cs);
 
     // test-dump data
-    fs.writeFileSync("./r1cs2plonk/plonk_constrains_js.json", JSON.stringify(plonkConstraints, (key, value) =>
+    fs.writeFileSync("/tmp/plonk_constrains_js.json", JSON.stringify(plonkConstraints, (key, value) =>
         typeof value === 'bigint' ? value.toString() :value
     ));
-    fs.writeFileSync("./r1cs2plonk/plonk_additions_js.json", JSON.stringify(plonkAdditions, (key, value) =>
+    fs.writeFileSync("/tmp/plonk_additions_js.json", JSON.stringify(plonkAdditions, (key, value) =>
         typeof value === 'bigint' ? value.toString() :value
     ));
 
@@ -24,12 +23,9 @@ async function run() {
             let pc= plonkConstraints[i];
             console.log("{}",  pc)
     }
-
-
 }
 
 
-// node test_render_pil.js
 run().then(()=> {
     process.exit(0);
 }, (err) => {

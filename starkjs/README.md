@@ -69,12 +69,14 @@ export CIRCUIT=fib
 
 ### Top Layer: Snark proof
 ```bash
+export CIRCUIT=fib
 bash -x ../test/test_fibonacci_verifier.sh
 ```
 
 ### Snark proof aggregation
 
 ```bash
+export CIRCUIT=fib
 bash -x ../test/test_aggregation_verifier.sh
 ```
 

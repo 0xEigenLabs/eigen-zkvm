@@ -260,34 +260,49 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
 }
 
 #[cfg(test)]
-pub mod tests {
-    use crate::compressor12::compressor12_setup::Options;
-    use crate::r1cs2plonk::r1cs2plonk;
-    use plonky::field_gl::GL;
+mod test {
+    use super::*;
     use plonky::reader::load_r1cs;
+    use std::fs::File;
+    use std::io::Write;
+    use std::path::Path;
 
+    /// The js dump code as below:
+    /// ```js
+    /// fs.writeFileSync("plonk_constrains_js.json", JSON.stringify(plonkConstraints, (key, value) =>
+    ///     typeof value === 'bigint' ? value.toString() :value
+    /// ));
+    /// fs.writeFileSync("plonk_additions_js.json", JSON.stringify(plonkAdditions, (key, value) =>
+    ///     typeof value === 'bigint' ? value.toString() :value
+    /// ));
+    /// ```
     #[test]
-    #[ignore]
     fn test_r1cs2plonk() {
-        let r1cs = load_r1cs::<GL>(&"/tmp/multiplier2.r1cs".to_string());
+        let CIRCUIT: String = std::env::var("CIRCUIT")
+            .unwrap_or_else(|_| "fib".to_string())
+            .parse()
+            .expect("Cannot parse DEGREE env var as u32");
+
+        let r1cs_file = format!("/tmp/{CIRCUIT}.verifier.r1cs");
+        let r1cs = load_r1cs::<GL>(&r1cs_file);
+
         let (plonk_constrains, plonk_additions) = r1cs2plonk(&r1cs);
 
-        use std::fs::File;
-        use std::io::Write;
-        use std::path::Path;
-        // let mut file = File::create(Path::new("./test_plonk_constrains_rs.json")).unwrap();
-        // let input = serde_json::to_string(&plonk_constrains).unwrap();
-        // write!(file, "{}", input).unwrap();
-        //
-        // let mut file = File::create(Path::new("./test_plonk_additions_rs.json")).unwrap();
-        // let input = serde_json::to_string(&plonk_additions).unwrap();
-        // write!(file, "{}", input).unwrap();
+        // test the r1cs2plonk data by dump its data.
+        let mut file = File::create(Path::new("plonk_constrains_rs.json")).unwrap();
+        let input = plonk_constrains
+            .iter()
+            .map(|pa| pa.to_string())
+            .collect::<Vec<String>>();
+        let input = serde_json::to_string(&input).unwrap();
+        write!(file, "{}", input).unwrap();
 
-        println!("plonk_constrains, {:?}", plonk_constrains);
-        for pa in plonk_constrains {
-            println!("plonk_constrains: {}", pa);
-            let a = pa.to_string();
-            println!("plonk_constrains: {}", a);
-        }
+        let mut file = File::create(Path::new("/tmp/plonk_additions_rs.json")).unwrap();
+        let input = plonk_additions
+            .iter()
+            .map(|pa| pa.to_string())
+            .collect::<Vec<String>>();
+        let input = serde_json::to_string(&input).unwrap();
+        write!(file, "{}", input).unwrap();
     }
 }

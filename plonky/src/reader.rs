@@ -298,3 +298,47 @@ pub fn load_aggregation_verification_key(filename: &str) -> AggregationVerificat
     );
     AggregationVerificationKey::read(&mut reader).expect("read aggregation vk err")
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::field_gl::GL;
+    use std::collections::BTreeMap;
+    use std::fs::File;
+    use std::io::Write;
+    use std::path::Path;
+
+    /// The js dump code like this:
+    /// ```js
+    ///     fs.writeFileSync("r1cs_constrains_js.json", JSON.stringify(r1cs.constraints, (key, value) =>
+    ///     typeof value === 'bigint' ? value.toString() :value
+    ///     ));
+    /// ```
+    #[allow(non_snake_case)]
+    #[test]
+    fn test_load_r1cs() {
+        let CIRCUIT: String = std::env::var("CIRCUIT")
+            .unwrap_or_else(|_| "fib".to_string())
+            .parse()
+            .expect("Cannot parse DEGREE env var as u32");
+        let r1cs_file = format!("/tmp/{CIRCUIT}.verifier.r1cs");
+        let r1cs = load_r1cs::<GL>(&r1cs_file);
+
+        // test the r1cs.constraints by dump its data.
+        let mut r1cs_constrains_str = String::new();
+        r1cs.constraints.iter().for_each(|pa| {
+            for x in pa.0.iter() {
+                r1cs_constrains_str.push_str(&format!("{}:{},", x.0, x.1.as_int()));
+            }
+            for x in pa.1.iter() {
+                r1cs_constrains_str.push_str(&format!("{}:{},", x.0, x.1.as_int()));
+            }
+            for x in pa.2.iter() {
+                r1cs_constrains_str.push_str(&format!("{}:{},", x.0, x.1.as_int()));
+            }
+        });
+        let mut file = File::create(Path::new("r1cs_constrains_rs.json")).unwrap();
+        let input = serde_json::to_string(&r1cs_constrains_str).unwrap();
+        write!(file, "{}", input).unwrap();
+    }
+}
