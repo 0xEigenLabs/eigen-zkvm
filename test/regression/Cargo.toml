@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-runtime = { path = "../powdr/riscv/runtime" }
+riscv = {git = "https://github.com/powdr-labs/powdr.git", package = "riscv"}
+number = {git = "https://github.com/powdr-labs/powdr.git", package = "number"}
 
 [workspace]

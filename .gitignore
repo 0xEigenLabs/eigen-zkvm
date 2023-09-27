@@ -29,8 +29,7 @@ keys/setup_*.ptau
 starkjs/circuits/
 **/package-lock.json
 witness.wtns
-test/powdr
-test/test_regression
+test/regression/test_regression
 
 artifacts
 cache
