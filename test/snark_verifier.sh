@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 
-export NODE_OPTIONS="--max-old-space-size=16384"
+export NODE_OPTIONS="--max-old-space-size=163840"
 source ~/.bashrc 
 
 CUR_DIR=$(cd $(dirname $0);pwd)
@@ -10,6 +10,9 @@ first_run=${2-false}
 #bls12381
 CURVE=${3-bn128}
 POWER=22
+if [ $CURVE = "bls12381" ]; then
+    POWER=25
+fi
 BIG_POWER=28
 SRS=${CUR_DIR}/../keys/setup_2^${POWER}.${CURVE}.ptau
 BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
