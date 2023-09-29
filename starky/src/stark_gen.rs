@@ -239,7 +239,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, 0);
 
         ctx.const_n = const_pols.write_buff();
-        const_tree.to_f3g(&mut ctx.const_2ns);
+        const_tree.to_extend(&mut ctx.const_2ns);
 
         ctx.publics = vec![F3G::ZERO; starkinfo.publics.len()];
         for (i, pe) in starkinfo.publics.iter().enumerate() {
@@ -269,7 +269,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         log::info!("Merkelizing 1....");
         let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n")?;
-        tree1.to_f3g(&mut ctx.cm1_2ns);
+        tree1.to_extend(&mut ctx.cm1_2ns);
 
         log::info!(
             "tree1 root: {}",
@@ -298,7 +298,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         log::info!("Merkelizing 2....");
         let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n")?;
-        tree2.to_f3g(&mut ctx.cm2_2ns);
+        tree2.to_extend(&mut ctx.cm2_2ns);
         transcript.put(&[tree2.root().as_elements().to_vec()])?;
         log::info!(
             "tree2 root: {}",
@@ -345,7 +345,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         log::info!("Merkelizing 3....");
 
         let tree3 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm3_n")?;
-        tree3.to_f3g(&mut ctx.cm3_2ns);
+        tree3.to_extend(&mut ctx.cm3_2ns);
         transcript.put(&[tree3.root().as_elements().to_vec()])?;
 
         log::info!(

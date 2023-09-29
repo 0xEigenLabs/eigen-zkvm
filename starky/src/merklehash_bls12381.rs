@@ -3,33 +3,35 @@ use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
 use crate::digest::ElementDigest;
 use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
-use crate::linearhash::LinearHash;
-use crate::poseidon_opt::Poseidon;
+use crate::field_bls12381::Fr;
+use crate::linearhash_bls12381::LinearHashBLS12381;
+use crate::poseidon_bls12381_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
+use ff::Field;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use std::time::Instant;
 
 #[derive(Default)]
-pub struct MerkleTreeGL {
+pub struct MerkleTreeBLS12381 {
     pub elements: Vec<FGL>,
     pub width: usize,
     pub height: usize,
     pub nodes: Vec<ElementDigest<4>>,
-    h: LinearHash,
+    h: LinearHashBLS12381,
     poseidon: Poseidon,
 }
 
 fn get_n_nodes(n_: usize) -> usize {
     let mut n = n_;
-    let mut next_n = (n - 1) / 2 + 1;
-    let mut acc = next_n * 2;
+    let mut next_n = (n - 1) / 16 + 1;
+    let mut acc = next_n * 16;
     while n > 1 {
         n = next_n;
-        next_n = (n - 1) / 2 + 1;
+        next_n = (n - 1) / 16 + 1;
         if n > 1 {
-            acc += next_n * 2;
+            acc += next_n * 16;
         } else {
             acc += 1;
         }
@@ -37,31 +39,17 @@ fn get_n_nodes(n_: usize) -> usize {
     acc
 }
 
-impl MerkleTreeGL {
-    fn merkle_gen_merkle_proof(&self, idx: usize, offset: usize, n: usize) -> Vec<Vec<FGL>> {
-        if n <= 1 {
-            return vec![];
-        }
-        let next_idx = idx >> 1;
-        let si = idx ^ 1;
-        let sib = self.nodes[offset + si].as_elements().to_vec();
-
-        let next_n = (n - 1) / 2 + 1;
-        let mut result = vec![sib];
-        result.append(&mut self.merkle_gen_merkle_proof(next_idx, offset + next_n * 2, next_n));
-        result
-    }
-
+impl MerkleTreeBLS12381 {
     #[inline]
-    fn merklize_level(&mut self, p_in: usize, n_ops: usize, p_out: usize) -> Result<()> {
-        let mut n_ops_per_thread = (n_ops - 1) / (get_max_workers() * 2) + 1;
+    pub fn merklize_level(&mut self, p_in: usize, n_ops: usize, p_out: usize) -> Result<()> {
+        let mut n_ops_per_thread = (n_ops - 1) / (get_max_workers() * 16) + 1;
         if n_ops_per_thread < MIN_OPS_PER_THREAD {
             n_ops_per_thread = MIN_OPS_PER_THREAD;
         }
 
-        let buff = &self.nodes[p_in..(p_in + n_ops * 2)];
+        let buff = &self.nodes[p_in..(p_in + n_ops * 16)];
         let nodes = buff
-            .par_chunks(2 * n_ops_per_thread)
+            .par_chunks(16 * n_ops_per_thread)
             .enumerate()
             .map(|(i, bb)| self.do_merklize_level(bb, i, n_ops).unwrap())
             .reduce(
@@ -86,30 +74,47 @@ impl MerkleTreeGL {
         _st_n: usize,
     ) -> Result<Vec<ElementDigest<4>>> {
         log::debug!(
-            "merklizing GL hash start.... {}/{}, buff size {}",
+            "merklizing bls12381 hash start.... {}/{}, buff size {}",
             _st_i,
             _st_n,
             buff_in.len()
         );
-        let n_ops = buff_in.len() / 2;
+        let n_ops = buff_in.len() / 16;
         let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
         buff_out64
             .iter_mut()
             .zip((0..n_ops).into_iter())
             .for_each(|(out, i)| {
-                let mut two = [FGL::ZERO; 8];
-                let one: &[FGL] = buff_in[i * 2].as_elements();
-                two[0..4].copy_from_slice(&one);
-                let one: &[FGL] = buff_in[i * 2 + 1].as_elements();
-                two[4..8].copy_from_slice(&one);
-                *out = self.h.hash(&two, 0).unwrap();
+                *out = self
+                    .h
+                    .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &Fr::zero())
+                    .unwrap();
             });
         Ok(buff_out64)
     }
 
+    fn merkle_gen_merkle_proof(&self, idx: usize, offset: usize, n: usize) -> Vec<Vec<Fr>> {
+        if n <= 1 {
+            return vec![];
+        }
+        let next_idx = idx >> 4;
+        let si = idx & 0xFFFFFFF0;
+        let mut sibs: Vec<Fr> = vec![];
+
+        for i in 0..16 {
+            let sib: Fr = Fr(self.nodes[offset + (si + i)].as_scalar::<Fr>());
+            sibs.push(sib);
+        }
+
+        let next_n = (n - 1) / 16 + 1;
+        let mut result = vec![sibs];
+        result.append(&mut self.merkle_gen_merkle_proof(next_idx, offset + next_n * 16, next_n));
+        result
+    }
+
     fn merkle_calculate_root_from_proof(
         &self,
-        mp: &Vec<Vec<FGL>>,
+        mp: &Vec<Vec<Fr>>,
         idx: usize,
         value: &ElementDigest<4>,
         offset: usize,
@@ -117,49 +122,38 @@ impl MerkleTreeGL {
         if mp.len() == offset {
             return Ok(value.clone());
         }
-        let cur_idx = idx & 1;
-        let next_idx = idx / 2;
-        let init = [FGL::ZERO; 4];
-        let next_value;
-        let mut inhash = vec![FGL::ZERO; 8];
-        if cur_idx == 0 {
-            let one = value.as_elements();
-            inhash[0..4].copy_from_slice(&one);
-            for i in 0..4 {
-                inhash[4 + i] = mp[offset][i];
-            }
-        } else {
-            for i in 0..4 {
-                inhash[i] = mp[offset][i];
-            }
-            let one = value.as_elements();
-            inhash[4..8].copy_from_slice(&one);
+        //let cur_idx = idx & 0xF;
+        let next_idx = idx >> 4;
+        let mut vals: Vec<Fr> = vec![];
+        for i in 0..16 {
+            vals.push(mp[offset][i]);
         }
-        let next = self.poseidon.hash(&inhash, &init, 4)?;
-        next_value = ElementDigest::<4>::new(&next);
+        let init = Fr::zero();
+        let next_value = self.poseidon.hash(&vals, &init)?;
+        let next_value = ElementDigest::<4>::from_scalar(&next_value);
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
     fn calculate_root_from_group_proof(
         &self,
-        mp: &Vec<Vec<FGL>>,
+        mp: &Vec<Vec<Fr>>,
         idx: usize,
         vals: &Vec<FGL>,
     ) -> Result<ElementDigest<4>> {
-        let h = self.h.hash(vals, 0)?;
-        self.merkle_calculate_root_from_proof(mp, idx, &h, 0)
+        let h = self.h.hash_element_matrix(&vec![vals.to_vec()])?;
+        self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::<4>::from_scalar(&h), 0)
     }
 }
 
-impl MerkleTree for MerkleTreeGL {
-    type BaseField = FGL;
+impl MerkleTree for MerkleTreeBLS12381 {
+    type BaseField = Fr;
     type MTNode = ElementDigest<4>;
 
     fn new() -> Self {
         Self {
             nodes: Vec::new(),
             elements: Vec::new(),
-            h: LinearHash::new(),
+            h: LinearHashBLS12381::new(),
             width: 0,
             height: 0,
             poseidon: Poseidon::new(),
@@ -183,19 +177,17 @@ impl MerkleTree for MerkleTreeGL {
         let max_workers = get_max_workers();
 
         let mut n_per_thread_f = (height - 1) / max_workers + 1;
-
-        let div = core::cmp::max(width / 8, 1);
-        let max_corrected = MAX_OPS_PER_THREAD / div;
-        let min_corrected = MIN_OPS_PER_THREAD / div;
-
-        if n_per_thread_f > max_corrected {
-            n_per_thread_f = max_corrected;
+        let mut min_pt = 0;
+        if width > 1 {
+            min_pt = MIN_OPS_PER_THREAD / ((width - 1) / (3 * 16) + 1);
         }
-        if n_per_thread_f < min_corrected {
-            n_per_thread_f = min_corrected;
+        if n_per_thread_f < min_pt {
+            n_per_thread_f = min_pt;
         }
-
-        let mut nodes = vec![Self::MTNode::default(); get_n_nodes(height)];
+        if n_per_thread_f > MAX_OPS_PER_THREAD {
+            n_per_thread_f = MAX_OPS_PER_THREAD;
+        }
+        let mut nodes = vec![ElementDigest::<4>::default(); get_n_nodes(height)];
         let now = Instant::now();
         if buff.len() > 0 {
             nodes
@@ -207,7 +199,7 @@ impl MerkleTree for MerkleTreeGL {
                         .zip((0..cur_n).into_iter())
                         .for_each(|(row_out, j)| {
                             let batch = &bb[(j * width)..((j + 1) * width)];
-                            *row_out = self.h.hash(batch, 0).unwrap();
+                            *row_out = self.h.hash_element_array(batch).unwrap();
                         });
                 });
         }
@@ -218,23 +210,27 @@ impl MerkleTree for MerkleTreeGL {
         self.elements = buff;
         self.width = width;
         self.height = height;
+        // println!("nodes: {:?}", self.nodes);
+        // println!("elements: {:?}", self.elements);
+        println!("width: {:?}", self.width);
+        println!("height: {:?}", self.height);
 
-        let mut n64: usize = height;
-        let mut next_n64: usize = (n64 - 1) / 2 + 1;
+        let mut n256: usize = height;
+        let mut next_n256: usize = (n256 - 1) / 16 + 1;
         let mut p_in: usize = 0;
-        let mut p_out: usize = p_in + next_n64 * 2;
-        while n64 > 1 {
+        let mut p_out: usize = p_in + next_n256 * 16;
+        while n256 > 1 {
             let now = Instant::now();
-            self.merklize_level(p_in, next_n64, p_out)?;
+            self.merklize_level(p_in, next_n256, p_out)?;
             log::info!(
                 "merklize_level {} time cost: {}",
-                next_n64,
+                next_n256,
                 now.elapsed().as_secs_f64()
             );
-            n64 = next_n64;
-            next_n64 = (n64 - 1) / 2 + 1;
+            n256 = next_n256;
+            next_n256 = (n256 - 1) / 16 + 1;
             p_in = p_out;
-            p_out = p_in + next_n64 * 2;
+            p_out = p_in + next_n256 * 16;
         }
 
         Ok(())
@@ -244,8 +240,8 @@ impl MerkleTree for MerkleTreeGL {
         self.elements[self.width * idx + sub_idx]
     }
 
-    // the path always returns 2-dim array likes [[x,x,x,x], ...]
-    fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<FGL>>)> {
+    // the path always returns 2-dim array likes [[x..14..x], ...]
+    fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<Fr>>)> {
         if idx >= self.height {
             return Err(EigenError::MerkleTreeError(
                 "access invalid node".to_string(),
@@ -267,7 +263,7 @@ impl MerkleTree for MerkleTreeGL {
     fn verify_group_proof(
         &self,
         root: &Self::MTNode,
-        mp: &Vec<Vec<FGL>>,
+        mp: &Vec<Vec<Fr>>,
         idx: usize,
         group_elements: &Vec<FGL>,
     ) -> Result<bool> {
@@ -282,42 +278,43 @@ impl MerkleTree for MerkleTreeGL {
 
 #[cfg(test)]
 mod tests {
-    use crate::merklehash::MerkleTreeGL;
+    use crate::field_bls12381::Fr;
+    use crate::merklehash_bls12381::MerkleTreeBLS12381;
     use crate::traits::MTNodeType;
     use crate::traits::MerkleTree;
+    use ff::PrimeField;
     use plonky::field_gl::Fr as FGL;
 
     #[test]
-    fn test_merklehash_gl_simple() {
-        let n = 256;
-        let idx = 3;
-        let n_pols = 9;
+    fn test_merklehash() {
+        let n = 4;
+        let idx = 1;
+        let n_pols = 3;
 
         let mut cols: Vec<FGL> = vec![FGL::ZERO; n_pols * n];
         for i in 0..n {
             for j in 0..n_pols {
-                cols[i * n_pols + j] = FGL::from((i + j * 1000) as u64);
+                cols[i * n_pols + j] = FGL::from((i + j * 10 + 1) as u64);
             }
         }
-
-        let mut tree = MerkleTreeGL::new();
+        let mut tree = MerkleTreeBLS12381::new();
         tree.merkelize(cols, n_pols, n).unwrap();
+        let root: Fr = Fr(tree.root().as_scalar::<Fr>());
+        assert_eq!(
+            root,
+            Fr::from_str(
+                "32227206116237215740162377531481191838063909532381497804787245624658969614932"
+            )
+            .unwrap()
+        );
+
         let (v, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        let re = root.as_elements();
-        let expected = vec![
-            FGL::from(11508832812350783315u64),
-            FGL::from(5044133147279090978u64),
-            FGL::from(6335412741057168694u64),
-            FGL::from(12530816673814004438u64),
-        ];
-        assert_eq!(expected, re);
-
         assert_eq!(tree.verify_group_proof(&root, &mp, idx, &v).unwrap(), true);
     }
 
     #[test]
-    fn test_merklehash_gl_small() {
+    fn test_merklehash_small() {
         let n = 256;
         let idx = 3;
         let n_pols = 9;
@@ -328,7 +325,7 @@ mod tests {
             }
         }
 
-        let mut tree = MerkleTreeGL::new();
+        let mut tree = MerkleTreeBLS12381::new();
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
@@ -340,7 +337,7 @@ mod tests {
     }
 
     #[test]
-    fn test_merklehash_gl_not_power_of_2() {
+    fn test_merklehash_not_power_of_2() {
         let n = 33;
         let idx = 32;
         let n_pols = 6;
@@ -351,20 +348,10 @@ mod tests {
             }
         }
 
-        let mut tree = MerkleTreeGL::new();
+        let mut tree = MerkleTreeBLS12381::new();
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-
-        let re = root.as_elements();
-        let expected = vec![
-            FGL::from(10952823080416094333u64),
-            FGL::from(14127307315435918656u64),
-            FGL::from(18155557507084305090u64),
-            FGL::from(4650815682547343351u64),
-        ];
-        assert_eq!(expected, re);
-
         assert_eq!(
             tree.verify_group_proof(&root, &mp, idx, &group_elements)
                 .unwrap(),
@@ -373,7 +360,7 @@ mod tests {
     }
 
     #[test]
-    fn test_merklehash_gl_big() {
+    fn test_merklehash_big() {
         let n = 1 << 16;
         let idx = 32;
         let n_pols = 50;
@@ -384,7 +371,7 @@ mod tests {
             }
         }
 
-        let mut tree = MerkleTreeGL::new();
+        let mut tree = MerkleTreeBLS12381::new();
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();

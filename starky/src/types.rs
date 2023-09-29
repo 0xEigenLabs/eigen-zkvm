@@ -190,7 +190,7 @@ pub struct Step {
     pub nBits: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct StarkStruct {
     pub nBits: usize,
     pub nBitsExt: usize,

@@ -10,6 +10,7 @@ mod compressor12;
 pub use compressor12::*;
 
 pub mod linearhash;
+pub mod linearhash_bls12381;
 pub mod linearhash_bn128;
 
 mod field_bn128;
@@ -27,6 +28,7 @@ mod poseidon_bls12381_constants_opt;
 pub mod poseidon_bls12381_opt;
 
 pub mod merklehash;
+pub mod merklehash_bls12381;
 pub mod merklehash_bn128;
 
 mod digest;
@@ -54,6 +56,7 @@ mod starkinfo_fri_prover;
 mod starkinfo_fri_ver;
 mod starkinfo_map;
 pub mod transcript;
+pub mod transcript_bls12381;
 pub mod transcript_bn128;
 
 pub mod r1cs2plonk;

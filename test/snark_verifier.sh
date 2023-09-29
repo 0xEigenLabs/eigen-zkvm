@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 
-export NODE_OPTIONS="--max-old-space-size=16384"
+export NODE_OPTIONS="--max-old-space-size=163840"
 source ~/.bashrc 
 
 CUR_DIR=$(cd $(dirname $0);pwd)
@@ -10,14 +10,16 @@ first_run=${2-false}
 #bls12381
 CURVE=${3-bn128}
 POWER=22
+if [ $CURVE = "bls12381" ]; then
+    POWER=25
+fi
 BIG_POWER=28
 SRS=${CUR_DIR}/../keys/setup_2^${POWER}.${CURVE}.ptau
-#BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
-BIG_SRS=/zkp/zkevm-proverjs/build/powersOfTau28_hez_final.ptau
+BIG_SRS=${CUR_DIR}/../keys/setup_2^${BIG_POWER}.ptau
 
-CIRCUIT_NAME=fibonacci.final
-
-WORK_DIR=${CUR_DIR}/aggregation/$CIRCUIT_NAME
+CIRCUIT_NAME=$4
+WORK_DIR=$5/$CIRCUIT_NAME
+mkdir -p $WORK_DIR
 
 SNARK_CIRCOM=$WORK_DIR/$CIRCUIT_NAME.circom
 SNARK_INPUT=$WORK_DIR/final_input.zkin.json 
@@ -33,7 +35,11 @@ ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 
 if [ $first_run = "true" ]; then 
     echo "compile circom and generate wasm and r1cs"
-    $ZKIT compile -i $CUR_DIR/../starkjs/circuits/$CIRCUIT_NAME.circom -p $CURVE  -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
+    if [ $CURVE = "bn128" ]; then
+        $ZKIT compile -i $CUR_DIR/../starkjs/circuits/$CIRCUIT_NAME.circom -p $CURVE  -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
+    elif [ $CURVE = "bls12381" ]; then
+        $ZKIT compile -i $CUR_DIR/../starkjs/circuits/$CIRCUIT_NAME.circom -p $CURVE -l "../stark-circuits/circuits" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
+    fi
     # cp $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm /tmp/aggregation/circuits.wasm
 fi 
 
@@ -77,7 +83,7 @@ else
     fi
     if [ ! -f $BIG_SRS ]; then
         echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
-        curl wget -P build https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final.ptau -o $BIG_SRS
+        curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final.ptau -o $BIG_SRS
     fi
 
     echo ">>> fflonk scheme <<< "

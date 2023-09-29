@@ -38,10 +38,12 @@ struct Transcript {
     n2b_cnt: usize,
     code: Vec<String>,
     bn1togl3Cnt: usize,
+
+    stark_struct: StarkStruct,
 }
 
 impl Transcript {
-    pub fn new() -> Self {
+    pub fn new(stark_struct: StarkStruct) -> Self {
         Self {
             state: String::from("0"),
             pending: vec![],
@@ -51,6 +53,7 @@ impl Transcript {
             n2b_cnt: 0,
             code: vec![],
             bn1togl3Cnt: 0,
+            stark_struct: stark_struct,
         }
     }
 
@@ -153,12 +156,16 @@ impl Transcript {
         let totalBits = n * nBits;
         let NFields = (totalBits - 1) / 253 + 1;
         let mut n2b: Vec<String> = vec![];
+        let n2bt = match self.stark_struct.verificationHashType.as_str() {
+            "BN128" => format!("Num2Bits_strict()"),
+            "BLS12381" => format!("Num2Bits(255)"),
+            _ => todo!(),
+        };
         for i in 0..NFields {
             let f = self.getFields253();
             n2b.push(format!("tcN2b_{}", self.n2b_cnt));
             self.n2b_cnt += 1;
-            self.code
-                .push(format!("component {} = Num2Bits_strict();", n2b[i]));
+            self.code.push(format!("component {} = {};", n2b[i], n2bt));
             self.code.push(format!("{}.in <== {};", n2b[i], f));
         }
         let mut curField = 0;
@@ -1002,7 +1009,7 @@ template StarkVerifier() {{
     // challenge calculation
     ///////////
 
-    let mut transcript = Transcript::new();
+    let mut transcript = Transcript::new(stark_struct.clone());
     transcript.put("publics", pil.publics.len() as i32);
     transcript.put("root1", -1);
     transcript.getField("challenges[0]", 3);
