@@ -16,10 +16,9 @@ CIRCUIT="fibonacci"
 PILEXECJS="fibonacci/fibonacci.js"
 RUNDIR="${CUR_DIR}/../starkjs"
 
-WORKSPACE=/tmp/aggregation_$CIRCUIT
-
 first_run=${1-no}
 CURVE=${2-bn128}
+WORKSPACE=/tmp/aggregation_${CURVE}_$CIRCUIT
 if [ $first_run = "yes" ]; then
     rm -rf $WORKSPACE && mkdir -p $WORKSPACE
 fi
@@ -28,11 +27,11 @@ RECURSIVE_CIRCUIT=$CIRCUIT.recursive1
 RECURSIVE2_CIRCUIT=$CIRCUIT.recursive2
 FINAL_CIRCUIT=$CIRCUIT.final
 
-input0=$CUR_DIR/aggregation/0/${RECURSIVE_CIRCUIT} && mkdir -p $input0
-input1=$CUR_DIR/aggregation/1/${RECURSIVE_CIRCUIT} && mkdir -p $input1
+input0=$WORKSPACE/aggregation/0/${RECURSIVE_CIRCUIT} && mkdir -p $input0
+input1=$WORKSPACE/aggregation/1/${RECURSIVE_CIRCUIT} && mkdir -p $input1
 
-mkdir -p $CUR_DIR/aggregation/$RECURSIVE2_CIRCUIT
-mkdir -p $CUR_DIR/aggregation/$FINAL_CIRCUIT
+mkdir -p $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT
+mkdir -p $WORKSPACE/aggregation/$FINAL_CIRCUIT
 
 # test poseidon
 #CIRCUIT="poseidon"
@@ -42,7 +41,7 @@ c12_start=$(date +%s)
 cd ${CUR_DIR} && npm i
 for (( i=0; i<$NUM_PROOF; i++ ))
 do
-    ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "stark"
+    ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "stark" $WORKSPACE
 done
 c12_end=$(date +%s)
 
@@ -92,7 +91,7 @@ echo "5. generate recursive2 proof"
 $ZKIT stark_prove -s ../starky/data/r2.starkStruct.json \
     -p $WORKSPACE/$RECURSIVE_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE_CIRCUIT.const \
-    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom --i $CUR_DIR/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json  --norm_stage
+    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json  --norm_stage
 
 aggregation_end=$(date +%s)
 
@@ -119,7 +118,7 @@ fi
 echo "3. generate the commit polynomicals files "
 node $RUNDIR/src/compressor12/main_compressor12_exec.js \
     -w $WORKSPACE/$RECURSIVE2_CIRCUIT"_js"/$RECURSIVE2_CIRCUIT.wasm  \
-    -i $CUR_DIR/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json   \
+    -i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json   \
     -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil  \
     -e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec \
     -m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm
@@ -127,19 +126,24 @@ node $RUNDIR/src/compressor12/main_compressor12_exec.js \
 
 echo "4. generate final proof  "
 # Remark: the N of final.starkStruct must be 2^20 , because the degree of $RECURSIVE2_CIRCUIT.pil is 2^20 which determined by the proocess of converting  $RECURSIVE_CIRCUIT2.circom to  $RECURSIVE_CIRCUIT2.pil
-$ZKIT stark_prove -s ../starky/data/final.starkStruct.bn128.json \
+STARK_STRUCT=$CUR_DIR/../starky/data/final.starkStruct.bls12381.json
+if [ $CURVE = "bn128" ]; then
+    STARK_STRUCT=$CUR_DIR/../starky/data/final.starkStruct.bn128.json
+fi
+$ZKIT stark_prove -s $STARK_STRUCT \
     -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
-    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $RUNDIR/circuits/$FINAL_CIRCUIT.circom --i $CUR_DIR/aggregation/$FINAL_CIRCUIT/final_input.zkin.json  --norm_stage
+    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $RUNDIR/circuits/$FINAL_CIRCUIT.circom --i $WORKSPACE/aggregation/$FINAL_CIRCUIT/final_input.zkin.json  --norm_stage
 
 final_end=$(date +%s)
 
 snark_start=$(date +%s)
 
+WORK_DIR=${WORKSPACE}/aggregation
 if [ $first_run = "yes" ]; then
-    $CUR_DIR/snark_verifier.sh groth16 true $CURVE
+    $CUR_DIR/snark_verifier.sh groth16 true $CURVE $FINAL_CIRCUIT $WORK_DIR
 else
-    $CUR_DIR/snark_verifier.sh groth16 false $CURVE
+    $CUR_DIR/snark_verifier.sh groth16 false $CURVE $FINAL_CIRCUIT $WORK_DIR
 fi
 
 snark_end=$(date +%s)

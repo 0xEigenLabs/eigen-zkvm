@@ -8,6 +8,7 @@ RUNDIR="${CUR_DIR}/../starkjs"
 PILCACHE=$WORKSPACE/$TASK_NO/$CIRCUIT
 PILEXECJS=$4
 GENERATE_PROOF_TYPE=$5
+WORKSPACE=$6
 RUST_LOG=info
 #  CIRCUIT="fibonacci"
 #  PILEXECJS="fibonacci/fibonacci.js"
@@ -60,7 +61,7 @@ node $RUNDIR/src/compressor12/main_compressor12_exec.js \
     -e $WORKSPACE/$C12_VERIFIER.exec \
     -m $WORKSPACE/$C12_VERIFIER.cm
 
-mkdir -p $CUR_DIR/aggregation/$RECURSIVE1_VERIFIER/
+mkdir -p $WORKSPACE/aggregation/$RECURSIVE1_VERIFIER/
 
 if [ "$GENERATE_PROOF_TYPE" = "stark" ]; then 
     echo "Generate stark proof"
@@ -70,7 +71,7 @@ if [ "$GENERATE_PROOF_TYPE" = "stark" ]; then
     ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json \
         -p $WORKSPACE/$C12_VERIFIER.pil.json \
         --o $WORKSPACE/$C12_VERIFIER.const \
-        --m $WORKSPACE/$C12_VERIFIER.cm -c $RUNDIR/circuits/$RECURSIVE1_VERIFIER.circom --i $CUR_DIR/aggregation/$RECURSIVE1_VERIFIER/input.zkin.json --agg_stage --norm_stage 
+        --m $WORKSPACE/$C12_VERIFIER.cm -c $RUNDIR/circuits/$RECURSIVE1_VERIFIER.circom --i $WORKSPACE/aggregation/$RECURSIVE1_VERIFIER/input.zkin.json --agg_stage --norm_stage 
 
 else 
     echo "Generate snark proof"
@@ -80,5 +81,5 @@ else
     ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.bn128.json \
         -p $WORKSPACE/$C12_VERIFIER.pil.json \
         --o $WORKSPACE/$C12_VERIFIER.const \
-        --m $WORKSPACE/$C12_VERIFIER.cm -c $RUNDIR/circuits/$RECURSIVE1_VERIFIER.circom --i $CUR_DIR/aggregation/$RECURSIVE1_VERIFIER/input.json --norm_stage
+        --m $WORKSPACE/$C12_VERIFIER.cm -c $RUNDIR/circuits/$RECURSIVE1_VERIFIER.circom --i $WORKSPACE/aggregation/$RECURSIVE1_VERIFIER/input.json --norm_stage
 fi 
