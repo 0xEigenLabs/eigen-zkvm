@@ -170,11 +170,6 @@ impl PolsArray {
         np_id
     }
 
-    #[inline(always)]
-    pub fn set_array(&mut self, ns: &String, np: &String, i: usize, value: FGL) {
-        self.set_matrix(ns, np, i, 0, value);
-    }
-
     pub fn load(&mut self, fileName: &str) -> Result<()> {
         let mut f = File::open(fileName)?;
         let maxBufferSize = 1024 * 1024 * 32;

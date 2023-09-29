@@ -256,10 +256,11 @@ pub fn plonk_setup_compressor(
     for i in 0..n_public_rows {
         let index = r + i;
         for pol_name in vec![EVPOL4, CMULADD, GATE, POSEIDON12, PARTIAL, FFT4] {
-            const_pols.set_array(
+            const_pols.set_matrix(
                 pil,
                 &Compressor.to_string(),
                 &pol_name.to_string(),
+                0,
                 index,
                 FGL::ZERO,
             );
@@ -389,7 +390,6 @@ pub fn plonk_setup_compressor(
             r += 1;
         }
     }
-    print_smap("plonk", &s_map);
 
     // Terminate the empty rows (Copyn the same constraint)
     for (_, pr) in partial_rows.iter_mut() {
@@ -444,6 +444,7 @@ pub fn plonk_setup_compressor(
                 for k in 0..12 {
                     s_map[k][r + j] = cgu.signals[j * 12 + k];
                     const_pols.set_matrix(
+                        pil,
                         &Compressor.to_string(),
                         &C.to_string(),
                         k,
@@ -456,6 +457,7 @@ pub fn plonk_setup_compressor(
                         pil,
                         &Compressor.to_string(),
                         &pol_name.to_string(),
+                        0,
                         index,
                         FGL::ZERO,
                     );

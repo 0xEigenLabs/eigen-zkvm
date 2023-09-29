@@ -24,11 +24,15 @@ impl std::fmt::Display for PlonkGate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "({}, {}, {}, {})",
+            "({}, {}, {}, {}, {}, {}, {}, {})",
             self.0,
             self.1,
-            self.2.as_int(),
+            self.2,
             self.3.as_int(),
+            self.4.as_int(),
+            self.5.as_int(),
+            self.6.as_int(),
+            self.7.as_int()
         )
     }
 }
