@@ -24,15 +24,11 @@ impl std::fmt::Display for PlonkGate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "({}, {}, {}, {}, {}, {}, {}, {})",
+            "({}, {}, {}, {})",
             self.0,
             self.1,
-            self.2,
+            self.2.as_int(),
             self.3.as_int(),
-            self.4.as_int(),
-            self.5.as_int(),
-            self.6.as_int(),
-            self.7.as_int()
         )
     }
 }
@@ -71,7 +67,14 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
     let mut plonk_additions: Vec<PlonkAdd> = vec![];
 
     let normalize = |lc: &mut BTreeMap<usize, FGL>| {
-        lc.retain(|_, v| *v != FGL::ZERO);
+        let keys: Vec<usize> = lc.keys().map(|k| *k).collect();
+        for key in keys.iter() {
+            let val = lc[key];
+            if val == FGL::ZERO {
+                lc.remove(key).unwrap();
+            }
+        }
+        // lc.retain(|_, v| *v != FGL::ZERO);
     };
 
     let join =
@@ -132,7 +135,6 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
 
             pc.push(PlonkGate(sl, sr, so, qm, ql, qr, qo, qc));
             pa.push(PlonkAdd(sl, sr, c1.1, c2.1));
-
             cs.push((so, FGL::ONE));
         }
         for c in cs.iter() {
@@ -196,19 +198,19 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
     let get_lc_type = |lc: &mut BTreeMap<usize, FGL>| -> String {
         let mut k = FGL::ZERO;
         let mut n = 0;
-
-        lc.retain(|_, v| *v != FGL::ZERO);
-
-        for (key, val) in lc.iter() {
-            if *key == 0 {
-                k = k + *val;
+        let keys: Vec<usize> = lc.keys().map(|k| *k).collect();
+        for key in keys.iter() {
+            let val = lc[key];
+            if val == FGL::ZERO {
+                lc.remove(key).unwrap();
+            } else if *key == 0 {
+                k = k + val;
             } else {
                 n += 1;
             }
         }
-
         if n > 0 {
-            return format!("{}", n);
+            return n.to_string();
         }
         if k != FGL::ZERO {
             return String::from("k");
@@ -237,11 +239,6 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
             }
         };
 
-    // 232126
-    println!(
-        "r1cs_constraint_last {:?}",
-        r1cs.constraints.last().unwrap()
-    );
     for (i, c) in r1cs.constraints.iter().enumerate() {
         if i % 100000 == 0 {
             println!("processing constraints: {}/{}", i, r1cs.constraints.len());

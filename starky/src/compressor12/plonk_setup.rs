@@ -13,6 +13,8 @@ use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::fs::File;
+use std::io::Write;
 
 #[derive(Default, Debug)]
 pub struct PlonkSetup {
@@ -211,16 +213,16 @@ impl PlonkSetupRenderInfo {
         // n_constaints:13702
         // n_plonk_gates:23096
         // n_plonk_adds:9394
-        println!("r1cs.num_inputs:{:?}", r1cs.num_inputs);
-        println!("r1cs.num_outputs:{:?}", r1cs.num_outputs);
-        println!("r1cs.num_variables:{:?}", r1cs.num_variables);
-        println!("n_publics:{n_publics}");
-        println!("n_public_rows:{n_public_rows}");
-        println!("n_used:{n_used}");
-        println!("n_bits:{n_bits}");
-        println!("n_constaints:{:?}", r1cs.constraints.len());
-        println!("n_plonk_gates:{:?}", plonk_constrains.len());
-        println!("n_plonk_adds:{:?}", plonk_additions.len());
+        // println!("r1cs.num_inputs:{:?}", r1cs.num_inputs);
+        // println!("r1cs.num_outputs:{:?}", r1cs.num_outputs);
+        // println!("r1cs.num_variables:{:?}", r1cs.num_variables);
+        // println!("n_publics:{n_publics}");
+        // println!("n_public_rows:{n_public_rows}");
+        // println!("n_used:{n_used}");
+        // println!("n_bits:{n_bits}");
+        // println!("n_constaints:{:?}", r1cs.constraints.len());
+        // println!("n_plonk_gates:{:?}", plonk_constrains.len());
+        // println!("n_plonk_adds:{:?}", plonk_additions.len());
 
         Self {
             n_used,
@@ -250,18 +252,12 @@ pub fn plonk_setup_compressor(
 
     let mut r = 0;
 
-    let print_smap = |name: &str, m: &Vec<Vec<u64>>| {
-        println!("{}", name);
-        m.iter().for_each(|s| {
-            println!("{:?}", s);
-        });
-    };
-
     // Paste public inputs.
     for i in 0..n_public_rows {
         let index = r + i;
-        for pol_name in [GATE, POSEIDON12, PARTIAL, CMULADD, EVPOL4, FFT4] {
+        for pol_name in vec![EVPOL4, CMULADD, GATE, POSEIDON12, PARTIAL, FFT4] {
             const_pols.set_array(
+                pil,
                 &Compressor.to_string(),
                 &pol_name.to_string(),
                 index,
@@ -269,7 +265,14 @@ pub fn plonk_setup_compressor(
             );
         }
         for k in 0..12 {
-            const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), k, index, FGL::ZERO);
+            const_pols.set_matrix(
+                pil,
+                &Compressor.to_string(),
+                &C.to_string(),
+                k,
+                index,
+                FGL::ZERO,
+            );
         }
     }
     for i in 0..n_publics {
@@ -279,10 +282,9 @@ pub fn plonk_setup_compressor(
         s_map[i % 12][r + i / 12] = 0;
     }
     r += n_public_rows;
-    print_smap("init", &s_map);
 
     // 3. Paste plonk constraints.
-    #[derive(Copy, Clone, Eq, PartialEq)]
+    #[derive(Copy, Clone, Eq, PartialEq, Debug)]
     struct ParRow {
         row: usize,
         n_used: usize,
@@ -291,7 +293,6 @@ pub fn plonk_setup_compressor(
     let mut partial_rows: BTreeMap<String, ParRow> = BTreeMap::new();
     let mut half_rows: Vec<ParRow> = vec![];
     let plonk_constraints = &plonk_setup_info.pg;
-    // todo bugfix. 这里出现问题。
     for (i, c) in plonk_constraints.iter().enumerate() {
         if c.0 == 2 {
             println!("plnonk_gate index: {i}");
@@ -324,7 +325,14 @@ pub fn plonk_setup_compressor(
                 .iter()
                 .zip([c.3, c.4, c.5, c.6, c.7, FGL::ZERO].iter())
             {
-                const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), *i, index, *value);
+                const_pols.set_matrix(
+                    pil,
+                    &Compressor.to_string(),
+                    &C.to_string(),
+                    *i,
+                    index,
+                    *value,
+                );
             }
 
             if i == 14243 || i == 20916 {
@@ -341,17 +349,35 @@ pub fn plonk_setup_compressor(
                 .iter()
                 .zip([c.3, c.4, c.5, c.6, c.7, FGL::ZERO].iter())
             {
-                const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), *i, index, *value);
-            }
-            for pol_name in [POSEIDON12, PARTIAL, CMULADD, EVPOL4, FFT4] {
-                const_pols.set_array(
+                const_pols.set_matrix(
+                    pil,
                     &Compressor.to_string(),
-                    &pol_name.to_string(),
+                    &C.to_string(),
+                    *i,
                     index,
-                    FGL::ZERO,
+                    *value,
                 );
             }
-            const_pols.set_array(&Compressor.to_string(), &GATE.to_string(), index, FGL::ONE);
+            for (pol_name, value) in vec![GATE, POSEIDON12, PARTIAL, CMULADD, EVPOL4, FFT4]
+                .iter()
+                .zip(vec![
+                    FGL::ONE,
+                    FGL::ZERO,
+                    FGL::ZERO,
+                    FGL::ZERO,
+                    FGL::ZERO,
+                    FGL::ZERO,
+                ])
+            {
+                const_pols.set_matrix(
+                    pil,
+                    &Compressor.to_string(),
+                    &pol_name.to_string(),
+                    0,
+                    index,
+                    value,
+                );
+            }
 
             if i == 14243 || i == 20916 {
                 println!("3-smap:{},{}", 0, r);
@@ -391,6 +417,7 @@ pub fn plonk_setup_compressor(
         s_map[11][hr.row] = 0;
         for i in [9, 6, 7, 8, 10, 11] {
             const_pols.set_matrix(
+                pil,
                 &Compressor.to_string(),
                 &C.to_string(),
                 i,
@@ -425,16 +452,19 @@ pub fn plonk_setup_compressor(
                     );
                 }
                 for pol_name in [GATE, CMULADD, EVPOL4, FFT4] {
-                    const_pols.set_array(
+                    const_pols.set_matrix(
+                        pil,
                         &Compressor.to_string(),
                         &pol_name.to_string(),
                         index,
                         FGL::ZERO,
                     );
                 }
-                const_pols.set_array(
+                const_pols.set_matrix(
+                    pil,
                     &Compressor.to_string(),
                     &POSEIDON12.to_string(),
+                    0,
                     index,
                     if j < 30 { FGL::ONE } else { FGL::ZERO },
                 );
@@ -444,32 +474,44 @@ pub fn plonk_setup_compressor(
                     FGL::ONE
                 };
                 let tt = if j < 30 { tt } else { FGL::ZERO };
-                const_pols.set_array(&Compressor.to_string(), &PARTIAL.to_string(), index, tt);
+                const_pols.set_matrix(
+                    pil,
+                    &Compressor.to_string(),
+                    &PARTIAL.to_string(),
+                    0,
+                    index,
+                    tt,
+                );
             }
             r += 31;
         } else if cgu.id == custom_gates_info.c_mul_add_id {
-            for j in 0..12 {
-                if r < n_used {
+            if r < n_used {
+                for j in 0..12 {
                     s_map[j][r] = cgu.signals[j];
                 }
             }
             let index = r;
             for pol_name in [GATE, POSEIDON12, PARTIAL, EVPOL4, FFT4] {
-                const_pols.set_array(
+                const_pols.set_matrix(
+                    pil,
                     &Compressor.to_string(),
                     &pol_name.to_string(),
+                    0,
                     index,
                     FGL::ZERO,
                 );
             }
-            const_pols.set_array(
+            const_pols.set_matrix(
+                pil,
                 &Compressor.to_string(),
                 &CMULADD.to_string(),
+                0,
                 index,
                 FGL::ONE,
             );
             for i in 0..12 {
                 const_pols.set_matrix(
+                    pil,
                     &Compressor.to_string(),
                     &C.to_string(),
                     i,
@@ -483,7 +525,6 @@ pub fn plonk_setup_compressor(
             }
 
             r += 1;
-        // } else if ( typeof customGatesInfo.FFT4Parameters[cgu.id] !== "undefined") {
         } else if CustomGateInfo::check_fft_param_defined(&custom_gates_info.fft_params, cgu.id) {
             for j in 0..12 {
                 s_map[j][r] = cgu.signals[j];
@@ -493,19 +534,30 @@ pub fn plonk_setup_compressor(
             }
             let index = r;
             for pol_name in [GATE, POSEIDON12, CMULADD, PARTIAL, EVPOL4] {
-                const_pols.set_array(
+                const_pols.set_matrix(
+                    pil,
                     &Compressor.to_string(),
                     &pol_name.to_string(),
+                    0,
                     index,
                     FGL::ZERO,
                 );
             }
-            const_pols.set_array(&Compressor.to_string(), &FFT4.to_string(), index, FGL::ONE);
+            const_pols.set_matrix(
+                pil,
+                &Compressor.to_string(),
+                &FFT4.to_string(),
+                0,
+                index,
+                FGL::ONE,
+            );
             let index = r + 1;
             for pol_name in [GATE, POSEIDON12, CMULADD, PARTIAL, EVPOL4, FFT4] {
-                const_pols.set_array(
+                const_pols.set_matrix(
+                    pil,
                     &Compressor.to_string(),
                     &pol_name.to_string(),
+                    0,
                     index,
                     FGL::ZERO,
                 );
@@ -517,11 +569,11 @@ pub fn plonk_setup_compressor(
             let firstW = custom_gates_info.fft_params[&(cgu.id as usize)][0];
             let firstW2 = firstW * firstW;
 
-            // if t == 4n {
             let index = r;
-            if t == FGL::from(4) {
+            if t.as_int() == 4 {
                 for i in [6, 7, 8] {
                     const_pols.set_matrix(
+                        pil,
                         &Compressor.to_string(),
                         &C.to_string(),
                         i,
@@ -541,6 +593,7 @@ pub fn plonk_setup_compressor(
                     .iter(),
                 ) {
                     const_pols.set_matrix(
+                        pil,
                         &Compressor.to_string(),
                         &C.to_string(),
                         *i,
@@ -548,9 +601,10 @@ pub fn plonk_setup_compressor(
                         *value,
                     );
                 }
-            } else if t == FGL::from(2) {
+            } else if t.as_int() == 2 {
                 for i in [0, 1, 2, 3, 4, 5] {
                     const_pols.set_matrix(
+                        pil,
                         &Compressor.to_string(),
                         &C.to_string(),
                         i,
@@ -563,6 +617,7 @@ pub fn plonk_setup_compressor(
                     .zip([scale, scale * firstW, scale * firstW * incW].iter())
                 {
                     const_pols.set_matrix(
+                        pil,
                         &Compressor.to_string(),
                         &C.to_string(),
                         *i,
@@ -576,47 +631,88 @@ pub fn plonk_setup_compressor(
 
             let index = r;
             for i in [9, 10, 11] {
-                const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), i, index, FGL::ZERO);
+                const_pols.set_matrix(
+                    pil,
+                    &Compressor.to_string(),
+                    &C.to_string(),
+                    i,
+                    index,
+                    FGL::ZERO,
+                );
             }
             for k in 0..12 {
                 let index = r + 1;
-                const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), k, index, FGL::ZERO);
+                const_pols.set_matrix(
+                    pil,
+                    &Compressor.to_string(),
+                    &C.to_string(),
+                    k,
+                    index,
+                    FGL::ZERO,
+                );
             }
             r += 2;
         } else if cgu.id == custom_gates_info.ev_pol_id {
             for j in 0..12 {
                 s_map[j][r] = cgu.signals[j];
-                const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), j, r, FGL::ZERO);
+                const_pols.set_matrix(
+                    pil,
+                    &Compressor.to_string(),
+                    &C.to_string(),
+                    j,
+                    r,
+                    FGL::ZERO,
+                );
             }
             for j in 0..9 {
                 s_map[j][r + 1] = cgu.signals[12 + j];
-                const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), j, r + 1, FGL::ZERO);
+                const_pols.set_matrix(
+                    pil,
+                    &Compressor.to_string(),
+                    &C.to_string(),
+                    j,
+                    r + 1,
+                    FGL::ZERO,
+                );
             }
             for j in 9..12 {
                 s_map[j][r + 1] = 0;
-                const_pols.set_matrix(&Compressor.to_string(), &C.to_string(), j, r + 1, FGL::ZERO);
+                const_pols.set_matrix(
+                    pil,
+                    &Compressor.to_string(),
+                    &C.to_string(),
+                    j,
+                    r + 1,
+                    FGL::ZERO,
+                );
             }
             let index = r;
             for pol_name in [GATE, POSEIDON12, CMULADD, PARTIAL, FFT4] {
-                const_pols.set_array(
+                const_pols.set_matrix(
+                    pil,
                     &Compressor.to_string(),
                     &pol_name.to_string(),
+                    0,
                     index,
                     FGL::ZERO,
                 );
             }
-            const_pols.set_array(
+            const_pols.set_matrix(
+                pil,
                 &Compressor.to_string(),
                 &EVPOL4.to_string(),
+                0,
                 index,
                 FGL::ONE,
             );
 
             let index = r + 1;
             for pol_name in [GATE, POSEIDON12, CMULADD, PARTIAL, EVPOL4, FFT4] {
-                const_pols.set_array(
+                const_pols.set_matrix(
+                    pil,
                     &Compressor.to_string(),
                     &pol_name.to_string(),
+                    0,
                     index,
                     FGL::ZERO,
                 );
@@ -635,19 +731,26 @@ pub fn plonk_setup_compressor(
         if (i % 10000) == 0 {
             log::info!("Preparing S... {}/{}", i, N);
         }
-        const_pols.set_matrix(&Compressor.to_string(), &S.to_string(), 0, i, w);
+        const_pols.set_matrix(pil, &Compressor.to_string(), &S.to_string(), 0, i, w);
         for j in 1..12 {
-            const_pols.set_matrix(&Compressor.to_string(), &S.to_string(), j, i, w * ks[j - 1]);
+            const_pols.set_matrix(
+                pil,
+                &Compressor.to_string(),
+                &S.to_string(),
+                j,
+                i,
+                w * ks[j - 1],
+            );
         }
         w = w * (crate::constant::MG.0[plonk_setup_info.n_bits].to_be());
     }
 
+    #[derive(Debug)]
     struct Grid {
         row: usize,
         col: usize,
     }
     let mut last_signal: BTreeMap<u64, Grid> = BTreeMap::new();
-
     for i in 0..r {
         if (i % 10000) == 0 {
             log::info!("Connection S... {}/{}", i, r);
@@ -655,17 +758,24 @@ pub fn plonk_setup_compressor(
         for j in 0..12 {
             if i < n_used {
                 let key = s_map[j][i];
-
+                if key == 0 {
+                    continue;
+                }
                 let ls = last_signal.get(&key);
                 if ls.is_some() {
                     let ls = ls.unwrap();
                     // connect and swap the value.
-                    let left =
-                        const_pols.get(&Compressor.to_string(), &S.to_string(), ls.col, ls.row);
-                    let right = const_pols.get(&Compressor.to_string(), &S.to_string(), j, i);
-
-                    const_pols.set_matrix(&Compressor.to_string(), &S.to_string(), j, i, left);
+                    let left = const_pols.get(
+                        pil,
+                        &Compressor.to_string(),
+                        &S.to_string(),
+                        ls.col,
+                        ls.row,
+                    );
+                    let right = const_pols.get(pil, &Compressor.to_string(), &S.to_string(), j, i);
+                    const_pols.set_matrix(pil, &Compressor.to_string(), &S.to_string(), j, i, left);
                     const_pols.set_matrix(
+                        pil,
                         &Compressor.to_string(),
                         &S.to_string(),
                         ls.col,
@@ -685,25 +795,35 @@ pub fn plonk_setup_compressor(
             log::info!("Empty gates... {}/{}", r, N);
         }
         let index = r;
-        for pol_name in [GATE, POSEIDON12, PARTIAL, CMULADD, EVPOL4, FFT4] {
-            const_pols.set_array(
+        for pol_name in vec![EVPOL4, CMULADD, GATE, POSEIDON12, PARTIAL, FFT4] {
+            const_pols.set_matrix(
+                pil,
                 &Compressor.to_string(),
                 &pol_name.to_string(),
+                0,
                 index,
                 FGL::ZERO,
             );
         }
         for k in 0..12 {
-            const_pols.set_matrix(&Compressor.to_string(), &S.to_string(), k, index, FGL::ZERO);
+            const_pols.set_matrix(
+                pil,
+                &Compressor.to_string(),
+                &C.to_string(),
+                k,
+                index,
+                FGL::ZERO,
+            );
         }
         r += 1;
     }
     // construct Lagrange Basis Polynomial: Li(x)
     for i in 0..n_public_rows {
+        let np = format!("L{}", i + 1);
         for j in 0..N {
-            const_pols.set_matrix(&Global.to_string(), &L.to_string(), i + 1, j, FGL::ZERO);
+            const_pols.set_matrix(pil, &Global.to_string(), &np, 0, j, FGL::ZERO);
         }
-        const_pols.set_matrix(&Global.to_string(), &L.to_string(), i + 1, i, FGL::ONE);
+        const_pols.set_matrix(pil, &Global.to_string(), &np, 0, i, FGL::ONE);
     }
 
     (const_pols, s_map)

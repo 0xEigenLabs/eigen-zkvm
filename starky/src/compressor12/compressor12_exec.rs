@@ -5,6 +5,7 @@ use crate::io_utils::read_vec_from_file;
 use crate::pilcom::compile_pil_from_path;
 use crate::polsarray::{PolKind, PolsArray};
 use num_traits::Zero;
+use plonky::ff::PrimeField;
 use plonky::field_gl::Fr as FGL;
 use plonky::witness::{load_input_for_witness, WitnessCalculator};
 use std::fs::File;
@@ -53,13 +54,15 @@ pub fn exec(
         .collect::<Vec<_>>();
 
     for i in 0..adds_len {
-        let f_w = w[adds[i * 4] as usize] * FGL::from(adds[i * 4 + 2])
-            + w[adds[i * 4 + 1] as usize] * FGL::from(adds[i * 4 + 3]);
+        let w2 = FGL::from_raw_repr(<FGL as PrimeField>::Repr::from(adds[i * 4 + 2])).unwrap();
+        let w3 = FGL::from_raw_repr(<FGL as PrimeField>::Repr::from(adds[i * 4 + 3])).unwrap();
+
+        let f_w = (w[adds[i * 4] as usize] * w2) + (w[adds[i * 4 + 1] as usize] * w3);
         w.push(f_w);
     }
 
     // 4. compress cmPol
-    let a_np_index = cm_pols.get_np_index_of_array(&Compressor.to_string(), &a.to_string(), 0);
+    let a_np_index = cm_pols.get_pol_id(&pil_json, &Compressor.to_string(), &a.to_string(), 0);
     let N = cm_pols.array[a_np_index].len();
 
     for i in 0..s_map_column_len {
@@ -67,6 +70,7 @@ pub fn exec(
             let s = s_map[i * 12 + c] as usize;
 
             cm_pols.set_matrix(
+                &pil_json,
                 &Compressor.to_string(),
                 &a.to_string(),
                 c,
@@ -75,16 +79,21 @@ pub fn exec(
             );
         }
     }
-    for i in 0..N {
+    for i in s_map_column_len..N {
         for c in 0..12 {
-            cm_pols.set_matrix(&Compressor.to_string(), &a.to_string(), c, i, FGL::ZERO);
+            cm_pols.set_matrix(
+                &pil_json,
+                &Compressor.to_string(),
+                &a.to_string(),
+                c,
+                i,
+                FGL::ZERO,
+            );
         }
     }
 
     // 5. save cmPol to file.
-    let mut file = File::create(Path::new(commit_file)).unwrap();
-    let input = serde_json::to_string_pretty(&cm_pols).unwrap();
-    write!(file, "{}", input).unwrap();
+    cm_pols.save(&commit_file)?;
 
     log::info!("files Generated Correctly");
     Result::Ok(())
