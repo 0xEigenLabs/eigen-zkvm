@@ -1,8 +1,8 @@
 #![allow(dead_code, non_snake_case)]
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD, SHIFT};
+use crate::f3g::F3G;
 use crate::fft_worker::{fft_block, interpolate_prepare_block};
 use crate::helper::log2_any;
-use crate::traits::FieldExtension;
 use core::cmp::min;
 use rayon::prelude::*;
 
@@ -16,9 +16,9 @@ pub fn BR(x: usize, domain_pow: usize) -> usize {
     (((x & 0xAAAAAAAA) >> 1) | ((x & 0x55555555) << 1)) >> (32 - domain_pow)
 }
 
-pub fn transpose<F: FieldExtension>(
-    buffdst: &mut Vec<F>,
-    buffsrc: &Vec<F>,
+pub fn transpose(
+    buffdst: &mut Vec<F3G>,
+    buffsrc: &Vec<F3G>,
     n_pols: usize,
     nbits: usize,
     transpose_bits: usize,
@@ -37,12 +37,7 @@ pub fn transpose<F: FieldExtension>(
     }
 }
 
-pub fn bit_reverse<F: FieldExtension>(
-    buffdst: &mut Vec<F>,
-    buffsrc: &Vec<F>,
-    n_pols: usize,
-    nbits: usize,
-) {
+pub fn bit_reverse(buffdst: &mut Vec<F3G>, buffsrc: &Vec<F3G>, n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
     for i in 0..n {
         let ri = BR(i, nbits);
@@ -52,9 +47,9 @@ pub fn bit_reverse<F: FieldExtension>(
     }
 }
 
-pub fn interpolate_bit_reverse<F: FieldExtension>(
-    buffdst: &mut Vec<F>,
-    buffsrc: &Vec<F>,
+pub fn interpolate_bit_reverse(
+    buffdst: &mut Vec<F3G>,
+    buffsrc: &Vec<F3G>,
     n_pols: usize,
     nbits: usize,
 ) {
@@ -68,14 +63,9 @@ pub fn interpolate_bit_reverse<F: FieldExtension>(
     }
 }
 
-pub fn inv_bit_reverse<F: FieldExtension>(
-    buffdst: &mut Vec<F>,
-    buffsrc: &Vec<F>,
-    n_pols: usize,
-    nbits: usize,
-) {
+pub fn inv_bit_reverse(buffdst: &mut Vec<F3G>, buffsrc: &Vec<F3G>, n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
-    let n_inv = F::inv(F::from(n));
+    let n_inv = F3G::inv(F3G::from(n));
     for i in 0..n {
         let ri = BR(i, nbits);
         let rii = (n - ri) % n;
@@ -85,9 +75,9 @@ pub fn inv_bit_reverse<F: FieldExtension>(
     }
 }
 
-pub fn interpolate_prepare<F: FieldExtension>(buff: &mut Vec<F>, n_pols: usize, nbits: usize) {
+pub fn interpolate_prepare(buff: &mut Vec<F3G>, n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
-    let inv_n = F::inv(F::from(n));
+    let inv_n = F3G::inv(F3G::from(n));
     let mut n_per_thread_f = (n - 1) / get_max_workers() + 1;
     let max_corrected = MAX_OPS_PER_THREAD / n_pols;
     let min_corrected = MIN_OPS_PER_THREAD / n_pols;
@@ -113,27 +103,27 @@ pub fn interpolate_prepare<F: FieldExtension>(buff: &mut Vec<F>, n_pols: usize, 
         .enumerate()
         .for_each(|(j, bb)| {
             let i = j * n_per_thread_f;
-            let start = inv_n * (F::from(SHIFT.clone()).exp(i));
-            interpolate_prepare_block(bb, n_pols, start, F::from(SHIFT.clone()), i, n);
+            let start = inv_n * (SHIFT.clone().exp(i));
+            interpolate_prepare_block(bb, n_pols, start, SHIFT.clone(), i, n);
         });
 }
 
-pub fn _fft<F: FieldExtension>(
-    buffsrc: &Vec<F>,
+pub fn _fft(
+    buffsrc: &Vec<F3G>,
     n_pols: usize,
     nbits: usize,
-    buffdst: &mut Vec<F>,
+    buffdst: &mut Vec<F3G>,
     inverse: bool,
 ) {
     let maxblockbits = 16;
     let minblockbits = 12;
     let blocks_per_thread = 8;
     let n = 1 << nbits;
-    let mut tmpbuff: Vec<F> = vec![F::ZERO; n * n_pols];
+    let mut tmpbuff: Vec<F3G> = vec![F3G::ZERO; n * n_pols];
     let outbuff = buffdst;
 
-    let mut bin: &mut Vec<F>;
-    let mut bout: &mut Vec<F>;
+    let mut bin: &mut Vec<F3G>;
+    let mut bout: &mut Vec<F3G>;
 
     let ideal_n_blocks = get_max_workers() * blocks_per_thread;
     let mut blockbits = log2_any(n * n_pols / ideal_n_blocks);
@@ -196,24 +186,19 @@ pub fn _fft<F: FieldExtension>(
     });
 }
 
-pub fn fft<F: FieldExtension>(buffsrc: &Vec<F>, n_pols: usize, nbits: usize, buffdst: &mut Vec<F>) {
+pub fn fft(buffsrc: &Vec<F3G>, n_pols: usize, nbits: usize, buffdst: &mut Vec<F3G>) {
     _fft(buffsrc, n_pols, nbits, buffdst, false)
 }
 
-pub fn ifft<F: FieldExtension>(
-    buffsrc: &Vec<F>,
-    n_pols: usize,
-    nbits: usize,
-    buffdst: &mut Vec<F>,
-) {
+pub fn ifft(buffsrc: &Vec<F3G>, n_pols: usize, nbits: usize, buffdst: &mut Vec<F3G>) {
     _fft(buffsrc, n_pols, nbits, buffdst, true)
 }
 
-pub fn interpolate<F: FieldExtension>(
-    buffsrc: &Vec<F>,
+pub fn interpolate(
+    buffsrc: &Vec<F3G>,
     n_pols: usize,
     nbits: usize,
-    buffdst: &mut Vec<F>,
+    buffdst: &mut Vec<F3G>,
     nbitsext: usize,
 ) {
     if buffsrc.len() == 0 {
@@ -221,11 +206,11 @@ pub fn interpolate<F: FieldExtension>(
     }
     let n = 1 << nbits;
     let n_ext = 1 << nbitsext;
-    let mut tmpbuff: Vec<F> = vec![F::ZERO; n_ext * n_pols]; //new BigBuffer(n*n_pols);
+    let mut tmpbuff: Vec<F3G> = vec![F3G::ZERO; n_ext * n_pols]; //new BigBuffer(n*n_pols);
     let outbuff = buffdst;
 
-    let mut bin: &mut Vec<F>;
-    let mut bout: &mut Vec<F>;
+    let mut bin: &mut Vec<F3G>;
+    let mut bout: &mut Vec<F3G>;
 
     let maxblockbits = 16;
     let minblockbits = 12;

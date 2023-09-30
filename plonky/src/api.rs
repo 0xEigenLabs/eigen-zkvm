@@ -1,11 +1,7 @@
 use crate::bellman_ce::pairing::bn256::Bn256;
 use crate::errors::{EigenError, Result};
-use crate::witness::{flat_array, WitnessCalculator};
+use crate::witness::{load_input_for_witness, WitnessCalculator};
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
-use num_bigint::BigInt;
-use num_traits::{One, Zero};
-use serde_json::Value;
-use std::str::FromStr;
 
 #[cfg(not(feature = "wasm"))]
 use crate::{aggregation, verifier};
@@ -90,36 +86,7 @@ pub fn calculate_witness(wasm_file: &String, input_json: &String, output: &Strin
         "30644E72E131A029B85045B68181585D2833E84879B9709143E1F593F0000001".to_lowercase()
     );
 
-    let inputs_str = std::fs::read_to_string(input_json)?;
-    let inputs: std::collections::HashMap<String, serde_json::Value> =
-        serde_json::from_str(&inputs_str).unwrap();
-
-    let inputs = inputs
-        .iter()
-        .map(|(key, value)| {
-            let res = match value {
-                Value::String(inner) => {
-                    vec![BigInt::from_str(inner).unwrap()]
-                }
-                Value::Bool(inner) => {
-                    if *inner {
-                        vec![BigInt::one()]
-                    } else {
-                        vec![BigInt::zero()]
-                    }
-                }
-                Value::Number(inner) => {
-                    vec![BigInt::from_str(&inner.to_string()).unwrap()]
-                    //vec![BigInt::from(inner.as_u64().expect("not a u32"))]
-                }
-                //Value::Array(inner) => inner.iter().cloned().map(value_to_bigint).collect(),
-                Value::Array(inner) => flat_array(inner),
-                _ => panic!("{:?}", value),
-            };
-
-            (key.clone(), res)
-        })
-        .collect::<std::collections::HashMap<_, _>>();
+    let inputs = load_input_for_witness(input_json);
 
     let wtns_buf = wtns.calculate_witness_bin(inputs, false)?;
     Ok(wtns.save_witness_to_bin_file::<Bn256>(output, &wtns_buf)?)

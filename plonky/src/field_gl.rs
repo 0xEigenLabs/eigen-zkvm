@@ -433,14 +433,6 @@ impl crate::ff::Field for Fr {
         self.mul_assign(&self.clone());
     }
 }
-
-impl Fr {
-    #[inline]
-    pub fn exp(self, power: PositiveInteger) -> Fr {
-        exp(self, power)
-    }
-}
-
 type PositiveInteger = u64;
 #[inline(always)]
 pub fn exp(base: Fr, power: PositiveInteger) -> Fr {
@@ -474,6 +466,12 @@ impl From<u64> for Fr {
     #[inline(always)]
     fn from(val: u64) -> Fr {
         Fr::from_repr(FrRepr::from(val)).unwrap()
+    }
+}
+
+impl Into<u64> for Fr {
+    fn into(self) -> u64 {
+        self.0 .0[0]
     }
 }
 

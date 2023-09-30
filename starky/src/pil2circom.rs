@@ -30,7 +30,7 @@ pub fn pil2circom(
             const_root,
             options,
         ),
-        "BN128" => crate::stark_verifier_circom_bn128::render(
+        "BN128" | "BLS12381" => crate::stark_verifier_circom_bn128::render(
             starkinfo,
             program,
             pil,

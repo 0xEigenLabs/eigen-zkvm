@@ -1,8 +1,8 @@
 use crate::constant::SHIFT;
+use crate::f3g::F3G;
 use crate::fft::FFT;
-use crate::traits::FieldExtension;
 
-pub fn pol_mul_axi<F: FieldExtension>(p: &mut Vec<F>, init: F, acc: &F) {
+pub fn pol_mul_axi(p: &mut Vec<F3G>, init: F3G, acc: &F3G) {
     let mut r = init;
     for i in 0..p.len() {
         p[i] *= r;
@@ -10,9 +10,9 @@ pub fn pol_mul_axi<F: FieldExtension>(p: &mut Vec<F>, init: F, acc: &F) {
     }
 }
 
-pub fn eval_pol<F: FieldExtension>(p: &Vec<F>, x: &F) -> F {
+pub fn eval_pol(p: &Vec<F3G>, x: &F3G) -> F3G {
     if p.len() == 0 {
-        return F::ZERO;
+        return F3G::ZERO;
     }
     let mut res = p[p.len() - 1];
     for i in (0..(p.len() - 1)).rev() {
@@ -22,12 +22,12 @@ pub fn eval_pol<F: FieldExtension>(p: &Vec<F>, x: &F) -> F {
 }
 
 #[allow(dead_code)]
-pub fn extend_pol<F: FieldExtension>(p: &Vec<F>, extend_bits: usize) -> Vec<F> {
+pub fn extend_pol(p: &Vec<F3G>, extend_bits: usize) -> Vec<F3G> {
     let mut standard_fft = FFT::new();
     let mut res = standard_fft.ifft(&p);
-    pol_mul_axi(&mut res, F::ONE, &F::from(SHIFT.clone()));
+    pol_mul_axi(&mut res, F3G::ONE, &SHIFT);
     let n_extend = (p.len() << extend_bits) - p.len();
-    let zeros = vec![F::ZERO; n_extend];
+    let zeros = vec![F3G::ZERO; n_extend];
     res.extend_from_slice(&zeros);
     standard_fft.fft(&res)
 }

@@ -1,12 +1,10 @@
 // input json of plonk
 #![allow(non_snake_case)]
 use crate::f3g::F3G;
-use crate::f5g::F5G;
-use crate::field_bls12381::Fr as BlsFr;
+use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bn128::Fr;
 use crate::helper;
 use crate::stark_gen::StarkProof;
-use crate::traits::FieldExtension;
 use crate::traits::{MTNodeType, MerkleTree};
 use plonky::field_gl::Fr as FGL;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
@@ -20,26 +18,6 @@ impl Serialize for F3G {
         if self.dim == 1 {
             serializer.serialize_str(&elems[0].as_int().to_string())
         } else if self.dim == 3 {
-            let mut seq = serializer.serialize_seq(Some(elems.len()))?;
-            for v in elems.iter() {
-                seq.serialize_element(&v.as_int().to_string())?;
-            }
-            seq.end()
-        } else {
-            panic!("Invalid dim {}", self);
-        }
-    }
-}
-
-impl Serialize for F5G {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let elems = self.as_elements();
-        if self.dim == 1 {
-            serializer.serialize_str(&elems[0].as_int().to_string())
-        } else if self.dim == 5 {
             let mut seq = serializer.serialize_seq(Some(elems.len()))?;
             for v in elems.iter() {
                 seq.serialize_element(&v.as_int().to_string())?;
@@ -77,6 +55,10 @@ impl<T: MTNodeType + Clone> Serialize for Input<T> {
                 let r: Fr = Fr(self.0.clone().as_scalar::<Fr>());
                 serializer.serialize_str(&helper::fr_to_biguint(&r).to_string())
             }
+            "BLS12381" => {
+                let r: Fr_bls12381 = Fr_bls12381(self.0.clone().as_scalar::<Fr_bls12381>());
+                serializer.serialize_str(&helper::fr_bls12381_to_biguint(&r).to_string())
+            }
             "GL" => {
                 let mut seq = serializer.serialize_seq(Some(4))?;
                 for v in e.iter() {
@@ -96,8 +78,8 @@ impl<T: MTNodeType> From<Fr> for Input<T> {
     }
 }
 
-impl<T: MTNodeType> From<BlsFr> for Input<T> {
-    fn from(val: BlsFr) -> Self {
+impl<T: MTNodeType> From<Fr_bls12381> for Input<T> {
+    fn from(val: Fr_bls12381) -> Self {
         let e = T::from_scalar(&val);
         Self(e, "".to_string())
     }
@@ -308,7 +290,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         map.serialize_entry("s0_siblingsC", &s0_siblingsC)?;
         map.serialize_entry("finalPol", &self.fri_proof.last)?;
         map.serialize_entry("publics", &self.publics)?;
-        if hashtype.as_str() == "BN128" {
+        if hashtype.as_str() == "BN128" || hashtype.as_str() == "BLS12381" {
             map.serialize_entry(
                 "proverAddr",
                 "273030697313060285579891744179749754319274977764",

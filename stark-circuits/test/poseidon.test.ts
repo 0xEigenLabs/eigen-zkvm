@@ -12,13 +12,13 @@ describe("Poseidon Circuit test", function () {
     this.timeout(1000000);
 
     before( async () => {
-        circuit2 = await test.genMain("circuits/poseidon_bls12381.circom","Poseidon", "", [1], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
-        circuit3 = await test.genMain("circuits/poseidon_bls12381.circom","Poseidon", "", [2], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
-        circuit4 = await test.genMain("circuits/poseidon_bls12381.circom","Poseidon", "", [3], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
-        circuit5 = await test.genMain("circuits/poseidon_bls12381.circom","Poseidon", "", [4], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
-        circuit6 = await test.genMain("circuits/poseidon_bls12381.circom","Poseidon", "", [5], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
-        circuit7 = await test.genMain("circuits/poseidon_bls12381.circom","Poseidon", "", [6], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
-        circuit17 = await test.genMain("circuits/poseidon_bls12381.circom","Poseidon", "", [16], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
+        circuit2 = await test.genMain("circuits/poseidon.circom","Poseidon", "", [1], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
+        circuit3 = await test.genMain("circuits/poseidon.circom","Poseidon", "", [2], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
+        circuit4 = await test.genMain("circuits/poseidon.circom","Poseidon", "", [3], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
+        circuit5 = await test.genMain("circuits/poseidon.circom","Poseidon", "", [4], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
+        circuit6 = await test.genMain("circuits/poseidon.circom","Poseidon", "", [5], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
+        circuit7 = await test.genMain("circuits/poseidon.circom","Poseidon", "", [6], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
+        circuit17 = await test.genMain("circuits/poseidon.circom","Poseidon", "", [16], {"include": "node_modules/circomlib/circuits", "prime": "bls12381"});
     });
 
     it("Should check constrain of hash([1]) t=2", async () => {

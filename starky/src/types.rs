@@ -8,7 +8,7 @@ use std::io::Read;
 
 use crate::errors::Result;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct Public {
     pub polType: String,
     pub polId: usize,
@@ -17,7 +17,7 @@ pub struct Public {
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct Reference {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub polType: Option<String>,
@@ -32,7 +32,7 @@ pub struct Reference {
     pub len: Option<usize>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq)]
 pub struct Expression {
     pub op: String, // number, cm, add, sub, ...
     pub deg: usize,
@@ -96,14 +96,14 @@ impl Expression {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct PolIdentity {
     pub e: usize,
     pub fileName: String,
     pub line: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct PlookupIdentity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub f: Option<Vec<usize>>,
@@ -115,7 +115,7 @@ pub struct PlookupIdentity {
     pub line: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct PermutationIdentity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub f: Option<Vec<usize>>,
@@ -127,7 +127,7 @@ pub struct PermutationIdentity {
     pub line: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct ConnectionIdentity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pols: Option<Vec<usize>>,
@@ -137,7 +137,8 @@ pub struct ConnectionIdentity {
     pub line: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+// pil.json
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct PIL {
     pub nCommitments: usize,
     pub nQ: usize,
@@ -190,7 +191,7 @@ pub struct Step {
     pub nBits: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct StarkStruct {
     pub nBits: usize,
     pub nBitsExt: usize,
@@ -216,18 +217,22 @@ where
     Ok(serde_json::from_str(&data)?)
 }
 
-#[test]
-pub fn test_read_pil() {
-    load_json::<PIL>("data/fib.pil.json").unwrap();
-    log::info!(
-        "arrays.pil.json: {:?}",
-        load_json::<PIL>("data/arrays.pil.json").unwrap()
-    );
-}
+#[cfg(test)]
+mod test {
+    use super::*;
 
-#[test]
-pub fn test_read_struct() {
-    let json_str = r#"
+    #[test]
+    pub fn test_read_pil() {
+        load_json::<PIL>("data/fib.pil.json").unwrap();
+        log::info!(
+            "arrays.pil.json: {:?}",
+            load_json::<PIL>("data/arrays.pil.json").unwrap()
+        );
+    }
+
+    #[test]
+    pub fn test_read_struct() {
+        let json_str = r#"
     {
         "nBits": 23,
         "nBitsExt": 24,
@@ -251,5 +256,6 @@ pub fn test_read_struct() {
         }
         ]
     }"#;
-    read_json::<StarkStruct>(json_str.to_string()).unwrap();
+        read_json::<StarkStruct>(json_str.to_string()).unwrap();
+    }
 }

@@ -9,10 +9,12 @@ edition = "2021"
 num-bigint = "0.4"
 num-traits = "0.2"
 num-integer = "0.1"
+array_tool = "1.0.3"
 
 # serialization
 serde = { version = "1.0", features = [ "derive" ] }
 serde_json = "1.0"
+byteorder = "1"
 
 # hash
 ff = {package="ff_ce" , version="0.11", features = ["derive"]}
@@ -31,10 +33,17 @@ env_logger = "0.10"
 # R1CS and Goldilocks
 plonky = { package="plonky", path = "../plonky", version = "0.0.2" }
 
+#powdr pil compile tool. branch = "main"
+pil_analyzer = {git = "https://github.com/powdr-labs/powdr.git", rev = "eb593dee15e194bd066085022f8a6ea52e2dab9b", package = "pil_analyzer"}
+number = {git = "https://github.com/powdr-labs/powdr.git", rev = "eb593dee15e194bd066085022f8a6ea52e2dab9b", package = "number"}
+ast = {git = "https://github.com/powdr-labs/powdr.git",   rev = "eb593dee15e194bd066085022f8a6ea52e2dab9b",package = "ast"}
+
+
 [dev-dependencies]
 criterion = "0.4"
 pprof = { version = "0.3", features = ["flamegraph"] }
 env_logger = "0.10"
+ark-std = {version = "0.4.0", features = ["print-trace"]}
 
 [[bench]]
 name = "merklehash"
