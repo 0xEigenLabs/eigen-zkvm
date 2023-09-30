@@ -145,7 +145,7 @@ mod test {
 
         write_exec_file(&file_path, &target_adds, &target_s_map);
 
-        let (adds_len, s_map_column_len, adds, s_map) = read_exec_file(&file_path);
+        let (adds_len, _s_map_column_len, _adds, _s_map) = read_exec_file(&file_path);
 
         assert_eq!(adds_len, target_adds.len());
     }

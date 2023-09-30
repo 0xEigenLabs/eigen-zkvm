@@ -241,12 +241,7 @@ impl PolsArray {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::compressor12_pil::render;
-    use crate::pilcom::compile_pil_from_str;
     use crate::types::{self, PIL};
-    use std::fs::File;
-    use std::io::Write;
-    use std::path::Path;
 
     #[test]
     fn test_load_polsarray() {

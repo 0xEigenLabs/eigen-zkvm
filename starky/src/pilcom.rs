@@ -36,7 +36,7 @@ mod test {
         let pil_str = fs::read_to_string(path.clone()).unwrap();
         // The target and actual pil_json
         let actual = compile_pil_from_str(&pil_str);
-        let target = load_json::<PIL>("data/fib.pil.json").unwrap();
+        let _target = load_json::<PIL>("data/fib.pil.json").unwrap();
 
         // This will meet error, as the polArray.name are different.
         // assert_eq!(actual, target);
@@ -44,6 +44,6 @@ mod test {
         // Check the file manually.
         let mut file = File::create(Path::new("data/fib2.pil.json")).unwrap();
         let input = serde_json::to_string_pretty(&actual).unwrap();
-        write!(file, "{}", input);
+        write!(file, "{}", input).unwrap();
     }
 }

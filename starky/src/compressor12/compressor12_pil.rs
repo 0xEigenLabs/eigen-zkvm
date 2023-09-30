@@ -372,7 +372,7 @@ macro_rules! c_mul_add {
 
 #[cfg(test)]
 mod test {
-    use crate::compressor12_pil::{render, CompressorPolName::*};
+    use crate::compressor12_pil::render;
     use std::fs::File;
     use std::io::Write;
     use std::path::Path;
@@ -382,13 +382,13 @@ mod test {
         let pil_string = render(5, 5);
 
         let mut file = File::create(Path::new("/tmp/render_pil_rs.pil")).unwrap();
-        file.write(pil_string.as_bytes());
+        file.write(pil_string.as_bytes()).unwrap();
     }
 
     #[test]
     fn test_render_and_compile() {
         let pil_string = render(5, 5);
         let mut file = File::create(Path::new("/tmp/render_pil_rs.pil")).unwrap();
-        write!(file, "{}", pil_string);
+        write!(file, "{}", pil_string).unwrap();
     }
 }
