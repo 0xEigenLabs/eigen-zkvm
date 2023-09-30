@@ -11,7 +11,6 @@ use array_tool::vec::Shift;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 #[derive(Default, Debug)]
@@ -47,7 +46,7 @@ impl PlonkSetup {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub(crate) struct NormalPlonkInfo {
     pub N: usize,
     // never used fileds
