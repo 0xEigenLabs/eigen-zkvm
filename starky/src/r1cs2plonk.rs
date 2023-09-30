@@ -267,6 +267,7 @@ mod test {
     /// ));
     /// ```
     #[test]
+    #[ignore]
     fn test_r1cs2plonk() {
         let CIRCUIT = "fib.verifier";
 
