@@ -4,11 +4,10 @@ use plonky::circom_circuit::Constraint;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::{Fr, GL};
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::ops::Neg;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct PlonkGate(
     pub usize,
     pub usize,
@@ -50,7 +49,7 @@ impl PlonkGate {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct PlonkAdd(pub usize, pub usize, pub FGL, pub FGL);
 impl std::fmt::Display for PlonkAdd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -245,10 +244,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
 
     for (i, c) in r1cs.constraints.iter().enumerate() {
         if i % 100000 == 0 {
-            println!("processing constraints: {}/{}", i, r1cs.constraints.len());
-        }
-        if i == 20924 {
-            println!("r1cs_constraint {:?}", c);
+            log::info!("processing constraints: {}/{}", i, r1cs.constraints.len());
         }
         process(
             c,

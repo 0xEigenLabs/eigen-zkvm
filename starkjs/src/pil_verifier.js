@@ -16,14 +16,12 @@ const {elapse} = require("./utils");
 const { BigBuffer, newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
 
 module.exports = {
-
   async generate(workspace, pilFile, pilConfig, fileCachePil, builder, starkStruct, proverAddr, input) {
     let timer = []
     elapse("begin", timer);
     // create and compile the trace polynomial
     let pil;
 
-    // 1. generate proof, .pil -> .pil.json
     if (typeof fileCachePil !== 'undefined' && fs.existsSync(fileCachePil)) {
       pil = JSON.parse(await fs.promises.readFile(fileCachePil, "utf8"));
     } else {
@@ -33,7 +31,6 @@ module.exports = {
       }
     }
 
-    // 2. generate commit and constant, .pil -> .cm & .const
     let constPols = newConstantPolsArray(pil);
     await builder.buildConstants(constPols, input);
     elapse("buildConstants", timer);
@@ -50,7 +47,44 @@ module.exports = {
     assert(res.length == 0);
 
     elapse("arithmetization", timer);
+    // prove and verify the stark proof
+/*
+    const proof = await this.proveAndVerify(pil, constPols, cmPols, starkStruct);
+    elapse("proveAndVerify", timer);
+    let zkIn = proof2zkin(proof.proof);
+    elapse("proof2zkin", timer);
+    zkIn.publics = proof.publics;
+    if (starkStruct.verificationHashType == "BN128") {
+      zkIn.proverAddr = BigInt(proverAddr);
+    }
+    elapse("proving", timer);
 
+    // generate vk
+    const vk = await this.buildConsttree(pil, constPols, cmPols, starkStruct);
+    elapse("buildConsttree", timer);
+
+    const  circomFile = path.join(workspace, "circuit.circom")
+    const starkInfo = starkInfoGen(pil, starkStruct);
+    const verifier = await pil2circom(pil, vk.constRoot, starkInfo)
+    elapse("pil2circom", timer);
+    console.log(circomFile);
+    await fs.promises.writeFile(circomFile, verifier, "utf8");
+    elapse("pil2circomToFile", timer);
+
+    // ----debug begin----
+    let publicFile = path.join(workspace, "circuit.public.info.json")
+    await fs.promises.writeFile(publicFile, JSONbig.stringify(proof.publics, null, 1), "utf8");
+    // ----debug end----
+
+    let zkinFile = path.join(workspace, "circuit.zkin.json")
+    await fs.promises.writeFile(zkinFile, JSONbig.stringify(zkIn, (k, v) => {
+      if (typeof(v) === "bigint") {
+        return v.toString();
+      } else {
+        return v;
+      }
+    }, 1), "utf8");
+   */
   },
 
   async buildConsttree(pil, constPols, cmPols, starkStruct) {

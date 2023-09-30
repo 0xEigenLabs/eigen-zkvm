@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 use crate::ff::*;
 use core::ops::{Add, Div, Mul, Neg, Sub};
-#[derive(Eq, Serialize, Deserialize)]
+#[derive(Eq)]
 pub struct Fr(pub FrRepr);
 /// This is the modulus m of the prime field
 pub const MODULUS: FrRepr = FrRepr([18446744069414584321u64]);

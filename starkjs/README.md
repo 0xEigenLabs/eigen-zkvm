@@ -22,49 +22,19 @@ export CIRCUIT=fib
 ```
 
 ### Recursive Layer: FRI Proof
-test compressor12
-#### old script
-```bash
-export CIRCUIT=fib
-#../target/release/eigen-zkit compile -p goldilocks -i circuits/$CIRCUIT.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
-
-# Circom to Stark  
-time node src/compressor12/main_compressor12_setup.js \
-    -r /tmp/$CIRCUIT.verifier.r1cs \
-    -c /tmp/c12_old.const \
-    -p /tmp/c12_old.pil \
-    -e /tmp/c12_old.exec >> /tmp/smap_js.txt
-
-node src/compressor12/main_compressor12_exec.js \
-    -w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm  \
-    -i circuits/$CIRCUIT.verifier.zkin.json  \
-    -p /tmp/c12_old.pil  \
-    -e /tmp/c12_old.exec \
-    -m /tmp/c12_old.cm
-    
-#../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json \
-#    -p /tmp/c12.pil.json \
-#    --o /tmp/c12_old.const \
-#    --m /tmp/c12_old.cm -c circuits/c12a.verifier.circom --i circuits/c12a.verifier.zkin.json --norm_stage
-```
-
-
-#### new script
-> rust version script
 ```bash
 export CIRCUIT=fib
 ../target/release/eigen-zkit compile -p goldilocks -i circuits/$CIRCUIT.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
 # Circom to Stark  
-../target/release/eigen-zkit compressor12_setup  --r /tmp/$CIRCUIT.verifier.r1cs --c /tmp/c12.const  --p /tmp/c12.pil   --e /tmp/c12.exec >> /tmp/smap_rs.txt
+../target/release/eigen-zkit compressor12_setup  --r /tmp/$CIRCUIT.verifier.r1cs --c /tmp/c12.const  --p /tmp/c12.pil   --e /tmp/c12.exec
 
-    
 ../target/release/eigen-zkit compressor12_exec --w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm --i circuits/$CIRCUIT.verifier.zkin.json --p /tmp/c12.pil  --e /tmp/c12.exec --m /tmp/c12.cm
 
 ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json \
     -p /tmp/c12.pil.json \
-    --o /tmp/c12_old.const \
-    --m /tmp/c12_old.cm -c circuits/c12a.verifier.circom --i circuits/c12a.verifier.zkin.json --norm_stage
+    --o /tmp/c12.const \
+    --m /tmp/c12.cm -c circuits/c12a.verifier.circom --i circuits/c12a.verifier.zkin.json --norm_stage
 ```
 
 ### Top Layer: Snark proof

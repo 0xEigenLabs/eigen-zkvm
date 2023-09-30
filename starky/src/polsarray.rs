@@ -3,39 +3,21 @@ use crate::errors::Result;
 use crate::f3g::F3G;
 use crate::types::PIL;
 use plonky::field_gl::Fr as FGL;
-use serde::ser::SerializeSeq;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
 
-fn fgl_pretty_print<S>(value: &Vec<Vec<FGL>>, serializer: S) -> std::result::Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    let mut seqs = serializer.serialize_seq(Some(value.len()))?;
-    for v in value {
-        let mut va = vec![0u64; v.len()];
-        for (i, vv) in v.iter().enumerate() {
-            va[i] = vv.as_int();
-        }
-        seqs.serialize_element(&va);
-    }
-    seqs.end()
-}
-
-#[derive(Default, Debug, Serialize, Deserialize)]
+#[derive(Default, Debug)]
 pub struct PolsArray {
     pub nPols: usize,
     // nameSpace, namePol, defArray's index,
     pub def: HashMap<String, HashMap<String, Vec<usize>>>,
     pub defArray: Vec<Pol>,
-    #[serde(serialize_with = "fgl_pretty_print")]
     pub array: Vec<Vec<FGL>>,
     pub n: usize,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone)]
 pub struct Pol {
     pub name: String,
     pub id: usize,
@@ -157,17 +139,10 @@ impl PolsArray {
         let ref_id = self.get_pol_id(pil, ns, np, i);
         self.array[ref_id][j] = value;
     }
+    #[inline(always)]
     pub fn get_pol_id(&self, pil: &PIL, ns: &String, np: &String, k: usize) -> usize {
         let pol = &pil.references[&format!("{}.{}", ns, np)];
         pol.id + k
-    }
-
-    #[inline(always)]
-    pub(crate) fn get_np_index_of_array(&mut self, ns: &String, np: &String, i: usize) -> usize {
-        let namespace = self.def.get(ns).unwrap();
-        let namepols = namespace.get(np).unwrap();
-        let np_id = namepols[i];
-        np_id
     }
 
     pub fn load(&mut self, fileName: &str) -> Result<()> {

@@ -13,8 +13,6 @@ use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::fs::File;
-use std::io::Write;
 
 #[derive(Default, Debug)]
 pub struct PlonkSetup {
@@ -87,7 +85,7 @@ impl NormalPlonkInfo {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub(crate) struct CustomGateInfo {
     pub(crate) poseidon_id: u64,
     pub(crate) c_mul_add_id: u64,
@@ -203,27 +201,6 @@ impl PlonkSetupRenderInfo {
             n_bits = opts.force_bits;
         }
 
-        // r1cs.num_inputs:4
-        // r1cs.num_outputs:0
-        // r1cs.num_variables:233756
-        // n_publics:3
-        // n_public_rows:1
-        // n_used:25037
-        // n_bits:15
-        // n_constaints:13702
-        // n_plonk_gates:23096
-        // n_plonk_adds:9394
-        // println!("r1cs.num_inputs:{:?}", r1cs.num_inputs);
-        // println!("r1cs.num_outputs:{:?}", r1cs.num_outputs);
-        // println!("r1cs.num_variables:{:?}", r1cs.num_variables);
-        // println!("n_publics:{n_publics}");
-        // println!("n_public_rows:{n_public_rows}");
-        // println!("n_used:{n_used}");
-        // println!("n_bits:{n_bits}");
-        // println!("n_constaints:{:?}", r1cs.constraints.len());
-        // println!("n_plonk_gates:{:?}", plonk_constrains.len());
-        // println!("n_plonk_adds:{:?}", plonk_additions.len());
-
         Self {
             n_used,
             n_bits,
@@ -296,7 +273,7 @@ pub fn plonk_setup_compressor(
     let plonk_constraints = &plonk_setup_info.pg;
     for (i, c) in plonk_constraints.iter().enumerate() {
         if c.0 == 2 {
-            println!("plnonk_gate index: {i}");
+            log::info!("plnonk_gate index: {i}");
         }
         if (i % 10000) == 0 {
             log::info!("Processing constraint... {}/{}", i, plonk_constraints.len())
@@ -306,9 +283,6 @@ pub fn plonk_setup_compressor(
         if pr.is_some() {
             let pr = pr.unwrap();
 
-            if i == 14243 || i == 20916 {
-                println!("1-smap:{},{}", pr.n_used * 3, pr.row);
-            }
             s_map[pr.n_used * 3][pr.row] = c.0 as u64;
             s_map[pr.n_used * 3 + 1][pr.row] = c.1 as u64;
             s_map[pr.n_used * 3 + 2][pr.row] = c.2 as u64;
@@ -336,9 +310,6 @@ pub fn plonk_setup_compressor(
                 );
             }
 
-            if i == 14243 || i == 20916 {
-                println!("2-smap:{},{}", pr.n_used * 3, pr.row);
-            }
             s_map[pr.n_used * 3][pr.row] = c.0 as u64;
             s_map[pr.n_used * 3 + 1][pr.row] = c.1 as u64;
             s_map[pr.n_used * 3 + 2][pr.row] = c.2 as u64;
@@ -380,9 +351,6 @@ pub fn plonk_setup_compressor(
                 );
             }
 
-            if i == 14243 || i == 20916 {
-                println!("3-smap:{},{}", 0, r);
-            }
             s_map[0][r] = c.0 as u64;
             s_map[1][r] = c.1 as u64;
             s_map[2][r] = c.2 as u64;

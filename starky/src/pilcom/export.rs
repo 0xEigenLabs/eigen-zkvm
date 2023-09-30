@@ -9,7 +9,8 @@ use crate::types::{
 };
 use ast::analyzed::{
     Analyzed, BinaryOperator, Expression, FunctionValueDefinition, IdentityKind, PolyID,
-    PolynomialReference, PolynomialType, Reference::*, StatementIdentifier, UnaryOperator,
+    PolynomialReference, PolynomialType, Reference::*, StatementIdentifier, SymbolKind,
+    UnaryOperator,
 };
 
 use super::expression_counter::compute_intermediate_expression_ids;
@@ -46,7 +47,7 @@ pub fn export<T: FieldElement>(analyzed: &Analyzed<T>) -> PIL {
         match item {
             StatementIdentifier::Definition(name) => {
                 if let (poly, Some(value)) = &analyzed.definitions[name] {
-                    if poly.poly_type == PolynomialType::Intermediate {
+                    if poly.kind == SymbolKind::Poly(PolynomialType::Intermediate) {
                         if let FunctionValueDefinition::Expression(value) = value {
                             let expression_id = exporter.extract_expression(value, 1);
                             assert_eq!(
@@ -88,7 +89,6 @@ pub fn export<T: FieldElement>(analyzed: &Analyzed<T>) -> PIL {
                 match identity.kind {
                     IdentityKind::Polynomial => pol_identities.push(PolIdentity {
                         e: sel_left.unwrap(),
-                        //e: pol_identities.len(),
                         fileName: file_name,
                         line,
                     }),
@@ -141,6 +141,13 @@ pub fn export<T: FieldElement>(analyzed: &Analyzed<T>) -> PIL {
     }
 }
 
+fn symbol_kind_to_json_string(k: SymbolKind) -> &'static str {
+    match k {
+        SymbolKind::Poly(poly_type) => polynomial_type_to_json_string(poly_type),
+        SymbolKind::Other() => panic!("Cannot translate \"other\" symbol to json."),
+    }
+}
+
 fn polynomial_type_to_json_string(t: PolynomialType) -> &'static str {
     polynomial_reference_type_to_type(polynomial_reference_type_to_json_string(t))
 }
@@ -176,20 +183,20 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
         self.analyzed
             .definitions
             .iter()
-            .map(|(name, (poly, _value))| {
-                let id = if poly.poly_type == PolynomialType::Intermediate {
-                    self.intermediate_poly_expression_ids[&poly.id]
+            .map(|(name, (symbol, _value))| {
+                let id = if symbol.kind == SymbolKind::Poly(PolynomialType::Intermediate) {
+                    self.intermediate_poly_expression_ids[&symbol.id]
                 } else {
-                    poly.id
+                    symbol.id
                 };
                 let out = Reference {
                     polType: None,
-                    type_: polynomial_type_to_json_string(poly.poly_type).to_string(),
+                    type_: symbol_kind_to_json_string(symbol.kind).to_string(),
                     id: id as usize,
-                    polDeg: poly.degree as usize,
-                    isArray: poly.is_array(),
+                    polDeg: symbol.degree as usize,
+                    isArray: symbol.is_array(),
                     elementType: None,
-                    len: poly.length.map(|l| l as usize),
+                    len: symbol.length.map(|l| l as usize),
                 };
                 (name.clone(), out)
             })
@@ -238,7 +245,7 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
                 },
             ),
             Expression::Reference(Poly(reference)) => self.polynomial_reference_to_json(reference),
-            Expression::Reference(LocalVar(_)) => {
+            Expression::Reference(LocalVar(_, _)) => {
                 panic!("No local variable references allowed here.")
             }
             Expression::PublicReference(name) => (
@@ -321,8 +328,12 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
             Expression::FunctionCall(_) => panic!("No function calls allowed here."),
             Expression::String(_) => panic!("Strings not allowed here."),
             Expression::Tuple(_) => panic!("Tuples not allowed here"),
+            Expression::ArrayLiteral(_) => panic!("Array literals not allowed here"),
             Expression::MatchExpression(_, _) => {
                 panic!("No match expressions allowed here.")
+            }
+            Expression::LambdaExpression(_) => {
+                panic!("No lambda expressions allowed here.")
             }
             Expression::FreeInput(_) => {
                 panic!("No free input expressions allowed here.")
