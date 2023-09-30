@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/bin/zsh
 set -ex
 
 ## build
 cargo build --release
 
 export NODE_OPTIONS="--max-old-space-size=81920"
-source ~/.bashrc
+source ~/.zshrc
 
 BIG_POWER=26
 NUM_PROOF=2
@@ -62,26 +62,26 @@ node $RUNDIR/src/recursive/main_joinzkin.js --starksetup ../starky/data/c12.star
 
 echo "3. generate the pil files and const polynomicals files "
 # generate the pil files and  const polynomicals files
-# input files :  $C12_VERIFIER.r1cs
-# output files : $C12_VERIFIER.const  $C12_VERIFIER.pil  $C12_VERIFIER.exec
+# input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
+# output files :  $C12_VERIFIER.exec
 if [ ! -f "$WORKSPACE/$RECURSIVE_CIRCUIT.pil" ]; then
-    node $RUNDIR/src/compressor12/main_compressor12_setup.js \
-        -r $WORKSPACE/$RECURSIVE_CIRCUIT.r1cs \
-        -c $WORKSPACE/$RECURSIVE_CIRCUIT.const \
-        -p $WORKSPACE/$RECURSIVE_CIRCUIT.pil \
-        -e $WORKSPACE/$RECURSIVE_CIRCUIT.exec 
-fi 
+    ${ZKIT} compressor12_setup  \
+        --r $WORKSPACE/$RECURSIVE_CIRCUIT.r1cs \
+        --c $WORKSPACE/$RECURSIVE_CIRCUIT.const \
+        --p $WORKSPACE/$RECURSIVE_CIRCUIT.pil \
+        --e $WORKSPACE/$RECURSIVE_CIRCUIT.exec
+fi
 
 echo "4. generate the commit polynomicals files  "
 # generate the commit polynomicals files 
-# input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil /$C12_VERIFIER.exec
+# input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil  $C12_VERIFIER.exec
 # output files :  $C12_VERIFIER.cm
-node $RUNDIR/src/compressor12/main_compressor12_exec.js \
-    -w $WORKSPACE/$RECURSIVE_CIRCUIT"_js"/$RECURSIVE_CIRCUIT.wasm  \
-    -i $input0/r1_input.zkin.json  \
-    -p $WORKSPACE/$RECURSIVE_CIRCUIT.pil  \
-    -e $WORKSPACE/$RECURSIVE_CIRCUIT.exec \
-    -m $WORKSPACE/$RECURSIVE_CIRCUIT.cm
+${ZKIT} compressor12_exec \
+    --w $WORKSPACE/$RECURSIVE_CIRCUIT"_js"/$RECURSIVE_CIRCUIT.wasm  \
+    --i $input0/r1_input.zkin.json  \
+    --p $WORKSPACE/$RECURSIVE_CIRCUIT.pil  \
+    --e $WORKSPACE/$RECURSIVE_CIRCUIT.exec \
+    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm
 
 echo "5. generate recursive2 proof"
 # generate the stark proof and the circom circuits to verify stark proof.
@@ -108,20 +108,20 @@ fi
 
 echo "2. generate the pil files and  const polynomicals files "
 if [ ! -f "$WORKSPACE/$RECURSIVE2_CIRCUIT.pil" ]; then
-    node $RUNDIR/src/compressor12/main_compressor12_setup.js \
-        -r $WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs \
-        -c $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
-        -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil \
-        -e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec 
-fi 
+    ${ZKIT} compressor12_setup \
+        --r $WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs \
+        --c $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
+        --p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil \
+        --e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec
+fi
 
 echo "3. generate the commit polynomicals files "
-node $RUNDIR/src/compressor12/main_compressor12_exec.js \
-    -w $WORKSPACE/$RECURSIVE2_CIRCUIT"_js"/$RECURSIVE2_CIRCUIT.wasm  \
-    -i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json   \
-    -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil  \
-    -e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec \
-    -m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm
+${ZKIT} compressor12_exec \
+    --w $WORKSPACE/$RECURSIVE2_CIRCUIT"_js"/$RECURSIVE2_CIRCUIT.wasm  \
+    --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json   \
+    --p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil  \
+    --e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec \
+    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm
 
 
 echo "4. generate final proof  "

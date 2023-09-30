@@ -645,7 +645,7 @@ fn calculate_Z(num: Vec<F3G>, den: Vec<F3G>) -> Vec<F3G> {
     }
 
     let check_val = z[N - 1] * (num[N - 1] * den_inv[N - 1]);
-    assert_eq!(check_val.eq(&F3G::one()), true);
+    assert!(check_val.eq(&F3G::one()));
     z
 }
 

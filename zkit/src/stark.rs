@@ -49,6 +49,7 @@ pub fn prove(
                 &stark_struct,
             )
             .unwrap();
+
             println!("verify the proof...");
             let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
                 &starkproof,
