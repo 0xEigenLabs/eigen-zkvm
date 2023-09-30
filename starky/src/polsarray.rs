@@ -259,17 +259,4 @@ pub mod tests {
         cmp.load("data/fib.exec").unwrap();
         cmp.save("data/fib.exec.cp").unwrap();
     }
-
-    #[test]
-    fn test_dump_pols_array() {
-        let pil_string = render(5, 5);
-
-        let pil_json = compile_pil_from_str(&pil_string);
-
-        let pols_array = PolsArray::new(&pil_json, PolKind::Constant);
-
-        let input = serde_json::to_string_pretty(&pols_array).unwrap();
-        let mut file = File::create(Path::new("./test_pols_array.json")).unwrap();
-        write!(file, "{}", input);
-    }
 }

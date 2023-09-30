@@ -815,17 +815,15 @@ mod test {
     /// ```
     #[test]
     fn test_custom_gates_from_r1cs() {
-        let CIRCUIT: String = std::env::var("CIRCUIT")
-            .unwrap_or_else(|_| "fib".to_string())
-            .parse()
-            .expect("Cannot parse DEGREE env var as u32");
-        let r1cs_file = format!("/tmp/{CIRCUIT}.verifier.r1cs");
+        let CIRCUIT = "fib.verifier";
+
+        let r1cs_file = format!("/tmp/{CIRCUIT}.r1cs");
         let r1cs = load_r1cs::<GL>(&r1cs_file);
 
         let custom_gates_info = CustomGateInfo::from_r1cs(&r1cs);
 
-        let mut file = File::create(Path::new("/tmp/custom_gates_info_rs.json")).unwrap();
-        let input = serde_json::to_string(&custom_gates_info).unwrap();
-        write!(file, "{}", input).unwrap();
+        // let mut file = File::create(Path::new("/tmp/custom_gates_info_rs.json")).unwrap();
+        // let input = serde_json::to_string(&custom_gates_info).unwrap();
+        // write!(file, "{}", input).unwrap();
     }
 }
