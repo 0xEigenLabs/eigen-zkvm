@@ -70,14 +70,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
     let mut plonk_additions: Vec<PlonkAdd> = vec![];
 
     let normalize = |lc: &mut BTreeMap<usize, FGL>| {
-        let keys: Vec<usize> = lc.keys().map(|k| *k).collect();
-        for key in keys.iter() {
-            let val = lc[key];
-            if val == FGL::ZERO {
-                lc.remove(key).unwrap();
-            }
-        }
-        // lc.retain(|_, v| *v != FGL::ZERO);
+        lc.retain(|_, v| *v != FGL::ZERO);
     };
 
     let join =

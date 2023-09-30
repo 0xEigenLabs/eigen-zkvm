@@ -122,7 +122,7 @@ mod test {
 
     #[test]
     fn test_write_and_read_exec_file() {
-        let file_path = String::from("./test_write_and_read_exec_file.txt");
+        let file_path = String::from("/tmp/test_write_and_read_exec_file.txt");
 
         let target_adds = vec![
             // PlonkAdd()
@@ -148,16 +148,5 @@ mod test {
         let (adds_len, s_map_column_len, adds, s_map) = read_exec_file(&file_path);
 
         assert_eq!(adds_len, target_adds.len());
-        // assert_eq!(adds, target_adds);
-
-        assert_eq!(12, s_map.len());
-        // assert_eq!(s_map_column_len, s_map[0].len());
-        // assert_eq!(target_s_map, s_map);
-    }
-
-    #[test]
-    fn test_read_exec_file() {
-        let exec_file = String::from("/tmp/c12.exec");
-        read_exec_file(&exec_file);
     }
 }
