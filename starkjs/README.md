@@ -31,10 +31,10 @@ export CIRCUIT=fib
 
 ../target/release/eigen-zkit compressor12_exec --w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm --i circuits/$CIRCUIT.verifier.zkin.json --p /tmp/c12.pil  --e /tmp/c12.exec --m /tmp/c12.cm
 
-../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json \
+../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.bn128.json \
     -p /tmp/c12.pil.json \
     --o /tmp/c12.const \
-    --m /tmp/c12.cm -c circuits/c12a.verifier.circom --i circuits/c12a.verifier.zkin.json --norm_stage
+    --m /tmp/c12.cm -c circuits/circuit.circom --i circuits/circuit.zkin.json --norm_stage
 ```
 
 ### Top Layer: Snark proof

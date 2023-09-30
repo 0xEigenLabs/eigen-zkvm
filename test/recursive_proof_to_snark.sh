@@ -39,27 +39,24 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
 
 ../target/release/eigen-zkit compile -p goldilocks -i $RUNDIR/circuits/$C12_VERIFIER.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/$TASK_NO
 
-# below also happened in start_aggregation.sh step4
-# todo seem like powdr::verify_pil can replace bow.
-
 # generate the pil files and  const constant polynomial files
 # input files :  $C12_VERIFIER.r1cs
 # output files :  $C12_VERIFIER.exec, $C12_VERIFIER.const  $C12_VERIFIER.pil
-node $RUNDIR/src/compressor12/main_compressor12_setup.js \
-    -r $WORKSPACE/$C12_VERIFIER.r1cs \
-    -c $WORKSPACE/$C12_VERIFIER.const \
-    -p $WORKSPACE/$C12_VERIFIER.pil \
-    -e $WORKSPACE/$C12_VERIFIER.exec
+../target/release/eigen-zkit compressor12_setup \
+    --r $WORKSPACE/$C12_VERIFIER.r1cs \
+    --c $WORKSPACE/$C12_VERIFIER.const \
+    --p $WORKSPACE/$C12_VERIFIER.pil \
+    --e $WORKSPACE/$C12_VERIFIER.exec
 
 # generate the commit polynomials files
 # input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil  $C12_VERIFIER.exec
 # output files :  $C12_VERIFIER.cm
-node $RUNDIR/src/compressor12/main_compressor12_exec.js \
-    -w $WORKSPACE/$C12_VERIFIER"_js"/$CIRCUIT.c12.wasm  \
-    -i $RUNDIR/circuits/$C12_VERIFIER.zkin.json  \
-    -p $WORKSPACE/$C12_VERIFIER.pil  \
-    -e $WORKSPACE/$C12_VERIFIER.exec \
-    -m $WORKSPACE/$C12_VERIFIER.cm
+../target/release/eigen-zkit compressor12_exec \
+    --w $WORKSPACE/$C12_VERIFIER"_js"/$CIRCUIT.c12.wasm  \
+    --i $RUNDIR/circuits/$C12_VERIFIER.zkin.json  \
+    --p $WORKSPACE/$C12_VERIFIER.pil  \
+    --e $WORKSPACE/$C12_VERIFIER.exec \
+    --m $WORKSPACE/$C12_VERIFIER.cm
 
 mkdir -p $WORKSPACE/aggregation/$RECURSIVE1_VERIFIER/
 
