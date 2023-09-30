@@ -28,18 +28,18 @@ npm run vm
 ```bash
 ../target/release/eigen-zkit compile -p goldilocks -i circuits/zkvm.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
-node ../starkjs/src/compressor12/main_compressor12_setup.js \
-    -r /tmp/zkvm.r1cs \
-    -c /tmp/c12.const \
-    -p /tmp/c12.pil \
-    -e /tmp/c12.exec
+../target/release/eigen-zkit compressor12_setup \
+    --r /tmp/zkvm.r1cs \
+    --c /tmp/c12.const \
+    --p /tmp/c12.pil \
+    --e /tmp/c12.exec
 
-node ../starkjs/src/compressor12/main_compressor12_exec.js \
-    -w /tmp/zkvm_js/zkvm.wasm  \
-    -i circuits/zkvm.zkin.json  \
-    -p /tmp/c12.pil  \
-    -e /tmp/c12.exec \
-    -m /tmp/c12.cm
+../target/release/eigen-zkit compressor12_exec \
+    --w /tmp/zkvm_js/zkvm.wasm  \
+    --i circuits/zkvm.zkin.json  \
+    --p /tmp/c12.pil  \
+    --e /tmp/c12.exec \
+    --m /tmp/c12.cm
 
 ../target/release/eigen-zkit stark_prove -s ./tools/zkvm.c12.starkstruct.json \
     -p /tmp/c12.pil.json \

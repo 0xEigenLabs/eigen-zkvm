@@ -240,7 +240,6 @@ struct AggregationCheckOpt {
     new_proof: String,
 }
 
-// .usage("node main_compressor12_setup.js -r <verifier.c12.r1cs> -p <verifier.c12.pil> -c <verifier.c12.const> -e <verifier.c12.exec> [--forceNBits=23]")
 #[derive(Parser, Debug)]
 struct Compresor12SetupOpt {
     #[arg(long = "r", default_value = "mycircuit.verifier.r1cs")]
