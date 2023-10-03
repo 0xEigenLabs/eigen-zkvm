@@ -1050,7 +1050,6 @@ pub mod tests {
     use crate::transcript_bn128::TranscriptBN128;
     use crate::types::load_json;
     use crate::types::{StarkStruct, PIL};
-    use serde::Serialize;
 
     #[test]
     fn test_stark_gen() {

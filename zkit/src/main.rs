@@ -467,7 +467,7 @@ fn main() {
         )
         .map_err(|_| EigenError::from("compreesor12 exec error".to_string())),
         Command::JoinZkin(args) => {
-            starky::zkin_join::join_zkin(&"1".to_string(), &args.zkin1, &args.zkin2, &args.zkinout)
+            starky::zkin_join::join_zkin(&args.zkin1, &args.zkin2, &args.zkinout)
                 .map_err(|_| EigenError::from("join_zkin error".to_string()))
         }
     };
