@@ -58,7 +58,6 @@ fi
 
 
 echo "2. combine input1.zkin.json with input2.zkin.json "
-#node $RUNDIR/src/recursive/main_joinzkin.js --starksetup ../starky/data/c12.starkStruct.json --zkin1 $input0/input.zkin.json --zkin2 $input1/input.zkin.json  --zkinout $input0/r1_input.zkin.json
 ${ZKIT} join_zkin --zkin1 $input0/input.zkin.json --zkin2 $input1/input.zkin.json  --zkinout $input0/r1_input.zkin.json
 
 
