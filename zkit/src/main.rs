@@ -254,8 +254,6 @@ struct Compresor12SetupOpt {
     force_n_bits: usize,
 }
 
-// generate the pil files and  const polynomicals files
-// .usage("node main_compressor12_exec.js -r <r1cs.circom> -p <pil.json> [-P <pilconfig.json] -v <verification_key.json>")
 #[derive(Parser, Debug)]
 struct Compresor12ExecOpt {
     // input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
@@ -270,6 +268,19 @@ struct Compresor12ExecOpt {
     exec_file: String,
     #[arg(long = "m", default_value = "mycircuit.c12.cm")]
     commit_file: String,
+}
+
+// generate the input1.zkin.json and input2.zkin.json into out.zkin.json
+#[derive(Parser, Debug)]
+struct JoinZkinExecOpt {
+    // #[arg(long = "starksetup", default_value = "starksetup.json")]
+    // starksetup: String,
+    #[arg(long = "zkin1", default_value = "input1.zkin.json")]
+    zkin1: String,
+    #[arg(long = "zkin2", default_value = "input2.zkin.json")]
+    zkin2: String,
+    #[arg(long = "zkinout", default_value = "out.zkin.json")]
+    zkinout: String,
 }
 
 #[derive(Parser, Debug)]
@@ -306,11 +317,12 @@ enum Command {
     #[command(name = "analyse")]
     Analyse(AnalyseOpt),
 
-    // todo opti command name.
     #[command(name = "compressor12_setup")]
     Compresor12Setup(Compresor12SetupOpt),
     #[command(name = "compressor12_exec")]
     Compresor12Exec(Compresor12ExecOpt),
+    #[command(name = "join_zkin")]
+    JoinZkin(JoinZkinExecOpt),
 }
 
 #[derive(Parser, Debug)]
@@ -454,6 +466,10 @@ fn main() {
             &args.commit_file,
         )
         .map_err(|_| EigenError::from("compreesor12 exec error".to_string())),
+        Command::JoinZkin(args) => {
+            starky::stark_gen::join_zkin(&"1".to_string(), &args.zkin1, &args.zkin2, &args.zkinout)
+                .map_err(|_| EigenError::from("join_zkin error".to_string()))
+        }
     };
     match exec_result {
         Err(x) => {
