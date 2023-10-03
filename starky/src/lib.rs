@@ -65,6 +65,7 @@ mod io_utils;
 pub mod pil2circom;
 pub mod pilcom;
 pub mod serializer;
+pub mod zkin_join;
 
 #[macro_use]
 extern crate serde_json;

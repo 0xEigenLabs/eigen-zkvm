@@ -1,4 +1,5 @@
 #![allow(non_snake_case, dead_code)]
+
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MG, MIN_OPS_PER_THREAD, SHIFT};
 use crate::errors::Result;
 use crate::f3g::F3G;
@@ -1075,7 +1076,6 @@ pub mod tests {
             &stark_struct,
         )
         .unwrap();
-
         log::info!("verify the proof...");
 
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(

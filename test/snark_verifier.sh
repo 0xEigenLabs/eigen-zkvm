@@ -2,7 +2,6 @@
 set -ex
 
 export NODE_OPTIONS="--max-old-space-size=163840"
-source ~/.bashrc 
 
 CUR_DIR=$(cd $(dirname $0);pwd)
 snark_type=${1-groth16}
