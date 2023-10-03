@@ -5,7 +5,6 @@ set -ex
 cargo build --release
 
 export NODE_OPTIONS="--max-old-space-size=81920"
-source ~/.zshrc
 
 BIG_POWER=26
 NUM_PROOF=2
