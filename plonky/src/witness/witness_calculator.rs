@@ -336,7 +336,7 @@ mod runtime {
         fn func(a: i32, b: i32, c: i32, d: i32, e: i32, f: i32) -> Result<()> {
             // NOTE: We can also get more information why it is failing, see p2str etc here:
             // https://github.com/iden3/circom_runtime/blob/master/js/witness_calculator.js#L52-L64
-            println!("runtime error, exiting early: {a} {b} {c} {d} {e} {f}",);
+            log::debug!("runtime error, exiting early: {a} {b} {c} {d} {e} {f}",);
             Err(EigenError::WasmerRuntimeError(wasmer::RuntimeError::new(
                 "1",
             )))
