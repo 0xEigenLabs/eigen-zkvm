@@ -41,13 +41,13 @@ pub fn compile(config: CompilerConfig) -> Result<(), ()> {
             &config.c_file,
             &config.dat_file,
         )?;
-        println!(
+        log::debug!(
             "{} {} and {}",
             Colour::Green.paint("Written successfully:"),
             config.c_file,
             config.dat_file
         );
-        println!(
+        log::debug!(
             "{} {}/{}, {}, {}, {}, {}, {}, {} and {}",
             Colour::Green.paint("Written successfully:"),
             &config.c_folder,
@@ -70,7 +70,7 @@ pub fn compile(config: CompilerConfig) -> Result<(), ()> {
                 &config.wasm_name,
                 &config.wat_file,
             )?;
-            println!(
+            log::debug!(
                 "{} {}",
                 Colour::Green.paint("Written successfully:"),
                 config.wat_file
@@ -82,7 +82,7 @@ pub fn compile(config: CompilerConfig) -> Result<(), ()> {
                     return Err(());
                 }
                 Result::Ok(()) => {
-                    println!(
+                    log::debug!(
                         "{} {}",
                         Colour::Green.paint("Written successfully:"),
                         config.wasm_file
@@ -105,7 +105,7 @@ pub fn compile(config: CompilerConfig) -> Result<(), ()> {
                     return Err(());
                 }
                 Result::Ok(()) => {
-                    println!(
+                    log::debug!(
                         "{} {}",
                         Colour::Green.paint("Written successfully:"),
                         config.wasm_file
@@ -120,7 +120,7 @@ pub fn compile(config: CompilerConfig) -> Result<(), ()> {
                 &config.wasm_name,
                 &config.wat_file,
             )?;
-            println!(
+            log::debug!(
                 "{} {}",
                 Colour::Green.paint("Written successfully:"),
                 config.wat_file

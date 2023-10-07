@@ -179,8 +179,8 @@ mod tests {
                 ]
             })
             .collect();
-        println!("{:?}", inputs[1][0].as_int());
-        println!("{:?}", inputs[2][2].as_int());
+        log::debug!("{:?}", inputs[1][0].as_int());
+        log::debug!("{:?}", inputs[2][2].as_int());
 
         let st = LinearHashBLS12381::new()
             .hash_element_matrix(&inputs)
@@ -213,7 +213,7 @@ mod tests {
 
         let result = lh.hash_element_array(&input).unwrap();
         log::debug!("out {}", result);
-        println!("{:?}", result);
+        log::debug!("{:?}", result);
         assert_eq!(result.0[0], FGL::from(13796980492452026086u64));
         assert_eq!(result.0[1], FGL::from(13318555390970742201u64));
         assert_eq!(result.0[2], FGL::from(9516443056151387241u64));

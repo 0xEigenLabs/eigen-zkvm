@@ -203,17 +203,13 @@ impl MerkleTree for MerkleTreeBLS12381 {
                         });
                 });
         }
-        log::info!("linearhash time cost: {}", now.elapsed().as_secs_f64());
+        log::debug!("linearhash time cost: {}", now.elapsed().as_secs_f64());
 
         // merklize level
         self.nodes = nodes;
         self.elements = buff;
         self.width = width;
         self.height = height;
-        // println!("nodes: {:?}", self.nodes);
-        // println!("elements: {:?}", self.elements);
-        println!("width: {:?}", self.width);
-        println!("height: {:?}", self.height);
 
         let mut n256: usize = height;
         let mut next_n256: usize = (n256 - 1) / 16 + 1;
@@ -222,7 +218,7 @@ impl MerkleTree for MerkleTreeBLS12381 {
         while n256 > 1 {
             let now = Instant::now();
             self.merklize_level(p_in, next_n256, p_out)?;
-            log::info!(
+            log::debug!(
                 "merklize_level {} time cost: {}",
                 next_n256,
                 now.elapsed().as_secs_f64()

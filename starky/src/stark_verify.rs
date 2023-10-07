@@ -89,7 +89,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     let fri = FRI::new(stark_struct);
     let check_query =
         |query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>, idx: usize| -> Result<Vec<F3G>> {
-            log::info!("Query: {}", idx);
+            log::debug!("Query: {}", idx);
             let tree = M::new();
             let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
             if !res {
