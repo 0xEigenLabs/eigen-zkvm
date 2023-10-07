@@ -25,6 +25,7 @@ pub fn prove(
     cm_pol_file: &String,
     circom_file: &String,
     zkin: &String,
+    prover_addr: &String,
 ) -> Result<()> {
     let mut pil = load_json::<PIL>(pil_file.as_str()).unwrap();
     let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
@@ -47,6 +48,7 @@ pub fn prove(
                 &setup.program,
                 &pil,
                 &stark_struct,
+                prover_addr,
             )
             .unwrap();
 
@@ -104,6 +106,7 @@ pub fn prove(
                 &setup.program,
                 &pil,
                 &stark_struct,
+                prover_addr,
             )
             .unwrap();
             println!("verify the proof...");
@@ -159,6 +162,7 @@ pub fn prove(
                 &setup.program,
                 &pil,
                 &stark_struct,
+                prover_addr,
             )
             .unwrap();
             println!("verify the proof...");
