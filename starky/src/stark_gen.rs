@@ -1,4 +1,5 @@
 #![allow(non_snake_case, dead_code)]
+
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MG, MIN_OPS_PER_THREAD, SHIFT};
 use crate::errors::Result;
 use crate::f3g::F3G;
@@ -267,11 +268,11 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             transcript.put(&b[..])?;
         }
 
-        log::info!("Merkelizing 1....");
+        log::debug!("Merkelizing 1....");
         let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n")?;
         tree1.to_extend(&mut ctx.cm1_2ns);
 
-        log::info!(
+        log::debug!(
             "tree1 root: {}",
             //crate::helper::fr_to_biguint(&tree1.root().into())
             tree1.root(),
@@ -296,11 +297,11 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             n_cm += 1;
         }
 
-        log::info!("Merkelizing 2....");
+        log::debug!("Merkelizing 2....");
         let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n")?;
         tree2.to_extend(&mut ctx.cm2_2ns);
         transcript.put(&[tree2.root().as_elements().to_vec()])?;
-        log::info!(
+        log::debug!(
             "tree2 root: {}",
             // crate::helper::fr_to_biguint(&tree2.root().into())
             tree2.root(),
@@ -315,7 +316,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         calculate_exps_parallel(&mut ctx, starkinfo, &program.step3prev, "n", "step3prev");
 
         for (i, pu) in starkinfo.pu_ctx.iter().enumerate() {
-            log::info!("Calculating z for plookup {}", i);
+            log::debug!("Calculating z for plookup {}", i);
             let p_num = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.num_id]);
             let p_den = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.den_id]);
             let z = calculate_Z(p_num, p_den);
@@ -324,7 +325,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         }
 
         for (i, pe) in starkinfo.pe_ctx.iter().enumerate() {
-            log::info!("Calculating z for permutation {}", i);
+            log::debug!("Calculating z for permutation {}", i);
             let p_num = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.num_id]);
             let p_den = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.den_id]);
             let z = calculate_Z(p_num, p_den);
@@ -332,7 +333,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             n_cm += 1;
         }
         for (i, ci) in starkinfo.ci_ctx.iter().enumerate() {
-            log::info!("Calculating z for connection {}", i);
+            log::debug!("Calculating z for connection {}", i);
             let p_num = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&ci.num_id]);
             let p_den = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&ci.den_id]);
             let z = calculate_Z(p_num, p_den);
@@ -342,13 +343,13 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         calculate_exps_parallel(&mut ctx, starkinfo, &program.step3, "n", "step3");
 
-        log::info!("Merkelizing 3....");
+        log::debug!("Merkelizing 3....");
 
         let tree3 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm3_n")?;
         tree3.to_extend(&mut ctx.cm3_2ns);
         transcript.put(&[tree3.root().as_elements().to_vec()])?;
 
-        log::info!(
+        log::debug!(
             "tree3 root: {}",
             // crate::helper::fr_to_biguint(&tree3.root().into())
             tree3.root(),
@@ -384,9 +385,9 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             );
         }
 
-        log::info!("Merkelizing 4....");
+        log::debug!("Merkelizing 4....");
         let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
-        log::info!(
+        log::debug!(
             "tree4 root: {}",
             // crate::helper::fr_to_biguint(&tree4.root().into())
             tree4.root(),
@@ -394,7 +395,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         transcript.put(&[tree4.root().as_elements().to_vec()])?;
 
         //if ctx.cm4_2ns.len() > 0 {
-        //    log::info!("tree4[0] {}", ctx.cm4_2ns[0]);
+        //    log::debug!("tree4[0] {}", ctx.cm4_2ns[0]);
         //}
 
         ///////////
@@ -748,7 +749,7 @@ pub fn calculate_exps(
     for i in 0..N {
         c_first.eval(ctx, i);
         if (i % 10000) == 0 {
-            log::info!("Calculating expression.. {}/{}", i, N);
+            log::debug!("Calculating expression.. {}/{}", i, N);
         }
     }
 }
@@ -1012,7 +1013,7 @@ pub fn calculate_exps_parallel(
         .enumerate()
         .for_each(|(i, tmp_ctx)| {
             let cur_n = std::cmp::min(n_per_thread, n - i * n_per_thread);
-            log::info!("execute trace LDE {}/{}", i * n_per_thread, n);
+            log::debug!("execute trace LDE {}/{}", i * n_per_thread, n);
             tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i * n_per_thread);
             for so in &exec_info.output_sections {
                 let tmp = tmp_ctx.get_mut(so.name.as_str());
@@ -1064,7 +1065,7 @@ pub mod tests {
         let mut setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
-        log::info!("setup {}", fr_root);
+        log::debug!("setup {}", fr_root);
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             &cm_pol,
             &const_pol,
@@ -1075,8 +1076,7 @@ pub mod tests {
             &stark_struct,
         )
         .unwrap();
-
-        log::info!("verify the proof...");
+        log::debug!("verify the proof...");
 
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
@@ -1112,7 +1112,7 @@ pub mod tests {
         )
         .unwrap();
 
-        log::info!("verify the proof...");
+        log::debug!("verify the proof...");
 
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
@@ -1145,7 +1145,7 @@ pub mod tests {
             &stark_struct,
         )
         .unwrap();
-        log::info!("verify the proof...");
+        log::debug!("verify the proof...");
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
             &setup.const_root,
@@ -1177,7 +1177,7 @@ pub mod tests {
             &stark_struct,
         )
         .unwrap();
-        log::info!("verify the proof...");
+        log::debug!("verify the proof...");
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
             &setup.const_root,
@@ -1209,7 +1209,7 @@ pub mod tests {
             &stark_struct,
         )
         .unwrap();
-        log::info!("verify the proof...");
+        log::debug!("verify the proof...");
         let result = stark_verify::<MerkleTreeGL, TranscriptGL>(
             &starkproof,
             &setup.const_root,

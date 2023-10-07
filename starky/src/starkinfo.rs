@@ -337,13 +337,13 @@ impl StarkInfo {
             exp_id: 0,
         };
 
-        log::info!("generate_step2");
+        log::debug!("generate_step2");
         info.generate_step2(&mut ctx, pil, &mut program)?; // H1, H2
 
-        log::info!("generate_step3");
+        log::debug!("generate_step3");
         info.generate_step3(&mut ctx, pil, &mut program, global_l1)?; // Z Polynonmial and LC of the permutation checks
 
-        log::info!("generate_constraint_polynomial");
+        log::debug!("generate_constraint_polynomial");
         info.generate_constraint_polynomial(
             &mut ctx,
             &mut ctx2ns,
@@ -363,9 +363,9 @@ impl StarkInfo {
             ctx.calculated.insert(("expsPrime", *k), *v);
         }
 
-        log::info!("generate_constraint_polynomial_verifier");
+        log::debug!("generate_constraint_polynomial_verifier");
         info.generate_constraint_polynomial_verifier(&mut ctx, pil, &mut program)?;
-        log::info!("generate_fri_polynomial");
+        log::debug!("generate_fri_polynomial");
         info.generate_fri_polynomial(&mut ctx2ns, pil, &mut program)?;
 
         let mut ctx = Context {
@@ -374,10 +374,10 @@ impl StarkInfo {
             calculated: HashMap::new(),
             exp_id: 0,
         };
-        log::info!("generate_fri_verifier");
+        log::debug!("generate_fri_verifier");
         info.generate_fri_verifier(&mut ctx, pil, &mut program)?;
 
-        log::info!("map");
+        log::debug!("map");
         info.map(pil, &stark_struct, &mut program)?;
 
         info.publics = pil.publics.clone();

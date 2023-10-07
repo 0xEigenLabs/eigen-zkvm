@@ -65,11 +65,11 @@ mod io_utils;
 pub mod pil2circom;
 pub mod pilcom;
 pub mod serializer;
+pub mod zkin_join;
 
 #[macro_use]
 extern crate serde_json;
 
-extern crate env_logger;
 extern crate ff;
 extern crate lazy_static;
 extern crate log;

@@ -211,7 +211,7 @@ impl MerkleTree for MerkleTreeGL {
                         });
                 });
         }
-        log::info!("linearhash time cost: {}", now.elapsed().as_secs_f64());
+        log::debug!("linearhash time cost: {}", now.elapsed().as_secs_f64());
 
         // merklize level
         self.nodes = nodes;
@@ -226,7 +226,7 @@ impl MerkleTree for MerkleTreeGL {
         while n64 > 1 {
             let now = Instant::now();
             self.merklize_level(p_in, next_n64, p_out)?;
-            log::info!(
+            log::debug!(
                 "merklize_level {} time cost: {}",
                 next_n64,
                 now.elapsed().as_secs_f64()
