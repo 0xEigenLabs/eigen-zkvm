@@ -41,7 +41,7 @@ pub fn load_proofs_from_list<E: Engine>(
     let proofs: Vec<Proof<E, PlonkCsWidth4WithNextStepParams>> = lines
         .iter()
         .map(|l| {
-            log::info!("reading {:?}", l);
+            log::debug!("reading {:?}", l);
             load_proof::<E>(l)
         })
         .collect();
@@ -150,7 +150,7 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> 
         return Err(EigenError::from("Invalid file header".to_string()));
     }
     let version = reader.read_u32::<LittleEndian>()?;
-    log::info!("wtns version {}", version);
+    log::debug!("wtns version {}", version);
     if version > 2 {
         return Err(EigenError::from("unsupported file version".to_string()));
     }
@@ -177,7 +177,7 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> 
         return Err(EigenError::from("invalid curve prime".to_string()));
     }
     let witness_len = reader.read_u32::<LittleEndian>()?;
-    log::info!("witness len {}", witness_len);
+    log::debug!("witness len {}", witness_len);
     let sec_type = reader.read_u32::<LittleEndian>()?;
     if sec_type != 2 {
         return Err(EigenError::from("invalid section type".to_string()));

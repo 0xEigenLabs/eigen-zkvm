@@ -67,7 +67,7 @@ pub fn get_simplification_style(
         (_, true, _, _) => Ok(SimplificationStyle::O1),
         (_, _, true, Ok(no_rounds)) => Ok(SimplificationStyle::O2(no_rounds)),
         (false, false, false, _) => Ok(SimplificationStyle::O1),
-        _ => Result::Err(eprintln!(
+        _ => Result::Err(log::debug!(
             "{}",
             Colour::Red.paint("invalid number of rounds")
         )),

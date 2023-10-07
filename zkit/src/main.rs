@@ -479,9 +479,9 @@ fn main() {
     };
     match exec_result {
         Err(x) => {
-            println!("execute error: {}", x);
+            log::debug!("execute error: {}", x);
             std::process::exit(400)
         }
-        _ => println!("time cost: {}", start.elapsed().as_secs_f64()),
+        _ => log::debug!("time cost: {}", start.elapsed().as_secs_f64()),
     };
 }

@@ -224,7 +224,7 @@ mod test {
     #[test]
     pub fn test_read_pil() {
         load_json::<PIL>("data/fib.pil.json").unwrap();
-        log::info!(
+        log::debug!(
             "arrays.pil.json: {:?}",
             load_json::<PIL>("data/arrays.pil.json").unwrap()
         );
