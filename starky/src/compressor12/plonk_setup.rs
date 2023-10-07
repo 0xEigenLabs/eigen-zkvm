@@ -271,9 +271,6 @@ pub fn plonk_setup_compressor(
     let mut half_rows: Vec<ParRow> = vec![];
     let plonk_constraints = &plonk_setup_info.pg;
     for (i, c) in plonk_constraints.iter().enumerate() {
-        if c.0 == 2 {
-            log::debug!("plnonk_gate index: {i}");
-        }
         if (i % 10000) == 0 {
             log::debug!("Processing constraint... {}/{}", i, plonk_constraints.len())
         }
