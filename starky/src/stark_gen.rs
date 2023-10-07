@@ -1077,6 +1077,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
+            &"273030697313060285579891744179749754319274977764".to_string(),
         )
         .unwrap();
         log::debug!("verify the proof...");
