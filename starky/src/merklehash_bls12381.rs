@@ -210,8 +210,6 @@ impl MerkleTree for MerkleTreeBLS12381 {
         self.elements = buff;
         self.width = width;
         self.height = height;
-        // log::debug!!("nodes: {:?}", self.nodes);
-        // log::debug!!("elements: {:?}", self.elements);
         log::debug!("width: {:?}", self.width);
         log::debug!("height: {:?}", self.height);
 
