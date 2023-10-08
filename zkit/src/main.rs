@@ -224,6 +224,11 @@ struct StarkProveOpt {
     circom_file: String,
     #[arg(long = "i", default_value = "zkin.json")]
     zkin: String,
+    #[arg(
+        long = "prover_addr",
+        default_value = "273030697313060285579891744179749754319274977764"
+    )]
+    prover_addr: String,
 }
 
 /// Check aggregation proof
@@ -446,6 +451,7 @@ fn main() {
             &args.cm_pols,
             &args.circom_file,
             &args.zkin,
+            &args.prover_addr,
         )
         .map_err(|e| EigenError::from(format!("stark prove error {:?}", e))),
 
