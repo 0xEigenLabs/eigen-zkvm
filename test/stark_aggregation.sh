@@ -91,7 +91,9 @@ echo "5. generate recursive2 proof"
 $ZKIT stark_prove -s ../starky/data/r2.starkStruct.json \
     -p $WORKSPACE/$RECURSIVE_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE_CIRCUIT.const \
-    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json  --norm_stage
+    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom \
+    --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json  --norm_stage \
+    --prover_addr 273030697313060285579891744179749754319274977764
 
 aggregation_end=$(date +%s)
 
