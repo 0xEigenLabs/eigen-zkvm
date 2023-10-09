@@ -5,7 +5,7 @@ use crate::bellman_ce::{Field, PrimeField, PrimeFieldRepr, ScalarEngine};
 use crate::circom_circuit::{Constraint, CustomGates, CustomGatesUses};
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::{
-    collections::HashMap,
+    collections::BTreeMap,
     io::{Error, ErrorKind, Read, Result, Seek, SeekFrom},
 };
 
@@ -82,6 +82,8 @@ fn read_constraint_vec<R: Read, E: ScalarEngine>(
             reader.read_u32::<LittleEndian>()? as usize,
             read_field::<&mut R, E>(&mut reader)?,
         ));
+        // sort by key
+        vec.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
     }
     Ok(vec)
 }
@@ -210,8 +212,8 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
     let num_sections = reader.read_u32::<LittleEndian>()?;
 
     // section type -> file offset
-    let mut section_offsets = HashMap::<u32, u64>::new();
-    let mut section_sizes = HashMap::<u32, u64>::new();
+    let mut section_offsets = BTreeMap::<u32, u64>::new();
+    let mut section_sizes = BTreeMap::<u32, u64>::new();
 
     // get file offset of each section, we donot support custom gate yet, so ignore the
     // last two sections.

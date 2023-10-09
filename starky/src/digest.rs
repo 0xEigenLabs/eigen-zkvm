@@ -1,14 +1,11 @@
 #![allow(non_snake_case)]
+use crate::field_bls12381::Fr as Fr_bls12381;
+use crate::field_bls12381::FrRepr as FrRepr_bls12381;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::traits::MTNodeType;
 use ff::*;
 use plonky::field_gl::Fr as FGL;
 use std::fmt::Display;
-
-// bn254
-// const DIGEST_SIZE: usize = 4;
-// bls12-381
-// const BLS12381_DIGEST_SIZE: usize = 6;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -84,12 +81,29 @@ pub fn to_bn128(e: &[FGL; 4]) -> Fr {
     Fr::from_repr(repr).unwrap()
 }
 
+#[inline(always)]
+pub fn to_bls12381(e: &[FGL; 4]) -> Fr_bls12381 {
+    let mut buf: Vec<u8> = vec![0u8; 32];
+    // To be optimized: FGL doesn't return bytes with specific endian.
+    buf[0..8].copy_from_slice(&e[0].as_int().to_le_bytes());
+    buf[8..16].copy_from_slice(&e[1].as_int().to_le_bytes());
+    buf[16..24].copy_from_slice(&e[2].as_int().to_le_bytes());
+    buf[24..32].copy_from_slice(&e[3].as_int().to_le_bytes());
+    let mut repr = FrRepr_bls12381::default();
+    let required_length = repr.as_ref().len() * 8;
+    buf.resize(required_length, 0);
+    repr.read_le(&buf[..]).unwrap();
+    Fr_bls12381::from_repr(repr).unwrap()
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::digest::to_bls12381;
     use crate::digest::to_bn128;
     use crate::digest::ElementDigest;
+    use crate::field_bls12381::Fr as Fr_bls12381;
     use crate::field_bn128::Fr;
-    use crate::helper::fr_to_biguint;
+    use crate::helper::{fr_bls12381_to_biguint, fr_to_biguint};
     use crate::traits::MTNodeType;
     use ff::PrimeField;
     use num_bigint::BigUint;
@@ -136,6 +150,19 @@ mod tests {
         result
     }
 
+    // for debug only
+    fn to_gl_bls12381(f: &Fr_bls12381) -> [FGL; 4] {
+        let mut f = fr_bls12381_to_biguint(f);
+        let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();
+        let mut result = [FGL::ZERO; 4];
+        for i in 0..4 {
+            let t = &f & &mask;
+            result[i] = FGL::from(t.to_u64().unwrap());
+            f = &f >> 64;
+        }
+        result
+    }
+
     #[test]
     fn test_fr_to_mont_to_element_digest_and_versus() {
         let b4: Vec<FGL> = vec![3u64, 1003, 2003, 0]
@@ -153,6 +180,32 @@ mod tests {
             2538813791642109216,
             4942736554053463004,
             3183287946373923876,
+        ]
+        .iter()
+        .map(|e| FGL::from(e.clone()))
+        .collect::<Vec<FGL>>()
+        .try_into()
+        .unwrap();
+        assert_eq!(expected, e1);
+    }
+
+    #[test]
+    fn test_fr_bls12381_to_mont_to_element_digest_and_versus() {
+        let b4: Vec<FGL> = vec![3u64, 1003, 2003, 0]
+            .iter()
+            .map(|e| FGL::from(e.clone()))
+            .collect();
+        let f1: Fr_bls12381 = to_bls12381(&b4[..].try_into().unwrap());
+
+        // to Montgomery
+        let f1 = Fr_bls12381::from_repr(f1.into_raw_repr()).unwrap();
+
+        let e1 = to_gl_bls12381(&f1);
+        let expected: [FGL; 4] = vec![
+            11023535560112151624u64,
+            10252228934103205545,
+            1509485146568764231,
+            1588734141810477816,
         ]
         .iter()
         .map(|e| FGL::from(e.clone()))

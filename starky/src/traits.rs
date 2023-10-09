@@ -17,7 +17,7 @@ pub trait MerkleTree {
         + core::fmt::Debug
         + Into<crate::serializer::Input<Self::MTNode>>;
     fn new() -> Self;
-    fn to_f3g(&self, p_be: &mut Vec<F3G>);
+    fn to_extend(&self, p_be: &mut Vec<F3G>);
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()>;
     fn get_element(&self, idx: usize, sub_idx: usize) -> FGL;
     fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<Self::BaseField>>)>;

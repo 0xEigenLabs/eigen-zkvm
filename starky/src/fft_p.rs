@@ -257,12 +257,12 @@ pub fn interpolate(
         bin = &mut tmpbuff;
     }
 
-    log::info!("Interpolating reverse....");
+    log::debug!("Interpolating reverse....");
     interpolate_bit_reverse(bout, buffsrc, n_pols, nbits);
     (bin, bout) = (bout, bin);
 
     for i in (0..nbits).step_by(blockbits) {
-        log::info!("Layer ifft {}", i);
+        log::debug!("Layer ifft {}", i);
         let s_inc = min(blockbits, nbits - i);
         bin.par_chunks_mut(blocksize * n_pols)
             .enumerate()
@@ -284,15 +284,15 @@ pub fn interpolate(
             (bin, bout) = (bout, bin);
         }
     }
-    log::info!("Interpolating prepare....");
+    log::debug!("Interpolating prepare....");
     interpolate_prepare(bin, n_pols, nbits);
-    log::info!("Bit reverse....");
+    log::debug!("Bit reverse....");
 
     bit_reverse(bout, bin, n_pols, nbitsext);
     (bin, bout) = (bout, bin);
 
     for i in (0..nbitsext).step_by(blockbitsext) {
-        log::info!("Layer fft {}", i);
+        log::debug!("Layer fft {}", i);
         let s_inc = min(blockbitsext, nbitsext - i);
         bin.par_chunks_mut(blocksizeext * n_pols)
             .enumerate()
@@ -313,7 +313,7 @@ pub fn interpolate(
             (bin, bout) = (bout, bin);
         }
     }
-    log::info!("interpolation terminated");
+    log::debug!("interpolation terminated");
 }
 
 #[cfg(test)]
@@ -373,7 +373,7 @@ mod tests {
         let mut buffout = vec![F3G::ZERO; n * n_pols];
 
         let mut sfft = FFT::new();
-        log::info!("Initializing...");
+        log::debug!("Initializing...");
         let mut pols = vec![Vec::new(); n_pols];
         for i in 0..n_pols {
             pols[i] = vec![F3G::ZERO; n];
@@ -385,14 +385,14 @@ mod tests {
         }
         let mut pols_v = vec![Vec::new(); n_pols];
         for i in 0..n_pols {
-            log::info!("legacy fft ... {}", i);
+            log::debug!("legacy fft ... {}", i);
             pols_v[i] = sfft.fft(&pols[i]);
         }
 
-        log::info!("fft...");
+        log::debug!("fft...");
         fft(&buff, n_pols, nbits, &mut buffout);
 
-        log::info!("check...");
+        log::debug!("check...");
         for i in 0..n_pols {
             for j in 0..n {
                 assert_eq!(pols_v[i][j], buffout[j * n_pols + i]);
@@ -409,7 +409,7 @@ mod tests {
         let mut buff = vec![F3G::ZERO; n * n_pols];
         let mut buffout = vec![F3G::ZERO; n * n_pols];
 
-        log::info!("Initializing...");
+        log::debug!("Initializing...");
         let mut pols = vec![vec![]; n_pols];
         for i in 0..n_pols {
             pols[i] = vec![F3G::ZERO; n];
@@ -422,14 +422,14 @@ mod tests {
         let mut sfft = FFT::new();
         let mut pols_v = vec![vec![]; n_pols];
         for i in 0..n_pols {
-            log::info!("legacy ifft ... {}", i);
+            log::debug!("legacy ifft ... {}", i);
             pols_v[i] = sfft.ifft(&pols[i]);
         }
 
-        log::info!("ifft...");
+        log::debug!("ifft...");
         ifft(&buff, n_pols, nbits, &mut buffout);
 
-        log::info!("check...");
+        log::debug!("check...");
         for i in 0..n_pols {
             for j in 0..n {
                 assert_eq!(pols_v[i][j], buffout[j * n_pols + i]);
