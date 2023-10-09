@@ -24,7 +24,7 @@ pub trait MerkleTree {
         + Into<crate::serializer::Input<Self::MTNode>>;
     type ExtendField: FieldExtension;
     fn new() -> Self;
-    fn to_fng(&self, p_be: &mut Vec<Self::ExtendField>);
+    fn to_extend(&self, p_be: &mut Vec<Self::ExtendField>);
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()>;
     fn get_element(&self, idx: usize, sub_idx: usize) -> FGL;
     fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<Self::BaseField>>)>;

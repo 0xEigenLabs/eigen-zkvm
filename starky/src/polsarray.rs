@@ -1,12 +1,11 @@
 #![allow(non_snake_case)]
 use crate::{traits::FieldExtension, types::PIL};
+use crate::errors::Result;
+use crate::f3g::F3G;
+use plonky::field_gl::Fr as FGL;
 use std::collections::HashMap;
 use std::fs::File;
-
 use std::io::{Read, Write};
-
-use crate::errors::Result;
-use plonky::field_gl::Fr as FGL;
 
 #[derive(Default, Debug)]
 pub struct PolsArray {
@@ -115,43 +114,35 @@ impl PolsArray {
         }
     }
 
-    pub fn get(&mut self, ns: &String, np: &String, i: usize, j: usize) -> FGL {
-        let namespace = self.def.get(ns);
-        if namespace.is_none() {
-            //retrun Err(EigenError::Unknown(format!("Invalid namespace:{}", ns)));
-        }
-        assert_eq!(namespace.is_some(), true);
-        let name_pol_index = namespace.unwrap().get(np);
-        assert_eq!(name_pol_index.is_some(), true);
-        if name_pol_index.is_none() {
-            //retrun Err(EigenError::Unknown(format!("Invalid name pol:{}/{}", ns, np)));
-        }
-        let idx = name_pol_index.unwrap()[i];
-        self.array[idx][j]
+    #[inline(always)]
+    pub fn get(&self, pil: &PIL, ns: &String, np: &String, i: usize, j: usize) -> FGL {
+        let ref_id = self.get_pol_id(pil, ns, np, i);
+        self.array[ref_id][j].clone()
     }
 
-    /// Set the ns.np[i][j] = value, where ns.np[i] is the (ref.id + i)-th element(column) in self.array
-    /// j would be 0 by default for non-array reference, e.g. For JS statement, constPols.Compressor.C[7][pr.row] = c[5], i is 7 and j is pr.row.
+    /// Set the ns.np[i][j] = value, where ns is the namespace, np is the state variable, i is
+    /// the i-th sub-variable of state np, and j is the i-row of np.
+    ///
+    /// e.g. For JS statement, constPols.Compressor.C[7][pr.row] = c[5], i is 7 and j is pr.row.
+    ///
     /// Before calling this function, you must ensure that this polsarray has been initialized
-    pub fn set(&mut self, ns: &String, np: &String, i: usize, j: usize, value: FGL) {
-        let namespace = self.def.get_mut(ns);
-        /*
-        if namespace.is_none() {
-            self.def.insert(ns.clone(), HashMap::new());
-            return self.set(ns, np, i, j, value);
-        }
-        */
-        let namespace = namespace.unwrap();
-        let namepols = namespace.get_mut(np);
-        /*
-        if namepols.is_none() {
-            namespace.insert(np.clone(), vec![0; self.n]);
-            return self.set(ns, np, i, j, value);
-        }
-        */
-        let namepols = namepols.unwrap();
-        let np_id = namepols[i];
-        self.array[np_id][j] = value;
+    #[inline(always)]
+    pub fn set_matrix(
+        &mut self,
+        pil: &PIL,
+        ns: &String,
+        np: &String,
+        i: usize,
+        j: usize,
+        value: FGL,
+    ) {
+        let ref_id = self.get_pol_id(pil, ns, np, i);
+        self.array[ref_id][j] = value;
+    }
+    #[inline(always)]
+    pub fn get_pol_id(&self, pil: &PIL, ns: &String, np: &String, k: usize) -> usize {
+        let pol = &pil.references[&format!("{}.{}", ns, np)];
+        pol.id + k
     }
 
     pub fn load(&mut self, fileName: &str) -> Result<()> {
@@ -164,7 +155,7 @@ impl PolsArray {
         let mut j = 0;
         let mut k = 0;
         while k < totalSize {
-            log::info!(
+            log::debug!(
                 "loading {:?}.. {:?} of {}",
                 fileName,
                 k / 1024 / 1024,
@@ -172,7 +163,7 @@ impl PolsArray {
             );
             let mut n = std::cmp::min(buff8.len() / 8, totalSize - k);
             let rs = f.read(&mut buff8[..(n * 8)])?;
-            log::info!(
+            log::debug!(
                 "read size: read size = {}, n = {}, k = {}, totalSize = {}",
                 rs,
                 n,
@@ -249,8 +240,9 @@ impl PolsArray {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::polsarray::{PolKind, PolsArray};
+    use super::*;
     use crate::types::{self, PIL};
+
     #[test]
     fn test_load_polsarray() {
         let pil = types::load_json::<PIL>("data/fib.pil.json").unwrap();

@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bn128::Fr;
 use ff::*;
 use num_bigint::BigUint;
@@ -59,6 +60,15 @@ pub fn fr_to_biguint(f: &Fr) -> BigUint {
 }
 
 #[inline(always)]
+pub fn fr_bls12381_to_biguint(f: &Fr_bls12381) -> BigUint {
+    let repr = f.into_repr();
+    let required_length = repr.as_ref().len() * 8;
+    let mut buf: Vec<u8> = Vec::with_capacity(required_length);
+    repr.write_be(&mut buf).unwrap();
+    BigUint::from_bytes_be(&buf)
+}
+
+#[inline(always)]
 pub fn biguint_to_be(f: &BigUint) -> FGL {
     let module = BigUint::from(0xFFFFFFFF00000001u64);
     let f = f % module;
@@ -68,6 +78,11 @@ pub fn biguint_to_be(f: &BigUint) -> FGL {
 #[inline(always)]
 pub fn biguint_to_fr(f: &BigUint) -> Fr {
     Fr::from_str(&f.to_string()).unwrap()
+}
+
+#[inline(always)]
+pub fn biguint_bls12381_to_fr(f: &BigUint) -> Fr_bls12381 {
+    Fr_bls12381::from_str(&f.to_string()).unwrap()
 }
 
 use std::fmt::{Debug, Display};

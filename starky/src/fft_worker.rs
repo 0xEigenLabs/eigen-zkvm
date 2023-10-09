@@ -9,7 +9,7 @@ pub fn interpolate_prepare_block<F: FieldExtension>(
     st_i: usize,
     st_n: usize,
 ) {
-    log::info!("linear interpolatePrepare start....{}/{}", st_i, st_n);
+    log::debug!("linear interpolatePrepare start....{}/{}", st_i, st_n);
     let heigth = buff.len() / width;
     let mut w = start;
     for i in 0..heigth {
@@ -18,7 +18,7 @@ pub fn interpolate_prepare_block<F: FieldExtension>(
         }
         w = w * inc;
     }
-    log::info!("linear interpolatePrepare end.... {}/{}", st_i, st_n);
+    log::debug!("linear interpolatePrepare end.... {}/{}", st_i, st_n);
 }
 
 fn _fft_block<F: FieldExtension>(
@@ -115,9 +115,9 @@ pub fn fft_block<F: FieldExtension>(
     blockbits: usize,
     layers: usize,
 ) {
-    log::info!("start block {} {}", s, start_pos);
+    log::debug!("start block {} {}", s, start_pos);
     _fft_block(
         buff, start_pos, start_pos, n_pols, nbits, s, blockbits, layers,
     );
-    log::info!("end block {} {}", s, start_pos);
+    log::debug!("end block {} {}", s, start_pos);
 }

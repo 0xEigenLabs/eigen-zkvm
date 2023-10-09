@@ -1,5 +1,5 @@
 extern crate clap;
-use clap::Parser;
+use clap::{command, Parser};
 use plonky::api::{
     aggregation_check, aggregation_prove, aggregation_verify, analyse, calculate_witness,
     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
@@ -241,6 +241,49 @@ struct AggregationCheckOpt {
 }
 
 #[derive(Parser, Debug)]
+struct Compresor12SetupOpt {
+    #[arg(long = "r", default_value = "mycircuit.verifier.r1cs")]
+    r1cs_file: String,
+    #[arg(long = "c", default_value = "mycircuit.c12.const")]
+    const_file: String, // Output file required to build the constants
+    #[arg(long = "p", default_value = "mycircuit.c12.pil")]
+    pil_file: String, // Proposed PIL
+    #[arg(long = "e", default_value = "mycircuit.c12.exec")]
+    exec_file: String, // File required to execute
+    #[arg(long, default_value = "0")]
+    force_n_bits: usize,
+}
+
+#[derive(Parser, Debug)]
+struct Compresor12ExecOpt {
+    // input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
+    #[arg(long = "i", default_value = "mycircuit.proof.zkin.json")]
+    input_file: String,
+    #[arg(long = "w", default_value = "mycircuit.verifier.wasm")]
+    wasm_file: String,
+    #[arg(long = "p", default_value = "mycircuit.c12.pil")]
+    pil_file: String,
+    // output files :  $C12_VERIFIER.exec
+    #[arg(long = "e", default_value = "mycircuit.c12.exec")]
+    exec_file: String,
+    #[arg(long = "m", default_value = "mycircuit.c12.cm")]
+    commit_file: String,
+}
+
+// generate the input1.zkin.json and input2.zkin.json into out.zkin.json
+#[derive(Parser, Debug)]
+struct JoinZkinExecOpt {
+    // #[arg(long = "starksetup", default_value = "starksetup.json")]
+    // starksetup: String,
+    #[arg(long = "zkin1", default_value = "input1.zkin.json")]
+    zkin1: String,
+    #[arg(long = "zkin2", default_value = "input2.zkin.json")]
+    zkin2: String,
+    #[arg(long = "zkinout", default_value = "out.zkin.json")]
+    zkinout: String,
+}
+
+#[derive(Parser, Debug)]
 enum Command {
     #[command(name = "setup")]
     Setup(SetupOpt),
@@ -273,6 +316,13 @@ enum Command {
 
     #[command(name = "analyse")]
     Analyse(AnalyseOpt),
+
+    #[command(name = "compressor12_setup")]
+    Compresor12Setup(Compresor12SetupOpt),
+    #[command(name = "compressor12_exec")]
+    Compresor12Exec(Compresor12ExecOpt),
+    #[command(name = "join_zkin")]
+    JoinZkin(JoinZkinExecOpt),
 }
 
 #[derive(Parser, Debug)]
@@ -387,7 +437,6 @@ fn main() {
         Command::AggregationCheck(args) => {
             aggregation_check(&args.old_proof_list, &args.old_vk, &args.new_proof)
         }
-
         Command::StarkProve(args) => stark::prove(
             &args.stark_struct,
             &args.piljson,
@@ -401,12 +450,32 @@ fn main() {
         .map_err(|e| EigenError::from(format!("stark prove error {:?}", e))),
 
         Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
+        Command::Compresor12Setup(args) => starky::compressor12_setup::setup(
+            &args.r1cs_file,
+            &args.pil_file,
+            &args.const_file,
+            &args.exec_file,
+            args.force_n_bits,
+        )
+        .map_err(|_| EigenError::from("compreesor12 setup error".to_string())),
+        Command::Compresor12Exec(args) => starky::compressor12_exec::exec(
+            &args.input_file,
+            &args.wasm_file,
+            &args.pil_file,
+            &args.exec_file,
+            &args.commit_file,
+        )
+        .map_err(|_| EigenError::from("compreesor12 exec error".to_string())),
+        Command::JoinZkin(args) => {
+            starky::zkin_join::join_zkin(&args.zkin1, &args.zkin2, &args.zkinout)
+                .map_err(|_| EigenError::from("join_zkin error".to_string()))
+        }
     };
     match exec_result {
         Err(x) => {
-            println!("execute error: {}", x);
+            log::debug!("execute error: {}", x);
             std::process::exit(400)
         }
-        _ => println!("time cost: {}", start.elapsed().as_secs_f64()),
+        _ => log::debug!("time cost: {}", start.elapsed().as_secs_f64()),
     };
 }

@@ -1,8 +1,9 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-const proof = require("../fibonacci.final/proof.json");
-const publics = require("../fibonacci.final/public.json");
+let dir = "/tmp/aggregation_bn128_fibonacci/aggregation/fibonacci.final"
+const proof = require(dir + "/proof.json");
+const publics = require(dir + "/public.json");
 
 describe("Plonk verifier test", function() {
   it("Groth16 Verify", async function() {

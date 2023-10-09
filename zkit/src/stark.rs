@@ -1,6 +1,7 @@
 use starky::errors::Result;
 use starky::{
     merklehash::MerkleTreeGL,
+    merklehash_bls12381::MerkleTreeBLS12381,
     merklehash_bn128::MerkleTreeBN128,
     pil2circom,
     polsarray::{PolKind, PolsArray},
@@ -8,6 +9,7 @@ use starky::{
     stark_setup::StarkSetup,
     stark_verify::stark_verify,
     transcript::TranscriptGL,
+    transcript_bls12381::TranscriptBLS128,
     transcript_bn128::TranscriptBN128,
     types::*,
 };
@@ -47,7 +49,8 @@ pub fn prove(
                 &stark_struct,
             )
             .unwrap();
-            println!("verify the proof...");
+
+            log::debug!("verify the proof...");
             let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
                 &starkproof,
                 &setup.const_root,
@@ -58,7 +61,7 @@ pub fn prove(
             .unwrap();
 
             assert_eq!(result, true);
-            println!("verify the proof done");
+            log::debug!("verify the proof done");
 
             let opt = pil2circom::StarkOption {
                 enable_input: false,
@@ -67,7 +70,7 @@ pub fn prove(
                 agg_stage: false,
             };
 
-            println!("generate circom");
+            log::debug!("generate circom");
             let str_ver = pil2circom::pil2circom(
                 &pil,
                 &setup.const_root,
@@ -78,7 +81,7 @@ pub fn prove(
             )?;
             let mut file = File::create(&circom_file)?;
             write!(file, "{}", str_ver)?;
-            println!("generate circom done");
+            log::debug!("generate circom done");
 
             if !norm_stage {
                 starkproof.rootC = None;
@@ -87,7 +90,63 @@ pub fn prove(
             let input = serde_json::to_string(&starkproof)?;
             let mut file = File::create(&zkin)?;
             write!(file, "{}", input)?;
-            println!("generate zkin done");
+            log::debug!("generate zkin done");
+        }
+        "BLS12381" => {
+            let mut setup =
+                StarkSetup::<MerkleTreeBLS12381>::new(&const_pol, &mut pil, &stark_struct, None)
+                    .unwrap();
+            let mut starkproof = StarkProof::<MerkleTreeBLS12381>::stark_gen::<TranscriptBLS128>(
+                &cm_pol,
+                &const_pol,
+                &setup.const_tree,
+                &setup.starkinfo,
+                &setup.program,
+                &pil,
+                &stark_struct,
+            )
+            .unwrap();
+            log::debug!("verify the proof...");
+            let result = stark_verify::<MerkleTreeBLS12381, TranscriptBLS128>(
+                &starkproof,
+                &setup.const_root,
+                &setup.starkinfo,
+                &stark_struct,
+                &mut setup.program,
+            )
+            .unwrap();
+
+            assert_eq!(result, true);
+            log::debug!("verify the proof done");
+
+            let opt = pil2circom::StarkOption {
+                enable_input: false,
+                verkey_input: norm_stage,
+                skip_main: false,
+                agg_stage: false,
+            };
+
+            log::debug!("generate circom");
+            let str_ver = pil2circom::pil2circom(
+                &pil,
+                &setup.const_root,
+                &stark_struct,
+                &mut setup.starkinfo,
+                &mut setup.program,
+                &opt,
+            )?;
+            let mut file = File::create(&circom_file)?;
+            write!(file, "{}", str_ver)?;
+            log::debug!("generate circom done");
+
+            if !norm_stage {
+                starkproof.rootC = None;
+            }
+
+            let input = serde_json::to_string(&starkproof)?;
+            let mut file = File::create(&zkin)?;
+            write!(file, "{}", input)?;
+            log::debug!("generate zkin done");
         }
         "GL" => {
             let mut setup =
@@ -102,7 +161,7 @@ pub fn prove(
                 &stark_struct,
             )
             .unwrap();
-            println!("verify the proof...");
+            log::debug!("verify the proof...");
             let result = stark_verify::<MerkleTreeGL, TranscriptGL>(
                 &starkproof,
                 &setup.const_root,
@@ -113,7 +172,7 @@ pub fn prove(
             .unwrap();
 
             assert_eq!(result, true);
-            println!("verify the proof done");
+            log::debug!("verify the proof done");
 
             let opt = pil2circom::StarkOption {
                 enable_input: false,
@@ -122,7 +181,7 @@ pub fn prove(
                 agg_stage: agg_stage,
             };
 
-            println!("generate circom");
+            log::debug!("generate circom");
             let str_ver = pil2circom::pil2circom(
                 &pil,
                 &setup.const_root,
@@ -133,7 +192,7 @@ pub fn prove(
             )?;
             let mut file = File::create(&circom_file)?;
             write!(file, "{}", str_ver)?;
-            println!("generate circom done");
+            log::debug!("generate circom done");
 
             if !norm_stage {
                 starkproof.rootC = None;
@@ -143,7 +202,7 @@ pub fn prove(
 
             let mut file = File::create(&zkin)?;
             write!(file, "{}", input)?;
-            println!("generate zkin done");
+            log::debug!("generate zkin done");
         }
         _ => panic!("Invalid hashtype {}", stark_struct.verificationHashType),
     };

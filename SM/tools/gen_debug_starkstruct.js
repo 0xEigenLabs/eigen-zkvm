@@ -24,8 +24,8 @@ async function main(){
     const extBits = typeof(argv.extbits) === "number" ?  argv.extbits : 1;
     const stepDelta = typeof(argv.stepdelta) === "number" ?  argv.stepdelta : 4;
 
-    if (starkType !== "GL" && starkType !== "BN128") {
-        throw new Error(`Invalid type ${starkType}, valid types are: GL,BN128`);
+    if (starkType !== "GL" && starkType !== "BN128" && starkType !== "BLS12381") {
+        throw new Error(`Invalid type ${starkType}, valid types are: GL,BN128,BLS12381`);
     }
 
     const pil = await compile(Fr, pilFile, null, pilConfig);

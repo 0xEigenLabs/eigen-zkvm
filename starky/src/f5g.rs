@@ -992,7 +992,7 @@ pub mod tests {
         ];
         let r_arr = F5G::batch_inverse(&arr);
         for i in 0..arr.len() {
-            println!("{} {}", arr[i].inv(), r_arr[i]);
+            log::debug!("{} {}", arr[i].inv(), r_arr[i]);
             assert_eq!(arr[i].inv().eq(&r_arr[i]), true);
         }
     }
