@@ -1,5 +1,5 @@
-use starky::errors::Result;
-use starky::{
+use crate::errors::Result;
+use crate::{
     merklehash::MerkleTreeGL,
     merklehash_bls12381::MerkleTreeBLS12381,
     merklehash_bn128::MerkleTreeBN128,
@@ -16,7 +16,7 @@ use starky::{
 use std::fs::File;
 use std::io::Write;
 
-pub fn prove(
+pub fn stark_prove(
     stark_struct: &String,
     pil_file: &String,
     norm_stage: bool,

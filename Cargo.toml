@@ -3,5 +3,6 @@ members = [
   "zkit",
   "plonky",
   "starky",
+  "dsl_compile"
 ]
 resolver = "2"
