@@ -1390,9 +1390,10 @@ template StarkVerifier() {{
             s
         ));
 
-        let e1 = (F3G::from(SHIFT.clone()))
+        let e1 = ((F3G::from(SHIFT.clone()))
             .exp(1 << stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits)
-            * F3G::from(MG.0[stark_struct.steps[s - 1].nBits].clone()).inv();
+            * F3G::from(MG.0[stark_struct.steps[s - 1].nBits].clone()))
+        .inv();
         let e0 = (F3G::from(SHIFT.clone())
             .exp(1 << (stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits)))
         .inv();
