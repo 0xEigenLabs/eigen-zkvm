@@ -72,8 +72,7 @@ pub fn stark_prove(
             prover_addr,
         ),
         _ => panic!("Invalid hashtype {}", stark_struct.verificationHashType),
-    };
-    Ok(())
+    }
 }
 
 // Adopt with different curve, eg: BN128, BLS12381, Goldilocks
