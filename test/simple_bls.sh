@@ -11,7 +11,7 @@ npm run $CIRCUIT
 
 ../target/release/eigen-zkit compile -p goldilocks -i circuits/$CIRCUIT.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
-// Circom to Stark
+# Circom to Stark
 ../target/release/eigen-zkit compressor12_setup \
     --r /tmp/$CIRCUIT.verifier.r1cs \
     --c /tmp/c12.const \
