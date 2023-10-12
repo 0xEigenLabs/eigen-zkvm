@@ -30,7 +30,7 @@ pub fn compile(config: CompilerConfig) -> Result<(), ()> {
             produce_input_log: config.produce_input_log,
             wat_flag: config.wat_flag,
         },
-        crate::VERSION,
+        crate::CIRCOM_VERSION,
     )?;
 
     if config.c_flag {

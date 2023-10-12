@@ -1,0 +1,23 @@
+[package]
+name = "dsl_compile"
+version = "0.1.0"
+edition = "2021"
+description = "Domain Specific Language(DSL) compiler: include circom compile"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ansi_term = "0.12.1"
+wast = "39.0.0"
+
+# error and log
+log = "0.4.0"
+
+## from circom
+parser = { git = "https://github.com/iden3/circom.git", version = "2.1.6" }
+program_structure = { git = "https://github.com/iden3/circom.git", version = "2.1.6" }
+type_analysis = { git = "https://github.com/iden3/circom.git", version = "2.1.5"}
+constraint_generation = { git = "https://github.com/iden3/circom.git", version = "2.1.6" }
+constraint_writers = { git = "https://github.com/iden3/circom.git", version = "2.1.5"}
+compiler = { git = "https://github.com/iden3/circom.git", version = "2.1.6"}
+dag = { git = "https://github.com/iden3/circom.git", version = "2.1.5"}

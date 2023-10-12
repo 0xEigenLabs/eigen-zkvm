@@ -11,7 +11,7 @@ npm run $CIRCUIT
 
 ../target/release/eigen-zkit compile -p goldilocks -i circuits/$CIRCUIT.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
-// Circom to Stark
+# Circom to Stark
 ../target/release/eigen-zkit compressor12_setup \
     --r /tmp/$CIRCUIT.verifier.r1cs \
     --c /tmp/c12.const \
@@ -37,6 +37,7 @@ CUR_DIR=$(cd $(dirname $0);pwd)
 CIRCUIT_NAME=c12a.verifier
 WORK_DIR=${CUR_DIR}/aggregation2
 mkdir -p $WORK_DIR/$CIRCUIT_NAME
-cp ../starkjs/circuits/c12a.verifier.zkin.json $WORK_DIR/$CIRCUIT_NAME/final_input.zkin.json
+cp ../starkjs/circuits/c12a.verifier.zkin.json $WORK_DIR/final_input.zkin.json
+cp ../starkjs/circuits/c12a.verifier.circom $WORK_DIR/
 
 bash -x ./snark_verifier.sh groth16 true bls12381 $CIRCUIT_NAME $WORK_DIR
