@@ -475,7 +475,7 @@ mod tests {
             })
             .collect::<HashMap<_, _>>();
 
-        let res = wtns.calculate_witness(inputs, false).unwrap();
+        let res = wtns.calculate_witness(inputs, true).unwrap();
         for (r, w) in res.iter().zip(case.witness) {
             assert_eq!(r, &BigInt::from_str(w).unwrap());
         }

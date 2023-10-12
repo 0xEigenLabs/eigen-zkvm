@@ -12,22 +12,9 @@ homepage = "https://eigen.cash"
 [dependencies]
 plonky = { package="plonky", path = "../plonky", version = "0.0.2" }
 starky = { package="starky", path = "../starky", version = "0.0.1" }
+dsl_compile = { package="dsl_compile", path = "../dsl_compile"}
 clap = { package = "clap", version = "4.3.4", features = ["derive"] }
 
-ansi_term = "0.12.1"
-wast = "39.0.0"
-
-serde = { version = "1.0", features = [ "derive" ] }
-serde_json = "1.0"
 # error and log
 log = "0.4.0"
 env_logger = "0.10"
-
-## from circom
-parser = { git = "https://github.com/iden3/circom.git", version = "2.1.6" }
-program_structure = { git = "https://github.com/iden3/circom.git", version = "2.1.6" }
-type_analysis = { git = "https://github.com/iden3/circom.git", version = "2.1.5"}
-constraint_generation = { git = "https://github.com/iden3/circom.git", version = "2.1.6" }
-constraint_writers = { git = "https://github.com/iden3/circom.git", version = "2.1.5"}
-compiler = { git = "https://github.com/iden3/circom.git", version = "2.1.6"}
-dag = { git = "https://github.com/iden3/circom.git", version = "2.1.5"}

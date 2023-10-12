@@ -181,6 +181,7 @@ pub struct StarkProof<M: MerkleTree> {
     pub publics: Vec<M::ExtendField>,
     pub rootC: Option<M::MTNode>,
     pub stark_struct: StarkStruct,
+    pub prover_addr: String,
 }
 
 impl<'a, M: MerkleTree> StarkProof<M> {
@@ -192,6 +193,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         program: &Program,
         _pil: &PIL,
         stark_struct: &StarkStruct,
+        prover_addr: &String,
     ) -> Result<StarkProof<M>> {
         let mut ctx = StarkContext::<M::ExtendField>::default();
         //log::debug!("starkinfo: {}", starkinfo);
@@ -550,6 +552,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             evals: ctx.evals.clone(),
             publics: ctx.publics.clone(),
             stark_struct: stark_struct.clone(),
+            prover_addr: prover_addr.clone(),
         })
     }
 
@@ -1093,6 +1096,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
+            &"273030697313060285579891744179749754319274977764".to_string(),
         )
         .unwrap();
         log::debug!("verify the proof...");
@@ -1128,6 +1132,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
+            &"273030697313060285579891744179749754319274977764".to_string(),
         )
         .unwrap();
 
@@ -1162,6 +1167,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
+            &"273030697313060285579891744179749754319274977764".to_string(),
         )
         .unwrap();
         log::debug!("verify the proof...");
@@ -1194,6 +1200,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
+            &"273030697313060285579891744179749754319274977764".to_string(),
         )
         .unwrap();
         log::debug!("verify the proof...");
@@ -1226,6 +1233,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
+            &"273030697313060285579891744179749754319274977764".to_string(),
         )
         .unwrap();
         log::debug!("verify the proof...");
