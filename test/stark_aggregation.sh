@@ -13,7 +13,6 @@ CUR_DIR=$(cd $(dirname $0);pwd)
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 CIRCUIT="fibonacci"
 PILEXECJS="fibonacci/fibonacci.js"
-RUNDIR="${CUR_DIR}/../starkjs"
 
 first_run=${1-no}
 CURVE=${2-bn128}
@@ -91,7 +90,7 @@ echo "5. generate recursive2 proof"
 $ZKIT stark_prove -s ../starky/data/r2.starkStruct.json \
     -p $WORKSPACE/$RECURSIVE_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE_CIRCUIT.const \
-    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom \
+    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm -c $WORKSPACE/circuits/$RECURSIVE2_CIRCUIT.circom \
     --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json  --norm_stage \
     --prover_addr 273030697313060285579891744179749754319274977764
 
@@ -102,7 +101,7 @@ final_start=$(date +%s)
 echo " ==> final recursive stage <== "
 if [ ! -f "$WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs" ]; then
     echo "1. compile circuit and generate r1cs and wasm"
-    ${ZKIT} compile -p goldilocks -i $RUNDIR/circuits/$RECURSIVE2_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE 
+    ${ZKIT} compile -p goldilocks -i $WORKSPACE/circuits/$RECURSIVE2_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE 
 else
     echo "1.no need compile circom : "$WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs" already generated"
 fi
@@ -135,7 +134,7 @@ fi
 $ZKIT stark_prove -s $STARK_STRUCT \
     -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
-    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $RUNDIR/circuits/$FINAL_CIRCUIT.circom --i $WORKSPACE/aggregation/$FINAL_CIRCUIT/final_input.zkin.json  --norm_stage
+    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $WORKSPACE/circuits/$FINAL_CIRCUIT.circom --i $WORKSPACE/aggregation/$FINAL_CIRCUIT/final_input.zkin.json  --norm_stage
 
 final_end=$(date +%s)
 
