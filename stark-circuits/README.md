@@ -113,16 +113,15 @@ the struct `ElementDigest` stands for the value of node in Merkle tree. For BN25
 ### Stark Genreation 
 
 - [x] F5G
-- [ ] linearhash_bls12381
-- [ ] merkle_hash_bls12381
-- [ ] transcripts_bls12381
-- [x] poseidon_bls12381 
-- [ ] update stark_setup,stark_gen,stark_verify to support bls12-381 curve 
-- [ ] update zkit main
+- [x] linearhash_bls12381
+- [x] merkle_hash_bls12381
+- [x] transcripts_bls12381
+- [x] poseidon_bls12381
+- [x] update stark_setup,stark_gen,stark_verify to support bls12-381 curve 
+- [x] update zkit main
 
 ### Stark Verify Circuit 
-- [ ] merklehash.circom 
+- [x] merklehash.circom 
 - [x] poseidon.circom for bls12381
-- [ ] linerhash.circom 
-- [ ] BN1toGL5.circom 
-- [ ] stark_verify.circom 
+- [x] linerhash.circom 
+- [x] stark_verify.circom 
