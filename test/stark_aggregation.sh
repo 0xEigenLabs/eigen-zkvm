@@ -134,7 +134,7 @@ fi
 $ZKIT stark_prove -s $STARK_STRUCT \
     -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
-    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $WORKSPACE/circuits/$FINAL_CIRCUIT.circom --i $WORKSPACE/aggregation/$FINAL_CIRCUIT/final_input.zkin.json  --norm_stage
+    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $WORKSPACE/aggregation/$FINAL_CIRCUIT.circom --i $WORKSPACE/aggregation/final_input.zkin.json  --norm_stage
 
 final_end=$(date +%s)
 

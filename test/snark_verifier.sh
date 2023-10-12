@@ -20,8 +20,8 @@ CIRCUIT_NAME=$4
 WORK_DIR=$5/$CIRCUIT_NAME
 mkdir -p $WORK_DIR
 
-SNARK_CIRCOM=$WORK_DIR/$CIRCUIT_NAME.circom
-SNARK_INPUT=$WORK_DIR/final_input.zkin.json 
+SNARK_CIRCOM=$5/$CIRCUIT_NAME.circom
+SNARK_INPUT=$5/final_input.zkin.json 
 
 RUNDIR="${CUR_DIR}/../starkjs"
 
@@ -35,9 +35,9 @@ ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 if [ $first_run = "true" ]; then 
     echo "compile circom and generate wasm and r1cs"
     if [ $CURVE = "bn128" ]; then
-        $ZKIT compile -i $CUR_DIR/../starkjs/circuits/$CIRCUIT_NAME.circom -p $CURVE  -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
+        $ZKIT compile -i $SNARK_CIRCOM -p $CURVE  -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
     elif [ $CURVE = "bls12381" ]; then
-        $ZKIT compile -i $CUR_DIR/../starkjs/circuits/$CIRCUIT_NAME.circom -p $CURVE -l "../stark-circuits/circuits" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
+        $ZKIT compile -i $SNARK_CIRCOM -p $CURVE -l "../stark-circuits/circuits" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
     fi
     # cp $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm /tmp/aggregation/circuits.wasm
 fi 
