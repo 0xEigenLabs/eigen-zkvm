@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
-use crate::{traits::FieldExtension, types::PIL};
 use crate::errors::Result;
 use crate::f3g::F3G;
+use crate::{traits::FieldExtension, types::PIL};
 use plonky::field_gl::Fr as FGL;
 use std::collections::HashMap;
 use std::fs::File;

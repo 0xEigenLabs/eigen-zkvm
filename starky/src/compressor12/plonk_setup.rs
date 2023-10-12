@@ -710,7 +710,10 @@ pub fn plonk_setup_compressor(
                 w * ks[j - 1],
             );
         }
-        w = w * (F3G::from(crate::constant::MG.0[plonk_setup_info.n_bits]).clone().to_be());
+        w = w
+            * (F3G::from(crate::constant::MG.0[plonk_setup_info.n_bits])
+                .clone()
+                .to_be());
     }
 
     #[derive(Debug)]
