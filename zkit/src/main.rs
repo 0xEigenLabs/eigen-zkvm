@@ -1,22 +1,14 @@
 extern crate clap;
 use clap::{command, Parser};
+use dsl_compile::circom_compiler;
 use plonky::api::{
     aggregation_check, aggregation_prove, aggregation_verify, analyse, calculate_witness,
     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
-    generate_verifier, prove, setup, verify,
+    generate_verifier, prove as plonky_prove, setup, verify,
 };
 use plonky::errors::EigenError;
+use starky::prove::stark_prove;
 use std::time::Instant;
-
-mod compilation_user;
-mod execution_user;
-mod input_user;
-mod parser_user;
-mod stark;
-mod type_analysis_user;
-
-/// Align with https://github.com/iden3/circom/blob/master/circom/Cargo.toml#L3
-const VERSION: &'static str = "2.1.2";
 
 /// Trust setup for Plonk
 #[derive(Parser, Debug)]
@@ -74,7 +66,7 @@ struct CalculateWitnessOpt {
 
 /// Prove by Plonk
 #[derive(Debug, Parser)]
-struct ProveOpt {
+struct PlonkProveOpt {
     #[arg(short, required = true)]
     circuit_file: String,
     #[arg(short)]
@@ -298,7 +290,7 @@ enum Command {
     #[command(name = "compile")]
     Compile(CompilierOpt),
     #[command(name = "prove")]
-    Prove(ProveOpt),
+    PlonkProve(PlonkProveOpt),
     #[command(name = "verify")]
     Verify(VerifyOpt),
     #[command(name = "export_verification_key")]
@@ -337,76 +329,26 @@ struct Cli {
     command: Command,
 }
 
-pub fn compile(opt: CompilierOpt) -> Result<(), ()> {
-    use compilation_user::CompilerConfig;
-    use execution_user::ExecutionConfig;
-    let fullopt = opt.full_simplification.len() > 0;
-    let o2_arg = opt.full_simplification.as_str();
-    let o_style = input_user::get_simplification_style(
-        opt.no_simplification,
-        opt.reduced_simplification,
-        fullopt,
-        &o2_arg,
-    )?;
-    let input = std::path::PathBuf::from(opt.input);
-    let output = std::path::PathBuf::from(opt.output);
-
-    let user_input =
-        input_user::Input::new(input, output, o_style, opt.prime, opt.link_directories)?;
-    let mut program_archive = parser_user::parse_project(&user_input)?;
-
-    type_analysis_user::analyse_project(&mut program_archive)?;
-
-    let config = ExecutionConfig {
-        no_rounds: user_input.no_rounds(),
-        flag_p: user_input.parallel_simplification_flag(),
-        flag_s: user_input.reduced_simplification_flag(),
-        flag_f: user_input.unsimplified_flag(),
-        flag_verbose: user_input.flag_verbose(),
-        inspect_constraints_flag: user_input.inspect_constraints_flag(),
-        r1cs_flag: user_input.r1cs_flag(),
-        json_constraint_flag: user_input.json_constraints_flag(),
-        json_substitution_flag: user_input.json_substitutions_flag(),
-        sym_flag: user_input.sym_flag(),
-        sym: user_input.sym_file().to_string(),
-        r1cs: user_input.r1cs_file().to_string(),
-        json_constraints: user_input.json_constraints_file().to_string(),
-        prime: user_input.get_prime(),
-    };
-    let circuit = execution_user::execute_project(program_archive, config)?;
-    let compilation_config = CompilerConfig {
-        vcp: circuit,
-        debug_output: user_input.print_ir_flag(),
-        c_flag: user_input.c_flag(),
-        wasm_flag: user_input.wasm_flag(),
-        wat_flag: user_input.wat_flag(),
-        js_folder: user_input.js_folder().to_string(),
-        wasm_name: user_input.wasm_name().to_string(),
-        c_folder: user_input.c_folder().to_string(),
-        c_run_name: user_input.c_run_name().to_string(),
-        c_file: user_input.c_file().to_string(),
-        dat_file: user_input.dat_file().to_string(),
-        wat_file: user_input.wat_file().to_string(),
-        wasm_file: user_input.wasm_file().to_string(),
-        produce_input_log: user_input.main_inputs_flag(),
-    };
-    compilation_user::compile(compilation_config)?;
-    Result::Ok(())
-}
-
 fn main() {
     let args = Cli::parse();
     env_logger::init();
     let start = Instant::now();
     let exec_result = match args.command {
         Command::Setup(args) => setup(args.power, &args.srs_monomial_form),
-        Command::Compile(args) => {
-            compile(args).map_err(|_| EigenError::from("compile error".to_string()))
-        }
+        Command::Compile(args) => circom_compiler(
+            args.input,
+            args.prime,
+            args.full_simplification,
+            args.link_directories,
+            args.output,
+            args.no_simplification,
+            args.reduced_simplification,
+        )
+        .map_err(|_| EigenError::from("compile error".to_string())),
         Command::CalculateWitness(args) => {
             calculate_witness(&args.wasm_file, &args.input_json, &args.output)
         }
-        Command::Prove(args) => prove(
+        Command::PlonkProve(args) => plonky_prove(
             &args.circuit_file,
             &args.witness,
             &args.srs_monomial_form,
@@ -442,7 +384,7 @@ fn main() {
         Command::AggregationCheck(args) => {
             aggregation_check(&args.old_proof_list, &args.old_vk, &args.new_proof)
         }
-        Command::StarkProve(args) => stark::prove(
+        Command::StarkProve(args) => stark_prove(
             &args.stark_struct,
             &args.piljson,
             args.norm_stage,
