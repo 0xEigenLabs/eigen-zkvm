@@ -15,7 +15,7 @@ will generate the PIL json, Commitment Polynomial file and Constant Polynomial f
 
 ```bash
 export CIRCUIT=fib
-../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
+RUST_LOG=debug ../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
     -p /tmp/$CIRCUIT.pil.json \
     --o /tmp/$CIRCUIT.const \
     --m /tmp/$CIRCUIT.cm -c circuits/$CIRCUIT.verifier.circom --i circuits/$CIRCUIT.verifier.zkin.json
@@ -24,14 +24,14 @@ export CIRCUIT=fib
 ### Recursive Layer: FRI Proof
 ```bash
 export CIRCUIT=fib
-../target/release/eigen-zkit compile -p goldilocks -i circuits/$CIRCUIT.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
+RUST_LOG=debug ../target/release/eigen-zkit compile -p goldilocks -i circuits/$CIRCUIT.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
 # Circom to Stark  
-../target/release/eigen-zkit compressor12_setup  --r /tmp/$CIRCUIT.verifier.r1cs --c /tmp/c12.const  --p /tmp/c12.pil   --e /tmp/c12.exec
+RUST_LOG=debug ../target/release/eigen-zkit compressor12_setup  --r /tmp/$CIRCUIT.verifier.r1cs --c /tmp/c12.const  --p /tmp/c12.pil   --e /tmp/c12.exec
 
-../target/release/eigen-zkit compressor12_exec --w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm --i circuits/$CIRCUIT.verifier.zkin.json --p /tmp/c12.pil  --e /tmp/c12.exec --m /tmp/c12.cm
+RUST_LOG=debug ../target/release/eigen-zkit compressor12_exec --w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm --i circuits/$CIRCUIT.verifier.zkin.json --p /tmp/c12.pil  --e /tmp/c12.exec --m /tmp/c12.cm
 
-../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.bn128.json \
+RUST_LOG=debug ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.bn128.json \
     -p /tmp/c12.pil.json \
     --o /tmp/c12.const \
     --m /tmp/c12.cm -c circuits/circuit.circom --i circuits/circuit.zkin.json --norm_stage
