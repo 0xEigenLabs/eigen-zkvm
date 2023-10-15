@@ -68,7 +68,7 @@ if [ "$GENERATE_PROOF_TYPE" = "stark" ]; then
     ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json \
         -p $WORKSPACE/$C12_VERIFIER.pil.json \
         --o $WORKSPACE/$C12_VERIFIER.const \
-        --m $WORKSPACE/$C12_VERIFIER.cm -c $WORKSPACE/circuits/$RECURSIVE1_VERIFIER.circom --i $WORKSPACE/aggregation/$RECURSIVE1_VERIFIER/input.zkin.json --agg_stage --norm_stage 
+        --m $WORKSPACE/$C12_VERIFIER.cm -c $WORKSPACE/circuits/$RECURSIVE1_VERIFIER.circom --i $WORKSPACE/aggregation/$RECURSIVE1_VERIFIER/input.zkin.json --norm_stage
 
 else 
     echo "Generate snark proof"
