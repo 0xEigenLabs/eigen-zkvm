@@ -20,6 +20,9 @@ pub mod r1cs_file;
 pub mod reader;
 pub mod witness;
 
+pub mod groth16;
+pub mod snark;
+
 #[cfg(not(target_arch = "wasm32"))]
 pub mod aggregation;
 
