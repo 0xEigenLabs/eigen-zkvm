@@ -81,7 +81,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     }
     let q_z = q * ctx.Z;
 
-    if !res.eq(&q_z) {
+    if !&res._eq(&q_z) {
         // CHeck Eq.30 in estark paper
         log::error!("Q != C * P: res {} != q_z {}", res, q_z);
         return Ok(false);

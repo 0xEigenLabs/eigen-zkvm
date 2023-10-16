@@ -91,7 +91,7 @@ impl FieldExtension for F3G {
     }
 
     #[inline]
-    fn mul_scalar(self, b: usize) -> Self {
+    fn mul_scalar(&self, b: usize) -> Self {
         let b = Fr::from(b as u64);
         let elems = self.as_elements();
         if self.dim == 1 {
@@ -102,7 +102,7 @@ impl FieldExtension for F3G {
     }
 
     #[inline]
-    fn eq(self, rhs: &Self) -> bool {
+    fn _eq(&self, rhs: &Self) -> bool {
         if self.dim == rhs.dim {
             self.cube == rhs.cube
         } else {
@@ -117,7 +117,7 @@ impl FieldExtension for F3G {
     }
 
     #[inline]
-    fn gt(self, rhs: &Self) -> bool {
+    fn gt(&self, rhs: &Self) -> bool {
         assert_eq!(self.dim, rhs.dim); // FIXME: align with JS
         let les = self.as_elements();
         let res = rhs.as_elements();
@@ -135,22 +135,22 @@ impl FieldExtension for F3G {
     }
 
     #[inline]
-    fn geq(self, rhs: &Self) -> bool {
-        self.eq(rhs) || self.gt(rhs)
+    fn geq(&self, rhs: &Self) -> bool {
+        self._eq(rhs) || self.gt(rhs)
     }
 
     #[inline]
-    fn lt(self, rhs: &Self) -> bool {
+    fn lt(&self, rhs: &Self) -> bool {
         !self.geq(rhs)
     }
 
     #[inline]
-    fn leq(self, rhs: &Self) -> bool {
+    fn leq(&self, rhs: &Self) -> bool {
         !self.gt(rhs)
     }
 
     #[inline]
-    fn exp(self, e_: usize) -> Self {
+    fn exp(&self, e_: usize) -> Self {
         let mut e = e_;
         if e == 0 {
             return Self::ONE;
@@ -170,11 +170,11 @@ impl FieldExtension for F3G {
             return Self::ONE;
         }
 
-        let mut res = self;
+        let mut res = F3G::from(*self);
         for i in (0..bits.len() - 1).rev() {
             res.square();
             if bits[i] == 1 {
-                res = res.mul(self);
+                res = res.mul(*self);
             }
         }
         res
@@ -192,7 +192,7 @@ impl FieldExtension for F3G {
         self.as_elements()[0].as_int()
     }
 
-    fn inv(self) -> Self {
+    fn inv(&self) -> Self {
         match self.dim {
             3 => {
                 let a = self.cube;
@@ -292,8 +292,8 @@ impl plonky::Field for F3G {
     #[inline(always)]
     fn is_zero(&self) -> bool {
         match self.dim {
-            1 => self.eq(&Self::ZERO),
-            _ => self.eq(&Self::zero()),
+            1 => self._eq(&Self::ZERO),
+            _ => self._eq(&Self::zero()),
         }
     }
 
@@ -714,7 +714,7 @@ pub mod tests {
 
         let e12 = F3G::new(Fr::from(2u64), Fr::from(2u64), Fr::from(3u64));
 
-        assert_eq!(e1.eq(&e11), true);
+        assert_eq!(e1._eq(&e11), true);
         assert_eq!(e1.lt(&e12), true);
     }
 
@@ -728,7 +728,7 @@ pub mod tests {
             Fr::from(4476495173063158826u64),
         );
 
-        assert_eq!(e1.exp(100).eq(&expected), true);
+        assert_eq!(e1.exp(100)._eq(&expected), true);
     }
 
     #[test]
@@ -749,7 +749,7 @@ pub mod tests {
         let r_arr = F3G::batch_inverse(&arr);
         for i in 0..arr.len() {
             log::debug!("{} {}", arr[i].inv(), r_arr[i]);
-            assert_eq!(arr[i].inv().eq(&r_arr[i]), true);
+            assert_eq!(arr[i].inv()._eq(&r_arr[i]), true);
         }
     }
 
@@ -760,5 +760,24 @@ pub mod tests {
         let b = a.inv();
         let c = a.mul(b);
         assert_eq!(c, F3G::one());
+    }
+
+    #[test]
+    fn test_f3g_is_zero() {
+        let a = &F3G::new(Fr::ZERO, Fr::ZERO, Fr::ZERO);
+        let b = a.is_zero();
+        assert_eq!(b, true);
+
+        let a = &F3G::new(Fr::ZERO, Fr::ONE, Fr::ZERO);
+        let b = a.is_zero();
+        assert_eq!(b, false);
+
+        let a = &F3G::from(Fr::ZERO);
+        let b = a.is_zero();
+        assert_eq!(b, true);
+
+        let a = &F3G::from(Fr::ONE);
+        let b = a.is_zero();
+        assert_eq!(b, false);
     }
 }

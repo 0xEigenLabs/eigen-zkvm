@@ -73,7 +73,7 @@ impl FRI {
             let special_x = transcript.get_field();
 
             let mut sinv = shift_inv;
-            let wi = F::inv(F::from(MG.0[pol_bits]));
+            let wi = F::inv(&F::from(MG.0[pol_bits]));
 
             for g in 0..(pol.len() / n_x) {
                 if si == 0 {
@@ -214,18 +214,18 @@ impl FRI {
                 };
 
                 let pgroup_c = standard_fft.ifft(&pgroup_e);
-                let sinv = F::inv(shift * (F::from(MG.0[pol_bits]).exp(ys[i])));
+                let sinv = F::inv(&(shift * (F::from(MG.0[pol_bits]).exp(ys[i]))));
                 let ev = eval_pol(&pgroup_c, &(special_x[si] * sinv));
 
                 if si < self.steps.len() - 1 {
                     let next_n_groups = 1 << self.steps[si + 1].nBits;
                     let group_idx = ys[i] / next_n_groups;
-                    if !ev.eq(&get3(&proof.queries[si + 1].pol_queries[i][0].0, group_idx)) {
+                    if !ev._eq(&get3(&proof.queries[si + 1].pol_queries[i][0].0, group_idx)) {
                         log::error!("eq query failed si:{}", si + 1);
                         return Ok(false);
                     }
                 } else {
-                    if !ev.eq(&proof.last[ys[i]]) {
+                    if !ev._eq(&proof.last[ys[i]]) {
                         log::error!("eq last failed si:{}, {}!={}", si, ev, &proof.last[ys[i]]);
                         return Ok(false);
                     }

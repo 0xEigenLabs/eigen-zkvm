@@ -75,7 +75,7 @@ pub fn inv_bit_reverse<F: FieldExtension>(
     nbits: usize,
 ) {
     let n = 1 << nbits;
-    let n_inv = F::inv(F::from(n));
+    let n_inv = F::inv(&F::from(n));
     for i in 0..n {
         let ri = BR(i, nbits);
         let rii = (n - ri) % n;
@@ -87,7 +87,7 @@ pub fn inv_bit_reverse<F: FieldExtension>(
 
 pub fn interpolate_prepare<F: FieldExtension>(buff: &mut Vec<F>, n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
-    let inv_n = F::inv(F::from(n));
+    let inv_n = F::inv(&F::from(n));
     let mut n_per_thread_f = (n - 1) / get_max_workers() + 1;
     let max_corrected = MAX_OPS_PER_THREAD / n_pols;
     let min_corrected = MIN_OPS_PER_THREAD / n_pols;

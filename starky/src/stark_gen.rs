@@ -369,7 +369,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
 
         let mut cur_s = M::ExtendField::ONE;
-        let shift_in = (M::ExtendField::inv(M::ExtendField::from(SHIFT.clone()))).exp(ctx.N);
+        let shift_in = (M::ExtendField::inv(&M::ExtendField::from(SHIFT.clone()))).exp(ctx.N);
         for p in 0..starkinfo.q_deg {
             for i in 0..ctx.N {
                 for k in 0..starkinfo.q_dim {
@@ -584,7 +584,7 @@ pub fn build_Zh_Inv<T: FieldExtension>(
     }
     let mut ZHInv = vec![T::ZERO; 1 << extend_bits];
     for i in 0..(1 << extend_bits) {
-        ZHInv[i] = T::inv(sn * w - T::ONE);
+        ZHInv[i] = T::inv(&(sn * w - T::ONE));
         w = w * T::from(MG.0[extend_bits].clone());
     }
     Box::new(move |i: usize| ZHInv[(i + offset) % ZHInv.len()].clone())
@@ -659,7 +659,7 @@ fn calculate_Z<F: FieldExtension>(num: Vec<F>, den: Vec<F>) -> Vec<F> {
     }
 
     let check_val = z[N - 1] * (num[N - 1] * den_inv[N - 1]);
-    assert_eq!(check_val.eq(&F::one()), true);
+    assert_eq!(check_val._eq(&F::one()), true);
     z
 }
 
