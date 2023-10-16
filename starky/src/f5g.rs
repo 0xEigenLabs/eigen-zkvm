@@ -192,9 +192,79 @@ impl FieldExtension for F5G {
         res
     }
 
+    // Invert this element. If this value is zero, then zero is returned.
+    // Inv() function refers to the implementation of ecgfp5: https://github.com/pornin/ecgfp5/blob/ce059c6d1e1662db437aecbf3db6bb67fe63c716/python/ecGFp5.py#L751
     #[inline]
     fn inv(&self) -> Self {
-        self._inv()
+        match self.dim {
+            5 => {
+                // We are using the method first described by Itoh and Tsujii.
+                //
+                // Let r = 1 + p + p^2 + p^3 + p^4.
+                // We have: p^5 - 1 = (p - 1)*r
+                // For x != 0, we then have:
+                //   x^(p^5-1) = (x^r)^(p-1)
+                // Since x^(p^5-1) = 1 (the group of invertible elements has
+                // order p^5-1), obtain that x^r is a root of the polynomial
+                // X^(p-1) - 1. However, all non-zero elements of GF(p) are
+                // roots of X^(p-1) - 1, and there are p-1 non-zero elements in
+                // GF(p), and a polynomial of degre p-1 cannot have more than
+                // p-1 roots in a field. Therefore, the roots of X^(p-1) - 1
+                // are _exactly_ the elements of GF(p). It follows that x^r is
+                // in GF(p), for any x != 0 in GF(p^5) (this also holds for x = 0).
+                //
+                // Given x != 0, we can write:
+                //   1/x = x^(r-1) / x^r
+                // Thus, we only need to compute x^(r-1) (in GF(p^5)), then x^r
+                // (by multiplying x with x^(r-1)), then invert x^r in GF(p),
+                // and multiply x^(r-1) by the inverse of x^r.
+                //
+                // We can compute efficiently x^(r-1) by using the Frobenius
+                // operator: in GF(p^5), raising a value to the power p boils
+                // down to multiplying four of the coefficients by precomputed
+                // constants.
+                // If we defined phi1(x) = x^p and phi2(x) = phi1(phi1(x)), then:
+                //   x^(r-1) = x^(p + p^2 + p^3 + p^4)
+                //           = x^(p + p^2) * phi2(x^(p + p^2))
+                //           = phi1(x) * phi1(phi1(x)) * phi2(phi1(x) * phi1(phi1(x)))
+                // which only needs three applications of phi1() or phi2(), and
+                // two multiplications in GF(p^5).
+
+                // t0 <- a^p
+                let t0 = self.frob1();
+
+                // t1 <- a^(p + p^2)
+                let t1 = t0.mul(t0.frob1());
+
+                // t2 <- a^(p + p^2 + p^3 + p^4)
+                let t2 = t1.mul(t1.frob2());
+
+                //compute x^r =t2 * x
+                let a = self.cube;
+                let b = t2.cube;
+                // Let r = 1 + p + p^2 + p^3 + p^4. We have a^r = a * t2. Also,
+                // (a^r)^(p-1) = a^(p^5-1) = 1, so a^r is in GF(p) (b^(p-1) = 1 for
+                // all non-zero elements in GF(p), and that's p-1 solutions to a
+                // polynomial of degree p-1, so it works in the other direction too:
+                // all values b such that b^(p-1) = 1 must be in GF(p)). Thus,
+                // We can compute a^r as only the low coefficient of a*t2 (into t3).
+                let mut t3 = a[0] * b[0]
+                    + Fr::from(3) * (a[1] * b[4] + a[2] * b[3] + a[3] * b[2] + a[4] * b[1]);
+                if t3.is_zero() {
+                    // If input 'a' is zero then we will divide 0 by 0, which is not
+                    // defined; we need a small corrective step to make divisor t3
+                    // equal to 1 in that case (the final output will still be zero,
+                    // since in such a case t2 = (0,0,0,0,0)).
+                    t3 = Fr::ONE;
+                }
+                let t4 = t3.inverse().unwrap();
+                t2.mul(Self::from(t4))
+            }
+            1 => Self::from(self.to_be().inverse().unwrap()),
+            _ => {
+                panic!("Invalid dim");
+            }
+        }
     }
 
     #[inline]
@@ -208,27 +278,6 @@ impl FieldExtension for F5G {
         let p = elements.as_ptr();
         let len = elements.len() * Self::ELEMENT_BYTES;
         unsafe { slice::from_raw_parts(p as *const u8, len) }
-    }
-
-    #[inline]
-    fn batch_inverse(elems: &[Self]) -> Vec<Self> {
-        if elems.len() == 0 {
-            return vec![];
-        }
-
-        let mut tmp: Vec<Self> = vec![Self::ZERO; elems.len()];
-        tmp[0] = elems[0];
-        for i in 1..elems.len() {
-            tmp[i] = elems[i] * (tmp[i - 1]);
-        }
-        let mut z = tmp[tmp.len() - 1].inv();
-        let mut res: Vec<Self> = vec![Self::ZERO; elems.len()];
-        for i in (1..elems.len()).rev() {
-            res[i] = z * tmp[i - 1];
-            z = z * elems[i];
-        }
-        res[0] = z;
-        res
     }
 
     fn as_bytes(&self) -> &[u8] {
@@ -636,7 +685,7 @@ impl From<[u8; 8]> for F5G {
 impl F5G {
     // Frobenius operator (raise this value to the power p).
     #[inline]
-    fn frob1(self) -> Self {
+    fn frob1(&self) -> Self {
         // Since z^5 = 3 in the field, and p = 1 mod 5, we have:
         // (z^i)^p = 3^(i*floor(p/5))*z^i
         // The Frobenius operator is a field automorphism, so we just
@@ -655,7 +704,7 @@ impl F5G {
 
     // Frobenius operator, twice (raise this value to the power p^2).
     #[inline]
-    fn frob2(self) -> Self {
+    fn frob2(&self) -> Self {
         assert_eq!(self.dim, 5);
         let c0 = self.cube[0];
         let c1 = self.cube[1] * Fr::from(15820824984080659046u64); // 9^(floor(p/5))
@@ -667,86 +716,12 @@ impl F5G {
             dim: 5,
         }
     }
-
-    // Invert this element. If this value is zero, then zero is returned.
-    // Inv() function refers to the implementation of ecgfp5: https://github.com/pornin/ecgfp5/blob/ce059c6d1e1662db437aecbf3db6bb67fe63c716/python/ecGFp5.py#L751
-    pub fn _inv(self) -> Self {
-        match self.dim {
-            5 => {
-                // We are using the method first described by Itoh and Tsujii.
-                //
-                // Let r = 1 + p + p^2 + p^3 + p^4.
-                // We have: p^5 - 1 = (p - 1)*r
-                // For x != 0, we then have:
-                //   x^(p^5-1) = (x^r)^(p-1)
-                // Since x^(p^5-1) = 1 (the group of invertible elements has
-                // order p^5-1), obtain that x^r is a root of the polynomial
-                // X^(p-1) - 1. However, all non-zero elements of GF(p) are
-                // roots of X^(p-1) - 1, and there are p-1 non-zero elements in
-                // GF(p), and a polynomial of degre p-1 cannot have more than
-                // p-1 roots in a field. Therefore, the roots of X^(p-1) - 1
-                // are _exactly_ the elements of GF(p). It follows that x^r is
-                // in GF(p), for any x != 0 in GF(p^5) (this also holds for x = 0).
-                //
-                // Given x != 0, we can write:
-                //   1/x = x^(r-1) / x^r
-                // Thus, we only need to compute x^(r-1) (in GF(p^5)), then x^r
-                // (by multiplying x with x^(r-1)), then invert x^r in GF(p),
-                // and multiply x^(r-1) by the inverse of x^r.
-                //
-                // We can compute efficiently x^(r-1) by using the Frobenius
-                // operator: in GF(p^5), raising a value to the power p boils
-                // down to multiplying four of the coefficients by precomputed
-                // constants.
-                // If we defined phi1(x) = x^p and phi2(x) = phi1(phi1(x)), then:
-                //   x^(r-1) = x^(p + p^2 + p^3 + p^4)
-                //           = x^(p + p^2) * phi2(x^(p + p^2))
-                //           = phi1(x) * phi1(phi1(x)) * phi2(phi1(x) * phi1(phi1(x)))
-                // which only needs three applications of phi1() or phi2(), and
-                // two multiplications in GF(p^5).
-
-                // t0 <- a^p
-                let t0 = self.frob1();
-
-                // t1 <- a^(p + p^2)
-                let t1 = t0.mul(t0.frob1());
-
-                // t2 <- a^(p + p^2 + p^3 + p^4)
-                let t2 = t1.mul(t1.frob2());
-
-                //compute x^r =t2 * x
-                let a = self.cube;
-                let b = t2.cube;
-                // Let r = 1 + p + p^2 + p^3 + p^4. We have a^r = a * t2. Also,
-                // (a^r)^(p-1) = a^(p^5-1) = 1, so a^r is in GF(p) (b^(p-1) = 1 for
-                // all non-zero elements in GF(p), and that's p-1 solutions to a
-                // polynomial of degree p-1, so it works in the other direction too:
-                // all values b such that b^(p-1) = 1 must be in GF(p)). Thus,
-                // We can compute a^r as only the low coefficient of a*t2 (into t3).
-                let mut t3 = a[0] * b[0]
-                    + Fr::from(3) * (a[1] * b[4] + a[2] * b[3] + a[3] * b[2] + a[4] * b[1]);
-                if t3.is_zero() {
-                    // If input 'a' is zero then we will divide 0 by 0, which is not
-                    // defined; we need a small corrective step to make divisor t3
-                    // equal to 1 in that case (the final output will still be zero,
-                    // since in such a case t2 = (0,0,0,0,0)).
-                    t3 = Fr::ONE;
-                }
-                let t4 = t3.inverse().unwrap();
-                t2.mul(Self::from(t4))
-            }
-            1 => Self::from(self.to_be().inverse().unwrap()),
-            _ => {
-                panic!("Invalid dim");
-            }
-        }
-    }
 }
 
 #[cfg(test)]
 pub mod tests {
     use crate::f5g::F5G;
-    use crate::traits::FieldExtension;
+    use crate::traits::{batch_inverse, FieldExtension};
     use plonky::field_gl::Fr;
     use plonky::Field;
     use std::ops::{Add, Mul};
@@ -990,7 +965,7 @@ pub mod tests {
             ),
             F5G::rand_gen(),
         ];
-        let r_arr = F5G::batch_inverse(&arr);
+        let r_arr = batch_inverse(&arr);
         for i in 0..arr.len() {
             log::debug!("{} {}", arr[i].inv(), r_arr[i]);
             assert_eq!(arr[i].inv()._eq(&r_arr[i]), true);

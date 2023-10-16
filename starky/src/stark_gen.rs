@@ -11,7 +11,7 @@ use crate::interpreter::compile_code;
 use crate::polsarray::PolsArray;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{Polynom, Segment};
-use crate::traits::FieldExtension;
+use crate::traits::{batch_inverse, FieldExtension};
 use crate::traits::{MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, PIL};
 use plonky::field_gl::Fr as FGL;
@@ -502,8 +502,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                 *tdw = x_buff[k] - wxi;
             });
 
-        tmp_den = M::ExtendField::batch_inverse(&tmp_den);
-        tmp_denw = M::ExtendField::batch_inverse(&tmp_denw);
+        tmp_den = batch_inverse(&tmp_den);
+        tmp_denw = batch_inverse(&tmp_denw);
         ctx.xDivXSubXi
             .par_chunks_mut(3)
             .zip_eq(ctx.xDivXSubWXi.par_chunks_mut(3))
@@ -651,7 +651,7 @@ fn calculate_H1H2<F: FieldExtension>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
 fn calculate_Z<F: FieldExtension>(num: Vec<F>, den: Vec<F>) -> Vec<F> {
     let N = num.len();
     assert_eq!(N, den.len());
-    let den_inv = F::batch_inverse(&den);
+    let den_inv = batch_inverse(&den);
     let mut z = vec![F::ZERO; N];
     z[0] = F::ONE;
     for i in 1..N {

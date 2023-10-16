@@ -92,9 +92,28 @@ pub trait FieldExtension:
     fn lt(&self, rhs: &Self) -> bool;
     fn leq(&self, rhs: &Self) -> bool;
     fn exp(&self, e_: usize) -> Self;
-    fn batch_inverse(elems: &[Self]) -> Vec<Self>;
     fn inv(&self) -> Self;
     fn as_int(&self) -> u64;
     fn elements_as_bytes(elements: &[Self]) -> &[u8];
     fn as_bytes(&self) -> &[u8];
+}
+
+pub fn batch_inverse<F: FieldExtension>(elems: &[F]) -> Vec<F> {
+    if elems.len() == 0 {
+        return vec![];
+    }
+
+    let mut tmp: Vec<F> = vec![F::ZERO; elems.len()];
+    tmp[0] = elems[0];
+    for i in 1..elems.len() {
+        tmp[i] = elems[i] * (tmp[i - 1]);
+    }
+    let mut z = tmp[tmp.len() - 1].inv();
+    let mut res: Vec<F> = vec![F::ZERO; elems.len()];
+    for i in (1..elems.len()).rev() {
+        res[i] = z * tmp[i - 1];
+        z = z * elems[i];
+    }
+    res[0] = z;
+    res
 }

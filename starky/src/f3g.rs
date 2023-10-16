@@ -239,27 +239,6 @@ impl FieldExtension for F3G {
         unsafe { slice::from_raw_parts(p as *const u8, len) }
     }
 
-    #[inline]
-    fn batch_inverse(elems: &[Self]) -> Vec<Self> {
-        if elems.len() == 0 {
-            return vec![];
-        }
-
-        let mut tmp: Vec<Self> = vec![Self::ZERO; elems.len()];
-        tmp[0] = elems[0];
-        for i in 1..elems.len() {
-            tmp[i] = elems[i] * (tmp[i - 1]);
-        }
-        let mut z = tmp[tmp.len() - 1].inv();
-        let mut res: Vec<Self> = vec![Self::ZERO; elems.len()];
-        for i in (1..elems.len()).rev() {
-            res[i] = z * tmp[i - 1];
-            z = z * elems[i];
-        }
-        res[0] = z;
-        res
-    }
-
     fn as_bytes(&self) -> &[u8] {
         let self_ptr: *const Self = self;
         unsafe { slice::from_raw_parts(self_ptr as *const u8, Self::ELEMENT_BYTES * self.dim) }
@@ -656,7 +635,7 @@ impl F3G {
 #[cfg(test)]
 pub mod tests {
     use crate::f3g::F3G;
-    use crate::traits::FieldExtension;
+    use crate::traits::{batch_inverse, FieldExtension};
     use plonky::field_gl::Fr;
     use plonky::Field;
     use std::ops::{Add, Mul};
@@ -746,7 +725,7 @@ pub mod tests {
             F3G::from(6u64),
             F3G::new(Fr::from(7u64), Fr::from(8u64), Fr::from(9u64)),
         ];
-        let r_arr = F3G::batch_inverse(&arr);
+        let r_arr = batch_inverse(&arr);
         for i in 0..arr.len() {
             log::debug!("{} {}", arr[i].inv(), r_arr[i]);
             assert_eq!(arr[i].inv()._eq(&r_arr[i]), true);
