@@ -7,7 +7,7 @@ use crate::poseidon_bls12381_opt::load_constants as load_constants_bls12381_opt;
 use crate::poseidon_bn128::{load_constants, Constants};
 use crate::poseidon_bn128_opt::load_constants as load_constants_opt;
 use ff::*;
-use plonky::field_gl::{exp, Fr};
+use plonky::field_gl::Fr;
 use plonky::Field;
 use std::collections::HashMap;
 
@@ -32,15 +32,14 @@ lazy_static::lazy_static! {
     };
 
     pub static ref SHIFT: Fr = Fr::from(49u64);
-    pub static ref SHIFT_INV : Fr= SHIFT.clone().inverse().unwrap();
+    pub static ref SHIFT_INV : Fr= SHIFT.inverse().unwrap();
     pub static ref MG: (Vec<Fr>, Vec<Fr>) = {
         let nqr = Fr::from(7u64);
         let rem = 2u64.pow(32) - 1;
         let s = 32usize;
         let mut w = vec![Fr::ZERO; s+1];
         let mut wi = vec![Fr::ZERO; s+1];
-        // w[s] = nqr.exp(rem);
-        w[s] = exp(nqr,rem);
+        w[s] = nqr.exp(rem);
         wi[s] = w[s].inverse().unwrap();
 
         for n in (0..s).rev() {

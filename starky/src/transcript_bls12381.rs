@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 use crate::digest::ElementDigest;
 use crate::errors::Result;
-use crate::f3g::F3G;
 use crate::ff::Field;
 use crate::field_bls12381::{Fr, FrRepr};
 use crate::helper::{biguint_to_be, fr_bls12381_to_biguint};
