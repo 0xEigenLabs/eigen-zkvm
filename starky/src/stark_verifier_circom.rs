@@ -1377,7 +1377,7 @@ template StarkVerifier() {{
             s,
             s,
             s,
-            // TODO: It seemd to we only use F1G here and make sure we only need to F3G::from(constant) (don not need constant.clone()) when using the constant variables
+            // we need to use F3G::from(constant.clone()) as the ownership of constant(Here we mean SHIFT) will be moved into the from function
             F3G::from(SHIFT.clone())
                 .exp(1 << (stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits))
                 .inv()

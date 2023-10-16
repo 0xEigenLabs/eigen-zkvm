@@ -35,7 +35,7 @@ impl TranscriptGL {
 }
 
 impl Transcript for TranscriptGL {
-    // TODO:Check the type F is equal to F3G
+    // TODO:Check the type F is equal to F3G after we support F5G.
     fn new() -> Self {
         Self {
             state: [FGL::ZERO; 4],
