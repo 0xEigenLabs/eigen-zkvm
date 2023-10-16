@@ -7,8 +7,8 @@ use crate::traits::FieldExtension;
 use std::fmt;
 
 #[derive(Clone, Debug)]
-pub enum Ops<T: FieldExtension> {
-    Vari(T), // instant value
+pub enum Ops<F: FieldExtension> {
+    Vari(F), // instant value
     Add,     // add and push the result into stack
     Sub,     // sub and push the result into stack
     Mul,     // mul and push the result into stack

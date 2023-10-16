@@ -226,11 +226,11 @@ impl PolsArray {
         Ok(())
     }
 
-    pub fn write_buff<T: FieldExtension>(&self) -> Vec<T> {
-        let mut buff: Vec<T> = vec![];
+    pub fn write_buff<F: FieldExtension>(&self) -> Vec<F> {
+        let mut buff: Vec<F> = vec![];
         for i in 0..self.n {
             for j in 0..self.nPols {
-                buff.push(T::from(self.array[j][i]));
+                buff.push(F::from(self.array[j][i]));
             }
         }
         buff
