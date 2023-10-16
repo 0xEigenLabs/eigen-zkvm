@@ -18,39 +18,39 @@ use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use std::collections::HashMap;
 
-pub struct StarkContext<T: FieldExtension> {
+pub struct StarkContext<F: FieldExtension> {
     pub nbits: usize,
     pub nbits_ext: usize,
     pub N: usize,
     pub Next: usize,
-    pub challenge: Vec<T>,
-    pub tmp: Vec<T>,
-    pub cm1_n: Vec<T>,
-    pub cm2_n: Vec<T>,
-    pub cm3_n: Vec<T>,
-    pub cm4_n: Vec<T>,
-    pub tmpexp_n: Vec<T>,
-    pub cm1_2ns: Vec<T>,
-    pub cm2_2ns: Vec<T>,
-    pub cm3_2ns: Vec<T>,
-    pub cm4_2ns: Vec<T>,
-    pub q_2ns: Vec<T>,
-    pub f_2ns: Vec<T>,
-    pub x_n: Vec<T>,
-    pub x_2ns: Vec<T>,
-    pub Zi: Box<dyn Fn(usize) -> T>,
-    pub const_n: Vec<T>,
-    pub const_2ns: Vec<T>,
-    pub publics: Vec<T>,
+    pub challenge: Vec<F>,
+    pub tmp: Vec<F>,
+    pub cm1_n: Vec<F>,
+    pub cm2_n: Vec<F>,
+    pub cm3_n: Vec<F>,
+    pub cm4_n: Vec<F>,
+    pub tmpexp_n: Vec<F>,
+    pub cm1_2ns: Vec<F>,
+    pub cm2_2ns: Vec<F>,
+    pub cm3_2ns: Vec<F>,
+    pub cm4_2ns: Vec<F>,
+    pub q_2ns: Vec<F>,
+    pub f_2ns: Vec<F>,
+    pub x_n: Vec<F>,
+    pub x_2ns: Vec<F>,
+    pub Zi: Box<dyn Fn(usize) -> F>,
+    pub const_n: Vec<F>,
+    pub const_2ns: Vec<F>,
+    pub publics: Vec<F>,
     pub xDivXSubXi: Vec<FGL>,
     pub xDivXSubWXi: Vec<FGL>,
-    pub evals: Vec<T>,
+    pub evals: Vec<F>,
 
-    pub exps_n: Vec<T>,
-    pub exps_2ns: Vec<T>,
+    pub exps_n: Vec<F>,
+    pub exps_2ns: Vec<F>,
 
-    pub Z: T,
-    pub Zp: T,
+    pub Z: F,
+    pub Zp: F,
     pub tree1: Vec<FGL>,
     pub tree2: Vec<FGL>,
     pub tree3: Vec<FGL>,
@@ -58,7 +58,7 @@ pub struct StarkContext<T: FieldExtension> {
     pub consts: Vec<FGL>,
 }
 
-impl<T: FieldExtension> std::fmt::Debug for StarkContext<T> {
+impl<F: FieldExtension> std::fmt::Debug for StarkContext<F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "n {}", self.N)?;
         writeln!(f, "nBits {}", self.nbits)?;
@@ -88,17 +88,17 @@ impl<T: FieldExtension> std::fmt::Debug for StarkContext<T> {
     }
 }
 
-unsafe impl<T: FieldExtension> Send for StarkContext<T> {}
-unsafe impl<T: FieldExtension> Sync for StarkContext<T> {}
+unsafe impl<F: FieldExtension> Send for StarkContext<F> {}
+unsafe impl<F: FieldExtension> Sync for StarkContext<F> {}
 
-impl<T: FieldExtension> Default for StarkContext<T> {
+impl<F: FieldExtension> Default for StarkContext<F> {
     fn default() -> Self {
         StarkContext {
             nbits: 0,
             nbits_ext: 0,
             N: 0,
             Next: 0,
-            challenge: vec![T::ZERO; 8],
+            challenge: vec![F::ZERO; 8],
             tmp: Vec::new(),
             cm1_n: Vec::new(),
             cm2_n: Vec::new(),
@@ -113,7 +113,7 @@ impl<T: FieldExtension> Default for StarkContext<T> {
             f_2ns: Vec::new(),
             x_n: Vec::new(),
             x_2ns: Vec::new(),
-            Zi: Box::new(|_: usize| T::ZERO),
+            Zi: Box::new(|_: usize| F::ZERO),
             const_n: Vec::new(),
             const_2ns: Vec::new(),
             publics: Vec::new(),
@@ -122,8 +122,8 @@ impl<T: FieldExtension> Default for StarkContext<T> {
             evals: Vec::new(),
             exps_n: Vec::new(),
             exps_2ns: Vec::new(),
-            Z: T::ZERO,
-            Zp: T::ZERO,
+            Z: F::ZERO,
+            Zp: F::ZERO,
             tree1: Vec::new(),
             tree2: Vec::new(),
             tree3: Vec::new(),
@@ -133,7 +133,7 @@ impl<T: FieldExtension> Default for StarkContext<T> {
     }
 }
 
-impl<T: FieldExtension> StarkContext<T> {
+impl<F: FieldExtension> StarkContext<F> {
     pub fn get_mut_base(&mut self, section: &str) -> &mut Vec<FGL> {
         match section {
             "xDivXSubXi" => &mut self.xDivXSubXi,
@@ -141,7 +141,7 @@ impl<T: FieldExtension> StarkContext<T> {
             _ => panic!("invalid symbol {:?}", section),
         }
     }
-    pub fn get_mut(&mut self, section: &str) -> &mut Vec<T> {
+    pub fn get_mut(&mut self, section: &str) -> &mut Vec<F> {
         match section {
             "tmp" => &mut self.tmp,
             "cm1_n" => &mut self.cm1_n,
