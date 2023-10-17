@@ -195,7 +195,7 @@ impl FieldExtension for F3G {
     #[inline]
     fn inv(&self) -> Self {
         match self.dim {
-            3 => self.inv5g(),
+            3 => self._inv(),
             1 => Self::from(self.to_be().inverse().unwrap()),
             _ => {
                 panic!("Invalid dim");
@@ -218,7 +218,7 @@ impl FieldExtension for F3G {
 }
 
 impl F3G {
-    fn inv5g(&self) -> Self {
+    fn _inv(&self) -> Self {
         assert_eq!(self.dim, 3);
         let a = self.cube;
         let aa = a[0] * a[0];
@@ -625,17 +625,6 @@ impl Display for F3G {
             )
         }
     }
-}
-
-impl F3G {
-    pub const ZERO: Self = Self {
-        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
-        dim: 1,
-    };
-    pub const ONE: Self = Self {
-        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
-        dim: 1,
-    };
 }
 
 #[cfg(test)]

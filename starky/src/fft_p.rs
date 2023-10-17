@@ -337,6 +337,7 @@ mod tests {
     use crate::fft::FFT;
     use crate::fft_p::{fft, ifft, interpolate, BR};
     use crate::polutils::extend_pol;
+    use crate::traits::FieldExtension;
 
     #[test]
     fn test_BR() {
