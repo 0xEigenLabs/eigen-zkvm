@@ -192,6 +192,7 @@ impl FieldExtension for F3G {
         self.as_elements()[0].as_int()
     }
 
+    #[inline]
     fn inv(&self) -> Self {
         match self.dim {
             3 => {
