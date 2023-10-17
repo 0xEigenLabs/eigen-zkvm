@@ -1,13 +1,11 @@
 use crate::constant::{MG, SHIFT, SHIFT_INV};
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
-use crate::f3g::F3G;
 use crate::fft::FFT;
 use crate::helper::log2_any;
 use crate::polutils::{eval_pol, pol_mul_axi};
-use crate::traits::{MTNodeType, MerkleTree, Transcript};
+use crate::traits::{FieldExtension, MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, Step};
 use plonky::field_gl::Fr as FGL;
-use plonky::Field;
 
 #[derive(Debug)]
 pub struct FRI {
@@ -24,12 +22,12 @@ pub struct Query<MB: Clone + std::default::Default, MN: MTNodeType> {
 }
 
 #[derive(Debug, Clone)]
-pub struct FRIProof<M: MerkleTree> {
+pub struct FRIProof<F: FieldExtension, M: MerkleTree<ExtendField = F>> {
     pub queries: Vec<Query<M::BaseField, M::MTNode>>,
-    pub last: Vec<F3G>,
+    pub last: Vec<F>,
 }
 
-impl<M: MerkleTree> FRIProof<M> {
+impl<F: FieldExtension, M: MerkleTree<ExtendField = F>> FRIProof<F, M> {
     pub fn new(qs: usize) -> Self {
         FRIProof {
             queries: vec![Query::<M::BaseField, M::MTNode>::default(); qs],
@@ -48,12 +46,12 @@ impl FRI {
         }
     }
 
-    pub fn prove<M: MerkleTree, T: Transcript>(
+    pub fn prove<F: FieldExtension, M: MerkleTree<ExtendField = F>, T: Transcript>(
         &mut self,
         transcript: &mut T,
-        pol: &Vec<F3G>,
+        pol: &Vec<M::ExtendField>,
         mut query_pol: impl FnMut(usize) -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
-    ) -> Result<FRIProof<M>> {
+    ) -> Result<FRIProof<F, M>> {
         let mut pol = pol.clone();
         let mut standard_fft = FFT::new();
         let mut pol_bits = log2_any(pol.len()) as usize;
@@ -61,33 +59,33 @@ impl FRI {
         assert_eq!(1 << pol_bits, pol.len());
         assert_eq!(pol_bits, self.in_nbits);
 
-        let mut shift_inv = SHIFT_INV.clone();
-        let mut shift = SHIFT.clone();
+        let mut shift_inv = F::from(SHIFT_INV.clone());
+        let mut shift = F::from(SHIFT.clone());
         let mut tree: Vec<M> = vec![];
 
-        let mut proof: FRIProof<M> = FRIProof::<M>::new(self.steps.len());
+        let mut proof: FRIProof<F, M> = FRIProof::<F, M>::new(self.steps.len());
         for si in 0..self.steps.len() {
             let reduction_bits = pol_bits - self.steps[si].nBits;
             let pol2_n = 1 << (pol_bits - reduction_bits);
             let n_x = pol.len() / pol2_n;
 
-            let mut pol2_e = vec![F3G::ZERO; pol2_n];
+            let mut pol2_e = vec![F::ZERO; pol2_n];
             let special_x = transcript.get_field();
 
             let mut sinv = shift_inv;
-            let wi = F3G::inv(MG.0[pol_bits]);
+            let wi = F::inv(&F::from(MG.0[pol_bits]));
 
             for g in 0..(pol.len() / n_x) {
                 if si == 0 {
                     pol2_e[g] = pol[g];
                 } else {
-                    let mut ppar = vec![F3G::ZERO; n_x];
+                    let mut ppar = vec![F::ZERO; n_x];
                     for i in 0..n_x {
                         ppar[i] = pol[i * pol2_n + g];
                     }
 
                     let mut ppar_c = standard_fft.ifft(&ppar);
-                    pol_mul_axi(&mut ppar_c, F3G::ONE, &sinv);
+                    pol_mul_axi(&mut ppar_c, F::ONE, &sinv);
                     pol2_e[g] = eval_pol(&ppar_c, &special_x);
                     sinv = sinv * wi;
                 }
@@ -118,7 +116,7 @@ impl FRI {
                 shift = shift * shift;
             }
         }
-        let mut last_pol: Vec<F3G> = vec![];
+        let mut last_pol: Vec<F> = vec![];
         for p in pol.iter() {
             last_pol.push(*p);
         }
@@ -152,16 +150,16 @@ impl FRI {
         Ok(proof)
     }
 
-    pub fn verify<M: MerkleTree, T: Transcript>(
+    pub fn verify<F: FieldExtension, M: MerkleTree<ExtendField = F>, T: Transcript>(
         &self,
         transcript: &mut T,
-        proof: &FRIProof<M>,
-        mut check_query: impl FnMut(&Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>, usize) -> Result<Vec<F3G>>,
+        proof: &FRIProof<F, M>,
+        mut check_query: impl FnMut(&Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>, usize) -> Result<Vec<F>>,
     ) -> Result<bool> {
         let tree = M::new();
         let mut standard_fft = FFT::new();
         assert_eq!(proof.queries.len(), self.steps.len()); // the last +1 is ommited
-        let mut special_x: Vec<F3G> = vec![];
+        let mut special_x: Vec<F> = vec![];
         for si in 0..self.steps.len() {
             special_x.push(transcript.get_field());
             if si < self.steps.len() - 1 {
@@ -184,12 +182,12 @@ impl FRI {
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
         let mut pol_bits = self.in_nbits;
         log::debug!("ys: {:?}, pol_bits {}", ys, self.in_nbits);
-        let mut shift = SHIFT.clone();
+        let mut shift = F::from(SHIFT.clone());
 
         let check_query_fn = |si: usize,
                               query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
                               idx: usize|
-         -> Result<Vec<F3G>> {
+         -> Result<Vec<F>> {
             let res =
                 tree.verify_group_proof(&proof.queries[si].root, &query[0].1, idx, &query[0].0)?;
             if !res {
@@ -203,7 +201,7 @@ impl FRI {
             let proof_item = &proof.queries[si];
             let reduction_bits = pol_bits - self.steps[si].nBits;
             for i in 0..n_queries {
-                let pgroup_e: Vec<F3G> = match si {
+                let pgroup_e: Vec<F> = match si {
                     0 => {
                         let pgroup_e = check_query(&proof_item.pol_queries[i], ys[i])?;
                         if pgroup_e.len() == 0 {
@@ -216,18 +214,18 @@ impl FRI {
                 };
 
                 let pgroup_c = standard_fft.ifft(&pgroup_e);
-                let sinv = F3G::inv(shift * (MG.0[pol_bits].exp(ys[i])));
+                let sinv = F::inv(&(shift * (F::from(MG.0[pol_bits]).exp(ys[i]))));
                 let ev = eval_pol(&pgroup_c, &(special_x[si] * sinv));
 
                 if si < self.steps.len() - 1 {
                     let next_n_groups = 1 << self.steps[si + 1].nBits;
                     let group_idx = ys[i] / next_n_groups;
-                    if !ev.eq(&get3(&proof.queries[si + 1].pol_queries[i][0].0, group_idx)) {
+                    if !ev._eq(&get3(&proof.queries[si + 1].pol_queries[i][0].0, group_idx)) {
                         log::error!("eq query failed si:{}", si + 1);
                         return Ok(false);
                     }
                 } else {
-                    if !ev.eq(&proof.last[ys[i]]) {
+                    if !ev._eq(&proof.last[ys[i]]) {
                         log::error!("eq last failed si:{}, {}!={}", si, ev, &proof.last[ys[i]]);
                         return Ok(false);
                     }
@@ -268,7 +266,7 @@ impl FRI {
     }
 }
 
-fn get_transposed_buffer(pol: &Vec<F3G>, transpose_bits: usize) -> Vec<FGL> {
+fn get_transposed_buffer<F: FieldExtension>(pol: &Vec<F>, transpose_bits: usize) -> Vec<FGL> {
     let n = pol.len();
     let w = 1 << transpose_bits;
     let h = n / w;
@@ -278,7 +276,8 @@ fn get_transposed_buffer(pol: &Vec<F3G>, transpose_bits: usize) -> Vec<FGL> {
             let di = i * h * 3 + j * 3;
             let fi = j * w + i;
             let pb = pol[fi].as_elements();
-            assert_eq!(pol[fi].dim, 3);
+            // TODO: Support F5G
+            assert_eq!(pol[fi].dim(), 3);
             res[di] = pb[0];
             res[di + 1] = pb[1];
             res[di + 2] = pb[2];
@@ -287,14 +286,16 @@ fn get_transposed_buffer(pol: &Vec<F3G>, transpose_bits: usize) -> Vec<FGL> {
     res
 }
 
-fn get3(arr: &Vec<FGL>, idx: usize) -> F3G {
-    F3G::new(arr[idx * 3], arr[idx * 3 + 1], arr[idx * 3 + 2])
+// TODO: Support F5G
+fn get3<F: FieldExtension>(arr: &Vec<FGL>, idx: usize) -> F {
+    F::from_vec(vec![arr[idx * 3], arr[idx * 3 + 1], arr[idx * 3 + 2]])
 }
 
-fn split3(arr: &Vec<FGL>) -> Vec<F3G> {
-    let mut res: Vec<F3G> = Vec::new();
+// TODO: Support F5G
+fn split3<F: FieldExtension>(arr: &Vec<FGL>) -> Vec<F> {
+    let mut res: Vec<F> = Vec::new();
     for i in (0..arr.len()).step_by(3) {
-        res.push(F3G::new(arr[i], arr[i + 1], arr[i + 2]));
+        res.push(F::from_vec(vec![arr[i], arr[i + 1], arr[i + 2]]));
     }
     return res;
 }

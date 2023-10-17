@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
     use crate::ff::*;
-    use crate::field_gl::exp;
     use crate::field_gl::*;
     use crate::rand::Rand;
     use num_bigint::BigUint;
@@ -101,18 +100,18 @@ mod tests {
     #[test]
     fn exp_test() {
         let a = Fr::zero();
-        assert_eq!(exp(a, 0), Fr::one());
-        assert_eq!(exp(a, 1), Fr::zero());
+        assert_eq!(a.exp(0), Fr::one());
+        assert_eq!(a.exp(1), Fr::zero());
 
         let a = Fr::one();
-        assert_eq!(exp(a, 0), Fr::one());
-        assert_eq!(exp(a, 1), Fr::one());
-        assert_eq!(exp(a, 3), Fr::one());
-        assert_eq!(exp(a, 7), Fr::one());
+        assert_eq!(a.exp(0), Fr::one());
+        assert_eq!(a.exp(1), Fr::one());
+        assert_eq!(a.exp(3), Fr::one());
+        assert_eq!(a.exp(7), Fr::one());
 
         let mut rng = rand::thread_rng();
         let a = Fr::rand(&mut rng);
-        assert_eq!(exp(a, 3), a * a * a);
+        assert_eq!(a.exp(3), a * a * a);
     }
 
     #[test]
@@ -156,7 +155,7 @@ mod tests {
     fn get_root_of_unity() {
         let root = Fr::root_of_unity();
         assert_eq!(Fr(crate::field_gl::ROOT_OF_UNITY), root);
-        assert_eq!(Fr::one(), exp(root, 1u64 << 32));
+        assert_eq!(Fr::one(), root.exp(1u64 << 32));
     }
 
     // RANDOMIZED TESTS
@@ -218,7 +217,7 @@ mod tests {
 
         #[test]
         fn exp_proptest(a in any::<u64>(), b in any::<u64>()) {
-            let result = exp(Fr::from_str(&a.to_string()).unwrap(), b);
+            let result = Fr::from_str(&a.to_string()).unwrap().exp( b);
 
             let b = BigUint::from(b);
             let _m = crate::field_gl::MODULUS.clone().0[0];
