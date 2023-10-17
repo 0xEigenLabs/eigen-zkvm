@@ -195,36 +195,7 @@ impl FieldExtension for F3G {
     #[inline]
     fn inv(&self) -> Self {
         match self.dim {
-            3 => {
-                let a = self.cube;
-                let aa = a[0] * a[0];
-                let ac = a[0] * a[2];
-                let ba = a[1] * a[0];
-                let bb = a[1] * a[1];
-                let bc = a[1] * a[2];
-                let cc = a[2] * a[2];
-
-                let aaa = aa * a[0];
-                let aac = aa * a[2];
-                let abc = ba * a[2];
-                let abb = ba * a[1];
-                let acc = ac * a[2];
-                let bbb = bb * a[1];
-                let bcc = bc * a[2];
-                let ccc = cc * a[2];
-
-                let t = -aaa - aac - aac + abc + abc + abc + abb - acc - bbb + bcc - ccc;
-                let tinv = t.inverse().unwrap();
-
-                let i1 = (-aa - ac - ac + bc + bb - cc) * tinv;
-                let i2 = (ba - cc) * tinv;
-                let i3 = (-bb + ac + cc) * tinv;
-
-                Self {
-                    cube: [i1, i2, i3],
-                    dim: 3,
-                }
-            }
+            3 => self.inv5g(),
             1 => Self::from(self.to_be().inverse().unwrap()),
             _ => {
                 panic!("Invalid dim");
@@ -243,6 +214,40 @@ impl FieldExtension for F3G {
     fn as_bytes(&self) -> &[u8] {
         let self_ptr: *const Self = self;
         unsafe { slice::from_raw_parts(self_ptr as *const u8, Self::ELEMENT_BYTES * self.dim) }
+    }
+}
+
+impl F3G {
+    fn inv5g(&self) -> Self {
+        assert_eq!(self.dim, 3);
+        let a = self.cube;
+        let aa = a[0] * a[0];
+        let ac = a[0] * a[2];
+        let ba = a[1] * a[0];
+        let bb = a[1] * a[1];
+        let bc = a[1] * a[2];
+        let cc = a[2] * a[2];
+
+        let aaa = aa * a[0];
+        let aac = aa * a[2];
+        let abc = ba * a[2];
+        let abb = ba * a[1];
+        let acc = ac * a[2];
+        let bbb = bb * a[1];
+        let bcc = bc * a[2];
+        let ccc = cc * a[2];
+
+        let t = -aaa - aac - aac + abc + abc + abc + abb - acc - bbb + bcc - ccc;
+        let tinv = t.inverse().unwrap();
+
+        let i1 = (-aa - ac - ac + bc + bb - cc) * tinv;
+        let i2 = (ba - cc) * tinv;
+        let i3 = (-bb + ac + cc) * tinv;
+
+        Self {
+            cube: [i1, i2, i3],
+            dim: 3,
+        }
     }
 }
 

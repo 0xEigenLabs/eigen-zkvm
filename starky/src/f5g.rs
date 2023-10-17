@@ -195,7 +195,7 @@ impl FieldExtension for F5G {
     #[inline(always)]
     fn inv(&self) -> Self {
         match self.dim {
-            5 => self.inv5(),
+            5 => self.inv5g(),
             1 => Self::from(self.to_be().inverse().unwrap()),
             _ => {
                 panic!("Invalid dim");
@@ -656,7 +656,7 @@ impl F5G {
     // Invert this element. If this value is zero, then zero is returned.
     // Inv() function refers to the implementation of ecgfp5: https://github.com/pornin/ecgfp5/blob/ce059c6d1e1662db437aecbf3db6bb67fe63c716/python/ecGFp5.py#L751
     #[inline]
-    fn inv5(&self) -> Self {
+    fn inv5g(&self) -> Self {
         // We are using the method first described by Itoh and Tsujii.
         //
         // Let r = 1 + p + p^2 + p^3 + p^4.

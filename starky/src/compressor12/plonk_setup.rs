@@ -3,11 +3,9 @@ use super::{
     compressor12_pil, compressor12_pil::CompressorNameSpace::*,
     compressor12_pil::CompressorPolName::*, compressor12_setup::Options, constants::CPOSEIDON,
 };
-use crate::f3g::F3G;
 use crate::pilcom::compile_pil_from_str;
 use crate::polsarray::{PolKind, PolsArray};
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
-use crate::traits::FieldExtension;
 use crate::types::PIL;
 use array_tool::vec::Shift;
 use plonky::circom_circuit::R1CS;

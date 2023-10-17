@@ -32,7 +32,7 @@ lazy_static::lazy_static! {
     };
 
     pub static ref SHIFT: Fr = Fr::from(49u64);
-    pub static ref SHIFT_INV : Fr= SHIFT.inverse().unwrap();
+    pub static ref SHIFT_INV: Fr = SHIFT.inverse().unwrap();
     pub static ref MG: (Vec<Fr>, Vec<Fr>) = {
         let nqr = Fr::from(7u64);
         let rem = 2u64.pow(32) - 1;
