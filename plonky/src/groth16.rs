@@ -106,8 +106,8 @@ mod tests {
                 if wi.is_zero() {
                     Fr::zero()
                 } else {
-                    assert_eq!(wi.to_u64_digits().1.len() < 2, true);
-                    Fr::from_repr(FrRepr::from(wi.to_u64_digits().1[0])).unwrap()
+                    println!("wi: {}", wi);
+                    Fr::from_str(&wi.to_string()).unwrap()             
                 }
             })
             .collect::<Vec<_>>();
