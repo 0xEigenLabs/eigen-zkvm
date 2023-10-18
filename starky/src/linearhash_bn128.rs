@@ -75,6 +75,7 @@ impl LinearHashBN128 {
             _ => {
                 //cornor case: x > MODULUS
                 let mut r = Fr(bn.into_raw_repr());
+                // 2^128 mod p.
                 const R2: FrRepr = FrRepr([
                     1997599621687373223u64,
                     6052339484930628067u64,
