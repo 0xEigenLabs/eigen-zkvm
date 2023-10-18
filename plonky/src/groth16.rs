@@ -106,8 +106,8 @@ mod tests {
                 if wi.is_zero() {
                     Fr::zero()
                 } else {
-                    println!("wi: {}", wi);
-                    Fr::from_str(&wi.to_string()).unwrap()             
+                    // println!("wi: {}", wi);
+                    Fr::from_str(&wi.to_string()).unwrap()
                 }
             })
             .collect::<Vec<_>>();
