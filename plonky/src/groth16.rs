@@ -22,18 +22,14 @@ impl<E: Engine, C: Circuit<E>> SNARK<E::Fr> for Groth16<E, C> {
         circuit: Self::Circuit,
         rng: &mut R,
     ) -> Result<(Self::ProvingKey, Self::PreparedVerificationKey)> {
-        #[cfg(debug_assertions)]
         let t = std::time::Instant::now();
 
         let pk = generate_random_parameters::<E, Self::Circuit, R>(circuit, rng)?;
         let pvk = prepare_verifying_key(&pk.vk);
 
-        #[cfg(debug_assertions)]
-        {
-            let elapsed = t.elapsed().as_secs_f64();
-            log::debug!("groth16 setup run time: {} secs", elapsed);
-        }
-
+        let elapsed = t.elapsed().as_secs_f64();
+        log::debug!("groth16 setup run time: {} secs", elapsed);
+    
         Ok((pk, pvk))
     }
 
@@ -42,16 +38,12 @@ impl<E: Engine, C: Circuit<E>> SNARK<E::Fr> for Groth16<E, C> {
         input_and_witness: Self::AssignedCircuit,
         rng: &mut R,
     ) -> Result<Self::Proof> {
-        #[cfg(debug_assertions)]
         let t = std::time::Instant::now();
 
         let result = create_random_proof::<E, _, _, _>(input_and_witness, circuit_pk, rng)?;
-
-        #[cfg(debug_assertions)]
-        {
-            let elapsed = t.elapsed().as_secs_f64();
-            log::debug!("groth16 generate proof run time: {} secs", elapsed);
-        }
+    
+        let elapsed = t.elapsed().as_secs_f64();
+        log::debug!("groth16 generate proof run time: {} secs", elapsed);
 
         Ok(result)
     }
@@ -61,16 +53,12 @@ impl<E: Engine, C: Circuit<E>> SNARK<E::Fr> for Groth16<E, C> {
         public_input: &[E::Fr],
         proof: &Self::Proof,
     ) -> Result<bool> {
-        #[cfg(debug_assertions)]
         let t = std::time::Instant::now();
 
         let result = verify_proof(&circuit_pvk, proof, &public_input)?;
 
-        #[cfg(debug_assertions)]
-        {
-            let elapsed = t.elapsed().as_secs_f64();
-            log::debug!("groth16 verify run time: {} secs", elapsed);
-        }
+        let elapsed = t.elapsed().as_secs_f64();
+        log::debug!("groth16 verify run time: {} secs", elapsed);
 
         Ok(result)
     }
@@ -78,30 +66,60 @@ impl<E: Engine, C: Circuit<E>> SNARK<E::Fr> for Groth16<E, C> {
 
 #[cfg(test)]
 mod tests {
+    use franklin_crypto::bellman::bn256::FrRepr;
+    use franklin_crypto::bellman::{Field, PrimeField};
+    use num_traits::Zero;
+
     use super::*;
-    use crate::bellman_ce::bn256::Bn256;
+    use crate::bellman_ce::bn256::{Bn256, Fr};
     use crate::circom_circuit::CircomCircuit;
     use crate::reader;
+    use crate::witness::{load_input_for_witness, WitnessCalculator};
     const CIRCUIT_FILE: &'static str =
         concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
-    const WITNESS_FILE: &'static str =
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/witness.wtns");
+    const INPUT_FILE: &'static str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/input.json");
+    const WASM_FILE: &'static str =
+        concat!(env!("CARGO_MANIFEST_DIR"), "/test-vectors/mycircuit.wasm");
+    // const WITNESS_FILE: &'static str =
+    //     concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/witness.wtns");
 
     #[test]
     fn groth16_proof() -> Result<()> {
         env_logger::init();
-        let circuit: CircomCircuit<Bn256> = CircomCircuit {
+        //1. SRS
+        let mut circuit: CircomCircuit<Bn256> = CircomCircuit {
             r1cs: reader::load_r1cs(CIRCUIT_FILE),
-            witness: Some(reader::load_witness_from_file::<Bn256>(WITNESS_FILE)),
+            witness: None,
             wire_mapping: None,
             aux_offset: 0,
         };
         let mut rng = rand::thread_rng();
-        let params = Groth16::circuit_specific_setup(circuit.clone(), &mut rng)?;
+        let params = Groth16::circuit_specific_setup(circuit, &mut rng)?;
 
-        let proof = Groth16::prove(&params.0, circuit.clone(), &mut rng)?;
+        //2. Prove
+        let mut wtns = WitnessCalculator::new(&WASM_FILE.to_string()).unwrap();
+        let inputs = load_input_for_witness(&INPUT_FILE.to_string());
+        let w = wtns.calculate_witness(inputs, false).unwrap();
+        let mut w = w
+            .iter()
+            .map(|wi| {
+                if wi.is_zero() {
+                    Fr::zero()
+                } else {
+                    assert_eq!(wi.to_u64_digits().1.len() < 2, true);
+                    Fr::from_repr(FrRepr::from(wi.to_u64_digits().1[0])).unwrap()
+                }
+            })
+            .collect::<Vec<_>>();
+        let circuit1: CircomCircuit<Bn256> = CircomCircuit {
+            r1cs: reader::load_r1cs(CIRCUIT_FILE),
+            witness: Some(w),
+            wire_mapping: None,
+            aux_offset: 0,
+        };
+        let inputs = circuit1.get_public_inputs().unwrap();
+        let proof = Groth16::prove(&params.0, circuit1.clone(), &mut rng)?;
 
-        let inputs: Vec<franklin_crypto::bellman::bn256::Fr> = circuit.get_public_inputs().unwrap();
         let verified = Groth16::<_, CircomCircuit<Bn256>>::verify_with_processed_vk(
             &params.1, &inputs, &proof,
         )?;

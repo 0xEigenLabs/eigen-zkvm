@@ -229,32 +229,32 @@ pub fn generate_aggregation_verifier(
     Result::Ok(())
 }
 
-pub fn groth16_setup(circuit_file: &String, witness: &String, curve_type: &str) -> Result<()> {
-    let mut rng = rand::thread_rng();
-    match curve_type {
-        "bn256" => {
-            let circuit: CircomCircuit<Bn256> = CircomCircuit {
-                r1cs: reader::load_r1cs(circuit_file),
-                witness: Some(reader::load_witness_from_file::<Bn256>(witness)),
-                wire_mapping: None,
-                aux_offset: 0,
-            };
-            Groth16::circuit_specific_setup(circuit, &mut rng);
-        }
-        "bls12381" => {
-            let circuit: CircomCircuit<Bls12> = CircomCircuit {
-                r1cs: reader::load_r1cs(circuit_file),
-                witness: Some(reader::load_witness_from_file::<Bls12>(witness)),
-                wire_mapping: None,
-                aux_offset: 0,
-            };
-            Groth16::circuit_specific_setup(circuit, &mut rng);
-        }
-        _ => Err(EigenError::Unknown(format!(
-            "Unknown curve type: {}",
-            curve_type
-        ))),
-    }
+// pub fn groth16_setup(circuit_file: &String, witness: &String, curve_type: &str) -> Result<()> {
+//     let mut rng = rand::thread_rng();
+//     match curve_type {
+//         "bn256" => {
+//             let circuit: CircomCircuit<Bn256> = CircomCircuit {
+//                 r1cs: reader::load_r1cs(circuit_file),
+//                 witness: Some(reader::load_witness_from_file::<Bn256>(witness)),
+//                 wire_mapping: None,
+//                 aux_offset: 0,
+//             };
+//             Groth16::circuit_specific_setup(circuit, &mut rng);
+//         }
+//         "bls12381" => {
+//             let circuit: CircomCircuit<Bls12> = CircomCircuit {
+//                 r1cs: reader::load_r1cs(circuit_file),
+//                 witness: Some(reader::load_witness_from_file::<Bls12>(witness)),
+//                 wire_mapping: None,
+//                 aux_offset: 0,
+//             };
+//             Groth16::circuit_specific_setup(circuit, &mut rng);
+//         }
+//         _ => Err(EigenError::Unknown(format!(
+//             "Unknown curve type: {}",
+//             curve_type
+//         ))),
+//     }
 
-    Result::Ok(())
-}
+//     Result::Ok(())
+// }
