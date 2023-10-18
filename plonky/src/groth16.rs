@@ -29,7 +29,7 @@ impl<E: Engine, C: Circuit<E>> SNARK<E::Fr> for Groth16<E, C> {
 
         let elapsed = t.elapsed().as_secs_f64();
         log::debug!("groth16 setup run time: {} secs", elapsed);
-    
+
         Ok((pk, pvk))
     }
 
@@ -41,7 +41,7 @@ impl<E: Engine, C: Circuit<E>> SNARK<E::Fr> for Groth16<E, C> {
         let t = std::time::Instant::now();
 
         let result = create_random_proof::<E, _, _, _>(input_and_witness, circuit_pk, rng)?;
-    
+
         let elapsed = t.elapsed().as_secs_f64();
         log::debug!("groth16 generate proof run time: {} secs", elapsed);
 
