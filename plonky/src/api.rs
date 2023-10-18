@@ -229,32 +229,49 @@ pub fn generate_aggregation_verifier(
     Result::Ok(())
 }
 
-// pub fn groth16_setup(circuit_file: &String, witness: &String, curve_type: &str) -> Result<()> {
-//     let mut rng = rand::thread_rng();
-//     match curve_type {
-//         "bn256" => {
-//             let circuit: CircomCircuit<Bn256> = CircomCircuit {
-//                 r1cs: reader::load_r1cs(circuit_file),
-//                 witness: Some(reader::load_witness_from_file::<Bn256>(witness)),
-//                 wire_mapping: None,
-//                 aux_offset: 0,
-//             };
-//             Groth16::circuit_specific_setup(circuit, &mut rng);
-//         }
-//         "bls12381" => {
-//             let circuit: CircomCircuit<Bls12> = CircomCircuit {
-//                 r1cs: reader::load_r1cs(circuit_file),
-//                 witness: Some(reader::load_witness_from_file::<Bls12>(witness)),
-//                 wire_mapping: None,
-//                 aux_offset: 0,
-//             };
-//             Groth16::circuit_specific_setup(circuit, &mut rng);
-//         }
-//         _ => Err(EigenError::Unknown(format!(
-//             "Unknown curve type: {}",
-//             curve_type
-//         ))),
-//     }
+pub fn groth16_setup(circuit_file: &String, curve_type: &str) -> Result<()> {
+    let mut rng = rand::thread_rng();
+    match curve_type {
+        "bn256" => {
+            let circuit: CircomCircuit<Bn256> = CircomCircuit {
+                r1cs: reader::load_r1cs(circuit_file),
+                witness: None,
+                wire_mapping: None,
+                aux_offset: 0,
+            };
+            let (pk, pvk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
 
-//     Result::Ok(())
-// }
+            // let pk_json = serde_json::to_string(&pk)?;
+            // let pk_file = std::fs::File::create("pk.json")?;
+            // std::fs::write(pk_file, pk_json.as_bytes())?;
+
+            // let pvk_json = serde_json::to_string(&pvk)?;
+            // let mut pvk_file = std::fs::File::create("pvk.json")?;
+            // std::fs::write(pvk_json.as_bytes())?;
+        }
+        "bls12381" => {
+            let circuit: CircomCircuit<Bls12> = CircomCircuit {
+                r1cs: reader::load_r1cs(circuit_file),
+                witness: None,
+                wire_mapping: None,
+                aux_offset: 0,
+            };
+            let (pk, pvk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
+
+            // let pk_json = serde_json::to_string(&pk)?;
+            // let mut pk_file = std::fs::File::create("pk.json")?;
+            // std::fs::write(pk_json.as_bytes())?;
+
+            // let pvk_json = serde_json::to_string(&pvk)?;
+            // let mut pvk_file = std::fs::File::create("pvk.json")?;
+            // std::fs::write(pvk_json.as_bytes())?;
+        }
+        _ => {
+            return Err(EigenError::Unknown(format!(
+                "Unknown curve type: {}",
+                curve_type
+            )))
+        }
+    };
+    Ok(())
+}
