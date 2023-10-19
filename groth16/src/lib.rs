@@ -1,5 +1,4 @@
 pub mod groth16;
-pub mod snark;
 
 pub use bellman_ce::pairing::ff;
 pub use ff::*;

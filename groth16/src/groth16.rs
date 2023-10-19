@@ -1,5 +1,4 @@
 use crate::bellman_ce::{groth16::*, Circuit};
-use crate::snark::SNARK;
 use algebraic::errors::Result;
 use franklin_crypto::bellman::pairing::Engine;
 use rand::Rng;
@@ -10,38 +9,31 @@ pub struct Groth16<E: Engine, C: Circuit<E>> {
     _circuit: PhantomData<C>,
 }
 
-impl<E: Engine, C: Circuit<E>> SNARK<E::Fr> for Groth16<E, C> {
-    type Circuit = C;
-    type AssignedCircuit = C;
-    type ProvingKey = Parameters<E>;
-    type VerificationKey = VerifyingKey<E>;
-    type PreparedVerificationKey = PreparedVerifyingKey<E>;
-    type Proof = Proof<E>;
-
-    fn circuit_specific_setup<R: Rng>(
-        circuit: Self::Circuit,
+impl<E: Engine, C: Circuit<E>> Groth16<E, C> {
+    pub fn circuit_specific_setup<R: Rng>(
+        circuit: C,
         rng: &mut R,
-    ) -> Result<(Self::ProvingKey, Self::VerificationKey)> {
-        let pk: Parameters<E> = generate_random_parameters::<E, Self::Circuit, R>(circuit, rng)?;
+    ) -> Result<(Parameters<E>, VerifyingKey<E>)> {
+        let pk: Parameters<E> = generate_random_parameters::<E, C, R>(circuit, rng)?;
         let vk = pk.vk.clone();
 
         Ok((pk, vk))
     }
 
-    fn prove<R: Rng>(
-        circuit_pk: &Self::ProvingKey,
-        input_and_witness: Self::AssignedCircuit,
+    pub fn prove<R: Rng>(
+        circuit_pk: &Parameters<E>,
+        input_and_witness: C,
         rng: &mut R,
-    ) -> Result<Self::Proof> {
+    ) -> Result<Proof<E>> {
         let result = create_random_proof::<E, _, _, _>(input_and_witness, circuit_pk, rng)?;
 
         Ok(result)
     }
 
-    fn verify_with_processed_vk(
-        circuit_vk: &Self::VerificationKey,
+    pub fn verify_with_processed_vk(
+        circuit_vk: &VerifyingKey<E>,
         public_input: &[E::Fr],
-        proof: &Self::Proof,
+        proof: &Proof<E>,
     ) -> Result<bool> {
         let circuit_pvk = prepare_verifying_key(&circuit_vk);
         let result = verify_proof(&circuit_pvk, proof, &public_input)?;

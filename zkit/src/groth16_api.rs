@@ -5,19 +5,16 @@ use algebraic::{
     witness::{load_input_for_witness, WitnessCalculator},
     Field, PrimeField,
 };
+use groth16::bellman_ce::pairing::{
+    bls12_381::{Bls12, Fr as Fr_bls12381},
+    bn256::{Bn256, Fr},
+};
 use groth16::bellman_ce::plonk::better_cs::keys::{read_fr_vec, write_fr_vec};
 use groth16::bellman_ce::{
     groth16::{Parameters, Proof, VerifyingKey},
     Engine,
 };
 use groth16::groth16::Groth16;
-use groth16::{
-    bellman_ce::pairing::{
-        bls12_381::{Bls12, Fr as Fr_bls12381},
-        bn256::{Bn256, Fr},
-    },
-    snark::SNARK,
-};
 use num_traits::Zero;
 use rand;
 
@@ -29,12 +26,12 @@ pub fn groth16_setup(
 ) -> Result<()> {
     let mut rng = rand::thread_rng();
     match curve_type {
-        "BN128" => {
+        "bn128" => {
             let circuit = create_circuit_from_file::<Bn256>(circuit_file, None);
             let (pk, vk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
             write_pk_vk_to_files(pk, vk, pk_file, vk_file)?
         }
-        "BLS12381" => {
+        "bls12381" => {
             let circuit = create_circuit_from_file::<Bls12>(circuit_file, None);
             let (pk, vk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
             write_pk_vk_to_files(pk, vk, pk_file, vk_file)?
@@ -60,12 +57,12 @@ pub fn groth16_prove(
 ) -> Result<()> {
     let mut rng = rand::thread_rng();
 
-    let mut wtns = WitnessCalculator::new(wtns_file).unwrap();
+    let mut wtns = WitnessCalculator::new(wtns_file)?;
     let inputs = load_input_for_witness(input_file);
-    let w = wtns.calculate_witness(inputs, false).unwrap();
+    let w = wtns.calculate_witness(inputs, false)?;
     match curve_type {
-        "BN128" => {
-            let pk: Parameters<Bn256> = read_pk_from_file(pk_file, false).unwrap();
+        "bn128" => {
+            let pk: Parameters<Bn256> = read_pk_from_file(pk_file, false)?;
             let w = w
                 .iter()
                 .map(|wi| {
@@ -85,8 +82,8 @@ pub fn groth16_prove(
             let mut writer1 = std::fs::File::create(public_input_file)?;
             write_fr_vec(&inputs, &mut writer1)?;
         }
-        "BLS12381" => {
-            let pk: Parameters<Bls12> = read_pk_from_file(pk_file, false).unwrap();
+        "bls12381" => {
+            let pk: Parameters<Bls12> = read_pk_from_file(pk_file, false)?;
             let w = w
                 .iter()
                 .map(|wi| {
@@ -124,10 +121,10 @@ pub fn groth16_verify(
     proof_file: &String,
 ) -> Result<()> {
     match curve_type {
-        "BN128" => {
-            let vk = read_vk_from_file(&vk_file).unwrap();
-            let inputs = read_public_input_from_file(&public_input_file).unwrap();
-            let proof = read_proof_from_file(&proof_file).unwrap();
+        "bn128" => {
+            let vk = read_vk_from_file(&vk_file)?;
+            let inputs = read_public_input_from_file(&public_input_file)?;
+            let proof = read_proof_from_file(&proof_file)?;
 
             let verification_result =
                 Groth16::<_, CircomCircuit<Bn256>>::verify_with_processed_vk(&vk, &inputs, &proof);
@@ -137,10 +134,10 @@ pub fn groth16_verify(
             }
         }
 
-        "BLS12381" => {
-            let vk = read_vk_from_file(&vk_file).unwrap();
-            let inputs = read_public_input_from_file_bls12381(&public_input_file).unwrap();
-            let proof = read_proof_from_file(&proof_file).unwrap();
+        "bls12381" => {
+            let vk = read_vk_from_file(&vk_file)?;
+            let inputs = read_public_input_from_file_bls12381(&public_input_file)?;
+            let proof = read_proof_from_file(&proof_file)?;
 
             let verification_result =
                 Groth16::<_, CircomCircuit<Bls12>>::verify_with_processed_vk(&vk, &inputs, &proof);
