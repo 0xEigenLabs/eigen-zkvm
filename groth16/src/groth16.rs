@@ -1,7 +1,7 @@
 use crate::bellman_ce::{groth16::*, Circuit};
+use crate::snark::SNARK;
 use algebraic::errors::Result;
 use franklin_crypto::bellman::pairing::Engine;
-use crate::snark::SNARK;
 use rand::Rng;
 use std::marker::PhantomData;
 
@@ -61,11 +61,11 @@ mod tests {
     use algebraic::circom_circuit::CircomCircuit;
     use algebraic::reader;
     use algebraic::witness::{load_input_for_witness, WitnessCalculator};
-    const INPUT_FILE: &'static str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.input.json");
+    const INPUT_FILE: &'static str =
+        concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.input.json");
     const CIRCUIT_FILE: &'static str =
         concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
-    const WASM_FILE: &'static str =
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.wasm");
+    const WASM_FILE: &'static str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.wasm");
     const CIRCUIT_FILE_BLS12: &'static str = concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/test-vectors/mycircuit_bls12381.r1cs"

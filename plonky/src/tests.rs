@@ -1,8 +1,8 @@
-use std::fs;
-use algebraic::reader::load_r1cs;
 use crate::bellman_ce::bn256::Bn256;
 use crate::circom_circuit::CircomCircuit;
 use crate::{plonk, reader};
+use algebraic::reader::load_r1cs;
+use std::fs;
 
 const CIRCUIT_FILE: &'static str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
 const WITNESS_FILE: &'static str =

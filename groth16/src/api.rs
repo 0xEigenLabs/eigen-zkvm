@@ -1,10 +1,10 @@
 use crate::bellman_ce::pairing::{bls12_381::Bls12, bn256::Bn256};
-use algebraic::errors::{EigenError, Result};
-use algebraic::witness::{load_input_for_witness, WitnessCalculator};
-use algebraic::circom_circuit::CircomCircuit;
-use algebraic::reader::load_r1cs;
 use crate::groth16::Groth16;
 use crate::snark::SNARK;
+use algebraic::circom_circuit::CircomCircuit;
+use algebraic::errors::{EigenError, Result};
+use algebraic::reader::load_r1cs;
+use algebraic::witness::{load_input_for_witness, WitnessCalculator};
 
 // TODO plz move this function into zkit and remove this file
 pub fn groth16_setup(circuit_file: &String, curve_type: &str) -> Result<()> {

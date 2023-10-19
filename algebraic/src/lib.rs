@@ -13,9 +13,9 @@ extern crate rand;
 
 pub mod circom_circuit;
 pub mod errors;
-pub mod reader;
 pub mod field_gl;
 pub mod r1cs_file;
+pub mod reader;
 pub mod witness;
 
 pub mod utils;
