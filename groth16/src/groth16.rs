@@ -21,11 +21,11 @@ impl<E: Engine, C: Circuit<E>> SNARK<E::Fr> for Groth16<E, C> {
     fn circuit_specific_setup<R: Rng>(
         circuit: Self::Circuit,
         rng: &mut R,
-    ) -> Result<(Self::ProvingKey, Self::PreparedVerificationKey)> {
+    ) -> Result<(Self::ProvingKey, Self::VerificationKey)> {
         let pk: Parameters<E> = generate_random_parameters::<E, Self::Circuit, R>(circuit, rng)?;
-        let pvk = prepare_verifying_key(&pk.vk);
+        let vk = pk.vk.clone();
 
-        Ok((pk, pvk))
+        Ok((pk, vk))
     }
 
     fn prove<R: Rng>(
@@ -39,10 +39,11 @@ impl<E: Engine, C: Circuit<E>> SNARK<E::Fr> for Groth16<E, C> {
     }
 
     fn verify_with_processed_vk(
-        circuit_pvk: &Self::PreparedVerificationKey,
+        circuit_vk: &Self::VerificationKey,
         public_input: &[E::Fr],
         proof: &Self::Proof,
     ) -> Result<bool> {
+        let circuit_pvk = prepare_verifying_key(&circuit_vk);
         let result = verify_proof(&circuit_pvk, proof, &public_input)?;
 
         Ok(result)
