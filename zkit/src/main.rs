@@ -126,7 +126,6 @@ struct ExportVerificationKeyOpt {
 
 /// Analyse circuits
 #[derive(Parser, Debug)]
-
 struct AnalyseOpt {
     #[arg(short)]
     circuit_file: String,
@@ -136,7 +135,6 @@ struct AnalyseOpt {
 
 /// Export aggregation proof's verification key
 #[derive(Parser, Debug)]
-
 struct ExportAggregationVerificationKeyOpt {
     #[arg(long = "c")]
     num_proofs_to_check: usize,
@@ -150,7 +148,6 @@ struct ExportAggregationVerificationKeyOpt {
 
 /// Proof aggregation for plonk
 #[derive(Parser, Debug)]
-
 struct AggregationProveOpt {
     /// SRS monomial form
     #[arg(short)]
@@ -171,7 +168,6 @@ struct AggregationProveOpt {
 
 /// Verify aggregation proof
 #[derive(Parser, Debug)]
-
 struct AggregationVerifyOpt {
     #[arg(long = "p", default_value = "aggregation_proof.bin")]
     proof: String,
@@ -181,7 +177,6 @@ struct AggregationVerifyOpt {
 
 /// A subcommand for generating a Solidity aggregation verifier smart contract
 #[derive(Parser, Debug)]
-
 struct GenerateAggregationVerifierOpt {
     /// Original individual verification key file
     #[arg(short, long = "old_vk", default_value = "vk.bin")]
@@ -199,7 +194,6 @@ struct GenerateAggregationVerifierOpt {
 
 /// Stark proving and verifying all in one
 #[derive(Parser, Debug)]
-
 struct StarkProveOpt {
     #[arg(short, long = "stark_stuct", default_value = "stark_struct.json")]
     stark_struct: String,
@@ -226,7 +220,6 @@ struct StarkProveOpt {
 
 /// Check aggregation proof
 #[derive(Parser, Debug)]
-
 struct AggregationCheckOpt {
     #[arg(long = "f")]
     old_proof_list: String,
@@ -238,8 +231,9 @@ struct AggregationCheckOpt {
     new_proof: String,
 }
 
+/// Setup compressor12 for converting R1CS to PIL
 #[derive(Parser, Debug)]
-struct Compresor12SetupOpt {
+struct Compressor12SetupOpt {
     #[arg(long = "r", default_value = "mycircuit.verifier.r1cs")]
     r1cs_file: String,
     #[arg(long = "c", default_value = "mycircuit.c12.const")]
@@ -252,8 +246,9 @@ struct Compresor12SetupOpt {
     force_n_bits: usize,
 }
 
+/// Exec compressor12 for converting R1CS to PIL
 #[derive(Parser, Debug)]
-struct Compresor12ExecOpt {
+struct Compressor12ExecOpt {
     // input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
     #[arg(long = "i", default_value = "mycircuit.proof.zkin.json")]
     input_file: String,
@@ -268,7 +263,7 @@ struct Compresor12ExecOpt {
     commit_file: String,
 }
 
-// generate the input1.zkin.json and input2.zkin.json into out.zkin.json
+/// generate the input1.zkin.json and input2.zkin.json into out.zkin.json
 #[derive(Parser, Debug)]
 struct JoinZkinExecOpt {
     // #[arg(long = "starksetup", default_value = "starksetup.json")]
@@ -280,6 +275,8 @@ struct JoinZkinExecOpt {
     #[arg(long = "zkinout", default_value = "out.zkin.json")]
     zkinout: String,
 }
+
+/// Setup groth16
 #[derive(Parser, Debug)]
 pub struct Groth16SetupOpt {
     #[arg(short, required = true, default_value = "BN128")]
@@ -291,6 +288,8 @@ pub struct Groth16SetupOpt {
     #[arg(short, required = true, default_value = "verification_key.bin")]
     vk_file: String,
 }
+
+/// Prove with groth16
 #[derive(Parser, Debug)]
 pub struct Groth16ProveOpt {
     #[arg(short, required = true, default_value = "BN128")]
@@ -308,6 +307,8 @@ pub struct Groth16ProveOpt {
     #[arg(long = "proof", required = true, default_value = "proof.bin")]
     proof_file: String,
 }
+
+/// Verify with groth16
 #[derive(Parser, Debug)]
 pub struct Groth16VerifyOpt {
     #[arg(short, required = true, default_value = "BN128")]
@@ -355,9 +356,9 @@ enum Command {
     Analyse(AnalyseOpt),
 
     #[command(name = "compressor12_setup")]
-    Compresor12Setup(Compresor12SetupOpt),
+    Compressor12Setup(Compressor12SetupOpt),
     #[command(name = "compressor12_exec")]
-    Compresor12Exec(Compresor12ExecOpt),
+    Compressor12Exec(Compressor12ExecOpt),
     #[command(name = "join_zkin")]
     JoinZkin(JoinZkinExecOpt),
 
@@ -445,7 +446,7 @@ fn main() {
         .map_err(|e| EigenError::from(format!("stark prove error {:?}", e))),
 
         Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
-        Command::Compresor12Setup(args) => starky::compressor12_setup::setup(
+        Command::Compressor12Setup(args) => starky::compressor12_setup::setup(
             &args.r1cs_file,
             &args.pil_file,
             &args.const_file,
@@ -453,7 +454,7 @@ fn main() {
             args.force_n_bits,
         )
         .map_err(|_| EigenError::from("compreesor12 setup error".to_string())),
-        Command::Compresor12Exec(args) => starky::compressor12_exec::exec(
+        Command::Compressor12Exec(args) => starky::compressor12_exec::exec(
             &args.input_file,
             &args.wasm_file,
             &args.pil_file,
