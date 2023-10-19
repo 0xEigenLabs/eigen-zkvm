@@ -1,6 +1,7 @@
 extern crate clap;
 use clap::{command, Parser};
 use dsl_compile::circom_compiler;
+use eigen_zkit::groth16_api::*;
 use plonky::api::{
     aggregation_check, aggregation_prove, aggregation_verify, analyse, calculate_witness,
     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
@@ -279,6 +280,45 @@ struct JoinZkinExecOpt {
     #[arg(long = "zkinout", default_value = "out.zkin.json")]
     zkinout: String,
 }
+#[derive(Parser, Debug)]
+pub struct Groth16SetupOpt {
+    #[arg(short, required = true, default_value = "BN128")]
+    curve_type: String,
+    #[arg(long = "r1cs", required = true)]
+    circuit_file: String,
+    #[arg(short, required = true, default_value = "g16.zkey")]
+    pk_file: String,
+    #[arg(short, required = true, default_value = "verification_key.bin")]
+    vk_file: String,
+}
+#[derive(Parser, Debug)]
+pub struct Groth16ProveOpt {
+    #[arg(short, required = true, default_value = "BN128")]
+    curve_type: String,
+    #[arg(long = "r1cs", required = true)]
+    circuit_file: String,
+    #[arg(short, required = true)]
+    wtns_file: String,
+    #[arg(short, required = true, default_value = "g16.zkey")]
+    pk_file: String,
+    #[arg(short, required = true)]
+    input_file: String,
+    #[arg(long = "input", required = true, default_value = "public_input.bin")]
+    public_input_file: String,
+    #[arg(long = "proof", required = true, default_value = "proof.bin")]
+    proof_file: String,
+}
+#[derive(Parser, Debug)]
+pub struct Groth16VerifyOpt {
+    #[arg(short, required = true, default_value = "BN128")]
+    curve_type: String,
+    #[arg(short, required = true, default_value = "verification_key.bin")]
+    vk_file: String,
+    #[arg(long = "input", required = true, default_value = "public_input.bin")]
+    public_input_file: String,
+    #[arg(long = "proof", required = true, default_value = "proof.bin")]
+    proof_file: String,
+}
 
 #[derive(Parser, Debug)]
 enum Command {
@@ -320,6 +360,13 @@ enum Command {
     Compresor12Exec(Compresor12ExecOpt),
     #[command(name = "join_zkin")]
     JoinZkin(JoinZkinExecOpt),
+
+    #[command(name = "groth16_setup")]
+    Groth16Setup(Groth16SetupOpt),
+    #[command(name = "groth16_prove")]
+    Groth16Prove(Groth16ProveOpt),
+    #[command(name = "groth16_verify")]
+    Groth16Verify(Groth16VerifyOpt),
 }
 
 #[derive(Parser, Debug)]
@@ -418,6 +465,30 @@ fn main() {
             starky::zkin_join::join_zkin(&args.zkin1, &args.zkin2, &args.zkinout)
                 .map_err(|_| EigenError::from("join_zkin error".to_string()))
         }
+        Command::Groth16Setup(args) => groth16_setup(
+            &args.curve_type,
+            &args.circuit_file,
+            &args.pk_file,
+            &args.vk_file,
+        )
+        .map_err(|e| EigenError::from(format!("groth16 setup error {:?}", e))),
+        Command::Groth16Prove(args) => groth16_prove(
+            &args.curve_type,
+            &args.circuit_file,
+            &args.wtns_file,
+            &args.pk_file,
+            &args.input_file,
+            &args.public_input_file,
+            &args.proof_file,
+        )
+        .map_err(|e| EigenError::from(format!("groth16 prove error {:?}", e))),
+        Command::Groth16Verify(args) => groth16_verify(
+            &args.curve_type,
+            &args.vk_file,
+            &args.public_input_file,
+            &args.proof_file,
+        )
+        .map_err(|e| EigenError::from(format!("groth16 verify error {:?}", e))),
     };
     match exec_result {
         Err(x) => {

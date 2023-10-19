@@ -1,10 +1,3 @@
-use crate::bellman_ce::pairing::{
-    bls12_381::{Bls12, Fr as Fr_bls12381},
-    bn256::{Bn256, Fr},
-};
-use crate::bellman_ce::plonk::better_cs::keys::{read_fr_vec, write_fr_vec};
-use crate::groth16::Groth16;
-use crate::snark::SNARK;
 use algebraic::{
     circom_circuit::CircomCircuit,
     errors::{EigenError, Result},
@@ -12,13 +5,22 @@ use algebraic::{
     witness::{load_input_for_witness, WitnessCalculator},
     Field, PrimeField,
 };
-use franklin_crypto::bellman::{
+use groth16::bellman_ce::plonk::better_cs::keys::{read_fr_vec, write_fr_vec};
+use groth16::bellman_ce::{
     groth16::{Parameters, Proof, VerifyingKey},
     Engine,
 };
+use groth16::groth16::Groth16;
+use groth16::{
+    bellman_ce::pairing::{
+        bls12_381::{Bls12, Fr as Fr_bls12381},
+        bn256::{Bn256, Fr},
+    },
+    snark::SNARK,
+};
 use num_traits::Zero;
+use rand;
 
-// TODO plz move this function into zkit and remove this file
 pub fn groth16_setup(
     curve_type: &str,
     circuit_file: &String,
@@ -47,7 +49,7 @@ pub fn groth16_setup(
     Ok(())
 }
 
-pub fn groth16_proof(
+pub fn groth16_prove(
     curve_type: &str,
     circuit_file: &String,
     wtns_file: &String,
@@ -120,7 +122,7 @@ pub fn groth16_verify(
     vk_file: &String,
     public_input_file: &String,
     proof_file: &String,
-) -> Result<bool> {
+) -> Result<()> {
     match curve_type {
         "BN128" => {
             let vk = read_vk_from_file(&vk_file).unwrap();
@@ -129,13 +131,10 @@ pub fn groth16_verify(
 
             let verification_result =
                 Groth16::<_, CircomCircuit<Bn256>>::verify_with_processed_vk(&vk, &inputs, &proof);
-            return match verification_result {
-                Ok(true) => Ok(true),
-                Ok(false) => Ok(false),
-                Err(_) => Err(EigenError::Unknown(
-                    "Verification process for bn256 failed.".to_string(),
-                )),
-            };
+
+            if verification_result.is_err() || !verification_result.unwrap() {
+                return Err(EigenError::Unknown("verify failed".to_string()));
+            }
         }
 
         "BLS12381" => {
@@ -145,20 +144,21 @@ pub fn groth16_verify(
 
             let verification_result =
                 Groth16::<_, CircomCircuit<Bls12>>::verify_with_processed_vk(&vk, &inputs, &proof);
-            return match verification_result {
-                Ok(true) => Ok(true),
-                Ok(false) => Ok(false),
-                Err(_) => Err(EigenError::Unknown(
-                    "Verification process for bls12381 failed.".to_string(),
-                )),
-            };
+
+            if verification_result.is_err() || !verification_result.unwrap() {
+                return Err(EigenError::Unknown("verify failed".to_string()));
+            }
         }
 
-        _ => Err(EigenError::Unknown(format!(
-            "Unknown curve type: {}",
-            curve_type
-        ))),
+        _ => {
+            return Err(EigenError::Unknown(format!(
+                "Unknown curve type: {}",
+                curve_type
+            )))
+        }
     }
+
+    Ok(())
 }
 
 fn create_circuit_from_file<E: Engine>(
