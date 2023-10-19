@@ -1,65 +1,18 @@
 use crate::errors::{EigenError, Result};
 use byteorder::{LittleEndian, ReadBytesExt};
+use itertools::Itertools;
+use std::collections::BTreeMap;
 use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufReader, Read, Seek};
 use std::str;
 
 use crate::bellman_ce::{
     kate_commitment::{Crs, CrsForLagrangeForm, CrsForMonomialForm},
     pairing::Engine,
-    plonk::{
-        better_cs::cs::PlonkCsWidth4WithNextStepParams,
-        better_cs::keys::{Proof, VerificationKey},
-    },
     Field, PrimeField, PrimeFieldRepr, ScalarEngine,
 };
 
-#[cfg(not(feature = "wasm"))]
-use crate::aggregation::{AggregatedProof, AggregationVerificationKey};
-
-/// load proof by filename
-pub fn load_proof<E: Engine>(filename: &str) -> Proof<E, PlonkCsWidth4WithNextStepParams> {
-    Proof::<E, PlonkCsWidth4WithNextStepParams>::read(
-        File::open(filename).expect("read proof file err"),
-    )
-    .expect("read proof err")
-}
-
-/// load multiple proofs form a list
-pub fn load_proofs_from_list<E: Engine>(
-    list: &str,
-) -> Vec<Proof<E, PlonkCsWidth4WithNextStepParams>> {
-    let file = File::open(list).expect("read proof list file err");
-    let lines: Vec<String> = BufReader::new(file)
-        .lines()
-        .map(|l| l.expect("could not parse line"))
-        .collect();
-    let proofs: Vec<Proof<E, PlonkCsWidth4WithNextStepParams>> = lines
-        .iter()
-        .map(|l| {
-            log::debug!("reading {:?}", l);
-            load_proof::<E>(l)
-        })
-        .collect();
-
-    assert!(!proofs.is_empty(), "no proof file found!");
-
-    let num_inputs = proofs[0].num_inputs;
-    for p in &proofs {
-        assert_eq!(p.num_inputs, num_inputs, "proofs num_inputs mismatch!");
-    }
-
-    proofs
-}
-
-/// load verification key file by filename
-pub fn load_verification_key<E: Engine>(
-    filename: &str,
-) -> VerificationKey<E, PlonkCsWidth4WithNextStepParams> {
-    let mut reader =
-        BufReader::with_capacity(1 << 24, File::open(filename).expect("read vk file err"));
-    VerificationKey::<E, PlonkCsWidth4WithNextStepParams>::read(&mut reader).expect("read vk err")
-}
+use crate::circom_circuit::{CircuitJson, R1CS};
 
 /// get universal setup file by filename
 fn get_universal_setup_file_buff_reader(setup_file_name: &str) -> Result<BufReader<File>> {
@@ -194,19 +147,86 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> 
     Ok(result)
 }
 
-/// load aggregation proof file by filename
-#[cfg(not(feature = "wasm"))]
-pub fn load_aggregated_proof(filename: &str) -> AggregatedProof {
-    AggregatedProof::read(File::open(filename).expect("read aggregated proof file err"))
-        .expect("read aggregated proof err")
+/// load r1cs file by filename with autodetect encoding (bin or json)
+pub fn load_r1cs<E: ScalarEngine>(filename: &str) -> R1CS<E> {
+    if filename.ends_with("json") {
+        load_r1cs_from_json_file(filename)
+    } else {
+        let (r1cs, _wire_mapping) = load_r1cs_from_bin_file(filename);
+        r1cs
+    }
 }
 
-/// load aggregation verification key file by filename
-#[cfg(not(feature = "wasm"))]
-pub fn load_aggregation_verification_key(filename: &str) -> AggregationVerificationKey<'static> {
-    let mut reader = BufReader::with_capacity(
-        1 << 24,
-        File::open(filename).expect("read aggregation vk file err"),
-    );
-    AggregationVerificationKey::read(&mut reader).expect("read aggregation vk err")
+/// load r1cs from json file by filename
+fn load_r1cs_from_json_file<E: ScalarEngine>(filename: &str) -> R1CS<E> {
+    let reader = OpenOptions::new()
+        .read(true)
+        .open(filename)
+        .expect("unable to open.");
+    load_r1cs_from_json(BufReader::new(reader))
+}
+
+/// load r1cs from json by a reader
+fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
+    let circuit_json: CircuitJson = serde_json::from_reader(reader).expect("unable to read.");
+
+    let num_inputs = circuit_json.num_inputs + circuit_json.num_outputs + 1;
+    let num_aux = circuit_json.num_variables - num_inputs;
+
+    let convert_constraint = |lc: &BTreeMap<String, String>| {
+        lc.iter()
+            .map(|(index, coeff)| (index.parse().unwrap(), E::Fr::from_str(coeff).unwrap()))
+            .collect_vec()
+    };
+
+    let constraints = circuit_json
+        .constraints
+        .iter()
+        .map(|c| {
+            (
+                convert_constraint(&c[0]),
+                convert_constraint(&c[1]),
+                convert_constraint(&c[2]),
+            )
+        })
+        .collect_vec();
+
+    R1CS {
+        num_inputs,
+        num_aux,
+        num_variables: circuit_json.num_variables,
+        num_outputs: circuit_json.num_outputs,
+        constraints,
+        custom_gates: vec![],
+        custom_gates_uses: vec![],
+    }
+}
+
+/// load r1cs from bin file by filename
+fn load_r1cs_from_bin_file<E: ScalarEngine>(filename: &str) -> (R1CS<E>, Vec<usize>) {
+    let reader = OpenOptions::new()
+        .read(true)
+        .open(filename)
+        .expect(&format!("unable to open {}.", filename));
+    load_r1cs_from_bin(BufReader::new(reader))
+}
+
+/// load r1cs from bin by a reader
+pub fn load_r1cs_from_bin<R: Read + Seek, E: ScalarEngine>(reader: R) -> (R1CS<E>, Vec<usize>) {
+    let file = crate::r1cs_file::from_reader::<R, E>(reader).expect("unable to read.");
+    let num_inputs = (1 + file.header.n_pub_in + file.header.n_pub_out) as usize;
+    let num_variables = file.header.n_wires as usize;
+    let num_aux = num_variables - num_inputs;
+    (
+        R1CS {
+            num_aux,
+            num_inputs,
+            num_variables,
+            num_outputs: file.header.n_pub_out as usize,
+            constraints: file.constraints,
+            custom_gates: file.custom_gates,
+            custom_gates_uses: file.custom_gates_uses,
+        },
+        file.wire_mapping.iter().map(|e| *e as usize).collect_vec(),
+    )
 }

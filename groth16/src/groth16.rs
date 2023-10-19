@@ -1,6 +1,6 @@
 use crate::bellman_ce::{groth16::*, Circuit};
-use crate::errors::Result;
-use crate::franklin_crypto::bellman::pairing::Engine;
+use algebraic::errors::Result;
+use franklin_crypto::bellman::pairing::Engine;
 use crate::snark::SNARK;
 use rand::Rng;
 use std::marker::PhantomData;
@@ -58,9 +58,9 @@ mod tests {
     use crate::bellman_ce::bls12_381::Bls12;
     use crate::bellman_ce::bls12_381::Fr as Fr_bls12381;
     use crate::bellman_ce::bn256::{Bn256, Fr};
-    use crate::circom_circuit::CircomCircuit;
-    use crate::reader;
-    use crate::witness::{load_input_for_witness, WitnessCalculator};
+    use algebraic::circom_circuit::CircomCircuit;
+    use algebraic::reader;
+    use algebraic::witness::{load_input_for_witness, WitnessCalculator};
     const INPUT_FILE: &'static str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/input.json");
     const CIRCUIT_FILE: &'static str =
         concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");

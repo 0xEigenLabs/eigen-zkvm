@@ -252,7 +252,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
 #[cfg(test)]
 mod test {
     use super::*;
-    use plonky::reader::load_r1cs;
+    use algebraic::reader::load_r1cs;
     use std::fs::File;
     use std::io::Write;
     use std::path::Path;

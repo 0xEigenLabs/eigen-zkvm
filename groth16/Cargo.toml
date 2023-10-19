@@ -1,25 +1,16 @@
 [package]
-name = "plonky"
-version = "0.0.2"
+name = "groth16"
+version = "0.1.0"
 edition = "2021"
-license = "Apache-2.0"
-description = "Eigen Plonk"
-documentation = "eigen.cash"
-homepage = "eigen.cash"
-
-[lib]
-crate-type = ["cdylib", "rlib"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bellman_vk_codegen = { git = "https://github.com/0xEigenLabs/solidity_plonk_verifier.git", version = "0.2.0" }
-#bellman_vk_codegen = { path = "../../solidity_plonk_verifier/bellman_vk_codegen", version = "0.2.0" }
-recursive_aggregation_circuit = { package = "recursive_aggregation_circuit", git = "https://github.com/0xEigenLabs/recursive_aggregation_circuit.git", version = "1.0.0"}
-#recursive_aggregation_circuit = { package = "recursive_aggregation_circuit", path = "../../recursive_aggregation_circuit", version = "1.0.0"}
 byteorder = "1"
 franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = [ "plonk" ], version = "0.0.5"}
 #franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
+bellman_vk_codegen = { git = "https://github.com/0xEigenLabs/solidity_plonk_verifier.git", version = "0.2.0" }
+#bellman_vk_codegen = { path = "../../solidity_plonk_verifier/bellman_vk_codegen", version = "0.2.0" }
 
 proptest = "1.1"
 hex-literal = "0.2.1"
@@ -53,5 +44,5 @@ rand = { version="0.6.5", features = ["wasm-bindgen"] }
 wasm-bindgen-test = "0.3"
 
 [features]
-default = ["bellman_vk_codegen/multicore", "franklin-crypto/multicore", "ethabi", "recursive_aggregation_circuit/multicore", "wasmer/default", "algebraic/default"]
-wasm = ["bellman_vk_codegen/wasm", "recursive_aggregation_circuit/wasm", "wasmer/js-default", "algebraic/wasm"]
+default = ["bellman_vk_codegen/multicore", "franklin-crypto/multicore", "ethabi", "wasmer/default", "algebraic/default"]
+wasm = ["bellman_vk_codegen/wasm", "wasmer/js-default", "algebraic/wasm"]

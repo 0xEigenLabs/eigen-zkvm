@@ -1,5 +1,5 @@
 use std::fs;
-
+use algebraic::reader::load_r1cs;
 use crate::bellman_ce::bn256::Bn256;
 use crate::circom_circuit::CircomCircuit;
 use crate::{plonk, reader};
@@ -18,7 +18,7 @@ const CIRCUIT_ANALYZE_RESULT: &'static str = r#"{"num_inputs":2,"num_aux":2,"num
 #[test]
 fn test_analyze() {
     let circuit = CircomCircuit::<Bn256> {
-        r1cs: reader::load_r1cs(CIRCUIT_FILE),
+        r1cs: load_r1cs(CIRCUIT_FILE),
         witness: None,
         wire_mapping: None,
         aux_offset: plonk::AUX_OFFSET,
@@ -35,7 +35,7 @@ fn test_analyze() {
 #[test]
 fn test_export_verification_key() {
     let circuit = CircomCircuit {
-        r1cs: reader::load_r1cs(CIRCUIT_FILE),
+        r1cs: load_r1cs(CIRCUIT_FILE),
         witness: None,
         wire_mapping: None,
         aux_offset: plonk::AUX_OFFSET,
@@ -57,7 +57,7 @@ fn test_export_verification_key() {
 #[test]
 fn test_prove() {
     let circuit = CircomCircuit {
-        r1cs: reader::load_r1cs(CIRCUIT_FILE),
+        r1cs: load_r1cs(CIRCUIT_FILE),
         witness: Some(reader::load_witness_from_file::<Bn256>(WITNESS_FILE)),
         wire_mapping: None,
         aux_offset: plonk::AUX_OFFSET,

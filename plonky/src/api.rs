@@ -1,9 +1,8 @@
-use crate::bellman_ce::pairing::{bls12_381::Bls12, bn256::Bn256};
+use crate::bellman_ce::pairing::bn256::Bn256;
 use crate::errors::{EigenError, Result};
-use crate::groth16::Groth16;
-use crate::snark::SNARK;
 use crate::witness::{load_input_for_witness, WitnessCalculator};
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
+use algebraic::reader::load_r1cs;
 
 #[cfg(not(feature = "wasm"))]
 use crate::{aggregation, verifier};
@@ -28,7 +27,7 @@ pub fn setup(power: u32, srs_monomial_form: &String) -> Result<()> {
 // circuit filename default resolver
 pub fn analyse(circuit_file: &String, output: &String) -> Result<()> {
     let circuit = CircomCircuit::<Bn256> {
-        r1cs: reader::load_r1cs(&circuit_file),
+        r1cs: load_r1cs(&circuit_file),
         witness: None,
         wire_mapping: None,
         aux_offset: plonk::AUX_OFFSET,
@@ -55,7 +54,7 @@ pub fn prove(
     public_json: &String,
 ) -> Result<()> {
     let circuit = CircomCircuit {
-        r1cs: reader::load_r1cs(circuit_file),
+        r1cs: load_r1cs(circuit_file),
         witness: Some(reader::load_witness_from_file::<Bn256>(witness)),
         wire_mapping: None,
         aux_offset: plonk::AUX_OFFSET,
@@ -100,7 +99,7 @@ pub fn export_verification_key(
     output_vk: &String,
 ) -> Result<()> {
     let circuit = CircomCircuit {
-        r1cs: reader::load_r1cs(circuit_file),
+        r1cs: load_r1cs(circuit_file),
         witness: None,
         wire_mapping: None,
         aux_offset: plonk::AUX_OFFSET,
@@ -227,51 +226,4 @@ pub fn generate_aggregation_verifier(
     };
     verifier::recursive_plonk_verifier::create_verifier_contract_from_default_template(config, sol);
     Result::Ok(())
-}
-
-pub fn groth16_setup(circuit_file: &String, curve_type: &str) -> Result<()> {
-    let mut rng = rand::thread_rng();
-    match curve_type {
-        "bn256" => {
-            let circuit: CircomCircuit<Bn256> = CircomCircuit {
-                r1cs: reader::load_r1cs(circuit_file),
-                witness: None,
-                wire_mapping: None,
-                aux_offset: 0,
-            };
-            let (pk, pvk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
-
-            // let pk_json = serde_json::to_string(&pk)?;
-            // let pk_file = std::fs::File::create("pk.json")?;
-            // std::fs::write(pk_file, pk_json.as_bytes())?;
-
-            // let pvk_json = serde_json::to_string(&pvk)?;
-            // let mut pvk_file = std::fs::File::create("pvk.json")?;
-            // std::fs::write(pvk_json.as_bytes())?;
-        }
-        "bls12381" => {
-            let circuit: CircomCircuit<Bls12> = CircomCircuit {
-                r1cs: reader::load_r1cs(circuit_file),
-                witness: None,
-                wire_mapping: None,
-                aux_offset: 0,
-            };
-            let (pk, pvk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
-
-            // let pk_json = serde_json::to_string(&pk)?;
-            // let mut pk_file = std::fs::File::create("pk.json")?;
-            // std::fs::write(pk_json.as_bytes())?;
-
-            // let pvk_json = serde_json::to_string(&pvk)?;
-            // let mut pvk_file = std::fs::File::create("pvk.json")?;
-            // std::fs::write(pvk_json.as_bytes())?;
-        }
-        _ => {
-            return Err(EigenError::Unknown(format!(
-                "Unknown curve type: {}",
-                curve_type
-            )))
-        }
-    };
-    Ok(())
 }

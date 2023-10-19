@@ -1,4 +1,4 @@
-use crate::errors::Result;
+use algebraic::errors::Result;
 use franklin_crypto::bellman::pairing::ff::PrimeField;
 use rand::Rng;
 /// The basic functionality for a SNARK.
