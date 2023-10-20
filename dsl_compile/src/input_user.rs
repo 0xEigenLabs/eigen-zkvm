@@ -75,35 +75,37 @@ pub fn get_simplification_style(
 
 impl Input {
     pub fn new(
-        input: PathBuf,
-        output_path: PathBuf,
+        input: &Path,
+        output_path: &Path,
         o_style: SimplificationStyle,
         prime: String,
         paths: Vec<String>,
     ) -> Result<Input, ()> {
         let file_name = input.file_stem().unwrap().to_str().unwrap().to_string();
-        let output_c_path = Input::build_folder(&output_path, &file_name, CPP);
-        let output_js_path = Input::build_folder(&output_path, &file_name, JS);
+        let output_c_path = Input::build_folder(output_path, &file_name, CPP);
+        let output_js_path = Input::build_folder(output_path, &file_name, JS);
         let mut link_libraries: Vec<PathBuf> = vec![];
         for path in paths.into_iter() {
             link_libraries.push(Path::new(&path).to_path_buf());
         }
 
+        let input = input.to_path_buf();
+
         Result::Ok(Input {
             field: P_0,
             input_program: input,
-            out_r1cs: Input::build_output(&output_path, &file_name, R1CS),
+            out_r1cs: Input::build_output(output_path, &file_name, R1CS),
             out_wat_code: Input::build_output(&output_js_path, &file_name, WAT),
             out_wasm_code: Input::build_output(&output_js_path, &file_name, WASM),
-            out_js_folder: output_js_path.clone(),
+            out_js_folder: output_js_path.to_path_buf(),
             out_wasm_name: file_name.clone(),
-            out_c_folder: output_c_path.clone(),
+            out_c_folder: output_c_path.to_path_buf(),
             out_c_run_name: file_name.clone(),
             out_c_code: Input::build_output(&output_c_path, &file_name, CPP),
             out_c_dat: Input::build_output(&output_c_path, &file_name, DAT),
-            out_sym: Input::build_output(&output_path, &file_name, SYM),
+            out_sym: Input::build_output(output_path, &file_name, SYM),
             out_json_constraints: Input::build_output(
-                &output_path,
+                output_path,
                 &format!("{}_constraints", file_name),
                 JSON,
             ),
@@ -132,15 +134,16 @@ impl Input {
         })
     }
 
-    fn build_folder(output_path: &PathBuf, filename: &str, ext: &str) -> PathBuf {
-        let mut file = output_path.clone();
+    fn build_folder(output_path: &Path, filename: &str, ext: &str) -> Box<Path> {
+        let mut file = output_path.to_path_buf();
         let folder_name = format!("{}_{}", filename, ext);
         file.push(folder_name);
-        file
+
+        file.into_boxed_path()
     }
 
-    fn build_output(output_path: &PathBuf, filename: &str, ext: &str) -> PathBuf {
-        let mut file = output_path.clone();
+    fn build_output(output_path: &Path, filename: &str, ext: &str) -> PathBuf {
+        let mut file = output_path.to_path_buf();
         file.push(format!("{}.{}", filename, ext));
         file
     }

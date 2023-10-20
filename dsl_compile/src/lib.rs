@@ -1,4 +1,5 @@
 //! It's for: Domain Specific Language(DSL) compiler: now only include circom compile.
+
 use std::path::Path;
 
 mod compilation_user;
@@ -30,8 +31,8 @@ pub fn circom_compiler(
         fullopt,
         o2_arg,
     )?;
-    let input = std::path::PathBuf::from(input);
-    let output = std::path::PathBuf::from(output);
+    let input = Path::new(&input);
+    let output = Path::new(&output);
 
     let user_input = input_user::Input::new(input, output, o_style, prime, link_directories)?;
     let mut program_archive = parser_user::parse_project(&user_input)?;
