@@ -31,6 +31,7 @@ log = "0.4.0"
 
 # R1CS and Goldilocks
 plonky = { package="plonky", path = "../plonky", version = "0.0.2" }
+algebraic = { path = "../algebraic" }
 
 #powdr pil compile tool. branch = "main"
 pil_analyzer = {git = "https://github.com/powdr-labs/powdr.git", rev = "eb593dee15e194bd066085022f8a6ea52e2dab9b", package = "pil_analyzer"}

@@ -53,26 +53,24 @@ if [ $snark_type = "groth16" ]; then
     fi
 
     if [ $first_run = "true" ]; then
-        $SNARKJS g16s $WORK_DIR/$CIRCUIT_NAME.r1cs $SRS $WORK_DIR/g16.zkey
+        $ZKIT groth16_setup -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -p $WORK_DIR/g16.zkey -v $WORK_DIR/verification_key.bin
     fi
 
     echo "2. groth16 fullprove"
-     $SNARKJS g16f $SNARK_INPUT $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm  $WORK_DIR/g16.zkey $WORK_DIR/proof.json $WORK_DIR/public.json
+    $ZKIT groth16_prove -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -w $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm -p $WORK_DIR/g16.zkey -i $SNARK_INPUT --input $WORK_DIR/public_input.bin --proof $WORK_DIR/proof.bin
 
     if [ $first_run = "true" ]; then
-        echo "3. generate verification_key"
-        $SNARKJS zkev  $WORK_DIR/g16.zkey  $WORK_DIR/verification_key.json
-
         echo "4. verify groth16 proof"
-        $SNARKJS g16v $WORK_DIR/verification_key.json $WORK_DIR/public.json $WORK_DIR/proof.json
+        $ZKIT  groth16_verify -c $CURVE -v $WORK_DIR/verification_key.bin --input $WORK_DIR/public_input.bin --proof $WORK_DIR/proof.bin
 
-        if [ $CURVE = "bn128" ]; then
-            echo "5. generate verifier contract"
-            $SNARKJS zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
+        # TODO: add g16 solidity verifier
+        #if [ $CURVE = "bn128" ]; then
+        #    echo "5. generate verifier contract"
+        #    $SNARKJS zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
 
-            echo "6. calculate verify gas cost"
-            cd aggregation && npx hardhat test test/final.test.ts
-        fi
+        #    echo "6. calculate verify gas cost"
+        #    cd aggregation && npx hardhat test test/final.test.ts
+        #fi
     fi
 
 else 

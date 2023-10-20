@@ -1,0 +1,49 @@
+[package]
+name = "algebraic"
+version = "0.0.1"
+edition = "2021"
+license = "Apache-2.0"
+description = "Eigen Algbraic based on R1CS"
+documentation = "eigen.cash"
+homepage = "eigen.cash"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+proptest = "1.1"
+hex-literal = "0.2.1"
+itertools = "0.8.1"
+log = "0.4.11"
+num-bigint = "0.3.3"
+num-traits = "0.2.8"
+serde = { version = "1.0", features = [ "derive" ] }
+serde_json = { version = "1.0", features = [ "arbitrary_precision" ] }
+hex = "*"
+wasmer = { version = "2.0", default-features = false }
+thiserror="1.0"
+fnv = { version = "1.0.3", default-features = false }
+num = { version = "0.4.0" }
+byteorder = "1"
+franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = [ "plonk" ], version = "0.0.5"}
+#franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
+
+[dev-dependencies]
+env_logger = "0.10"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rand = "0.4"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2.51", features = ["serde-serialize"]  }
+wasm-bindgen-futures = "0.4.1"
+rand = { version="0.6.5", features = ["wasm-bindgen"] }
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[features]
+default = ["franklin-crypto/multicore", "wasmer/default"]
+wasm = ["wasmer/js-default"]

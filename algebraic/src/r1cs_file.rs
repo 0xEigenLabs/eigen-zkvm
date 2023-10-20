@@ -244,6 +244,8 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
     }
     if !(header.prime_size
         == hex!("010000f093f5e1439170b97948e833285d588181b64550b829a031e1724e6430")
+        || header.prime_size
+            == hex!("01000000fffffffffe5bfeff02a4bd5305d8a10908d83933487d9d2953a7ed73")
         || header.prime_size == hex!("01000000ffffffff"))
     {
         return Err(Error::new(

@@ -1,9 +1,9 @@
 #![allow(clippy::unit_arg)]
 
+#[macro_use]
 extern crate serde;
 #[macro_use]
 extern crate hex_literal;
-extern crate bellman_vk_codegen;
 extern crate byteorder;
 extern crate franklin_crypto;
 extern crate itertools;
@@ -11,30 +11,21 @@ extern crate num_bigint;
 extern crate num_traits;
 extern crate rand;
 
-pub use algebraic::circom_circuit;
-pub use algebraic::errors;
-pub use algebraic::field_gl;
-pub use algebraic::r1cs_file;
-pub use algebraic::witness;
-
-pub mod plonk;
+pub mod circom_circuit;
+pub mod errors;
+pub mod field_gl;
+pub mod r1cs_file;
 pub mod reader;
+pub mod witness;
 
-#[cfg(not(target_arch = "wasm32"))]
-pub mod aggregation;
-
-pub mod transpile;
 pub mod utils;
-pub mod verifier;
 
 pub use bellman_ce::pairing::ff;
 pub use ff::*;
 pub use franklin_crypto::bellman as bellman_ce;
 
-pub mod api;
-
 #[cfg(test)]
-mod tests;
+mod field_gl_test;
 
 #[cfg(target_arch = "wasm32")]
 extern crate wasm_bindgen;
