@@ -1,3 +1,5 @@
+#![allow(clippy::reversed_empty_ranges)]
+
 // Most of this file is forked from source codes of [Matter Labs's zkSync](https://github.com/matter-labs/zksync)
 use crate::bellman_ce::bn256::Bn256;
 use crate::bellman_ce::{
