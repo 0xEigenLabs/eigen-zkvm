@@ -201,10 +201,10 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
             "eval" => format!("evals[{}]", r.id),
             "challenge" => format!("challenges[{}]", r.id),
             "public" => format!("publics[{}]", r.id),
-            "x" => format!("challenges[7]"),
-            "Z" => format!("Z"),
-            "xDivXSubXi" => format!("xDivXSubXi.out"),
-            "xDivXSubWXi" => format!("xDivXSubWXi.out"),
+            "x" => "challenges[7]".to_string(),
+            "Z" => "Z".to_string(),
+            "xDivXSubXi" => "xDivXSubXi.out".to_string(),
+            "xDivXSubWXi" => "xDivXSubWXi.out".to_string(),
             "tmp" => format!("tmp_{}", r.id),
             "tree1" => format!("mapValues.tree1_{}", r.id),
             "tree2" => format!("mapValues.tree2_{}", r.id - starkinfo.n_cm1),
@@ -217,7 +217,7 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                 r.id - starkinfo.n_cm1 - starkinfo.n_cm2 - starkinfo.n_cm3
             ),
             "const" => format!("consts[{}]", r.id),
-            "number" => format!("{}", r.value.as_ref().unwrap()),
+            "number" => r.value.unwrap(),
             _ => panic!("Invalid ref: {}", r.type_),
         }
     };

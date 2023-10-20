@@ -207,7 +207,6 @@ pub fn compile_code<T: FieldExtension>(
     } else {
         1 << (ctx.nbits_ext - ctx.nbits)
     };
-    let next = next;
 
     let N = if dom == "n" {
         1 << ctx.nbits
