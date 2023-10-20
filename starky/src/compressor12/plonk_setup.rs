@@ -22,7 +22,7 @@ pub struct PlonkSetup {
 }
 
 impl PlonkSetup {
-    pub fn plonk_setup(r1cs: &R1CS<GL>, opts: &Options) -> Self {
+    pub fn new(r1cs: &R1CS<GL>, opts: &Options) -> Self {
         // 1. plonk_setup_render phase
         let plonk_setup_info = PlonkSetupRenderInfo::plonk_setup_render(r1cs, opts);
         // 2. render .pil file by template.
@@ -276,9 +276,7 @@ pub fn plonk_setup_compressor(
         }
         let k = c.str_key();
         let pr = partial_rows.get_mut(&k);
-        if pr.is_some() {
-            let pr = pr.unwrap();
-
+        if let Some(pr) = pr {
             s_map[pr.n_used * 3][pr.row] = c.0 as u64;
             s_map[pr.n_used * 3 + 1][pr.row] = c.1 as u64;
             s_map[pr.n_used * 3 + 2][pr.row] = c.2 as u64;
@@ -452,8 +450,8 @@ pub fn plonk_setup_compressor(
             r += 31;
         } else if cgu.id == custom_gates_info.c_mul_add_id {
             if r < n_used {
-                for j in 0..12 {
-                    s_map[j][r] = cgu.signals[j];
+                for (j, map) in s_map.iter_mut().enumerate().take(12) {
+                    map[r] = cgu.signals[j];
                 }
             }
             let index = r;
@@ -492,11 +490,9 @@ pub fn plonk_setup_compressor(
 
             r += 1;
         } else if CustomGateInfo::check_fft_param_defined(&custom_gates_info.fft_params, cgu.id) {
-            for j in 0..12 {
-                s_map[j][r] = cgu.signals[j];
-            }
-            for j in 0..12 {
-                s_map[j][r + 1] = cgu.signals[12 + j];
+            for (j, map) in s_map.iter_mut().enumerate().take(12) {
+                map[r] = cgu.signals[j];
+                map[r + 1] = cgu.signals[12 + j];
             }
             let index = r;
             for pol_name in [GATE, POSEIDON12, CMULADD, PARTIAL, EVPOL4] {
@@ -619,8 +615,8 @@ pub fn plonk_setup_compressor(
             }
             r += 2;
         } else if cgu.id == custom_gates_info.ev_pol_id {
-            for j in 0..12 {
-                s_map[j][r] = cgu.signals[j];
+            for (j, map) in s_map.iter_mut().enumerate().take(12) {
+                map[r] = cgu.signals[j];
                 const_pols.set_matrix(
                     pil,
                     &Compressor.to_string(),
@@ -630,8 +626,8 @@ pub fn plonk_setup_compressor(
                     FGL::ZERO,
                 );
             }
-            for j in 0..9 {
-                s_map[j][r + 1] = cgu.signals[12 + j];
+            for (j, map) in s_map.iter_mut().enumerate().take(9) {
+                map[r + 1] = cgu.signals[12 + j];
                 const_pols.set_matrix(
                     pil,
                     &Compressor.to_string(),
@@ -641,8 +637,9 @@ pub fn plonk_setup_compressor(
                     FGL::ZERO,
                 );
             }
-            for j in 9..12 {
-                s_map[j][r + 1] = 0;
+            for (j, map) in s_map.iter_mut().enumerate().take(12).skip(9) {
+                map[r + 1] = 0;
+
                 const_pols.set_matrix(
                     pil,
                     &Compressor.to_string(),
@@ -721,15 +718,14 @@ pub fn plonk_setup_compressor(
         if (i % 10000) == 0 {
             log::debug!("Connection S... {}/{}", i, r);
         }
-        for j in 0..12 {
+        for (j, map) in s_map.iter_mut().enumerate().take(12) {
             if i < n_used {
-                let key = s_map[j][i];
+                let key = map[i];
                 if key == 0 {
                     continue;
                 }
                 let ls = last_signal.get(&key);
-                if ls.is_some() {
-                    let ls = ls.unwrap();
+                if let Some(ls) = ls {
                     // connect and swap the value.
                     let left = const_pols.get(
                         pil,

@@ -21,6 +21,7 @@ pub fn interpolate_prepare_block<F: FieldExtension>(
     log::debug!("linear interpolatePrepare end.... {}/{}", st_i, st_n);
 }
 
+#[allow(clippy::too_many_arguments)]
 fn _fft_block<F: FieldExtension>(
     buff: &mut [F],
     rel_pos: usize,

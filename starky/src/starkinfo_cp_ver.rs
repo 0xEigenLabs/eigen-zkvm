@@ -32,8 +32,7 @@ impl StarkInfo {
             match r.type_.as_str() {
                 "exp" => {
                     let idx = ctx.starkinfo.im_exps_list.iter().position(|&s| s == r.id);
-                    if idx.is_some() {
-                        let idx = idx.unwrap();
+                    if let Some(idx) = idx {
                         r.type_ = "cm".to_string();
                         r.id = ctx.starkinfo.im_exp2cm[&ctx.starkinfo.im_exps_list[idx]];
 

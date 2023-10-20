@@ -16,9 +16,7 @@ impl<const N: usize> MTNodeType for ElementDigest<N> {
     fn new(value: &[FGL]) -> Self {
         assert!(value.len() >= N);
         let mut fv = [FGL::ZERO; N];
-        for i in 0..N {
-            fv[i] = value[i];
-        }
+        fv[..N].copy_from_slice(&value[..N]);
         Self(fv)
     }
 
@@ -40,11 +38,11 @@ impl<const N: usize> MTNodeType for ElementDigest<N> {
 
     /// This function may return a invalid T due to it's just a container for T's inner elements.
     #[inline(always)]
-    fn as_scalar<T: PrimeField>(self) -> T::Repr {
+    fn as_scalar<T: PrimeField>(&self) -> T::Repr {
         let mut y = T::Repr::default();
         let t = y.as_mut();
-        for i in 0..N {
-            t[i] = self.0[i].as_int();
+        for (i, ti) in t.iter_mut().enumerate().take(N) {
+            *ti = self.0[i].as_int();
         }
         y
     }
@@ -142,9 +140,9 @@ mod tests {
         let mut f = fr_to_biguint(f);
         let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();
         let mut result = [FGL::ZERO; 4];
-        for i in 0..4 {
+        for res in &mut result {
             let t = &f & &mask;
-            result[i] = FGL::from(t.to_u64().unwrap());
+            *res = FGL::from(t.to_u64().unwrap());
             f = &f >> 64;
         }
         result
@@ -155,9 +153,9 @@ mod tests {
         let mut f = fr_bls12381_to_biguint(f);
         let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();
         let mut result = [FGL::ZERO; 4];
-        for i in 0..4 {
+        for res in &mut result {
             let t = &f & &mask;
-            result[i] = FGL::from(t.to_u64().unwrap());
+            *res = FGL::from(t.to_u64().unwrap());
             f = &f >> 64;
         }
         result

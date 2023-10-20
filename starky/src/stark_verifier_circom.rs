@@ -185,8 +185,8 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
         }
     };
     let mut str_code = String::from("");
-    for i in 0..code.len() {
-        let inst = &code[i];
+
+    for inst in code {
         /*
             if inst.dest.type_.as_str() == "tmp" {
                 if inst.dest.dim == 1 {
@@ -746,8 +746,8 @@ template MapValues() {{
     ));
 
     let sNames = ["", "cm1_2ns", "cm2_2ns", "cm3_2ns", "cm4_2ns"];
-    for t in 1..=4 {
-        for (i, ms) in starkinfo.map_sections.get(sNames[t]).iter().enumerate() {
+    for (t, s_name) in sNames.iter().enumerate().skip(1) {
+        for (i, ms) in starkinfo.map_sections.get(s_name).iter().enumerate() {
             let p = &starkinfo.var_pol_map[*ms];
             if p.dim == 1 {
                 res.push_str(&format!(
@@ -767,8 +767,8 @@ template MapValues() {{
         }
     }
 
-    for t in 1..=4 {
-        for (i, ms) in starkinfo.map_sections.get(sNames[t]).iter().enumerate() {
+    for (t, s_name) in sNames.iter().enumerate().skip(1) {
+        for (i, ms) in starkinfo.map_sections.get(s_name).iter().enumerate() {
             let p = &starkinfo.var_pol_map[*ms];
             if p.dim == 1 {
                 res.push_str(&format!(

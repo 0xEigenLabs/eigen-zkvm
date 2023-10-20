@@ -398,7 +398,7 @@ impl StarkInfo {
 
     fn _set_code_dimensions(
         &mut self,
-        codes: &mut Vec<Section>,
+        codes: &mut [Section],
         tmp_dim: &mut HashMap<usize, usize>,
         dim_x: usize,
     ) {
@@ -487,8 +487,7 @@ impl StarkInfo {
 
                 "exp" => {
                     let idx = ctx.starkinfo.im_exps_list.iter().position(|&x| x == r.id);
-                    if idx.is_some() {
-                        let idx = idx.unwrap();
+                    if let Some(idx) = idx {
                         r.type_ = "cm".to_string();
                         r.id = ctx.starkinfo.im_exp2cm[&ctx.starkinfo.im_exps_list[idx]];
                     } else if ctx.tmpexps.get(&r.id).is_some() && ctx.dom == "n" {

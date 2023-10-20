@@ -4,8 +4,8 @@ use crate::traits::FieldExtension;
 
 pub fn pol_mul_axi<F: FieldExtension>(p: &mut Vec<F>, init: F, acc: &F) {
     let mut r = init;
-    for i in 0..p.len() {
-        p[i] *= r;
+    for pi in p {
+        *pi *= r;
         r *= *acc;
     }
 }

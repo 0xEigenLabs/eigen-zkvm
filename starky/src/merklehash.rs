@@ -106,7 +106,7 @@ impl MerkleTreeGL {
 
     fn merkle_calculate_root_from_proof(
         &self,
-        mp: &Vec<Vec<FGL>>,
+        mp: &[Vec<FGL>],
         idx: usize,
         value: &ElementDigest<4>,
         offset: usize,
@@ -122,13 +122,9 @@ impl MerkleTreeGL {
         if cur_idx == 0 {
             let one = value.as_elements();
             inhash[0..4].copy_from_slice(one);
-            for i in 0..4 {
-                inhash[4 + i] = mp[offset][i];
-            }
+            inhash[4..(4 + 4)].copy_from_slice(&mp[offset][..4]);
         } else {
-            for i in 0..4 {
-                inhash[i] = mp[offset][i];
-            }
+            inhash[..4].copy_from_slice(&mp[offset][..4]);
             let one = value.as_elements();
             inhash[4..8].copy_from_slice(one);
         }
@@ -139,9 +135,9 @@ impl MerkleTreeGL {
 
     fn calculate_root_from_group_proof(
         &self,
-        mp: &Vec<Vec<FGL>>,
+        mp: &[Vec<FGL>],
         idx: usize,
-        vals: &Vec<FGL>,
+        vals: &[FGL],
     ) -> Result<ElementDigest<4>> {
         let h = self.h.hash(vals, 0)?;
         self.merkle_calculate_root_from_proof(mp, idx, &h, 0)
@@ -247,10 +243,9 @@ impl MerkleTree for MerkleTreeGL {
             ));
         }
 
-        let mut v = vec![FGL::ZERO; self.width];
-        for i in 0..self.width {
-            v[i] = self.get_element(idx, i);
-        }
+        let v = (0..self.width)
+            .map(|i| self.get_element(idx, i))
+            .collect::<Vec<_>>();
         let mp = self.merkle_gen_merkle_proof(idx, 0, self.height);
         Ok((v, mp))
     }
@@ -262,9 +257,9 @@ impl MerkleTree for MerkleTreeGL {
     fn verify_group_proof(
         &self,
         root: &Self::MTNode,
-        mp: &Vec<Vec<FGL>>,
+        mp: &[Vec<FGL>],
         idx: usize,
-        group_elements: &Vec<FGL>,
+        group_elements: &[FGL],
     ) -> Result<bool> {
         let c_root = self.calculate_root_from_group_proof(mp, idx, group_elements)?;
         Ok(self.eq_root(root, &c_root))

@@ -34,7 +34,11 @@ pub fn compile(config: CompilerConfig) -> Result<(), DslError> {
         crate::CIRCOM_VERSION,
     ) {
         Ok(circuit) => circuit,
-        _ => log::error!("compiler_interface::run_compiler"),
+        _ => {
+            return Err(DslError::CircomCompileError(
+                "compiler_interface::run_compiler error".to_string(),
+            ));
+        }
     };
 
     if config.c_flag {

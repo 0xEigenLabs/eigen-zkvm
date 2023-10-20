@@ -3,6 +3,7 @@ use crate::constant::MG;
 use crate::helper::log2_any;
 use crate::traits::FieldExtension;
 
+#[allow(clippy::upper_case_acronyms)]
 pub struct FFT<F: FieldExtension> {
     pub roots: Vec<Vec<F>>,
 }
@@ -19,7 +20,7 @@ impl<F: FieldExtension> FFT<F> {
 
     fn set_roots(&mut self, s: usize) {
         let mut i = s;
-        while !(i > self.roots.len() && !self.roots[i].is_empty()) {
+        while i <= self.roots.len() || self.roots[i].is_empty() {
             let mut r = F::ONE;
             let nroots = 1 << i;
             self.roots[i] = vec![F::ZERO; nroots];
@@ -46,9 +47,9 @@ impl<F: FieldExtension> FFT<F> {
             panic!("Size must be multiple of 2")
         }
         let mut buff = vec![F::ZERO; n];
-        for i in 0..p.len() {
+        for (i, pi) in p.iter().enumerate() {
             let r = (i as u32).reverse_bits() >> (32 - bits);
-            buff[r as usize] = p[i];
+            buff[r as usize] = *pi;
         }
 
         for s in 1..=bits {

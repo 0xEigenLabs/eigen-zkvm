@@ -1,4 +1,5 @@
 #![allow(non_snake_case, dead_code)]
+#![allow(clippy::needless_range_loop)]
 
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MG, MIN_OPS_PER_THREAD, SHIFT};
 use crate::errors::Result;
@@ -185,6 +186,7 @@ pub struct StarkProof<M: MerkleTree> {
 }
 
 impl<'a, M: MerkleTree> StarkProof<M> {
+    #[allow(clippy::too_many_arguments, clippy::type_complexity)]
     pub fn stark_gen<T: Transcript>(
         cm_pols: &PolsArray,
         const_pols: &PolsArray,
@@ -193,7 +195,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         program: &Program,
         _pil: &PIL,
         stark_struct: &StarkStruct,
-        prover_addr: &String,
+        prover_addr: &str,
     ) -> Result<StarkProof<M>> {
         let mut ctx = StarkContext::<M::ExtendField>::default();
         //log::debug!("starkinfo: {}", starkinfo);
@@ -552,7 +554,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             evals: ctx.evals.clone(),
             publics: ctx.publics.clone(),
             stark_struct: stark_struct.clone(),
-            prover_addr: prover_addr.clone(),
+            prover_addr: prover_addr.to_string(),
         })
     }
 
@@ -579,12 +581,13 @@ pub fn build_Zh_Inv<T: FieldExtension>(
 ) -> Box<dyn Fn(usize) -> T + 'static> {
     let mut w = T::ONE;
     let mut sn = T::from(*SHIFT);
-    for _i in 0..nBits {
+    for _ in 0..nBits {
         sn = sn * sn;
     }
     let mut ZHInv = vec![T::ZERO; 1 << extend_bits];
-    for i in 0..(1 << extend_bits) {
-        ZHInv[i] = T::inv(&(sn * w - T::ONE));
+
+    for zi in &mut ZHInv.iter_mut() {
+        *zi = T::inv(&(sn * w - T::ONE));
         w *= T::from(MG.0[extend_bits]);
     }
     Box::new(move |i: usize| ZHInv[(i + offset) % ZHInv.len()])
@@ -991,14 +994,16 @@ pub fn calculate_exps_parallel<F: FieldExtension>(
 
     for i in (0..n).step_by(n_per_thread) {
         let cur_n = std::cmp::min(n_per_thread, n - i);
-        let mut tmp_ctx = StarkContext::default();
-        tmp_ctx.N = n;
-        tmp_ctx.Next = next;
-        tmp_ctx.nbits = ctx.nbits;
-        tmp_ctx.nbits_ext = ctx.nbits_ext;
-        tmp_ctx.evals = ctx.evals.clone();
-        tmp_ctx.publics = ctx.publics.clone();
-        tmp_ctx.challenge = ctx.challenge.clone();
+        let mut tmp_ctx = StarkContext::<F> {
+            N: n,
+            Next: next,
+            nbits: ctx.nbits,
+            nbits_ext: ctx.nbits_ext,
+            evals: ctx.evals.clone(),
+            publics: ctx.publics.clone(),
+            challenge: ctx.challenge.clone(),
+            ..Default::default()
+        };
 
         for si in &exec_info.input_sections {
             if si.name.as_str() == "xDivXSubXi" || si.name.as_str() == "xDivXSubWXi" {
@@ -1096,7 +1101,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
-            &"273030697313060285579891744179749754319274977764".to_string(),
+            "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
         log::debug!("verify the proof...");
@@ -1132,7 +1137,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
-            &"273030697313060285579891744179749754319274977764".to_string(),
+            "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
 
@@ -1167,7 +1172,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
-            &"273030697313060285579891744179749754319274977764".to_string(),
+            "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
         log::debug!("verify the proof...");
@@ -1200,7 +1205,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
-            &"273030697313060285579891744179749754319274977764".to_string(),
+            "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
         log::debug!("verify the proof...");
@@ -1233,7 +1238,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
-            &"273030697313060285579891744179749754319274977764".to_string(),
+            "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
         log::debug!("verify the proof...");

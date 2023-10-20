@@ -7,6 +7,7 @@ use crate::traits::{FieldExtension, MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, Step};
 use plonky::field_gl::Fr as FGL;
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug)]
 pub struct FRI {
     pub in_nbits: usize,
@@ -15,6 +16,7 @@ pub struct FRI {
     pub steps: Vec<Step>,
 }
 
+#[allow(clippy::type_complexity)]
 #[derive(Debug, Default, Clone)]
 pub struct Query<MB: Clone + std::default::Default, MN: MTNodeType> {
     pub pol_queries: Vec<Vec<(Vec<FGL>, Vec<Vec<MB>>)>>,
@@ -49,10 +51,10 @@ impl FRI {
     pub fn prove<F: FieldExtension, M: MerkleTree<ExtendField = F>, T: Transcript>(
         &mut self,
         transcript: &mut T,
-        pol: &Vec<M::ExtendField>,
+        pol: &[M::ExtendField],
         mut query_pol: impl FnMut(usize) -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
     ) -> Result<FRIProof<F, M>> {
-        let mut pol = pol.clone();
+        let mut pol = pol.to_owned();
         let mut standard_fft = FFT::new();
         let mut pol_bits = log2_any(pol.len());
         log::debug!("fri prove {} {}", pol.len(), 1 << pol_bits);
@@ -64,8 +66,8 @@ impl FRI {
         let mut tree: Vec<M> = vec![];
 
         let mut proof: FRIProof<F, M> = FRIProof::<F, M>::new(self.steps.len());
-        for si in 0..self.steps.len() {
-            let reduction_bits = pol_bits - self.steps[si].nBits;
+        for (si, stepi) in self.steps.iter().enumerate() {
+            let reduction_bits = pol_bits - stepi.nBits;
             let pol2_n = 1 << (pol_bits - reduction_bits);
             let n_x = pol.len() / pol2_n;
 
@@ -93,7 +95,7 @@ impl FRI {
             log::debug!("pol2_e 0={}, 1={}", pol2_e[0], pol2_e[1]);
             if si < self.steps.len() - 1 {
                 let n_groups = 1 << self.steps[si + 1].nBits;
-                let group_size = (1 << self.steps[si].nBits) / n_groups;
+                let group_size = (1 << stepi.nBits) / n_groups;
                 let pol2_etb = get_transposed_buffer(&pol2_e, self.steps[si + 1].nBits);
                 let mut tmptree = M::new();
                 tmptree.merkelize(pol2_etb, 3 * group_size, n_groups)?;
@@ -142,14 +144,15 @@ impl FRI {
                 }
             }
             if si < self.steps.len() - 1 {
-                for i in 0..ys.len() {
-                    ys[i] %= 1 << self.steps[si + 1].nBits;
+                for ysi in &mut ys {
+                    *ysi %= 1 << self.steps[si + 1].nBits;
                 }
             }
         }
         Ok(proof)
     }
 
+    #[allow(clippy::type_complexity)]
     pub fn verify<F: FieldExtension, M: MerkleTree<ExtendField = F>, T: Transcript>(
         &self,
         transcript: &mut T,
@@ -196,10 +199,9 @@ impl FRI {
             }
             Ok(split3(&query[0].0))
         };
-
-        for si in 0..self.steps.len() {
+        for (si, stepi) in self.steps.iter().enumerate() {
             let proof_item = &proof.queries[si];
-            let reduction_bits = pol_bits - self.steps[si].nBits;
+            let reduction_bits = pol_bits - stepi.nBits;
             for i in 0..n_queries {
                 let pgroup_e: Vec<F> = match si {
                     0 => {
@@ -230,14 +232,14 @@ impl FRI {
                 }
             }
 
-            pol_bits = self.steps[si].nBits;
+            pol_bits = stepi.nBits;
             for _j in 0..reduction_bits {
                 shift = shift * shift;
             }
 
             if si < self.steps.len() - 1 {
-                for i in 0..ys.len() {
-                    ys[i] %= 1 << self.steps[si + 1].nBits;
+                for ysi in &mut ys {
+                    *ysi %= 1 << self.steps[si + 1].nBits;
                 }
             }
         }
@@ -285,7 +287,7 @@ fn get_transposed_buffer<F: FieldExtension>(pol: &Vec<F>, transpose_bits: usize)
 }
 
 // TODO: Support F5G
-fn get3<F: FieldExtension>(arr: &Vec<FGL>, idx: usize) -> F {
+fn get3<F: FieldExtension>(arr: &[FGL], idx: usize) -> F {
     F::from_vec(vec![arr[idx * 3], arr[idx * 3 + 1], arr[idx * 3 + 2]])
 }
 

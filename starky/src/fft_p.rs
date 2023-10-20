@@ -17,8 +17,8 @@ pub fn BR(x: usize, domain_pow: usize) -> usize {
 }
 
 pub fn transpose<F: FieldExtension>(
-    buffdst: &mut Vec<F>,
-    buffsrc: &Vec<F>,
+    buffdst: &mut [F],
+    buffsrc: &[F],
     n_pols: usize,
     nbits: usize,
     transpose_bits: usize,
@@ -38,8 +38,8 @@ pub fn transpose<F: FieldExtension>(
 }
 
 pub fn bit_reverse<F: FieldExtension>(
-    buffdst: &mut Vec<F>,
-    buffsrc: &Vec<F>,
+    buffdst: &mut [F],
+    buffsrc: &[F],
     n_pols: usize,
     nbits: usize,
 ) {
@@ -53,8 +53,8 @@ pub fn bit_reverse<F: FieldExtension>(
 }
 
 pub fn interpolate_bit_reverse<F: FieldExtension>(
-    buffdst: &mut Vec<F>,
-    buffsrc: &Vec<F>,
+    buffdst: &mut [F],
+    buffsrc: &[F],
     n_pols: usize,
     nbits: usize,
 ) {
@@ -69,8 +69,8 @@ pub fn interpolate_bit_reverse<F: FieldExtension>(
 }
 
 pub fn inv_bit_reverse<F: FieldExtension>(
-    buffdst: &mut Vec<F>,
-    buffsrc: &Vec<F>,
+    buffdst: &mut [F],
+    buffsrc: &[F],
     n_pols: usize,
     nbits: usize,
 ) {
@@ -85,7 +85,7 @@ pub fn inv_bit_reverse<F: FieldExtension>(
     }
 }
 
-pub fn interpolate_prepare<F: FieldExtension>(buff: &mut Vec<F>, n_pols: usize, nbits: usize) {
+pub fn interpolate_prepare<F: FieldExtension>(buff: &mut [F], n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
     let inv_n = F::inv(&F::from(n));
     let mut n_per_thread_f = (n - 1) / get_max_workers() + 1;
@@ -119,10 +119,10 @@ pub fn interpolate_prepare<F: FieldExtension>(buff: &mut Vec<F>, n_pols: usize, 
 }
 
 pub fn _fft<F: FieldExtension>(
-    buffsrc: &Vec<F>,
+    buffsrc: &[F],
     n_pols: usize,
     nbits: usize,
-    buffdst: &mut Vec<F>,
+    buffdst: &mut [F],
     inverse: bool,
 ) {
     let maxblockbits = 16;
@@ -130,10 +130,7 @@ pub fn _fft<F: FieldExtension>(
     let blocks_per_thread = 8;
     let n = 1 << nbits;
     let mut tmpbuff: Vec<F> = vec![F::ZERO; n * n_pols];
-    let outbuff = buffdst;
-
-    let mut bin: &mut Vec<F>;
-    let mut bout: &mut Vec<F>;
+    let mut outbuff = buffdst.to_owned();
 
     let ideal_n_blocks = get_max_workers() * blocks_per_thread;
     let mut blockbits = log2_any(n * n_pols / ideal_n_blocks);
@@ -155,13 +152,11 @@ pub fn _fft<F: FieldExtension>(
         n_transposes = ((nbits - 1) / blockbits) + 1;
     }
 
-    if n_transposes & 1 > 0 {
-        bout = &mut tmpbuff;
-        bin = outbuff;
+    let (mut bout, mut bin) = if n_transposes & 1 > 0 {
+        (&mut tmpbuff, &mut outbuff)
     } else {
-        bout = outbuff;
-        bin = &mut tmpbuff;
-    }
+        (&mut outbuff, &mut tmpbuff)
+    };
 
     if inverse {
         inv_bit_reverse(bout, buffsrc, n_pols, nbits);
@@ -196,24 +191,19 @@ pub fn _fft<F: FieldExtension>(
     });
 }
 
-pub fn fft<F: FieldExtension>(buffsrc: &Vec<F>, n_pols: usize, nbits: usize, buffdst: &mut Vec<F>) {
+pub fn fft<F: FieldExtension>(buffsrc: &[F], n_pols: usize, nbits: usize, buffdst: &mut [F]) {
     _fft(buffsrc, n_pols, nbits, buffdst, false)
 }
 
-pub fn ifft<F: FieldExtension>(
-    buffsrc: &Vec<F>,
-    n_pols: usize,
-    nbits: usize,
-    buffdst: &mut Vec<F>,
-) {
+pub fn ifft<F: FieldExtension>(buffsrc: &[F], n_pols: usize, nbits: usize, buffdst: &mut [F]) {
     _fft(buffsrc, n_pols, nbits, buffdst, true)
 }
 
 pub fn interpolate<F: FieldExtension>(
-    buffsrc: &Vec<F>,
+    buffsrc: &[F],
     n_pols: usize,
     nbits: usize,
-    buffdst: &mut Vec<F>,
+    buffdst: &mut [F],
     nbitsext: usize,
 ) {
     if buffsrc.is_empty() {
@@ -221,11 +211,8 @@ pub fn interpolate<F: FieldExtension>(
     }
     let n = 1 << nbits;
     let n_ext = 1 << nbitsext;
-    let mut tmpbuff: Vec<F> = vec![F::ZERO; n_ext * n_pols]; //new BigBuffer(n*n_pols);
-    let outbuff = buffdst;
-
-    let mut bin: &mut Vec<F>;
-    let mut bout: &mut Vec<F>;
+    let mut tmpbuff = vec![F::ZERO; n_ext * n_pols]; //new BigBuffer(n*n_pols);
+    let mut outbuff = buffdst.to_owned();
 
     let maxblockbits = 16;
     let minblockbits = 12;
@@ -263,18 +250,15 @@ pub fn interpolate<F: FieldExtension>(
     if blockbitsext < nbitsext {
         n_transposes += (nbitsext - 1) / blockbitsext + 1;
     }
-
-    if (n_transposes & 1) > 0 {
-        bout = &mut tmpbuff;
-        bin = outbuff;
+    let (bout, bin) = if (n_transposes & 1) > 0 {
+        (&mut tmpbuff, &mut outbuff)
     } else {
-        bout = outbuff;
-        bin = &mut tmpbuff;
-    }
+        (&mut outbuff, &mut tmpbuff)
+    };
 
     log::debug!("Interpolating reverse....");
     interpolate_bit_reverse(bout, buffsrc, n_pols, nbits);
-    (bin, bout) = (bout, bin);
+    let (mut bin, mut bout) = (bout, bin);
 
     for i in (0..nbits).step_by(blockbits) {
         log::debug!("Layer ifft {}", i);

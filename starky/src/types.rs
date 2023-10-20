@@ -63,7 +63,7 @@ impl fmt::Display for Expression {
 
 impl Expression {
     pub fn next(&self) -> bool {
-        !(self.next.is_none() || !self.next.unwrap())
+        self.next.is_some() && self.next.unwrap()
     }
 }
 

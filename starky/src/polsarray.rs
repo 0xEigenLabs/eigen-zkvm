@@ -40,10 +40,8 @@ impl PolsArray {
 
         let mut def: HashMap<String, HashMap<String, Vec<usize>>> = HashMap::new();
         let mut defArray: Vec<Pol> = vec![Pol::default(); nPols];
-        let mut array: Vec<Vec<FGL>> = vec![Vec::new(); nPols];
-        for i in 0..array.len() {
-            array[i] = vec![FGL::default(); nPols];
-        }
+        let mut array: Vec<Vec<FGL>> = (0..nPols).map(|_| vec![FGL::default(); nPols]).collect();
+
         for (refName, ref_) in pil.references.iter() {
             if (ref_.type_ == "cmP" && kind == PolKind::Commit)
                 || (ref_.type_ == "constP" && kind == PolKind::Constant)
@@ -92,8 +90,8 @@ impl PolsArray {
             }
         }
 
-        for i in 0..nPols {
-            if defArray[i].name.is_empty() {
+        for def in &defArray {
+            if def.name.is_empty() {
                 panic!("Invalid pils sequence");
             }
         }
@@ -170,8 +168,8 @@ impl PolsArray {
                 )
             };
             n = rs / 8;
-            for l in 0..n {
-                self.array[i][j] = FGL::from(buff[l]);
+            for x in buff {
+                self.array[i][j] = FGL::from(*x);
                 i += 1;
                 if i == self.nPols {
                     i = 0;
@@ -203,7 +201,7 @@ impl PolsArray {
                             buff.len() * std::mem::size_of::<u64>(),
                         )
                     };
-                    writer.write(buff8)?;
+                    writer.write_all(buff8).expect("Failed to write buff8");
                     p = 0;
                 }
             }
@@ -215,7 +213,7 @@ impl PolsArray {
                     buff.len() * std::mem::size_of::<u64>(),
                 )
             };
-            writer.write(buff8)?;
+            writer.write_all(buff8)?;
         }
         Ok(())
     }

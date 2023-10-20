@@ -19,7 +19,7 @@ impl LinearHashBN128 {
         LinearHashBN128 { h: Poseidon::new() }
     }
 
-    pub fn hash_element_matrix(&self, columns: &Vec<Vec<FGL>>) -> Result<Fr> {
+    pub fn hash_element_matrix(&self, columns: &[Vec<FGL>]) -> Result<Fr> {
         let mut st = Fr::zero();
         let mut vals3: Vec<Fr> = vec![];
 

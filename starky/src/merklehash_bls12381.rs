@@ -111,7 +111,7 @@ impl MerkleTreeBLS12381 {
 
     fn merkle_calculate_root_from_proof(
         &self,
-        mp: &Vec<Vec<Fr>>,
+        mp: &[Vec<Fr>],
         idx: usize,
         value: &ElementDigest<4>,
         offset: usize,
@@ -133,11 +133,11 @@ impl MerkleTreeBLS12381 {
 
     fn calculate_root_from_group_proof(
         &self,
-        mp: &Vec<Vec<Fr>>,
+        mp: &[Vec<Fr>],
         idx: usize,
-        vals: &Vec<FGL>,
+        vals: &[FGL],
     ) -> Result<ElementDigest<4>> {
-        let h = self.h.hash_element_matrix(&vec![vals.to_vec()])?;
+        let h = self.h.hash_element_matrix(&[vals.to_vec()])?;
         self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::<4>::from_scalar(&h), 0)
     }
 }
@@ -239,10 +239,10 @@ impl MerkleTree for MerkleTreeBLS12381 {
             ));
         }
 
-        let mut v = vec![FGL::ZERO; self.width];
-        for i in 0..self.width {
-            v[i] = self.get_element(idx, i);
-        }
+        let v = (0..self.width)
+            .map(|i| self.get_element(idx, i))
+            .collect::<Vec<_>>();
+
         let mp = self.merkle_gen_merkle_proof(idx, 0, self.height);
         Ok((v, mp))
     }
@@ -254,9 +254,9 @@ impl MerkleTree for MerkleTreeBLS12381 {
     fn verify_group_proof(
         &self,
         root: &Self::MTNode,
-        mp: &Vec<Vec<Fr>>,
+        mp: &[Vec<Fr>],
         idx: usize,
-        group_elements: &Vec<FGL>,
+        group_elements: &[FGL],
     ) -> Result<bool> {
         let c_root = self.calculate_root_from_group_proof(mp, idx, group_elements)?;
         Ok(self.eq_root(root, &c_root))

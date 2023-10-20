@@ -8,6 +8,7 @@ use crate::types::{StarkStruct, PIL};
 use std::collections::HashMap;
 
 impl StarkInfo {
+    #[allow(clippy::unnecessary_unwrap)]
     pub fn generate_constraint_polynomial(
         &mut self,
         ctx: &mut Context,
@@ -122,6 +123,7 @@ impl StarkInfo {
     }
 }
 
+#[allow(clippy::if_same_then_else)]
 fn _calculate_im_pols(
     pil: &mut PIL,
     exp: &Expression,
@@ -255,8 +257,8 @@ pub fn get_exp_dim(pil: &PIL, exp: &Expression) -> i32 {
     match exp.op.as_str() {
         "add" | "sub" | "addc" | "mulc" | "neg" => {
             let mut md = 1;
-            for i in 0..values.len() {
-                let d = get_exp_dim(pil, &values[i]);
+            for vi in &values {
+                let d = get_exp_dim(pil, vi);
                 if d > md {
                     md = d;
                 }

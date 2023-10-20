@@ -375,10 +375,8 @@ fn find_muladd(exp: &Expression) -> Expression {
             return Expression::new("muladd".to_string(), 0, None, None, Some(vec![a, b, c]));
         } else {
             let mut r = exp.clone();
-            let mut mut_values: Vec<Expression> = Vec::new();
-            for i in 0..values.len() {
-                mut_values.push(find_muladd(&values[i]))
-            }
+            let mut_values: Vec<Expression> =
+                (0..values.len()).map(|i| find_muladd(&values[i])).collect();
             if !mut_values.is_empty() {
                 r.values = Some(mut_values);
             }

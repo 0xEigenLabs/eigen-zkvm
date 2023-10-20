@@ -13,9 +13,10 @@ pub trait MTNodeType {
     fn as_elements(&self) -> &[FGL];
     fn new(value: &[FGL]) -> Self;
     fn from_scalar<T: PrimeField>(e: &T) -> Self;
-    fn as_scalar<T: PrimeField>(self) -> T::Repr;
+    fn as_scalar<T: PrimeField>(&self) -> T::Repr;
 }
 
+#[allow(clippy::type_complexity)]
 pub trait MerkleTree {
     type MTNode: Copy + std::fmt::Display + Clone + Default + MTNodeType + core::fmt::Debug;
     type BaseField: Clone
@@ -31,9 +32,9 @@ pub trait MerkleTree {
     fn verify_group_proof(
         &self,
         root: &Self::MTNode,
-        mp: &Vec<Vec<Self::BaseField>>,
+        mp: &[Vec<Self::BaseField>],
         idx: usize,
-        group_elements: &Vec<FGL>,
+        group_elements: &[FGL],
     ) -> Result<bool>;
     fn root(&self) -> Self::MTNode;
     fn eq_root(&self, r1: &Self::MTNode, r2: &Self::MTNode) -> bool;

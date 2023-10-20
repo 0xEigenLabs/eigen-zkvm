@@ -500,6 +500,7 @@ impl MulAssign for F5G {
 
 impl Div for F5G {
     type Output = Self;
+    #[allow(clippy::suspicious_arithmetic_impl)]
     #[inline]
     fn div(self, rhs: Self) -> Self::Output {
         self * (rhs.inv())

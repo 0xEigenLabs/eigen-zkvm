@@ -17,7 +17,7 @@ impl LinearHash {
 
     pub fn hash_element_matrix(
         &self,
-        vals: &Vec<Vec<FGL>>,
+        vals: &[Vec<FGL>],
         batch_size: usize,
     ) -> Result<ElementDigest<4>> {
         let mut flatvals: Vec<FGL> = vec![];

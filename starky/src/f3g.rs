@@ -485,6 +485,7 @@ impl MulAssign for F3G {
 
 impl Div for F3G {
     type Output = Self;
+    #[allow(clippy::suspicious_arithmetic_impl)]
     #[inline]
     fn div(self, rhs: Self) -> Self::Output {
         self * (rhs.inv())

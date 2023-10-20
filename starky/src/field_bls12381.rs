@@ -1,4 +1,4 @@
-#![allow(unused_imports)]
+#![allow(unused_imports, clippy::too_many_arguments)]
 use core::ops::{Add, Div, Mul, Neg, Sub};
 use ff::*;
 
