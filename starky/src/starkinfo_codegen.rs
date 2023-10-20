@@ -662,7 +662,10 @@ pub fn build_linear_code(ctx: &mut Context, pil: &PIL, loop_pos: &str) -> Vec<Se
     let mut res: Vec<Section> = vec![];
     for i in 0..ctx.code.len() {
         let ep = exp_and_expprimes.get(&i);
-        if ep.is_some() && (*ep.unwrap()) && (((loop_pos == "i") && (!ctx.code[i].prime)) || (loop_pos == "last")) {
+        if ep.is_some()
+            && (*ep.unwrap())
+            && (((loop_pos == "i") && (!ctx.code[i].prime)) || (loop_pos == "last"))
+        {
             continue;
         }
         for cc in ctx.code[i].code.iter() {

@@ -128,10 +128,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         let hashtype = &self.stark_struct.verificationHashType;
         match &self.rootC {
             Some(value) => {
-                map.serialize_entry(
-                    "rootC",
-                    &Input::<M::MTNode>::new(*value, hashtype.clone()),
-                )?;
+                map.serialize_entry("rootC", &Input::<M::MTNode>::new(*value, hashtype.clone()))?;
             }
             None => {}
         }

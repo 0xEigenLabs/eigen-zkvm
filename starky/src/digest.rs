@@ -175,10 +175,12 @@ mod tests {
         let f1 = Fr::from_repr(f1.into_raw_repr()).unwrap();
 
         let e1 = to_gl(&f1);
-        let expected: [FGL; 4] = [10593660675180540444u64,
+        let expected: [FGL; 4] = [
+            10593660675180540444u64,
             2538813791642109216,
             4942736554053463004,
-            3183287946373923876]
+            3183287946373923876,
+        ]
         .iter()
         .map(|e| FGL::from(*e))
         .collect::<Vec<FGL>>()
@@ -199,10 +201,12 @@ mod tests {
         let f1 = Fr_bls12381::from_repr(f1.into_raw_repr()).unwrap();
 
         let e1 = to_gl_bls12381(&f1);
-        let expected: [FGL; 4] = [11023535560112151624u64,
+        let expected: [FGL; 4] = [
+            11023535560112151624u64,
             10252228934103205545,
             1509485146568764231,
-            1588734141810477816]
+            1588734141810477816,
+        ]
         .iter()
         .map(|e| FGL::from(*e))
         .collect::<Vec<FGL>>()

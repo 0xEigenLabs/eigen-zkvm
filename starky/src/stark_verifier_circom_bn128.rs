@@ -817,8 +817,10 @@ template MapValues() {{
             }
         }
     }
-    res.push_str(r#"
-}"#);
+    res.push_str(
+        r#"
+}"#,
+    );
     res
 }
 
@@ -842,9 +844,11 @@ template StarkVerifier() {{
     );
 
     if options.verkey_input {
-        res.push_str(r#"
+        res.push_str(
+            r#"
     signal input rootC;
-"#);
+"#,
+        );
     } else {
         let c: Fr = Fr((*const_root).as_scalar::<Fr>());
         res.push_str(&format!(
@@ -963,20 +967,26 @@ template StarkVerifier() {{
     ));
 
     if options.enable_input {
-        res.push_str(r#"
+        res.push_str(
+            r#"
     signal input enable;
     enable * (enable -1 ) === 0;
-    "#);
+    "#,
+        );
     } else {
-        res.push_str(r#"
+        res.push_str(
+            r#"
     signal enable;
     enable <== 1;
-    "#);
+    "#,
+        );
     }
 
-    res.push_str(r#"
+    res.push_str(
+        r#"
     signal challenges[8][3];
-    "#);
+    "#,
+    );
 
     for s in 0..stark_struct.steps.len() {
         res.push_str(&format!(
@@ -1152,14 +1162,18 @@ template StarkVerifier() {{
     ));
 
     if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
-        res.push_str(r#"
+        res.push_str(
+            r#"
             s0_merkle2[q].key[i] <== ys[q][i];
-    "#);
+    "#,
+        );
     }
     if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
-        res.push_str(r#"
+        res.push_str(
+            r#"
             s0_merkle3[q].key[i] <== ys[q][i];
-    "#);
+    "#,
+        );
     }
 
     res.push_str(&format!(
@@ -1230,22 +1244,28 @@ template StarkVerifier() {{
     ));
 
     if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
-        res.push_str(r#"
+        res.push_str(
+            r#"
                 s0_merkle2[q].siblings[i][j] <== s0_siblings2[q][i][j];
-        "#);
+        "#,
+        );
     }
     if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
-        res.push_str(r#"
+        res.push_str(
+            r#"
                 s0_merkle3[q].siblings[i][j] <== s0_siblings3[q][i][j];
-        "#);
+        "#,
+        );
     }
 
-    res.push_str(r#"
+    res.push_str(
+        r#"
                 s0_merkle4[q].siblings[i][j] <== s0_siblings4[q][i][j];
                 s0_merkleC[q].siblings[i][j] <== s0_siblingsC[q][i][j];
             }
         }
-        "#);
+        "#,
+    );
 
     if 0 < stark_struct.steps.len() - 1 {
         res.push_str(&format!(
@@ -1521,22 +1541,28 @@ template StarkVerifier() {{
     ));
 
     if starkinfo.map_sectionsN.cm2_2ns > 0 {
-        res.push_str(r#"
-        enable * (s0_merkle2[q].root - root2) === 0;"#);
+        res.push_str(
+            r#"
+        enable * (s0_merkle2[q].root - root2) === 0;"#,
+        );
     }
 
     if starkinfo.map_sectionsN.cm3_2ns > 0 {
-        res.push_str(r#"
-        enable * (s0_merkle3[q].root - root3) === 0;"#);
+        res.push_str(
+            r#"
+        enable * (s0_merkle3[q].root - root3) === 0;"#,
+        );
     }
 
-    res.push_str(r#"
+    res.push_str(
+        r#"
         enable * (s0_merkle4[q].root - root4) === 0;
         enable * (s0_merkleC[q].root - rootC) === 0;
         for (var e=0; e<3; e++) {
             enable * (s0_lowValues[q].out[e] - verifyQueries[q].out[e]) === 0;
         }
-    }"#);
+    }"#,
+    );
 
     for s in 1..stark_struct.steps.len() {
         res.push_str(&format!(
@@ -1717,34 +1743,46 @@ template Main() {{
         ));
 
         if starkinfo.map_sectionsN.cm2_2ns > 0 {
-            res.push_str(r#"
+            res.push_str(
+                r#"
     sv.s0_vals2 <== s0_vals2;
-    "#);
+    "#,
+            );
         }
         if starkinfo.map_sectionsN.cm3_2ns > 0 {
-            res.push_str(r#"
+            res.push_str(
+                r#"
     sv.s0_vals3 <== s0_vals3;
-    "#);
+    "#,
+            );
         }
-        res.push_str(r#"
+        res.push_str(
+            r#"
     sv.s0_vals4 <== s0_vals4;
     sv.s0_valsC <== s0_valsC;
     sv.s0_siblings1 <== s0_siblings1;
-    "#);
+    "#,
+        );
         if starkinfo.map_sectionsN.cm2_2ns > 0 {
-            res.push_str(r#"
+            res.push_str(
+                r#"
     sv.s0_siblings2 <== s0_siblings2;
-    "#);
+    "#,
+            );
         }
         if starkinfo.map_sectionsN.cm3_2ns > 0 {
-            res.push_str(r#"
+            res.push_str(
+                r#"
     sv.s0_siblings3 <== s0_siblings3;
-    "#);
+    "#,
+            );
         }
-        res.push_str(r#"
+        res.push_str(
+            r#"
     sv.s0_siblings4 <== s0_siblings4;
     sv.s0_siblingsC <== s0_siblingsC;
-    "#);
+    "#,
+        );
 
         for s in 0..(stark_struct.steps.len() - 1) {
             res.push_str(&format!(
@@ -1765,9 +1803,11 @@ template Main() {{
                 s, s, s, s
             ));
         }
-        res.push_str(r#"
+        res.push_str(
+            r#"
     sv.finalPol <== finalPol;
-    "#);
+    "#,
+        );
 
         //////
         // Calculate Publics Hash

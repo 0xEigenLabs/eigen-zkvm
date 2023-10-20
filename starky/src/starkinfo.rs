@@ -108,23 +108,11 @@ impl fmt::Display for StarkInfo {
             self.n_cm1, self.n_cm2, self.n_cm3, self.n_cm4, self.n_q
         )?;
         let obj = json!(self.pu_ctx);
-        writeln!(
-            f,
-            "pu_ctx: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "pu_ctx: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.pe_ctx);
-        writeln!(
-            f,
-            "pe_ctx: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "pe_ctx: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.ci_ctx);
-        writeln!(
-            f,
-            "ci_ctx: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "ci_ctx: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         writeln!(
             f,
             "n_constants: {}, n_publics: {}, c_exp: {}",
@@ -152,17 +140,9 @@ impl fmt::Display for StarkInfo {
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.exps_n);
-        writeln!(
-            f,
-            "exps_n: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "exps_n: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.ev_map);
-        writeln!(
-            f,
-            "ev_map: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "ev_map: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         writeln!(
             f,
             "fri_exp_id: {}, n_exps: {}",
@@ -171,11 +151,7 @@ impl fmt::Display for StarkInfo {
         let obj = json!(self.cm_n);
         writeln!(f, "cm_n: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.cm_2ns);
-        writeln!(
-            f,
-            "cm_2ns: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "cm_2ns: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.tmpexp_n);
         writeln!(
             f,
@@ -183,17 +159,9 @@ impl fmt::Display for StarkInfo {
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.f_2ns);
-        writeln!(
-            f,
-            "f_2ns: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "f_2ns: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.q_2ns);
-        writeln!(
-            f,
-            "q_2ns: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "q_2ns: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.map_sections);
         writeln!(
             f,

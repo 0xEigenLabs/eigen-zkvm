@@ -566,8 +566,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
         log::debug!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
 
-         // just let public codegen run multiple times
-                                    //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
+        // just let public codegen run multiple times
+        //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
         t.eval(ctx, idx)
     }
 }

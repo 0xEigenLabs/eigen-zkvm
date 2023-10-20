@@ -54,10 +54,8 @@ mod tests {
     use algebraic::circom_circuit::CircomCircuit;
     use algebraic::reader;
     use algebraic::witness::{load_input_for_witness, WitnessCalculator};
-    const INPUT_FILE: &str =
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.input.json");
-    const CIRCUIT_FILE: &str =
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
+    const INPUT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.input.json");
+    const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
     const WASM_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.wasm");
     const CIRCUIT_FILE_BLS12: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),

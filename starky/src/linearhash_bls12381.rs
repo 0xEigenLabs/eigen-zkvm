@@ -148,13 +148,7 @@ mod tests {
         let inputs: Vec<_> = (0..100).collect::<Vec<u64>>();
         let inputs: Vec<Vec<FGL>> = inputs
             .iter()
-            .map(|e: &u64| {
-                vec![
-                    FGL::from(*e),
-                    FGL::from(e * 1000),
-                    FGL::from(e * 1000000),
-                ]
-            })
+            .map(|e: &u64| vec![FGL::from(*e), FGL::from(e * 1000), FGL::from(e * 1000000)])
             .collect();
 
         let st = LinearHashBLS12381::new()
@@ -171,13 +165,7 @@ mod tests {
         let inputs: Vec<_> = (0..9).collect::<Vec<u64>>();
         let inputs: Vec<Vec<FGL>> = inputs
             .iter()
-            .map(|e: &u64| {
-                vec![
-                    FGL::from(*e),
-                    FGL::from(*e),
-                    FGL::from(*e),
-                ]
-            })
+            .map(|e: &u64| vec![FGL::from(*e), FGL::from(*e), FGL::from(*e)])
             .collect();
         log::debug!("{:?}", inputs[1][0].as_int());
         log::debug!("{:?}", inputs[2][2].as_int());

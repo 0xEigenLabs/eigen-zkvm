@@ -93,17 +93,14 @@ impl MerkleTreeGL {
         );
         let n_ops = buff_in.len() / 2;
         let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
-        buff_out64
-            .iter_mut()
-            .zip(0..n_ops)
-            .for_each(|(out, i)| {
-                let mut two = [FGL::ZERO; 8];
-                let one: &[FGL] = buff_in[i * 2].as_elements();
-                two[0..4].copy_from_slice(one);
-                let one: &[FGL] = buff_in[i * 2 + 1].as_elements();
-                two[4..8].copy_from_slice(one);
-                *out = self.h.hash(&two, 0).unwrap();
-            });
+        buff_out64.iter_mut().zip(0..n_ops).for_each(|(out, i)| {
+            let mut two = [FGL::ZERO; 8];
+            let one: &[FGL] = buff_in[i * 2].as_elements();
+            two[0..4].copy_from_slice(one);
+            let one: &[FGL] = buff_in[i * 2 + 1].as_elements();
+            two[4..8].copy_from_slice(one);
+            *out = self.h.hash(&two, 0).unwrap();
+        });
         Ok(buff_out64)
     }
 
@@ -120,7 +117,7 @@ impl MerkleTreeGL {
         let cur_idx = idx & 1;
         let next_idx = idx / 2;
         let init = [FGL::ZERO; 4];
-        
+
         let mut inhash = vec![FGL::ZERO; 8];
         if cur_idx == 0 {
             let one = value.as_elements();
@@ -203,12 +200,10 @@ impl MerkleTree for MerkleTreeGL {
                 .zip(buff.par_chunks(n_per_thread_f * width))
                 .for_each(|(out, bb)| {
                     let cur_n = bb.len() / width;
-                    out.iter_mut()
-                        .zip(0..cur_n)
-                        .for_each(|(row_out, j)| {
-                            let batch = &bb[(j * width)..((j + 1) * width)];
-                            *row_out = self.h.hash(batch, 0).unwrap();
-                        });
+                    out.iter_mut().zip(0..cur_n).for_each(|(row_out, j)| {
+                        let batch = &bb[(j * width)..((j + 1) * width)];
+                        *row_out = self.h.hash(batch, 0).unwrap();
+                    });
                 });
         }
         log::debug!("linearhash time cost: {}", now.elapsed().as_secs_f64());
@@ -332,10 +327,9 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert!(
-            tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap()
-        );
+        assert!(tree
+            .verify_group_proof(&root, &mp, idx, &group_elements)
+            .unwrap());
     }
 
     #[test]
@@ -364,10 +358,9 @@ mod tests {
         ];
         assert_eq!(expected, re);
 
-        assert!(
-            tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap()
-        );
+        assert!(tree
+            .verify_group_proof(&root, &mp, idx, &group_elements)
+            .unwrap());
     }
 
     #[test]
@@ -386,10 +379,9 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert!(
-            tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap()
-        );
+        assert!(tree
+            .verify_group_proof(&root, &mp, idx, &group_elements)
+            .unwrap());
     }
     //TODO save and restore to file
 }

@@ -36,8 +36,11 @@ impl StarkInfo {
         let max_deg = (1 << (stark_struct.nBitsExt - stark_struct.nBits)) + 1;
         for d in 2..=max_deg {
             let (im_exps, q_deg) = calculate_im_pols(pil, &c_exp, d)?;
-            if im_exps.is_some() && (self.q_deg == 0 || (im_exps.as_ref().unwrap().len() + (q_deg as usize)
-                        < self.im_exps.len() + self.q_deg)) {
+            if im_exps.is_some()
+                && (self.q_deg == 0
+                    || (im_exps.as_ref().unwrap().len() + (q_deg as usize)
+                        < self.im_exps.len() + self.q_deg))
+            {
                 self.q_deg = q_deg as usize;
                 self.im_exps = im_exps.unwrap();
             }
@@ -200,7 +203,10 @@ fn _calculate_im_pols(
                     ed = d1 + d2;
                 }
             }
-            if eb.is_some() && im_expressions.is_some() && eb.as_ref().unwrap().len() == im_expressions.as_ref().unwrap().len() {
+            if eb.is_some()
+                && im_expressions.is_some()
+                && eb.as_ref().unwrap().len() == im_expressions.as_ref().unwrap().len()
+            {
                 return (eb, ed);
             }
         }

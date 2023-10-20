@@ -22,6 +22,6 @@ fix: ## Automatically apply lint suggestions. This flag implies `--no-deps` and 
 	@cargo clippy --fix
 
 test: ## Run tests for all the workspace members
-	@cargo test --release --all --all-features
+	@cargo test --release --all
 
 .PHONY: clippy fmt test

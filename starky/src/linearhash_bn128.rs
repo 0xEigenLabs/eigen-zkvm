@@ -149,13 +149,7 @@ mod tests {
         let inputs: Vec<_> = (0..100).collect::<Vec<u64>>();
         let inputs: Vec<Vec<FGL>> = inputs
             .iter()
-            .map(|e: &u64| {
-                vec![
-                    FGL::from(*e),
-                    FGL::from(e * 1000),
-                    FGL::from(e * 1000000),
-                ]
-            })
+            .map(|e: &u64| vec![FGL::from(*e), FGL::from(e * 1000), FGL::from(e * 1000000)])
             .collect();
 
         let st = LinearHashBN128::new().hash_element_matrix(&inputs).unwrap();

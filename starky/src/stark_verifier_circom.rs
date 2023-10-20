@@ -800,8 +800,10 @@ template MapValues() {{
             }
         }
     }
-    res.push_str(r#"
-}"#);
+    res.push_str(
+        r#"
+}"#,
+    );
     res
 }
 
@@ -825,9 +827,11 @@ template StarkVerifier() {{
     );
 
     if options.verkey_input {
-        res.push_str(r#"
+        res.push_str(
+            r#"
     signal input rootC[4];
-"#);
+"#,
+        );
     } else {
         let const_roots = const_root.as_elements();
         res.push_str(&format!(
@@ -950,20 +954,26 @@ template StarkVerifier() {{
     ));
 
     if options.enable_input {
-        res.push_str(r#"
+        res.push_str(
+            r#"
     signal input enable;
     enable * (enable -1 ) === 0;
-    "#);
+    "#,
+        );
     } else {
-        res.push_str(r#"
+        res.push_str(
+            r#"
     signal enable;
     enable <== 1;
-    "#);
+    "#,
+        );
     }
 
-    res.push_str(r#"
+    res.push_str(
+        r#"
     signal challenges[8][3];
-    "#);
+    "#,
+    );
 
     for s in 0..stark_struct.steps.len() {
         res.push_str(&format!(
@@ -1137,14 +1147,18 @@ template StarkVerifier() {{
     ));
 
     if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
-        res.push_str(r#"
+        res.push_str(
+            r#"
             s0_merkle2[q].key[i] <== ys[q][i];
-    "#);
+    "#,
+        );
     }
     if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
-        res.push_str(r#"
+        res.push_str(
+            r#"
             s0_merkle3[q].key[i] <== ys[q][i];
-    "#);
+    "#,
+        );
     }
 
     res.push_str(&format!(
@@ -1215,22 +1229,28 @@ template StarkVerifier() {{
     ));
 
     if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
-        res.push_str(r#"
+        res.push_str(
+            r#"
                 s0_merkle2[q].siblings[i][j] <== s0_siblings2[q][i][j];
-        "#);
+        "#,
+        );
     }
     if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
-        res.push_str(r#"
+        res.push_str(
+            r#"
                 s0_merkle3[q].siblings[i][j] <== s0_siblings3[q][i][j];
-        "#);
+        "#,
+        );
     }
 
-    res.push_str(r#"
+    res.push_str(
+        r#"
                 s0_merkle4[q].siblings[i][j] <== s0_siblings4[q][i][j];
                 s0_merkleC[q].siblings[i][j] <== s0_siblingsC[q][i][j];
             }
         }
-        "#);
+        "#,
+    );
 
     if 0 < stark_struct.steps.len() - 1 {
         res.push_str(&format!(
@@ -1265,9 +1285,11 @@ template StarkVerifier() {{
         ));
     }
 
-    res.push_str(r#"
+    res.push_str(
+        r#"
     }
-        "#);
+        "#,
+    );
 
     for s in 1..stark_struct.steps.len() {
         res.push_str(&format!(
@@ -1512,10 +1534,12 @@ template Recursive2() {{
             pil.publics.len()
         ));
 
-        res.push_str(r#"
+        res.push_str(
+            r#"
     signal input a_rootC[4];
     signal input b_rootC[4];
-"#);
+"#,
+        );
 
         res.push_str(&format!(
             r#"
@@ -1676,7 +1700,8 @@ template Recursive2() {{
             1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits,
         ));
 
-        res.push_str(r#"
+        res.push_str(
+            r#"
     component vA = StarkVerifier();
 
     vA.publics <== a_publics;
@@ -1697,7 +1722,8 @@ template Recursive2() {{
     vA.s0_siblingsC <== a_s0_siblingsC;
 
     vA.finalPol <== a_finalPol;
-            "#);
+            "#,
+        );
 
         for s in 1..(stark_struct.steps.len()) {
             res.push_str(&format!(
@@ -1710,7 +1736,8 @@ template Recursive2() {{
             ));
         }
 
-        res.push_str(r#"
+        res.push_str(
+            r#"
     component vB = StarkVerifier();
 
     vB.publics <== b_publics;
@@ -1731,7 +1758,8 @@ template Recursive2() {{
     vB.s0_siblingsC <== b_s0_siblingsC;
 
     vB.finalPol <== b_finalPol;
-            "#);
+            "#,
+        );
 
         for s in 1..(stark_struct.steps.len()) {
             res.push_str(&format!(
@@ -1744,23 +1772,31 @@ template Recursive2() {{
             ));
         }
 
-        res.push_str(r#"
+        res.push_str(
+            r#"
 }
-            "#)
+            "#,
+        )
     }
 
     if !options.skip_main {
         if options.agg_stage {
-            res.push_str(r#"
-component main {public [a_publics, a_rootC, b_publics,b_rootC]}= Recursive2();"#);
+            res.push_str(
+                r#"
+component main {public [a_publics, a_rootC, b_publics,b_rootC]}= Recursive2();"#,
+            );
         } else if options.verkey_input {
-            res.push_str(r#"
+            res.push_str(
+                r#"
 component main {public [publics, rootC]}= StarkVerifier();
-    "#);
+    "#,
+            );
         } else {
-            res.push_str(r#"
+            res.push_str(
+                r#"
 component main {public [publics]}= StarkVerifier();
-    "#);
+    "#,
+            );
         }
     }
     res

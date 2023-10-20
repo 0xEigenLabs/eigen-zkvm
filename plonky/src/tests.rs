@@ -5,12 +5,10 @@ use algebraic::reader::load_r1cs;
 use std::fs;
 
 const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
-const WITNESS_FILE: &str =
-    concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/witness.wtns");
+const WITNESS_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/witness.wtns");
 const VK_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/vk.bin");
 const PROOF_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/proof.bin");
-const MONOMIAL_KEY_FILE: &str =
-    concat!(env!("CARGO_MANIFEST_DIR"), "/../keys/setup_2^10.key");
+const MONOMIAL_KEY_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../keys/setup_2^10.key");
 const DEFAULT_TRANSCRIPT: &str = "keccak";
 
 const CIRCUIT_ANALYZE_RESULT: &str = r#"{"num_inputs":2,"num_aux":2,"num_variables":4,"num_constraints":1,"num_nontrivial_constraints":1,"num_gates":1,"num_hints":1,"constraint_stats":[{"name":"0","num_gates":1}]}"#;

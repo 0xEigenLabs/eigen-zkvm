@@ -81,15 +81,12 @@ impl MerkleTreeBLS12381 {
         );
         let n_ops = buff_in.len() / 16;
         let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
-        buff_out64
-            .iter_mut()
-            .zip(0..n_ops)
-            .for_each(|(out, i)| {
-                *out = self
-                    .h
-                    .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &Fr::zero())
-                    .unwrap();
-            });
+        buff_out64.iter_mut().zip(0..n_ops).for_each(|(out, i)| {
+            *out = self
+                .h
+                .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &Fr::zero())
+                .unwrap();
+        });
         Ok(buff_out64)
     }
 
@@ -195,12 +192,10 @@ impl MerkleTree for MerkleTreeBLS12381 {
                 .zip(buff.par_chunks(n_per_thread_f * width))
                 .for_each(|(out, bb)| {
                     let cur_n = bb.len() / width;
-                    out.iter_mut()
-                        .zip(0..cur_n)
-                        .for_each(|(row_out, j)| {
-                            let batch = &bb[(j * width)..((j + 1) * width)];
-                            *row_out = self.h.hash_element_array(batch).unwrap();
-                        });
+                    out.iter_mut().zip(0..cur_n).for_each(|(row_out, j)| {
+                        let batch = &bb[(j * width)..((j + 1) * width)];
+                        *row_out = self.h.hash_element_array(batch).unwrap();
+                    });
                 });
         }
         log::debug!("linearhash time cost: {}", now.elapsed().as_secs_f64());
@@ -325,10 +320,9 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert!(
-            tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap()
-        );
+        assert!(tree
+            .verify_group_proof(&root, &mp, idx, &group_elements)
+            .unwrap());
     }
 
     #[test]
@@ -347,10 +341,9 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert!(
-            tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap()
-        );
+        assert!(tree
+            .verify_group_proof(&root, &mp, idx, &group_elements)
+            .unwrap());
     }
 
     #[test]
@@ -369,10 +362,9 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert!(
-            tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap()
-        );
+        assert!(tree
+            .verify_group_proof(&root, &mp, idx, &group_elements)
+            .unwrap());
     }
     //TODO save and restore to file
 }

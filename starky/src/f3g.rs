@@ -108,9 +108,7 @@ impl FieldExtension for F3G {
         } else if self.dim == 1 {
             self.cube[0] == rhs.cube[0] && rhs.cube[1] == Fr::ZERO && rhs.cube[2] == Fr::ZERO
         } else {
-            self.cube[0] == rhs.cube[0]
-                && (self.cube[1] == Fr::ZERO)
-                && (self.cube[2] == Fr::ZERO)
+            self.cube[0] == rhs.cube[0] && (self.cube[1] == Fr::ZERO) && (self.cube[2] == Fr::ZERO)
         }
     }
 

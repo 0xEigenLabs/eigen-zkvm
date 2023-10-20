@@ -252,12 +252,8 @@ mod tests {
     #[test]
     fn test_poseidon_opt_hash_1_11() {
         let poseidon = Poseidon::new();
-        let input = (0u64..8)
-            .map(FGL::from)
-            .collect::<Vec<FGL>>();
-        let state = (8u64..12)
-            .map(FGL::from)
-            .collect::<Vec<FGL>>();
+        let input = (0u64..8).map(FGL::from).collect::<Vec<FGL>>();
+        let state = (8u64..12).map(FGL::from).collect::<Vec<FGL>>();
         let res = poseidon.hash(&input, &state, 4).unwrap();
         let expected = vec![
             FGL::from(0xd64e1e3efc5b8e9eu64),
