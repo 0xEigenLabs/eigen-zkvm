@@ -6,6 +6,7 @@ use crate::pil2circom::StarkOption;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::Node;
 use crate::starkinfo_codegen::Section;
+use crate::traits::FieldExtension;
 use crate::traits::MTNodeType;
 use crate::types::{StarkStruct, PIL};
 
@@ -1376,12 +1377,12 @@ template StarkVerifier() {{
             s,
             s,
             s,
-            SHIFT
-                .clone()
+            // we need to use F3G::from(constant.clone()) as the ownership of constant(Here we mean SHIFT) will be moved into the from function
+            F3G::from(SHIFT.clone())
                 .exp(1 << (stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits))
                 .inv()
                 .as_int(),
-            (MG.0[stark_struct.steps[s - 1].nBits].inv() - F3G::ONE).as_int(),
+            (F3G::from(MG.0[stark_struct.steps[s - 1].nBits].clone()).inv() - F3G::ONE).as_int(),
             stark_struct.steps[s].nBits,
             s,
             s,

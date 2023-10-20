@@ -3,6 +3,8 @@ members = [
   "zkit",
   "plonky",
   "starky",
+  "algebraic",
+  "groth16",
   "dsl_compile"
 ]
 resolver = "2"

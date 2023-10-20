@@ -12,8 +12,12 @@ homepage = "https://eigen.cash"
 [dependencies]
 plonky = { package="plonky", path = "../plonky", version = "0.0.2" }
 starky = { package="starky", path = "../starky", version = "0.0.1" }
+groth16 = { package="groth16", path = "../groth16", version = "0.0.1" }
+algebraic = { path = "../algebraic", default-features=false }
 dsl_compile = { package="dsl_compile", path = "../dsl_compile"}
 clap = { package = "clap", version = "4.3.4", features = ["derive"] }
+num-traits = "0.2.8"
+rand = "0.4"
 
 # error and log
 log = "0.4.0"

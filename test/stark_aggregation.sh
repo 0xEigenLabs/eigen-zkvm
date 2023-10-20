@@ -61,8 +61,8 @@ ${ZKIT} join_zkin --zkin1 $input0/input.zkin.json --zkin2 $input1/input.zkin.jso
 
 echo "3. generate the pil files and const polynomicals files "
 # generate the pil files and  const polynomicals files
-# input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
-# output files :  $C12_VERIFIER.exec
+# input files :  $C12_VERIFIER.r1cs
+# output files :  $C12_VERIFIER.const  $C12_VERIFIER.pil  $C12_VERIFIER.exec
 if [ ! -f "$WORKSPACE/$RECURSIVE_CIRCUIT.pil" ]; then
     ${ZKIT} compressor12_setup  \
         --r $WORKSPACE/$RECURSIVE_CIRCUIT.r1cs \

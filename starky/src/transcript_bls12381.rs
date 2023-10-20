@@ -1,13 +1,12 @@
 #![allow(dead_code)]
 use crate::digest::ElementDigest;
 use crate::errors::Result;
-use crate::f3g::F3G;
 use crate::ff::Field;
 use crate::field_bls12381::{Fr, FrRepr};
 use crate::helper::{biguint_to_be, fr_bls12381_to_biguint};
 use crate::poseidon_bls12381_opt::Poseidon;
-use crate::traits::MTNodeType;
 use crate::traits::Transcript;
+use crate::traits::{FieldExtension, MTNodeType};
 use ff::*;
 use num_bigint::BigUint;
 use plonky::field_gl::Fr as FGL;
@@ -62,11 +61,11 @@ impl Transcript for TranscriptBLS128 {
         }
     }
 
-    fn get_field(&mut self) -> F3G {
+    fn get_field<F: FieldExtension>(&mut self) -> F {
         let a = self.get_fields1().unwrap();
         let b = self.get_fields1().unwrap();
         let c = self.get_fields1().unwrap();
-        F3G::new(a, b, c)
+        F::from_vec(vec![a, b, c])
     }
 
     fn get_fields1(&mut self) -> Result<FGL> {

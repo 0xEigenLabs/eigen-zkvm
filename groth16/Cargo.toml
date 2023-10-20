@@ -1,22 +1,11 @@
 [package]
-name = "plonky"
-version = "0.0.2"
+name = "groth16"
+version = "0.0.1"
 edition = "2021"
-license = "Apache-2.0"
-description = "Eigen Plonk"
-documentation = "eigen.cash"
-homepage = "eigen.cash"
-
-[lib]
-crate-type = ["cdylib", "rlib"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bellman_vk_codegen = { git = "https://github.com/0xEigenLabs/solidity_plonk_verifier.git", version = "0.2.0" }
-#bellman_vk_codegen = { path = "../../solidity_plonk_verifier/bellman_vk_codegen", version = "0.2.0" }
-recursive_aggregation_circuit = { package = "recursive_aggregation_circuit", git = "https://github.com/0xEigenLabs/recursive_aggregation_circuit.git", version = "1.0.0"}
-#recursive_aggregation_circuit = { package = "recursive_aggregation_circuit", path = "../../recursive_aggregation_circuit", version = "1.0.0"}
 byteorder = "1"
 franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = [ "plonk" ], version = "0.0.5"}
 #franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
@@ -28,9 +17,7 @@ num-bigint = "0.3.3"
 num-traits = "0.2.8"
 serde = { version = "1.0", features = [ "derive" ] }
 serde_json = { version = "1.0", features = [ "arbitrary_precision" ] }
-handlebars = "3.*"
 hex = "*"
-ethabi = { version = "14", optional = true }
 wasmer = { version = "2.0", default-features = false }
 thiserror="1.0"
 fnv = { version = "1.0.3", default-features = false }
@@ -52,5 +39,5 @@ rand = { version="0.6.5", features = ["wasm-bindgen"] }
 wasm-bindgen-test = "0.3"
 
 [features]
-default = ["bellman_vk_codegen/multicore", "franklin-crypto/multicore", "ethabi", "recursive_aggregation_circuit/multicore", "wasmer/default", "algebraic/default"]
-wasm = ["bellman_vk_codegen/wasm", "recursive_aggregation_circuit/wasm", "wasmer/js-default", "algebraic/wasm"]
+default = ["franklin-crypto/multicore", "wasmer/default", "algebraic/default"]
+wasm = ["wasmer/js-default", "algebraic/wasm"]

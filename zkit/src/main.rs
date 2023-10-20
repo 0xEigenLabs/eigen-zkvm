@@ -1,6 +1,7 @@
 extern crate clap;
 use clap::{command, Parser};
 use dsl_compile::circom_compiler;
+use eigen_zkit::groth16_api::*;
 use plonky::api::{
     aggregation_check, aggregation_prove, aggregation_verify, analyse, calculate_witness,
     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
@@ -125,7 +126,6 @@ struct ExportVerificationKeyOpt {
 
 /// Analyse circuits
 #[derive(Parser, Debug)]
-
 struct AnalyseOpt {
     #[arg(short)]
     circuit_file: String,
@@ -135,7 +135,6 @@ struct AnalyseOpt {
 
 /// Export aggregation proof's verification key
 #[derive(Parser, Debug)]
-
 struct ExportAggregationVerificationKeyOpt {
     #[arg(long = "c")]
     num_proofs_to_check: usize,
@@ -149,7 +148,6 @@ struct ExportAggregationVerificationKeyOpt {
 
 /// Proof aggregation for plonk
 #[derive(Parser, Debug)]
-
 struct AggregationProveOpt {
     /// SRS monomial form
     #[arg(short)]
@@ -170,7 +168,6 @@ struct AggregationProveOpt {
 
 /// Verify aggregation proof
 #[derive(Parser, Debug)]
-
 struct AggregationVerifyOpt {
     #[arg(long = "p", default_value = "aggregation_proof.bin")]
     proof: String,
@@ -180,7 +177,6 @@ struct AggregationVerifyOpt {
 
 /// A subcommand for generating a Solidity aggregation verifier smart contract
 #[derive(Parser, Debug)]
-
 struct GenerateAggregationVerifierOpt {
     /// Original individual verification key file
     #[arg(short, long = "old_vk", default_value = "vk.bin")]
@@ -198,7 +194,6 @@ struct GenerateAggregationVerifierOpt {
 
 /// Stark proving and verifying all in one
 #[derive(Parser, Debug)]
-
 struct StarkProveOpt {
     #[arg(short, long = "stark_stuct", default_value = "stark_struct.json")]
     stark_struct: String,
@@ -225,7 +220,6 @@ struct StarkProveOpt {
 
 /// Check aggregation proof
 #[derive(Parser, Debug)]
-
 struct AggregationCheckOpt {
     #[arg(long = "f")]
     old_proof_list: String,
@@ -237,8 +231,9 @@ struct AggregationCheckOpt {
     new_proof: String,
 }
 
+/// Setup compressor12 for converting R1CS to PIL
 #[derive(Parser, Debug)]
-struct Compresor12SetupOpt {
+struct Compressor12SetupOpt {
     #[arg(long = "r", default_value = "mycircuit.verifier.r1cs")]
     r1cs_file: String,
     #[arg(long = "c", default_value = "mycircuit.c12.const")]
@@ -251,8 +246,9 @@ struct Compresor12SetupOpt {
     force_n_bits: usize,
 }
 
+/// Exec compressor12 for converting R1CS to PIL
 #[derive(Parser, Debug)]
-struct Compresor12ExecOpt {
+struct Compressor12ExecOpt {
     // input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
     #[arg(long = "i", default_value = "mycircuit.proof.zkin.json")]
     input_file: String,
@@ -267,7 +263,7 @@ struct Compresor12ExecOpt {
     commit_file: String,
 }
 
-// generate the input1.zkin.json and input2.zkin.json into out.zkin.json
+/// generate the input1.zkin.json and input2.zkin.json into out.zkin.json
 #[derive(Parser, Debug)]
 struct JoinZkinExecOpt {
     // #[arg(long = "starksetup", default_value = "starksetup.json")]
@@ -278,6 +274,51 @@ struct JoinZkinExecOpt {
     zkin2: String,
     #[arg(long = "zkinout", default_value = "out.zkin.json")]
     zkinout: String,
+}
+
+/// Setup groth16
+#[derive(Parser, Debug)]
+pub struct Groth16SetupOpt {
+    #[arg(short, required = true, default_value = "bn128")]
+    curve_type: String,
+    #[arg(long = "r1cs", required = true)]
+    circuit_file: String,
+    #[arg(short, required = true, default_value = "g16.zkey")]
+    pk_file: String,
+    #[arg(short, required = true, default_value = "verification_key.bin")]
+    vk_file: String,
+}
+
+/// Prove with groth16
+#[derive(Parser, Debug)]
+pub struct Groth16ProveOpt {
+    #[arg(short, required = true, default_value = "bn128")]
+    curve_type: String,
+    #[arg(long = "r1cs", required = true)]
+    circuit_file: String,
+    #[arg(short, required = true)]
+    wtns_file: String,
+    #[arg(short, required = true, default_value = "g16.zkey")]
+    pk_file: String,
+    #[arg(short, required = true)]
+    input_file: String,
+    #[arg(long = "input", required = true, default_value = "public_input.bin")]
+    public_input_file: String,
+    #[arg(long = "proof", required = true, default_value = "proof.bin")]
+    proof_file: String,
+}
+
+/// Verify with groth16
+#[derive(Parser, Debug)]
+pub struct Groth16VerifyOpt {
+    #[arg(short, required = true, default_value = "bn128")]
+    curve_type: String,
+    #[arg(short, required = true, default_value = "verification_key.bin")]
+    vk_file: String,
+    #[arg(long = "input", required = true, default_value = "public_input.bin")]
+    public_input_file: String,
+    #[arg(long = "proof", required = true, default_value = "proof.bin")]
+    proof_file: String,
 }
 
 #[derive(Parser, Debug)]
@@ -315,11 +356,18 @@ enum Command {
     Analyse(AnalyseOpt),
 
     #[command(name = "compressor12_setup")]
-    Compresor12Setup(Compresor12SetupOpt),
+    Compressor12Setup(Compressor12SetupOpt),
     #[command(name = "compressor12_exec")]
-    Compresor12Exec(Compresor12ExecOpt),
+    Compressor12Exec(Compressor12ExecOpt),
     #[command(name = "join_zkin")]
     JoinZkin(JoinZkinExecOpt),
+
+    #[command(name = "groth16_setup")]
+    Groth16Setup(Groth16SetupOpt),
+    #[command(name = "groth16_prove")]
+    Groth16Prove(Groth16ProveOpt),
+    #[command(name = "groth16_verify")]
+    Groth16Verify(Groth16VerifyOpt),
 }
 
 #[derive(Parser, Debug)]
@@ -398,7 +446,7 @@ fn main() {
         .map_err(|e| EigenError::from(format!("stark prove error {:?}", e))),
 
         Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
-        Command::Compresor12Setup(args) => starky::compressor12_setup::setup(
+        Command::Compressor12Setup(args) => starky::compressor12_setup::setup(
             &args.r1cs_file,
             &args.pil_file,
             &args.const_file,
@@ -406,7 +454,7 @@ fn main() {
             args.force_n_bits,
         )
         .map_err(|_| EigenError::from("compreesor12 setup error".to_string())),
-        Command::Compresor12Exec(args) => starky::compressor12_exec::exec(
+        Command::Compressor12Exec(args) => starky::compressor12_exec::exec(
             &args.input_file,
             &args.wasm_file,
             &args.pil_file,
@@ -418,10 +466,34 @@ fn main() {
             starky::zkin_join::join_zkin(&args.zkin1, &args.zkin2, &args.zkinout)
                 .map_err(|_| EigenError::from("join_zkin error".to_string()))
         }
+        Command::Groth16Setup(args) => groth16_setup(
+            &args.curve_type,
+            &args.circuit_file,
+            &args.pk_file,
+            &args.vk_file,
+        )
+        .map_err(|e| EigenError::from(format!("groth16 setup error {:?}", e))),
+        Command::Groth16Prove(args) => groth16_prove(
+            &args.curve_type,
+            &args.circuit_file,
+            &args.wtns_file,
+            &args.pk_file,
+            &args.input_file,
+            &args.public_input_file,
+            &args.proof_file,
+        )
+        .map_err(|e| EigenError::from(format!("groth16 prove error {:?}", e))),
+        Command::Groth16Verify(args) => groth16_verify(
+            &args.curve_type,
+            &args.vk_file,
+            &args.public_input_file,
+            &args.proof_file,
+        )
+        .map_err(|e| EigenError::from(format!("groth16 verify error {:?}", e))),
     };
     match exec_result {
         Err(x) => {
-            log::debug!("execute error: {}", x);
+            log::error!("execute error: {}", x);
             std::process::exit(400)
         }
         _ => log::debug!("time cost: {}", start.elapsed().as_secs_f64()),

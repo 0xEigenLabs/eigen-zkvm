@@ -148,7 +148,7 @@ impl MerkleTreeBLS12381 {
 impl MerkleTree for MerkleTreeBLS12381 {
     type BaseField = Fr;
     type MTNode = ElementDigest<4>;
-
+    type ExtendField = F3G;
     fn new() -> Self {
         Self {
             nodes: Vec::new(),
