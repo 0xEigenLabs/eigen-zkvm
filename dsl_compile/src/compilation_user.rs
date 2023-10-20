@@ -1,3 +1,4 @@
+use crate::errors::DslError;
 use ansi_term::Colour;
 use compiler::compiler_interface;
 use compiler::compiler_interface::{Config, VCP};
@@ -22,8 +23,8 @@ pub struct CompilerConfig {
     pub vcp: VCP,
 }
 
-pub fn compile(config: CompilerConfig) -> Result<(), ()> {
-    let circuit = compiler_interface::run_compiler(
+pub fn compile(config: CompilerConfig) -> Result<(), DslError> {
+    let circuit = match compiler_interface::run_compiler(
         config.vcp,
         Config {
             debug_output: config.debug_output,
@@ -31,16 +32,23 @@ pub fn compile(config: CompilerConfig) -> Result<(), ()> {
             wat_flag: config.wat_flag,
         },
         crate::CIRCOM_VERSION,
-    )?;
+    ) {
+        Ok(circuit) => circuit,
+        _ => log::error!("compiler_interface::run_compiler"),
+    };
 
     if config.c_flag {
-        compiler_interface::write_c(
+        match compiler_interface::write_c(
             &circuit,
             &config.c_folder,
             &config.c_run_name,
             &config.c_file,
             &config.dat_file,
-        )?;
+        ) {
+            Ok(()) => (),
+
+            _ => log::error!("compiler_interface::write_c"),
+        };
         log::debug!(
             "{} {} and {}",
             Colour::Green.paint("Written successfully:"),
@@ -64,12 +72,16 @@ pub fn compile(config: CompilerConfig) -> Result<(), ()> {
 
     match (config.wat_flag, config.wasm_flag) {
         (true, true) => {
-            compiler_interface::write_wasm(
+            match compiler_interface::write_wasm(
                 &circuit,
                 &config.js_folder,
                 &config.wasm_name,
                 &config.wat_file,
-            )?;
+            ) {
+                Ok(()) => (),
+
+                _ => log::error!("compiler_interface::run_compiler"),
+            };
             log::debug!(
                 "{} {}",
                 Colour::Green.paint("Written successfully:"),
@@ -77,11 +89,13 @@ pub fn compile(config: CompilerConfig) -> Result<(), ()> {
             );
             let result = wat_to_wasm(&config.wat_file, &config.wasm_file);
             match result {
-                Result::Err(report) => {
+                Err(report) => {
                     Report::print_reports(&[report], &FileLibrary::new());
-                    return Err(());
+                    return Err(DslError::CircomCompileError(
+                        "wat_to_wasm error".to_string(),
+                    ));
                 }
-                Result::Ok(()) => {
+                Ok(()) => {
                     log::debug!(
                         "{} {}",
                         Colour::Green.paint("Written successfully:"),
@@ -91,20 +105,26 @@ pub fn compile(config: CompilerConfig) -> Result<(), ()> {
             }
         }
         (false, true) => {
-            compiler_interface::write_wasm(
+            match compiler_interface::write_wasm(
                 &circuit,
                 &config.js_folder,
                 &config.wasm_name,
                 &config.wat_file,
-            )?;
+            ) {
+                Ok(()) => (),
+
+                _ => log::error!("compiler_interface::write_wasm error"),
+            };
             let result = wat_to_wasm(&config.wat_file, &config.wasm_file);
             std::fs::remove_file(&config.wat_file).unwrap();
             match result {
-                Result::Err(report) => {
+                Err(report) => {
                     Report::print_reports(&[report], &FileLibrary::new());
-                    return Err(());
+                    return Err(DslError::CircomCompileError(
+                        "wat_to_wasm error".to_string(),
+                    ));
                 }
-                Result::Ok(()) => {
+                Ok(()) => {
                     log::debug!(
                         "{} {}",
                         Colour::Green.paint("Written successfully:"),
@@ -114,12 +134,15 @@ pub fn compile(config: CompilerConfig) -> Result<(), ()> {
             }
         }
         (true, false) => {
-            compiler_interface::write_wasm(
+            match compiler_interface::write_wasm(
                 &circuit,
                 &config.js_folder,
                 &config.wasm_name,
                 &config.wat_file,
-            )?;
+            ) {
+                Ok(()) => (),
+                _ => log::error!("compiler_interface::write_wasm error"),
+            };
             log::debug!(
                 "{} {}",
                 Colour::Green.paint("Written successfully:"),
@@ -144,22 +167,22 @@ fn wat_to_wasm(wat_file: &str, wasm_file: &str) -> Result<(), Report> {
     let buf = ParseBuffer::new(&wat_contents).unwrap();
     let result_wasm_contents = parser::parse::<Wat>(&buf);
     match result_wasm_contents {
-        Result::Err(error) => {
-            Result::Err(Report::error(
+        Err(error) => {
+            Err(Report::error(
                 format!("Error translating the circuit from wat to wasm.\n\nException encountered when parsing WAT: {}", error),
                 ReportCode::ErrorWat2Wasm,
             ))
         }
-        Result::Ok(mut wat) => {
+        Ok(mut wat) => {
             let wasm_contents = wat.module.encode();
             match wasm_contents {
-                Result::Err(error) => {
-                    Result::Err(Report::error(
+                Err(error) => {
+                    Err(Report::error(
                         format!("Error translating the circuit from wat to wasm.\n\nException encountered when encoding WASM: {}", error),
                         ReportCode::ErrorWat2Wasm,
                     ))
                 }
-                Result::Ok(wasm_contents) => {
+                Ok(wasm_contents) => {
                     let file = File::create(wasm_file).unwrap();
                     let mut writer = BufWriter::new(file);
                     writer.write_all(&wasm_contents).map_err(|_err| Report::error(
