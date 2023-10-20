@@ -27,7 +27,7 @@ pub fn setup(power: u32, srs_monomial_form: &String) -> Result<()> {
 // circuit filename default resolver
 pub fn analyse(circuit_file: &String, output: &String) -> Result<()> {
     let circuit = CircomCircuit::<Bn256> {
-        r1cs: load_r1cs(&circuit_file),
+        r1cs: load_r1cs(circuit_file),
         witness: None,
         wire_mapping: None,
         aux_offset: plonk::AUX_OFFSET,
@@ -90,7 +90,7 @@ pub fn calculate_witness(wasm_file: &String, input_json: &String, output: &Strin
     let inputs = load_input_for_witness(input_json);
 
     let wtns_buf = wtns.calculate_witness_bin(inputs, false)?;
-    Ok(wtns.save_witness_to_bin_file::<Bn256>(output, &wtns_buf)?)
+    wtns.save_witness_to_bin_file::<Bn256>(output, &wtns_buf)
 }
 
 pub fn export_verification_key(

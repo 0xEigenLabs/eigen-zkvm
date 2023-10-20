@@ -185,7 +185,7 @@ impl crate::ff::PrimeFieldRepr for FrRepr {
             last = tmp;
         }
         if last > 0 {
-            self.0[0] = R2.0[0] + self.0[0];
+            self.0[0] += R2.0[0];
         }
     }
     #[inline(always)]
@@ -231,7 +231,7 @@ impl crate::ff::PrimeFieldRepr for FrRepr {
         }
         if carry > 0 {
             // 2**64 - (2**64 - 2**32 + 1)
-            self.0[0] = R2.0[0] + self.0[0];
+            self.0[0] += R2.0[0];
         }
     }
     #[inline(always)]
@@ -389,9 +389,9 @@ impl crate::ff::Field for Fr {
         // M - 2 = 0b1111111111111111111111111111111011111111111111111111111111111111
 
         // compute base^11
-        let mut sf = self.clone();
+        let mut sf = *self;
         sf.square();
-        sf.mul_assign(&self);
+        sf.mul_assign(self);
 
         // compute base^111
         sf.square();
@@ -471,9 +471,9 @@ impl From<u64> for Fr {
     }
 }
 
-impl Into<u64> for Fr {
-    fn into(self) -> u64 {
-        self.0 .0[0]
+impl From<Fr> for u64 {
+    fn from(val: Fr) -> Self {
+        val.0 .0[0]
     }
 }
 
@@ -565,7 +565,7 @@ impl Add for Fr {
     type Output = Self;
     #[inline]
     fn add(self, other: Self) -> Self {
-        let mut lhs = self.clone();
+        let mut lhs = self;
         lhs.add_assign(&other);
         lhs
     }
@@ -575,7 +575,7 @@ impl Mul for Fr {
     type Output = Self;
     #[inline]
     fn mul(self, other: Self) -> Self {
-        let mut lhs = self.clone();
+        let mut lhs = self;
         lhs.mul_assign(&other);
         lhs
     }
@@ -585,7 +585,7 @@ impl Sub for Fr {
     type Output = Self;
     #[inline]
     fn sub(self, other: Self) -> Self {
-        let mut lhs = self.clone();
+        let mut lhs = self;
         lhs.sub_assign(&other);
         lhs
     }
@@ -661,7 +661,7 @@ mod tests {
         fn gl_check_mul(a in any::<u64>()) {
             let v = Fr::from_str(&a.to_string()).unwrap();
             let lhs = v * v * v;
-            let mut rhs = v.clone();
+            let mut rhs = v;
             rhs.square();
             prop_assert_eq!(lhs, rhs * v);
         }
@@ -684,7 +684,7 @@ mod tests {
         #[test]
         fn gl_check_neg(a in any::<u64>()){
             let mut v1 = Fr::from_str(&a.to_string()).unwrap();
-            let v2 = v1.clone();
+            let v2 = v1;
             v1.negate();
             prop_assert_eq!(v1+v2, Fr::zero());
         }

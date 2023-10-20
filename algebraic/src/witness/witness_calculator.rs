@@ -129,7 +129,7 @@ impl WitnessCalculator {
         for i in 0..witness_size {
             let mut arr = vec![0u32; n32 as usize];
             for j in 0..n32 {
-                arr[(n32 - 1 - j) as usize] = wtns_u32[(i * n32 + j as u32) as usize];
+                arr[(n32 - 1 - j) as usize] = wtns_u32[(i * n32 + j) as usize];
             }
             wo.push(from_array32(arr));
         }

@@ -35,8 +35,8 @@ impl<E: Engine, C: Circuit<E>> Groth16<E, C> {
         public_input: &[E::Fr],
         proof: &Proof<E>,
     ) -> Result<bool> {
-        let circuit_pvk = prepare_verifying_key(&circuit_vk);
-        let result = verify_proof(&circuit_pvk, proof, &public_input)?;
+        let circuit_pvk = prepare_verifying_key(circuit_vk);
+        let result = verify_proof(&circuit_pvk, proof, public_input)?;
 
         Ok(result)
     }
@@ -54,16 +54,16 @@ mod tests {
     use algebraic::circom_circuit::CircomCircuit;
     use algebraic::reader;
     use algebraic::witness::{load_input_for_witness, WitnessCalculator};
-    const INPUT_FILE: &'static str =
+    const INPUT_FILE: &str =
         concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.input.json");
-    const CIRCUIT_FILE: &'static str =
+    const CIRCUIT_FILE: &str =
         concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
-    const WASM_FILE: &'static str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.wasm");
-    const CIRCUIT_FILE_BLS12: &'static str = concat!(
+    const WASM_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.wasm");
+    const CIRCUIT_FILE_BLS12: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/test-vectors/mycircuit_bls12381.r1cs"
     );
-    const WASM_FILE_BLS12: &'static str = concat!(
+    const WASM_FILE_BLS12: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/test-vectors/mycircuit_bls12381.wasm"
     );
@@ -85,7 +85,7 @@ mod tests {
 
         //2. Prove
         let t1 = std::time::Instant::now();
-        let mut wtns = WitnessCalculator::new(&WASM_FILE.to_string()).unwrap();
+        let mut wtns = WitnessCalculator::new(WASM_FILE).unwrap();
         let inputs = load_input_for_witness(&INPUT_FILE.to_string());
         let w = wtns.calculate_witness(inputs, false).unwrap();
         let w = w
@@ -140,7 +140,7 @@ mod tests {
 
         //2. Prove
         let t1 = std::time::Instant::now();
-        let mut wtns = WitnessCalculator::new(&WASM_FILE_BLS12.to_string()).unwrap();
+        let mut wtns = WitnessCalculator::new(WASM_FILE_BLS12).unwrap();
         let inputs = load_input_for_witness(&INPUT_FILE.to_string());
         let w = wtns.calculate_witness(inputs, false).unwrap();
         let w = w

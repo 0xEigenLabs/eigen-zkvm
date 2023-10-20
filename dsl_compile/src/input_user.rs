@@ -34,16 +34,16 @@ pub struct Input {
     pub link_libraries: Vec<PathBuf>,
 }
 
-const P_0: &'static str =
+const P_0: &str =
     "21888242871839275222246405745257275088548364400416034343698204186575808495617";
-const R1CS: &'static str = "r1cs";
-const WAT: &'static str = "wat";
-const WASM: &'static str = "wasm";
-const CPP: &'static str = "cpp";
-const JS: &'static str = "js";
-const DAT: &'static str = "dat";
-const SYM: &'static str = "sym";
-const JSON: &'static str = "json";
+const R1CS: &str = "r1cs";
+const WAT: &str = "wat";
+const WASM: &str = "wasm";
+const CPP: &str = "cpp";
+const JS: &str = "js";
+const DAT: &str = "dat";
+const SYM: &str = "sym";
+const JSON: &str = "json";
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum SimplificationStyle {
@@ -128,8 +128,8 @@ impl Input {
             inspect_constraints_flag: false,
             flag_verbose: false,
             //prime: "bn128".to_string(), //goldilocks
-            prime: prime,
-            link_libraries: link_libraries,
+            prime,
+            link_libraries,
         })
     }
 
@@ -147,7 +147,7 @@ impl Input {
     }
 
     pub fn input_file(&self) -> &str {
-        &self.input_program.to_str().unwrap()
+        self.input_program.to_str().unwrap()
     }
     pub fn r1cs_file(&self) -> &str {
         self.out_r1cs.to_str().unwrap()

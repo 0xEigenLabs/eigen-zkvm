@@ -122,9 +122,9 @@ pub fn groth16_verify(
 ) -> Result<()> {
     match curve_type {
         "bn128" => {
-            let vk = read_vk_from_file(&vk_file)?;
-            let inputs = read_public_input_from_file(&public_input_file)?;
-            let proof = read_proof_from_file(&proof_file)?;
+            let vk = read_vk_from_file(vk_file)?;
+            let inputs = read_public_input_from_file(public_input_file)?;
+            let proof = read_proof_from_file(proof_file)?;
 
             let verification_result =
                 Groth16::<_, CircomCircuit<Bn256>>::verify_with_processed_vk(&vk, &inputs, &proof);
@@ -135,9 +135,9 @@ pub fn groth16_verify(
         }
 
         "bls12381" => {
-            let vk = read_vk_from_file(&vk_file)?;
-            let inputs = read_public_input_from_file_bls12381(&public_input_file)?;
-            let proof = read_proof_from_file(&proof_file)?;
+            let vk = read_vk_from_file(vk_file)?;
+            let inputs = read_public_input_from_file_bls12381(public_input_file)?;
+            let proof = read_proof_from_file(proof_file)?;
 
             let verification_result =
                 Groth16::<_, CircomCircuit<Bls12>>::verify_with_processed_vk(&vk, &inputs, &proof);

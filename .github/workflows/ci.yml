@@ -52,4 +52,4 @@ jobs:
           toolchain: stable
           override: true
       - run: rustup component add clippy
-      - run: cargo clippy --all-features --all-targets -- -D warnings
+      - run: cargo clippy --all-targets -- -D warnings

@@ -220,7 +220,7 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
     for i in 0..(num_sections) {
         let section_type = reader.read_u32::<LittleEndian>()?;
         let section_size = reader.read_u64::<LittleEndian>()?;
-        let offset = reader.seek(SeekFrom::Current(0))?;
+        let offset = reader.stream_position()?;
         section_offsets.insert(section_type, offset);
         section_sizes.insert(section_type, section_size);
         reader.seek(SeekFrom::Current(section_size as i64))?;

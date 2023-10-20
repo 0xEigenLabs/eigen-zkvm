@@ -207,7 +207,7 @@ fn load_r1cs_from_bin_file<E: ScalarEngine>(filename: &str) -> (R1CS<E>, Vec<usi
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
-        .expect(&format!("unable to open {}.", filename));
+        .unwrap_or_else(|_| panic!("unable to open {}.", filename));
     load_r1cs_from_bin(BufReader::new(reader))
 }
 
