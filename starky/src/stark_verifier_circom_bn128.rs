@@ -217,7 +217,7 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                 r.id - starkinfo.n_cm1 - starkinfo.n_cm2 - starkinfo.n_cm3
             ),
             "const" => format!("consts[{}]", r.id),
-            "number" => r.value.unwrap(),
+            "number" => r.value.clone().unwrap(),
             _ => panic!("Invalid ref: {}", r.type_),
         }
     };
