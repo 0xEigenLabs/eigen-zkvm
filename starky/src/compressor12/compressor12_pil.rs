@@ -23,7 +23,7 @@ pub enum CompressorPolName {
 impl ToString for CompressorPolName {
     fn to_string(&self) -> String {
         match self {
-            Self::L => format!("L"),
+            Self::L => "L".to_string(),
             Self::S => String::from("S"),
             Self::C => String::from("C"),
             Self::a => String::from("a"),

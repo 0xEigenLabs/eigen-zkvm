@@ -14,9 +14,9 @@ pub fn interpolate_prepare_block<F: FieldExtension>(
     let mut w = start;
     for i in 0..heigth {
         for j in 0..width {
-            buff[i * width + j] = buff[i * width + j] * w;
+            buff[i * width + j] *= w;
         }
-        w = w * inc;
+        w *= inc;
     }
     log::debug!("linear interpolatePrepare end.... {}/{}", st_i, st_n);
 }
@@ -102,7 +102,7 @@ fn _fft_block<F: FieldExtension>(
             buff[(start_pos - rel_pos + i) * n_pols + j] = u + t;
             buff[(start_pos - rel_pos + md2 + i) * n_pols + j] = u - t;
         }
-        w = w * F::from(MG.0[layers])
+        w *= F::from(MG.0[layers])
     }
 }
 

@@ -7,7 +7,7 @@ use core::cmp::min;
 use rayon::prelude::*;
 
 pub fn BR(x: usize, domain_pow: usize) -> usize {
-    assert_eq!(domain_pow <= 32, true);
+    assert!(domain_pow <= 32);
     let mut x = x;
     x = (x >> 16) | (x << 16);
     x = ((x & 0xFF00FF00) >> 8) | ((x & 0x00FF00FF) << 8);
@@ -113,8 +113,8 @@ pub fn interpolate_prepare<F: FieldExtension>(buff: &mut Vec<F>, n_pols: usize, 
         .enumerate()
         .for_each(|(j, bb)| {
             let i = j * n_per_thread_f;
-            let start = inv_n * (F::from(SHIFT.clone()).exp(i));
-            interpolate_prepare_block(bb, n_pols, start, F::from(SHIFT.clone()), i, n);
+            let start = inv_n * (F::from(*SHIFT).exp(i));
+            interpolate_prepare_block(bb, n_pols, start, F::from(*SHIFT), i, n);
         });
 }
 
@@ -189,7 +189,7 @@ pub fn _fft<F: FieldExtension>(
 
             if s_inc < nbits {
                 // Do not transpose if it's the same
-                transpose(&mut bout, &bin, n_pols, nbits, s_inc);
+                transpose(bout, bin, n_pols, nbits, s_inc);
                 (bin, bout) = (bout, bin);
             }
         }
@@ -216,7 +216,7 @@ pub fn interpolate<F: FieldExtension>(
     buffdst: &mut Vec<F>,
     nbitsext: usize,
 ) {
-    if buffsrc.len() == 0 {
+    if buffsrc.is_empty() {
         return;
     }
     let n = 1 << nbits;

@@ -99,7 +99,7 @@ pub trait FieldExtension:
 }
 
 pub fn batch_inverse<F: FieldExtension>(elems: &[F]) -> Vec<F> {
-    if elems.len() == 0 {
+    if elems.is_empty() {
         return vec![];
     }
 
@@ -112,7 +112,7 @@ pub fn batch_inverse<F: FieldExtension>(elems: &[F]) -> Vec<F> {
     let mut res: Vec<F> = vec![F::ZERO; elems.len()];
     for i in (1..elems.len()).rev() {
         res[i] = z * tmp[i - 1];
-        z = z * elems[i];
+        z *= elems[i];
     }
     res[0] = z;
     res

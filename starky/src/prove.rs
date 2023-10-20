@@ -95,7 +95,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
         &setup.starkinfo,
         &setup.program,
         pil,
-        &stark_struct,
+        stark_struct,
         prover_addr,
     )
     .unwrap();
@@ -110,26 +110,26 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     )
     .unwrap();
 
-    assert_eq!(result, true);
+    assert!(result);
     log::debug!("verify the proof done");
 
     let opt = pil2circom::StarkOption {
         enable_input: false,
         verkey_input: norm_stage,
         skip_main: false,
-        agg_stage: agg_stage,
+        agg_stage,
     };
 
     log::debug!("generate circom");
     let str_ver = pil2circom::pil2circom(
-        &pil,
+        pil,
         &setup.const_root,
-        &stark_struct,
+        stark_struct,
         &mut setup.starkinfo,
         &mut setup.program,
         &opt,
     )?;
-    let mut file = File::create(&circom_file)?;
+    let mut file = File::create(circom_file)?;
     write!(file, "{}", str_ver)?;
     log::debug!("generate circom done");
 
@@ -138,7 +138,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     }
 
     let input = serde_json::to_string(&starkproof)?;
-    let mut file = File::create(&zkin)?;
+    let mut file = File::create(zkin)?;
     write!(file, "{}", input)?;
     log::debug!("generate zkin done");
     Ok(())

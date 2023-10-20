@@ -63,7 +63,7 @@ impl fmt::Display for Expression {
 
 impl Expression {
     pub fn next(&self) -> bool {
-        return !(self.next.is_none() || !self.next.unwrap());
+        !(self.next.is_none() || !self.next.unwrap())
     }
 }
 
@@ -82,12 +82,12 @@ impl Expression {
         values: Option<Vec<Expression>>,
     ) -> Self {
         Expression {
-            op: op,
-            deg: deg,
-            id: id,
+            op,
+            deg,
+            id,
             next: None,
-            value: value,
-            values: values,
+            value,
+            values,
             keep: None,
             keep2ns: None,
             idQ: None,

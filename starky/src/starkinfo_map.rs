@@ -19,7 +19,7 @@ impl StarkInfo {
 
         let mut tmpexps: HashMap<usize, usize> = HashMap::new();
         let im_exps_none =
-            |id: &usize| -> bool { self.im_exps.get(id).is_none() || self.im_exps[id] == false };
+            |id: &usize| -> bool { self.im_exps.get(id).is_none() || !self.im_exps[id] };
 
         pil.cm_dims = vec![0usize; self.n_cm1 + self.n_cm2 + self.n_cm3 + self.n_cm4]; //FIXME
         for i in 0..self.n_cm1 {
@@ -35,8 +35,8 @@ impl StarkInfo {
                 exp_id: 0,
                 section_pos: 0,
             });
-            self.cm_n.push(pp_n.clone());
-            self.cm_2ns.push(pp_2ns.clone());
+            self.cm_n.push(pp_n);
+            self.cm_2ns.push(pp_2ns);
             self.map_sections.cm1_n.push(pp_n);
             self.map_sections.cm1_2ns.push(pp_2ns);
             pil.cm_dims[i] = 1
@@ -51,70 +51,66 @@ impl StarkInfo {
 
             let pph1_n = add_pol(PolType {
                 section: "cm2_n".to_string(),
-                dim: dim,
+                dim,
                 exp_id: 0,
                 section_pos: 0,
             });
             let pph1_2ns = add_pol(PolType {
                 section: "cm2_2ns".to_string(),
-                dim: dim,
+                dim,
                 exp_id: 0,
                 section_pos: 0,
             });
 
-            self.cm_n.push(pph1_n.clone());
-            self.cm_2ns.push(pph1_2ns.clone());
+            self.cm_n.push(pph1_n);
+            self.cm_2ns.push(pph1_2ns);
             self.map_sections.cm2_n.push(pph1_n);
             self.map_sections.cm2_2ns.push(pph1_2ns);
             pil.cm_dims[self.n_cm1 + i * 2] = dim;
 
             let pph2_n = add_pol(PolType {
                 section: "cm2_n".to_string(),
-                dim: dim,
+                dim,
                 exp_id: 0,
                 section_pos: 0,
             });
             let pph2_2ns = add_pol(PolType {
                 section: "cm2_2ns".to_string(),
-                dim: dim,
+                dim,
                 exp_id: 0,
                 section_pos: 0,
             });
 
-            self.cm_n.push(pph2_n.clone());
-            self.cm_2ns.push(pph2_2ns.clone());
+            self.cm_n.push(pph2_n);
+            self.cm_2ns.push(pph2_2ns);
             self.map_sections.cm2_n.push(pph2_n);
             self.map_sections.cm2_2ns.push(pph2_2ns);
             pil.cm_dims[self.n_cm1 + i * 2 + 1] = dim;
 
-            if im_exps_none(&pu.f_exp_id) {
-                if tmpexps.get(&pu.f_exp_id).is_none() {
-                    tmpexps.insert(pu.f_exp_id, self.tmpexp_n.len());
-                    let ppf_n = add_pol(PolType {
-                        section: "tmpexp_n".to_string(),
-                        dim: dim,
-                        exp_id: 0,
-                        section_pos: 0,
-                    });
-                    self.tmpexp_n.push(ppf_n.clone());
-                    self.map_sections.tmpexp_n.push(ppf_n);
-                    self.exp2pol.insert(pu.f_exp_id, ppf_n);
-                }
+            if im_exps_none(&pu.f_exp_id) && tmpexps.get(&pu.f_exp_id).is_none() {
+                tmpexps.insert(pu.f_exp_id, self.tmpexp_n.len());
+                let ppf_n = add_pol(PolType {
+                    section: "tmpexp_n".to_string(),
+                    dim,
+                    exp_id: 0,
+                    section_pos: 0,
+                });
+                self.tmpexp_n.push(ppf_n);
+                self.map_sections.tmpexp_n.push(ppf_n);
+                self.exp2pol.insert(pu.f_exp_id, ppf_n);
             }
 
-            if im_exps_none(&pu.t_exp_id) {
-                if tmpexps.get(&pu.t_exp_id).is_none() {
-                    tmpexps.insert(pu.t_exp_id, self.tmpexp_n.len());
-                    let ppt_n = add_pol(PolType {
-                        section: "tmpexp_n".to_string(),
-                        dim: dim,
-                        exp_id: 0,
-                        section_pos: 0,
-                    });
-                    self.tmpexp_n.push(ppt_n.clone());
-                    self.map_sections.tmpexp_n.push(ppt_n);
-                    self.exp2pol.insert(pu.t_exp_id, ppt_n);
-                }
+            if im_exps_none(&pu.t_exp_id) && tmpexps.get(&pu.t_exp_id).is_none() {
+                tmpexps.insert(pu.t_exp_id, self.tmpexp_n.len());
+                let ppt_n = add_pol(PolType {
+                    section: "tmpexp_n".to_string(),
+                    dim,
+                    exp_id: 0,
+                    section_pos: 0,
+                });
+                self.tmpexp_n.push(ppt_n);
+                self.map_sections.tmpexp_n.push(ppt_n);
+                self.exp2pol.insert(pu.t_exp_id, ppt_n);
             }
         }
 
@@ -140,42 +136,38 @@ impl StarkInfo {
                 exp_id: 0,
                 section_pos: 0,
             });
-            self.cm_n.push(ppz_n.clone());
-            self.cm_2ns.push(ppz_2ns.clone());
+            self.cm_n.push(ppz_n);
+            self.cm_2ns.push(ppz_2ns);
             self.map_sections.cm3_n.push(ppz_n);
             self.map_sections.cm3_2ns.push(ppz_2ns);
             pil.cm_dims[self.n_cm1 + self.n_cm2 + i] = 3;
 
-            if im_exps_none(&o.num_id) {
-                if tmpexps.get(&o.num_id).is_none() {
-                    tmpexps.insert(o.num_id, self.tmpexp_n.len());
-                    let pp_num_n = add_pol(PolType {
-                        section: "tmpexp_n".to_string(),
-                        dim: 3,
-                        exp_id: 0,
-                        section_pos: 0,
-                    });
+            if im_exps_none(&o.num_id) && tmpexps.get(&o.num_id).is_none() {
+                tmpexps.insert(o.num_id, self.tmpexp_n.len());
+                let pp_num_n = add_pol(PolType {
+                    section: "tmpexp_n".to_string(),
+                    dim: 3,
+                    exp_id: 0,
+                    section_pos: 0,
+                });
 
-                    self.tmpexp_n.push(pp_num_n);
-                    self.map_sections.tmpexp_n.push(pp_num_n);
-                    self.exp2pol.insert(o.num_id, pp_num_n);
-                }
+                self.tmpexp_n.push(pp_num_n);
+                self.map_sections.tmpexp_n.push(pp_num_n);
+                self.exp2pol.insert(o.num_id, pp_num_n);
             }
 
-            if im_exps_none(&o.den_id) {
-                if tmpexps.get(&o.den_id).is_none() {
-                    tmpexps.insert(o.den_id, self.tmpexp_n.len());
-                    let pp_den_n = add_pol(PolType {
-                        section: "tmpexp_n".to_string(),
-                        dim: 3,
-                        exp_id: 0,
-                        section_pos: 0,
-                    });
+            if im_exps_none(&o.den_id) && tmpexps.get(&o.den_id).is_none() {
+                tmpexps.insert(o.den_id, self.tmpexp_n.len());
+                let pp_den_n = add_pol(PolType {
+                    section: "tmpexp_n".to_string(),
+                    dim: 3,
+                    exp_id: 0,
+                    section_pos: 0,
+                });
 
-                    self.tmpexp_n.push(pp_den_n);
-                    self.map_sections.tmpexp_n.push(pp_den_n);
-                    self.exp2pol.insert(o.den_id, pp_den_n);
-                }
+                self.tmpexp_n.push(pp_den_n);
+                self.map_sections.tmpexp_n.push(pp_den_n);
+                self.exp2pol.insert(o.den_id, pp_den_n);
             }
         }
 
@@ -184,14 +176,14 @@ impl StarkInfo {
 
             let ppz_n = add_pol(PolType {
                 section: "cm3_n".to_string(),
-                dim: dim,
+                dim,
                 exp_id: 0,
                 section_pos: 0,
             });
 
             let ppz_2ns = add_pol(PolType {
                 section: "cm3_2ns".to_string(),
-                dim: dim,
+                dim,
                 exp_id: 0,
                 section_pos: 0,
             });
@@ -462,7 +454,7 @@ impl StarkInfo {
         let mut tmp_dim: HashMap<usize, usize> = HashMap::new();
         let dim_x = 3;
         self._set_code_dimensions(&mut segment.first, &mut tmp_dim, dim_x);
-        return Ok(());
+        Ok(())
     }
 
     fn fix_prover_code(
@@ -477,7 +469,7 @@ impl StarkInfo {
             exp_map: HashMap::new(),
             tmp_used: segment.tmp_used,
             dom: dom.to_string(),
-            tmpexps: tmpexps,
+            tmpexps,
             starkinfo: self,
         };
 

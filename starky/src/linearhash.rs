@@ -52,7 +52,7 @@ impl LinearHash {
             .for_each(|(outs, inps)| {
                 let hv = self._hash(inps).unwrap();
                 let hv: &[FGL] = hv.as_elements();
-                outs[0..hv.len()].copy_from_slice(&hv);
+                outs[0..hv.len()].copy_from_slice(hv);
             });
 
         if hashes.len() <= 4 {
@@ -83,7 +83,7 @@ impl LinearHash {
                 inhashes = vec![];
             }
         }
-        if inhashes.len() > 0 {
+        if !inhashes.is_empty() {
             while inhashes.len() < 8 {
                 inhashes.push(FGL::ZERO);
             }

@@ -38,9 +38,9 @@ pub struct Program {
 impl fmt::Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let obj = json!(self);
-        write!(
+        writeln!(
             f,
-            "publics: {}\n",
+            "publics: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )
     }
@@ -97,153 +97,153 @@ pub struct StarkInfo {
 impl fmt::Display for StarkInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let obj = json!(self.var_pol_map);
-        write!(
+        writeln!(
             f,
-            "var_pol_map: {}\n",
+            "var_pol_map: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
-        write!(
+        writeln!(
             f,
-            "n_cm 1-4: {} {} {} {}, n_q: {}\n",
+            "n_cm 1-4: {} {} {} {}, n_q: {}",
             self.n_cm1, self.n_cm2, self.n_cm3, self.n_cm4, self.n_q
         )?;
         let obj = json!(self.pu_ctx);
-        write!(
+        writeln!(
             f,
-            "pu_ctx: {}\n",
+            "pu_ctx: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.pe_ctx);
-        write!(
+        writeln!(
             f,
-            "pe_ctx: {}\n",
+            "pe_ctx: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.ci_ctx);
-        write!(
+        writeln!(
             f,
-            "ci_ctx: {}\n",
+            "ci_ctx: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
-        write!(
+        writeln!(
             f,
-            "n_constants: {}, n_publics: {}, c_exp: {}\n",
+            "n_constants: {}, n_publics: {}, c_exp: {}",
             self.n_constants, self.n_publics, self.c_exp
         )?;
-        write!(f, "q_deg: {}, q_dim: {}\n", self.q_deg, self.q_dim)?;
+        writeln!(f, "q_deg: {}, q_dim: {}", self.q_deg, self.q_dim)?;
         let obj = json!(self.im_exps);
-        write!(
+        writeln!(
             f,
-            "im_exps: {}\n",
+            "im_exps: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.im_exp2cm);
-        write!(
+        writeln!(
             f,
-            "im_exp2cm: {}\n",
+            "im_exp2cm: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.qs);
-        write!(f, "qs: {}\n", serde_json::to_string_pretty(&obj).unwrap())?;
+        writeln!(f, "qs: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.exps_2ns);
-        write!(
+        writeln!(
             f,
-            "exps_2ns: {}\n",
+            "exps_2ns: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.exps_n);
-        write!(
+        writeln!(
             f,
-            "exps_n: {}\n",
+            "exps_n: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.ev_map);
-        write!(
+        writeln!(
             f,
-            "ev_map: {}\n",
+            "ev_map: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
-        write!(
+        writeln!(
             f,
-            "fri_exp_id: {}, n_exps: {}\n",
+            "fri_exp_id: {}, n_exps: {}",
             self.fri_exp_id, self.n_exps
         )?;
         let obj = json!(self.cm_n);
-        write!(f, "cm_n: {}\n", serde_json::to_string_pretty(&obj).unwrap())?;
+        writeln!(f, "cm_n: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.cm_2ns);
-        write!(
+        writeln!(
             f,
-            "cm_2ns: {}\n",
+            "cm_2ns: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.tmpexp_n);
-        write!(
+        writeln!(
             f,
-            "tmpexp_n: {}\n",
+            "tmpexp_n: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.f_2ns);
-        write!(
+        writeln!(
             f,
-            "f_2ns: {}\n",
+            "f_2ns: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.q_2ns);
-        write!(
+        writeln!(
             f,
-            "q_2ns: {}\n",
+            "q_2ns: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.map_sections);
-        write!(
+        writeln!(
             f,
-            "map_sections: {}\n",
+            "map_sections: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.map_sectionsN1);
-        write!(
+        writeln!(
             f,
-            "map_sectionsN1: {}\n",
+            "map_sectionsN1: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.map_sectionsN3);
-        write!(
+        writeln!(
             f,
-            "map_sectionsN3: {}\n",
+            "map_sectionsN3: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.map_sectionsN);
-        write!(
+        writeln!(
             f,
-            "map_sectionsN: {}\n",
+            "map_sectionsN: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.map_offsets);
-        write!(
+        writeln!(
             f,
-            "map_offsets: {}\n",
+            "map_offsets: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.map_deg);
-        write!(
+        writeln!(
             f,
-            "map_deg: {}\n",
+            "map_deg: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
-        write!(f, "map_total_n: {}\n", self.map_total_n)?;
+        writeln!(f, "map_total_n: {}", self.map_total_n)?;
         let obj = json!(self.exp2pol);
-        write!(
+        writeln!(
             f,
-            "exp2pol: {}\n",
+            "exp2pol: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
         let obj = json!(self.publics);
-        write!(
+        writeln!(
             f,
-            "publics: {}\n",
+            "publics: {}",
             serde_json::to_string_pretty(&obj).unwrap()
         )?;
-        write!(f, "ev_idx: {:?}\n", self.ev_idx)
+        writeln!(f, "ev_idx: {:?}", self.ev_idx)
     }
 }
 
@@ -378,7 +378,7 @@ impl StarkInfo {
         info.generate_fri_verifier(&mut ctx, pil, &mut program)?;
 
         log::debug!("map");
-        info.map(pil, &stark_struct, &mut program)?;
+        info.map(pil, stark_struct, &mut program)?;
 
         info.publics = pil.publics.clone();
         Ok((info, program))
@@ -474,7 +474,7 @@ impl StarkInfo {
 
             let mut f_exp = E::nop();
             for j in pi.f.as_ref().unwrap().iter() {
-                let e = E::exp(j.clone(), None);
+                let e = E::exp(*j, None);
                 if f_exp == E::nop() {
                     f_exp = e;
                 } else {

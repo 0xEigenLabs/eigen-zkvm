@@ -26,7 +26,7 @@ impl TranscriptGL {
     fn add_1(&mut self, e: &FGL) -> Result<()> {
         log::debug!("add_1: {}", e);
         self.out = Vec::new();
-        self.pending.push(e.clone());
+        self.pending.push(*e);
         if self.pending.len() == 8 {
             self.update_state()?;
         }
@@ -53,7 +53,7 @@ impl Transcript for TranscriptGL {
     }
 
     fn get_fields1(&mut self) -> Result<FGL> {
-        if self.out.len() > 0 {
+        if !self.out.is_empty() {
             let v = self.out[0];
             self.out.remove(0);
             return Ok(v);
@@ -89,7 +89,7 @@ impl Transcript for TranscriptGL {
                 let shift = &fields[cur_field] >> cur_bit;
                 let bit = shift & &one;
                 if bit == one {
-                    a = a + (1 << j);
+                    a += 1 << j;
                 }
                 cur_bit += 1;
                 if cur_bit == 63 {

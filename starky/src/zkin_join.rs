@@ -38,7 +38,7 @@ pub fn join_zkin(
     // 3. save zkout to file
     // dump zkin file porting from stark_prove
     let input = serde_json::to_string(&zkout_map)?;
-    let mut file = File::create(&zkout)?;
+    let mut file = File::create(zkout)?;
     write!(file, "{}", input).unwrap();
     log::debug!("zkout file Generated Correctly");
     Ok(())

@@ -75,7 +75,7 @@ mod tests {
         let mut lhs = v;
         lhs.mul_assign(&v);
         lhs.mul_assign(&v);
-        let mut rhs = v.clone();
+        let mut rhs = v;
         rhs.square();
         rhs.mul_assign(&v);
         assert_eq!(lhs, rhs);

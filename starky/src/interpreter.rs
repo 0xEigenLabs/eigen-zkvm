@@ -90,8 +90,8 @@ pub struct Block<T: FieldExtension> {
 impl<T: FieldExtension> Block<T> {
     fn codegen(&self, step: &str, codebuf: String) {
         use std::io::Write;
-        let body = format!(r#"{}"#, codebuf);
-        let mut f = std::fs::File::create(&format!("/tmp/{}_{}.rs", self.namespace, step)).unwrap();
+        let body = codebuf.to_string();
+        let mut f = std::fs::File::create(format!("/tmp/{}_{}.rs", self.namespace, step)).unwrap();
         write!(f, "{}", &body).unwrap();
     }
 
@@ -228,11 +228,11 @@ pub fn compile_code<T: FieldExtension>(
             //log::debug!("get_ref_src: {}", src[src.len() - 1]);
         }
 
-        let exp = match (&code[j].op).as_str() {
-            "add" => Expr::new(Ops::Add, Vec::new(), (&src[0..2]).to_vec(), vec![]),
-            "sub" => Expr::new(Ops::Sub, Vec::new(), (&src[0..2]).to_vec(), vec![]),
-            "mul" => Expr::new(Ops::Mul, Vec::new(), (&src[0..2]).to_vec(), vec![]),
-            "copy" => Expr::new(Ops::Copy_, Vec::new(), (&src[0..1]).to_vec(), vec![]),
+        let exp = match code[j].op.as_str() {
+            "add" => Expr::new(Ops::Add, Vec::new(), src[0..2].to_vec(), vec![]),
+            "sub" => Expr::new(Ops::Sub, Vec::new(), src[0..2].to_vec(), vec![]),
+            "mul" => Expr::new(Ops::Mul, Vec::new(), src[0..2].to_vec(), vec![]),
+            "copy" => Expr::new(Ops::Copy_, Vec::new(), src[0..1].to_vec(), vec![]),
             _ => {
                 panic!("Invalid op {:?}", code[j])
             }

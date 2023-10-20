@@ -47,7 +47,7 @@ pub fn exec(
             if wi.is_zero() {
                 FGL::ZERO
             } else {
-                assert_eq!(wi.to_u64_digits().1.len() < 2, true);
+                assert!(wi.to_u64_digits().1.len() < 2);
                 FGL::from(wi.to_u64_digits().1[0])
             }
         })
@@ -93,7 +93,7 @@ pub fn exec(
     }
 
     // 5. save cmPol to file.
-    cm_pols.save(&commit_file)?;
+    cm_pols.save(commit_file)?;
 
     log::debug!("files Generated Correctly");
     Result::Ok(())

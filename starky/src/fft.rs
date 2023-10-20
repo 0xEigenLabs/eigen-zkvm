@@ -19,13 +19,13 @@ impl<F: FieldExtension> FFT<F> {
 
     fn set_roots(&mut self, s: usize) {
         let mut i = s;
-        while !(i > self.roots.len() && self.roots[i].len() > 0) {
+        while !(i > self.roots.len() && !self.roots[i].is_empty()) {
             let mut r = F::ONE;
             let nroots = 1 << i;
             self.roots[i] = vec![F::ZERO; nroots];
             for j in 0..nroots {
                 self.roots[i][j] = r;
-                r = r * F::from(MG.0[i]);
+                r *= F::from(MG.0[i]);
             }
             if i == 0 {
                 break;
@@ -62,7 +62,7 @@ impl<F: FieldExtension> FFT<F> {
                     let u = buff[k + j];
                     buff[k + j] = u + t;
                     buff[k + j + mdiv2] = u - t;
-                    w = w * winc;
+                    w *= winc;
                 }
             }
         }
@@ -88,7 +88,7 @@ mod tests {
     #[test]
     fn test_single_fft() {
         let mut f = FFT::new();
-        let a: Vec<F3G> = vec![1u32, 2u32, 3u32, 5u32]
+        let a: Vec<F3G> = [1u32, 2u32, 3u32, 5u32]
             .iter()
             .map(|e| F3G::from(*e))
             .collect();

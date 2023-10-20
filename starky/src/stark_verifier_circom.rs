@@ -64,7 +64,7 @@ impl Transcript {
     }
 
     fn getFields1(&mut self) -> String {
-        if self.out.len() == 0 {
+        if self.out.is_empty() {
             while self.pending.len() < 8 {
                 self.pending.push(String::from("0"));
             }
@@ -152,7 +152,7 @@ impl Transcript {
     pub fn getCode(&self) -> String {
         let mut tmp: Vec<String> = vec![];
         for i in 0..self.code.len() {
-            tmp.push(String::from("    ".to_owned() + &self.code[i]));
+            tmp.push("    ".to_owned() + &self.code[i]);
         }
         tmp.join("\n")
     }
@@ -745,7 +745,7 @@ template MapValues() {{
         starkinfo.map_sectionsN.get("cm4_2ns")
     ));
 
-    let sNames = vec!["", "cm1_2ns", "cm2_2ns", "cm3_2ns", "cm4_2ns"];
+    let sNames = ["", "cm1_2ns", "cm2_2ns", "cm3_2ns", "cm4_2ns"];
     for t in 1..=4 {
         for (i, ms) in starkinfo.map_sections.get(sNames[t]).iter().enumerate() {
             let p = &starkinfo.var_pol_map[*ms];
@@ -800,10 +800,8 @@ template MapValues() {{
             }
         }
     }
-    res.push_str(&format!(
-        r#"
-}}"#
-    ));
+    res.push_str(r#"
+}"#);
     res
 }
 
@@ -827,11 +825,9 @@ template StarkVerifier() {{
     );
 
     if options.verkey_input {
-        res.push_str(&format!(
-            r#"
+        res.push_str(r#"
     signal input rootC[4];
-"#
-        ));
+"#);
     } else {
         let const_roots = const_root.as_elements();
         res.push_str(&format!(
@@ -954,26 +950,20 @@ template StarkVerifier() {{
     ));
 
     if options.enable_input {
-        res.push_str(&format!(
-            r#"
+        res.push_str(r#"
     signal input enable;
     enable * (enable -1 ) === 0;
-    "#
-        ));
+    "#);
     } else {
-        res.push_str(&format!(
-            r#"
+        res.push_str(r#"
     signal enable;
     enable <== 1;
-    "#
-        ));
+    "#);
     }
 
-    res.push_str(&format!(
-        r#"
+    res.push_str(r#"
     signal challenges[8][3];
-    "#
-    ));
+    "#);
 
     for s in 0..stark_struct.steps.len() {
         res.push_str(&format!(
@@ -1147,18 +1137,14 @@ template StarkVerifier() {{
     ));
 
     if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
-        res.push_str(&format!(
-            r#"
+        res.push_str(r#"
             s0_merkle2[q].key[i] <== ys[q][i];
-    "#
-        ));
+    "#);
     }
     if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
-        res.push_str(&format!(
-            r#"
+        res.push_str(r#"
             s0_merkle3[q].key[i] <== ys[q][i];
-    "#
-        ));
+    "#);
     }
 
     res.push_str(&format!(
@@ -1229,28 +1215,22 @@ template StarkVerifier() {{
     ));
 
     if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
-        res.push_str(&format!(
-            r#"
+        res.push_str(r#"
                 s0_merkle2[q].siblings[i][j] <== s0_siblings2[q][i][j];
-        "#
-        ));
+        "#);
     }
     if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
-        res.push_str(&format!(
-            r#"
+        res.push_str(r#"
                 s0_merkle3[q].siblings[i][j] <== s0_siblings3[q][i][j];
-        "#
-        ));
+        "#);
     }
 
-    res.push_str(&format!(
-        r#"
+    res.push_str(r#"
                 s0_merkle4[q].siblings[i][j] <== s0_siblings4[q][i][j];
                 s0_merkleC[q].siblings[i][j] <== s0_siblingsC[q][i][j];
-            }}
-        }}
-        "#
-    ));
+            }
+        }
+        "#);
 
     if 0 < stark_struct.steps.len() - 1 {
         res.push_str(&format!(
@@ -1285,11 +1265,9 @@ template StarkVerifier() {{
         ));
     }
 
-    res.push_str(&format!(
-        r#"
-    }}
-        "#
-    ));
+    res.push_str(r#"
+    }
+        "#);
 
     for s in 1..stark_struct.steps.len() {
         res.push_str(&format!(
@@ -1378,11 +1356,11 @@ template StarkVerifier() {{
             s,
             s,
             // we need to use F3G::from(constant.clone()) as the ownership of constant(Here we mean SHIFT) will be moved into the from function
-            F3G::from(SHIFT.clone())
+            F3G::from(*SHIFT)
                 .exp(1 << (stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits))
                 .inv()
                 .as_int(),
-            (F3G::from(MG.0[stark_struct.steps[s - 1].nBits].clone()).inv() - F3G::ONE).as_int(),
+            (F3G::from(MG.0[stark_struct.steps[s - 1].nBits]).inv() - F3G::ONE).as_int(),
             stark_struct.steps[s].nBits,
             s,
             s,
@@ -1534,12 +1512,10 @@ template Recursive2() {{
             pil.publics.len()
         ));
 
-        res.push_str(&format!(
-            r#"
+        res.push_str(r#"
     signal input a_rootC[4];
     signal input b_rootC[4];
-"#
-        ));
+"#);
 
         res.push_str(&format!(
             r#"
@@ -1700,8 +1676,7 @@ template Recursive2() {{
             1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits,
         ));
 
-        res.push_str(&format!(
-            r#"
+        res.push_str(r#"
     component vA = StarkVerifier();
 
     vA.publics <== a_publics;
@@ -1722,8 +1697,7 @@ template Recursive2() {{
     vA.s0_siblingsC <== a_s0_siblingsC;
 
     vA.finalPol <== a_finalPol;
-            "#,
-        ));
+            "#);
 
         for s in 1..(stark_struct.steps.len()) {
             res.push_str(&format!(
@@ -1736,8 +1710,7 @@ template Recursive2() {{
             ));
         }
 
-        res.push_str(&format!(
-            r#"
+        res.push_str(r#"
     component vB = StarkVerifier();
 
     vB.publics <== b_publics;
@@ -1758,8 +1731,7 @@ template Recursive2() {{
     vB.s0_siblingsC <== b_s0_siblingsC;
 
     vB.finalPol <== b_finalPol;
-            "#,
-        ));
+            "#);
 
         for s in 1..(stark_struct.steps.len()) {
             res.push_str(&format!(
@@ -1772,31 +1744,23 @@ template Recursive2() {{
             ));
         }
 
-        res.push_str(&format!(
-            r#"
-}}
-            "#
-        ))
+        res.push_str(r#"
+}
+            "#)
     }
 
     if !options.skip_main {
         if options.agg_stage {
-            res.push_str(&format!(
-                r#"
-component main {{public [a_publics, a_rootC, b_publics,b_rootC]}}= Recursive2();"#
-            ));
+            res.push_str(r#"
+component main {public [a_publics, a_rootC, b_publics,b_rootC]}= Recursive2();"#);
         } else if options.verkey_input {
-            res.push_str(&format!(
-                r#"
-component main {{public [publics, rootC]}}= StarkVerifier();
-    "#
-            ));
+            res.push_str(r#"
+component main {public [publics, rootC]}= StarkVerifier();
+    "#);
         } else {
-            res.push_str(&format!(
-                r#"
-component main {{public [publics]}}= StarkVerifier();
-    "#
-            ));
+            res.push_str(r#"
+component main {public [publics]}= StarkVerifier();
+    "#);
         }
     }
     res

@@ -231,7 +231,7 @@ pub fn plonk_setup_compressor(
     // Paste public inputs.
     for i in 0..n_public_rows {
         let index = r + i;
-        for pol_name in vec![EVPOL4, CMULADD, GATE, POSEIDON12, PARTIAL, FFT4] {
+        for pol_name in [EVPOL4, CMULADD, GATE, POSEIDON12, PARTIAL, FFT4] {
             const_pols.set_matrix(
                 pil,
                 &Compressor.to_string(),
@@ -289,10 +289,10 @@ pub fn plonk_setup_compressor(
             } else if pr.n_used == 4 {
                 partial_rows.remove(&k);
             }
-        } else if half_rows.len() > 0 {
+        } else if !half_rows.is_empty() {
             let mut pr = half_rows.shift().unwrap();
             let index = pr.row;
-            for (i, value) in vec![9_usize, 6, 7, 8, 10, 11]
+            for (i, value) in [9_usize, 6, 7, 8, 10, 11]
                 .iter()
                 .zip([c.3, c.4, c.5, c.6, c.7, FGL::ZERO].iter())
             {
@@ -326,7 +326,7 @@ pub fn plonk_setup_compressor(
                     *value,
                 );
             }
-            for (pol_name, value) in vec![GATE, POSEIDON12, PARTIAL, CMULADD, EVPOL4, FFT4]
+            for (pol_name, value) in [GATE, POSEIDON12, PARTIAL, CMULADD, EVPOL4, FFT4]
                 .iter()
                 .zip(vec![
                     FGL::ONE,
@@ -761,7 +761,7 @@ pub fn plonk_setup_compressor(
             log::debug!("Empty gates... {}/{}", r, N);
         }
         let index = r;
-        for pol_name in vec![EVPOL4, CMULADD, GATE, POSEIDON12, PARTIAL, FFT4] {
+        for pol_name in [EVPOL4, CMULADD, GATE, POSEIDON12, PARTIAL, FFT4] {
             const_pols.set_matrix(
                 pil,
                 &Compressor.to_string(),

@@ -18,6 +18,9 @@ fmt: ## Check whether the code is formated correctly
 	@cargo check
 	@cargo fmt --all -- --check
 
+fix: ## Automatically apply lint suggestions. This flag implies `--no-deps` and `--all-targets`
+	@cargo clippy --fix
+
 test: ## Run tests for all the workspace members
 	@cargo test --release --all --all-features
 

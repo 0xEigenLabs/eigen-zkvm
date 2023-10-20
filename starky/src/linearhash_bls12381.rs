@@ -46,7 +46,7 @@ impl LinearHashBLS12381 {
         if accN > 0 {
             vals3.push(acc);
         }
-        if vals3.len() == 0 {
+        if vals3.is_empty() {
             return Ok(st);
         } else if vals3.len() == 1 {
             return Ok(vals3[0]);
@@ -54,13 +54,13 @@ impl LinearHashBLS12381 {
         let mut inHash: Vec<Fr> = vec![];
 
         for val3 in vals3.iter() {
-            inHash.push(val3.clone());
+            inHash.push(*val3);
             if inHash.len() == 16 {
                 st = self.h.hash(&inHash, &st)?;
                 inHash = vec![];
             }
         }
-        if inHash.len() > 0 {
+        if !inHash.is_empty() {
             st = self.h.hash(&inHash, &st)?;
         }
         Ok(st)
@@ -150,7 +150,7 @@ mod tests {
             .iter()
             .map(|e: &u64| {
                 vec![
-                    FGL::from(e.clone()),
+                    FGL::from(*e),
                     FGL::from(e * 1000),
                     FGL::from(e * 1000000),
                 ]
@@ -173,9 +173,9 @@ mod tests {
             .iter()
             .map(|e: &u64| {
                 vec![
-                    FGL::from(e.clone()),
-                    FGL::from(e.clone()),
-                    FGL::from(e.clone()),
+                    FGL::from(*e),
+                    FGL::from(*e),
+                    FGL::from(*e),
                 ]
             })
             .collect();

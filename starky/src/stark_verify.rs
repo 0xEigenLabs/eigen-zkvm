@@ -35,7 +35,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
         let b = ctx.publics[i]
             .as_elements()
             .iter()
-            .map(|e| vec![e.clone()])
+            .map(|e| vec![*e])
             .collect::<Vec<Vec<FGL>>>();
         transcript.put(&b[..])?;
     }
@@ -56,7 +56,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
         let b = ctx.evals[i]
             .as_elements()
             .iter()
-            .map(|e| vec![e.clone()])
+            .map(|e| vec![*e])
             .collect::<Vec<Vec<FGL>>>();
         transcript.put(&b[..])?;
     }
@@ -76,8 +76,8 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     let mut x_acc = M::ExtendField::ONE;
     let mut q = M::ExtendField::ZERO;
     for i in 0..starkinfo.q_deg {
-        q = q + x_acc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
-        x_acc = x_acc * x_n;
+        q += x_acc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
+        x_acc *= x_n;
     }
     let q_z = q * ctx.Z;
 
@@ -124,7 +124,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
         ctx_query.publics = ctx.publics.clone();
         ctx_query.challenge = ctx.challenge.clone();
 
-        let x = M::ExtendField::from(SHIFT.clone())
+        let x = M::ExtendField::from(*SHIFT)
             * (M::ExtendField::from(MG.0[ctx.nbits + extend_bits]).exp(idx));
         ctx_query.xDivXSubXi = (x / (x - ctx_query.challenge[7])).as_elements();
         ctx_query.xDivXSubWXi = (x

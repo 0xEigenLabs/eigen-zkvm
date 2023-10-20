@@ -67,10 +67,7 @@ impl PolsArray {
                             name: refName.clone(),
                             id: ref_.id + i,
                             idx: Some(i),
-                            elementType: match &ref_.elementType {
-                                Some(x) => Some(x.clone()),
-                                None => None,
-                            },
+                            elementType: ref_.elementType.as_ref().cloned(),
                             polDeg: ref_.polDeg,
                         };
                         arrayPols[i] = ref_.id + i;
@@ -83,10 +80,7 @@ impl PolsArray {
                         name: refName.clone(),
                         id: ref_.id,
                         idx: None,
-                        elementType: match &ref_.elementType {
-                            Some(x) => Some(x.clone()),
-                            None => None,
-                        },
+                        elementType: ref_.elementType.as_ref().cloned(),
                         polDeg: ref_.polDeg,
                     };
                     let arrayPols: Vec<usize> = vec![ref_.id];
@@ -99,7 +93,7 @@ impl PolsArray {
         }
 
         for i in 0..nPols {
-            if defArray[i].name.len() == 0 {
+            if defArray[i].name.is_empty() {
                 panic!("Invalid pils sequence");
             }
         }
@@ -116,7 +110,7 @@ impl PolsArray {
     #[inline(always)]
     pub fn get(&self, pil: &PIL, ns: &String, np: &String, i: usize, j: usize) -> FGL {
         let ref_id = self.get_pol_id(pil, ns, np, i);
-        self.array[ref_id][j].clone()
+        self.array[ref_id][j]
     }
 
     /// Set the ns.np[i][j] = value, where ns is the namespace, np is the state variable, i is
@@ -209,7 +203,7 @@ impl PolsArray {
                             buff.len() * std::mem::size_of::<u64>(),
                         )
                     };
-                    writer.write(&buff8)?;
+                    writer.write(buff8)?;
                     p = 0;
                 }
             }
@@ -221,7 +215,7 @@ impl PolsArray {
                     buff.len() * std::mem::size_of::<u64>(),
                 )
             };
-            writer.write(&buff8)?;
+            writer.write(buff8)?;
         }
         Ok(())
     }

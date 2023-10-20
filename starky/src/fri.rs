@@ -54,13 +54,13 @@ impl FRI {
     ) -> Result<FRIProof<F, M>> {
         let mut pol = pol.clone();
         let mut standard_fft = FFT::new();
-        let mut pol_bits = log2_any(pol.len()) as usize;
+        let mut pol_bits = log2_any(pol.len());
         log::debug!("fri prove {} {}", pol.len(), 1 << pol_bits);
         assert_eq!(1 << pol_bits, pol.len());
         assert_eq!(pol_bits, self.in_nbits);
 
-        let mut shift_inv = F::from(SHIFT_INV.clone());
-        let mut shift = F::from(SHIFT.clone());
+        let mut shift_inv = F::from(*SHIFT_INV);
+        let mut shift = F::from(*SHIFT);
         let mut tree: Vec<M> = vec![];
 
         let mut proof: FRIProof<F, M> = FRIProof::<F, M>::new(self.steps.len());
@@ -87,7 +87,7 @@ impl FRI {
                     let mut ppar_c = standard_fft.ifft(&ppar);
                     pol_mul_axi(&mut ppar_c, F::ONE, &sinv);
                     pol2_e[g] = eval_pol(&ppar_c, &special_x);
-                    sinv = sinv * wi;
+                    sinv *= wi;
                 }
             }
             log::debug!("pol2_e 0={}, 1={}", pol2_e[0], pol2_e[1]);
@@ -143,7 +143,7 @@ impl FRI {
             }
             if si < self.steps.len() - 1 {
                 for i in 0..ys.len() {
-                    ys[i] = ys[i] % (1 << self.steps[si + 1].nBits);
+                    ys[i] %= 1 << self.steps[si + 1].nBits;
                 }
             }
         }
@@ -182,7 +182,7 @@ impl FRI {
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
         let mut pol_bits = self.in_nbits;
         log::debug!("ys: {:?}, pol_bits {}", ys, self.in_nbits);
-        let mut shift = F::from(SHIFT.clone());
+        let mut shift = F::from(*SHIFT);
 
         let check_query_fn = |si: usize,
                               query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
@@ -204,7 +204,7 @@ impl FRI {
                 let pgroup_e: Vec<F> = match si {
                     0 => {
                         let pgroup_e = check_query(&proof_item.pol_queries[i], ys[i])?;
-                        if pgroup_e.len() == 0 {
+                        if pgroup_e.is_empty() {
                             log::error!("check_query failed si:{}", si);
                             return Ok(false);
                         }
@@ -224,11 +224,9 @@ impl FRI {
                         log::error!("eq query failed si:{}", si + 1);
                         return Ok(false);
                     }
-                } else {
-                    if !ev._eq(&proof.last[ys[i]]) {
-                        log::error!("eq last failed si:{}, {}!={}", si, ev, &proof.last[ys[i]]);
-                        return Ok(false);
-                    }
+                } else if !ev._eq(&proof.last[ys[i]]) {
+                    log::error!("eq last failed si:{}, {}!={}", si, ev, &proof.last[ys[i]]);
+                    return Ok(false);
                 }
             }
 
@@ -239,7 +237,7 @@ impl FRI {
 
             if si < self.steps.len() - 1 {
                 for i in 0..ys.len() {
-                    ys[i] = ys[i] % (1 << self.steps[si + 1].nBits);
+                    ys[i] %= 1 << self.steps[si + 1].nBits;
                 }
             }
         }
@@ -297,7 +295,7 @@ fn split3<F: FieldExtension>(arr: &Vec<FGL>) -> Vec<F> {
     for i in (0..arr.len()).step_by(3) {
         res.push(F::from_vec(vec![arr[i], arr[i + 1], arr[i + 2]]));
     }
-    return res;
+    res
 }
 
 /*

@@ -53,7 +53,7 @@ impl MerkleTreeBN128 {
             .enumerate()
             .map(|(i, bb)| self.do_merklize_level(bb, i, n_ops).unwrap())
             .reduce(
-                || Vec::<ElementDigest<4>>::new(),
+                Vec::<ElementDigest<4>>::new,
                 |mut a: Vec<ElementDigest<4>>, mut b: Vec<ElementDigest<4>>| {
                     a.append(&mut b);
                     a
@@ -83,7 +83,7 @@ impl MerkleTreeBN128 {
         let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
         buff_out64
             .iter_mut()
-            .zip((0..n_ops).into_iter())
+            .zip(0..n_ops)
             .for_each(|(out, i)| {
                 *out = self
                     .h
@@ -120,7 +120,7 @@ impl MerkleTreeBN128 {
         offset: usize,
     ) -> Result<ElementDigest<4>> {
         if mp.len() == offset {
-            return Ok(value.clone());
+            return Ok(*value);
         }
         //let cur_idx = idx & 0xF;
         let next_idx = idx >> 4;
@@ -162,7 +162,7 @@ impl MerkleTree for MerkleTreeBN128 {
     }
 
     fn element_size(&self) -> usize {
-        return self.elements.len();
+        self.elements.len()
     }
 
     fn to_extend(&self, p_be: &mut Vec<Self::ExtendField>) {
@@ -191,14 +191,14 @@ impl MerkleTree for MerkleTreeBN128 {
         // calculate the nodes of the specific height Merkle tree
         let mut nodes = vec![ElementDigest::<4>::default(); get_n_nodes(height)];
         let now = Instant::now();
-        if buff.len() > 0 {
+        if !buff.is_empty() {
             nodes
                 .par_chunks_mut(n_per_thread_f)
                 .zip(buff.par_chunks(n_per_thread_f * width))
                 .for_each(|(out, bb)| {
                     let cur_n = bb.len() / width;
                     out.iter_mut()
-                        .zip((0..cur_n).into_iter())
+                        .zip(0..cur_n)
                         .for_each(|(row_out, j)| {
                             let batch = &bb[(j * width)..((j + 1) * width)];
                             *row_out = self.h.hash_element_array(batch).unwrap();
@@ -310,7 +310,7 @@ mod tests {
 
         let (v, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert_eq!(tree.verify_group_proof(&root, &mp, idx, &v).unwrap(), true);
+        assert!(tree.verify_group_proof(&root, &mp, idx, &v).unwrap());
     }
 
     #[test]
@@ -329,10 +329,9 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert_eq!(
+        assert!(
             tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap(),
-            true
+                .unwrap()
         );
     }
 
@@ -352,10 +351,9 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert_eq!(
+        assert!(
             tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap(),
-            true
+                .unwrap()
         );
     }
 
@@ -375,10 +373,9 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert_eq!(
+        assert!(
             tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap(),
-            true
+                .unwrap()
         );
     }
     //TODO save and restore to file
