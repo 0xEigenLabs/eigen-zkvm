@@ -501,20 +501,21 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                 *td = x_buff[k] - xi;
                 *tdw = x_buff[k] - wxi;
             });
-
-        tmp_den = batch_inverse(&tmp_den);
-        tmp_denw = batch_inverse(&tmp_denw);
+        let tmp_ = vec![tmp_den, tmp_denw]
+            .par_iter()
+            .map(|t| batch_inverse(t))
+            .collect::<Vec<Vec<M::ExtendField>>>();
         ctx.xDivXSubXi
             .par_chunks_mut(3)
             .zip_eq(ctx.xDivXSubWXi.par_chunks_mut(3))
             .enumerate()
             .for_each(|(k, (xxx, xxwx))| {
-                let v = (tmp_den[k] * x_buff[k]).as_elements();
+                let v = (tmp_[0][k] * x_buff[k]).as_elements();
                 xxx[0] = v[0];
                 xxx[1] = v[1];
                 xxx[2] = v[2];
 
-                let vw = (tmp_denw[k] * x_buff[k]).as_elements();
+                let vw = (tmp_[1][k] * x_buff[k]).as_elements();
                 xxwx[0] = vw[0];
                 xxwx[1] = vw[1];
                 xxwx[2] = vw[2];
