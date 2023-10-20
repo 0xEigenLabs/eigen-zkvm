@@ -65,7 +65,7 @@ pub struct CircomCircuit<E: ScalarEngine> {
     // debug symbols
 }
 
-impl<'a, E: ScalarEngine> CircomCircuit<E> {
+impl<E: ScalarEngine> CircomCircuit<E> {
     pub fn get_public_inputs(&self) -> Option<Vec<E::Fr>> {
         match &self.witness {
             None => None,
@@ -94,7 +94,7 @@ impl<'a, E: ScalarEngine> CircomCircuit<E> {
 /// Our demo circuit implements this `Circuit` trait which
 /// is used during paramgen and proving in order to
 /// synthesize the constraint system.
-impl<'a, E: Engine> Circuit<E> for CircomCircuit<E> {
+impl<E: Engine> Circuit<E> for CircomCircuit<E> {
     //noinspection RsBorrowChecker
     fn synthesize<CS: ConstraintSystem<E>>(self, cs: &mut CS) -> Result<(), SynthesisError> {
         let witness = &self.witness;

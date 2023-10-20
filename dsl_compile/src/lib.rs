@@ -1,4 +1,6 @@
 //! It's for: Domain Specific Language(DSL) compiler: now only include circom compile.
+use std::path::Path;
+
 mod compilation_user;
 mod execution_user;
 mod input_user;

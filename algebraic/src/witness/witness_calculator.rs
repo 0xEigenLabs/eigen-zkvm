@@ -247,8 +247,8 @@ impl WitnessCalculator {
         // sec size
         writer.write_u64::<LittleEndian>((wtns_size * field_size) as u64)?;
 
-        for i in 0..wtns.len() {
-            writer.write_u32::<LittleEndian>(wtns[i])?;
+        for w in wtns {
+            writer.write_u32::<LittleEndian>(*w)?;
         }
         Ok(())
     }
@@ -294,7 +294,7 @@ pub fn value_to_bigint(v: Value) -> BigInt {
     }
 }
 
-pub fn flat_array(v: &Vec<Value>) -> Vec<BigInt> {
+pub fn flat_array(v: &[Value]) -> Vec<BigInt> {
     let mut result = Vec::new();
     fn fill_array(out: &mut Vec<BigInt>, value: &Value) {
         match value {

@@ -1,6 +1,8 @@
 #![allow(unused_imports)]
 use crate::ff::*;
 use core::ops::{Add, Div, Mul, Neg, Sub};
+use std::cmp::Ordering;
+
 #[derive(Eq)]
 pub struct Fr(pub FrRepr);
 /// This is the modulus m of the prime field
@@ -112,12 +114,10 @@ impl From<u64> for FrRepr {
 }
 impl Ord for FrRepr {
     #[inline(always)]
-    fn cmp(&self, other: &FrRepr) -> ::std::cmp::Ordering {
+    fn cmp(&self, other: &FrRepr) -> Ordering {
         for (a, b) in self.0.iter().rev().zip(other.0.iter().rev()) {
-            if a < b {
-                return ::std::cmp::Ordering::Less;
-            } else if a > b {
-                return ::std::cmp::Ordering::Greater;
+            if *a != *b {
+                return a.cmp(b);
             }
         }
         ::std::cmp::Ordering::Equal

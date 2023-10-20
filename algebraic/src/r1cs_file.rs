@@ -179,8 +179,10 @@ fn read_custom_gates_uses_list<R: Read>(
     let n_custom_gate_uses = b_r1cs32[0];
     let mut b_r1cs_pos = 1;
     for i in 0..n_custom_gate_uses {
-        let mut c = CustomGatesUses::default();
-        c.id = b_r1cs32[b_r1cs_pos] as u64;
+        let mut c = CustomGatesUses {
+            id: b_r1cs32[b_r1cs_pos] as u64,
+            ..Default::default()
+        };
         b_r1cs_pos += 1;
         let num_signals = b_r1cs32[b_r1cs_pos];
         b_r1cs_pos += 1;

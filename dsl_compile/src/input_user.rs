@@ -59,7 +59,7 @@ pub fn get_simplification_style(
     let no_rounds = if o_2_argument == "full" {
         Ok(usize::MAX)
     } else {
-        usize::from_str_radix(o_2_argument, 10)
+        o_2_argument.parse::<usize>()
     };
     match (o_0, o_1, o_2, no_rounds) {
         (true, _, _, _) => Ok(SimplificationStyle::O0),
