@@ -90,8 +90,8 @@ impl PolsArray {
             }
         }
 
-        for def in &defArray {
-            if def.name.is_empty() {
+        for i in 0..nPols {
+            if defArray[i].name.len() == 0 {
                 panic!("Invalid pils sequence");
             }
         }
