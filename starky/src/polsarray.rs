@@ -91,7 +91,7 @@ impl PolsArray {
         }
 
         for i in 0..nPols {
-            if defArray[i].name.len() == 0 {
+            if defArray[i].name.is_empty() {
                 panic!("Invalid pils sequence");
             }
         }
