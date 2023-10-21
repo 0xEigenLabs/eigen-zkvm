@@ -1082,8 +1082,6 @@ pub mod tests {
 
     #[test]
     fn test_stark_gen() {
-        env_logger::init();
-
         let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
 
         let start_new_pols_array = start_timer!(|| "new_pols_array.constant");
@@ -1141,8 +1139,6 @@ pub mod tests {
 
     #[test]
     fn test_stark_permutation() {
-        env_logger::init();
-
         let mut pil = load_json::<PIL>("data/pe.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/pe.const").unwrap();
@@ -1180,8 +1176,6 @@ pub mod tests {
 
     #[test]
     fn test_stark_plookup_bn128() {
-        env_logger::init();
-
         let mut pil = load_json::<PIL>("data/plookup.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/plookup.const").unwrap();
@@ -1215,8 +1209,6 @@ pub mod tests {
 
     #[test]
     fn test_stark_connection() {
-        env_logger::init();
-
         let mut pil = load_json::<PIL>("data/connection.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/connection.const").unwrap();
@@ -1250,8 +1242,6 @@ pub mod tests {
 
     #[test]
     fn test_stark_plookup_gl() {
-        env_logger::init();
-
         let mut pil = load_json::<PIL>("data/plookup.pil.json.gl").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/plookup.const.gl").unwrap();
