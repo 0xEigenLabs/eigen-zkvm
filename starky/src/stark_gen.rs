@@ -1082,7 +1082,6 @@ pub mod tests {
 
     #[test]
     fn test_stark_gen() {
-        env::set_var("RUST_LOG", "debug");
         env_logger::init();
 
         let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
@@ -1142,7 +1141,6 @@ pub mod tests {
 
     #[test]
     fn test_stark_permutation() {
-        env::set_var("RUST_LOG", "debug");
         env_logger::init();
 
         let mut pil = load_json::<PIL>("data/pe.pil.json").unwrap();
@@ -1182,7 +1180,6 @@ pub mod tests {
 
     #[test]
     fn test_stark_plookup_bn128() {
-        env::set_var("RUST_LOG", "debug");
         env_logger::init();
 
         let mut pil = load_json::<PIL>("data/plookup.pil.json").unwrap();
@@ -1218,7 +1215,6 @@ pub mod tests {
 
     #[test]
     fn test_stark_connection() {
-        env::set_var("RUST_LOG", "debug");
         env_logger::init();
 
         let mut pil = load_json::<PIL>("data/connection.pil.json").unwrap();
@@ -1254,7 +1250,6 @@ pub mod tests {
 
     #[test]
     fn test_stark_plookup_gl() {
-        env::set_var("RUST_LOG", "debug");
         env_logger::init();
 
         let mut pil = load_json::<PIL>("data/plookup.pil.json.gl").unwrap();
