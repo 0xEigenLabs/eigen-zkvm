@@ -1077,22 +1077,42 @@ pub mod tests {
     use crate::transcript_bn128::TranscriptBN128;
     use crate::types::load_json;
     use crate::types::{StarkStruct, PIL};
+    use ark_std::{end_timer, start_timer};
+    use std::env;
 
     #[test]
     fn test_stark_gen() {
+        env::set_var("RUST_LOG", "debug");
         env_logger::init();
-        let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
-        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
-        const_pol.load("data/fib.const").unwrap();
 
+        let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
+
+        let start_new_pols_array = start_timer!(|| "new_pols_array.constant");
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
+        end_timer!(start_new_pols_array);
+
+        let start_load_const = start_timer!(|| "load_const");
+        const_pol.load("data/fib.const").unwrap();
+        end_timer!(start_load_const);
+
+        let start_new_pols_array = start_timer!(|| "new_pols_array.commit");
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
+        end_timer!(start_new_pols_array);
+
+        let start_load_cm = start_timer!(|| "load_cm");
         cm_pol.load("data/fib.cm").unwrap();
+        end_timer!(start_load_cm);
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
+
+        let start_stark_setup = start_timer!(|| "stark_setup");
         let mut setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+        end_timer!(start_stark_setup);
         let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
         log::debug!("setup {}", fr_root);
+
+        let start_stark_gen = start_timer!(|| "stark_gen");
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             &cm_pol,
             &const_pol,
@@ -1104,8 +1124,10 @@ pub mod tests {
             "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
+        end_timer!(start_stark_gen);
         log::debug!("verify the proof...");
 
+        let start_stark_verify = start_timer!(|| "stark_verify");
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
             &setup.const_root,
@@ -1114,11 +1136,15 @@ pub mod tests {
             &mut setup.program,
         )
         .unwrap();
+        end_timer!(start_stark_verify);
         assert!(result);
     }
 
     #[test]
     fn test_stark_permutation() {
+        env::set_var("RUST_LOG", "debug");
+        env_logger::init();
+
         let mut pil = load_json::<PIL>("data/pe.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/pe.const").unwrap();
@@ -1156,6 +1182,9 @@ pub mod tests {
 
     #[test]
     fn test_stark_plookup_bn128() {
+        env::set_var("RUST_LOG", "debug");
+        env_logger::init();
+
         let mut pil = load_json::<PIL>("data/plookup.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/plookup.const").unwrap();
@@ -1189,6 +1218,9 @@ pub mod tests {
 
     #[test]
     fn test_stark_connection() {
+        env::set_var("RUST_LOG", "debug");
+        env_logger::init();
+
         let mut pil = load_json::<PIL>("data/connection.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/connection.const").unwrap();
@@ -1222,6 +1254,9 @@ pub mod tests {
 
     #[test]
     fn test_stark_plookup_gl() {
+        env::set_var("RUST_LOG", "debug");
+        env_logger::init();
+
         let mut pil = load_json::<PIL>("data/plookup.pil.json.gl").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
         const_pol.load("data/plookup.const.gl").unwrap();
