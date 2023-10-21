@@ -1078,7 +1078,7 @@ pub mod tests {
     use crate::types::load_json;
     use crate::types::{StarkStruct, PIL};
     use ark_std::{end_timer, start_timer};
-    use std::env;
+    
 
     #[test]
     fn test_stark_gen() {
