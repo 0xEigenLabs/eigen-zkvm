@@ -168,8 +168,9 @@ impl PolsArray {
                 )
             };
             n = rs / 8;
-            for x in buff {
-                self.array[i][j] = FGL::from(*x);
+
+            for l in 0..n {
+                self.array[i][j] = FGL::from(buff[l]);
                 i += 1;
                 if i == self.nPols {
                     i = 0;
