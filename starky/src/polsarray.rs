@@ -201,7 +201,7 @@ impl PolsArray {
                             buff.len() * std::mem::size_of::<u64>(),
                         )
                     };
-                    writer.write_all(buff8).expect("Failed to write buff8");
+                    writer.write_all(buff8)?;
                     p = 0;
                 }
             }

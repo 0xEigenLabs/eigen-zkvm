@@ -68,17 +68,15 @@ pub fn prove(
     )?;
 
     let proof = setup.prove(circuit, transcript)?;
-    let writer = std::fs::File::create(proof_bin).expect("Failed to crate proof_bin file");
+    let writer = std::fs::File::create(proof_bin)?;
     proof.write(writer)?;
 
     let (inputs, serialized_proof) = bellman_vk_codegen::serialize_proof(&proof);
-    let ser_proof_str =
-        serde_json::to_string_pretty(&serialized_proof).expect("Failed to serialized proof");
-    let ser_inputs_str =
-        serde_json::to_string_pretty(&inputs).expect("Failed to serialized inputs");
+    let ser_proof_str = serde_json::to_string_pretty(&serialized_proof)?;
+    let ser_inputs_str = serde_json::to_string_pretty(&inputs)?;
 
-    std::fs::write(proof_json, ser_proof_str.as_bytes()).expect("Failed to write proof_json");
-    std::fs::write(public_json, ser_inputs_str.as_bytes()).expect("Failed to write public_json");
+    std::fs::write(proof_json, ser_proof_str.as_bytes())?;
+    std::fs::write(public_json, ser_inputs_str.as_bytes())?;
 
     Result::Ok(())
 }
