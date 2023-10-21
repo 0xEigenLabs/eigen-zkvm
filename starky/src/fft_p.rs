@@ -1,4 +1,4 @@
-#![allow(dead_code, non_snake_case)]
+#![allow(dead_code, non_snake_case, clippy::ptr_arg)]
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD, SHIFT};
 use crate::fft_worker::{fft_block, interpolate_prepare_block};
 use crate::helper::log2_any;
@@ -17,8 +17,8 @@ pub fn BR(x: usize, domain_pow: usize) -> usize {
 }
 
 pub fn transpose<F: FieldExtension>(
-    buffdst: &mut [F],
-    buffsrc: &[F],
+    buffdst: &mut Vec<F>,
+    buffsrc: &Vec<F>,
     n_pols: usize,
     nbits: usize,
     transpose_bits: usize,
@@ -38,8 +38,8 @@ pub fn transpose<F: FieldExtension>(
 }
 
 pub fn bit_reverse<F: FieldExtension>(
-    buffdst: &mut [F],
-    buffsrc: &[F],
+    buffdst: &mut Vec<F>,
+    buffsrc: &Vec<F>,
     n_pols: usize,
     nbits: usize,
 ) {
@@ -53,8 +53,8 @@ pub fn bit_reverse<F: FieldExtension>(
 }
 
 pub fn interpolate_bit_reverse<F: FieldExtension>(
-    buffdst: &mut [F],
-    buffsrc: &[F],
+    buffdst: &mut Vec<F>,
+    buffsrc: &Vec<F>,
     n_pols: usize,
     nbits: usize,
 ) {
@@ -69,8 +69,8 @@ pub fn interpolate_bit_reverse<F: FieldExtension>(
 }
 
 pub fn inv_bit_reverse<F: FieldExtension>(
-    buffdst: &mut [F],
-    buffsrc: &[F],
+    buffdst: &mut Vec<F>,
+    buffsrc: &Vec<F>,
     n_pols: usize,
     nbits: usize,
 ) {
@@ -85,7 +85,7 @@ pub fn inv_bit_reverse<F: FieldExtension>(
     }
 }
 
-pub fn interpolate_prepare<F: FieldExtension>(buff: &mut [F], n_pols: usize, nbits: usize) {
+pub fn interpolate_prepare<F: FieldExtension>(buff: &mut Vec<F>, n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
     let inv_n = F::inv(&F::from(n));
     let mut n_per_thread_f = (n - 1) / get_max_workers() + 1;
@@ -119,10 +119,10 @@ pub fn interpolate_prepare<F: FieldExtension>(buff: &mut [F], n_pols: usize, nbi
 }
 
 pub fn _fft<F: FieldExtension>(
-    buffsrc: &[F],
+    buffsrc: &Vec<F>,
     n_pols: usize,
     nbits: usize,
-    buffdst: &mut [F],
+    buffdst: &mut Vec<F>,
     inverse: bool,
 ) {
     let maxblockbits = 16;
@@ -130,7 +130,10 @@ pub fn _fft<F: FieldExtension>(
     let blocks_per_thread = 8;
     let n = 1 << nbits;
     let mut tmpbuff: Vec<F> = vec![F::ZERO; n * n_pols];
-    let mut outbuff = buffdst.to_owned();
+    let outbuff = buffdst;
+
+    let mut bin: &mut Vec<F>;
+    let mut bout: &mut Vec<F>;
 
     let ideal_n_blocks = get_max_workers() * blocks_per_thread;
     let mut blockbits = log2_any(n * n_pols / ideal_n_blocks);
@@ -152,11 +155,13 @@ pub fn _fft<F: FieldExtension>(
         n_transposes = ((nbits - 1) / blockbits) + 1;
     }
 
-    let (mut bout, mut bin) = if n_transposes & 1 > 0 {
-        (&mut tmpbuff, &mut outbuff)
+    if n_transposes & 1 > 0 {
+        bout = &mut tmpbuff;
+        bin = outbuff;
     } else {
-        (&mut outbuff, &mut tmpbuff)
-    };
+        bout = outbuff;
+        bin = &mut tmpbuff;
+    }
 
     if inverse {
         inv_bit_reverse(bout, buffsrc, n_pols, nbits);
@@ -191,11 +196,16 @@ pub fn _fft<F: FieldExtension>(
     });
 }
 
-pub fn fft<F: FieldExtension>(buffsrc: &[F], n_pols: usize, nbits: usize, buffdst: &mut [F]) {
+pub fn fft<F: FieldExtension>(buffsrc: &Vec<F>, n_pols: usize, nbits: usize, buffdst: &mut Vec<F>) {
     _fft(buffsrc, n_pols, nbits, buffdst, false)
 }
 
-pub fn ifft<F: FieldExtension>(buffsrc: &[F], n_pols: usize, nbits: usize, buffdst: &mut [F]) {
+pub fn ifft<F: FieldExtension>(
+    buffsrc: &Vec<F>,
+    n_pols: usize,
+    nbits: usize,
+    buffdst: &mut Vec<F>,
+) {
     _fft(buffsrc, n_pols, nbits, buffdst, true)
 }
 
