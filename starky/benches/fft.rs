@@ -11,13 +11,12 @@ const MIN_K: usize = 6;
 const MAX_K: usize = 24;
 
 fn generate_coeffs<F: FieldExtension>(k: usize) -> Vec<F> {
-    let mut rng = ::rand::thread_rng();
-
     let num_threads = rayon::current_num_threads();
     let mut parts = vec![F::one(); 1 << k];
     rayon::scope(|scope| {
         for out in parts.chunks_mut(num_threads) {
             scope.spawn(move |_| {
+                let mut rng = ::rand::thread_rng();
                 for i in 0..num_threads {
                     out[i] = <F as rand::Rand>::rand(&mut rng)
                 }
