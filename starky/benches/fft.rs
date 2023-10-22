@@ -19,13 +19,13 @@ fn bench_standard_fft<F: FieldExtension>(c: &mut Criterion) {
     for k in MIN_K..=MAX_K {
         let mut a: Vec<F> = gen_rand_goldfields(k);
 
-        group.bench_function(format!("fft,k={}", k), |b| {
+        group.bench_function(format!("fft/k/{}", k), |b| {
             b.iter(|| {
                 f.fft(&a);
             });
         });
 
-        group.bench_function(format!("ifft,k={}", k), |b| {
+        group.bench_function(format!("ifft/k/{}", k), |b| {
             b.iter(|| {
                 f.ifft(&a);
             });
@@ -40,13 +40,13 @@ fn bench_p_fft<F: FieldExtension>(c: &mut Criterion) {
         // prepare data.
         let mut a: Vec<F> = gen_rand_goldfields(k);
         // bench fft
-        group.bench_function(format!("p_fft,k={}", k), |b| {
+        group.bench_function(format!("p_fft/k/{}", k), |b| {
             b.iter(|| {
                 fft(&a, 1, k, &mut vec![]);
             });
         });
         // bench ifft
-        group.bench_function(format!("p_ifft,k={}", k), |b| {
+        group.bench_function(format!("p_ifft/k/{}", k), |b| {
             b.iter(|| {
                 ifft(&a, 1, k, &mut vec![]);
             });
