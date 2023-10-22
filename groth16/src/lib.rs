@@ -241,7 +241,8 @@ mod tests {
         let vk = VerifyingKey::<Bn256>::read(&mut reader).unwrap();
 
         let result = serialize_vk(vk, "bn128");
-        std::fs::write("./test-vectors/verification_key.json", result).expect("Unable to write data to file");
+        std::fs::write("./test-vectors/verification_key.json", result)
+            .expect("Unable to write data to file");
     }
 
     #[test]
@@ -278,6 +279,7 @@ mod tests {
 
         let input = read_fr_vec::<Fr, _>(&mut reader).unwrap();
         let result = serialize_input(&input);
-        std::fs::write("./test-vectors/public_input.json", result).expect("Unable to write data to file");
+        std::fs::write("./test-vectors/public_input.json", result)
+            .expect("Unable to write data to file");
     }
 }
