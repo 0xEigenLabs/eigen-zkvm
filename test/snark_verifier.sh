@@ -109,3 +109,20 @@ else
     echo "6. calculate verify gas cost"
     cd aggregation && npx hardhat test test/final.fflonk.test.ts
 fi 
+
+# 1-setup
+./target/debug/eigen-zkit groth16_setup -c bn128 --r1cs test/multiplier.r1cs -p  g16.zkey -v verification_key.bin
+# 2-proof
+./target/debug/eigen-zkit groth16_prove -c bn128 --r1cs test/multiplier.r1cs -w test/multiplier.wasm -p g16.zkey -i test/multiplier.input.json --input public_input.bin --proof proof.bin
+# 3-verify
+./target/debug/eigen-zkit groth16_verify -c bn128 -v verification_key.bin --input public_input.bin --proof proof.bin
+
+# 1-setup
+snarkjs g16s circuit.r1cs powersOfTau28_hez_final_08.ptau g16.zkey
+snarkjs zkev g16.zkey verification_key.json
+# 2-proof
+snarkjs g16f input.json circuit.wasm g16.zkey proof.json public.json
+# 3-verify
+snarkjs g16v verification_key.json public.json proof.json
+
+./target/debug/eigen-zkit groth16_setup -c bls12381 --r1cs test/multiplier.r1cs -p  g16_bls12381.zkey -v verification_key_bls12381.bin
