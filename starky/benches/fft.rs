@@ -29,7 +29,7 @@ fn generate_coeffs<F: FieldExtension>(k: usize) -> Vec<F> {
 fn bench_standard_fft<F: FieldExtension>(c: &mut Criterion) {
     let mut f = FFT::new();
 
-    let mut group_fft = c.benchmark_group("fft & ifft");
+    let mut group_fft = c.benchmark_group("standard_fft");
     let mut rng = ::rand::thread_rng();
     for k in MIN_K..=MAX_K {
         // prepare data.
@@ -50,7 +50,7 @@ fn bench_standard_fft<F: FieldExtension>(c: &mut Criterion) {
 }
 
 fn bench_p_fft<F: FieldExtension>(c: &mut Criterion) {
-    let mut group_fft = c.benchmark_group("p_fft & p_ifft");
+    let mut group_fft = c.benchmark_group("p_fft");
     let mut rng = ::rand::thread_rng();
     for k in MIN_K..=MAX_K {
         // prepare data.
