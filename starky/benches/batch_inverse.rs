@@ -2,7 +2,7 @@
 extern crate criterion;
 
 use criterion::{BenchmarkId, Criterion};
-use starky::dev::gen_rand_fields;
+use starky::dev::{gen_rand_fields, gen_rand_goldfields};
 use starky::f3g::F3G;
 use starky::traits::{batch_inverse, FieldExtension};
 
@@ -12,7 +12,7 @@ const MAX_K: usize = 24;
 fn bench_batch_inverse<F: FieldExtension>(c: &mut Criterion) {
     let mut group = c.benchmark_group("batch_inverse");
     for k in MIN_K..=MAX_K {
-        let a: Vec<F> = gen_rand_fields(k);
+        let a: Vec<F> = gen_rand_goldfields(k);
         group.bench_function(BenchmarkId::new("k", k), |b| {
             b.iter(|| batch_inverse(&a));
         });
