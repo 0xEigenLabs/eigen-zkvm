@@ -68,6 +68,8 @@ pub mod prove;
 pub mod serializer;
 pub mod zkin_join;
 
+pub mod dev;
+
 #[macro_use]
 extern crate serde_json;
 
