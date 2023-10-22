@@ -56,3 +56,7 @@ harness = false
 [[bench]]
 name = "batch_inverse"
 harness = false
+
+[[bench]]
+name = "poseidon"
+harness = false
