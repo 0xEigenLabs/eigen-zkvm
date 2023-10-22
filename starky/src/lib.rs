@@ -13,7 +13,7 @@ pub mod linearhash;
 pub mod linearhash_bls12381;
 pub mod linearhash_bn128;
 
-mod field_bn128;
+pub mod field_bn128;
 mod poseidon_bn128;
 mod poseidon_bn128_constants;
 mod poseidon_bn128_constants_opt;

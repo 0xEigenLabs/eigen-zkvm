@@ -14,18 +14,18 @@ const MAX_K: usize = 24;
 fn bench_standard_fft<F: FieldExtension>(c: &mut Criterion) {
     let mut f = FFT::new();
 
-    let mut group_fft = c.benchmark_group("standard_fft");
+    let mut group = c.benchmark_group("standard_fft");
 
     for k in MIN_K..=MAX_K {
         let mut a: Vec<F> = gen_rand_fields(k);
 
-        group_fft.bench_function(format!("fft,k={}", k), |b| {
+        group.bench_function(format!("fft,k={}", k), |b| {
             b.iter(|| {
                 f.fft(&a);
             });
         });
 
-        group_fft.bench_function(format!("ifft,k={}", k), |b| {
+        group.bench_function(format!("ifft,k={}", k), |b| {
             b.iter(|| {
                 f.ifft(&a);
             });
@@ -34,19 +34,19 @@ fn bench_standard_fft<F: FieldExtension>(c: &mut Criterion) {
 }
 
 fn bench_p_fft<F: FieldExtension>(c: &mut Criterion) {
-    let mut group_fft = c.benchmark_group("p_fft");
+    let mut group = c.benchmark_group("p_fft");
     let mut rng = ::rand::thread_rng();
     for k in MIN_K..=MAX_K {
         // prepare data.
-        let mut a: Vec<F> = generate_coeffs(k);
+        let mut a: Vec<F> = gen_rand_fields(k);
         // bench fft
-        group_fft.bench_function(format!("p_fft,k={}", k), |b| {
+        group.bench_function(format!("p_fft,k={}", k), |b| {
             b.iter(|| {
                 fft(&a, 1, k, &mut vec![]);
             });
         });
         // bench ifft
-        group_fft.bench_function(format!("p_ifft,k={}", k), |b| {
+        group.bench_function(format!("p_ifft,k={}", k), |b| {
             b.iter(|| {
                 ifft(&a, 1, k, &mut vec![]);
             });
