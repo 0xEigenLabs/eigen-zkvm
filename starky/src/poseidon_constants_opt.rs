@@ -1,3 +1,4 @@
+#[allow(clippy::type_complexity)]
 pub fn constants() -> (Vec<u64>, Vec<Vec<u64>>, Vec<Vec<u64>>, Vec<u64>) {
     let c_str: Vec<u64> = vec![
         0xb585f766f2144405,

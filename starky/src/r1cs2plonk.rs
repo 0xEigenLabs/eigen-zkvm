@@ -77,7 +77,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
         |lc1: &BTreeMap<usize, FGL>, k: &FGL, lc2: &BTreeMap<usize, FGL>| -> BTreeMap<usize, FGL> {
             let mut res: BTreeMap<usize, FGL> = BTreeMap::new();
             for (key, val) in lc1.iter() {
-                if res.get(&key).is_none() {
+                if res.get(key).is_none() {
                     res.insert(*key, *k * (*val));
                 } else {
                     let tmp = res[key];
@@ -86,7 +86,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
             }
 
             for (key, val) in lc2.iter() {
-                if res.get(&key).is_none() {
+                if res.get(key).is_none() {
                     res.insert(*key, *val);
                 } else {
                     let tmp = res[key];
@@ -194,7 +194,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
     let get_lc_type = |lc: &mut BTreeMap<usize, FGL>| -> String {
         let mut k = FGL::ZERO;
         let mut n = 0;
-        let keys: Vec<usize> = lc.keys().map(|k| *k).collect();
+        let keys: Vec<usize> = lc.keys().copied().collect();
         for key in keys.iter() {
             let val = lc[key];
             if val == FGL::ZERO {

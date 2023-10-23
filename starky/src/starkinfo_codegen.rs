@@ -63,14 +63,14 @@ impl Node {
         prime: bool,
         tree_pos: usize,
     ) -> Self {
-        assert_eq!(type_.len() > 0, true);
+        assert!(!type_.is_empty());
         Node {
-            type_: type_,
-            id: id,
-            value: value,
-            dim: dim,
-            prime: prime,
-            tree_pos: tree_pos,
+            type_,
+            id,
+            value,
+            dim,
+            prime,
+            tree_pos,
             p: 0,
             exp_id: 0,
         }
@@ -111,7 +111,7 @@ impl Segment {
     }
 
     pub fn is_some(&self) -> bool {
-        self.first.len() > 0 || self.i.len() > 0 || self.last.len() > 0
+        !self.first.is_empty() || !self.i.is_empty() || !self.last.is_empty()
     }
 }
 
@@ -286,7 +286,7 @@ pub fn pil_code_gen(
 ) -> Result<()> {
     let prime_idx = if prime { "expsPrime" } else { "exps" };
     if ctx.calculated.get(&(prime_idx, exp_id)).is_some() {
-        if res_type.len() > 0 {
+        if !res_type.is_empty() {
             let idx = ctx
                 .code
                 .iter()
@@ -296,7 +296,7 @@ pub fn pil_code_gen(
             let dest = Node::new(res_type.to_string(), res_id, None, 0, prime, 0);
             c.code.push(Section {
                 op: "copy".to_string(),
-                dest: dest,
+                dest,
                 src: vec![c.code[c.code.len() - 1].dest.clone()],
             });
         }
@@ -307,7 +307,7 @@ pub fn pil_code_gen(
     calculate_deps(ctx, pil, &exp, prime, exp_id, false)?;
 
     let mut code_ctx = ContextC {
-        exp_id: exp_id,
+        exp_id,
         tmp_used: ctx.tmp_used,
         code: Vec::new(),
     };
@@ -329,7 +329,7 @@ pub fn pil_code_gen(
             src: vec![ret_ref],
         });
     }
-    if res_type.len() > 0 {
+    if !res_type.is_empty() {
         if prime {
             panic!("Prime in retType");
         }
@@ -338,14 +338,14 @@ pub fn pil_code_gen(
         let src = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
         code_ctx.code.push(Section {
             op: "copy".to_string(),
-            dest: dest,
+            dest,
             src: vec![src],
         });
     }
 
     ctx.code.push(Code {
-        exp_id: exp_id,
-        prime: prime,
+        exp_id,
+        prime,
         code: code_ctx.code,
         tmp_used: 0,
         idQ: None,
@@ -375,11 +375,9 @@ fn find_muladd(exp: &Expression) -> Expression {
             return Expression::new("muladd".to_string(), 0, None, None, Some(vec![a, b, c]));
         } else {
             let mut r = exp.clone();
-            let mut mut_values: Vec<Expression> = Vec::new();
-            for i in 0..values.len() {
-                mut_values.push(find_muladd(&values[i]))
-            }
-            if mut_values.len() > 0 {
+            let mut_values: Vec<Expression> =
+                (0..values.len()).map(|i| find_muladd(&values[i])).collect();
+            if !mut_values.is_empty() {
                 r.values = Some(mut_values);
             }
             return r;
@@ -644,7 +642,7 @@ pub fn build_code(ctx: &mut Context, pil: &mut PIL) -> Segment {
 
     // FIXME: deprecated
     for (i, e) in pil.expressions.iter().enumerate() {
-        if (!e.keep.is_some()) && e.idQ.is_none() {
+        if e.keep.is_none() && e.idQ.is_none() {
             ctx.calculated.insert(("exps", i), false);
             ctx.calculated.insert(("expsPrime", i), false);
         }
@@ -662,10 +660,11 @@ pub fn build_linear_code(ctx: &mut Context, pil: &PIL, loop_pos: &str) -> Vec<Se
     let mut res: Vec<Section> = vec![];
     for i in 0..ctx.code.len() {
         let ep = exp_and_expprimes.get(&i);
-        if ep.is_some() && (*ep.unwrap()) {
-            if ((loop_pos == "i") && (!ctx.code[i].prime)) || (loop_pos == "last") {
-                continue;
-            }
+        if ep.is_some()
+            && (*ep.unwrap())
+            && (((loop_pos == "i") && (!ctx.code[i].prime)) || (loop_pos == "last"))
+        {
+            continue;
         }
         for cc in ctx.code[i].code.iter() {
             res.push(cc.clone());
@@ -693,7 +692,7 @@ fn get_exp_and_expprimes(ctx: &mut Context, pil: &PIL) -> HashMap<usize, bool> {
 
     let mut res = HashMap::<usize, bool>::new();
     for (k, v) in calc_exps.iter() {
-        res.insert(*k, if *v == 3 { true } else { false });
+        res.insert(*k, *v == 3);
     }
     res
 }

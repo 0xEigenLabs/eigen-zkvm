@@ -3,7 +3,7 @@ pub enum CompressorNameSpace {
     Compressor,
 }
 
-#[allow(dead_code, non_camel_case_types)]
+#[allow(dead_code, clippy::upper_case_acronyms, non_camel_case_types)]
 pub enum CompressorPolName {
     // pols name under namespace `Global`
     L,
@@ -23,7 +23,7 @@ pub enum CompressorPolName {
 impl ToString for CompressorPolName {
     fn to_string(&self) -> String {
         match self {
-            Self::L => format!("L"),
+            Self::L => "L".to_string(),
             Self::S => String::from("S"),
             Self::C => String::from("C"),
             Self::a => String::from("a"),
@@ -382,7 +382,7 @@ mod test {
         let pil_string = render(5, 5);
 
         let mut file = File::create(Path::new("/tmp/render_pil_rs.pil")).unwrap();
-        file.write(pil_string.as_bytes()).unwrap();
+        file.write_all(pil_string.as_bytes()).unwrap();
     }
 
     #[test]

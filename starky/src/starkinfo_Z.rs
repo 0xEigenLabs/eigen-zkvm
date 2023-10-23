@@ -57,7 +57,7 @@ impl StarkInfo {
             }
 
             if E::is_nop(&t_exp) {
-                panic!("nop {}", format!("{:?}", t_exp));
+                panic!("nop {:?}", t_exp);
             }
 
             let t_exp_id = pil.expressions.len();
@@ -83,7 +83,7 @@ impl StarkInfo {
 
             let f_exp_id = pil.expressions.len();
             if E::is_nop(&f_exp) {
-                panic!("nop {}", format!("{:?}", f_exp));
+                panic!("nop {:?}", f_exp);
             }
 
             pil.expressions.push(f_exp);
@@ -235,7 +235,7 @@ impl StarkInfo {
 
             pil.expressions.push(c1);
             pil.polIdentities.push(PolIdentity {
-                e: self.pe_ctx[i].c1_id.clone(),
+                e: self.pe_ctx[i].c1_id,
                 line: 0,
                 fileName: "".to_string(),
             });
@@ -261,8 +261,8 @@ impl StarkInfo {
             pil.expressions.push(den_exp);
 
             let mut c2 = E::sub(
-                &E::mul(&zp, &E::exp(self.pe_ctx[i].den_id.clone(), None)),
-                &E::mul(&z, &E::exp(self.pe_ctx[i].num_id.clone(), None)),
+                &E::mul(&zp, &E::exp(self.pe_ctx[i].den_id, None)),
+                &E::mul(&z, &E::exp(self.pe_ctx[i].num_id, None)),
             );
             c2.deg = 2;
             self.pe_ctx[i].c2_id = pil.expressions.len();
@@ -271,13 +271,13 @@ impl StarkInfo {
             }
             pil.expressions.push(c2);
             pil.polIdentities.push(PolIdentity {
-                e: self.pe_ctx[i].c2_id.clone(),
+                e: self.pe_ctx[i].c2_id,
                 line: 0,
                 fileName: "".to_string(),
             });
 
-            pil_code_gen(ctx, pil, self.pe_ctx[i].num_id.clone(), false, "", 0, false)?;
-            pil_code_gen(ctx, pil, self.pe_ctx[i].den_id.clone(), false, "", 0, false)?;
+            pil_code_gen(ctx, pil, self.pe_ctx[i].num_id, false, "", 0, false)?;
+            pil_code_gen(ctx, pil, self.pe_ctx[i].den_id, false, "", 0, false)?;
         }
         Ok(())
     }
@@ -304,8 +304,10 @@ impl StarkInfo {
                 _ => panic!("ci.connections is empty"),
             };
 
-            let mut ci_ctx = PCCTX::default();
-            ci_ctx.z_id = pil.nCommitments;
+            let mut ci_ctx = PCCTX {
+                z_id: pil.nCommitments,
+                ..Default::default()
+            };
             pil.nCommitments += 1;
 
             let gamma = E::challenge("gamma".to_string());
@@ -397,14 +399,14 @@ impl StarkInfo {
             pil.expressions.push(c1);
 
             pil.polIdentities.push(PolIdentity {
-                e: ci_ctx.c1_id.clone(),
+                e: ci_ctx.c1_id,
                 line: 0,
                 fileName: "".to_string(),
             });
 
             let mut c2 = E::sub(
-                &E::mul(&zp, &E::exp(ci_ctx.den_id.clone(), None)),
-                &E::mul(&z, &E::exp(ci_ctx.num_id.clone(), None)),
+                &E::mul(&zp, &E::exp(ci_ctx.den_id, None)),
+                &E::mul(&z, &E::exp(ci_ctx.num_id, None)),
             );
             c2.deg = 2;
             ci_ctx.c2_id = pil.expressions.len();
@@ -415,13 +417,13 @@ impl StarkInfo {
 
             pil.expressions.push(c2);
             pil.polIdentities.push(PolIdentity {
-                e: ci_ctx.c2_id.clone(),
+                e: ci_ctx.c2_id,
                 line: 0,
                 fileName: "".to_string(),
             });
 
-            pil_code_gen(ctx, pil, ci_ctx.num_id.clone(), false, "", 0, false)?;
-            pil_code_gen(ctx, pil, ci_ctx.den_id.clone(), false, "", 0, false)?;
+            pil_code_gen(ctx, pil, ci_ctx.num_id, false, "", 0, false)?;
+            pil_code_gen(ctx, pil, ci_ctx.den_id, false, "", 0, false)?;
             self.ci_ctx.push(ci_ctx);
         }
         Ok(())

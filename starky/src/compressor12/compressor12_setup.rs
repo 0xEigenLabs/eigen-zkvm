@@ -18,10 +18,10 @@ pub struct Options {
 // input: .r1cs
 // output: .pil, .const, .exec,
 pub fn setup(
-    r1cs_file: &String,
-    pil_file: &String,
-    const_file: &String,
-    exec_file: &String,
+    r1cs_file: &str,
+    pil_file: &str,
+    const_file: &str,
+    exec_file: &str,
     force_n_bits: usize,
 ) -> Result<()> {
     // 0. readR1cs
@@ -31,7 +31,7 @@ pub fn setup(
     };
 
     // 1. plonk setup: generate plonk circuit, the pil file.
-    let res = PlonkSetup::plonk_setup(&r1cs, &opts);
+    let res = PlonkSetup::new(&r1cs, &opts);
 
     // 2. And write it into pil_file.
     let mut file = File::create(pil_file).unwrap();
@@ -47,7 +47,7 @@ pub fn setup(
 }
 
 // construct and save ExecFile: plonk additions + sMap -> BigUint64Array
-pub(super) fn write_exec_file(exec_file: &String, adds: &Vec<PlonkAdd>, s_map: &Vec<Vec<u64>>) {
+pub(super) fn write_exec_file(exec_file: &str, adds: &Vec<PlonkAdd>, s_map: &Vec<Vec<u64>>) {
     let adds_len = adds.len();
     let s_map_row_len = s_map.len();
     let s_map_column_len = s_map[0].len();

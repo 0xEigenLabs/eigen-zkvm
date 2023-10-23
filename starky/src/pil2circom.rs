@@ -40,5 +40,5 @@ pub fn pil2circom(
         ),
         _ => panic!("Invalid hash type: {}", stark_struct.verificationHashType),
     };
-    return Ok(res);
+    Ok(res)
 }

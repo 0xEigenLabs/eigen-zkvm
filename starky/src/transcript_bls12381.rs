@@ -34,7 +34,7 @@ impl TranscriptBLS128 {
     fn add_1(&mut self, e: &Fr) -> Result<()> {
         self.out = VecDeque::new();
         log::debug!("add_1: {:?}", fr_bls12381_to_biguint(e));
-        self.pending.push(e.clone());
+        self.pending.push(*e);
         if self.pending.len() == 16 {
             self.update_state()?;
         }
@@ -42,7 +42,7 @@ impl TranscriptBLS128 {
     }
 
     fn get_fields253(&mut self) -> Result<Fr> {
-        if self.out.len() > 0 {
+        if !self.out.is_empty() {
             return Ok(self.out.pop_front().unwrap());
         }
         self.update_state()?;
@@ -69,12 +69,12 @@ impl Transcript for TranscriptBLS128 {
     }
 
     fn get_fields1(&mut self) -> Result<FGL> {
-        if self.out3.len() > 0 {
+        if !self.out3.is_empty() {
             log::debug!("get_fields1 {},", self.out3[0]);
             return Ok(self.out3.pop_front().unwrap());
         }
 
-        if self.out.len() > 0 {
+        if !self.out.is_empty() {
             let v = self.out.pop_front().unwrap();
             let bv = fr_bls12381_to_biguint(&v);
             let mask = BigUint::from(0xFFFFFFFFFFFFFFFFu128);
@@ -119,7 +119,7 @@ impl Transcript for TranscriptBLS128 {
                 let shift = &fields[cur_field] >> cur_bit;
                 let bit = shift & &one;
                 if bit == one {
-                    a = a + (1 << j);
+                    a += 1 << j;
                 }
                 cur_bit += 1;
                 if cur_bit == 253 {

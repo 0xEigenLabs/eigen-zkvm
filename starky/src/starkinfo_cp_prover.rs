@@ -8,6 +8,7 @@ use crate::types::{StarkStruct, PIL};
 use std::collections::HashMap;
 
 impl StarkInfo {
+    #[allow(clippy::unnecessary_unwrap)]
     pub fn generate_constraint_polynomial(
         &mut self,
         ctx: &mut Context,
@@ -36,14 +37,13 @@ impl StarkInfo {
         let max_deg = (1 << (stark_struct.nBitsExt - stark_struct.nBits)) + 1;
         for d in 2..=max_deg {
             let (im_exps, q_deg) = calculate_im_pols(pil, &c_exp, d)?;
-            if im_exps.is_some() {
-                if self.q_deg == 0
+            if im_exps.is_some()
+                && (self.q_deg == 0
                     || (im_exps.as_ref().unwrap().len() + (q_deg as usize)
-                        < self.im_exps.len() + self.q_deg)
-                {
-                    self.q_deg = q_deg as usize;
-                    self.im_exps = im_exps.unwrap();
-                }
+                        < self.im_exps.len() + self.q_deg))
+            {
+                self.q_deg = q_deg as usize;
+                self.im_exps = im_exps.unwrap();
             }
         }
 
@@ -123,6 +123,7 @@ impl StarkInfo {
     }
 }
 
+#[allow(clippy::if_same_then_else)]
 fn _calculate_im_pols(
     pil: &mut PIL,
     exp: &Expression,
@@ -141,7 +142,7 @@ fn _calculate_im_pols(
         return (None, -1);
     }
     //log::debug!("_calculate_im_pols: {}", exp.op);
-    if vec!["add", "sub", "addc", "mulc", "neg"].contains(&exp.op.as_str()) {
+    if ["add", "sub", "addc", "mulc", "neg"].contains(&exp.op.as_str()) {
         let mut md = 0;
         #[allow(unused_assignments)]
         let mut d: i32 = 0;
@@ -153,10 +154,10 @@ fn _calculate_im_pols(
                 md = d;
             }
         }
-        return (im_e, md);
-    } else if vec!["number", "public", "challenge"].contains(&exp.op.as_str()) {
+        (im_e, md)
+    } else if ["number", "public", "challenge"].contains(&exp.op.as_str()) {
         return (im_expressions.clone(), 0);
-    } else if vec!["x", "const", "cm"].contains(&exp.op.as_str()) {
+    } else if ["x", "const", "cm"].contains(&exp.op.as_str()) {
         if max_deg < 1 {
             return (None, -1);
         }
@@ -166,7 +167,7 @@ fn _calculate_im_pols(
         let mut ed = -1;
         let values: &Vec<Expression> = exp.values.as_ref().unwrap();
         // TODO explain
-        if vec!["number", "public", "challenge"].contains(&values[0].op.as_str()) {
+        if ["number", "public", "challenge"].contains(&values[0].op.as_str()) {
             return _calculate_im_pols(
                 pil,
                 &(values[1]),
@@ -176,7 +177,7 @@ fn _calculate_im_pols(
                 abs_max_d,
             );
         }
-        if vec!["number", "public", "challenge"].contains(&values[1].op.as_str()) {
+        if ["number", "public", "challenge"].contains(&values[1].op.as_str()) {
             return _calculate_im_pols(
                 pil,
                 &(values[0]),
@@ -199,19 +200,16 @@ fn _calculate_im_pols(
                 if eb.is_none() {
                     eb = e2;
                     ed = d1 + d2;
-                } else {
-                    if e2.as_ref().unwrap().len() < eb.as_ref().unwrap().len() {
-                        eb = e2;
-                        ed = d1 + d2;
-                    }
+                } else if e2.as_ref().unwrap().len() < eb.as_ref().unwrap().len() {
+                    eb = e2;
+                    ed = d1 + d2;
                 }
             }
-            if eb.is_some() {
-                if im_expressions.is_some()
-                    && eb.as_ref().unwrap().len() == im_expressions.as_ref().unwrap().len()
-                {
-                    return (eb, ed);
-                }
+            if eb.is_some()
+                && im_expressions.is_some()
+                && eb.as_ref().unwrap().len() == im_expressions.as_ref().unwrap().len()
+            {
+                return (eb, ed);
             }
         }
         return (eb, ed);
@@ -259,8 +257,8 @@ pub fn get_exp_dim(pil: &PIL, exp: &Expression) -> i32 {
     match exp.op.as_str() {
         "add" | "sub" | "addc" | "mulc" | "neg" => {
             let mut md = 1;
-            for i in 0..values.len() {
-                let d = get_exp_dim(pil, &values[i]);
+            for vi in &values {
+                let d = get_exp_dim(pil, vi);
                 if d > md {
                     md = d;
                 }

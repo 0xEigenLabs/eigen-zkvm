@@ -128,10 +128,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         let hashtype = &self.stark_struct.verificationHashType;
         match &self.rootC {
             Some(value) => {
-                map.serialize_entry(
-                    "rootC",
-                    &Input::<M::MTNode>::new(value.clone(), hashtype.clone()),
-                )?;
+                map.serialize_entry("rootC", &Input::<M::MTNode>::new(*value, hashtype.clone()))?;
             }
             None => {}
         }
@@ -214,7 +211,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                     .collect::<Vec<Vec<Input<M::MTNode>>>>(),
             );
 
-            if qe[1].0.len() > 0 {
+            if !qe[1].0.is_empty() {
                 s0_vals2.push(qe[1].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
                 s0_siblings2.push(
                     qe[1]
@@ -233,7 +230,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                 );
             }
 
-            if qe[2].0.len() > 0 {
+            if !qe[2].0.is_empty() {
                 s0_vals3.push(qe[2].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
                 s0_siblings3.push(
                     qe[2]
@@ -253,7 +250,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
             }
 
             let qe = &self.fri_proof.queries[0].pol_queries[i];
-            if qe[3].0.len() > 0 {
+            if !qe[3].0.is_empty() {
                 s0_vals4.push(qe[3].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
                 s0_siblings4.push(
                     qe[3]
@@ -272,7 +269,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                 );
             }
 
-            if qe[4].0.len() > 0 {
+            if !qe[4].0.is_empty() {
                 s0_valsC.push(qe[4].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
                 s0_siblingsC.push(
                     qe[4]
@@ -293,19 +290,19 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         }
 
         map.serialize_entry("s0_vals1", &s0_vals1)?;
-        if s0_vals2.len() > 0 {
+        if !s0_vals2.is_empty() {
             map.serialize_entry("s0_vals2", &s0_vals2)?;
         }
-        if s0_vals3.len() > 0 {
+        if !s0_vals3.is_empty() {
             map.serialize_entry("s0_vals3", &s0_vals3)?;
         }
         map.serialize_entry("s0_vals4", &s0_vals4)?;
         map.serialize_entry("s0_valsC", &s0_valsC)?;
         map.serialize_entry("s0_siblings1", &s0_siblings1)?;
-        if s0_siblings2.len() > 0 {
+        if !s0_siblings2.is_empty() {
             map.serialize_entry("s0_siblings2", &s0_siblings2)?;
         }
-        if s0_siblings3.len() > 0 {
+        if !s0_siblings3.is_empty() {
             map.serialize_entry("s0_siblings3", &s0_siblings3)?;
         }
         map.serialize_entry("s0_siblings4", &s0_siblings4)?;

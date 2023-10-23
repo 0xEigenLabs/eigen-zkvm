@@ -1,3 +1,4 @@
+use crate::errors::DslError;
 use ansi_term::Colour;
 use std::path::{Path, PathBuf};
 
@@ -34,16 +35,15 @@ pub struct Input {
     pub link_libraries: Vec<PathBuf>,
 }
 
-const P_0: &'static str =
-    "21888242871839275222246405745257275088548364400416034343698204186575808495617";
-const R1CS: &'static str = "r1cs";
-const WAT: &'static str = "wat";
-const WASM: &'static str = "wasm";
-const CPP: &'static str = "cpp";
-const JS: &'static str = "js";
-const DAT: &'static str = "dat";
-const SYM: &'static str = "sym";
-const JSON: &'static str = "json";
+const P_0: &str = "21888242871839275222246405745257275088548364400416034343698204186575808495617";
+const R1CS: &str = "r1cs";
+const WAT: &str = "wat";
+const WASM: &str = "wasm";
+const CPP: &str = "cpp";
+const JS: &str = "js";
+const DAT: &str = "dat";
+const SYM: &str = "sym";
+const JSON: &str = "json";
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum SimplificationStyle {
@@ -56,55 +56,59 @@ pub fn get_simplification_style(
     o_1: bool,
     o_2: bool,
     o_2_argument: &str,
-) -> Result<SimplificationStyle, ()> {
+) -> Result<SimplificationStyle, DslError> {
     let no_rounds = if o_2_argument == "full" {
         Ok(usize::MAX)
     } else {
-        usize::from_str_radix(o_2_argument, 10)
+        o_2_argument.parse::<usize>()
     };
     match (o_0, o_1, o_2, no_rounds) {
         (true, _, _, _) => Ok(SimplificationStyle::O0),
         (_, true, _, _) => Ok(SimplificationStyle::O1),
         (_, _, true, Ok(no_rounds)) => Ok(SimplificationStyle::O2(no_rounds)),
         (false, false, false, _) => Ok(SimplificationStyle::O1),
-        _ => Result::Err(log::debug!(
-            "{}",
-            Colour::Red.paint("invalid number of rounds")
-        )),
+        _ => {
+            log::debug!("{}", Colour::Red.paint("invalid number of rounds"));
+            Err(DslError::CircomCompileError(
+                "invalid number of rounds".to_string(),
+            ))
+        }
     }
 }
 
 impl Input {
     pub fn new(
-        input: PathBuf,
-        output_path: PathBuf,
+        input: &Path,
+        output_path: &Path,
         o_style: SimplificationStyle,
         prime: String,
         paths: Vec<String>,
-    ) -> Result<Input, ()> {
+    ) -> Result<Input, DslError> {
         let file_name = input.file_stem().unwrap().to_str().unwrap().to_string();
-        let output_c_path = Input::build_folder(&output_path, &file_name, CPP);
-        let output_js_path = Input::build_folder(&output_path, &file_name, JS);
+        let output_c_path = Input::build_folder(output_path, &file_name, CPP);
+        let output_js_path = Input::build_folder(output_path, &file_name, JS);
         let mut link_libraries: Vec<PathBuf> = vec![];
         for path in paths.into_iter() {
             link_libraries.push(Path::new(&path).to_path_buf());
         }
 
-        Result::Ok(Input {
+        let input = input.to_path_buf();
+
+        Ok(Input {
             field: P_0,
             input_program: input,
-            out_r1cs: Input::build_output(&output_path, &file_name, R1CS),
+            out_r1cs: Input::build_output(output_path, &file_name, R1CS),
             out_wat_code: Input::build_output(&output_js_path, &file_name, WAT),
             out_wasm_code: Input::build_output(&output_js_path, &file_name, WASM),
-            out_js_folder: output_js_path.clone(),
+            out_js_folder: output_js_path.to_path_buf(),
             out_wasm_name: file_name.clone(),
-            out_c_folder: output_c_path.clone(),
+            out_c_folder: output_c_path.to_path_buf(),
             out_c_run_name: file_name.clone(),
             out_c_code: Input::build_output(&output_c_path, &file_name, CPP),
             out_c_dat: Input::build_output(&output_c_path, &file_name, DAT),
-            out_sym: Input::build_output(&output_path, &file_name, SYM),
+            out_sym: Input::build_output(output_path, &file_name, SYM),
             out_json_constraints: Input::build_output(
-                &output_path,
+                output_path,
                 &format!("{}_constraints", file_name),
                 JSON,
             ),
@@ -128,26 +132,27 @@ impl Input {
             inspect_constraints_flag: false,
             flag_verbose: false,
             //prime: "bn128".to_string(), //goldilocks
-            prime: prime,
-            link_libraries: link_libraries,
+            prime,
+            link_libraries,
         })
     }
 
-    fn build_folder(output_path: &PathBuf, filename: &str, ext: &str) -> PathBuf {
-        let mut file = output_path.clone();
+    fn build_folder(output_path: &Path, filename: &str, ext: &str) -> Box<Path> {
+        let mut file = output_path.to_path_buf();
         let folder_name = format!("{}_{}", filename, ext);
         file.push(folder_name);
-        file
+
+        file.into_boxed_path()
     }
 
-    fn build_output(output_path: &PathBuf, filename: &str, ext: &str) -> PathBuf {
-        let mut file = output_path.clone();
+    fn build_output(output_path: &Path, filename: &str, ext: &str) -> PathBuf {
+        let mut file = output_path.to_path_buf();
         file.push(format!("{}.{}", filename, ext));
         file
     }
 
     pub fn input_file(&self) -> &str {
-        &self.input_program.to_str().unwrap()
+        self.input_program.to_str().unwrap()
     }
     pub fn r1cs_file(&self) -> &str {
         self.out_r1cs.to_str().unwrap()

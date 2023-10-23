@@ -1,3 +1,4 @@
+use crate::errors::DslError;
 use ansi_term::Colour;
 use compiler::hir::very_concrete_program::VCP;
 use constraint_writers::debug_writer::DebugWriter;
@@ -24,7 +25,7 @@ pub struct ExecutionConfig {
 pub fn execute_project(
     program_archive: ProgramArchive,
     config: ExecutionConfig,
-) -> Result<VCP, ()> {
+) -> Result<VCP, DslError> {
     use constraint_generation::{build_circuit, BuildConfig};
     let debug = DebugWriter::new(config.json_constraints).unwrap();
     let build_config = BuildConfig {
@@ -39,20 +40,26 @@ pub fn execute_project(
         // https://github.com/iden3/circom/commit/8f140c1dec7975b339bfe17c1f08d8081b913560
         flag_old_heuristics: false,
     };
-    let (exporter, vcp) = build_circuit(program_archive, build_config)?;
-    if config.r1cs_flag {
-        generate_output_r1cs(&config.r1cs, exporter.as_ref())?;
+    match build_circuit(program_archive, build_config) {
+        Ok((exporter, vcp)) => {
+            if config.r1cs_flag {
+                generate_output_r1cs(&config.r1cs, exporter.as_ref())?;
+            }
+            if config.sym_flag {
+                generate_output_sym(&config.sym, exporter.as_ref())?;
+            }
+            if config.json_constraint_flag {
+                generate_json_constraints(&debug, exporter.as_ref())?;
+            }
+            Result::Ok(vcp)
+        }
+        Err(..) => Err(DslError::CircomCompileError(
+            "execute_project error".to_string(),
+        )),
     }
-    if config.sym_flag {
-        generate_output_sym(&config.sym, exporter.as_ref())?;
-    }
-    if config.json_constraint_flag {
-        generate_json_constraints(&debug, exporter.as_ref())?;
-    }
-    Result::Ok(vcp)
 }
 
-fn generate_output_r1cs(file: &str, exporter: &dyn ConstraintExporter) -> Result<(), ()> {
+fn generate_output_r1cs(file: &str, exporter: &dyn ConstraintExporter) -> Result<(), DslError> {
     if let Result::Ok(()) = exporter.r1cs(file, true) {
         log::debug!("{} {}", Colour::Green.paint("Written successfully:"), file);
         Result::Ok(())
@@ -61,28 +68,32 @@ fn generate_output_r1cs(file: &str, exporter: &dyn ConstraintExporter) -> Result
             "{}",
             Colour::Red.paint("Could not write the output in the given path")
         );
-        Result::Err(())
+        Result::Err(DslError::CircomCompileError(
+            "generate_output_r1cs error".to_string(),
+        ))
     }
 }
 
-fn generate_output_sym(file: &str, exporter: &dyn ConstraintExporter) -> Result<(), ()> {
+fn generate_output_sym(file: &str, exporter: &dyn ConstraintExporter) -> Result<(), DslError> {
     if let Result::Ok(()) = exporter.sym(file) {
         log::debug!("{} {}", Colour::Green.paint("Written successfully:"), file);
         Result::Ok(())
     } else {
-        log::debug!(
+        log::error!(
             "{}",
             Colour::Red.paint("Could not write the output in the given path")
         );
-        Result::Err(())
+        Result::Err(DslError::CircomCompileError(
+            "generate_output_sym error".to_string(),
+        ))
     }
 }
 
 fn generate_json_constraints(
     debug: &DebugWriter,
     exporter: &dyn ConstraintExporter,
-) -> Result<(), ()> {
-    if let Ok(()) = exporter.json_constraints(&debug) {
+) -> Result<(), DslError> {
+    if let Ok(()) = exporter.json_constraints(debug) {
         log::debug!(
             "{} {}",
             Colour::Green.paint("Constraints written in:"),
@@ -90,10 +101,12 @@ fn generate_json_constraints(
         );
         Result::Ok(())
     } else {
-        log::debug!(
+        log::error!(
             "{}",
             Colour::Red.paint("Could not write the output in the given path")
         );
-        Result::Err(())
+        Result::Err(DslError::CircomCompileError(
+            "generate_json_constraints error".to_string(),
+        ))
     }
 }

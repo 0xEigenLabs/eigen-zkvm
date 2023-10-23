@@ -10,7 +10,7 @@ use crate::{aggregation, verifier};
 use std::path::Path;
 
 // generate a monomial_form SRS, and save it to a file
-pub fn setup(power: u32, srs_monomial_form: &String) -> Result<()> {
+pub fn setup(power: u32, srs_monomial_form: &str) -> Result<()> {
     let srs = plonk::gen_key_monomial_form(power)?;
     let path = Path::new(srs_monomial_form);
     assert!(
@@ -25,9 +25,9 @@ pub fn setup(power: u32, srs_monomial_form: &String) -> Result<()> {
 }
 
 // circuit filename default resolver
-pub fn analyse(circuit_file: &String, output: &String) -> Result<()> {
+pub fn analyse(circuit_file: &str, output: &str) -> Result<()> {
     let circuit = CircomCircuit::<Bn256> {
-        r1cs: load_r1cs(&circuit_file),
+        r1cs: load_r1cs(circuit_file),
         witness: None,
         wire_mapping: None,
         aux_offset: plonk::AUX_OFFSET,
@@ -43,15 +43,16 @@ pub fn analyse(circuit_file: &String, output: &String) -> Result<()> {
     Result::Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn prove(
-    circuit_file: &String,
-    witness: &String,
-    srs_monomial_form: &String,
+    circuit_file: &str,
+    witness: &str,
+    srs_monomial_form: &str,
     srs_lagrange_form: Option<String>,
-    transcript: &String,
-    proof_bin: &String,
-    proof_json: &String,
-    public_json: &String,
+    transcript: &str,
+    proof_bin: &str,
+    proof_json: &str,
+    public_json: &str,
 ) -> Result<()> {
     let circuit = CircomCircuit {
         r1cs: load_r1cs(circuit_file),
@@ -80,7 +81,7 @@ pub fn prove(
     Result::Ok(())
 }
 
-pub fn calculate_witness(wasm_file: &String, input_json: &String, output: &String) -> Result<()> {
+pub fn calculate_witness(wasm_file: &str, input_json: &str, output: &str) -> Result<()> {
     let mut wtns = WitnessCalculator::new(wasm_file).unwrap();
     assert_eq!(
         wtns.memory.prime.to_str_radix(16),
@@ -90,13 +91,13 @@ pub fn calculate_witness(wasm_file: &String, input_json: &String, output: &Strin
     let inputs = load_input_for_witness(input_json);
 
     let wtns_buf = wtns.calculate_witness_bin(inputs, false)?;
-    Ok(wtns.save_witness_to_bin_file::<Bn256>(output, &wtns_buf)?)
+    wtns.save_witness_to_bin_file::<Bn256>(output, &wtns_buf)
 }
 
 pub fn export_verification_key(
-    srs_monomial_form: &String,
-    circuit_file: &String,
-    output_vk: &String,
+    srs_monomial_form: &str,
+    circuit_file: &str,
+    output_vk: &str,
 ) -> Result<()> {
     let circuit = CircomCircuit {
         r1cs: load_r1cs(circuit_file),
@@ -116,7 +117,7 @@ pub fn export_verification_key(
     Result::Ok(())
 }
 
-pub fn verify(vk_file: &String, proof_bin: &String, transcript: &String) -> Result<()> {
+pub fn verify(vk_file: &str, proof_bin: &str, transcript: &str) -> Result<()> {
     let vk = reader::load_verification_key::<Bn256>(vk_file);
     let proof = reader::load_proof::<Bn256>(proof_bin);
     let ok = plonk::verify(&vk, &proof, transcript)?;
@@ -126,7 +127,7 @@ pub fn verify(vk_file: &String, proof_bin: &String, transcript: &String) -> Resu
     Result::Ok(())
 }
 
-pub fn generate_verifier(vk_file: &String, sol: &String) -> Result<()> {
+pub fn generate_verifier(vk_file: &str, sol: &str) -> Result<()> {
     let vk = reader::load_verification_key::<Bn256>(vk_file);
     bellman_vk_codegen::render_verification_key_from_default_template(&vk, sol, true);
     Result::Ok(())
@@ -136,8 +137,8 @@ pub fn generate_verifier(vk_file: &String, sol: &String) -> Result<()> {
 pub fn export_aggregation_verification_key(
     num_proofs_to_check: usize,
     num_inputs: usize,
-    srs_monomial_form: &String,
-    vk_file: &String,
+    srs_monomial_form: &str,
+    vk_file: &str,
 ) -> Result<()> {
     let big_crs = reader::load_key_monomial_form(srs_monomial_form);
     let vk = aggregation::export_vk(num_proofs_to_check, num_inputs, &big_crs)?;
@@ -150,11 +151,11 @@ pub fn export_aggregation_verification_key(
 
 #[cfg(not(feature = "wasm"))]
 pub fn aggregation_prove(
-    srs_monomial_form: &String,
-    old_proof_list: &String,
-    old_vk: &String,
-    new_proof: &String,
-    proofjson: &String,
+    srs_monomial_form: &str,
+    old_proof_list: &str,
+    old_vk: &str,
+    new_proof: &str,
+    proofjson: &str,
 ) -> Result<()> {
     let big_crs = reader::load_key_monomial_form(srs_monomial_form);
     let old_proofs = reader::load_proofs_from_list::<Bn256>(old_proof_list);
@@ -178,7 +179,7 @@ pub fn aggregation_prove(
 }
 
 #[cfg(not(feature = "wasm"))]
-pub fn aggregation_verify(proof: &String, vk: &String) -> Result<()> {
+pub fn aggregation_verify(proof: &str, vk: &str) -> Result<()> {
     let vk = reader::load_aggregation_verification_key(vk);
     let proof = reader::load_aggregated_proof(proof);
     let correct = aggregation::verify(vk, proof)?;
@@ -190,11 +191,7 @@ pub fn aggregation_verify(proof: &String, vk: &String) -> Result<()> {
 
 // check an aggregated proof is corresponding to the original proofs
 #[cfg(not(feature = "wasm"))]
-pub fn aggregation_check(
-    old_proof_list: &String,
-    old_vk: &String,
-    new_proof: &String,
-) -> Result<()> {
+pub fn aggregation_check(old_proof_list: &str, old_vk: &str, new_proof: &str) -> Result<()> {
     let old_proofs = reader::load_proofs_from_list::<Bn256>(old_proof_list);
     let old_vk = reader::load_verification_key::<Bn256>(old_vk);
     let new_proof = reader::load_aggregated_proof(new_proof);
@@ -211,10 +208,10 @@ pub fn aggregation_check(
 
 #[cfg(not(feature = "wasm"))]
 pub fn generate_aggregation_verifier(
-    raw_vk_file: &String,
-    aggregation_vk_file: &String,
+    raw_vk_file: &str,
+    aggregation_vk_file: &str,
     num_inputs: usize,
-    sol: &String,
+    sol: &str,
 ) -> Result<()> {
     let old_vk = reader::load_verification_key::<Bn256>(raw_vk_file);
     let aggregation_vk = reader::load_aggregation_verification_key(aggregation_vk_file);

@@ -68,7 +68,7 @@ impl<M: MerkleTree> StarkSetup<M> {
         let starkinfo = starkinfo::StarkInfo::new(pil, stark_struct, global_l1)?;
         Ok(StarkSetup {
             const_root: const_tree.root(),
-            const_tree: const_tree,
+            const_tree,
             starkinfo: starkinfo.0,
             program: starkinfo.1,
         })

@@ -1,9 +1,13 @@
 name: Cargo Build & Test
 
+# We only run these lints on trial-merges of PRs to reduce noise.
 on:
-  push:
+  merge_group:
   pull_request:
-
+    types: [synchronize, opened, reopened, ready_for_review]
+  push:
+    branches:
+      - main
 env:
   CARGO_TERM_COLOR: always
 
@@ -37,3 +41,15 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: rustup component add clippy
+      - run: cargo clippy --all-targets -- -D warnings

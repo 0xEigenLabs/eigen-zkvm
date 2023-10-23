@@ -54,7 +54,7 @@ impl Transcript {
             n2b_cnt: 0,
             code: vec![],
             bn1togl3Cnt: 0,
-            stark_struct: stark_struct,
+            stark_struct,
         }
     }
 
@@ -68,12 +68,12 @@ impl Transcript {
     }
 
     fn getFields1(&mut self) -> String {
-        if self.out3.len() > 0 {
+        if !self.out3.is_empty() {
             let res = self.out3[0].to_owned();
             self.out3.remove(0);
             return res;
         }
-        if self.out.len() > 0 {
+        if !self.out.is_empty() {
             let cName = format!("bn1togl3_{}", self.bn1togl3Cnt);
             self.bn1togl3Cnt += 1;
             self.code.push(format!("component {} = BN1toGL3();", cName));
@@ -91,7 +91,7 @@ impl Transcript {
     }
 
     fn getFields253(&mut self) -> String {
-        if self.out.len() > 0 {
+        if !self.out.is_empty() {
             let res = self.out[0].to_owned();
             self.out.remove(0);
             return res;
@@ -158,8 +158,8 @@ impl Transcript {
         let NFields = (totalBits - 1) / 253 + 1;
         let mut n2b: Vec<String> = vec![];
         let n2bt = match self.stark_struct.verificationHashType.as_str() {
-            "BN128" => format!("Num2Bits_strict()"),
-            "BLS12381" => format!("Num2Bits(255)"),
+            "BN128" => "Num2Bits_strict()".to_string(),
+            "BLS12381" => "Num2Bits(255)".to_string(),
             _ => todo!(),
         };
         for i in 0..NFields {
@@ -189,7 +189,7 @@ impl Transcript {
     pub fn getCode(&self) -> String {
         let mut tmp: Vec<String> = vec![];
         for i in 0..self.code.len() {
-            tmp.push(String::from("    ".to_owned() + &self.code[i]));
+            tmp.push("    ".to_owned() + &self.code[i]);
         }
         tmp.join("\n")
     }
@@ -201,10 +201,10 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
             "eval" => format!("evals[{}]", r.id),
             "challenge" => format!("challenges[{}]", r.id),
             "public" => format!("publics[{}]", r.id),
-            "x" => format!("challenges[7]"),
-            "Z" => format!("Z"),
-            "xDivXSubXi" => format!("xDivXSubXi.out"),
-            "xDivXSubWXi" => format!("xDivXSubWXi.out"),
+            "x" => "challenges[7]".to_string(),
+            "Z" => "Z".to_string(),
+            "xDivXSubXi" => "xDivXSubXi.out".to_string(),
+            "xDivXSubWXi" => "xDivXSubWXi.out".to_string(),
             "tmp" => format!("tmp_{}", r.id),
             "tree1" => format!("mapValues.tree1_{}", r.id),
             "tree2" => format!("mapValues.tree2_{}", r.id - starkinfo.n_cm1),
@@ -217,13 +217,12 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
                 r.id - starkinfo.n_cm1 - starkinfo.n_cm2 - starkinfo.n_cm3
             ),
             "const" => format!("consts[{}]", r.id),
-            "number" => format!("{}", r.value.as_ref().unwrap()),
+            "number" => r.value.as_ref().unwrap().to_string(),
             _ => panic!("Invalid ref: {}", r.type_),
         }
     };
     let mut str_code = String::from("");
-    for i in 0..code.len() {
-        let inst = &code[i];
+    for inst in code {
         match inst.op.as_str() {
             "add" => {
                 if inst.src[0].dim == 1 && inst.src[1].dim == 1 {
@@ -710,7 +709,7 @@ template parallel VerifyQuery() {{
         stark_struct.nBits
     ));
 
-    let (tmpCode, evalQ) = unrollCode(&program.verifier_query_code.first, &starkinfo);
+    let (tmpCode, evalQ) = unrollCode(&program.verifier_query_code.first, starkinfo);
     res.push_str(&tmpCode);
 
     // Final Normalization
@@ -762,9 +761,9 @@ template MapValues() {{
         starkinfo.map_sectionsN.get("cm4_2ns")
     ));
 
-    let sNames = vec!["", "cm1_2ns", "cm2_2ns", "cm3_2ns", "cm4_2ns"];
-    for t in 1..=4 {
-        for (i, ms) in starkinfo.map_sections.get(sNames[t]).iter().enumerate() {
+    let sNames = ["", "cm1_2ns", "cm2_2ns", "cm3_2ns", "cm4_2ns"];
+    for (t, s_name) in sNames.iter().enumerate().skip(1) {
+        for (i, ms) in starkinfo.map_sections.get(s_name).iter().enumerate() {
             let p = &starkinfo.var_pol_map[*ms];
             if p.dim == 1 {
                 res.push_str(&format!(
@@ -784,8 +783,8 @@ template MapValues() {{
         }
     }
 
-    for t in 1..=4 {
-        for (i, ms) in starkinfo.map_sections.get(sNames[t]).iter().enumerate() {
+    for (t, s_name) in sNames.iter().enumerate().skip(1) {
+        for (i, ms) in starkinfo.map_sections.get(s_name).iter().enumerate() {
             let p = &starkinfo.var_pol_map[*ms];
             if p.dim == 1 {
                 res.push_str(&format!(
@@ -817,10 +816,10 @@ template MapValues() {{
             }
         }
     }
-    res.push_str(&format!(
+    res.push_str(
         r#"
-}}"#
-    ));
+}"#,
+    );
     res
 }
 
@@ -844,11 +843,11 @@ template StarkVerifier() {{
     );
 
     if options.verkey_input {
-        res.push_str(&format!(
+        res.push_str(
             r#"
     signal input rootC;
-"#
-        ));
+"#,
+        );
     } else {
         let c: Fr = Fr((*const_root).as_scalar::<Fr>());
         res.push_str(&format!(
@@ -967,26 +966,26 @@ template StarkVerifier() {{
     ));
 
     if options.enable_input {
-        res.push_str(&format!(
+        res.push_str(
             r#"
     signal input enable;
     enable * (enable -1 ) === 0;
-    "#
-        ));
+    "#,
+        );
     } else {
-        res.push_str(&format!(
+        res.push_str(
             r#"
     signal enable;
     enable <== 1;
-    "#
-        ));
+    "#,
+        );
     }
 
-    res.push_str(&format!(
+    res.push_str(
         r#"
     signal challenges[8][3];
-    "#
-    ));
+    "#,
+    );
 
     for s in 0..stark_struct.steps.len() {
         res.push_str(&format!(
@@ -1162,18 +1161,18 @@ template StarkVerifier() {{
     ));
 
     if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
-        res.push_str(&format!(
+        res.push_str(
             r#"
             s0_merkle2[q].key[i] <== ys[q][i];
-    "#
-        ));
+    "#,
+        );
     }
     if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
-        res.push_str(&format!(
+        res.push_str(
             r#"
             s0_merkle3[q].key[i] <== ys[q][i];
-    "#
-        ));
+    "#,
+        );
     }
 
     res.push_str(&format!(
@@ -1244,28 +1243,28 @@ template StarkVerifier() {{
     ));
 
     if starkinfo.map_sectionsN.get("cm2_2ns") > 0 {
-        res.push_str(&format!(
+        res.push_str(
             r#"
                 s0_merkle2[q].siblings[i][j] <== s0_siblings2[q][i][j];
-        "#
-        ));
+        "#,
+        );
     }
     if starkinfo.map_sectionsN.get("cm3_2ns") > 0 {
-        res.push_str(&format!(
+        res.push_str(
             r#"
                 s0_merkle3[q].siblings[i][j] <== s0_siblings3[q][i][j];
-        "#
-        ));
+        "#,
+        );
     }
 
-    res.push_str(&format!(
+    res.push_str(
         r#"
                 s0_merkle4[q].siblings[i][j] <== s0_siblings4[q][i][j];
                 s0_merkleC[q].siblings[i][j] <== s0_siblingsC[q][i][j];
-            }}
-        }}
-        "#
-    ));
+            }
+        }
+        "#,
+    );
 
     if 0 < stark_struct.steps.len() - 1 {
         res.push_str(&format!(
@@ -1390,11 +1389,11 @@ template StarkVerifier() {{
             s
         ));
 
-        let e1 = (F3G::from(SHIFT.clone())
-            .exp(1 << stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits)
-            * F3G::from(MG.0[stark_struct.steps[s - 1].nBits].clone()))
+        let e1 = (F3G::from(*SHIFT)
+            .exp(1 << (stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits))
+            * F3G::from(MG.0[stark_struct.steps[s - 1].nBits]))
         .inv();
-        let e0 = (F3G::from(SHIFT.clone())
+        let e0 = (F3G::from(*SHIFT)
             .exp(1 << (stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits)))
         .inv();
 
@@ -1436,8 +1435,8 @@ template StarkVerifier() {{
         s{}_X[q] <== {} *  ( ys[q][0] * {} +1);
         "#,
                 s,
-                (F3G::from(SHIFT.clone())
-                    .exp(1 << stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits))
+                (F3G::from(*SHIFT)
+                    .exp(1 << (stark_struct.nBitsExt - stark_struct.steps[s - 1].nBits)))
                 .inv(),
                 F3G::from(MG.0[stark_struct.steps[s - 1].nBits]) - F3G::ONE
             ));
@@ -1541,28 +1540,28 @@ template StarkVerifier() {{
     ));
 
     if starkinfo.map_sectionsN.cm2_2ns > 0 {
-        res.push_str(&format!(
+        res.push_str(
             r#"
-        enable * (s0_merkle2[q].root - root2) === 0;"#
-        ));
+        enable * (s0_merkle2[q].root - root2) === 0;"#,
+        );
     }
 
     if starkinfo.map_sectionsN.cm3_2ns > 0 {
-        res.push_str(&format!(
+        res.push_str(
             r#"
-        enable * (s0_merkle3[q].root - root3) === 0;"#
-        ));
+        enable * (s0_merkle3[q].root - root3) === 0;"#,
+        );
     }
 
-    res.push_str(&format!(
+    res.push_str(
         r#"
         enable * (s0_merkle4[q].root - root4) === 0;
         enable * (s0_merkleC[q].root - rootC) === 0;
-        for (var e=0; e<3; e++) {{
+        for (var e=0; e<3; e++) {
             enable * (s0_lowValues[q].out[e] - verifyQueries[q].out[e]) === 0;
-        }}
-    }}"#
-    ));
+        }
+    }"#,
+    );
 
     for s in 1..stark_struct.steps.len() {
         res.push_str(&format!(
@@ -1743,46 +1742,46 @@ template Main() {{
         ));
 
         if starkinfo.map_sectionsN.cm2_2ns > 0 {
-            res.push_str(&format!(
+            res.push_str(
                 r#"
     sv.s0_vals2 <== s0_vals2;
-    "#
-            ));
+    "#,
+            );
         }
         if starkinfo.map_sectionsN.cm3_2ns > 0 {
-            res.push_str(&format!(
+            res.push_str(
                 r#"
     sv.s0_vals3 <== s0_vals3;
-    "#
-            ));
+    "#,
+            );
         }
-        res.push_str(&format!(
+        res.push_str(
             r#"
     sv.s0_vals4 <== s0_vals4;
     sv.s0_valsC <== s0_valsC;
     sv.s0_siblings1 <== s0_siblings1;
-    "#
-        ));
+    "#,
+        );
         if starkinfo.map_sectionsN.cm2_2ns > 0 {
-            res.push_str(&format!(
+            res.push_str(
                 r#"
     sv.s0_siblings2 <== s0_siblings2;
-    "#
-            ));
+    "#,
+            );
         }
         if starkinfo.map_sectionsN.cm3_2ns > 0 {
-            res.push_str(&format!(
+            res.push_str(
                 r#"
     sv.s0_siblings3 <== s0_siblings3;
-    "#
-            ));
+    "#,
+            );
         }
-        res.push_str(&format!(
+        res.push_str(
             r#"
     sv.s0_siblings4 <== s0_siblings4;
     sv.s0_siblingsC <== s0_siblingsC;
-    "#
-        ));
+    "#,
+        );
 
         for s in 0..(stark_struct.steps.len() - 1) {
             res.push_str(&format!(
@@ -1803,11 +1802,11 @@ template Main() {{
                 s, s, s, s
             ));
         }
-        res.push_str(&format!(
+        res.push_str(
             r#"
     sv.finalPol <== finalPol;
-    "#
-        ));
+    "#,
+        );
 
         //////
         // Calculate Publics Hash
