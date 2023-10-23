@@ -1,4 +1,5 @@
 #![allow(clippy::needless_range_loop)]
+#![allow(dead_code)]
 
 pub mod errors;
 pub mod polsarray;
@@ -31,6 +32,7 @@ pub mod poseidon_bls12381_opt;
 
 pub mod merklehash;
 pub mod merklehash_bls12381;
+
 pub mod merklehash_bn128;
 
 mod digest;
