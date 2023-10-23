@@ -1,20 +1,23 @@
 use algebraic::{
+    bellman_ce::Engine,
     circom_circuit::CircomCircuit,
     errors::{EigenError, Result},
     reader::load_r1cs,
     witness::{load_input_for_witness, WitnessCalculator},
     Field, PrimeField,
 };
-use groth16::bellman_ce::pairing::{
-    bls12_381::{Bls12, Fr as Fr_bls12381},
-    bn256::{Bn256, Fr},
+use groth16::{
+    bellman_ce::{
+        groth16::{Parameters, Proof, VerifyingKey},
+        pairing::{
+            bls12_381::{Bls12, Fr as Fr_bls12381},
+            bn256::{Bn256, Fr},
+        },
+        plonk::better_cs::keys::{read_fr_vec, write_fr_vec},
+    },
+    groth16::Groth16,
+    json_export::*,
 };
-use groth16::bellman_ce::plonk::better_cs::keys::{read_fr_vec, write_fr_vec};
-use groth16::bellman_ce::{
-    groth16::{Parameters, Proof, VerifyingKey},
-    Engine,
-};
-use groth16::groth16::Groth16;
 use num_traits::Zero;
 use rand;
 
@@ -29,12 +32,12 @@ pub fn groth16_setup(
         "bn128" => {
             let circuit = create_circuit_from_file::<Bn256>(circuit_file, None);
             let (pk, vk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
-            write_pk_vk_to_files(pk, vk, pk_file, vk_file)?
+            write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file)?
         }
         "bls12381" => {
             let circuit = create_circuit_from_file::<Bls12>(circuit_file, None);
             let (pk, vk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
-            write_pk_vk_to_files(pk, vk, pk_file, vk_file)?
+            write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file)?
         }
         _ => {
             return Err(EigenError::Unknown(format!(
@@ -77,10 +80,10 @@ pub fn groth16_prove(
             let circuit = create_circuit_from_file::<Bn256>(circuit_file, Some(w));
             let inputs = circuit.get_public_inputs().unwrap();
             let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
-            let writer = std::fs::File::create(proof_file)?;
-            proof.write(writer)?;
-            let mut writer1 = std::fs::File::create(public_input_file)?;
-            write_fr_vec(&inputs, &mut writer1)?;
+            let proof_json = serialize_proof(&proof, curve_type);
+            std::fs::write(proof_file, proof_json)?;
+            let input_json = serialize_input::<Fr>(&inputs);
+            std::fs::write(public_input_file, input_json)?;
         }
         "bls12381" => {
             let pk: Parameters<Bls12> = read_pk_from_file(pk_file, false)?;
@@ -98,10 +101,10 @@ pub fn groth16_prove(
             let circuit = create_circuit_from_file::<Bls12>(circuit_file, Some(w));
             let inputs = circuit.get_public_inputs().unwrap();
             let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
-            let writer = std::fs::File::create(proof_file)?;
-            proof.write(writer)?;
-            let mut writer1 = std::fs::File::create(public_input_file)?;
-            write_fr_vec(&inputs, &mut writer1)?;
+            let proof_json = serialize_proof(&proof, curve_type);
+            std::fs::write(proof_file, proof_json)?;
+            let input_json = serialize_input::<Fr>(&inputs);
+            std::fs::write(public_input_file, input_json)?;
         }
         _ => {
             return Err(EigenError::Unknown(format!(
@@ -226,7 +229,8 @@ fn read_proof_from_file<E: Engine>(file_path: &str) -> Result<Proof<E>> {
     Ok(Proof::<E>::read(&mut reader)?)
 }
 
-fn write_pk_vk_to_files<E: Engine>(
+fn write_pk_vk_to_files<E: Engine + Parser>(
+    curve_type: &str,
     pk: Parameters<E>,
     vk: VerifyingKey<E>,
     pk_file: &str,
@@ -234,7 +238,7 @@ fn write_pk_vk_to_files<E: Engine>(
 ) -> Result<()> {
     let writer = std::fs::File::create(pk_file)?;
     pk.write(writer)?;
-    let writer1 = std::fs::File::create(vk_file)?;
-    vk.write(writer1)?;
+    let vk_json = serialize_vk(vk, curve_type);
+    std::fs::write(vk_file, vk_json)?;
     Ok(())
 }

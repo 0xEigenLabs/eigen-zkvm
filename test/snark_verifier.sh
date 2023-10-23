@@ -110,19 +110,40 @@ else
     cd aggregation && npx hardhat test test/final.fflonk.test.ts
 fi 
 
-# 1-setup
-./target/debug/eigen-zkit groth16_setup -c bn128 --r1cs test/multiplier.r1cs -p  g16.zkey -v verification_key.bin
-# 2-proof
-./target/debug/eigen-zkit groth16_prove -c bn128 --r1cs test/multiplier.r1cs -w test/multiplier.wasm -p g16.zkey -i test/multiplier.input.json --input public_input.bin --proof proof.bin
-# 3-verify
-./target/debug/eigen-zkit groth16_verify -c bn128 -v verification_key.bin --input public_input.bin --proof proof.bin
+# # 1-setup
+# ./target/debug/eigen-zkit groth16_setup -c bn128 --r1cs test/multiplier.r1cs -p  g16.zkey -v verification_key.bin
+# # 2-proof
+# ./target/debug/eigen-zkit groth16_prove -c bn128 --r1cs test/multiplier.r1cs -w test/multiplier.wasm -p g16.zkey -i test/multiplier.input.json --input public_input.bin --proof proof.bin
+# # 3-verify
+# ./target/debug/eigen-zkit groth16_verify -c bn128 -v verification_key.bin --input public_input.bin --proof proof.bin
 
-# 1-setup
-snarkjs g16s circuit.r1cs powersOfTau28_hez_final_08.ptau g16.zkey
-snarkjs zkev g16.zkey verification_key.json
-# 2-proof
-snarkjs g16f input.json circuit.wasm g16.zkey proof.json public.json
-# 3-verify
-snarkjs g16v verification_key.json public.json proof.json
+# # 1-setup
+# snarkjs g16s circuit.r1cs powersOfTau28_hez_final_08.ptau g16.zkey
+# snarkjs zkev g16.zkey verification_key.json
+# # 2-proof
+# snarkjs g16f input.json circuit.wasm g16.zkey proof.json public.json
+# # 3-verify
+# snarkjs g16v verification_key.json public.json proof.json
+# # 4-solidity
+# snarkjs zkey export solidityverifier circuit_final.zkey verifier.sol
 
-./target/debug/eigen-zkit groth16_setup -c bls12381 --r1cs test/multiplier.r1cs -p  g16_bls12381.zkey -v verification_key_bls12381.bin
+# ./target/debug/eigen-zkit groth16_setup -c bls12381 --r1cs test/multiplier.r1cs -p  g16_bls12381.zkey -v verification_key_bls12381.bin
+
+# # 1-setup
+# snarkjs g16s circuit_bls12381.r1cs final_14.ptau g16_bls12381.zkey
+# snarkjs zkev g16_bls12381.zkey verification_key_bls12381.json
+# # 2-proof
+# snarkjs g16f input.json circuit_js/circuit_bls12381.wasm g16_bls12381.zkey proof_bls12381.json public_bls12381.json
+# # 3-verify
+# snarkjs g16v verification_key_bls12381.json public_bls12381.json proof_bls12381.json
+# # 4-solidity
+# snarkjs zkey export solidityverifier g16_bls12381.zkey verifier_bls12381.sol
+
+
+# $SNARKJS powersoftau new $CURVE ${POWER} /tmp/pot${POWER}_0000.ptau -v
+# $SNARKJS powersoftau contribute /tmp/pot${POWER}_0000.ptau /tmp/pot${POWER}_0001.ptau --name="First contribution" -v
+# $SNARKJS powersoftau prepare phase2 /tmp/pot${POWER}_0001.ptau $SRS -v
+
+# snarkjs powersoftau new bls12381 14 pot14_0000.ptau -v
+# snarkjs powersoftau contribute pot14_0000.ptau pot14_0001.ptau --name="First contribution" -v
+# snarkjs powersoftau prepare phase2 pot14_0001.ptau final_14.ptau -v
