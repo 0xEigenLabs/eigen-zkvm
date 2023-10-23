@@ -3,6 +3,7 @@ use crate::constant::MG;
 use crate::helper::log2_any;
 use crate::traits::FieldExtension;
 
+#[allow(clippy::upper_case_acronyms)]
 pub struct FFT<F: FieldExtension> {
     pub roots: Vec<Vec<F>>,
 }
@@ -19,13 +20,13 @@ impl<F: FieldExtension> FFT<F> {
 
     fn set_roots(&mut self, s: usize) {
         let mut i = s;
-        while !(i > self.roots.len() && self.roots[i].len() > 0) {
+        while i <= self.roots.len() || self.roots[i].is_empty() {
             let mut r = F::ONE;
             let nroots = 1 << i;
             self.roots[i] = vec![F::ZERO; nroots];
             for j in 0..nroots {
                 self.roots[i][j] = r;
-                r = r * F::from(MG.0[i]);
+                r *= F::from(MG.0[i]);
             }
             if i == 0 {
                 break;
@@ -46,9 +47,9 @@ impl<F: FieldExtension> FFT<F> {
             panic!("Size must be multiple of 2")
         }
         let mut buff = vec![F::ZERO; n];
-        for i in 0..p.len() {
+        for (i, pi) in p.iter().enumerate() {
             let r = (i as u32).reverse_bits() >> (32 - bits);
-            buff[r as usize] = p[i];
+            buff[r as usize] = *pi;
         }
 
         for s in 1..=bits {
@@ -62,7 +63,7 @@ impl<F: FieldExtension> FFT<F> {
                     let u = buff[k + j];
                     buff[k + j] = u + t;
                     buff[k + j + mdiv2] = u - t;
-                    w = w * winc;
+                    w *= winc;
                 }
             }
         }
@@ -88,7 +89,7 @@ mod tests {
     #[test]
     fn test_single_fft() {
         let mut f = FFT::new();
-        let a: Vec<F3G> = vec![1u32, 2u32, 3u32, 5u32]
+        let a: Vec<F3G> = [1u32, 2u32, 3u32, 5u32]
             .iter()
             .map(|e| F3G::from(*e))
             .collect();

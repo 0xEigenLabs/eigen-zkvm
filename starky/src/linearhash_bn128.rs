@@ -19,7 +19,7 @@ impl LinearHashBN128 {
         LinearHashBN128 { h: Poseidon::new() }
     }
 
-    pub fn hash_element_matrix(&self, columns: &Vec<Vec<FGL>>) -> Result<Fr> {
+    pub fn hash_element_matrix(&self, columns: &[Vec<FGL>]) -> Result<Fr> {
         let mut st = Fr::zero();
         let mut vals3: Vec<Fr> = vec![];
 
@@ -46,7 +46,7 @@ impl LinearHashBN128 {
         if accN > 0 {
             vals3.push(acc);
         }
-        if vals3.len() == 0 {
+        if vals3.is_empty() {
             return Ok(st);
         } else if vals3.len() == 1 {
             return Ok(vals3[0]);
@@ -54,13 +54,13 @@ impl LinearHashBN128 {
         let mut inHash: Vec<Fr> = vec![];
 
         for val3 in vals3.iter() {
-            inHash.push(val3.clone());
+            inHash.push(*val3);
             if inHash.len() == 16 {
                 st = self.h.hash(&inHash, &st)?;
                 inHash = vec![];
             }
         }
-        if inHash.len() > 0 {
+        if !inHash.is_empty() {
             st = self.h.hash(&inHash, &st)?;
         }
         Ok(st)
@@ -149,13 +149,7 @@ mod tests {
         let inputs: Vec<_> = (0..100).collect::<Vec<u64>>();
         let inputs: Vec<Vec<FGL>> = inputs
             .iter()
-            .map(|e: &u64| {
-                vec![
-                    FGL::from(e.clone()),
-                    FGL::from(e * 1000),
-                    FGL::from(e * 1000000),
-                ]
-            })
+            .map(|e: &u64| vec![FGL::from(*e), FGL::from(e * 1000), FGL::from(e * 1000000)])
             .collect();
 
         let st = LinearHashBN128::new().hash_element_matrix(&inputs).unwrap();

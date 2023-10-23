@@ -115,7 +115,7 @@ mod tests {
     }
     fn log_2(x: usize) -> usize {
         assert!(x > 0);
-        num_bits::<usize>() as usize - x.leading_zeros() as usize - 1
+        num_bits::<usize>() - x.leading_zeros() as usize - 1
     }
 
     #[test]

@@ -18,25 +18,26 @@ use crate::{
 use std::fs::File;
 use std::io::Write;
 
+#[allow(clippy::too_many_arguments)]
 pub fn stark_prove(
-    stark_struct: &String,
-    pil_file: &String,
+    stark_struct: &str,
+    pil_file: &str,
     norm_stage: bool,
     agg_stage: bool,
-    const_pol_file: &String,
-    cm_pol_file: &String,
-    circom_file: &String,
-    zkin: &String,
-    prover_addr: &String,
+    const_pol_file: &str,
+    cm_pol_file: &str,
+    circom_file: &str,
+    zkin: &str,
+    prover_addr: &str,
 ) -> Result<()> {
-    let mut pil = load_json::<PIL>(pil_file.as_str()).unwrap();
+    let mut pil = load_json::<PIL>(pil_file).unwrap();
     let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
-    const_pol.load(const_pol_file.as_str()).unwrap();
+    const_pol.load(const_pol_file).unwrap();
 
     let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
-    cm_pol.load(cm_pol_file.as_str()).unwrap();
+    cm_pol.load(cm_pol_file).unwrap();
 
-    let stark_struct = load_json::<StarkStruct>(stark_struct.as_str()).unwrap();
+    let stark_struct = load_json::<StarkStruct>(stark_struct).unwrap();
     match stark_struct.verificationHashType.as_str() {
         "BN128" => prove::<MerkleTreeBN128, TranscriptBN128>(
             &mut pil,
@@ -76,6 +77,7 @@ pub fn stark_prove(
 }
 
 // Adopt with different curve, eg: BN128, BLS12381, Goldilocks
+#[allow(clippy::too_many_arguments)]
 fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     pil: &mut PIL,
     const_pol: &PolsArray,
@@ -83,9 +85,9 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     stark_struct: &StarkStruct,
     agg_stage: bool,
     norm_stage: bool,
-    circom_file: &String,
-    zkin: &String,
-    prover_addr: &String,
+    circom_file: &str,
+    zkin: &str,
+    prover_addr: &str,
 ) -> Result<()> {
     let mut setup = StarkSetup::<M>::new(const_pol, pil, stark_struct, None).unwrap();
     let mut starkproof = StarkProof::<M>::stark_gen::<T>(
@@ -95,7 +97,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
         &setup.starkinfo,
         &setup.program,
         pil,
-        &stark_struct,
+        stark_struct,
         prover_addr,
     )
     .unwrap();
@@ -110,26 +112,26 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     )
     .unwrap();
 
-    assert_eq!(result, true);
+    assert!(result);
     log::debug!("verify the proof done");
 
     let opt = pil2circom::StarkOption {
         enable_input: false,
         verkey_input: norm_stage,
         skip_main: false,
-        agg_stage: agg_stage,
+        agg_stage,
     };
 
     log::debug!("generate circom");
     let str_ver = pil2circom::pil2circom(
-        &pil,
+        pil,
         &setup.const_root,
-        &stark_struct,
+        stark_struct,
         &mut setup.starkinfo,
         &mut setup.program,
         &opt,
     )?;
-    let mut file = File::create(&circom_file)?;
+    let mut file = File::create(circom_file)?;
     write!(file, "{}", str_ver)?;
     log::debug!("generate circom done");
 
@@ -138,7 +140,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     }
 
     let input = serde_json::to_string(&starkproof)?;
-    let mut file = File::create(&zkin)?;
+    let mut file = File::create(zkin)?;
     write!(file, "{}", input)?;
     log::debug!("generate zkin done");
     Ok(())

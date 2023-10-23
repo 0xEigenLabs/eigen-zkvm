@@ -15,15 +15,14 @@ use groth16::bellman_ce::{
     Engine,
 };
 use groth16::groth16::Groth16;
-use groth16::serialize::*;
 use num_traits::Zero;
 use rand;
 
 pub fn groth16_setup(
     curve_type: &str,
-    circuit_file: &String,
-    pk_file: &String,
-    vk_file: &String,
+    circuit_file: &str,
+    pk_file: &str,
+    vk_file: &str,
 ) -> Result<()> {
     let mut rng = rand::thread_rng();
     match curve_type {
@@ -49,12 +48,12 @@ pub fn groth16_setup(
 
 pub fn groth16_prove(
     curve_type: &str,
-    circuit_file: &String,
-    wtns_file: &String,
-    pk_file: &String,
-    input_file: &String,
-    public_input_file: &String,
-    proof_file: &String,
+    circuit_file: &str,
+    wtns_file: &str,
+    pk_file: &str,
+    input_file: &str,
+    public_input_file: &str,
+    proof_file: &str,
 ) -> Result<()> {
     let mut rng = rand::thread_rng();
 
@@ -117,15 +116,15 @@ pub fn groth16_prove(
 
 pub fn groth16_verify(
     curve_type: &str,
-    vk_file: &String,
-    public_input_file: &String,
-    proof_file: &String,
+    vk_file: &str,
+    public_input_file: &str,
+    proof_file: &str,
 ) -> Result<()> {
     match curve_type {
         "bn128" => {
-            let vk = read_vk_from_file(&vk_file)?;
-            let inputs = read_public_input_from_file::<Fr>(&public_input_file)?;
-            let proof = read_proof_from_file(&proof_file)?;
+            let vk = read_vk_from_file(vk_file)?;
+            let inputs = read_public_input_from_file::<Fr>(public_input_file)?;
+            let proof = read_proof_from_file(proof_file)?;
 
             let verification_result =
                 Groth16::<_, CircomCircuit<Bn256>>::verify_with_processed_vk(&vk, &inputs, &proof);
@@ -136,9 +135,9 @@ pub fn groth16_verify(
         }
 
         "bls12381" => {
-            let vk = read_vk_from_file(&vk_file)?;
-            let inputs = read_public_input_from_file::<Fr_bls12381>(&public_input_file)?;
-            let proof = read_proof_from_file(&proof_file)?;
+            let vk = read_vk_from_file(vk_file)?;
+            let inputs = read_public_input_from_file::<Fr_bls12381>(public_input_file)?;
+            let proof = read_proof_from_file(proof_file)?;
 
             let verification_result =
                 Groth16::<_, CircomCircuit<Bls12>>::verify_with_processed_vk(&vk, &inputs, &proof);
@@ -160,7 +159,7 @@ pub fn groth16_verify(
 }
 
 fn create_circuit_from_file<E: Engine>(
-    circuit_file: &String,
+    circuit_file: &str,
     witness: Option<Vec<E::Fr>>,
 ) -> CircomCircuit<E> {
     CircomCircuit {
@@ -230,8 +229,8 @@ fn read_proof_from_file<E: Engine>(file_path: &str) -> Result<Proof<E>> {
 fn write_pk_vk_to_files<E: Engine>(
     pk: Parameters<E>,
     vk: VerifyingKey<E>,
-    pk_file: &String,
-    vk_file: &String,
+    pk_file: &str,
+    vk_file: &str,
 ) -> Result<()> {
     let writer = std::fs::File::create(pk_file)?;
     pk.write(writer)?;

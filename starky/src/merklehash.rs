@@ -65,7 +65,7 @@ impl MerkleTreeGL {
             .enumerate()
             .map(|(i, bb)| self.do_merklize_level(bb, i, n_ops).unwrap())
             .reduce(
-                || Vec::<ElementDigest<4>>::new(),
+                Vec::<ElementDigest<4>>::new,
                 |mut a: Vec<ElementDigest<4>>, mut b: Vec<ElementDigest<4>>| {
                     a.append(&mut b);
                     a
@@ -93,58 +93,51 @@ impl MerkleTreeGL {
         );
         let n_ops = buff_in.len() / 2;
         let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
-        buff_out64
-            .iter_mut()
-            .zip((0..n_ops).into_iter())
-            .for_each(|(out, i)| {
-                let mut two = [FGL::ZERO; 8];
-                let one: &[FGL] = buff_in[i * 2].as_elements();
-                two[0..4].copy_from_slice(&one);
-                let one: &[FGL] = buff_in[i * 2 + 1].as_elements();
-                two[4..8].copy_from_slice(&one);
-                *out = self.h.hash(&two, 0).unwrap();
-            });
+        buff_out64.iter_mut().zip(0..n_ops).for_each(|(out, i)| {
+            let mut two = [FGL::ZERO; 8];
+            let one: &[FGL] = buff_in[i * 2].as_elements();
+            two[0..4].copy_from_slice(one);
+            let one: &[FGL] = buff_in[i * 2 + 1].as_elements();
+            two[4..8].copy_from_slice(one);
+            *out = self.h.hash(&two, 0).unwrap();
+        });
         Ok(buff_out64)
     }
 
     fn merkle_calculate_root_from_proof(
         &self,
-        mp: &Vec<Vec<FGL>>,
+        mp: &[Vec<FGL>],
         idx: usize,
         value: &ElementDigest<4>,
         offset: usize,
     ) -> Result<ElementDigest<4>> {
         if mp.len() == offset {
-            return Ok(value.clone());
+            return Ok(*value);
         }
         let cur_idx = idx & 1;
         let next_idx = idx / 2;
         let init = [FGL::ZERO; 4];
-        let next_value;
+
         let mut inhash = vec![FGL::ZERO; 8];
         if cur_idx == 0 {
             let one = value.as_elements();
-            inhash[0..4].copy_from_slice(&one);
-            for i in 0..4 {
-                inhash[4 + i] = mp[offset][i];
-            }
+            inhash[0..4].copy_from_slice(one);
+            inhash[4..(4 + 4)].copy_from_slice(&mp[offset][..4]);
         } else {
-            for i in 0..4 {
-                inhash[i] = mp[offset][i];
-            }
+            inhash[..4].copy_from_slice(&mp[offset][..4]);
             let one = value.as_elements();
-            inhash[4..8].copy_from_slice(&one);
+            inhash[4..8].copy_from_slice(one);
         }
         let next = self.poseidon.hash(&inhash, &init, 4)?;
-        next_value = ElementDigest::<4>::new(&next);
+        let next_value = ElementDigest::<4>::new(&next);
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
     fn calculate_root_from_group_proof(
         &self,
-        mp: &Vec<Vec<FGL>>,
+        mp: &[Vec<FGL>],
         idx: usize,
-        vals: &Vec<FGL>,
+        vals: &[FGL],
     ) -> Result<ElementDigest<4>> {
         let h = self.h.hash(vals, 0)?;
         self.merkle_calculate_root_from_proof(mp, idx, &h, 0)
@@ -167,7 +160,7 @@ impl MerkleTree for MerkleTreeGL {
     }
 
     fn element_size(&self) -> usize {
-        return self.elements.len();
+        self.elements.len()
     }
 
     fn to_extend(&self, p_be: &mut Vec<F3G>) {
@@ -197,18 +190,16 @@ impl MerkleTree for MerkleTreeGL {
 
         let mut nodes = vec![Self::MTNode::default(); get_n_nodes(height)];
         let now = Instant::now();
-        if buff.len() > 0 {
+        if !buff.is_empty() {
             nodes
                 .par_chunks_mut(n_per_thread_f)
                 .zip(buff.par_chunks(n_per_thread_f * width))
                 .for_each(|(out, bb)| {
                     let cur_n = bb.len() / width;
-                    out.iter_mut()
-                        .zip((0..cur_n).into_iter())
-                        .for_each(|(row_out, j)| {
-                            let batch = &bb[(j * width)..((j + 1) * width)];
-                            *row_out = self.h.hash(batch, 0).unwrap();
-                        });
+                    out.iter_mut().zip(0..cur_n).for_each(|(row_out, j)| {
+                        let batch = &bb[(j * width)..((j + 1) * width)];
+                        *row_out = self.h.hash(batch, 0).unwrap();
+                    });
                 });
         }
         log::debug!("linearhash time cost: {}", now.elapsed().as_secs_f64());
@@ -252,10 +243,9 @@ impl MerkleTree for MerkleTreeGL {
             ));
         }
 
-        let mut v = vec![FGL::ZERO; self.width];
-        for i in 0..self.width {
-            v[i] = self.get_element(idx, i);
-        }
+        let v = (0..self.width)
+            .map(|i| self.get_element(idx, i))
+            .collect::<Vec<_>>();
         let mp = self.merkle_gen_merkle_proof(idx, 0, self.height);
         Ok((v, mp))
     }
@@ -267,9 +257,9 @@ impl MerkleTree for MerkleTreeGL {
     fn verify_group_proof(
         &self,
         root: &Self::MTNode,
-        mp: &Vec<Vec<FGL>>,
+        mp: &[Vec<FGL>],
         idx: usize,
-        group_elements: &Vec<FGL>,
+        group_elements: &[FGL],
     ) -> Result<bool> {
         let c_root = self.calculate_root_from_group_proof(mp, idx, group_elements)?;
         Ok(self.eq_root(root, &c_root))
@@ -313,7 +303,7 @@ mod tests {
         ];
         assert_eq!(expected, re);
 
-        assert_eq!(tree.verify_group_proof(&root, &mp, idx, &v).unwrap(), true);
+        assert!(tree.verify_group_proof(&root, &mp, idx, &v).unwrap());
     }
 
     #[test]
@@ -332,11 +322,9 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert_eq!(
-            tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap(),
-            true
-        );
+        assert!(tree
+            .verify_group_proof(&root, &mp, idx, &group_elements)
+            .unwrap());
     }
 
     #[test]
@@ -365,11 +353,9 @@ mod tests {
         ];
         assert_eq!(expected, re);
 
-        assert_eq!(
-            tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap(),
-            true
-        );
+        assert!(tree
+            .verify_group_proof(&root, &mp, idx, &group_elements)
+            .unwrap());
     }
 
     #[test]
@@ -388,11 +374,9 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert_eq!(
-            tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap(),
-            true
-        );
+        assert!(tree
+            .verify_group_proof(&root, &mp, idx, &group_elements)
+            .unwrap());
     }
     //TODO save and restore to file
 }

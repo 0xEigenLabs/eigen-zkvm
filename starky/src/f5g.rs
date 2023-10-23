@@ -98,20 +98,18 @@ impl FieldExtension for F5G {
     fn _eq(&self, rhs: &Self) -> bool {
         if self.dim == rhs.dim {
             self.cube == rhs.cube
+        } else if self.dim == 1 {
+            self.cube[0] == rhs.cube[0]
+                && rhs.cube[1] == Fr::ZERO
+                && rhs.cube[2] == Fr::ZERO
+                && rhs.cube[3] == Fr::ZERO
+                && rhs.cube[4] == Fr::ZERO
         } else {
-            if self.dim == 1 {
-                self.cube[0] == rhs.cube[0]
-                    && rhs.cube[1] == Fr::ZERO
-                    && rhs.cube[2] == Fr::ZERO
-                    && rhs.cube[3] == Fr::ZERO
-                    && rhs.cube[4] == Fr::ZERO
-            } else {
-                self.cube[0] == rhs.cube[0]
-                    && (self.cube[1] == Fr::ZERO)
-                    && (self.cube[2] == Fr::ZERO)
-                    && (self.cube[3] == Fr::ZERO)
-                    && (self.cube[4] == Fr::ZERO)
-            }
+            self.cube[0] == rhs.cube[0]
+                && (self.cube[1] == Fr::ZERO)
+                && (self.cube[2] == Fr::ZERO)
+                && (self.cube[3] == Fr::ZERO)
+                && (self.cube[4] == Fr::ZERO)
         }
     }
 
@@ -175,10 +173,10 @@ impl FieldExtension for F5G {
             } else {
                 bits.push(0)
             }
-            e = e >> 1;
+            e >>= 1;
         }
 
-        if bits.len() == 0 {
+        if bits.is_empty() {
             return Self::ONE;
         }
 
@@ -304,17 +302,17 @@ impl plonky::Field for F5G {
 
     #[inline(always)]
     fn add_assign(&mut self, other: &Self) {
-        *self = *self + *other
+        *self += *other
     }
 
     #[inline(always)]
     fn sub_assign(&mut self, other: &Self) {
-        *self = *self - *other;
+        *self -= *other;
     }
 
     #[inline(always)]
     fn mul_assign(&mut self, other: &Self) {
-        *self = *self * *other;
+        *self *= *other;
     }
 
     #[inline(always)]
@@ -502,6 +500,7 @@ impl MulAssign for F5G {
 
 impl Div for F5G {
     type Output = Self;
+    #[allow(clippy::suspicious_arithmetic_impl)]
     #[inline]
     fn div(self, rhs: Self) -> Self::Output {
         self * (rhs.inv())
@@ -908,12 +907,12 @@ pub mod tests {
             Fr::from(5u64),
         );
 
-        assert_eq!(e1._eq(&e11), true);
-        assert_eq!(e1.geq(&e11), true);
+        assert!(e1._eq(&e11));
+        assert!(e1.geq(&e11));
 
-        assert_eq!(e1.lt(&e12), true);
-        assert_eq!(e12.gt(&e1), true);
-        assert_eq!(e12.geq(&e1), true);
+        assert!(e1.lt(&e12));
+        assert!(e12.gt(&e1));
+        assert!(e12.geq(&e1));
     }
 
     #[test]
@@ -971,7 +970,7 @@ pub mod tests {
         let r_arr = batch_inverse(&arr);
         for i in 0..arr.len() {
             log::debug!("{} {}", arr[i].inv(), r_arr[i]);
-            assert_eq!(arr[i].inv()._eq(&r_arr[i]), true);
+            assert!(arr[i].inv()._eq(&r_arr[i]));
         }
     }
 
@@ -979,18 +978,18 @@ pub mod tests {
     fn test_f3g_is_zero() {
         let a = &F5G::new(Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO);
         let b = a.is_zero();
-        assert_eq!(b, true);
+        assert!(b);
 
         let a = &F5G::new(Fr::ZERO, Fr::ONE, Fr::ZERO, Fr::ZERO, Fr::ZERO);
         let b = a.is_zero();
-        assert_eq!(b, false);
+        assert!(!b);
 
         let a = &F5G::from(Fr::ZERO);
         let b = a.is_zero();
-        assert_eq!(b, true);
+        assert!(b);
 
         let a = &F5G::from(Fr::ONE);
         let b = a.is_zero();
-        assert_eq!(b, false);
+        assert!(!b);
     }
 }

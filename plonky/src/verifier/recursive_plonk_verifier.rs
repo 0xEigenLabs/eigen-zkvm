@@ -179,7 +179,7 @@ pub fn create_verifier_contract_from_template(
 
     template_params.insert(
         "individual_input_num".to_string(),
-        to_json(&config.individual_input_num),
+        to_json(config.individual_input_num),
     );
     // template_params.insert("vk_max_index".to_string(), to_json(config.vk_max_index));
 

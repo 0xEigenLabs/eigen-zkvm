@@ -179,8 +179,10 @@ fn read_custom_gates_uses_list<R: Read>(
     let n_custom_gate_uses = b_r1cs32[0];
     let mut b_r1cs_pos = 1;
     for i in 0..n_custom_gate_uses {
-        let mut c = CustomGatesUses::default();
-        c.id = b_r1cs32[b_r1cs_pos] as u64;
+        let mut c = CustomGatesUses {
+            id: b_r1cs32[b_r1cs_pos] as u64,
+            ..Default::default()
+        };
         b_r1cs_pos += 1;
         let num_signals = b_r1cs32[b_r1cs_pos];
         b_r1cs_pos += 1;
@@ -220,7 +222,7 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
     for i in 0..(num_sections) {
         let section_type = reader.read_u32::<LittleEndian>()?;
         let section_size = reader.read_u64::<LittleEndian>()?;
-        let offset = reader.seek(SeekFrom::Current(0))?;
+        let offset = reader.stream_position()?;
         section_offsets.insert(section_type, offset);
         section_sizes.insert(section_type, section_size);
         reader.seek(SeekFrom::Current(section_size as i64))?;

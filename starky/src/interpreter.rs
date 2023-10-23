@@ -90,8 +90,8 @@ pub struct Block<T: FieldExtension> {
 impl<T: FieldExtension> Block<T> {
     fn codegen(&self, step: &str, codebuf: String) {
         use std::io::Write;
-        let body = format!(r#"{}"#, codebuf);
-        let mut f = std::fs::File::create(&format!("/tmp/{}_{}.rs", self.namespace, step)).unwrap();
+        let body = codebuf.to_string();
+        let mut f = std::fs::File::create(format!("/tmp/{}_{}.rs", self.namespace, step)).unwrap();
         write!(f, "{}", &body).unwrap();
     }
 
@@ -207,7 +207,6 @@ pub fn compile_code<T: FieldExtension>(
     } else {
         1 << (ctx.nbits_ext - ctx.nbits)
     };
-    let next = next;
 
     let N = if dom == "n" {
         1 << ctx.nbits
@@ -221,32 +220,23 @@ pub fn compile_code<T: FieldExtension>(
         exprs: Vec::new(),
     };
 
-    for j in 0..code.len() {
+    for cj in code.iter() {
         let mut src: Vec<Expr<T>> = Vec::new();
-        for k in 0..code[j].src.len() {
-            src.push(get_ref(ctx, starkinfo, &code[j].src[k], dom, next, modulas));
+        for k in 0..cj.src.len() {
+            src.push(get_ref(ctx, starkinfo, &cj.src[k], dom, next, modulas));
             //log::debug!("get_ref_src: {}", src[src.len() - 1]);
         }
 
-        let exp = match (&code[j].op).as_str() {
-            "add" => Expr::new(Ops::Add, Vec::new(), (&src[0..2]).to_vec(), vec![]),
-            "sub" => Expr::new(Ops::Sub, Vec::new(), (&src[0..2]).to_vec(), vec![]),
-            "mul" => Expr::new(Ops::Mul, Vec::new(), (&src[0..2]).to_vec(), vec![]),
-            "copy" => Expr::new(Ops::Copy_, Vec::new(), (&src[0..1]).to_vec(), vec![]),
+        let exp = match cj.op.as_str() {
+            "add" => Expr::new(Ops::Add, Vec::new(), src[0..2].to_vec(), vec![]),
+            "sub" => Expr::new(Ops::Sub, Vec::new(), src[0..2].to_vec(), vec![]),
+            "mul" => Expr::new(Ops::Mul, Vec::new(), src[0..2].to_vec(), vec![]),
+            "copy" => Expr::new(Ops::Copy_, Vec::new(), src[0..1].to_vec(), vec![]),
             _ => {
-                panic!("Invalid op {:?}", code[j])
+                panic!("Invalid op {:?}", cj)
             }
         };
-        set_ref(
-            ctx,
-            starkinfo,
-            &code[j].dest,
-            exp,
-            dom,
-            next,
-            modulas,
-            &mut body,
-        );
+        set_ref(ctx, starkinfo, &cj.dest, exp, dom, next, modulas, &mut body);
     }
     if ret {
         let sz = code.len() - 1;
@@ -323,6 +313,7 @@ fn get_value<T: FieldExtension>(ctx: &mut StarkContext<T>, expr: &Expr<T>, arg_i
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn set_ref<T: FieldExtension>(
     ctx: &StarkContext<T>,
     starkinfo: &StarkInfo,

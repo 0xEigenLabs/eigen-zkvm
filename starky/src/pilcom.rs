@@ -6,12 +6,12 @@ use crate::types::PIL;
 use number::GoldilocksField;
 use std::path::Path;
 
-pub fn compile_pil_from_str(pil_str: &String) -> PIL {
+pub fn compile_pil_from_str(pil_str: &str) -> PIL {
     let analyze = pil_analyzer::analyze_string::<GoldilocksField>(pil_str);
 
     export::export(&analyze)
 }
-pub fn compile_pil_from_path(pil_path: &String) -> PIL {
+pub fn compile_pil_from_path(pil_path: &str) -> PIL {
     let analyze = pil_analyzer::analyze::<GoldilocksField>(Path::new(pil_path));
 
     export::export(&analyze)

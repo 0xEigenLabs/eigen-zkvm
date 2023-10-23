@@ -13,9 +13,10 @@ pub trait MTNodeType {
     fn as_elements(&self) -> &[FGL];
     fn new(value: &[FGL]) -> Self;
     fn from_scalar<T: PrimeField>(e: &T) -> Self;
-    fn as_scalar<T: PrimeField>(self) -> T::Repr;
+    fn as_scalar<T: PrimeField>(&self) -> T::Repr;
 }
 
+#[allow(clippy::type_complexity)]
 pub trait MerkleTree {
     type MTNode: Copy + std::fmt::Display + Clone + Default + MTNodeType + core::fmt::Debug;
     type BaseField: Clone
@@ -31,9 +32,9 @@ pub trait MerkleTree {
     fn verify_group_proof(
         &self,
         root: &Self::MTNode,
-        mp: &Vec<Vec<Self::BaseField>>,
+        mp: &[Vec<Self::BaseField>],
         idx: usize,
-        group_elements: &Vec<FGL>,
+        group_elements: &[FGL],
     ) -> Result<bool>;
     fn root(&self) -> Self::MTNode;
     fn eq_root(&self, r1: &Self::MTNode, r2: &Self::MTNode) -> bool;
@@ -99,7 +100,7 @@ pub trait FieldExtension:
 }
 
 pub fn batch_inverse<F: FieldExtension>(elems: &[F]) -> Vec<F> {
-    if elems.len() == 0 {
+    if elems.is_empty() {
         return vec![];
     }
 
@@ -112,7 +113,7 @@ pub fn batch_inverse<F: FieldExtension>(elems: &[F]) -> Vec<F> {
     let mut res: Vec<F> = vec![F::ZERO; elems.len()];
     for i in (1..elems.len()).rev() {
         res[i] = z * tmp[i - 1];
-        z = z * elems[i];
+        z *= elems[i];
     }
     res[0] = z;
     res
