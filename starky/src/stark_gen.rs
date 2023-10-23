@@ -1,4 +1,5 @@
 #![allow(non_snake_case, dead_code)]
+#![allow(clippy::needless_range_loop)]
 
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MG, MIN_OPS_PER_THREAD, SHIFT};
 use crate::errors::Result;
@@ -185,6 +186,7 @@ pub struct StarkProof<M: MerkleTree> {
 }
 
 impl<'a, M: MerkleTree> StarkProof<M> {
+    #[allow(clippy::too_many_arguments, clippy::type_complexity)]
     pub fn stark_gen<T: Transcript>(
         cm_pols: &PolsArray,
         const_pols: &PolsArray,
@@ -193,7 +195,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         program: &Program,
         _pil: &PIL,
         stark_struct: &StarkStruct,
-        prover_addr: &String,
+        prover_addr: &str,
     ) -> Result<StarkProof<M>> {
         let mut ctx = StarkContext::<M::ExtendField>::default();
         //log::debug!("starkinfo: {}", starkinfo);
@@ -229,16 +231,16 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let w_nbits: M::ExtendField = M::ExtendField::from(MG.0[ctx.nbits]);
         for i in 0..ctx.N {
             ctx.x_n[i] = xx;
-            xx = xx * w_nbits;
+            xx *= w_nbits;
         }
 
         let extend_bits = ctx.nbits_ext - ctx.nbits;
         ctx.x_2ns = vec![M::ExtendField::ZERO; ctx.N << extend_bits];
 
-        let mut xx: M::ExtendField = M::ExtendField::from(SHIFT.clone());
+        let mut xx: M::ExtendField = M::ExtendField::from(*SHIFT);
         for i in 0..(ctx.N << extend_bits) {
             ctx.x_2ns[i] = xx;
-            xx = xx * M::ExtendField::from(MG.0[ctx.nbits_ext]);
+            xx *= M::ExtendField::from(MG.0[ctx.nbits_ext]);
         }
 
         ctx.Zi = build_Zh_Inv::<M::ExtendField>(ctx.nbits, extend_bits, 0);
@@ -267,7 +269,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             let b = ctx.publics[i]
                 .as_elements()
                 .iter()
-                .map(|e| vec![e.clone()])
+                .map(|e| vec![*e])
                 .collect::<Vec<Vec<FGL>>>();
             transcript.put(&b[..])?;
         }
@@ -369,7 +371,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
 
         let mut cur_s = M::ExtendField::ONE;
-        let shift_in = (M::ExtendField::inv(&M::ExtendField::from(SHIFT.clone()))).exp(ctx.N);
+        let shift_in = (M::ExtendField::inv(&M::ExtendField::from(*SHIFT))).exp(ctx.N);
         for p in 0..starkinfo.q_deg {
             for i in 0..ctx.N {
                 for k in 0..starkinfo.q_dim {
@@ -377,7 +379,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                         qq1[p * ctx.N * starkinfo.q_dim + i * starkinfo.q_dim + k] * cur_s;
                 }
             }
-            cur_s = cur_s * shift_in;
+            cur_s *= shift_in;
         }
 
         if starkinfo.q_deg > 0 {
@@ -412,9 +414,9 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         LEv[0] = M::ExtendField::from(FGL::from(1u64));
         LpEv[0] = M::ExtendField::from(FGL::from(1u64));
 
-        let xis = ctx.challenge[7] / M::ExtendField::from(SHIFT.clone());
+        let xis = ctx.challenge[7] / M::ExtendField::from(*SHIFT);
         let wxis = (ctx.challenge[7] * M::ExtendField::from(MG.0[ctx.nbits]))
-            / M::ExtendField::from(SHIFT.clone());
+            / M::ExtendField::from(*SHIFT);
 
         for i in 1..ctx.N {
             LEv[i] = LEv[i - 1] * xis;
@@ -464,7 +466,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             let b = ctx.evals[i]
                 .as_elements()
                 .iter()
-                .map(|e| vec![e.clone()])
+                .map(|e| vec![*e])
                 .collect::<Vec<Vec<FGL>>>();
             transcript.put(&b)?;
         }
@@ -489,8 +491,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let mut x_buff = vec![M::ExtendField::ZERO; extend_size];
 
         x_buff.par_iter_mut().enumerate().for_each(|(k, xb)| {
-            *xb = M::ExtendField::from(SHIFT.clone())
-                * M::ExtendField::from(MG.0[ctx.nbits + extend_bits].clone()).exp(k);
+            *xb = M::ExtendField::from(*SHIFT)
+                * M::ExtendField::from(MG.0[ctx.nbits + extend_bits]).exp(k);
         });
 
         tmp_den
@@ -552,7 +554,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             evals: ctx.evals.clone(),
             publics: ctx.publics.clone(),
             stark_struct: stark_struct.clone(),
-            prover_addr: prover_addr.clone(),
+            prover_addr: prover_addr.to_string(),
         })
     }
 
@@ -566,9 +568,9 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
         log::debug!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
 
-        let res = t.eval(ctx, idx); // just let public codegen run multiple times
-                                    //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
-        res
+        // just let public codegen run multiple times
+        //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
+        t.eval(ctx, idx)
     }
 }
 
@@ -578,16 +580,17 @@ pub fn build_Zh_Inv<T: FieldExtension>(
     offset: usize,
 ) -> Box<dyn Fn(usize) -> T + 'static> {
     let mut w = T::ONE;
-    let mut sn = T::from(SHIFT.clone());
-    for _i in 0..nBits {
+    let mut sn = T::from(*SHIFT);
+    for _ in 0..nBits {
         sn = sn * sn;
     }
     let mut ZHInv = vec![T::ZERO; 1 << extend_bits];
-    for i in 0..(1 << extend_bits) {
-        ZHInv[i] = T::inv(&(sn * w - T::ONE));
-        w = w * T::from(MG.0[extend_bits].clone());
+
+    for zi in &mut ZHInv.iter_mut() {
+        *zi = T::inv(&(sn * w - T::ONE));
+        w *= T::from(MG.0[extend_bits]);
     }
-    Box::new(move |i: usize| ZHInv[(i + offset) % ZHInv.len()].clone())
+    Box::new(move |i: usize| ZHInv[(i + offset) % ZHInv.len()])
 }
 
 fn set_pol<F: FieldExtension>(
@@ -634,7 +637,7 @@ fn calculate_H1H2<F: FieldExtension>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
         if idx.is_none() {
             panic!("Number not included: {:?}", e);
         }
-        s.push((e.clone(), *idx.unwrap()));
+        s.push((*e, *idx.unwrap()));
     }
 
     s.sort_by(|a, b| a.1.cmp(&b.1));
@@ -659,7 +662,7 @@ fn calculate_Z<F: FieldExtension>(num: Vec<F>, den: Vec<F>) -> Vec<F> {
     }
 
     let check_val = z[N - 1] * (num[N - 1] * den_inv[N - 1]);
-    assert_eq!(check_val._eq(&F::one()), true);
+    assert!(check_val._eq(&F::one()));
     z
 }
 
@@ -957,11 +960,11 @@ pub fn calculate_exps_parallel<F: FieldExtension>(
             section.width = starkinfo.n_constants;
         } else if starkinfo.map_sectionsN.get(name) != usize::MAX {
             section.width = starkinfo.map_sectionsN.get(name);
-        } else if vec!["x_n", "x_2ns"].contains(&name) {
+        } else if ["x_n", "x_2ns"].contains(&name) {
             section.width = 1;
-        } else if vec!["xDivXSubXi", "xDivXSubWXi", "f_2ns"].contains(&name) {
+        } else if ["xDivXSubXi", "xDivXSubWXi", "f_2ns"].contains(&name) {
             section.width = 3;
-        } else if vec!["q_2ns"].contains(&name) {
+        } else if ["q_2ns"].contains(&name) {
             section.width = starkinfo.q_dim;
         } else {
             panic!("Invalid section name {}", name)
@@ -991,14 +994,16 @@ pub fn calculate_exps_parallel<F: FieldExtension>(
 
     for i in (0..n).step_by(n_per_thread) {
         let cur_n = std::cmp::min(n_per_thread, n - i);
-        let mut tmp_ctx = StarkContext::default();
-        tmp_ctx.N = n;
-        tmp_ctx.Next = next;
-        tmp_ctx.nbits = ctx.nbits;
-        tmp_ctx.nbits_ext = ctx.nbits_ext;
-        tmp_ctx.evals = ctx.evals.clone();
-        tmp_ctx.publics = ctx.publics.clone();
-        tmp_ctx.challenge = ctx.challenge.clone();
+        let mut tmp_ctx = StarkContext::<F> {
+            N: n,
+            Next: next,
+            nbits: ctx.nbits,
+            nbits_ext: ctx.nbits_ext,
+            evals: ctx.evals.clone(),
+            publics: ctx.publics.clone(),
+            challenge: ctx.challenge.clone(),
+            ..Default::default()
+        };
 
         for si in &exec_info.input_sections {
             if si.name.as_str() == "xDivXSubXi" || si.name.as_str() == "xDivXSubWXi" {
@@ -1039,11 +1044,11 @@ pub fn calculate_exps_parallel<F: FieldExtension>(
             tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i * n_per_thread);
             for so in &exec_info.output_sections {
                 let tmp = tmp_ctx.get_mut(so.name.as_str());
-                if tmp.len() == 0 {
+                if tmp.is_empty() {
                     *tmp = vec![F::ZERO; so.width * (cur_n + next)];
                 }
             }
-            calculate_exps(tmp_ctx, starkinfo, seg, &dom, step, cur_n);
+            calculate_exps(tmp_ctx, starkinfo, seg, dom, step, cur_n);
         });
 
     // write back the output
@@ -1072,22 +1077,38 @@ pub mod tests {
     use crate::transcript_bn128::TranscriptBN128;
     use crate::types::load_json;
     use crate::types::{StarkStruct, PIL};
+    use ark_std::{end_timer, start_timer};
 
     #[test]
     fn test_stark_gen() {
-        env_logger::init();
         let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
-        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
-        const_pol.load("data/fib.const").unwrap();
 
+        let start_new_pols_array = start_timer!(|| "new_pols_array.constant");
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
+        end_timer!(start_new_pols_array);
+
+        let start_load_const = start_timer!(|| "load_const");
+        const_pol.load("data/fib.const").unwrap();
+        end_timer!(start_load_const);
+
+        let start_new_pols_array = start_timer!(|| "new_pols_array.commit");
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
+        end_timer!(start_new_pols_array);
+
+        let start_load_cm = start_timer!(|| "load_cm");
         cm_pol.load("data/fib.cm").unwrap();
+        end_timer!(start_load_cm);
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
+
+        let start_stark_setup = start_timer!(|| "stark_setup");
         let mut setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+        end_timer!(start_stark_setup);
         let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
         log::debug!("setup {}", fr_root);
+
+        let start_stark_gen = start_timer!(|| "stark_gen");
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             &cm_pol,
             &const_pol,
@@ -1096,11 +1117,13 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
-            &"273030697313060285579891744179749754319274977764".to_string(),
+            "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
+        end_timer!(start_stark_gen);
         log::debug!("verify the proof...");
 
+        let start_stark_verify = start_timer!(|| "stark_verify");
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
             &setup.const_root,
@@ -1109,7 +1132,8 @@ pub mod tests {
             &mut setup.program,
         )
         .unwrap();
-        assert_eq!(result, true);
+        end_timer!(start_stark_verify);
+        assert!(result);
     }
 
     #[test]
@@ -1132,7 +1156,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
-            &"273030697313060285579891744179749754319274977764".to_string(),
+            "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
 
@@ -1146,7 +1170,7 @@ pub mod tests {
             &mut setup.program,
         )
         .unwrap();
-        assert_eq!(result, true);
+        assert!(result);
     }
 
     #[test]
@@ -1167,7 +1191,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
-            &"273030697313060285579891744179749754319274977764".to_string(),
+            "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
         log::debug!("verify the proof...");
@@ -1179,7 +1203,7 @@ pub mod tests {
             &mut setup.program,
         )
         .unwrap();
-        assert_eq!(result, true);
+        assert!(result);
     }
 
     #[test]
@@ -1200,7 +1224,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
-            &"273030697313060285579891744179749754319274977764".to_string(),
+            "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
         log::debug!("verify the proof...");
@@ -1212,7 +1236,7 @@ pub mod tests {
             &mut setup.program,
         )
         .unwrap();
-        assert_eq!(result, true);
+        assert!(result);
     }
 
     #[test]
@@ -1233,7 +1257,7 @@ pub mod tests {
             &setup.program,
             &pil,
             &stark_struct,
-            &"273030697313060285579891744179749754319274977764".to_string(),
+            "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
         log::debug!("verify the proof...");
@@ -1245,6 +1269,6 @@ pub mod tests {
             &mut setup.program,
         )
         .unwrap();
-        assert_eq!(result, true);
+        assert!(result);
     }
 }

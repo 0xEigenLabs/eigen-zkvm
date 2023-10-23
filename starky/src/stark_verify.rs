@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, clippy::type_complexity)]
 use crate::constant::{MG, SHIFT};
 use crate::errors::{EigenError::FRIVerifierFailed, Result};
 use crate::fri::FRI;
@@ -7,6 +7,7 @@ use crate::stark_gen::StarkProof;
 use crate::starkinfo::Program;
 use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::{Node, Section};
+use crate::traits;
 use crate::traits::FieldExtension;
 use crate::traits::{MTNodeType, MerkleTree, Transcript};
 use crate::types::StarkStruct;
@@ -35,7 +36,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
         let b = ctx.publics[i]
             .as_elements()
             .iter()
-            .map(|e| vec![e.clone()])
+            .map(|e| vec![*e])
             .collect::<Vec<Vec<FGL>>>();
         transcript.put(&b[..])?;
     }
@@ -56,7 +57,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
         let b = ctx.evals[i]
             .as_elements()
             .iter()
-            .map(|e| vec![e.clone()])
+            .map(|e| vec![*e])
             .collect::<Vec<Vec<FGL>>>();
         transcript.put(&b[..])?;
     }
@@ -76,8 +77,8 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     let mut x_acc = M::ExtendField::ONE;
     let mut q = M::ExtendField::ZERO;
     for i in 0..starkinfo.q_deg {
-        q = q + x_acc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
-        x_acc = x_acc * x_n;
+        q += x_acc * ctx.evals[*starkinfo.ev_idx.get("cm", 0, starkinfo.qs[i]).unwrap()];
+        x_acc *= x_n;
     }
     let q_z = q * ctx.Z;
 
@@ -113,18 +114,19 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
         if !res {
             return Err(FRIVerifierFailed);
         }
-        let mut ctx_query = StarkContext::default();
-        ctx_query.tree1 = query[0].0.clone();
-        ctx_query.tree2 = query[1].0.clone();
-        ctx_query.tree3 = query[2].0.clone();
-        ctx_query.tree4 = query[3].0.clone();
-        ctx_query.consts = query[4].0.clone();
+        let mut ctx_query = StarkContext::<<M as traits::MerkleTree>::ExtendField> {
+            tree1: query[0].0.clone(),
+            tree2: query[1].0.clone(),
+            tree3: query[2].0.clone(),
+            tree4: query[3].0.clone(),
+            consts: query[4].0.clone(),
+            evals: ctx.evals.clone(),
+            publics: ctx.publics.clone(),
+            challenge: ctx.challenge.clone(),
+            ..Default::default()
+        };
 
-        ctx_query.evals = ctx.evals.clone();
-        ctx_query.publics = ctx.publics.clone();
-        ctx_query.challenge = ctx.challenge.clone();
-
-        let x = M::ExtendField::from(SHIFT.clone())
+        let x = M::ExtendField::from(*SHIFT)
             * (M::ExtendField::from(MG.0[ctx.nbits + extend_bits]).exp(idx));
         ctx_query.xDivXSubXi = (x / (x - ctx_query.challenge[7])).as_elements();
         ctx_query.xDivXSubWXi = (x
@@ -203,22 +205,22 @@ fn execute_code<F: FieldExtension>(ctx: &mut StarkContext<F>, code: &mut Vec<Sec
             panic!("Invalid reference type set: {}", r.type_);
         }
     };
-
-    for i in 0..code.len() {
+    let sz = code.len() - 1;
+    let dest = code[sz].dest.clone();
+    for ci in code {
         let mut src: Vec<F> = vec![];
-        for s in code[i].src.iter() {
+        for s in ci.src.iter() {
             src.push(get_ref(s, &tmp));
         }
-        let res = match code[i].op.as_str() {
+        let res = match ci.op.as_str() {
             "add" => src[0] + src[1],
             "sub" => src[0] - src[1],
             "mul" => src[0] * src[1],
             "muladd" => (src[0] * src[1]) + src[2],
             "copy" => src[0],
-            _ => panic!("Invalid op: {}", code[i].op),
+            _ => panic!("Invalid op: {}", ci.op),
         };
-        set_ref(&mut code[i].dest, res, &mut tmp);
+        set_ref(&mut ci.dest, res, &mut tmp);
     }
-    let sz = code.len() - 1;
-    get_ref(&code[sz].dest, &tmp)
+    get_ref(&dest, &tmp)
 }

@@ -1,12 +1,17 @@
 //! It's for: Domain Specific Language(DSL) compiler: now only include circom compile.
+
+use crate::errors::DslError;
+use std::path::Path;
+
 mod compilation_user;
+mod errors;
 mod execution_user;
 mod input_user;
 mod parser_user;
 mod type_analysis_user;
 
 /// Align with https://github.com/iden3/circom/blob/master/circom/Cargo.toml#L3
-const CIRCOM_VERSION: &'static str = "2.1.2";
+const CIRCOM_VERSION: &str = "2.1.2";
 
 /// Compile circom circuits to r1cs, and generate witness
 pub fn circom_compiler(
@@ -17,19 +22,19 @@ pub fn circom_compiler(
     output: String,
     no_simplification: bool,
     reduced_simplification: bool,
-) -> Result<(), ()> {
+) -> Result<(), DslError> {
     use compilation_user::CompilerConfig;
     use execution_user::ExecutionConfig;
-    let fullopt = full_simplification.len() > 0;
+    let fullopt = !full_simplification.is_empty();
     let o2_arg = full_simplification.as_str();
     let o_style = input_user::get_simplification_style(
         no_simplification,
         reduced_simplification,
         fullopt,
-        &o2_arg,
+        o2_arg,
     )?;
-    let input = std::path::PathBuf::from(input);
-    let output = std::path::PathBuf::from(output);
+    let input = Path::new(&input);
+    let output = Path::new(&output);
 
     let user_input = input_user::Input::new(input, output, o_style, prime, link_directories)?;
     let mut program_archive = parser_user::parse_project(&user_input)?;

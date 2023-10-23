@@ -1,3 +1,4 @@
+#[allow(clippy::type_complexity)]
 pub fn constants() -> (
     Vec<Vec<&'static str>>,
     Vec<Vec<Vec<&'static str>>>,

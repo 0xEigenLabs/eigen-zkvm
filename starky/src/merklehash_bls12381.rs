@@ -53,7 +53,7 @@ impl MerkleTreeBLS12381 {
             .enumerate()
             .map(|(i, bb)| self.do_merklize_level(bb, i, n_ops).unwrap())
             .reduce(
-                || Vec::<ElementDigest<4>>::new(),
+                Vec::<ElementDigest<4>>::new,
                 |mut a: Vec<ElementDigest<4>>, mut b: Vec<ElementDigest<4>>| {
                     a.append(&mut b);
                     a
@@ -81,15 +81,12 @@ impl MerkleTreeBLS12381 {
         );
         let n_ops = buff_in.len() / 16;
         let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
-        buff_out64
-            .iter_mut()
-            .zip((0..n_ops).into_iter())
-            .for_each(|(out, i)| {
-                *out = self
-                    .h
-                    .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &Fr::zero())
-                    .unwrap();
-            });
+        buff_out64.iter_mut().zip(0..n_ops).for_each(|(out, i)| {
+            *out = self
+                .h
+                .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &Fr::zero())
+                .unwrap();
+        });
         Ok(buff_out64)
     }
 
@@ -114,13 +111,13 @@ impl MerkleTreeBLS12381 {
 
     fn merkle_calculate_root_from_proof(
         &self,
-        mp: &Vec<Vec<Fr>>,
+        mp: &[Vec<Fr>],
         idx: usize,
         value: &ElementDigest<4>,
         offset: usize,
     ) -> Result<ElementDigest<4>> {
         if mp.len() == offset {
-            return Ok(value.clone());
+            return Ok(*value);
         }
         //let cur_idx = idx & 0xF;
         let next_idx = idx >> 4;
@@ -136,11 +133,11 @@ impl MerkleTreeBLS12381 {
 
     fn calculate_root_from_group_proof(
         &self,
-        mp: &Vec<Vec<Fr>>,
+        mp: &[Vec<Fr>],
         idx: usize,
-        vals: &Vec<FGL>,
+        vals: &[FGL],
     ) -> Result<ElementDigest<4>> {
-        let h = self.h.hash_element_matrix(&vec![vals.to_vec()])?;
+        let h = self.h.hash_element_matrix(&[vals.to_vec()])?;
         self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::<4>::from_scalar(&h), 0)
     }
 }
@@ -161,7 +158,7 @@ impl MerkleTree for MerkleTreeBLS12381 {
     }
 
     fn element_size(&self) -> usize {
-        return self.elements.len();
+        self.elements.len()
     }
 
     fn to_extend(&self, p_be: &mut Vec<F3G>) {
@@ -189,18 +186,16 @@ impl MerkleTree for MerkleTreeBLS12381 {
         }
         let mut nodes = vec![ElementDigest::<4>::default(); get_n_nodes(height)];
         let now = Instant::now();
-        if buff.len() > 0 {
+        if !buff.is_empty() {
             nodes
                 .par_chunks_mut(n_per_thread_f)
                 .zip(buff.par_chunks(n_per_thread_f * width))
                 .for_each(|(out, bb)| {
                     let cur_n = bb.len() / width;
-                    out.iter_mut()
-                        .zip((0..cur_n).into_iter())
-                        .for_each(|(row_out, j)| {
-                            let batch = &bb[(j * width)..((j + 1) * width)];
-                            *row_out = self.h.hash_element_array(batch).unwrap();
-                        });
+                    out.iter_mut().zip(0..cur_n).for_each(|(row_out, j)| {
+                        let batch = &bb[(j * width)..((j + 1) * width)];
+                        *row_out = self.h.hash_element_array(batch).unwrap();
+                    });
                 });
         }
         log::debug!("linearhash time cost: {}", now.elapsed().as_secs_f64());
@@ -244,10 +239,10 @@ impl MerkleTree for MerkleTreeBLS12381 {
             ));
         }
 
-        let mut v = vec![FGL::ZERO; self.width];
-        for i in 0..self.width {
-            v[i] = self.get_element(idx, i);
-        }
+        let v = (0..self.width)
+            .map(|i| self.get_element(idx, i))
+            .collect::<Vec<_>>();
+
         let mp = self.merkle_gen_merkle_proof(idx, 0, self.height);
         Ok((v, mp))
     }
@@ -259,9 +254,9 @@ impl MerkleTree for MerkleTreeBLS12381 {
     fn verify_group_proof(
         &self,
         root: &Self::MTNode,
-        mp: &Vec<Vec<Fr>>,
+        mp: &[Vec<Fr>],
         idx: usize,
-        group_elements: &Vec<FGL>,
+        group_elements: &[FGL],
     ) -> Result<bool> {
         let c_root = self.calculate_root_from_group_proof(mp, idx, group_elements)?;
         Ok(self.eq_root(root, &c_root))
@@ -306,7 +301,7 @@ mod tests {
 
         let (v, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert_eq!(tree.verify_group_proof(&root, &mp, idx, &v).unwrap(), true);
+        assert!(tree.verify_group_proof(&root, &mp, idx, &v).unwrap());
     }
 
     #[test]
@@ -325,11 +320,9 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert_eq!(
-            tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap(),
-            true
-        );
+        assert!(tree
+            .verify_group_proof(&root, &mp, idx, &group_elements)
+            .unwrap());
     }
 
     #[test]
@@ -348,11 +341,9 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert_eq!(
-            tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap(),
-            true
-        );
+        assert!(tree
+            .verify_group_proof(&root, &mp, idx, &group_elements)
+            .unwrap());
     }
 
     #[test]
@@ -371,11 +362,9 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert_eq!(
-            tree.verify_group_proof(&root, &mp, idx, &group_elements)
-                .unwrap(),
-            true
-        );
+        assert!(tree
+            .verify_group_proof(&root, &mp, idx, &group_elements)
+            .unwrap());
     }
     //TODO save and restore to file
 }

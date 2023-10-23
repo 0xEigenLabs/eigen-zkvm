@@ -40,10 +40,8 @@ impl PolsArray {
 
         let mut def: HashMap<String, HashMap<String, Vec<usize>>> = HashMap::new();
         let mut defArray: Vec<Pol> = vec![Pol::default(); nPols];
-        let mut array: Vec<Vec<FGL>> = vec![Vec::new(); nPols];
-        for i in 0..array.len() {
-            array[i] = vec![FGL::default(); nPols];
-        }
+        let mut array: Vec<Vec<FGL>> = (0..nPols).map(|_| vec![FGL::default(); nPols]).collect();
+
         for (refName, ref_) in pil.references.iter() {
             if (ref_.type_ == "cmP" && kind == PolKind::Commit)
                 || (ref_.type_ == "constP" && kind == PolKind::Constant)
@@ -67,10 +65,7 @@ impl PolsArray {
                             name: refName.clone(),
                             id: ref_.id + i,
                             idx: Some(i),
-                            elementType: match &ref_.elementType {
-                                Some(x) => Some(x.clone()),
-                                None => None,
-                            },
+                            elementType: ref_.elementType.as_ref().cloned(),
                             polDeg: ref_.polDeg,
                         };
                         arrayPols[i] = ref_.id + i;
@@ -83,10 +78,7 @@ impl PolsArray {
                         name: refName.clone(),
                         id: ref_.id,
                         idx: None,
-                        elementType: match &ref_.elementType {
-                            Some(x) => Some(x.clone()),
-                            None => None,
-                        },
+                        elementType: ref_.elementType.as_ref().cloned(),
                         polDeg: ref_.polDeg,
                     };
                     let arrayPols: Vec<usize> = vec![ref_.id];
@@ -99,7 +91,7 @@ impl PolsArray {
         }
 
         for i in 0..nPols {
-            if defArray[i].name.len() == 0 {
+            if defArray[i].name.is_empty() {
                 panic!("Invalid pils sequence");
             }
         }
@@ -116,7 +108,7 @@ impl PolsArray {
     #[inline(always)]
     pub fn get(&self, pil: &PIL, ns: &String, np: &String, i: usize, j: usize) -> FGL {
         let ref_id = self.get_pol_id(pil, ns, np, i);
-        self.array[ref_id][j].clone()
+        self.array[ref_id][j]
     }
 
     /// Set the ns.np[i][j] = value, where ns is the namespace, np is the state variable, i is
@@ -176,6 +168,7 @@ impl PolsArray {
                 )
             };
             n = rs / 8;
+
             for l in 0..n {
                 self.array[i][j] = FGL::from(buff[l]);
                 i += 1;
@@ -209,7 +202,7 @@ impl PolsArray {
                             buff.len() * std::mem::size_of::<u64>(),
                         )
                     };
-                    writer.write(&buff8)?;
+                    writer.write_all(buff8)?;
                     p = 0;
                 }
             }
@@ -221,7 +214,7 @@ impl PolsArray {
                     buff.len() * std::mem::size_of::<u64>(),
                 )
             };
-            writer.write(&buff8)?;
+            writer.write_all(buff8)?;
         }
         Ok(())
     }

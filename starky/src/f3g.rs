@@ -105,14 +105,10 @@ impl FieldExtension for F3G {
     fn _eq(&self, rhs: &Self) -> bool {
         if self.dim == rhs.dim {
             self.cube == rhs.cube
+        } else if self.dim == 1 {
+            self.cube[0] == rhs.cube[0] && rhs.cube[1] == Fr::ZERO && rhs.cube[2] == Fr::ZERO
         } else {
-            if self.dim == 1 {
-                self.cube[0] == rhs.cube[0] && rhs.cube[1] == Fr::ZERO && rhs.cube[2] == Fr::ZERO
-            } else {
-                self.cube[0] == rhs.cube[0]
-                    && (self.cube[1] == Fr::ZERO)
-                    && (self.cube[2] == Fr::ZERO)
-            }
+            self.cube[0] == rhs.cube[0] && (self.cube[1] == Fr::ZERO) && (self.cube[2] == Fr::ZERO)
         }
     }
 
@@ -163,14 +159,14 @@ impl FieldExtension for F3G {
             } else {
                 bits.push(0)
             }
-            e = e >> 1;
+            e >>= 1;
         }
 
-        if bits.len() == 0 {
+        if bits.is_empty() {
             return Self::ONE;
         }
 
-        let mut res = F3G::from(*self);
+        let mut res = *self;
         for i in (0..bits.len() - 1).rev() {
             res.square();
             if bits[i] == 1 {
@@ -325,17 +321,17 @@ impl plonky::Field for F3G {
 
     #[inline(always)]
     fn add_assign(&mut self, other: &Self) {
-        *self = *self + *other
+        *self += *other
     }
 
     #[inline(always)]
     fn sub_assign(&mut self, other: &Self) {
-        *self = *self - *other;
+        *self -= *other;
     }
 
     #[inline(always)]
     fn mul_assign(&mut self, other: &Self) {
-        *self = *self * *other;
+        *self *= *other;
     }
 
     #[inline(always)]
@@ -489,6 +485,7 @@ impl MulAssign for F3G {
 
 impl Div for F3G {
     type Output = Self;
+    #[allow(clippy::suspicious_arithmetic_impl)]
     #[inline]
     fn div(self, rhs: Self) -> Self::Output {
         self * (rhs.inv())
@@ -688,8 +685,8 @@ pub mod tests {
 
         let e12 = F3G::new(Fr::from(2u64), Fr::from(2u64), Fr::from(3u64));
 
-        assert_eq!(e1._eq(&e11), true);
-        assert_eq!(e1.lt(&e12), true);
+        assert!(e1._eq(&e11));
+        assert!(e1.lt(&e12));
     }
 
     #[test]
@@ -702,7 +699,7 @@ pub mod tests {
             Fr::from(4476495173063158826u64),
         );
 
-        assert_eq!(e1.exp(100)._eq(&expected), true);
+        assert!(e1.exp(100)._eq(&expected));
     }
 
     #[test]
@@ -723,7 +720,7 @@ pub mod tests {
         let r_arr = batch_inverse(&arr);
         for i in 0..arr.len() {
             log::debug!("{} {}", arr[i].inv(), r_arr[i]);
-            assert_eq!(arr[i].inv()._eq(&r_arr[i]), true);
+            assert!(arr[i].inv()._eq(&r_arr[i]));
         }
     }
 
@@ -740,18 +737,18 @@ pub mod tests {
     fn test_f3g_is_zero() {
         let a = &F3G::new(Fr::ZERO, Fr::ZERO, Fr::ZERO);
         let b = a.is_zero();
-        assert_eq!(b, true);
+        assert!(b);
 
         let a = &F3G::new(Fr::ZERO, Fr::ONE, Fr::ZERO);
         let b = a.is_zero();
-        assert_eq!(b, false);
+        assert!(!b);
 
         let a = &F3G::from(Fr::ZERO);
         let b = a.is_zero();
-        assert_eq!(b, true);
+        assert!(b);
 
         let a = &F3G::from(Fr::ONE);
         let b = a.is_zero();
-        assert_eq!(b, false);
+        assert!(!b);
     }
 }

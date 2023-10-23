@@ -14,11 +14,9 @@ pub struct ElementDigest<const N: usize>(pub [FGL; N]);
 impl<const N: usize> MTNodeType for ElementDigest<N> {
     #[inline(always)]
     fn new(value: &[FGL]) -> Self {
-        assert_eq!(value.len() >= N, true);
+        assert!(value.len() >= N);
         let mut fv = [FGL::ZERO; N];
-        for i in 0..N {
-            fv[i] = value[i];
-        }
+        fv[..N].copy_from_slice(&value[..N]);
         Self(fv)
     }
 
@@ -40,11 +38,11 @@ impl<const N: usize> MTNodeType for ElementDigest<N> {
 
     /// This function may return a invalid T due to it's just a container for T's inner elements.
     #[inline(always)]
-    fn as_scalar<T: PrimeField>(self) -> T::Repr {
+    fn as_scalar<T: PrimeField>(&self) -> T::Repr {
         let mut y = T::Repr::default();
         let t = y.as_mut();
-        for i in 0..N {
-            t[i] = self.0[i].as_int();
+        for (i, ti) in t.iter_mut().enumerate().take(N) {
+            *ti = self.0[i].as_int();
         }
         y
     }
@@ -53,7 +51,7 @@ impl<const N: usize> MTNodeType for ElementDigest<N> {
 impl<const N: usize> Display for ElementDigest<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for i in 0..N {
-            write!(f, "{}\n", self.0[i].as_int())?;
+            writeln!(f, "{}", self.0[i].as_int())?;
         }
         Ok(())
     }
@@ -142,9 +140,9 @@ mod tests {
         let mut f = fr_to_biguint(f);
         let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();
         let mut result = [FGL::ZERO; 4];
-        for i in 0..4 {
+        for res in &mut result {
             let t = &f & &mask;
-            result[i] = FGL::from(t.to_u64().unwrap());
+            *res = FGL::from(t.to_u64().unwrap());
             f = &f >> 64;
         }
         result
@@ -155,9 +153,9 @@ mod tests {
         let mut f = fr_bls12381_to_biguint(f);
         let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();
         let mut result = [FGL::ZERO; 4];
-        for i in 0..4 {
+        for res in &mut result {
             let t = &f & &mask;
-            result[i] = FGL::from(t.to_u64().unwrap());
+            *res = FGL::from(t.to_u64().unwrap());
             f = &f >> 64;
         }
         result
@@ -165,9 +163,9 @@ mod tests {
 
     #[test]
     fn test_fr_to_mont_to_element_digest_and_versus() {
-        let b4: Vec<FGL> = vec![3u64, 1003, 2003, 0]
+        let b4: Vec<FGL> = [3u64, 1003, 2003, 0]
             .iter()
-            .map(|e| FGL::from(e.clone()))
+            .map(|e| FGL::from(*e))
             .collect();
         let f1: Fr = to_bn128(&b4[..].try_into().unwrap());
 
@@ -175,14 +173,14 @@ mod tests {
         let f1 = Fr::from_repr(f1.into_raw_repr()).unwrap();
 
         let e1 = to_gl(&f1);
-        let expected: [FGL; 4] = vec![
+        let expected: [FGL; 4] = [
             10593660675180540444u64,
             2538813791642109216,
             4942736554053463004,
             3183287946373923876,
         ]
         .iter()
-        .map(|e| FGL::from(e.clone()))
+        .map(|e| FGL::from(*e))
         .collect::<Vec<FGL>>()
         .try_into()
         .unwrap();
@@ -191,9 +189,9 @@ mod tests {
 
     #[test]
     fn test_fr_bls12381_to_mont_to_element_digest_and_versus() {
-        let b4: Vec<FGL> = vec![3u64, 1003, 2003, 0]
+        let b4: Vec<FGL> = [3u64, 1003, 2003, 0]
             .iter()
-            .map(|e| FGL::from(e.clone()))
+            .map(|e| FGL::from(*e))
             .collect();
         let f1: Fr_bls12381 = to_bls12381(&b4[..].try_into().unwrap());
 
@@ -201,14 +199,14 @@ mod tests {
         let f1 = Fr_bls12381::from_repr(f1.into_raw_repr()).unwrap();
 
         let e1 = to_gl_bls12381(&f1);
-        let expected: [FGL; 4] = vec![
+        let expected: [FGL; 4] = [
             11023535560112151624u64,
             10252228934103205545,
             1509485146568764231,
             1588734141810477816,
         ]
         .iter()
-        .map(|e| FGL::from(e.clone()))
+        .map(|e| FGL::from(*e))
         .collect::<Vec<FGL>>()
         .try_into()
         .unwrap();

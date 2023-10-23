@@ -116,15 +116,15 @@ impl Poseidon {
         let P = &POSEIDON_BN128_CONSTANTS_OPT.p[t - 2];
         let mut tmp_state = vec![Fr::zero(); t];
 
-        let mut state = vec![init_state.clone(); t];
-        state[1..].clone_from_slice(&inp);
+        let mut state = vec![*init_state; t];
+        state[1..].clone_from_slice(inp);
         state
             .iter_mut()
             .enumerate()
             .for_each(|(i, a)| a.add_assign(&C[i]));
 
         for r in 0..(n_rounds_f / 2 - 1) {
-            state.iter_mut().for_each(|e| Self::pow5(e));
+            state.iter_mut().for_each(Self::pow5);
             state.iter_mut().enumerate().for_each(|(i, a)| {
                 a.add_assign(&C[(r + 1) * t + i]);
             });
@@ -150,7 +150,7 @@ impl Poseidon {
                 });
         }
 
-        state.iter_mut().for_each(|e| Self::pow5(e));
+        state.iter_mut().for_each(Self::pow5);
         state.iter_mut().enumerate().for_each(|(i, a)| {
             a.add_assign(&C[(n_rounds_f / 2 - 1 + 1) * t + i]);
         }); //opt
@@ -194,7 +194,7 @@ impl Poseidon {
         }
 
         for r in 0..(n_rounds_f / 2 - 1) {
-            state.iter_mut().for_each(|e| Self::pow5(e));
+            state.iter_mut().for_each(Self::pow5);
             state.iter_mut().enumerate().for_each(|(i, a)| {
                 a.add_assign(&C[(n_rounds_f / 2 + 1) * t + n_rounds_p + r * t + i]);
             });
@@ -217,7 +217,7 @@ impl Poseidon {
                 });
         }
 
-        state.iter_mut().for_each(|e| Self::pow5(e));
+        state.iter_mut().for_each(Self::pow5);
         let sz = state.len();
         tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
             let mut acc = Fr::zero();
@@ -230,7 +230,7 @@ impl Poseidon {
         });
         state = tmp_state;
 
-        Ok((&state[0..out]).to_vec())
+        Ok(state[0..out].to_vec())
     }
 }
 

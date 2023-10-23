@@ -102,8 +102,8 @@ impl Poseidon {
             return Err(format!("Capacity inputs length {} != 4", init_state.len(),));
         }
 
-        state[0..8].clone_from_slice(&inp);
-        state[8..].clone_from_slice(&init_state);
+        state[0..8].clone_from_slice(inp);
+        state[8..].clone_from_slice(init_state);
 
         state
             .iter_mut()
@@ -112,7 +112,7 @@ impl Poseidon {
 
         let mut tmp_state = vec![FGL::ZERO; t];
         for r in 0..(n_rounds_f / 2 - 1) {
-            state.iter_mut().for_each(|e| Self::pow7(e));
+            state.iter_mut().for_each(Self::pow7);
             state.iter_mut().enumerate().for_each(|(i, a)| {
                 a.add_assign(&C[(r + 1) * t + i]);
             });
@@ -135,7 +135,7 @@ impl Poseidon {
                 });
         }
 
-        state.iter_mut().for_each(|e| Self::pow7(e));
+        state.iter_mut().for_each(Self::pow7);
         state.iter_mut().enumerate().for_each(|(i, a)| {
             a.add_assign(&C[(n_rounds_f / 2 - 1 + 1) * t + i]);
         }); //opt
@@ -179,7 +179,7 @@ impl Poseidon {
         }
 
         for r in 0..(n_rounds_f / 2 - 1) {
-            state.iter_mut().for_each(|e| Self::pow7(e));
+            state.iter_mut().for_each(Self::pow7);
             state.iter_mut().enumerate().for_each(|(i, a)| {
                 a.add_assign(&C[(n_rounds_f / 2 + 1) * t + n_rounds_p + r * t + i]);
             });
@@ -202,7 +202,7 @@ impl Poseidon {
                 });
         }
 
-        state.iter_mut().for_each(|e| Self::pow7(e));
+        state.iter_mut().for_each(Self::pow7);
         let sz = state.len();
         tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
             let mut acc = FGL::ZERO;
@@ -215,7 +215,7 @@ impl Poseidon {
         });
         state = tmp_state;
 
-        Ok((&state[0..out]).to_vec())
+        Ok(state[0..out].to_vec())
     }
 }
 
@@ -252,14 +252,8 @@ mod tests {
     #[test]
     fn test_poseidon_opt_hash_1_11() {
         let poseidon = Poseidon::new();
-        let input = (0u64..8)
-            .into_iter()
-            .map(|e| FGL::from(e))
-            .collect::<Vec<FGL>>();
-        let state = (8u64..12)
-            .into_iter()
-            .map(|e| FGL::from(e))
-            .collect::<Vec<FGL>>();
+        let input = (0u64..8).map(FGL::from).collect::<Vec<FGL>>();
+        let state = (8u64..12).map(FGL::from).collect::<Vec<FGL>>();
         let res = poseidon.hash(&input, &state, 4).unwrap();
         let expected = vec![
             FGL::from(0xd64e1e3efc5b8e9eu64),

@@ -1,5 +1,5 @@
 #![allow(deprecated, dead_code)]
-#![allow(clippy::derive_hash_xor_eq, clippy::too_many_arguments)]
+#![allow(clippy::derived_hash_with_manual_eq, clippy::too_many_arguments)]
 use crate::constant::POSEIDON_BN128_CONSTANTS;
 use crate::field_bn128::Fr;
 use crate::poseidon_bn128_constants as constants;
@@ -131,15 +131,15 @@ impl Poseidon {
         let n_rounds_f = POSEIDON_BN128_CONSTANTS.n_rounds_f;
         let n_rounds_p = POSEIDON_BN128_CONSTANTS.n_rounds_p[t - 2];
 
-        let mut state = vec![init_state.clone(); t];
-        state[1..].clone_from_slice(&inp);
+        let mut state = vec![*init_state; t];
+        state[1..].clone_from_slice(inp);
 
         for i in 0..(n_rounds_f + n_rounds_p) {
             self.ark(&mut state, &POSEIDON_BN128_CONSTANTS.c[t - 2], i * t);
             self.sbox(n_rounds_f, n_rounds_p, &mut state, i);
             state = self.mix(&state, &POSEIDON_BN128_CONSTANTS.m[t - 2]);
         }
-        Ok((&state[0..out]).to_vec())
+        Ok(state[0..out].to_vec())
     }
 }
 

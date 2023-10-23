@@ -18,11 +18,11 @@ pub type Result<T> = std::result::Result<T, EigenError>;
 // input files: .wasm, .exec,  .pil, zkin.json(input file),
 // output: .cm
 pub fn exec(
-    input_file: &String,
-    wasm_file: &String,
-    pil_file: &String,
-    exec_file: &String,
-    commit_file: &String,
+    input_file: &str,
+    wasm_file: &str,
+    pil_file: &str,
+    exec_file: &str,
+    commit_file: &str,
 ) -> Result<()> {
     // 0. load exec_file,
     let (adds_len, s_map_column_len, adds, s_map) = read_exec_file(exec_file);
@@ -47,7 +47,7 @@ pub fn exec(
             if wi.is_zero() {
                 FGL::ZERO
             } else {
-                assert_eq!(wi.to_u64_digits().1.len() < 2, true);
+                assert!(wi.to_u64_digits().1.len() < 2);
                 FGL::from(wi.to_u64_digits().1[0])
             }
         })
@@ -93,13 +93,13 @@ pub fn exec(
     }
 
     // 5. save cmPol to file.
-    cm_pols.save(&commit_file)?;
+    cm_pols.save(commit_file)?;
 
     log::debug!("files Generated Correctly");
     Result::Ok(())
 }
 
-fn read_exec_file(exec_file: &String) -> (usize, usize, Vec<u64>, Vec<u64>) {
+fn read_exec_file(exec_file: &str) -> (usize, usize, Vec<u64>, Vec<u64>) {
     let mut buff = read_vec_from_file(exec_file).unwrap();
 
     let mut new_buff = buff.split_off(2);

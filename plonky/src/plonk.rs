@@ -1,3 +1,5 @@
+#![allow(clippy::reversed_empty_ranges)]
+
 // Most of this file is forked from source codes of [Matter Labs's zkSync](https://github.com/matter-labs/zksync)
 use crate::bellman_ce::bn256::Bn256;
 use crate::bellman_ce::{
@@ -144,15 +146,15 @@ impl SetupForProver {
     pub fn make_verification_key(
         &self,
     ) -> Result<VerificationKey<E, PlonkCsWidth4WithNextStepParams>> {
-        return Ok(make_verification_key(
+        Ok(make_verification_key(
             &self.setup_polynomials,
             &self.key_monomial_form,
-        )?);
+        )?)
     }
 
     // quickly valiate whether a witness is satisfied
     pub fn validate_witness<C: Circuit<E> + Clone>(&self, circuit: C) -> Result<()> {
-        return Ok(is_satisfied_using_one_shot_check(circuit, &self.hints)?);
+        Ok(is_satisfied_using_one_shot_check(circuit, &self.hints)?)
     }
 
     // generate a plonk proof for a circuit, with witness loaded

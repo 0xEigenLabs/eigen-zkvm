@@ -1,3 +1,4 @@
+#![allow(clippy::needless_range_loop)]
 use criterion::*;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
@@ -16,11 +17,9 @@ fn run_merklehash(pols: Vec<FGL>) {
     log::debug!("time cost: {}", now.elapsed().as_secs());
     let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
     let root = tree.root();
-    assert_eq!(
-        tree.verify_group_proof(&root, &mp, idx, &group_elements)
-            .unwrap(),
-        true
-    );
+    assert!(tree
+        .verify_group_proof(&root, &mp, idx, &group_elements)
+        .unwrap());
 }
 
 fn merklehash_group_bench(c: &mut Criterion) {
@@ -39,7 +38,8 @@ fn merklehash_group_bench(c: &mut Criterion) {
     });
     group.sample_size(10);
     group.sampling_mode(SamplingMode::Flat);
-    for data in [&pols].iter() {
+    {
+        let data = &(&pols);
         group.bench_with_input(
             BenchmarkId::new("merkelize", format!("height*n_pols={}", pols.len())),
             data,
