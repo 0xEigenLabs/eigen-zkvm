@@ -3,7 +3,6 @@ use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD, S
 use crate::fft_worker::{fft_block, interpolate_prepare_block};
 use crate::helper::log2_any;
 use crate::traits::FieldExtension;
-use crate::utils::parallells::parallelize;
 use core::cmp::min;
 use lazy_static::lazy_static;
 use rayon::prelude::*;
