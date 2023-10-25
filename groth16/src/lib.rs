@@ -1,6 +1,5 @@
-pub mod export_solidity_verifier;
 pub mod groth16;
-pub mod json_export;
+pub mod json_utils;
 
 pub use bellman_ce::pairing::ff;
 pub use ff::*;

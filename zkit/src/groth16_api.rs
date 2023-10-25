@@ -13,10 +13,9 @@ use groth16::{
             bls12_381::{Bls12, Fr as Fr_bls12381},
             bn256::{Bn256, Fr},
         },
-        plonk::better_cs::keys::{read_fr_vec, write_fr_vec},
     },
     groth16::Groth16,
-    json_export::*,
+    json_utils::*,
 };
 use num_traits::Zero;
 use rand;
@@ -103,7 +102,7 @@ pub fn groth16_prove(
             let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
             let proof_json = serialize_proof(&proof, curve_type);
             std::fs::write(proof_file, proof_json)?;
-            let input_json = serialize_input::<Fr>(&inputs);
+            let input_json = serialize_input::<Fr_bls12381>(&inputs);
             std::fs::write(public_input_file, input_json)?;
         }
         _ => {
@@ -173,66 +172,31 @@ fn create_circuit_from_file<E: Engine>(
     }
 }
 
-pub trait FieldElement: Sized + PrimeField {}
-
-impl FieldElement for Fr {}
-impl FieldElement for Fr_bls12381 {}
-
 fn read_pk_from_file<E: Engine>(file_path: &str, checked: bool) -> Result<Parameters<E>> {
     let file = std::fs::File::open(file_path)?;
     let mut reader = std::io::BufReader::new(file);
     Ok(Parameters::<E>::read(&mut reader, checked)?)
 }
 
-fn read_vk_from_file<E: Engine>(file_path: &str) -> Result<VerifyingKey<E>> {
-    let file = std::fs::File::open(file_path)?;
-    let mut reader = std::io::BufReader::new(file);
-    // let vk = VerifyingKey {
-    //     alpha_g1: serialization::to_g1::<T>(vk.alpha),
-    //     beta_g1: <T::BellmanEngine as Engine>::G1Affine::one(), // not used during verification
-    //     beta_g2: serialization::to_g2::<T>(vk.beta),
-    //     gamma_g2: serialization::to_g2::<T>(vk.gamma),
-    //     delta_g1: <T::BellmanEngine as Engine>::G1Affine::one(), // not used during verification
-    //     delta_g2: serialization::to_g2::<T>(vk.delta),
-    //     ic: vk
-    //         .gamma_abc
-    //         .into_iter()
-    //         .map(serialization::to_g1::<T>)
-    //         .collect(),
-    // };
-    Ok(VerifyingKey::<E>::read(&mut reader)?)
+fn read_vk_from_file<P: Parser>(file_path: &str) -> Result<VerifyingKey<P>> {
+    let json_data = std::fs::read_to_string(file_path).expect("Unable to read the JSON file");
+    Ok(to_verification_key::<P>(&json_data))
 }
 
 fn read_public_input_from_file<T: FieldElement>(file_path: &str) -> Result<Vec<T>> {
-    let file = std::fs::File::open(file_path)?;
-    let mut reader = std::io::BufReader::new(file);
-    // let public_inputs: Vec<_> = proof
-    //         .inputs
-    //         .iter()
-    //         .map(|s| {
-    //             T::try_from_str(s.trim_start_matches("0x"), 16)
-    //                 .unwrap()
-    //                 .into_bellman()
-    //         })
-    //         .collect::<Vec<_>>();
-    Ok(read_fr_vec::<T, _>(&mut reader)?)
+    let json_data = std::fs::read_to_string(file_path).expect("Unable to read the JSON file");
+    Ok(to_public_input::<T>(&json_data))
 }
 
-fn read_proof_from_file<E: Engine>(file_path: &str) -> Result<Proof<E>> {
-    let file = std::fs::File::open(file_path)?;
-    let mut reader = std::io::BufReader::new(file);
-    // let bellman_proof = BellmanProof {
-    //     a: serialization::to_g1::<T>(proof.proof.a),
-    //     b: serialization::to_g2::<T>(proof.proof.b),
-    //     c: serialization::to_g1::<T>(proof.proof.c),
-    // };
-    Ok(Proof::<E>::read(&mut reader)?)
+fn read_proof_from_file<P: Parser>(file_path: &str) -> Result<Proof<P>> {
+    let json_data = std::fs::read_to_string(file_path).expect("Unable to read the JSON file");
+    Ok(to_proof::<P>(&json_data))
 }
 
-fn write_pk_vk_to_files<E: Engine + Parser>(
+fn write_pk_vk_to_files<P: Parser>(
     curve_type: &str,
-    pk: Parameters<E>,
-    vk: VerifyingKey<E>,
+    pk: Parameters<P>,
+    vk: VerifyingKey<P>,
     pk_file: &str,
     vk_file: &str,
 ) -> Result<()> {
