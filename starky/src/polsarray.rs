@@ -2,6 +2,7 @@
 use crate::errors::Result;
 use crate::{traits::FieldExtension, types::PIL};
 use plonky::field_gl::Fr as FGL;
+use profiler_macro::time_profiler;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -32,6 +33,7 @@ pub enum PolKind {
 }
 
 impl PolsArray {
+    #[time_profiler("new_pols_array")]
     pub fn new(pil: &PIL, kind: PolKind) -> Self {
         let nPols = match kind {
             PolKind::Commit => pil.nCommitments,
@@ -136,6 +138,7 @@ impl PolsArray {
         pol.id + k
     }
 
+    #[time_profiler("load_pols_array")]
     pub fn load(&mut self, fileName: &str) -> Result<()> {
         let mut f = File::open(fileName)?;
         let maxBufferSize = 1024 * 1024 * 32;
