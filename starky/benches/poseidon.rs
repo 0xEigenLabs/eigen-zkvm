@@ -2,7 +2,7 @@
 extern crate criterion;
 
 use criterion::{BenchmarkId, Criterion};
-use ff::{Field, PrimeField};
+use ff::Field;
 use starky::dev::gen_rand_fields;
 use starky::field_bn128::Fr;
 use starky::poseidon_bn128_opt::Poseidon;

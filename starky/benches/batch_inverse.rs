@@ -2,7 +2,7 @@
 extern crate criterion;
 
 use criterion::{BenchmarkId, Criterion};
-use starky::dev::{gen_rand_fields, gen_rand_goldfields};
+use starky::dev::gen_rand_goldfields;
 use starky::f3g::F3G;
 use starky::traits::{batch_inverse, FieldExtension};
 

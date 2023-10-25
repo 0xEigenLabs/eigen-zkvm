@@ -1,6 +1,6 @@
 /// A test/bench tools
-use crate::traits::{batch_inverse, FieldExtension};
-use ff::{PrimeField, PrimeFieldRepr};
+use crate::traits::FieldExtension;
+use ff::PrimeField;
 
 // concurrency generate random goldfields. with specific k.
 pub fn gen_rand_goldfields<F: FieldExtension>(k: usize) -> Vec<F> {
