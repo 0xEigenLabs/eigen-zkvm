@@ -13,6 +13,7 @@ use crate::bellman_ce::{
 };
 
 use crate::circom_circuit::{CircuitJson, R1CS};
+use crate::r1cs_file::R1CSFile;
 
 /// get universal setup file by filename
 fn get_universal_setup_file_buff_reader(setup_file_name: &str) -> Result<BufReader<File>> {
@@ -147,7 +148,7 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> 
     Ok(result)
 }
 
-/// load r1cs file by filename with autodetect encoding (bin or json)
+/// load r1cs_file file by filename with autodetect encoding (bin or json)
 pub fn load_r1cs<E: ScalarEngine>(filename: &str) -> R1CS<E> {
     if filename.ends_with("json") {
         load_r1cs_from_json_file(filename)
@@ -157,7 +158,7 @@ pub fn load_r1cs<E: ScalarEngine>(filename: &str) -> R1CS<E> {
     }
 }
 
-/// load r1cs from json file by filename
+/// load r1cs_file from json file by filename
 fn load_r1cs_from_json_file<E: ScalarEngine>(filename: &str) -> R1CS<E> {
     let reader = OpenOptions::new()
         .read(true)
@@ -166,7 +167,7 @@ fn load_r1cs_from_json_file<E: ScalarEngine>(filename: &str) -> R1CS<E> {
     load_r1cs_from_json(BufReader::new(reader))
 }
 
-/// load r1cs from json by a reader
+/// load r1cs_file from json by a reader
 fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
     let circuit_json: CircuitJson = serde_json::from_reader(reader).expect("unable to read.");
 
@@ -202,7 +203,7 @@ fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
     }
 }
 
-/// load r1cs from bin file by filename
+/// load r1cs_file from bin file by filename
 fn load_r1cs_from_bin_file<E: ScalarEngine>(filename: &str) -> (R1CS<E>, Vec<usize>) {
     let reader = OpenOptions::new()
         .read(true)
@@ -211,9 +212,9 @@ fn load_r1cs_from_bin_file<E: ScalarEngine>(filename: &str) -> (R1CS<E>, Vec<usi
     load_r1cs_from_bin(BufReader::new(reader))
 }
 
-/// load r1cs from bin by a reader
+/// load r1cs_file from bin by a reader
 pub fn load_r1cs_from_bin<R: Read + Seek, E: ScalarEngine>(reader: R) -> (R1CS<E>, Vec<usize>) {
-    let file = crate::r1cs_file::from_reader::<R, E>(reader).expect("unable to read.");
+    let file = R1CSFile::from_reader::<R, E>(reader).expect("unable to read.");
     let num_inputs = (1 + file.header.n_pub_in + file.header.n_pub_out) as usize;
     let num_variables = file.header.n_wires as usize;
     let num_aux = num_variables - num_inputs;

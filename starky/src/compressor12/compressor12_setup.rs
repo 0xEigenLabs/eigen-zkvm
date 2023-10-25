@@ -15,7 +15,7 @@ pub struct Options {
 }
 
 // setup phase:
-// input: .r1cs
+// input: .r1cs_file
 // output: .pil, .const, .exec,
 pub fn setup(
     r1cs_file: &str,

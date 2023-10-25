@@ -51,7 +51,7 @@ if [ ! -f "$WORKSPACE/$RECURSIVE_CIRCUIT.r1cs" ]; then
     echo "1. compile circuit, use task 0 by default"
     ${ZKIT} compile -p goldilocks -i $CUR_DIR/../starkjs/circuits/0/$RECURSIVE_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
 else
-    echo "1.no need compile circom : "$WORKSPACE/$RECURSIVE_CIRCUIT.r1cs" already generated"
+    echo "1.no need compile circom : "$WORKSPACE/$RECURSIVE_CIRCUIT.r1cs_file" already generated"
 fi
 
 
@@ -61,11 +61,11 @@ ${ZKIT} join_zkin --zkin1 $input0/input.zkin.json --zkin2 $input1/input.zkin.jso
 
 echo "3. generate the pil files and const polynomicals files "
 # generate the pil files and  const polynomicals files
-# input files :  $C12_VERIFIER.r1cs
+# input files :  $C12_VERIFIER.r1cs_file
 # output files :  $C12_VERIFIER.const  $C12_VERIFIER.pil  $C12_VERIFIER.exec
 if [ ! -f "$WORKSPACE/$RECURSIVE_CIRCUIT.pil" ]; then
     ${ZKIT} compressor12_setup  \
-        --r $WORKSPACE/$RECURSIVE_CIRCUIT.r1cs \
+        --r $WORKSPACE/$RECURSIVE_CIRCUIT.r1cs_file \
         --c $WORKSPACE/$RECURSIVE_CIRCUIT.const \
         --p $WORKSPACE/$RECURSIVE_CIRCUIT.pil \
         --e $WORKSPACE/$RECURSIVE_CIRCUIT.exec
@@ -103,14 +103,14 @@ if [ ! -f "$WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs" ]; then
     echo "1. compile circuit and generate r1cs and wasm"
     ${ZKIT} compile -p goldilocks -i $WORKSPACE/circuits/$RECURSIVE2_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE 
 else
-    echo "1.no need compile circom : "$WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs" already generated"
+    echo "1.no need compile circom : "$WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs_file" already generated"
 fi
 
 
 echo "2. generate the pil files and  const polynomicals files "
 if [ ! -f "$WORKSPACE/$RECURSIVE2_CIRCUIT.pil" ]; then
     ${ZKIT} compressor12_setup \
-        --r $WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs \
+        --r $WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs_file \
         --c $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
         --p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil \
         --e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec

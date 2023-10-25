@@ -234,7 +234,7 @@ struct AggregationCheckOpt {
 /// Setup compressor12 for converting R1CS to PIL
 #[derive(Parser, Debug)]
 struct Compressor12SetupOpt {
-    #[arg(long = "r", default_value = "mycircuit.verifier.r1cs")]
+    #[arg(long = "r", default_value = "mycircuit.verifier.r1cs_file")]
     r1cs_file: String,
     #[arg(long = "c", default_value = "mycircuit.c12.const")]
     const_file: String, // Output file required to build the constants
@@ -249,7 +249,7 @@ struct Compressor12SetupOpt {
 /// Exec compressor12 for converting R1CS to PIL
 #[derive(Parser, Debug)]
 struct Compressor12ExecOpt {
-    // input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
+    // input files :  $C12_VERIFIER.r1cs_file  $C12_VERIFIER.const  $C12_VERIFIER.pil
     #[arg(long = "i", default_value = "mycircuit.proof.zkin.json")]
     input_file: String,
     #[arg(long = "w", default_value = "mycircuit.verifier.wasm")]
@@ -281,7 +281,7 @@ struct JoinZkinExecOpt {
 pub struct Groth16SetupOpt {
     #[arg(short, required = true, default_value = "bn128")]
     curve_type: String,
-    #[arg(long = "r1cs", required = true)]
+    #[arg(long = "r1cs_file", required = true)]
     circuit_file: String,
     #[arg(short, required = true, default_value = "g16.zkey")]
     pk_file: String,
@@ -294,7 +294,7 @@ pub struct Groth16SetupOpt {
 pub struct Groth16ProveOpt {
     #[arg(short, required = true, default_value = "bn128")]
     curve_type: String,
-    #[arg(long = "r1cs", required = true)]
+    #[arg(long = "r1cs_file", required = true)]
     circuit_file: String,
     #[arg(short, required = true)]
     wtns_file: String,
@@ -327,7 +327,7 @@ enum Command {
     Setup(SetupOpt),
     #[command(name = "calculate_witness")]
     CalculateWitness(CalculateWitnessOpt),
-    /// Compile circom circuits to r1cs, and generate witness
+    /// Compile circom circuits to r1cs_file, and generate witness
     #[command(name = "compile")]
     Compile(CompilierOpt),
     #[command(name = "prove")]

@@ -4,7 +4,7 @@ use crate::{plonk, reader};
 use algebraic::reader::load_r1cs;
 use std::fs;
 
-const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
+const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs_file");
 const WITNESS_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/witness.wtns");
 const VK_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/vk.bin");
 const PROOF_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/proof.bin");

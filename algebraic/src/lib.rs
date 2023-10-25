@@ -26,6 +26,7 @@ pub use franklin_crypto::bellman as bellman_ce;
 
 #[cfg(test)]
 mod field_gl_test;
+pub(crate) mod io_utils;
 
 #[cfg(target_arch = "wasm32")]
 extern crate wasm_bindgen;

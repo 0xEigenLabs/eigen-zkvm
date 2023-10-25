@@ -53,11 +53,11 @@ if [ $snark_type = "groth16" ]; then
     fi
 
     if [ $first_run = "true" ]; then
-        $ZKIT groth16_setup -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -p $WORK_DIR/g16.zkey -v $WORK_DIR/verification_key.bin
+        $ZKIT groth16_setup -c $CURVE --r1cs_file $WORK_DIR/$CIRCUIT_NAME.r1cs_file -p $WORK_DIR/g16.zkey -v $WORK_DIR/verification_key.bin
     fi
 
     echo "2. groth16 fullprove"
-    $ZKIT groth16_prove -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -w $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm -p $WORK_DIR/g16.zkey -i $SNARK_INPUT --input $WORK_DIR/public_input.bin --proof $WORK_DIR/proof.bin
+    $ZKIT groth16_prove -c $CURVE --r1cs_file $WORK_DIR/$CIRCUIT_NAME.r1cs_file -w $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm -p $WORK_DIR/g16.zkey -i $SNARK_INPUT --input $WORK_DIR/public_input.bin --proof $WORK_DIR/proof.bin
 
     if [ $first_run = "true" ]; then
         echo "4. verify groth16 proof"
@@ -88,8 +88,8 @@ else
     
      if [ ! -f "$WORK_DIR/fflonk.zkey" ]; then
         echo "1. generate groth16 zkey"
-        # nohup snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey &
-        $SNARKJS ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey
+        # nohup snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs_file  $BIG_SRS $WORK_DIR/fflonk.zkey &
+        $SNARKJS ffs $WORK_DIR/$CIRCUIT_NAME.r1cs_file  $BIG_SRS $WORK_DIR/fflonk.zkey
     else 
         echo "1. fflonk zkey already generated"
     fi

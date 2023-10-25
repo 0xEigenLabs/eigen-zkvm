@@ -10,6 +10,8 @@ use crate::bellman_ce::{
     pairing::Engine, Circuit, ConstraintSystem, Index, LinearCombination, PrimeField, ScalarEngine,
     SynthesisError, Variable,
 };
+use crate::r1cs_file::constraint::Constraint;
+use crate::r1cs_file::custom_gate::{CustomGates, CustomGatesUses};
 
 use crate::utils::repr_to_big;
 
@@ -22,26 +24,6 @@ pub struct CircuitJson {
     pub num_outputs: usize,
     #[serde(rename = "nVars")]
     pub num_variables: usize,
-}
-
-pub type Constraint<E> = (
-    Vec<(usize, <E as ScalarEngine>::Fr)>,
-    Vec<(usize, <E as ScalarEngine>::Fr)>,
-    Vec<(usize, <E as ScalarEngine>::Fr)>,
-);
-
-// R1CSfile's CustomGates
-#[derive(Debug, Default, Clone)]
-pub struct CustomGates<E: ScalarEngine> {
-    pub template_name: String,
-    pub parameters: Vec<E::Fr>,
-}
-
-// R1CSfile's CustomGatesUses
-#[derive(Debug, Default, Clone)]
-pub struct CustomGatesUses {
-    pub id: u64,
-    pub signals: Vec<u64>,
 }
 
 /// R1CS spec: https://www.sikoba.com/docs/SKOR_GD_R1CS_Format.pdf

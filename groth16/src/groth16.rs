@@ -55,11 +55,11 @@ mod tests {
     use algebraic::reader;
     use algebraic::witness::{load_input_for_witness, WitnessCalculator};
     const INPUT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.input.json");
-    const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
+    const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs_file");
     const WASM_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.wasm");
     const CIRCUIT_FILE_BLS12: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/test-vectors/mycircuit_bls12381.r1cs"
+        "/test-vectors/mycircuit_bls12381.r1cs_file"
     );
     const WASM_FILE_BLS12: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),

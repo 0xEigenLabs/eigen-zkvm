@@ -271,7 +271,7 @@ mod test {
     fn test_r1cs2plonk() {
         let CIRCUIT = "fib.verifier";
 
-        let r1cs_file = format!("/tmp/{CIRCUIT}.r1cs");
+        let r1cs_file = format!("/tmp/{CIRCUIT}.r1cs_file");
         let r1cs = load_r1cs::<GL>(&r1cs_file);
 
         let (plonk_constrains, plonk_additions) = r1cs2plonk(&r1cs);

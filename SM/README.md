@@ -29,7 +29,7 @@ npm run vm
 ../target/release/eigen-zkit compile -p goldilocks -i circuits/zkvm.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
 ../target/release/eigen-zkit compressor12_setup \
-    --r /tmp/zkvm.r1cs \
+    --r /tmp/zkvm.r1cs_file \
     --c /tmp/c12.const \
     --p /tmp/c12.pil \
     --e /tmp/c12.exec
