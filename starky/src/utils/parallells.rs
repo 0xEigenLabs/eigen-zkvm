@@ -2,6 +2,14 @@ use rayon::{current_num_threads, scope};
 
 /// This simple utility function will parallelize an operation that is to be
 /// performed over a mutable slice.
+/// ```
+///     parallelize(&mut p_be, |values, start| {
+//         for (i, v) in values.iter_mut().enumerate() {
+//             let idx = start + i;
+//             *v = result[idx].to_be();
+//         }
+//     });
+/// ```
 pub fn parallelize<T: Send, F: Fn(&mut [T], usize) + Send + Sync + Clone>(v: &mut [T], f: F) {
     let n = v.len();
     let num_threads = current_num_threads();

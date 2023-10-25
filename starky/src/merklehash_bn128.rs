@@ -61,9 +61,9 @@ impl MerkleTreeBN128 {
             );
 
         let out = &mut self.nodes[p_out..(p_out + n_ops)];
-        out.iter_mut()
-            .zip(nodes)
-            .for_each(|(nout, nin)| *nout = nin);
+        out.par_iter_mut()
+            .zip(nodes.par_iter())
+            .for_each(|(nout, nin)| *nout = *nin);
         Ok(())
     }
 
@@ -81,12 +81,15 @@ impl MerkleTreeBN128 {
         );
         let n_ops = buff_in.len() / 16;
         let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
-        buff_out64.iter_mut().zip(0..n_ops).for_each(|(out, i)| {
-            *out = self
-                .h
-                .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &Fr::zero())
-                .unwrap();
-        });
+        buff_out64
+            .par_iter_mut()
+            .zip(0..n_ops)
+            .for_each(|(out, i)| {
+                *out = self
+                    .h
+                    .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &Fr::zero())
+                    .unwrap();
+            });
         Ok(buff_out64)
     }
 
@@ -187,20 +190,22 @@ impl MerkleTree for MerkleTreeBN128 {
         }
         // calculate the nodes of the specific height Merkle tree
         let mut nodes = vec![ElementDigest::<4>::default(); get_n_nodes(height)];
-        let now = Instant::now();
         if !buff.is_empty() {
+            let now = Instant::now();
             nodes
                 .par_chunks_mut(n_per_thread_f)
                 .zip(buff.par_chunks(n_per_thread_f * width))
                 .for_each(|(out, bb)| {
                     let cur_n = bb.len() / width;
-                    out.iter_mut().zip(0..cur_n).for_each(|(row_out, j)| {
-                        let batch = &bb[(j * width)..((j + 1) * width)];
-                        *row_out = self.h.hash_element_array(batch).unwrap();
-                    });
+                    out.par_iter_mut()
+                        .zip((0..cur_n).into_par_iter())
+                        .for_each(|(row_out, j)| {
+                            let batch = &bb[(j * width)..((j + 1) * width)];
+                            *row_out = self.h.hash_element_array(batch).unwrap();
+                        });
                 });
+            log::debug!("linearhash time cost: {}", now.elapsed().as_secs_f64());
         }
-        log::debug!("linearhash time cost: {}", now.elapsed().as_secs_f64());
 
         // merklize level
         self.nodes = nodes;
@@ -212,6 +217,7 @@ impl MerkleTree for MerkleTreeBN128 {
         let mut next_n256: usize = (n256 - 1) / 16 + 1;
         let mut p_in: usize = 0;
         let mut p_out: usize = p_in + next_n256 * 16;
+
         while n256 > 1 {
             let now = Instant::now();
             self.merklize_level(p_in, next_n256, p_out)?;
