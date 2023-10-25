@@ -6,6 +6,7 @@ use crate::polutils::{eval_pol, pol_mul_axi};
 use crate::traits::{FieldExtension, MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, Step};
 use plonky::field_gl::Fr as FGL;
+use profiler_macro::time_profiler;
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Debug)]
@@ -48,6 +49,7 @@ impl FRI {
         }
     }
 
+    #[time_profiler("fri_prove")]
     pub fn prove<F: FieldExtension, M: MerkleTree<ExtendField = F>, T: Transcript>(
         &mut self,
         transcript: &mut T,
@@ -153,6 +155,7 @@ impl FRI {
     }
 
     #[allow(clippy::type_complexity)]
+    #[time_profiler("fri_verify")]
     pub fn verify<F: FieldExtension, M: MerkleTree<ExtendField = F>, T: Transcript>(
         &self,
         transcript: &mut T,

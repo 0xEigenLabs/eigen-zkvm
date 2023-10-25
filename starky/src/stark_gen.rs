@@ -187,8 +187,8 @@ pub struct StarkProof<M: MerkleTree> {
 }
 
 impl<'a, M: MerkleTree> StarkProof<M> {
-    #[time_profiler("stark_gen")]
     #[allow(clippy::too_many_arguments, clippy::type_complexity)]
+    #[time_profiler()]
     pub fn stark_gen<T: Transcript>(
         cm_pols: &PolsArray,
         const_pols: &PolsArray,

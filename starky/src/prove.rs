@@ -15,10 +15,12 @@ use crate::{
     types::*,
     ElementDigest,
 };
+use profiler_macro::time_profiler;
 use std::fs::File;
 use std::io::Write;
 
 #[allow(clippy::too_many_arguments)]
+#[time_profiler()]
 pub fn stark_prove(
     stark_struct: &str,
     pil_file: &str,

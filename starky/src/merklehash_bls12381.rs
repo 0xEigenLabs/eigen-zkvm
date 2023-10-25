@@ -10,6 +10,7 @@ use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use ff::Field;
 use plonky::field_gl::Fr as FGL;
+use profiler_macro::time_profiler;
 use rayon::prelude::*;
 use std::time::Instant;
 
@@ -170,6 +171,7 @@ impl MerkleTree for MerkleTreeBLS12381 {
             });
     }
 
+    #[time_profiler()]
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()> {
         let max_workers = get_max_workers();
 

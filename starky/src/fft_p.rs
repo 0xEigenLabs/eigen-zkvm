@@ -4,6 +4,7 @@ use crate::fft_worker::{fft_block, interpolate_prepare_block};
 use crate::helper::log2_any;
 use crate::traits::FieldExtension;
 use core::cmp::min;
+use profiler_macro::time_profiler;
 use rayon::prelude::*;
 
 pub fn BR(x: usize, domain_pow: usize) -> usize {
@@ -37,6 +38,7 @@ pub fn transpose<F: FieldExtension>(
     }
 }
 
+#[time_profiler()]
 pub fn bit_reverse<F: FieldExtension>(
     buffdst: &mut Vec<F>,
     buffsrc: &Vec<F>,
@@ -52,6 +54,7 @@ pub fn bit_reverse<F: FieldExtension>(
     }
 }
 
+#[time_profiler()]
 pub fn interpolate_bit_reverse<F: FieldExtension>(
     buffdst: &mut Vec<F>,
     buffsrc: &Vec<F>,
@@ -68,6 +71,7 @@ pub fn interpolate_bit_reverse<F: FieldExtension>(
     }
 }
 
+#[time_profiler()]
 pub fn inv_bit_reverse<F: FieldExtension>(
     buffdst: &mut Vec<F>,
     buffsrc: &Vec<F>,
@@ -85,6 +89,7 @@ pub fn inv_bit_reverse<F: FieldExtension>(
     }
 }
 
+#[time_profiler()]
 pub fn interpolate_prepare<F: FieldExtension>(buff: &mut Vec<F>, n_pols: usize, nbits: usize) {
     let n = 1 << nbits;
     let inv_n = F::inv(&F::from(n));
@@ -196,10 +201,12 @@ pub fn _fft<F: FieldExtension>(
     });
 }
 
+#[time_profiler()]
 pub fn fft<F: FieldExtension>(buffsrc: &Vec<F>, n_pols: usize, nbits: usize, buffdst: &mut Vec<F>) {
     _fft(buffsrc, n_pols, nbits, buffdst, false)
 }
 
+#[time_profiler()]
 pub fn ifft<F: FieldExtension>(
     buffsrc: &Vec<F>,
     n_pols: usize,
@@ -209,6 +216,7 @@ pub fn ifft<F: FieldExtension>(
     _fft(buffsrc, n_pols, nbits, buffdst, true)
 }
 
+#[time_profiler()]
 pub fn interpolate<F: FieldExtension>(
     buffsrc: &Vec<F>,
     n_pols: usize,

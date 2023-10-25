@@ -1,7 +1,9 @@
 #![allow(dead_code)]
+
 use crate::constant::MG;
 use crate::helper::log2_any;
 use crate::traits::FieldExtension;
+use profiler_macro::time_profiler;
 
 #[allow(clippy::upper_case_acronyms)]
 pub struct FFT<F: FieldExtension> {
@@ -35,6 +37,7 @@ impl<F: FieldExtension> FFT<F> {
         }
     }
 
+    #[time_profiler()]
     pub fn fft(&mut self, p: &Vec<F>) -> Vec<F> {
         if p.len() <= 1 {
             return p.clone();
@@ -70,6 +73,7 @@ impl<F: FieldExtension> FFT<F> {
         buff
     }
 
+    #[time_profiler()]
     pub fn ifft(&mut self, p: &Vec<F>) -> Vec<F> {
         let q = self.fft(p);
         let n = p.len();

@@ -1,8 +1,9 @@
 /// A test/bench tools
-use crate::traits::{batch_inverse, FieldExtension};
-use ff::{PrimeField, PrimeFieldRepr};
+use ff::PrimeField;
+use profiler_macro::time_profiler;
 
 // concurrency generate random goldfields. with specific k.
+#[time_profiler()]
 pub fn gen_rand_goldfields<F: FieldExtension>(k: usize) -> Vec<F> {
     let num_threads = rayon::current_num_threads();
     let mut parts = vec![F::one(); 1 << k];
@@ -20,6 +21,7 @@ pub fn gen_rand_goldfields<F: FieldExtension>(k: usize) -> Vec<F> {
 }
 
 // concurrency generate random fields. with specific k.
+#[time_profiler()]
 pub fn gen_rand_fields<F: PrimeField>(k: usize) -> Vec<F> {
     let num_threads = rayon::current_num_threads();
     let mut parts = vec![F::one(); 1 << k];

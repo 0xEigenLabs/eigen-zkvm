@@ -3,8 +3,10 @@ use crate::expressionops::ExpressionOps as E;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Context, Node};
 use crate::types::PIL;
+use profiler_macro::time_profiler;
 
 impl StarkInfo {
+    #[time_profiler()]
     pub fn generate_fri_polynomial(
         &mut self,
         ctx: &mut Context,

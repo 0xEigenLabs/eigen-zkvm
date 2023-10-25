@@ -8,6 +8,7 @@ use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use plonky::field_gl::Fr as FGL;
+use profiler_macro::time_profiler;
 use rayon::prelude::*;
 use std::time::Instant;
 
@@ -38,6 +39,7 @@ fn get_n_nodes(n_: usize) -> usize {
 }
 
 impl MerkleTreeGL {
+    #[time_profiler()]
     fn merkle_gen_merkle_proof(&self, idx: usize, offset: usize, n: usize) -> Vec<Vec<FGL>> {
         if n <= 1 {
             return vec![];
@@ -53,6 +55,7 @@ impl MerkleTreeGL {
     }
 
     #[inline]
+    #[time_profiler()]
     fn merklize_level(&mut self, p_in: usize, n_ops: usize, p_out: usize) -> Result<()> {
         let mut n_ops_per_thread = (n_ops - 1) / (get_max_workers() * 2) + 1;
         if n_ops_per_thread < MIN_OPS_PER_THREAD {
@@ -79,6 +82,7 @@ impl MerkleTreeGL {
         Ok(())
     }
 
+    #[time_profiler()]
     fn do_merklize_level(
         &self,
         buff_in: &[ElementDigest<4>],
@@ -104,6 +108,7 @@ impl MerkleTreeGL {
         Ok(buff_out64)
     }
 
+    #[time_profiler()]
     fn merkle_calculate_root_from_proof(
         &self,
         mp: &[Vec<FGL>],
@@ -133,6 +138,7 @@ impl MerkleTreeGL {
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
+    #[time_profiler()]
     fn calculate_root_from_group_proof(
         &self,
         mp: &[Vec<FGL>],
@@ -172,6 +178,7 @@ impl MerkleTree for MerkleTreeGL {
             });
     }
 
+    #[time_profiler()]
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()> {
         let max_workers = get_max_workers();
 

@@ -1,9 +1,11 @@
 #![allow(non_snake_case)]
+
 use crate::errors::Result;
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::ElementDigest;
 use plonky::field_gl::Fr as FGL;
+use profiler_macro::time_profiler;
 
 #[derive(Default)]
 pub struct LinearHash {
@@ -15,6 +17,7 @@ impl LinearHash {
         LinearHash { h: Poseidon::new() }
     }
 
+    #[time_profiler()]
     pub fn hash_element_matrix(
         &self,
         vals: &[Vec<FGL>],
