@@ -6,9 +6,9 @@ pub mod constraint;
 pub mod custom_gate;
 pub mod header;
 
-use crate::bellman_ce::{Field, PrimeField, PrimeFieldRepr, ScalarEngine};
+use crate::bellman_ce::{PrimeField, ScalarEngine};
 use crate::r1cs_file::{
-    constraint::{read_constraint_vec, read_constraints, Constraint},
+    constraint::{read_constraints, Constraint},
     custom_gate::{CustomGates, CustomGatesUses},
     header::Header,
 };
@@ -56,7 +56,7 @@ impl<E: ScalarEngine> R1CSFile<E> {
         Ok(vec)
     }
 
-    pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1CSFile<E>> {
+    pub fn from_reader<R: Read + Seek>(mut reader: R) -> Result<R1CSFile<E>> {
         let mut magic = [0u8; 4];
         reader.read_exact(&mut magic)?;
         if magic != [0x72, 0x31, 0x63, 0x73] {
@@ -228,7 +228,7 @@ mod tests {
         );
 
         let reader = BufReader::new(Cursor::new(&data[..]));
-        let file = R1CSFile::from_reader::<_, Bn256>(reader).unwrap();
+        let file = R1CSFile::<Bn256>::from_reader::<_>(reader).unwrap();
         assert_eq!(file.version, 1);
 
         assert_eq!(file.header.field_size, 32);
