@@ -89,11 +89,21 @@ pub fn render_scalar_to_hex<F: PrimeField>(el: &F) -> String {
     format!("0x{}", hex::encode(buff))
 }
 
-pub fn render_hex_to_scalar<F: PrimeField>(value: &str) -> F {
-    let value = BigUint::from_str_radix(&value[2..], 16)
-        .unwrap()
-        .to_str_radix(10);
+pub fn render_str_to_scalar<F: PrimeField>(value: &str) -> F {
+    let value = match value.starts_with("0x") {
+        true => BigUint::from_str_radix(&value[2..], 16).unwrap()
+            .to_str_radix(10),
+        _ => value.to_string(),
+    };
     F::from_str(&value).unwrap()
+}
+
+pub fn to_public_input<T: PrimeField>(s: &str) -> Vec<T> {
+    let input: Vec<String> = serde_json::from_str(s).unwrap();
+    input
+        .iter()
+        .map(|hex_str| render_str_to_scalar::<T>(hex_str))
+        .collect()
 }
 
 impl Parser for Bn256 {
@@ -113,17 +123,17 @@ impl Parser for Bn256 {
     }
 
     fn to_g1(x: &str, y: &str) -> Self::G1Affine {
-        G1Affine::from_xy_unchecked(render_hex_to_scalar(x), render_hex_to_scalar(y))
+        G1Affine::from_xy_unchecked(render_str_to_scalar(x), render_str_to_scalar(y))
     }
 
     fn to_g2(x0: &str, x1: &str, y0: &str, y1: &str) -> Self::G2Affine {
         let x = Fq2 {
-            c0: render_hex_to_scalar(x0),
-            c1: render_hex_to_scalar(x1),
+            c0: render_str_to_scalar(x0),
+            c1: render_str_to_scalar(x1),
         };
         let y = Fq2 {
-            c0: render_hex_to_scalar(y0),
-            c1: render_hex_to_scalar(y1),
+            c0: render_str_to_scalar(y0),
+            c1: render_str_to_scalar(y1),
         };
         G2Affine::from_xy_unchecked(x, y)
     }
@@ -146,17 +156,17 @@ impl Parser for Bls12 {
     }
 
     fn to_g1(x: &str, y: &str) -> Self::G1Affine {
-        G1Affine_bls12381::from_xy_unchecked(render_hex_to_scalar(x), render_hex_to_scalar(y))
+        G1Affine_bls12381::from_xy_unchecked(render_str_to_scalar(x), render_str_to_scalar(y))
     }
 
     fn to_g2(x0: &str, x1: &str, y0: &str, y1: &str) -> Self::G2Affine {
         let x = Fq2_bls12381 {
-            c0: render_hex_to_scalar(x0),
-            c1: render_hex_to_scalar(x1),
+            c0: render_str_to_scalar(x0),
+            c1: render_str_to_scalar(x1),
         };
         let y = Fq2_bls12381 {
-            c0: render_hex_to_scalar(y0),
-            c1: render_hex_to_scalar(y1),
+            c0: render_str_to_scalar(y0),
+            c1: render_str_to_scalar(y1),
         };
         G2Affine_bls12381::from_xy_unchecked(x, y)
     }
@@ -188,17 +198,6 @@ pub fn serialize_proof<P: Parser>(p: &Proof<P>, curve_type: &str) -> Result<Stri
     };
 
     Ok(to_string(&proof_file)?)
-}
-
-pub fn serialize_input<T: PrimeField>(inputs: &[T]) -> Result<String> {
-    Ok(format!(
-        "[\"{}\"]",
-        inputs
-            .iter()
-            .map(render_scalar_to_hex)
-            .collect::<Vec<_>>()
-            .join("\", \""),
-    ))
 }
 
 pub fn to_verification_key<P: Parser>(s: &str) -> VerifyingKey<P> {
@@ -233,23 +232,14 @@ pub fn to_proof<P: Parser>(s: &str) -> Proof<P> {
     }
 }
 
-pub fn to_public_input<T: PrimeField>(s: &str) -> Vec<T> {
-    let input: Vec<String> = serde_json::from_str(s).unwrap();
-    input
-        .iter()
-        .map(|hex_str| render_hex_to_scalar::<T>(hex_str))
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::bellman_ce::groth16::{Proof, VerifyingKey};
     use crate::bellman_ce::pairing::{
         bls12_381::Bls12,
-        bn256::{Bn256, Fr},
+        bn256::Bn256,
     };
-    use crate::bellman_ce::plonk::better_cs::keys::read_fr_vec;
 
     #[test]
     fn test_serialize_vk() {
@@ -304,22 +294,5 @@ mod tests {
             .expect("Unable to read the JSON file");
         let proof_from_json = to_proof::<Bn256>(&json_data);
         assert_eq!(proof_from_bin.a, proof_from_json.a, "Proofs are not equal");
-    }
-
-    #[test]
-    fn test_serialize_input() {
-        let mut reader = std::io::BufReader::with_capacity(
-            1 << 24,
-            std::fs::File::open("./test-vectors/public_input.bin").unwrap(),
-        );
-        let input_from_bin = read_fr_vec::<Fr, _>(&mut reader).unwrap();
-        let result = serialize_input::<Fr>(&input_from_bin).unwrap();
-        std::fs::write("./test-vectors/public_input.json", result)
-            .expect("Unable to write data to file");
-
-        let json_data = std::fs::read_to_string("./test-vectors/public_input.json")
-            .expect("Unable to read the JSON file");
-        let input_from_json = to_public_input::<Fr>(&json_data);
-        assert_eq!(input_from_bin[0], input_from_json[0], "Input are not equal");
     }
 }

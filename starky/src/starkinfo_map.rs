@@ -194,7 +194,6 @@ impl StarkInfo {
             self.map_sections.cm3_2ns.push(ppz_2ns);
             pil.cm_dims[self.n_cm1 + self.n_cm2 + i] = dim;
             self.exp2pol.insert(self.im_exps_list[i], ppz_n);
-            log::debug!("5 exp2pol {:?}", self.exp2pol)
         }
 
         self.q_dim = Self::get_exp_dim(pil, &pil.expressions[self.c_exp]);
