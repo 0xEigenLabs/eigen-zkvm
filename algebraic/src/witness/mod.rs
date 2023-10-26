@@ -1,31 +1,16 @@
-pub(super) mod witness_calculator;
+mod memory;
 
+mod utils;
+mod wasm_circom;
+pub mod witness_calculator;
+
+use crate::witness::utils::flat_array;
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::str::FromStr;
-pub use witness_calculator::flat_array;
-pub use witness_calculator::WitnessCalculator;
-
-mod memory;
-pub(super) use memory::SafeMemory;
-
-mod circom;
-pub(super) use circom::{CircomBase, Wasm};
-
-pub(super) use circom::Circom;
-
-use fnv::FnvHasher;
 use std::hash::Hasher;
-
-pub(crate) fn fnv(inp: &str) -> (u32, u32) {
-    let mut hasher = FnvHasher::default();
-    hasher.write(inp.as_bytes());
-    let h = hasher.finish();
-
-    ((h >> 32) as u32, h as u32)
-}
+use std::str::FromStr;
 
 pub fn load_input_for_witness(input_file: &str) -> HashMap<String, Vec<BigInt>> {
     let inputs_str = std::fs::read_to_string(input_file).unwrap();

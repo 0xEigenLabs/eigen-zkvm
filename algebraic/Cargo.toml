@@ -46,4 +46,3 @@ wasm-bindgen-test = "0.3"
 
 [features]
 default = ["franklin-crypto/multicore", "wasmer/default"]
-wasm = ["wasmer/js-default"]

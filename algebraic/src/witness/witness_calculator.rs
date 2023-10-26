@@ -1,6 +1,5 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/witness_calculator.rs
-use super::Circom;
-use super::{fnv, CircomBase, SafeMemory, Wasm};
+
 use crate::bellman_ce::{PrimeField, ScalarEngine};
 use crate::errors::{EigenError, Result};
 use num::ToPrimitive;
@@ -12,12 +11,15 @@ use serde_json::Value;
 use std::str::FromStr;
 use wasmer::{imports, Function, Instance, Memory, MemoryType, Module, Store};
 
-#[cfg(not(feature = "wasm"))]
 use std::fs::OpenOptions;
 
-#[cfg(not(feature = "wasm"))]
 use std::io::{BufWriter, Write};
 
+use crate::witness::{
+    memory::SafeMemory,
+    utils::*,
+    wasm_circom::{Circom, CircomBase, Wasm},
+};
 use byteorder::{LittleEndian, WriteBytesExt};
 
 #[derive(Clone, Debug)]
@@ -26,29 +28,6 @@ pub struct WitnessCalculator {
     pub memory: SafeMemory,
     pub n64: u32,
     pub circom_version: u32,
-}
-
-fn from_array32(arr: Vec<u32>) -> BigInt {
-    let mut res = BigInt::zero();
-    let radix = BigInt::from(0x100000000u64);
-    for &val in arr.iter() {
-        res = res * &radix + BigInt::from(val);
-    }
-    res
-}
-
-fn to_array32(s: &BigInt, size: usize) -> Vec<u32> {
-    let mut res = vec![0; size];
-    let mut rem = s.clone();
-    let radix = BigInt::from(0x100000000u64);
-    let mut c = size;
-    while !rem.is_zero() {
-        c -= 1;
-        res[c] = (&rem % &radix).to_u32().unwrap();
-        rem /= &radix;
-    }
-
-    res
 }
 
 impl WitnessCalculator {
@@ -182,7 +161,6 @@ impl WitnessCalculator {
         Ok(w)
     }
 
-    #[cfg(not(feature = "wasm"))]
     pub fn save_witness_to_bin_file<E: ScalarEngine>(
         &self,
         filename: &str,
@@ -283,47 +261,6 @@ impl WitnessCalculator {
 
         Ok(witness)
     }
-}
-
-#[allow(dead_code)]
-pub fn value_to_bigint(v: Value) -> BigInt {
-    match v {
-        Value::String(inner) => BigInt::from_str(&inner).unwrap(),
-        Value::Number(inner) => BigInt::from(inner.as_u64().expect("not a u32")),
-        _ => panic!("unsupported type {:?}", v),
-    }
-}
-
-pub fn flat_array(v: &[Value]) -> Vec<BigInt> {
-    let mut result = Vec::new();
-    fn fill_array(out: &mut Vec<BigInt>, value: &Value) {
-        match value {
-            Value::Array(inner) => {
-                for v2 in inner.iter() {
-                    fill_array(out, v2);
-                }
-            }
-            Value::Bool(inner) => {
-                if *inner {
-                    out.push(BigInt::one());
-                } else {
-                    out.push(BigInt::zero());
-                }
-            }
-            Value::String(inner) => {
-                out.push(BigInt::from_str(inner).unwrap());
-            }
-            Value::Number(inner) => {
-                out.push(BigInt::from_str(&inner.to_string()).unwrap());
-            }
-            _ => panic!(),
-        }
-    }
-
-    for v2 in v.iter() {
-        fill_array(&mut result, v2);
-    }
-    result
 }
 
 // callback hooks for debugging

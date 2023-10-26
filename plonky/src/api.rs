@@ -1,12 +1,12 @@
 use crate::bellman_ce::pairing::bn256::Bn256;
 use crate::errors::{EigenError, Result};
-use crate::witness::{load_input_for_witness, WitnessCalculator};
+use crate::witness::load_input_for_witness;
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
 use algebraic::reader::load_r1cs;
 
-#[cfg(not(feature = "wasm"))]
 use crate::{aggregation, verifier};
 
+use algebraic::witness::witness_calculator::WitnessCalculator;
 use std::path::Path;
 
 // generate a monomial_form SRS, and save it to a file
@@ -133,7 +133,6 @@ pub fn generate_verifier(vk_file: &str, sol: &str) -> Result<()> {
     Result::Ok(())
 }
 
-#[cfg(not(feature = "wasm"))]
 pub fn export_aggregation_verification_key(
     num_proofs_to_check: usize,
     num_inputs: usize,
@@ -149,7 +148,6 @@ pub fn export_aggregation_verification_key(
     Result::Ok(())
 }
 
-#[cfg(not(feature = "wasm"))]
 pub fn aggregation_prove(
     srs_monomial_form: &str,
     old_proof_list: &str,
@@ -178,7 +176,6 @@ pub fn aggregation_prove(
     Result::Ok(())
 }
 
-#[cfg(not(feature = "wasm"))]
 pub fn aggregation_verify(proof: &str, vk: &str) -> Result<()> {
     let vk = reader::load_aggregation_verification_key(vk);
     let proof = reader::load_aggregated_proof(proof);
@@ -190,7 +187,7 @@ pub fn aggregation_verify(proof: &str, vk: &str) -> Result<()> {
 }
 
 // check an aggregated proof is corresponding to the original proofs
-#[cfg(not(feature = "wasm"))]
+
 pub fn aggregation_check(old_proof_list: &str, old_vk: &str, new_proof: &str) -> Result<()> {
     let old_proofs = reader::load_proofs_from_list::<Bn256>(old_proof_list);
     let old_vk = reader::load_verification_key::<Bn256>(old_vk);
@@ -206,7 +203,6 @@ pub fn aggregation_check(old_proof_list: &str, old_vk: &str, new_proof: &str) ->
     Result::Ok(())
 }
 
-#[cfg(not(feature = "wasm"))]
 pub fn generate_aggregation_verifier(
     raw_vk_file: &str,
     aggregation_vk_file: &str,

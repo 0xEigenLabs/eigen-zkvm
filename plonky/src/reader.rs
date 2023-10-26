@@ -14,7 +14,6 @@ use crate::bellman_ce::{
     Field, PrimeField, PrimeFieldRepr, ScalarEngine,
 };
 
-#[cfg(not(feature = "wasm"))]
 use crate::aggregation::{AggregatedProof, AggregationVerificationKey};
 
 /// load proof by filename
@@ -195,14 +194,12 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> 
 }
 
 /// load aggregation proof file by filename
-#[cfg(not(feature = "wasm"))]
 pub fn load_aggregated_proof(filename: &str) -> AggregatedProof {
     AggregatedProof::read(File::open(filename).expect("read aggregated proof file err"))
         .expect("read aggregated proof err")
 }
 
 /// load aggregation verification key file by filename
-#[cfg(not(feature = "wasm"))]
 pub fn load_aggregation_verification_key(filename: &str) -> AggregationVerificationKey<'static> {
     let mut reader = BufReader::with_capacity(
         1 << 24,
