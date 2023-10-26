@@ -179,17 +179,17 @@ fn read_pk_from_file<E: Engine>(file_path: &str, checked: bool) -> Result<Parame
 }
 
 fn read_vk_from_file<P: Parser>(file_path: &str) -> Result<VerifyingKey<P>> {
-    let json_data = std::fs::read_to_string(file_path).expect("Unable to read the JSON file");
+    let json_data = std::fs::read_to_string(file_path)?;
     Ok(to_verification_key::<P>(&json_data))
 }
 
 fn read_public_input_from_file<T: FieldElement>(file_path: &str) -> Result<Vec<T>> {
-    let json_data = std::fs::read_to_string(file_path).expect("Unable to read the JSON file");
+    let json_data = std::fs::read_to_string(file_path)?;
     Ok(to_public_input::<T>(&json_data))
 }
 
 fn read_proof_from_file<P: Parser>(file_path: &str) -> Result<Proof<P>> {
-    let json_data = std::fs::read_to_string(file_path).expect("Unable to read the JSON file");
+    let json_data = std::fs::read_to_string(file_path)?;
     Ok(to_proof::<P>(&json_data))
 }
 
