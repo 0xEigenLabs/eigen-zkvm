@@ -30,7 +30,7 @@ pub struct CompilierOpt {
     no_simplification: bool,
 
     /// prime field, like goldilocks
-    #[arg(short, default_value = "bn128")]
+    #[arg(short, default_value = "BN128")]
     prime: String,
 
     ///Set reduced simplification
@@ -279,7 +279,7 @@ struct JoinZkinExecOpt {
 /// Setup groth16
 #[derive(Parser, Debug)]
 pub struct Groth16SetupOpt {
-    #[arg(short, required = true, default_value = "bn128")]
+    #[arg(short, required = true, default_value = "BN128")]
     curve_type: String,
     #[arg(long = "r1cs", required = true)]
     circuit_file: String,
@@ -292,7 +292,7 @@ pub struct Groth16SetupOpt {
 /// Prove with groth16
 #[derive(Parser, Debug)]
 pub struct Groth16ProveOpt {
-    #[arg(short, required = true, default_value = "bn128")]
+    #[arg(short, required = true, default_value = "BN128")]
     curve_type: String,
     #[arg(long = "r1cs", required = true)]
     circuit_file: String,
@@ -315,7 +315,7 @@ pub struct Groth16ProveOpt {
 /// Verify with groth16
 #[derive(Parser, Debug)]
 pub struct Groth16VerifyOpt {
-    #[arg(short, required = true, default_value = "bn128")]
+    #[arg(short, required = true, default_value = "BN128")]
     curve_type: String,
     #[arg(short, required = true, default_value = "verification_key.json")]
     vk_file: String,
