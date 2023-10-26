@@ -1,5 +1,5 @@
 use crate::bellman_ce::pairing::{bls12_381::Bls12, bn256::Bn256};
-use algebraic::{errors::Result, PrimeField, PrimeFieldRepr};
+use algebraic::{errors::Result, utils::repr_to_big, PrimeField};
 use franklin_crypto::bellman::{
     bls12_381::{
         Fq2 as Fq2_bls12381, G1Affine as G1Affine_bls12381, G2Affine as G2Affine_bls12381,
@@ -61,17 +61,17 @@ pub struct ProofFile {
 }
 
 pub trait Parser: franklin_crypto::bellman::pairing::Engine {
-    fn parse_g1(e: &Self::G1Affine) -> (String, String);
-    fn parse_g2(e: &Self::G2Affine) -> (String, String, String, String);
-    fn parse_g1_json(e: &Self::G1Affine) -> G1 {
-        let parsed = Self::parse_g1(e);
+    fn parse_g1(e: &Self::G1Affine, to_hex: bool) -> (String, String);
+    fn parse_g2(e: &Self::G2Affine, to_hex: bool) -> (String, String, String, String);
+    fn parse_g1_json(e: &Self::G1Affine, to_hex: bool) -> G1 {
+        let parsed = Self::parse_g1(e, to_hex);
         G1 {
             x: parsed.0,
             y: parsed.1,
         }
     }
-    fn parse_g2_json(e: &Self::G2Affine) -> G2 {
-        let parsed = Self::parse_g2(e);
+    fn parse_g2_json(e: &Self::G2Affine, to_hex: bool) -> G2 {
+        let parsed = Self::parse_g2(e, to_hex);
         G2 {
             x: (parsed.0, parsed.1).into(),
             y: (parsed.2, parsed.3).into(),
@@ -81,12 +81,13 @@ pub trait Parser: franklin_crypto::bellman::pairing::Engine {
     fn to_g2(x0: &str, x1: &str, y0: &str, y1: &str) -> Self::G2Affine;
 }
 
-pub fn render_scalar_to_hex<F: PrimeField>(el: &F) -> String {
-    let mut buff = vec![];
+pub fn render_scalar_to_str<F: PrimeField>(el: &F, to_hex: bool) -> String {
     let repr = el.into_repr();
-    repr.write_be(&mut buff).unwrap();
-
-    format!("0x{}", hex::encode(buff))
+    if to_hex {
+        repr.to_string()
+    } else {
+        repr_to_big(repr)
+    }
 }
 
 pub fn render_str_to_scalar<F: PrimeField>(value: &str) -> F {
@@ -108,18 +109,21 @@ pub fn to_public_input<T: PrimeField>(s: &str) -> Vec<T> {
 }
 
 impl Parser for Bn256 {
-    fn parse_g1(e: &Self::G1Affine) -> (String, String) {
-        let (x, y) = e.into_xy_unchecked();
-        (render_scalar_to_hex(&x), render_scalar_to_hex(&y))
-    }
-
-    fn parse_g2(e: &Self::G2Affine) -> (String, String, String, String) {
+    fn parse_g1(e: &Self::G1Affine, to_hex: bool) -> (String, String) {
         let (x, y) = e.into_xy_unchecked();
         (
-            render_scalar_to_hex(&x.c0),
-            render_scalar_to_hex(&x.c1),
-            render_scalar_to_hex(&y.c0),
-            render_scalar_to_hex(&y.c1),
+            render_scalar_to_str(&x, to_hex),
+            render_scalar_to_str(&y, to_hex),
+        )
+    }
+
+    fn parse_g2(e: &Self::G2Affine, to_hex: bool) -> (String, String, String, String) {
+        let (x, y) = e.into_xy_unchecked();
+        (
+            render_scalar_to_str(&x.c0, to_hex),
+            render_scalar_to_str(&x.c1, to_hex),
+            render_scalar_to_str(&y.c0, to_hex),
+            render_scalar_to_str(&y.c1, to_hex),
         )
     }
 
@@ -141,18 +145,21 @@ impl Parser for Bn256 {
 }
 
 impl Parser for Bls12 {
-    fn parse_g1(e: &Self::G1Affine) -> (String, String) {
-        let (x, y) = e.into_xy_unchecked();
-        (render_scalar_to_hex(&x), render_scalar_to_hex(&y))
-    }
-
-    fn parse_g2(e: &Self::G2Affine) -> (String, String, String, String) {
+    fn parse_g1(e: &Self::G1Affine, to_hex: bool) -> (String, String) {
         let (x, y) = e.into_xy_unchecked();
         (
-            render_scalar_to_hex(&x.c0),
-            render_scalar_to_hex(&x.c1),
-            render_scalar_to_hex(&y.c0),
-            render_scalar_to_hex(&y.c1),
+            render_scalar_to_str(&x, to_hex),
+            render_scalar_to_str(&y, to_hex),
+        )
+    }
+
+    fn parse_g2(e: &Self::G2Affine, to_hex: bool) -> (String, String, String, String) {
+        let (x, y) = e.into_xy_unchecked();
+        (
+            render_scalar_to_str(&x.c0, to_hex),
+            render_scalar_to_str(&x.c1, to_hex),
+            render_scalar_to_str(&y.c0, to_hex),
+            render_scalar_to_str(&y.c1, to_hex),
         )
     }
 
@@ -173,27 +180,35 @@ impl Parser for Bls12 {
     }
 }
 
-pub fn serialize_vk<P: Parser>(vk: &VerifyingKey<P>, curve_type: &str) -> Result<String> {
+pub fn serialize_vk<P: Parser>(
+    vk: &VerifyingKey<P>,
+    curve_type: &str,
+    to_hex: bool,
+) -> Result<String> {
     let verifying_key_file = VerifyingKeyFile {
         protocol: "groth16".to_string(),
         curve: curve_type.to_string(),
-        alpha_g1: P::parse_g1_json(&vk.alpha_g1),
-        beta_g1: P::parse_g1_json(&vk.beta_g1),
-        beta_g2: P::parse_g2_json(&vk.beta_g2),
-        gamma_g2: P::parse_g2_json(&vk.gamma_g2),
-        delta_g1: P::parse_g1_json(&vk.delta_g1),
-        delta_g2: P::parse_g2_json(&vk.delta_g2),
-        ic: vk.ic.iter().map(P::parse_g1_json).collect::<Vec<_>>(),
+        alpha_g1: P::parse_g1_json(&vk.alpha_g1, to_hex),
+        beta_g1: P::parse_g1_json(&vk.beta_g1, to_hex),
+        beta_g2: P::parse_g2_json(&vk.beta_g2, to_hex),
+        gamma_g2: P::parse_g2_json(&vk.gamma_g2, to_hex),
+        delta_g1: P::parse_g1_json(&vk.delta_g1, to_hex),
+        delta_g2: P::parse_g2_json(&vk.delta_g2, to_hex),
+        ic: vk
+            .ic
+            .iter()
+            .map(|e| P::parse_g1_json(e, to_hex))
+            .collect::<Vec<_>>(),
     };
 
     Ok(to_string(&verifying_key_file)?)
 }
 
-pub fn serialize_proof<P: Parser>(p: &Proof<P>, curve_type: &str) -> Result<String> {
+pub fn serialize_proof<P: Parser>(p: &Proof<P>, curve_type: &str, to_hex: bool) -> Result<String> {
     let proof_file = ProofFile {
-        a: P::parse_g1_json(&p.a),
-        b: P::parse_g2_json(&p.b),
-        c: P::parse_g1_json(&p.c),
+        a: P::parse_g1_json(&p.a, to_hex),
+        b: P::parse_g2_json(&p.b, to_hex),
+        c: P::parse_g1_json(&p.c, to_hex),
         protocol: "groth16".to_string(),
         curve: curve_type.to_string(),
     };
@@ -246,7 +261,7 @@ mod tests {
             std::fs::File::open("./test-vectors/verification_key.bin").unwrap(),
         );
         let vk_from_bin = VerifyingKey::<Bn256>::read(&mut reader).unwrap();
-        let result = serialize_vk(&vk_from_bin, "bn128").unwrap();
+        let result = serialize_vk(&vk_from_bin, "bn128", false).unwrap();
         std::fs::write("./test-vectors/verification_key.json", result)
             .expect("Unable to write data to file");
 
@@ -266,7 +281,7 @@ mod tests {
             std::fs::File::open("./test-vectors/verification_key_bls12381.bin").unwrap(),
         );
         let vk_from_bin = VerifyingKey::<Bls12>::read(&mut reader).unwrap();
-        let result = serialize_vk(&vk_from_bin, "bls12381").unwrap();
+        let result = serialize_vk(&vk_from_bin, "bls12381", false).unwrap();
         std::fs::write("./test-vectors/verification_key_bls12381.json", result)
             .expect("Unable to write data to file");
         let json_data = std::fs::read_to_string("./test-vectors/verification_key_bls12381.json")
@@ -285,7 +300,7 @@ mod tests {
             std::fs::File::open("./test-vectors/proof.bin").unwrap(),
         );
         let proof_from_bin = Proof::<Bn256>::read(&mut reader).unwrap();
-        let result = serialize_proof(&proof_from_bin, "bn128").unwrap();
+        let result = serialize_proof(&proof_from_bin, "bn128", false).unwrap();
         std::fs::write("./test-vectors/proof.json", result).expect("Unable to write data to file");
 
         let json_data = std::fs::read_to_string("./test-vectors/proof.json")

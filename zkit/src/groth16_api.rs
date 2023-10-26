@@ -77,7 +77,7 @@ pub fn groth16_prove(
                 .collect::<Vec<_>>();
             let circuit = create_circuit_from_file::<Bn256>(circuit_file, Some(w));
             let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
-            let proof_json = serialize_proof(&proof, curve_type)?;
+            let proof_json = serialize_proof(&proof, curve_type, false)?;
             std::fs::write(proof_file, proof_json)?;
             let input_json = circuit.get_public_inputs_json();
             std::fs::write(public_input_file, input_json)?;
@@ -96,7 +96,7 @@ pub fn groth16_prove(
                 .collect::<Vec<_>>();
             let circuit = create_circuit_from_file::<Bls12>(circuit_file, Some(w));
             let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
-            let proof_json = serialize_proof(&proof, curve_type)?;
+            let proof_json = serialize_proof(&proof, curve_type, false)?;
             std::fs::write(proof_file, proof_json)?;
             let input_json = circuit.get_public_inputs_json();
             std::fs::write(public_input_file, input_json)?;
@@ -198,7 +198,7 @@ fn write_pk_vk_to_files<P: Parser>(
 ) -> Result<()> {
     let writer = std::fs::File::create(pk_file)?;
     pk.write(writer)?;
-    let vk_json = serialize_vk(&vk, curve_type)?;
+    let vk_json = serialize_vk(&vk, curve_type, false)?;
     std::fs::write(vk_file, vk_json)?;
     Ok(())
 }
