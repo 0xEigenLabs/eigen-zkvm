@@ -6,10 +6,9 @@ export NODE_OPTIONS="--max-old-space-size=163840"
 CUR_DIR=$(cd $(dirname $0);pwd)
 snark_type=${1-groth16}
 first_run=${2-false}
-#bls12381
-CURVE=${3-bn128}
+CURVE=${3-BN128}
 POWER=22
-if [ $CURVE = "bls12381" ]; then
+if [ $CURVE = "BLS12381" ]; then
     POWER=25
 fi
 BIG_POWER=28
@@ -34,9 +33,9 @@ ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 
 if [ $first_run = "true" ]; then 
     echo "compile circom and generate wasm and r1cs"
-    if [ $CURVE = "bn128" ]; then
+    if [ $CURVE = "BN128" ]; then
         $ZKIT compile -i $SNARK_CIRCOM -p $CURVE  -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
-    elif [ $CURVE = "bls12381" ]; then
+    elif [ $CURVE = "BLS12381" ]; then
         $ZKIT compile -i $SNARK_CIRCOM -p $CURVE -l "../stark-circuits/circuits" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
     fi
     # cp $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm /tmp/aggregation/circuits.wasm
@@ -64,7 +63,7 @@ if [ $snark_type = "groth16" ]; then
         $ZKIT  groth16_verify -c $CURVE -v $WORK_DIR/verification_key.json --public-input $WORK_DIR/public_input.json --proof $WORK_DIR/proof.json
 
         # TODO: add g16 solidity verifier
-        #if [ $CURVE = "bn128" ]; then
+        #if [ $CURVE = "BN128" ]; then
         #    echo "5. generate verifier contract"
         #    $SNARKJS zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
 
@@ -74,7 +73,7 @@ if [ $snark_type = "groth16" ]; then
     fi
 
 else 
-    if [ $CURVE != "bn128" ]; then
+    if [ $CURVE != "BN128" ]; then
         echo "Not support ${CURVE}"
         exit -1
     fi

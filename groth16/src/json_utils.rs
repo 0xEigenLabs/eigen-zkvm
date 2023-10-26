@@ -261,7 +261,7 @@ mod tests {
             std::fs::File::open("./test-vectors/verification_key.bin").unwrap(),
         );
         let vk_from_bin = VerifyingKey::<Bn256>::read(&mut reader).unwrap();
-        let result = serialize_vk(&vk_from_bin, "bn128", false).unwrap();
+        let result = serialize_vk(&vk_from_bin, "BN128", false).unwrap();
         std::fs::write("./test-vectors/verification_key.json", result)
             .expect("Unable to write data to file");
 
@@ -281,7 +281,7 @@ mod tests {
             std::fs::File::open("./test-vectors/verification_key_bls12381.bin").unwrap(),
         );
         let vk_from_bin = VerifyingKey::<Bls12>::read(&mut reader).unwrap();
-        let result = serialize_vk(&vk_from_bin, "bls12381", false).unwrap();
+        let result = serialize_vk(&vk_from_bin, "BLS12381", false).unwrap();
         std::fs::write("./test-vectors/verification_key_bls12381.json", result)
             .expect("Unable to write data to file");
         let json_data = std::fs::read_to_string("./test-vectors/verification_key_bls12381.json")
@@ -300,7 +300,7 @@ mod tests {
             std::fs::File::open("./test-vectors/proof.bin").unwrap(),
         );
         let proof_from_bin = Proof::<Bn256>::read(&mut reader).unwrap();
-        let result = serialize_proof(&proof_from_bin, "bn128", false).unwrap();
+        let result = serialize_proof(&proof_from_bin, "BN128", false).unwrap();
         std::fs::write("./test-vectors/proof.json", result).expect("Unable to write data to file");
 
         let json_data = std::fs::read_to_string("./test-vectors/proof.json")
