@@ -40,7 +40,7 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
 ../target/release/eigen-zkit compile -p goldilocks -i $WORKSPACE/circuits/$C12_VERIFIER.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/$TASK_NO
 
 # generate the pil files and  const constant polynomial files
-# input files :  $C12_VERIFIER.r1cs_file
+# input files :  $C12_VERIFIER.r1cs
 # output files :  $C12_VERIFIER.exec, $C12_VERIFIER.const  $C12_VERIFIER.pil
 ../target/release/eigen-zkit compressor12_setup \
     --r $WORKSPACE/$C12_VERIFIER.r1cs \
