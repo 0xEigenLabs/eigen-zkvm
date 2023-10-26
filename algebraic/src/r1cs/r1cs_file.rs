@@ -115,7 +115,7 @@ impl<E: ScalarEngine> R1CSFile<E> {
         ))?;
         let constraints = read_constraints::<&mut R, E>(
             &mut reader,
-            *section_sizes.get(&CONSTRAINT_TYPE).unwrap(),
+            // *section_sizes.get(&CONSTRAINT_TYPE).unwrap(),
             &header,
         )?;
 
@@ -134,8 +134,8 @@ impl<E: ScalarEngine> R1CSFile<E> {
             ))?;
             custom_gates = CustomGates::read_custom_gates_list(
                 &mut reader,
-                *section_sizes.get(&CUSTOM_GATES_LIST).unwrap(),
-                &header,
+                // *section_sizes.get(&CUSTOM_GATES_LIST).unwrap(),
+                // &header,
             )?;
         }
 
@@ -147,7 +147,7 @@ impl<E: ScalarEngine> R1CSFile<E> {
             custom_gates_uses = CustomGatesUses::read_custom_gates_uses_list(
                 &mut reader,
                 *section_sizes.get(&CUSTOM_GATES_USE).unwrap(),
-                &header,
+                // &header,
             )?;
         }
 

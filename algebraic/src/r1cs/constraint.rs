@@ -10,10 +10,7 @@ pub type Constraint<E> = (
     Vec<(usize, <E as ScalarEngine>::Fr)>,
 );
 
-pub fn read_constraint_vec<R: Read, E: ScalarEngine>(
-    mut reader: R,
-    header: &Header,
-) -> Result<Vec<(usize, E::Fr)>> {
+pub fn read_constraint_vec<R: Read, E: ScalarEngine>(mut reader: R) -> Result<Vec<(usize, E::Fr)>> {
     let n_vec = reader.read_u32::<LittleEndian>()? as usize;
     let mut vec = Vec::with_capacity(n_vec);
     for _ in 0..n_vec {
@@ -29,16 +26,17 @@ pub fn read_constraint_vec<R: Read, E: ScalarEngine>(
 
 pub fn read_constraints<R: Read, E: ScalarEngine>(
     mut reader: R,
-    size: u64,
+    // size: u64,
     header: &Header,
 ) -> Result<Vec<Constraint<E>>> {
     // todo check section size
-    let mut vec = Vec::with_capacity(header.n_constraints as usize);
-    for _ in 0..header.n_constraints {
+    let len = header.n_constraints as usize;
+    let mut vec = Vec::with_capacity(len);
+    for _ in 0..len {
         vec.push((
-            read_constraint_vec::<&mut R, E>(&mut reader, header)?,
-            read_constraint_vec::<&mut R, E>(&mut reader, header)?,
-            read_constraint_vec::<&mut R, E>(&mut reader, header)?,
+            read_constraint_vec::<&mut R, E>(&mut reader)?,
+            read_constraint_vec::<&mut R, E>(&mut reader)?,
+            read_constraint_vec::<&mut R, E>(&mut reader)?,
         ));
     }
     Ok(vec)

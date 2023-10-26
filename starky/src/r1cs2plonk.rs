@@ -252,6 +252,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
 #[cfg(test)]
 mod test {
     use super::*;
+    use algebraic::r1cs::R1CS;
     use std::fs::File;
     use std::io::Write;
     use std::path::Path;
@@ -271,7 +272,7 @@ mod test {
         let CIRCUIT = "fib.verifier";
 
         let r1cs_file = format!("/tmp/{CIRCUIT}.r1cs");
-        let r1cs = load_r1cs::<GL>(&r1cs_file);
+        let r1cs = R1CS::<GL>::load_r1cs(&r1cs_file);
 
         let (plonk_constrains, plonk_additions) = r1cs2plonk(&r1cs);
 

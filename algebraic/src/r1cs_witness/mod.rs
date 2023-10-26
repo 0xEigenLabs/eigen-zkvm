@@ -9,7 +9,6 @@ use num_bigint::BigInt;
 use num_traits::{One, Zero};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::hash::Hasher;
 use std::str::FromStr;
 
 pub fn load_input_for_witness(input_file: &str) -> HashMap<String, Vec<BigInt>> {

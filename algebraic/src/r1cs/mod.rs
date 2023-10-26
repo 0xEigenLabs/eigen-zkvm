@@ -4,17 +4,14 @@ pub mod header;
 pub mod r1cs_file;
 pub(crate) mod utils;
 
-use crate::bellman_ce::{
-    pairing::Engine, Circuit, ConstraintSystem, Index, LinearCombination, PrimeField, ScalarEngine,
-    SynthesisError, Variable,
-};
+use crate::bellman_ce::{PrimeField, ScalarEngine};
 
 use crate::r1cs::constraint::Constraint;
 use crate::r1cs::custom_gate::{CustomGates, CustomGatesUses};
 use crate::r1cs::r1cs_file::R1CSFile;
 use itertools::Itertools;
 use std::collections::BTreeMap;
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::{BufReader, Read, Seek};
 use std::str;
 

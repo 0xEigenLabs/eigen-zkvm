@@ -3,8 +3,6 @@
 extern crate rand;
 
 use itertools::Itertools;
-use std::collections::BTreeMap;
-use std::str;
 
 use crate::bellman_ce::{
     pairing::Engine, Circuit, ConstraintSystem, Index, LinearCombination, PrimeField, ScalarEngine,

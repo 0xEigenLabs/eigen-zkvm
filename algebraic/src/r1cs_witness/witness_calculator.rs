@@ -2,12 +2,10 @@
 
 use crate::bellman_ce::{PrimeField, ScalarEngine};
 use crate::errors::{EigenError, Result};
-use num::ToPrimitive;
 use num_bigint::BigInt;
 use num_bigint::BigUint;
 use num_bigint::Sign;
-use num_traits::{One, Zero};
-use serde_json::Value;
+use num_traits::Zero;
 use std::str::FromStr;
 use wasmer::{imports, Function, Instance, Memory, MemoryType, Module, Store};
 
@@ -325,6 +323,7 @@ mod runtime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::Value;
     use std::{collections::HashMap, path::PathBuf};
 
     struct TestCase<'a> {
