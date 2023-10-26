@@ -96,20 +96,17 @@ pub fn maybe_load_key_lagrange_form<E: Engine>(
 
 /// load r1cs_witness file by filename with autodetect encoding (bin or json).
 pub fn load_witness_from_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
-    if filename.ends_with("json") {
-        load_witness_from_json_file::<E>(filename)
-    } else {
-        load_witness_from_bin_file::<E>(filename)
-    }
-}
-
-/// load r1cs_witness from json file by filename
-pub fn load_witness_from_json_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
-    let reader = OpenOptions::new()
+    let file = OpenOptions::new()
         .read(true)
         .open(filename)
         .expect("unable to open.");
-    load_witness_from_json::<E, BufReader<File>>(BufReader::new(reader))
+    let render = BufReader::new(file);
+    if filename.ends_with("json") {
+        load_witness_from_json::<E, BufReader<File>>(render)
+    } else {
+        load_witness_from_bin_reader::<E, BufReader<File>>(render)
+            .expect("read r1cs_witness failed")
+    }
 }
 
 /// load r1cs_witness from json by a reader
@@ -119,16 +116,6 @@ fn load_witness_from_json<E: ScalarEngine, R: Read>(reader: R) -> Vec<E::Fr> {
         .into_iter()
         .map(|x| E::Fr::from_str(&x).unwrap())
         .collect::<Vec<E::Fr>>()
-}
-
-/// load r1cs_witness from bin file by filename
-pub fn load_witness_from_bin_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
-    let reader = OpenOptions::new()
-        .read(true)
-        .open(filename)
-        .expect("unable to open.");
-    load_witness_from_bin_reader::<E, BufReader<File>>(BufReader::new(reader))
-        .expect("read r1cs_witness failed")
 }
 
 /// load r1cs_witness from u8 array

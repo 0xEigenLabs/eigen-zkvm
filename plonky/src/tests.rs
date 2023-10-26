@@ -5,10 +5,7 @@ use algebraic::r1cs::R1CS;
 use std::fs;
 
 const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
-const WITNESS_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../test/single/r1cs_witness.wtns"
-);
+const WITNESS_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/witness.wtns");
 const VK_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/vk.bin");
 const PROOF_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/proof.bin");
 const MONOMIAL_KEY_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../keys/setup_2^10.key");

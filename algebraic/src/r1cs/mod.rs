@@ -41,21 +41,40 @@ pub struct CircuitJson {
 impl<E: ScalarEngine> R1CS<E> {
     /// load r1cs file by filename with autodetect encoding (bin or json)
     pub fn load_r1cs(filename: &str) -> R1CS<E> {
+        let file = OpenOptions::new()
+            .read(true)
+            .open(filename)
+            .unwrap_or_else(|_| panic!("unable to open {}.", filename));
+
+        let render = BufReader::new(file);
+
         if filename.ends_with("json") {
-            Self::load_r1cs_from_json_file(filename)
+            Self::load_r1cs_from_json(render)
         } else {
-            let (r1cs, _wire_mapping) = Self::load_r1cs_from_bin_file(filename);
+            let (r1cs, _wire_mapping) = Self::load_r1cs_from_bin(render);
+
             r1cs
         }
     }
 
-    /// load r1cs from json file by filename
-    fn load_r1cs_from_json_file(filename: &str) -> R1CS<E> {
-        let reader = OpenOptions::new()
-            .read(true)
-            .open(filename)
-            .expect("unable to open.");
-        Self::load_r1cs_from_json(BufReader::new(reader))
+    /// load r1cs from bin by a reader
+    fn load_r1cs_from_bin<R: Read + Seek>(reader: R) -> (R1CS<E>, Vec<usize>) {
+        let file = R1CSFile::from_reader::<R>(reader).expect("unable to read.");
+        let num_inputs = (1 + file.header.n_pub_in + file.header.n_pub_out) as usize;
+        let num_variables = file.header.n_wires as usize;
+        let num_aux = num_variables - num_inputs;
+        (
+            R1CS {
+                num_aux,
+                num_inputs,
+                num_variables,
+                num_outputs: file.header.n_pub_out as usize,
+                constraints: file.constraints,
+                custom_gates: file.custom_gates,
+                custom_gates_uses: file.custom_gates_uses,
+            },
+            file.wire_mapping.iter().map(|e| *e as usize).collect_vec(),
+        )
     }
 
     /// load r1cs from json by a reader
@@ -92,34 +111,5 @@ impl<E: ScalarEngine> R1CS<E> {
             custom_gates: vec![],
             custom_gates_uses: vec![],
         }
-    }
-
-    /// load r1cs from bin file by filename
-    fn load_r1cs_from_bin_file(filename: &str) -> (R1CS<E>, Vec<usize>) {
-        let reader = OpenOptions::new()
-            .read(true)
-            .open(filename)
-            .unwrap_or_else(|_| panic!("unable to open {}.", filename));
-        Self::load_r1cs_from_bin(BufReader::new(reader))
-    }
-
-    /// load r1cs from bin by a reader
-    pub fn load_r1cs_from_bin<R: Read + Seek>(reader: R) -> (R1CS<E>, Vec<usize>) {
-        let file = R1CSFile::from_reader::<R>(reader).expect("unable to read.");
-        let num_inputs = (1 + file.header.n_pub_in + file.header.n_pub_out) as usize;
-        let num_variables = file.header.n_wires as usize;
-        let num_aux = num_variables - num_inputs;
-        (
-            R1CS {
-                num_aux,
-                num_inputs,
-                num_variables,
-                num_outputs: file.header.n_pub_out as usize,
-                constraints: file.constraints,
-                custom_gates: file.custom_gates,
-                custom_gates_uses: file.custom_gates_uses,
-            },
-            file.wire_mapping.iter().map(|e| *e as usize).collect_vec(),
-        )
     }
 }
