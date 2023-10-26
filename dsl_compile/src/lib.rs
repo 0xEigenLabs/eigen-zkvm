@@ -13,7 +13,7 @@ mod type_analysis_user;
 /// Align with https://github.com/iden3/circom/blob/master/circom/Cargo.toml#L3
 const CIRCOM_VERSION: &str = "2.1.2";
 
-/// Compile circom circuits to r1cs, and generate r1cs_witness
+/// Compile circom circuits to r1cs, and generate circom_witness
 pub fn circom_compiler(
     input: String,
     prime: String,

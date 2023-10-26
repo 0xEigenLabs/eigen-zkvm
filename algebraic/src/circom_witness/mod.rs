@@ -1,3 +1,13 @@
+mod memory;
+
+mod utils;
+mod wasm;
+
+use self::utils::flat_array;
+use num_traits::{One, Zero};
+use serde_json::Value;
+use std::collections::HashMap;
+
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/witness_calculator.rs
 
 use crate::bellman_ce::{PrimeField, ScalarEngine};
@@ -5,7 +15,6 @@ use crate::errors::{EigenError, Result};
 use num_bigint::BigInt;
 use num_bigint::BigUint;
 use num_bigint::Sign;
-use num_traits::Zero;
 use std::str::FromStr;
 use wasmer::{imports, Function, Instance, Memory, MemoryType, Module, Store};
 
@@ -13,10 +22,10 @@ use std::fs::OpenOptions;
 
 use std::io::{BufWriter, Write};
 
-use crate::r1cs_witness::{
+use crate::circom_witness::{
     memory::SafeMemory,
     utils::*,
-    wasm_circom::{Circom, CircomBase, Wasm},
+    wasm::{Circom, CircomBase, Wasm},
 };
 use byteorder::{LittleEndian, WriteBytesExt};
 
@@ -90,6 +99,36 @@ impl WitnessCalculator {
         }
 
         new_circom(instance, memory, version)
+    }
+
+    pub fn load_input_for_witness(input_file: &str) -> HashMap<String, Vec<BigInt>> {
+        let inputs_str = std::fs::read_to_string(input_file).unwrap();
+        let inputs: HashMap<String, Value> = serde_json::from_str(&inputs_str).unwrap();
+
+        inputs
+            .iter()
+            .map(|(key, value)| {
+                let res = match value {
+                    Value::String(inner) => {
+                        vec![BigInt::from_str(inner).unwrap()]
+                    }
+                    Value::Bool(inner) => {
+                        if *inner {
+                            vec![BigInt::one()]
+                        } else {
+                            vec![BigInt::zero()]
+                        }
+                    }
+                    Value::Number(inner) => {
+                        vec![BigInt::from_str(&inner.to_string()).unwrap()]
+                    }
+                    Value::Array(inner) => flat_array(inner),
+                    _ => panic!("{:?}", value),
+                };
+
+                (key.clone(), res)
+            })
+            .collect::<HashMap<_, _>>()
     }
 
     pub fn calculate_witness<I: IntoIterator<Item = (String, Vec<BigInt>)>>(
@@ -215,7 +254,7 @@ impl WitnessCalculator {
         }
         writer.write_all(&prime_buf)?;
 
-        // write r1cs_witness size
+        // write circom_witness size
         let wtns_size = wtns.len() as u32 / n32;
         writer.write_u32::<LittleEndian>(wtns_size)?;
         // sec type
@@ -248,7 +287,7 @@ impl WitnessCalculator {
             .into_iter()
             .map(|w| {
                 let w = if w.sign() == num_bigint::Sign::Minus {
-                    // Need to negate the r1cs_witness element if negative
+                    // Need to negate the circom_witness element if negative
                     modulus.clone() - w.abs().to_biguint().unwrap()
                 } else {
                     w.to_biguint().unwrap()

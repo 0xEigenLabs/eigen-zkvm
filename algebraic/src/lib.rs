@@ -12,10 +12,10 @@ extern crate num_traits;
 extern crate rand;
 
 pub mod circom_circuit;
+pub mod circom_witness;
 pub mod errors;
 pub mod field_gl;
 pub mod r1cs;
-pub mod r1cs_witness;
 
 pub mod utils;
 

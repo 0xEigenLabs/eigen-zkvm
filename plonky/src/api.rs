@@ -1,12 +1,11 @@
 use crate::bellman_ce::pairing::bn256::Bn256;
 use crate::errors::{EigenError, Result};
-use crate::r1cs_witness::load_input_for_witness;
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
 
 use crate::{aggregation, verifier};
 
+use algebraic::circom_witness::WitnessCalculator;
 use algebraic::r1cs::R1CS;
-use algebraic::r1cs_witness::witness_calculator::WitnessCalculator;
 use std::path::Path;
 
 // generate a monomial_form SRS, and save it to a file
@@ -88,7 +87,7 @@ pub fn calculate_witness(wasm_file: &str, input_json: &str, output: &str) -> Res
         "30644E72E131A029B85045B68181585D2833E84879B9709143E1F593F0000001".to_lowercase()
     );
 
-    let inputs = load_input_for_witness(input_json);
+    let inputs = WitnessCalculator::load_input_for_witness(input_json);
 
     let wtns_buf = wtns.calculate_witness_bin(inputs, false)?;
     wtns.save_witness_to_bin_file::<Bn256>(output, &wtns_buf)

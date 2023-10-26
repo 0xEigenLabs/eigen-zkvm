@@ -52,9 +52,9 @@ mod tests {
     use crate::bellman_ce::bls12_381::Fr as Fr_bls12381;
     use crate::bellman_ce::bn256::{Bn256, Fr};
     use algebraic::circom_circuit::CircomCircuit;
+    use algebraic::circom_witness::WitnessCalculator;
+
     use algebraic::r1cs::R1CS;
-    use algebraic::r1cs_witness::load_input_for_witness;
-    use algebraic::r1cs_witness::witness_calculator::WitnessCalculator;
 
     const INPUT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.input.json");
     const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
@@ -86,7 +86,7 @@ mod tests {
         //2. Prove
         let t1 = std::time::Instant::now();
         let mut wtns = WitnessCalculator::new(WASM_FILE).unwrap();
-        let inputs = load_input_for_witness(INPUT_FILE);
+        let inputs = WitnessCalculator::load_input_for_witness(INPUT_FILE);
         let w = wtns.calculate_witness(inputs, false).unwrap();
         let w = w
             .iter()
@@ -141,7 +141,7 @@ mod tests {
         //2. Prove
         let t1 = std::time::Instant::now();
         let mut wtns = WitnessCalculator::new(WASM_FILE_BLS12).unwrap();
-        let inputs = load_input_for_witness(INPUT_FILE);
+        let inputs = WitnessCalculator::load_input_for_witness(INPUT_FILE);
         let w = wtns.calculate_witness(inputs, false).unwrap();
         let w = w
             .iter()

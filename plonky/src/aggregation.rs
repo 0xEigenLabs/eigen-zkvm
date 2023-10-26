@@ -295,7 +295,7 @@ pub fn prove(
 
         let leaf_values = vk
             .into_witness_for_params(&rns_params)
-            .expect("must transform into limbed r1cs_witness");
+            .expect("must transform into limbed circom_witness");
 
         let values_per_leaf = leaf_values.len();
         let intra_leaf_indexes_to_query: Vec<_> =
