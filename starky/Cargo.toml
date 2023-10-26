@@ -48,3 +48,15 @@ ark-std = {version = "0.4.0", features = ["print-trace"]}
 [[bench]]
 name = "merklehash"
 harness = false
+
+[[bench]]
+name = "fft"
+harness = false
+
+[[bench]]
+name = "batch_inverse"
+harness = false
+
+[[bench]]
+name = "poseidon"
+harness = false
