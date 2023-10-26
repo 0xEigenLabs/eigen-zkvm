@@ -16,7 +16,7 @@ pub mod linearhash;
 pub mod linearhash_bls12381;
 pub mod linearhash_bn128;
 
-mod field_bn128;
+pub mod field_bn128;
 mod poseidon_bn128;
 mod poseidon_bn128_constants;
 mod poseidon_bn128_constants_opt;
@@ -42,7 +42,7 @@ mod constant;
 mod expressionops;
 pub mod f3g;
 pub mod f5g;
-mod fft;
+pub mod fft;
 pub mod fft_p;
 mod fft_worker;
 mod fri;
@@ -72,6 +72,8 @@ pub mod prove;
 pub mod serializer;
 pub(crate) mod utils;
 pub mod zkin_join;
+
+pub mod dev;
 
 #[macro_use]
 extern crate serde_json;
