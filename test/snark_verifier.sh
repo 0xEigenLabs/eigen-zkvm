@@ -53,15 +53,15 @@ if [ $snark_type = "groth16" ]; then
     fi
 
     if [ $first_run = "true" ]; then
-        $ZKIT groth16_setup -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -p $WORK_DIR/g16.zkey -v $WORK_DIR/verification_key.bin
+        $ZKIT groth16_setup -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -p $WORK_DIR/g16.zkey -v $WORK_DIR/verification_key.json
     fi
 
     echo "2. groth16 fullprove"
-    $ZKIT groth16_prove -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -w $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm -p $WORK_DIR/g16.zkey -i $SNARK_INPUT --input $WORK_DIR/public_input.bin --proof $WORK_DIR/proof.bin
+    $ZKIT groth16_prove -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -w $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm -p $WORK_DIR/g16.zkey -i $SNARK_INPUT --public-input $WORK_DIR/public_input.json --proof $WORK_DIR/proof.json
 
     if [ $first_run = "true" ]; then
         echo "4. verify groth16 proof"
-        $ZKIT  groth16_verify -c $CURVE -v $WORK_DIR/verification_key.bin --input $WORK_DIR/public_input.bin --proof $WORK_DIR/proof.bin
+        $ZKIT  groth16_verify -c $CURVE -v $WORK_DIR/verification_key.json --public-input $WORK_DIR/public_input.json --proof $WORK_DIR/proof.json
 
         # TODO: add g16 solidity verifier
         #if [ $CURVE = "bn128" ]; then
