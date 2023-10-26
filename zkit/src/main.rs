@@ -285,7 +285,7 @@ pub struct Groth16SetupOpt {
     circuit_file: String,
     #[arg(short, required = true, default_value = "g16.zkey")]
     pk_file: String,
-    #[arg(short, required = true, default_value = "verification_key.bin")]
+    #[arg(short, required = true, default_value = "verification_key.json")]
     vk_file: String,
 }
 
@@ -302,9 +302,13 @@ pub struct Groth16ProveOpt {
     pk_file: String,
     #[arg(short, required = true)]
     input_file: String,
-    #[arg(long = "input", required = true, default_value = "public_input.bin")]
+    #[arg(
+        long = "public-input",
+        required = true,
+        default_value = "public_input.json"
+    )]
     public_input_file: String,
-    #[arg(long = "proof", required = true, default_value = "proof.bin")]
+    #[arg(long = "proof", required = true, default_value = "proof.json")]
     proof_file: String,
 }
 
@@ -313,11 +317,15 @@ pub struct Groth16ProveOpt {
 pub struct Groth16VerifyOpt {
     #[arg(short, required = true, default_value = "bn128")]
     curve_type: String,
-    #[arg(short, required = true, default_value = "verification_key.bin")]
+    #[arg(short, required = true, default_value = "verification_key.json")]
     vk_file: String,
-    #[arg(long = "input", required = true, default_value = "public_input.bin")]
+    #[arg(
+        long = "public-input",
+        required = true,
+        default_value = "public_input.json"
+    )]
     public_input_file: String,
-    #[arg(long = "proof", required = true, default_value = "proof.bin")]
+    #[arg(long = "proof", required = true, default_value = "proof.json")]
     proof_file: String,
 }
 
@@ -493,9 +501,9 @@ fn main() {
     };
     match exec_result {
         Err(x) => {
-            log::error!("execute error: {}", x);
+            println!("execute error: {}", x);
             std::process::exit(400)
         }
-        _ => log::debug!("time cost: {}", start.elapsed().as_secs_f64()),
+        _ => println!("time cost: {}", start.elapsed().as_secs_f64()),
     };
 }
