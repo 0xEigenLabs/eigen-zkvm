@@ -1,5 +1,5 @@
 use crate::bellman_ce::pairing::{bls12_381::Bls12, bn256::Bn256};
-use algebraic::{PrimeField, PrimeFieldRepr};
+use algebraic::{errors::Result, PrimeField, PrimeFieldRepr};
 use franklin_crypto::bellman::{
     bls12_381::{
         Fq2 as Fq2_bls12381, G1Affine as G1Affine_bls12381, G2Affine as G2Affine_bls12381,
@@ -162,7 +162,7 @@ impl Parser for Bls12 {
     }
 }
 
-pub fn serialize_vk<P: Parser>(vk: &VerifyingKey<P>, curve_type: &str) -> String {
+pub fn serialize_vk<P: Parser>(vk: &VerifyingKey<P>, curve_type: &str) -> Result<String> {
     let verifying_key_file = VerifyingKeyFile {
         protocol: "groth16".to_string(),
         curve: curve_type.to_string(),
@@ -175,10 +175,10 @@ pub fn serialize_vk<P: Parser>(vk: &VerifyingKey<P>, curve_type: &str) -> String
         ic: vk.ic.iter().map(P::parse_g1_json).collect::<Vec<_>>(),
     };
 
-    to_string(&verifying_key_file).unwrap()
+    Ok(to_string(&verifying_key_file)?)
 }
 
-pub fn serialize_proof<P: Parser>(p: &Proof<P>, curve_type: &str) -> String {
+pub fn serialize_proof<P: Parser>(p: &Proof<P>, curve_type: &str) -> Result<String> {
     let proof_file = ProofFile {
         a: P::parse_g1_json(&p.a),
         b: P::parse_g2_json(&p.b),
@@ -187,18 +187,18 @@ pub fn serialize_proof<P: Parser>(p: &Proof<P>, curve_type: &str) -> String {
         curve: curve_type.to_string(),
     };
 
-    to_string(&proof_file).unwrap()
+    Ok(to_string(&proof_file)?)
 }
 
-pub fn serialize_input<T: PrimeField>(inputs: &[T]) -> String {
-    format!(
+pub fn serialize_input<T: PrimeField>(inputs: &[T]) -> Result<String> {
+    Ok(format!(
         "[\"{}\"]",
         inputs
             .iter()
             .map(render_scalar_to_hex)
             .collect::<Vec<_>>()
             .join("\", \""),
-    )
+    ))
 }
 
 pub fn to_verification_key<P: Parser>(s: &str) -> VerifyingKey<P> {
@@ -258,7 +258,7 @@ mod tests {
             std::fs::File::open("./test-vectors/verification_key.bin").unwrap(),
         );
         let vk_from_bin = VerifyingKey::<Bn256>::read(&mut reader).unwrap();
-        let result = serialize_vk(&vk_from_bin, "bn128");
+        let result = serialize_vk(&vk_from_bin, "bn128").unwrap();
         std::fs::write("./test-vectors/verification_key.json", result)
             .expect("Unable to write data to file");
 
@@ -278,7 +278,7 @@ mod tests {
             std::fs::File::open("./test-vectors/verification_key_bls12381.bin").unwrap(),
         );
         let vk_from_bin = VerifyingKey::<Bls12>::read(&mut reader).unwrap();
-        let result = serialize_vk(&vk_from_bin, "bls12381");
+        let result = serialize_vk(&vk_from_bin, "bls12381").unwrap();
         std::fs::write("./test-vectors/verification_key_bls12381.json", result)
             .expect("Unable to write data to file");
         let json_data = std::fs::read_to_string("./test-vectors/verification_key_bls12381.json")
@@ -297,7 +297,7 @@ mod tests {
             std::fs::File::open("./test-vectors/proof.bin").unwrap(),
         );
         let proof_from_bin = Proof::<Bn256>::read(&mut reader).unwrap();
-        let result = serialize_proof(&proof_from_bin, "bn128");
+        let result = serialize_proof(&proof_from_bin, "bn128").unwrap();
         std::fs::write("./test-vectors/proof.json", result).expect("Unable to write data to file");
 
         let json_data = std::fs::read_to_string("./test-vectors/proof.json")
@@ -313,7 +313,7 @@ mod tests {
             std::fs::File::open("./test-vectors/public_input.bin").unwrap(),
         );
         let input_from_bin = read_fr_vec::<Fr, _>(&mut reader).unwrap();
-        let result = serialize_input::<Fr>(&input_from_bin);
+        let result = serialize_input::<Fr>(&input_from_bin).unwrap();
         std::fs::write("./test-vectors/public_input.json", result)
             .expect("Unable to write data to file");
 
