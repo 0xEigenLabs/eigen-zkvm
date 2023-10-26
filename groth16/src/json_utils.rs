@@ -91,7 +91,8 @@ pub fn render_scalar_to_hex<F: PrimeField>(el: &F) -> String {
 
 pub fn render_str_to_scalar<F: PrimeField>(value: &str) -> F {
     let value = match value.starts_with("0x") {
-        true => BigUint::from_str_radix(&value[2..], 16).unwrap()
+        true => BigUint::from_str_radix(&value[2..], 16)
+            .unwrap()
             .to_str_radix(10),
         _ => value.to_string(),
     };
@@ -236,10 +237,7 @@ pub fn to_proof<P: Parser>(s: &str) -> Proof<P> {
 mod tests {
     use super::*;
     use crate::bellman_ce::groth16::{Proof, VerifyingKey};
-    use crate::bellman_ce::pairing::{
-        bls12_381::Bls12,
-        bn256::Bn256,
-    };
+    use crate::bellman_ce::pairing::{bls12_381::Bls12, bn256::Bn256};
 
     #[test]
     fn test_serialize_vk() {
