@@ -2,10 +2,10 @@ use crate::bellman_ce::pairing::bn256::Bn256;
 use crate::errors::{EigenError, Result};
 use crate::r1cs_witness::load_input_for_witness;
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
-use algebraic::r1cs_reader::load_r1cs;
 
 use crate::{aggregation, verifier};
 
+use algebraic::r1cs::R1CS;
 use algebraic::r1cs_witness::witness_calculator::WitnessCalculator;
 use std::path::Path;
 
@@ -27,7 +27,7 @@ pub fn setup(power: u32, srs_monomial_form: &str) -> Result<()> {
 // circuit filename default resolver
 pub fn analyse(circuit_file: &str, output: &str) -> Result<()> {
     let circuit = CircomCircuit::<Bn256> {
-        r1cs: load_r1cs(circuit_file),
+        r1cs: R1CS::load_r1cs(circuit_file),
         witness: None,
         wire_mapping: None,
         aux_offset: plonk::AUX_OFFSET,
@@ -55,7 +55,7 @@ pub fn prove(
     public_json: &str,
 ) -> Result<()> {
     let circuit = CircomCircuit {
-        r1cs: load_r1cs(circuit_file),
+        r1cs: R1CS::load_r1cs(circuit_file),
         witness: Some(reader::load_witness_from_file::<Bn256>(witness)),
         wire_mapping: None,
         aux_offset: plonk::AUX_OFFSET,
@@ -100,7 +100,7 @@ pub fn export_verification_key(
     output_vk: &str,
 ) -> Result<()> {
     let circuit = CircomCircuit {
-        r1cs: load_r1cs(circuit_file),
+        r1cs: R1CS::load_r1cs(circuit_file),
         witness: None,
         wire_mapping: None,
         aux_offset: plonk::AUX_OFFSET,

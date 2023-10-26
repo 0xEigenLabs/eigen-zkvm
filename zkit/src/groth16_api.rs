@@ -1,8 +1,8 @@
+use algebraic::r1cs::R1CS;
 use algebraic::r1cs_witness::witness_calculator::WitnessCalculator;
 use algebraic::{
     circom_circuit::CircomCircuit,
     errors::{EigenError, Result},
-    r1cs_reader::load_r1cs,
     r1cs_witness::load_input_for_witness,
     Field, PrimeField,
 };
@@ -164,7 +164,7 @@ fn create_circuit_from_file<E: Engine>(
     witness: Option<Vec<E::Fr>>,
 ) -> CircomCircuit<E> {
     CircomCircuit {
-        r1cs: load_r1cs(circuit_file),
+        r1cs: R1CS::load_r1cs(circuit_file),
         witness,
         wire_mapping: None,
         aux_offset: 0,

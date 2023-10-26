@@ -1,7 +1,6 @@
 use crate::bellman_ce::bn256::Bn256;
 use crate::circom_circuit::CircomCircuit;
 use crate::{plonk, reader};
-use algebraic::r1cs_reader::load_r1cs;
 use std::fs;
 
 const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");

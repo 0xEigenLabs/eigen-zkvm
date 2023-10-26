@@ -14,24 +14,12 @@ use crate::r1cs::R1CS;
 
 use crate::utils::repr_to_big;
 
-#[derive(Serialize, Deserialize)]
-pub struct CircuitJson {
-    pub constraints: Vec<Vec<BTreeMap<String, String>>>,
-    #[serde(rename = "nPubInputs")]
-    pub num_inputs: usize,
-    #[serde(rename = "nOutputs")]
-    pub num_outputs: usize,
-    #[serde(rename = "nVars")]
-    pub num_variables: usize,
-}
-
 #[derive(Clone, Debug)]
 pub struct CircomCircuit<E: ScalarEngine> {
     pub r1cs: R1CS<E>,
     pub witness: Option<Vec<E::Fr>>,
     pub wire_mapping: Option<Vec<usize>>,
     pub aux_offset: usize,
-    // debug symbols
 }
 
 impl<E: ScalarEngine> CircomCircuit<E> {
