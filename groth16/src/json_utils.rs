@@ -1,7 +1,4 @@
-use crate::bellman_ce::pairing::{
-    bls12_381::{Bls12, Fr as Fr_bls12381},
-    bn256::{Bn256, Fr},
-};
+use crate::bellman_ce::pairing::{bls12_381::Bls12, bn256::Bn256};
 use algebraic::{PrimeField, PrimeFieldRepr};
 use franklin_crypto::bellman::{
     bls12_381::{
@@ -13,26 +10,72 @@ use franklin_crypto::bellman::{
 };
 use num_bigint::BigUint;
 use num_traits::Num;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json::to_string;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct G1 {
+    pub x: String,
+    pub y: String,
+}
 
-pub trait FieldElement: Sized + PrimeField {}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct G2 {
+    pub x: [String; 2],
+    pub y: [String; 2],
+}
 
-impl FieldElement for Fr {}
-impl FieldElement for Fr_bls12381 {}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VerifyingKeyFile {
+    #[serde(rename = "protocol")]
+    pub protocol: String,
+    #[serde(rename = "curve")]
+    pub curve: String,
+    #[serde(rename = "vk_alpha_1")]
+    pub alpha_g1: G1,
+    #[serde(rename = "vk_beta_1")]
+    pub beta_g1: G1,
+    #[serde(rename = "vk_beta_2")]
+    pub beta_g2: G2,
+    #[serde(rename = "vk_gamma_2")]
+    pub gamma_g2: G2,
+    #[serde(rename = "vk_delta_1")]
+    pub delta_g1: G1,
+    #[serde(rename = "vk_delta_2")]
+    pub delta_g2: G2,
+    #[serde(rename = "IC")]
+    pub ic: Vec<G1>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProofFile {
+    #[serde(rename = "pi_a")]
+    pub a: G1,
+    #[serde(rename = "pi_b")]
+    pub b: G2,
+    #[serde(rename = "pi_c")]
+    pub c: G1,
+    #[serde(rename = "protocol")]
+    pub protocol: String,
+    #[serde(rename = "curve")]
+    pub curve: String,
+}
 
 pub trait Parser: franklin_crypto::bellman::pairing::Engine {
     fn parse_g1(e: &Self::G1Affine) -> (String, String);
     fn parse_g2(e: &Self::G2Affine) -> (String, String, String, String);
-    fn parse_g1_json(e: &Self::G1Affine) -> String {
+    fn parse_g1_json(e: &Self::G1Affine) -> G1 {
         let parsed = Self::parse_g1(e);
-        format!("[\"{}\", \"{}\"]", parsed.0, parsed.1)
+        G1 {
+            x: parsed.0,
+            y: parsed.1,
+        }
     }
-    fn parse_g2_json(e: &Self::G2Affine) -> String {
+    fn parse_g2_json(e: &Self::G2Affine) -> G2 {
         let parsed = Self::parse_g2(e);
-        format!(
-            "[[\"{}\", \"{}\"], [\"{}\", \"{}\"]]",
-            parsed.0, parsed.1, parsed.2, parsed.3,
-        )
+        G2 {
+            x: (parsed.0, parsed.1).into(),
+            y: (parsed.2, parsed.3).into(),
+        }
     }
     fn to_g1(x: &str, y: &str) -> Self::G1Affine;
     fn to_g2(x0: &str, x1: &str, y0: &str, y1: &str) -> Self::G2Affine;
@@ -119,51 +162,35 @@ impl Parser for Bls12 {
     }
 }
 
-pub fn serialize_vk<P: Parser>(vk: VerifyingKey<P>, curve_type: &str) -> String {
-    format!(
-        "{{
-\"protocol\": \"groth16\",
-\"curve\": \"{}\",
-\"vk_alpha_1\": {},
-\"vk_beta_1\": {},
-\"vk_beta_2\": {},
-\"vk_gamma_2\": {},
-\"vk_delta_1\": {},
-\"vk_delta_2\": {},
-\"IC\": [{}]
-}}",
-        curve_type,
-        P::parse_g1_json(&vk.alpha_g1),
-        P::parse_g1_json(&vk.beta_g1),
-        P::parse_g2_json(&vk.beta_g2),
-        P::parse_g2_json(&vk.gamma_g2),
-        P::parse_g1_json(&vk.delta_g1),
-        P::parse_g2_json(&vk.delta_g2),
-        &vk.ic
-            .iter()
-            .map(P::parse_g1_json)
-            .collect::<Vec<_>>()
-            .join(", "),
-    )
+pub fn serialize_vk<P: Parser>(vk: &VerifyingKey<P>, curve_type: &str) -> String {
+    let verifying_key_file = VerifyingKeyFile {
+        protocol: "groth16".to_string(),
+        curve: curve_type.to_string(),
+        alpha_g1: P::parse_g1_json(&vk.alpha_g1),
+        beta_g1: P::parse_g1_json(&vk.beta_g1),
+        beta_g2: P::parse_g2_json(&vk.beta_g2),
+        gamma_g2: P::parse_g2_json(&vk.gamma_g2),
+        delta_g1: P::parse_g1_json(&vk.delta_g1),
+        delta_g2: P::parse_g2_json(&vk.delta_g2),
+        ic: vk.ic.iter().map(P::parse_g1_json).collect::<Vec<_>>(),
+    };
+
+    to_string(&verifying_key_file).unwrap()
 }
 
 pub fn serialize_proof<P: Parser>(p: &Proof<P>, curve_type: &str) -> String {
-    format!(
-        "{{
-\"pi_a\": {},
-\"pi_b\": {},
-\"pi_c\": {},
-\"protocol\": \"groth16\",
-\"curve\": \"{}\"
-}}",
-        P::parse_g1_json(&p.a),
-        P::parse_g2_json(&p.b),
-        P::parse_g1_json(&p.c),
-        curve_type
-    )
+    let proof_file = ProofFile {
+        a: P::parse_g1_json(&p.a),
+        b: P::parse_g2_json(&p.b),
+        c: P::parse_g1_json(&p.c),
+        protocol: "groth16".to_string(),
+        curve: curve_type.to_string(),
+    };
+
+    to_string(&proof_file).unwrap()
 }
 
-pub fn serialize_input<T: FieldElement>(inputs: &[T]) -> String {
+pub fn serialize_input<T: PrimeField>(inputs: &[T]) -> String {
     format!(
         "[\"{}\"]",
         inputs
@@ -172,52 +199,6 @@ pub fn serialize_input<T: FieldElement>(inputs: &[T]) -> String {
             .collect::<Vec<_>>()
             .join("\", \""),
     )
-}
-
-#[derive(Debug, Deserialize)]
-pub struct G1 {
-    pub x: String,
-    pub y: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct G2 {
-    pub x: [String; 2],
-    pub y: [String; 2],
-}
-
-#[derive(Debug, Deserialize)]
-pub struct VerifyingKeyFile {
-    #[serde(rename = "vk_alpha_1")]
-    pub alpha_g1: G1,
-
-    #[serde(rename = "vk_beta_1")]
-    pub beta_g1: G1,
-
-    #[serde(rename = "vk_beta_2")]
-    pub beta_g2: G2,
-
-    #[serde(rename = "vk_gamma_2")]
-    pub gamma_g2: G2,
-
-    #[serde(rename = "vk_delta_1")]
-    pub delta_g1: G1,
-
-    #[serde(rename = "vk_delta_2")]
-    pub delta_g2: G2,
-
-    #[serde(rename = "IC")]
-    pub ic: Vec<G1>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ProofFile {
-    #[serde(rename = "pi_a")]
-    pub a: G1,
-    #[serde(rename = "pi_b")]
-    pub b: G2,
-    #[serde(rename = "pi_c")]
-    pub c: G1,
 }
 
 pub fn to_verification_key<P: Parser>(s: &str) -> VerifyingKey<P> {
@@ -252,9 +233,8 @@ pub fn to_proof<P: Parser>(s: &str) -> Proof<P> {
     }
 }
 
-pub fn to_public_input<T: FieldElement>(s: &str) -> Vec<T> {
-    let input: Vec<String> =
-        serde_json::from_str(s).expect("Error during deserialization of the JSON data");
+pub fn to_public_input<T: PrimeField>(s: &str) -> Vec<T> {
+    let input: Vec<String> = serde_json::from_str(s).unwrap();
     input
         .iter()
         .map(|hex_str| render_hex_to_scalar::<T>(hex_str))
@@ -277,23 +257,17 @@ mod tests {
             1 << 24,
             std::fs::File::open("./test-vectors/verification_key.bin").unwrap(),
         );
-        let vk = VerifyingKey::<Bn256>::read(&mut reader).unwrap();
-
-        let result = serialize_vk(vk, "bn128");
+        let vk_from_bin = VerifyingKey::<Bn256>::read(&mut reader).unwrap();
+        let result = serialize_vk(&vk_from_bin, "bn128");
         std::fs::write("./test-vectors/verification_key.json", result)
             .expect("Unable to write data to file");
-    }
 
-    #[test]
-    fn test_to_verification_key() {
         let json_data = std::fs::read_to_string("./test-vectors/verification_key.json")
             .expect("Unable to read the JSON file");
-
-        let verifying_key = to_verification_key::<Bn256>(&json_data);
-
-        assert!(
-            !verifying_key.ic.is_empty(),
-            "IC vector should not be empty"
+        let verifying_key_from_json = to_verification_key::<Bn256>(&json_data);
+        assert_eq!(
+            vk_from_bin.alpha_g1, verifying_key_from_json.alpha_g1,
+            "VerificationKey are not equal"
         );
     }
 
@@ -303,11 +277,17 @@ mod tests {
             1 << 24,
             std::fs::File::open("./test-vectors/verification_key_bls12381.bin").unwrap(),
         );
-        let vk = VerifyingKey::<Bls12>::read(&mut reader).unwrap();
-
-        let result = serialize_vk(vk, "bls12381");
+        let vk_from_bin = VerifyingKey::<Bls12>::read(&mut reader).unwrap();
+        let result = serialize_vk(&vk_from_bin, "bls12381");
         std::fs::write("./test-vectors/verification_key_bls12381.json", result)
             .expect("Unable to write data to file");
+        let json_data = std::fs::read_to_string("./test-vectors/verification_key_bls12381.json")
+            .expect("Unable to read the JSON file");
+        let verifying_key_from_json = to_verification_key::<Bls12>(&json_data);
+        assert_eq!(
+            vk_from_bin.alpha_g1, verifying_key_from_json.alpha_g1,
+            "VerificationKey are not equal"
+        );
     }
 
     #[test]
@@ -316,20 +296,14 @@ mod tests {
             1 << 24,
             std::fs::File::open("./test-vectors/proof.bin").unwrap(),
         );
-        let proof = Proof::<Bn256>::read(&mut reader).unwrap();
-
-        let result = serialize_proof(&proof, "bn128");
+        let proof_from_bin = Proof::<Bn256>::read(&mut reader).unwrap();
+        let result = serialize_proof(&proof_from_bin, "bn128");
         std::fs::write("./test-vectors/proof.json", result).expect("Unable to write data to file");
-    }
 
-    #[test]
-    fn test_to_proof() {
         let json_data = std::fs::read_to_string("./test-vectors/proof.json")
             .expect("Unable to read the JSON file");
-
-        let proof = to_proof::<Bn256>(&json_data);
-
-        println!("{:?}", proof);
+        let proof_from_json = to_proof::<Bn256>(&json_data);
+        assert_eq!(proof_from_bin.a, proof_from_json.a, "Proofs are not equal");
     }
 
     #[test]
@@ -338,20 +312,14 @@ mod tests {
             1 << 24,
             std::fs::File::open("./test-vectors/public_input.bin").unwrap(),
         );
-
-        let input = read_fr_vec::<Fr, _>(&mut reader).unwrap();
-        let result = serialize_input::<Fr>(&input);
+        let input_from_bin = read_fr_vec::<Fr, _>(&mut reader).unwrap();
+        let result = serialize_input::<Fr>(&input_from_bin);
         std::fs::write("./test-vectors/public_input.json", result)
             .expect("Unable to write data to file");
-    }
 
-    #[test]
-    fn test_to_public_input() {
         let json_data = std::fs::read_to_string("./test-vectors/public_input.json")
             .expect("Unable to read the JSON file");
-
-        let input = to_public_input::<Fr>(&json_data);
-
-        println!("{:?}", input);
+        let input_from_json = to_public_input::<Fr>(&json_data);
+        assert_eq!(input_from_bin[0], input_from_json[0], "Input are not equal");
     }
 }

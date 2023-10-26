@@ -183,7 +183,7 @@ fn read_vk_from_file<P: Parser>(file_path: &str) -> Result<VerifyingKey<P>> {
     Ok(to_verification_key::<P>(&json_data))
 }
 
-fn read_public_input_from_file<T: FieldElement>(file_path: &str) -> Result<Vec<T>> {
+fn read_public_input_from_file<T: PrimeField>(file_path: &str) -> Result<Vec<T>> {
     let json_data = std::fs::read_to_string(file_path)?;
     Ok(to_public_input::<T>(&json_data))
 }
@@ -202,7 +202,7 @@ fn write_pk_vk_to_files<P: Parser>(
 ) -> Result<()> {
     let writer = std::fs::File::create(pk_file)?;
     pk.write(writer)?;
-    let vk_json = serialize_vk(vk, curve_type);
+    let vk_json = serialize_vk(&vk, curve_type);
     std::fs::write(vk_file, vk_json)?;
     Ok(())
 }
