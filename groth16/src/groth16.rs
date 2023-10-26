@@ -52,14 +52,14 @@ mod tests {
     use crate::bellman_ce::bls12_381::Fr as Fr_bls12381;
     use crate::bellman_ce::bn256::{Bn256, Fr};
     use algebraic::circom_circuit::CircomCircuit;
-    use algebraic::reader;
-    use algebraic::witness::{load_input_for_witness, WitnessCalculator};
+    use algebraic::r1cs_reader;
+    use algebraic::r1cs_witness::{load_input_for_witness, WitnessCalculator};
     const INPUT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.input.json");
-    const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs_file");
+    const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
     const WASM_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.wasm");
     const CIRCUIT_FILE_BLS12: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/test-vectors/mycircuit_bls12381.r1cs_file"
+        "/test-vectors/mycircuit_bls12381.r1cs"
     );
     const WASM_FILE_BLS12: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -71,7 +71,7 @@ mod tests {
         //1. SRS
         let t = std::time::Instant::now();
         let circuit: CircomCircuit<Bn256> = CircomCircuit {
-            r1cs: reader::load_r1cs(CIRCUIT_FILE),
+            r1cs: r1cs_reader::load_r1cs(CIRCUIT_FILE),
             witness: None,
             wire_mapping: None,
             aux_offset: 0,
@@ -98,7 +98,7 @@ mod tests {
             })
             .collect::<Vec<_>>();
         let circuit1: CircomCircuit<Bn256> = CircomCircuit {
-            r1cs: reader::load_r1cs(CIRCUIT_FILE),
+            r1cs: r1cs_reader::load_r1cs(CIRCUIT_FILE),
             witness: Some(w),
             wire_mapping: None,
             aux_offset: 0,
@@ -126,7 +126,7 @@ mod tests {
         //1. SRS
         let t = std::time::Instant::now();
         let circuit: CircomCircuit<Bls12> = CircomCircuit {
-            r1cs: reader::load_r1cs(CIRCUIT_FILE_BLS12),
+            r1cs: r1cs_reader::load_r1cs(CIRCUIT_FILE_BLS12),
             witness: None,
             wire_mapping: None,
             aux_offset: 0,
@@ -153,7 +153,7 @@ mod tests {
             })
             .collect::<Vec<_>>();
         let circuit1: CircomCircuit<Bls12> = CircomCircuit {
-            r1cs: reader::load_r1cs(CIRCUIT_FILE_BLS12),
+            r1cs: r1cs_reader::load_r1cs(CIRCUIT_FILE_BLS12),
             witness: Some(w),
             wire_mapping: None,
             aux_offset: 0,

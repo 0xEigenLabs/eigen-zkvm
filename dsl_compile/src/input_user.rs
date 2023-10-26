@@ -36,7 +36,7 @@ pub struct Input {
 }
 
 const P_0: &str = "21888242871839275222246405745257275088548364400416034343698204186575808495617";
-const R1CS: &str = "r1cs_file";
+const R1CS: &str = "r1cs";
 const WAT: &str = "wat";
 const WASM: &str = "wasm";
 const CPP: &str = "cpp";

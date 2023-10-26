@@ -8,9 +8,9 @@ use crate::polsarray::{PolKind, PolsArray};
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
 use crate::types::PIL;
 use array_tool::vec::Shift;
-use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
+use plonky::r1cs::R1CS;
 use std::collections::BTreeMap;
 
 #[derive(Default, Debug)]
@@ -77,7 +77,7 @@ impl NormalPlonkInfo {
 
         Self {
             N,
-            // n_constaints: r1cs_file.constraints.len(),
+            // n_constaints: r1cs.constraints.len(),
             // n_plonk_gates: plonk_constrains_len,
             // n_plonk_adds: plonk_additions.len(),
         }
@@ -109,7 +109,7 @@ impl CustomGateInfo {
         let mut c_mul_add_id = 0;
         let mut poseidon_id = 0;
         let mut ev_pol_id = 0;
-        // let mut fft_params = vec![vec![]; r1cs_file.custom_gates.len()];
+        // let mut fft_params = vec![vec![]; r1cs.custom_gates.len()];
         let mut fft_params: BTreeMap<usize, Vec<FGL>> = BTreeMap::new();
 
         for (i, c) in r1cs.custom_gates.iter().enumerate() {
@@ -176,7 +176,7 @@ pub struct PlonkSetupRenderInfo {
 
 impl PlonkSetupRenderInfo {
     pub fn plonk_setup_render(r1cs: &R1CS<GL>, opts: &Options) -> Self {
-        // 1. r1cs_file to plonk
+        // 1. r1cs to plonk
         let (plonk_constrains, plonk_additions) = r1cs2plonk(r1cs);
 
         // 2. get normal plonk info

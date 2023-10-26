@@ -94,7 +94,7 @@ pub fn maybe_load_key_lagrange_form<E: Engine>(
     }
 }
 
-/// load witness file by filename with autodetect encoding (bin or json).
+/// load r1cs_witness file by filename with autodetect encoding (bin or json).
 pub fn load_witness_from_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
     if filename.ends_with("json") {
         load_witness_from_json_file::<E>(filename)
@@ -103,7 +103,7 @@ pub fn load_witness_from_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
     }
 }
 
-/// load witness from json file by filename
+/// load r1cs_witness from json file by filename
 pub fn load_witness_from_json_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
     let reader = OpenOptions::new()
         .read(true)
@@ -112,7 +112,7 @@ pub fn load_witness_from_json_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr
     load_witness_from_json::<E, BufReader<File>>(BufReader::new(reader))
 }
 
-/// load witness from json by a reader
+/// load r1cs_witness from json by a reader
 fn load_witness_from_json<E: ScalarEngine, R: Read>(reader: R) -> Vec<E::Fr> {
     let witness: Vec<String> = serde_json::from_reader(reader).expect("unable to read.");
     witness
@@ -121,22 +121,22 @@ fn load_witness_from_json<E: ScalarEngine, R: Read>(reader: R) -> Vec<E::Fr> {
         .collect::<Vec<E::Fr>>()
 }
 
-/// load witness from bin file by filename
+/// load r1cs_witness from bin file by filename
 pub fn load_witness_from_bin_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
         .expect("unable to open.");
     load_witness_from_bin_reader::<E, BufReader<File>>(BufReader::new(reader))
-        .expect("read witness failed")
+        .expect("read r1cs_witness failed")
 }
 
-/// load witness from u8 array
+/// load r1cs_witness from u8 array
 pub fn load_witness_from_array<E: ScalarEngine>(buffer: Vec<u8>) -> Result<Vec<E::Fr>> {
     load_witness_from_bin_reader::<E, _>(buffer.as_slice())
 }
 
-/// load witness from u8 array by a reader
+/// load r1cs_witness from u8 array by a reader
 pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> Result<Vec<E::Fr>> {
     let mut wtns_header = [0u8; 4];
     reader.read_exact(&mut wtns_header)?;
@@ -172,7 +172,7 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> 
         return Err(EigenError::from("invalid curve prime".to_string()));
     }
     let witness_len = reader.read_u32::<LittleEndian>()?;
-    log::debug!("witness len {}", witness_len);
+    log::debug!("r1cs_witness len {}", witness_len);
     let sec_type = reader.read_u32::<LittleEndian>()?;
     if sec_type != 2 {
         return Err(EigenError::from("invalid section type".to_string()));
@@ -180,7 +180,7 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> 
     let sec_size = reader.read_u64::<LittleEndian>()?;
     if sec_size != (witness_len * field_size) as u64 {
         return Err(EigenError::from(format!(
-            "Invalid witness section size {}",
+            "Invalid r1cs_witness section size {}",
             sec_size
         )));
     }

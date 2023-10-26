@@ -14,8 +14,8 @@ extern crate rand;
 pub use algebraic::circom_circuit;
 pub use algebraic::errors;
 pub use algebraic::field_gl;
-pub use algebraic::r1cs_file;
-pub use algebraic::witness;
+pub use algebraic::r1cs;
+pub use algebraic::r1cs_witness;
 
 pub mod plonk;
 pub mod reader;

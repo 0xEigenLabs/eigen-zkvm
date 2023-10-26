@@ -1,6 +1,6 @@
 use crate::bellman_ce::ScalarEngine;
-use crate::io_utils::read_field;
-use crate::r1cs_file::header::Header;
+use crate::r1cs::header::Header;
+use crate::r1cs::utils::read_field;
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::{Read, Result};
 

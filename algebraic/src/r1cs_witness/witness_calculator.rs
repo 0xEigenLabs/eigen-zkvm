@@ -15,7 +15,7 @@ use std::fs::OpenOptions;
 
 use std::io::{BufWriter, Write};
 
-use crate::witness::{
+use crate::r1cs_witness::{
     memory::SafeMemory,
     utils::*,
     wasm_circom::{Circom, CircomBase, Wasm},
@@ -217,7 +217,7 @@ impl WitnessCalculator {
         }
         writer.write_all(&prime_buf)?;
 
-        // write witness size
+        // write r1cs_witness size
         let wtns_size = wtns.len() as u32 / n32;
         writer.write_u32::<LittleEndian>(wtns_size)?;
         // sec type
@@ -250,7 +250,7 @@ impl WitnessCalculator {
             .into_iter()
             .map(|w| {
                 let w = if w.sign() == num_bigint::Sign::Minus {
-                    // Need to negate the witness element if negative
+                    // Need to negate the r1cs_witness element if negative
                     modulus.clone() - w.abs().to_biguint().unwrap()
                 } else {
                     w.to_biguint().unwrap()

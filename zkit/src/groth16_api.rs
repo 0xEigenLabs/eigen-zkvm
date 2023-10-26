@@ -1,9 +1,9 @@
-use algebraic::witness::witness_calculator::WitnessCalculator;
+use algebraic::r1cs_witness::witness_calculator::WitnessCalculator;
 use algebraic::{
     circom_circuit::CircomCircuit,
     errors::{EigenError, Result},
-    reader::load_r1cs,
-    witness::load_input_for_witness,
+    r1cs_reader::load_r1cs,
+    r1cs_witness::load_input_for_witness,
     Field, PrimeField,
 };
 use groth16::bellman_ce::pairing::{

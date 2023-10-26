@@ -14,9 +14,9 @@ extern crate rand;
 pub mod circom_circuit;
 pub mod errors;
 pub mod field_gl;
-pub mod r1cs_file;
-pub mod reader;
-pub mod witness;
+pub mod r1cs;
+pub mod r1cs_reader;
+pub mod r1cs_witness;
 
 pub mod utils;
 
@@ -26,7 +26,6 @@ pub use franklin_crypto::bellman as bellman_ce;
 
 #[cfg(test)]
 mod field_gl_test;
-pub(crate) mod io_utils;
 
 #[cfg(target_arch = "wasm32")]
 extern crate wasm_bindgen;

@@ -4,7 +4,7 @@ mod utils;
 mod wasm_circom;
 pub mod witness_calculator;
 
-use crate::witness::utils::flat_array;
+use crate::r1cs_witness::utils::flat_array;
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
 use serde_json::Value;

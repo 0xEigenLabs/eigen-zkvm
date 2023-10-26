@@ -1,12 +1,12 @@
 use crate::bellman_ce::pairing::bn256::Bn256;
 use crate::errors::{EigenError, Result};
-use crate::witness::load_input_for_witness;
+use crate::r1cs_witness::load_input_for_witness;
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
-use algebraic::reader::load_r1cs;
+use algebraic::r1cs_reader::load_r1cs;
 
 use crate::{aggregation, verifier};
 
-use algebraic::witness::witness_calculator::WitnessCalculator;
+use algebraic::r1cs_witness::witness_calculator::WitnessCalculator;
 use std::path::Path;
 
 // generate a monomial_form SRS, and save it to a file

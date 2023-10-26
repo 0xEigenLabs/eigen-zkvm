@@ -152,12 +152,12 @@ impl SetupForProver {
         )?)
     }
 
-    // quickly valiate whether a witness is satisfied
+    // quickly valiate whether a r1cs_witness is satisfied
     pub fn validate_witness<C: Circuit<E> + Clone>(&self, circuit: C) -> Result<()> {
         Ok(is_satisfied_using_one_shot_check(circuit, &self.hints)?)
     }
 
-    // generate a plonk proof for a circuit, with witness loaded
+    // generate a plonk proof for a circuit, with r1cs_witness loaded
     pub fn prove<C: Circuit<E> + Clone>(
         &self,
         circuit: C,

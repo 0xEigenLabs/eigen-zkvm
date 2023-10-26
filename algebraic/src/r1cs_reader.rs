@@ -12,8 +12,9 @@ use crate::bellman_ce::{
     Field, PrimeField, PrimeFieldRepr, ScalarEngine,
 };
 
-use crate::circom_circuit::{CircuitJson, R1CS};
-use crate::r1cs_file::R1CSFile;
+use crate::circom_circuit::CircuitJson;
+use crate::r1cs::r1cs_file::R1CSFile;
+use crate::r1cs::R1CS;
 
 /// get universal setup file by filename
 fn get_universal_setup_file_buff_reader(setup_file_name: &str) -> Result<BufReader<File>> {
@@ -49,7 +50,7 @@ pub fn maybe_load_key_lagrange_form<E: Engine>(
     }
 }
 
-/// load witness file by filename with autodetect encoding (bin or json).
+/// load r1cs_witness file by filename with autodetect encoding (bin or json).
 pub fn load_witness_from_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
     if filename.ends_with("json") {
         load_witness_from_json_file::<E>(filename)
@@ -58,7 +59,7 @@ pub fn load_witness_from_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
     }
 }
 
-/// load witness from json file by filename
+/// load r1cs_witness from json file by filename
 pub fn load_witness_from_json_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
     let reader = OpenOptions::new()
         .read(true)
@@ -67,7 +68,7 @@ pub fn load_witness_from_json_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr
     load_witness_from_json::<E, BufReader<File>>(BufReader::new(reader))
 }
 
-/// load witness from json by a reader
+/// load r1cs_witness from json by a reader
 fn load_witness_from_json<E: ScalarEngine, R: Read>(reader: R) -> Vec<E::Fr> {
     let witness: Vec<String> = serde_json::from_reader(reader).expect("unable to read.");
     witness
@@ -76,22 +77,22 @@ fn load_witness_from_json<E: ScalarEngine, R: Read>(reader: R) -> Vec<E::Fr> {
         .collect::<Vec<E::Fr>>()
 }
 
-/// load witness from bin file by filename
+/// load r1cs_witness from bin file by filename
 pub fn load_witness_from_bin_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
         .expect("unable to open.");
     load_witness_from_bin_reader::<E, BufReader<File>>(BufReader::new(reader))
-        .expect("read witness failed")
+        .expect("read r1cs_witness failed")
 }
 
-/// load witness from u8 array
+/// load r1cs_witness from u8 array
 pub fn load_witness_from_array<E: ScalarEngine>(buffer: Vec<u8>) -> Result<Vec<E::Fr>> {
     load_witness_from_bin_reader::<E, _>(buffer.as_slice())
 }
 
-/// load witness from u8 array by a reader
+/// load r1cs_witness from u8 array by a reader
 pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> Result<Vec<E::Fr>> {
     let mut wtns_header = [0u8; 4];
     reader.read_exact(&mut wtns_header)?;
@@ -127,7 +128,7 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> 
         return Err(EigenError::from("invalid curve prime".to_string()));
     }
     let witness_len = reader.read_u32::<LittleEndian>()?;
-    log::debug!("witness len {}", witness_len);
+    log::debug!("r1cs_witness len {}", witness_len);
     let sec_type = reader.read_u32::<LittleEndian>()?;
     if sec_type != 2 {
         return Err(EigenError::from("invalid section type".to_string()));
@@ -135,7 +136,7 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> 
     let sec_size = reader.read_u64::<LittleEndian>()?;
     if sec_size != (witness_len * field_size) as u64 {
         return Err(EigenError::from(format!(
-            "Invalid witness section size {}",
+            "Invalid r1cs_witness section size {}",
             sec_size
         )));
     }
@@ -148,7 +149,7 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> 
     Ok(result)
 }
 
-/// load r1cs_file file by filename with autodetect encoding (bin or json)
+/// load r1cs file by filename with autodetect encoding (bin or json)
 pub fn load_r1cs<E: ScalarEngine>(filename: &str) -> R1CS<E> {
     if filename.ends_with("json") {
         load_r1cs_from_json_file(filename)
@@ -158,7 +159,7 @@ pub fn load_r1cs<E: ScalarEngine>(filename: &str) -> R1CS<E> {
     }
 }
 
-/// load r1cs_file from json file by filename
+/// load r1cs from json file by filename
 fn load_r1cs_from_json_file<E: ScalarEngine>(filename: &str) -> R1CS<E> {
     let reader = OpenOptions::new()
         .read(true)
@@ -167,7 +168,7 @@ fn load_r1cs_from_json_file<E: ScalarEngine>(filename: &str) -> R1CS<E> {
     load_r1cs_from_json(BufReader::new(reader))
 }
 
-/// load r1cs_file from json by a reader
+/// load r1cs from json by a reader
 fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
     let circuit_json: CircuitJson = serde_json::from_reader(reader).expect("unable to read.");
 
@@ -203,7 +204,7 @@ fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
     }
 }
 
-/// load r1cs_file from bin file by filename
+/// load r1cs from bin file by filename
 fn load_r1cs_from_bin_file<E: ScalarEngine>(filename: &str) -> (R1CS<E>, Vec<usize>) {
     let reader = OpenOptions::new()
         .read(true)
@@ -212,7 +213,7 @@ fn load_r1cs_from_bin_file<E: ScalarEngine>(filename: &str) -> (R1CS<E>, Vec<usi
     load_r1cs_from_bin(BufReader::new(reader))
 }
 
-/// load r1cs_file from bin by a reader
+/// load r1cs from bin by a reader
 pub fn load_r1cs_from_bin<R: Read + Seek, E: ScalarEngine>(reader: R) -> (R1CS<E>, Vec<usize>) {
     let file = R1CSFile::<E>::from_reader::<R>(reader).expect("unable to read.");
     let num_inputs = (1 + file.header.n_pub_in + file.header.n_pub_out) as usize;

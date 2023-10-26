@@ -1,11 +1,14 @@
 use crate::bellman_ce::bn256::Bn256;
 use crate::circom_circuit::CircomCircuit;
 use crate::{plonk, reader};
-use algebraic::reader::load_r1cs;
+use algebraic::r1cs_reader::load_r1cs;
 use std::fs;
 
-const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs_file");
-const WITNESS_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/witness.wtns");
+const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
+const WITNESS_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../test/single/r1cs_witness.wtns"
+);
 const VK_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/vk.bin");
 const PROOF_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/single/proof.bin");
 const MONOMIAL_KEY_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../keys/setup_2^10.key");

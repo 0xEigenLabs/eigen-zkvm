@@ -3,7 +3,7 @@ use crate::compressor12::plonk_setup::PlonkSetup;
 use crate::errors::EigenError;
 use crate::io_utils::write_vec_to_file;
 use crate::r1cs2plonk::PlonkAdd;
-use algebraic::reader::load_r1cs;
+use algebraic::r1cs_reader::load_r1cs;
 use plonky::field_gl::GL;
 use std::fs::File;
 use std::io::Write;
@@ -15,7 +15,7 @@ pub struct Options {
 }
 
 // setup phase:
-// input: .r1cs_file
+// input: .r1cs
 // output: .pil, .const, .exec,
 pub fn setup(
     r1cs_file: &str,
