@@ -50,7 +50,7 @@ pub struct CompilierOpt {
     link_directories: Vec<String>,
 }
 
-/// Calculate witness and save to output file
+/// Calculate circom_witness and save to output file
 #[derive(Debug, Parser)]
 
 struct CalculateWitnessOpt {
@@ -60,8 +60,8 @@ struct CalculateWitnessOpt {
     /// [input] input json
     #[arg(short, required = true)]
     input_json: String,
-    /// [output] witness filename
-    #[arg(short, default_value = "witness.wtns")]
+    /// [output] circom_witness filename
+    #[arg(short, default_value = "circom_witness.wtns")]
     output: String,
 }
 
@@ -335,7 +335,7 @@ enum Command {
     Setup(SetupOpt),
     #[command(name = "calculate_witness")]
     CalculateWitness(CalculateWitnessOpt),
-    /// Compile circom circuits to r1cs, and generate witness
+    /// Compile circom circuits to r1cs, and generate circom_witness
     #[command(name = "compile")]
     Compile(CompilierOpt),
     #[command(name = "prove")]

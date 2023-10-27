@@ -8,9 +8,9 @@ use crate::polsarray::{PolKind, PolsArray};
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
 use crate::types::PIL;
 use array_tool::vec::Shift;
-use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
+use plonky::r1cs::R1CS;
 use std::collections::BTreeMap;
 
 #[derive(Default, Debug)]

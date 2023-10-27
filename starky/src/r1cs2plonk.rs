@@ -1,9 +1,9 @@
 #![allow(non_snake_case)]
 use array_tool::vec::Shift;
-use plonky::circom_circuit::Constraint;
-use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::{Fr, GL};
+use plonky::r1cs::constraint::Constraint;
+use plonky::r1cs::R1CS;
 use std::collections::BTreeMap;
 use std::ops::Neg;
 
@@ -252,7 +252,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
 #[cfg(test)]
 mod test {
     use super::*;
-    use algebraic::reader::load_r1cs;
+    use algebraic::r1cs::R1CS;
     use std::fs::File;
     use std::io::Write;
     use std::path::Path;
@@ -272,7 +272,7 @@ mod test {
         let CIRCUIT = "fib.verifier";
 
         let r1cs_file = format!("/tmp/{CIRCUIT}.r1cs");
-        let r1cs = load_r1cs::<GL>(&r1cs_file);
+        let r1cs = R1CS::<GL>::load_r1cs(&r1cs_file);
 
         let (plonk_constrains, plonk_additions) = r1cs2plonk(&r1cs);
 

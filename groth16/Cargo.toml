@@ -22,7 +22,7 @@ wasmer = { version = "2.0", default-features = false }
 thiserror="1.0"
 fnv = { version = "1.0.3", default-features = false }
 num = { version = "0.4.0" }
-algebraic = { path = "../algebraic", default-features=false }
+algebraic = { path = "../algebraic" }
 
 [dev-dependencies]
 env_logger = "0.10"
@@ -39,5 +39,4 @@ rand = { version="0.6.5", features = ["wasm-bindgen"] }
 wasm-bindgen-test = "0.3"
 
 [features]
-default = ["franklin-crypto/multicore", "wasmer/default", "algebraic/default"]
-wasm = ["wasmer/js-default", "algebraic/wasm"]
+default = ["franklin-crypto/multicore", "wasmer/default"]

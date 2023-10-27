@@ -1,9 +1,9 @@
+use algebraic::circom_witness::WitnessCalculator;
+use algebraic::r1cs::R1CS;
 use algebraic::{
     bellman_ce::Engine,
     circom_circuit::CircomCircuit,
     errors::{EigenError, Result},
-    reader::load_r1cs,
-    witness::{load_input_for_witness, WitnessCalculator},
     Field, PrimeField,
 };
 use groth16::{
@@ -60,7 +60,7 @@ pub fn groth16_prove(
     let mut rng = rand::thread_rng();
 
     let mut wtns = WitnessCalculator::new(wtns_file)?;
-    let inputs = load_input_for_witness(input_file);
+    let inputs = WitnessCalculator::load_input_for_witness(input_file);
     let w = wtns.calculate_witness(inputs, false)?;
     match curve_type {
         "BN128" => {
@@ -161,7 +161,7 @@ fn create_circuit_from_file<E: Engine>(
     witness: Option<Vec<E::Fr>>,
 ) -> CircomCircuit<E> {
     CircomCircuit {
-        r1cs: load_r1cs(circuit_file),
+        r1cs: R1CS::load_r1cs(circuit_file),
         witness,
         wire_mapping: None,
         aux_offset: 0,

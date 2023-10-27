@@ -53,4 +53,3 @@ wasm-bindgen-test = "0.3"
 
 [features]
 default = ["bellman_vk_codegen/multicore", "franklin-crypto/multicore", "ethabi", "recursive_aggregation_circuit/multicore", "wasmer/default", "algebraic/default"]
-wasm = ["bellman_vk_codegen/wasm", "recursive_aggregation_circuit/wasm", "wasmer/js-default", "algebraic/wasm"]

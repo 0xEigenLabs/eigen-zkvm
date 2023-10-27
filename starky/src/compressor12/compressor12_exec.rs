@@ -4,10 +4,10 @@ use crate::errors::EigenError;
 use crate::io_utils::read_vec_from_file;
 use crate::pilcom::compile_pil_from_path;
 use crate::polsarray::{PolKind, PolsArray};
+use algebraic::circom_witness::WitnessCalculator;
 use num_traits::Zero;
 use plonky::ff::PrimeField;
 use plonky::field_gl::Fr as FGL;
-use plonky::witness::{load_input_for_witness, WitnessCalculator};
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -37,9 +37,9 @@ pub fn exec(
     // 2. construct cmPol: .pil.json -> .cm
     let mut cm_pols = PolsArray::new(&pil_json, PolKind::Commit);
 
-    // 3. calculate witness. wasm+input->witness
+    // 3. calculate circom_witness. wasm+input->circom_witness
     let mut wtns = WitnessCalculator::new(wasm_file).unwrap();
-    let inputs = load_input_for_witness(input_file);
+    let inputs = WitnessCalculator::load_input_for_witness(input_file);
     let w = wtns.calculate_witness(inputs, false).unwrap();
     let mut w = w
         .iter()

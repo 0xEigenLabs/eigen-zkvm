@@ -3,58 +3,14 @@
 extern crate rand;
 
 use itertools::Itertools;
-use std::collections::BTreeMap;
-use std::str;
 
 use crate::bellman_ce::{
     pairing::Engine, Circuit, ConstraintSystem, Index, LinearCombination, PrimeField, ScalarEngine,
     SynthesisError, Variable,
 };
+use crate::r1cs::R1CS;
 
 use crate::utils::repr_to_big;
-
-#[derive(Serialize, Deserialize)]
-pub struct CircuitJson {
-    pub constraints: Vec<Vec<BTreeMap<String, String>>>,
-    #[serde(rename = "nPubInputs")]
-    pub num_inputs: usize,
-    #[serde(rename = "nOutputs")]
-    pub num_outputs: usize,
-    #[serde(rename = "nVars")]
-    pub num_variables: usize,
-}
-
-pub type Constraint<E> = (
-    Vec<(usize, <E as ScalarEngine>::Fr)>,
-    Vec<(usize, <E as ScalarEngine>::Fr)>,
-    Vec<(usize, <E as ScalarEngine>::Fr)>,
-);
-
-// R1CSfile's CustomGates
-#[derive(Debug, Default, Clone)]
-pub struct CustomGates<E: ScalarEngine> {
-    pub template_name: String,
-    pub parameters: Vec<E::Fr>,
-}
-
-// R1CSfile's CustomGatesUses
-#[derive(Debug, Default, Clone)]
-pub struct CustomGatesUses {
-    pub id: u64,
-    pub signals: Vec<u64>,
-}
-
-/// R1CS spec: https://www.sikoba.com/docs/SKOR_GD_R1CS_Format.pdf
-#[derive(Clone, Debug)]
-pub struct R1CS<E: ScalarEngine> {
-    pub num_inputs: usize,
-    pub num_aux: usize,
-    pub num_variables: usize,
-    pub num_outputs: usize,
-    pub constraints: Vec<Constraint<E>>,
-    pub custom_gates: Vec<CustomGates<E>>,
-    pub custom_gates_uses: Vec<CustomGatesUses>,
-}
 
 #[derive(Clone, Debug)]
 pub struct CircomCircuit<E: ScalarEngine> {
@@ -62,7 +18,6 @@ pub struct CircomCircuit<E: ScalarEngine> {
     pub witness: Option<Vec<E::Fr>>,
     pub wire_mapping: Option<Vec<usize>>,
     pub aux_offset: usize,
-    // debug symbols
 }
 
 impl<E: ScalarEngine> CircomCircuit<E> {
