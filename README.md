@@ -41,9 +41,9 @@ For power in range 20 to 26, you can download directly from [universal-setup hub
 
 * Stark aggregation proof
 
-> [stark_aggregation.sh yes bn128](./test/stark_aggregation.sh)
+> [stark_aggregation.sh yes BN128](./test/stark_aggregation.sh)
 
-> [stark_aggregation.sh yes bls12381](./test/stark_aggregation.sh)
+> [stark_aggregation.sh yes BLS12381](./test/stark_aggregation.sh)
 
 * Stark proof and recursive stark prove
 > [starky](./starky)
@@ -53,5 +53,6 @@ For power in range 20 to 26, you can download directly from [universal-setup hub
 > [starkjs](./starkjs)
 
 ## Applications
+* [Rust zkVM/Risc V/REVM)](https://docs.powdr.org/backends/estark.html)
 * [eigen-secret](https://github.com/0xEigenLabs/eigen-secret)
 * [zk-mixer](https://github.com/0xEigenLabs/zk-mixer)

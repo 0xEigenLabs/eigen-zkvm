@@ -28,12 +28,12 @@ pub fn groth16_setup(
 ) -> Result<()> {
     let mut rng = rand::thread_rng();
     match curve_type {
-        "bn128" => {
+        "BN128" => {
             let circuit = create_circuit_from_file::<Bn256>(circuit_file, None);
             let (pk, vk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
             write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file)?
         }
-        "bls12381" => {
+        "BLS12381" => {
             let circuit = create_circuit_from_file::<Bls12>(circuit_file, None);
             let (pk, vk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
             write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file)?
@@ -63,7 +63,7 @@ pub fn groth16_prove(
     let inputs = WitnessCalculator::load_input_for_witness(input_file);
     let w = wtns.calculate_witness(inputs, false)?;
     match curve_type {
-        "bn128" => {
+        "BN128" => {
             let pk: Parameters<Bn256> = read_pk_from_file(pk_file, false)?;
             let w = w
                 .iter()
@@ -82,7 +82,7 @@ pub fn groth16_prove(
             let input_json = circuit.get_public_inputs_json();
             std::fs::write(public_input_file, input_json)?;
         }
-        "bls12381" => {
+        "BLS12381" => {
             let pk: Parameters<Bls12> = read_pk_from_file(pk_file, false)?;
             let w = w
                 .iter()
@@ -119,7 +119,7 @@ pub fn groth16_verify(
     proof_file: &str,
 ) -> Result<()> {
     match curve_type {
-        "bn128" => {
+        "BN128" => {
             let vk = read_vk_from_file(vk_file)?;
             let inputs = read_public_input_from_file::<Fr>(public_input_file)?;
             let proof = read_proof_from_file(proof_file)?;
@@ -132,7 +132,7 @@ pub fn groth16_verify(
             }
         }
 
-        "bls12381" => {
+        "BLS12381" => {
             let vk = read_vk_from_file(vk_file)?;
             let inputs = read_public_input_from_file::<Fr_bls12381>(public_input_file)?;
             let proof = read_proof_from_file(proof_file)?;
