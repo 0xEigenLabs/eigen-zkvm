@@ -393,7 +393,7 @@ fn main() {
         Command::Setup(args) => setup(args.power, &args.srs_monomial_form),
         Command::Compile(args) => circom_compiler(
             args.input,
-            args.prime,
+            args.prime.to_lowercase(),
             args.full_simplification,
             args.link_directories,
             args.output,

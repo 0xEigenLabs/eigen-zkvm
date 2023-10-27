@@ -43,14 +43,6 @@ fi
 
 
 if [ $snark_type = "groth16" ]; then
-    if [ ! -f $SRS ]; then
-        echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
-        #curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${POWER}.ptau -o $SRS
-        $SNARKJS powersoftau new $CURVE ${POWER} /tmp/pot${POWER}_0000.ptau -v
-        $SNARKJS powersoftau contribute /tmp/pot${POWER}_0000.ptau /tmp/pot${POWER}_0001.ptau --name="First contribution" -v
-        $SNARKJS powersoftau prepare phase2 /tmp/pot${POWER}_0001.ptau $SRS -v
-    fi
-
     if [ $first_run = "true" ]; then
         $ZKIT groth16_setup -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -p $WORK_DIR/g16.zkey -v $WORK_DIR/verification_key.json
     fi

@@ -40,4 +40,4 @@ mkdir -p $WORK_DIR/$CIRCUIT_NAME
 cp ../starkjs/circuits/c12a.verifier.zkin.json $WORK_DIR/final_input.zkin.json
 cp ../starkjs/circuits/c12a.verifier.circom $WORK_DIR/
 
-bash -x ./snark_verifier.sh groth16 true bls12381 $CIRCUIT_NAME $WORK_DIR
+bash -x ./snark_verifier.sh groth16 true BLS12381 $CIRCUIT_NAME $WORK_DIR
