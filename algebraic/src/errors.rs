@@ -1,3 +1,4 @@
+use crate::bellman_ce;
 use thiserror::Error;
 
 pub type Result<T> = std::result::Result<T, EigenError>;
@@ -35,7 +36,10 @@ pub enum EigenError {
     FRIVerifierFailed,
 
     #[error("Fr::from_expr error")]
-    PFDecodeError(#[from] crate::ff::PrimeFieldDecodingError),
+    PFDecodeError(#[from] ff::PrimeFieldDecodingError),
+
+    #[error("Fr::from_expr error")]
+    FrankinCryptoPFDecodeError(#[from] bellman_ce::PrimeFieldDecodingError),
 
     #[error("WasmRuntime error, exit `{0}`")]
     WasmerRuntimeError(#[from] wasmer::RuntimeError),

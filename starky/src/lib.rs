@@ -1,7 +1,5 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(dead_code)]
-
-pub mod errors;
 pub mod polsarray;
 mod polutils;
 pub mod stark_verifier_circom;
@@ -80,3 +78,5 @@ extern crate serde_json;
 extern crate ff;
 extern crate lazy_static;
 extern crate log;
+
+pub use algebraic::errors;
