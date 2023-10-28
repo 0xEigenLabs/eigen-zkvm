@@ -1,7 +1,7 @@
 extern crate clap;
 use clap::{command, Parser};
 use dsl_compile::circom_compiler;
-use eigen_zkit::groth16_api::*;
+use groth16::api::*;
 use plonky::api::{
     aggregation_check, aggregation_prove, aggregation_verify, analyse, calculate_witness,
     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,

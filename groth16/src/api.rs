@@ -6,7 +6,7 @@ use algebraic::{
     witness::{load_input_for_witness, WitnessCalculator},
     Field, PrimeField,
 };
-use groth16::{
+use crate::{
     bellman_ce::{
         groth16::{Parameters, Proof, VerifyingKey},
         pairing::{
