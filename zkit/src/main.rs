@@ -1,7 +1,7 @@
 extern crate clap;
 use clap::{command, Parser};
 use dsl_compile::circom_compiler;
-use eigen_zkit::groth16_api::*;
+use groth16::api::*;
 use plonky::api::{
     aggregation_check, aggregation_prove, aggregation_verify, analyse, calculate_witness,
     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
@@ -297,7 +297,7 @@ pub struct Groth16ProveOpt {
     #[arg(long = "r1cs", required = true)]
     circuit_file: String,
     #[arg(short, required = true)]
-    wtns_file: String,
+    wasm_file: String,
     #[arg(short, required = true, default_value = "g16.zkey")]
     pk_file: String,
     #[arg(short, required = true)]
@@ -484,7 +484,7 @@ fn main() {
         Command::Groth16Prove(args) => groth16_prove(
             &args.curve_type,
             &args.circuit_file,
-            &args.wtns_file,
+            &args.wasm_file,
             &args.pk_file,
             &args.input_file,
             &args.public_input_file,

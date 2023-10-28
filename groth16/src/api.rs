@@ -1,12 +1,4 @@
-use algebraic::{
-    bellman_ce::Engine,
-    circom_circuit::CircomCircuit,
-    errors::{EigenError, Result},
-    reader::load_r1cs,
-    witness::{load_input_for_witness, WitnessCalculator},
-    Field, PrimeField,
-};
-use groth16::{
+use crate::{
     bellman_ce::{
         groth16::{Parameters, Proof, VerifyingKey},
         pairing::{
@@ -16,6 +8,14 @@ use groth16::{
     },
     groth16::Groth16,
     json_utils::*,
+};
+use algebraic::{
+    bellman_ce::Engine,
+    circom_circuit::CircomCircuit,
+    errors::{EigenError, Result},
+    reader::load_r1cs,
+    witness::{load_input_for_witness, WitnessCalculator},
+    Field, PrimeField,
 };
 use num_traits::Zero;
 use rand;
