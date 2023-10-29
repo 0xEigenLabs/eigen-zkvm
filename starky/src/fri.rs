@@ -17,7 +17,6 @@ pub struct FRI {
     pub steps: Vec<Step>,
 }
 
-#[allow(clippy::type_complexity)]
 #[derive(Debug, Default, Clone)]
 pub struct Query<MB: Clone + std::default::Default, MN: MTNodeType> {
     pub pol_queries: Vec<Vec<(Vec<FGL>, Vec<Vec<MB>>)>>,
@@ -154,7 +153,6 @@ impl FRI {
         Ok(proof)
     }
 
-    #[allow(clippy::type_complexity)]
     #[time_profiler("fri_verify")]
     pub fn verify<F: FieldExtension, M: MerkleTree<ExtendField = F>, T: Transcript>(
         &self,

@@ -1,5 +1,8 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(dead_code)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
+
 pub mod polsarray;
 mod polutils;
 pub mod stark_verifier_circom;
