@@ -1,6 +1,5 @@
 #![allow(clippy::needless_range_loop)]
-
-pub mod errors;
+#![allow(dead_code)]
 pub mod polsarray;
 mod polutils;
 pub mod stark_verifier_circom;
@@ -31,6 +30,7 @@ pub mod poseidon_bls12381_opt;
 
 pub mod merklehash;
 pub mod merklehash_bls12381;
+
 pub mod merklehash_bn128;
 
 mod digest;
@@ -78,3 +78,5 @@ extern crate serde_json;
 extern crate ff;
 extern crate lazy_static;
 extern crate log;
+
+pub use algebraic::errors;

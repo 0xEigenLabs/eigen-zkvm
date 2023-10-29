@@ -1,8 +1,7 @@
 //! Safe-ish interface for reading and writing specific types to the WASM runtime's memory,
 //! modified from ark-circom
-use crate::bellman_ce::{Field, PrimeField, PrimeFieldRepr, ScalarEngine};
+use crate::bellman_ce::{to_hex, Field, PrimeField, PrimeFieldRepr, ScalarEngine};
 use crate::errors::Result;
-use crate::to_hex;
 use num_bigint::{BigInt, BigUint};
 use num_traits::Num;
 use num_traits::ToPrimitive;

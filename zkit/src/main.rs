@@ -1,7 +1,7 @@
 extern crate clap;
 use clap::{command, Parser};
 use dsl_compile::circom_compiler;
-use eigen_zkit::groth16_api::*;
+use groth16::api::*;
 use plonky::api::{
     aggregation_check, aggregation_prove, aggregation_verify, analyse, calculate_witness,
     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
@@ -30,7 +30,7 @@ pub struct CompilierOpt {
     no_simplification: bool,
 
     /// prime field, like goldilocks
-    #[arg(short, default_value = "bn128")]
+    #[arg(short, default_value = "BN128")]
     prime: String,
 
     ///Set reduced simplification
@@ -279,45 +279,53 @@ struct JoinZkinExecOpt {
 /// Setup groth16
 #[derive(Parser, Debug)]
 pub struct Groth16SetupOpt {
-    #[arg(short, required = true, default_value = "bn128")]
+    #[arg(short, required = true, default_value = "BN128")]
     curve_type: String,
     #[arg(long = "r1cs", required = true)]
     circuit_file: String,
     #[arg(short, required = true, default_value = "g16.zkey")]
     pk_file: String,
-    #[arg(short, required = true, default_value = "verification_key.bin")]
+    #[arg(short, required = true, default_value = "verification_key.json")]
     vk_file: String,
 }
 
 /// Prove with groth16
 #[derive(Parser, Debug)]
 pub struct Groth16ProveOpt {
-    #[arg(short, required = true, default_value = "bn128")]
+    #[arg(short, required = true, default_value = "BN128")]
     curve_type: String,
     #[arg(long = "r1cs", required = true)]
     circuit_file: String,
     #[arg(short, required = true)]
-    wtns_file: String,
+    wasm_file: String,
     #[arg(short, required = true, default_value = "g16.zkey")]
     pk_file: String,
     #[arg(short, required = true)]
     input_file: String,
-    #[arg(long = "input", required = true, default_value = "public_input.bin")]
+    #[arg(
+        long = "public-input",
+        required = true,
+        default_value = "public_input.json"
+    )]
     public_input_file: String,
-    #[arg(long = "proof", required = true, default_value = "proof.bin")]
+    #[arg(long = "proof", required = true, default_value = "proof.json")]
     proof_file: String,
 }
 
 /// Verify with groth16
 #[derive(Parser, Debug)]
 pub struct Groth16VerifyOpt {
-    #[arg(short, required = true, default_value = "bn128")]
+    #[arg(short, required = true, default_value = "BN128")]
     curve_type: String,
-    #[arg(short, required = true, default_value = "verification_key.bin")]
+    #[arg(short, required = true, default_value = "verification_key.json")]
     vk_file: String,
-    #[arg(long = "input", required = true, default_value = "public_input.bin")]
+    #[arg(
+        long = "public-input",
+        required = true,
+        default_value = "public_input.json"
+    )]
     public_input_file: String,
-    #[arg(long = "proof", required = true, default_value = "proof.bin")]
+    #[arg(long = "proof", required = true, default_value = "proof.json")]
     proof_file: String,
 }
 
@@ -385,7 +393,7 @@ fn main() {
         Command::Setup(args) => setup(args.power, &args.srs_monomial_form),
         Command::Compile(args) => circom_compiler(
             args.input,
-            args.prime,
+            args.prime.to_lowercase(),
             args.full_simplification,
             args.link_directories,
             args.output,
@@ -476,7 +484,7 @@ fn main() {
         Command::Groth16Prove(args) => groth16_prove(
             &args.curve_type,
             &args.circuit_file,
-            &args.wtns_file,
+            &args.wasm_file,
             &args.pk_file,
             &args.input_file,
             &args.public_input_file,
@@ -493,9 +501,9 @@ fn main() {
     };
     match exec_result {
         Err(x) => {
-            log::error!("execute error: {}", x);
+            println!("execute error: {}", x);
             std::process::exit(400)
         }
-        _ => log::debug!("time cost: {}", start.elapsed().as_secs_f64()),
+        _ => println!("time cost: {}", start.elapsed().as_secs_f64()),
     };
 }

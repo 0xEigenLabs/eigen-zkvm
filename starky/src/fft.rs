@@ -6,6 +6,7 @@ use crate::traits::FieldExtension;
 use profiler_macro::time_profiler;
 
 #[allow(clippy::upper_case_acronyms)]
+#[derive(Default)]
 pub struct FFT<F: FieldExtension> {
     pub roots: Vec<Vec<F>>,
 }

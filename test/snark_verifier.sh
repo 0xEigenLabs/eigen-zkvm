@@ -6,10 +6,9 @@ export NODE_OPTIONS="--max-old-space-size=163840"
 CUR_DIR=$(cd $(dirname $0);pwd)
 snark_type=${1-groth16}
 first_run=${2-false}
-#bls12381
-CURVE=${3-bn128}
+CURVE=${3-BN128}
 POWER=22
-if [ $CURVE = "bls12381" ]; then
+if [ $CURVE = "BLS12381" ]; then
     POWER=25
 fi
 BIG_POWER=28
@@ -34,9 +33,9 @@ ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 
 if [ $first_run = "true" ]; then 
     echo "compile circom and generate wasm and r1cs"
-    if [ $CURVE = "bn128" ]; then
+    if [ $CURVE = "BN128" ]; then
         $ZKIT compile -i $SNARK_CIRCOM -p $CURVE  -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
-    elif [ $CURVE = "bls12381" ]; then
+    elif [ $CURVE = "BLS12381" ]; then
         $ZKIT compile -i $SNARK_CIRCOM -p $CURVE -l "../stark-circuits/circuits" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORK_DIR
     fi
     # cp $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm /tmp/aggregation/circuits.wasm
@@ -44,27 +43,19 @@ fi
 
 
 if [ $snark_type = "groth16" ]; then
-    if [ ! -f $SRS ]; then
-        echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
-        #curl https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${POWER}.ptau -o $SRS
-        $SNARKJS powersoftau new $CURVE ${POWER} /tmp/pot${POWER}_0000.ptau -v
-        $SNARKJS powersoftau contribute /tmp/pot${POWER}_0000.ptau /tmp/pot${POWER}_0001.ptau --name="First contribution" -v
-        $SNARKJS powersoftau prepare phase2 /tmp/pot${POWER}_0001.ptau $SRS -v
-    fi
-
     if [ $first_run = "true" ]; then
-        $ZKIT groth16_setup -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -p $WORK_DIR/g16.zkey -v $WORK_DIR/verification_key.bin
+        $ZKIT groth16_setup -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -p $WORK_DIR/g16.zkey -v $WORK_DIR/verification_key.json
     fi
 
     echo "2. groth16 fullprove"
-    $ZKIT groth16_prove -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -w $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm -p $WORK_DIR/g16.zkey -i $SNARK_INPUT --input $WORK_DIR/public_input.bin --proof $WORK_DIR/proof.bin
+    $ZKIT groth16_prove -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -w $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm -p $WORK_DIR/g16.zkey -i $SNARK_INPUT --public-input $WORK_DIR/public_input.json --proof $WORK_DIR/proof.json
 
     if [ $first_run = "true" ]; then
         echo "4. verify groth16 proof"
-        $ZKIT  groth16_verify -c $CURVE -v $WORK_DIR/verification_key.bin --input $WORK_DIR/public_input.bin --proof $WORK_DIR/proof.bin
+        $ZKIT  groth16_verify -c $CURVE -v $WORK_DIR/verification_key.json --public-input $WORK_DIR/public_input.json --proof $WORK_DIR/proof.json
 
         # TODO: add g16 solidity verifier
-        #if [ $CURVE = "bn128" ]; then
+        #if [ $CURVE = "BN128" ]; then
         #    echo "5. generate verifier contract"
         #    $SNARKJS zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
 
@@ -74,7 +65,7 @@ if [ $snark_type = "groth16" ]; then
     fi
 
 else 
-    if [ $CURVE != "bn128" ]; then
+    if [ $CURVE != "BN128" ]; then
         echo "Not support ${CURVE}"
         exit -1
     fi

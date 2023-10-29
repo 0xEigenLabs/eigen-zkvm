@@ -15,7 +15,7 @@ CIRCUIT="fibonacci"
 PILEXECJS="fibonacci/fibonacci.js"
 
 first_run=${1-no}
-CURVE=${2-bn128}
+CURVE=${2-BN128}
 WORKSPACE=/tmp/aggregation_${CURVE}_$CIRCUIT
 if [ $first_run = "yes" ]; then
     rm -rf $WORKSPACE && mkdir -p $WORKSPACE
@@ -128,7 +128,7 @@ ${ZKIT} compressor12_exec \
 echo "4. generate final proof  "
 # Remark: the N of final.starkStruct must be 2^20 , because the degree of $RECURSIVE2_CIRCUIT.pil is 2^20 which determined by the proocess of converting  $RECURSIVE_CIRCUIT2.circom to  $RECURSIVE_CIRCUIT2.pil
 STARK_STRUCT=$CUR_DIR/../starky/data/final.starkStruct.bls12381.json
-if [ $CURVE = "bn128" ]; then
+if [ $CURVE = "BN128" ]; then
     STARK_STRUCT=$CUR_DIR/../starky/data/final.starkStruct.bn128.json
 fi
 $ZKIT stark_prove -s $STARK_STRUCT \

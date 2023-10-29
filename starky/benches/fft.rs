@@ -1,12 +1,11 @@
 #[macro_use]
 extern crate criterion;
 
-use criterion::{BenchmarkId, Criterion};
-use starky::dev::{gen_rand_fields, gen_rand_goldfields};
+use criterion::Criterion;
+use starky::dev::gen_rand_goldfields;
 use starky::fft_p::{fft, ifft};
 use starky::traits::FieldExtension;
 use starky::{f3g::F3G, fft::FFT};
-use std::fmt::format;
 
 const MIN_K: usize = 6;
 const MAX_K: usize = 24;
@@ -17,7 +16,7 @@ fn bench_standard_fft<F: FieldExtension>(c: &mut Criterion) {
     let mut group = c.benchmark_group("standard_fft");
 
     for k in MIN_K..=MAX_K {
-        let mut a: Vec<F> = gen_rand_goldfields(k);
+        let a: Vec<F> = gen_rand_goldfields(k);
 
         group.bench_function(format!("fft/k/{}", k), |b| {
             b.iter(|| {
@@ -35,10 +34,9 @@ fn bench_standard_fft<F: FieldExtension>(c: &mut Criterion) {
 
 fn bench_p_fft<F: FieldExtension>(c: &mut Criterion) {
     let mut group = c.benchmark_group("p_fft");
-    let mut rng = ::rand::thread_rng();
     for k in MIN_K..=MAX_K {
         // prepare data.
-        let mut a: Vec<F> = gen_rand_goldfields(k);
+        let a: Vec<F> = gen_rand_goldfields(k);
         // bench fft
         group.bench_function(format!("p_fft/k/{}", k), |b| {
             b.iter(|| {
