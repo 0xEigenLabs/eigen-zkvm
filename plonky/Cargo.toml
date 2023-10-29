@@ -37,6 +37,9 @@ fnv = { version = "1.0.3", default-features = false }
 num = { version = "0.4.0" }
 algebraic = { path = "../algebraic", default-features=false }
 
+profiler_macro = {git = "https://github.com/ChengYueJia/profiler-rs", branch = "main"}
+ark-std = { version = "0.4.0", optional = true }
+
 [dev-dependencies]
 env_logger = "0.10"
 
@@ -54,3 +57,4 @@ wasm-bindgen-test = "0.3"
 [features]
 default = ["bellman_vk_codegen/multicore", "franklin-crypto/multicore", "ethabi", "recursive_aggregation_circuit/multicore", "wasmer/default", "algebraic/default"]
 wasm = ["bellman_vk_codegen/wasm", "recursive_aggregation_circuit/wasm", "wasmer/js-default", "algebraic/wasm"]
+profiler = ["ark-std/print-trace"]
