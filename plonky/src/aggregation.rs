@@ -46,6 +46,7 @@ use recursive_aggregation_circuit::circuit::{
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use ethabi::ethereum_types::U256;
 use itertools::Itertools;
+use profiler_macro::time_profiler;
 use serde::{ser::SerializeSeq, Serialize, Serializer};
 use std::io::{Read, Write};
 
@@ -256,6 +257,7 @@ pub fn serialize_new_proof<C: NewCircuit<bn256::Bn256>>(
 const VK_TREE_DEPTH: usize = 7;
 
 // recursively prove multiple proofs, and aggregate them into one
+#[time_profiler("agg_plonk_prove")]
 pub fn prove(
     big_crs: Crs<Bn256, CrsForMonomialForm>,
     old_proofs: Vec<OldProof<Bn256, PlonkCsWidth4WithNextStepParams>>,
@@ -411,6 +413,7 @@ fn verify_subproof_limbs(
 }
 
 // verify a aggregation proof by using a corresponding verification key
+#[time_profiler("agg_plonk_verify")]
 pub fn verify(
     vk: VerificationKey<Bn256, RecursiveAggregationCircuitBn256>,
     aggregated_proof: AggregatedProof,
