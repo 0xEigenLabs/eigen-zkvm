@@ -1018,7 +1018,7 @@ console.log("fastDebugExit: ", ctx.zkPC, rom.labels)
             if ((typeof ctx.hashK[addr].reads[pos] !== "undefined") &&
                 (ctx.hashK[addr].reads[pos] != size))
             {
-                throw new Error(`HashK(${addr}) diferent read sizes (${ctx.hashK[addr].reads[pos]} != ${size}) in the same position ${pos} ${sourceRef}`)
+                throw new Error(`HashK(${addr}) different read sizes (${ctx.hashK[addr].reads[pos]} != ${size}) in the same position ${pos} ${sourceRef}`)
             }
             ctx.hashK[addr].reads[pos] = size;
             incHashPos = size;
@@ -1094,7 +1094,7 @@ console.log("fastDebugExit: ", ctx.zkPC, rom.labels)
             if ((typeof ctx.hashP[addr].reads[pos] !== "undefined") &&
                 (ctx.hashP[addr].reads[pos] != size))
             {
-                throw new Error(`HashP(${addr}) diferent read sizes in the same position ${pos} (${ctx.hashP[addr].reads[pos]} != ${size}) ${sourceRef}`);
+                throw new Error(`HashP(${addr}) different read sizes in the same position ${pos} (${ctx.hashP[addr].reads[pos]} != ${size}) ${sourceRef}`);
             }
             ctx.hashP[addr].reads[pos] = size;
             incHashPos = size;
@@ -2057,7 +2057,7 @@ function assertOutputs(ctx){
         throw new Error("Assert Error: newNumBatch does not match");
     }
 
-    console.log("Assert outputs run succesfully");
+    console.log("Assert outputs run successfully");
 }
 
 
