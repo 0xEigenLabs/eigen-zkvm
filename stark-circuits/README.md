@@ -4,7 +4,7 @@ Stark circuit is the valilla Stark verifier implementation atop both BN254 and B
 This code orignals from [Hermez pil-stark](https://github.com/0xPolygonHermez/pil-stark), and here we generalize the basic blocks for big fields, using `eSize` as the number of Godilocks elements to indicate one of big field.
 
 
-For the [recursion-aggregation-composition architechure](../docs/recursion-aggregation-composition.png)(source: p14, [proof-recursion](https://github.com/0xPolygonHermez/zkevm-techdocs/blob/main/proof-recursion/v.1.1/proof-recursion.pdf)), the final stage is generated atop big field for final verification on L1, like Ethereum or Cardano, which means that before final stage, all computation are atop Godilocks, when into the final stage, it verifys the Snark proof of stark's verification computation atop big field.
+For the [recursion-aggregation-composition architecture](../docs/recursion-aggregation-composition.png)(source: p14, [proof-recursion](https://github.com/0xPolygonHermez/zkevm-techdocs/blob/main/proof-recursion/v.1.1/proof-recursion.pdf)), the final stage is generated atop big field for final verification on L1, like Ethereum or Cardano, which means that before final stage, all computation are atop Godilocks, when into the final stage, it verifys the Snark proof of stark's verification computation atop big field.
 
 ## Basic Blocks
 
@@ -24,7 +24,7 @@ For the [recursion-aggregation-composition architechure](../docs/recursion-aggre
 ### Irreducible polinomial
 
 For the element mapping from Goldilocks field to Scalar field of BLS12-381, a field switch is need.
-The scalar field of bls381 could be presented by 5-64bits, by refering to the switch for Godilocks-BN254, we choose the valilla Irreducible Polynomail atop [$GF_{p^5}$](https://github.com/pornin/ecgfp5).
+The scalar field of bls381 could be presented by 5-64bits, by referring to the switch for Godilocks-BN254, we choose the valilla Irreducible Polynomail atop [$GF_{p^5}$](https://github.com/pornin/ecgfp5).
 
 * BN254: `x^3 - x - 1`
 * BLS12-381: `x^5 - 3`
@@ -103,7 +103,7 @@ Observe that the multiplication and inversion for scalar field in BN254 and BLS1
 ### Merkle
 
 For the Merkel Circuit, each leaf is N-elements on GL field, where N is 4 for BN254, and 6 for BLS12-381. Before we calculate the merkle root, we need convert the N-elements to one element in big field.
-As a refernece, [to\_bn128](https://github.com/0xEigenLabs/eigen-zkvm/blob/main/starky/src/digest.rs#L73) is present, and same conversion should be applied to bls-12381.
+As a reference, [to\_bn128](https://github.com/0xEigenLabs/eigen-zkvm/blob/main/starky/src/digest.rs#L73) is present, and same conversion should be applied to bls-12381.
 
 ## ElementDigest
 
