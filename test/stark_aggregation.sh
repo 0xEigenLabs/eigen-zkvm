@@ -47,9 +47,9 @@ c12_end=$(date +%s)
 aggregation_start=$(date +%s)
 
 echo " ==> aggregation stage <== "
-if [ ! -f "$WORKSPACE/$RECURSIVE_CIRCUIT.r1cs" ]; then
+if [ $first_run = "yes" ]; then
     echo "1. compile circuit, use task 0 by default"
-    ${ZKIT} compile -p goldilocks -i $CUR_DIR/../starkjs/circuits/0/$RECURSIVE_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
+    ${ZKIT} compile -p goldilocks -i $WORKSPACE/circuits/0/$RECURSIVE_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
 else
     echo "1.no need compile circom : "$WORKSPACE/$RECURSIVE_CIRCUIT.r1cs" already generated"
 fi
@@ -63,7 +63,7 @@ echo "3. generate the pil files and const polynomicals files "
 # generate the pil files and  const polynomicals files
 # input files :  $C12_VERIFIER.r1cs
 # output files :  $C12_VERIFIER.const  $C12_VERIFIER.pil  $C12_VERIFIER.exec
-if [ ! -f "$WORKSPACE/$RECURSIVE_CIRCUIT.pil" ]; then
+if [ $first_run = "yes" ]; then
     ${ZKIT} compressor12_setup  \
         --r $WORKSPACE/$RECURSIVE_CIRCUIT.r1cs \
         --c $WORKSPACE/$RECURSIVE_CIRCUIT.const \
@@ -99,7 +99,7 @@ aggregation_end=$(date +%s)
 final_start=$(date +%s)
 # final recursive stage 
 echo " ==> final recursive stage <== "
-if [ ! -f "$WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs" ]; then
+if [ $first_run = "yes" ]; then
     echo "1. compile circuit and generate r1cs and wasm"
     ${ZKIT} compile -p goldilocks -i $WORKSPACE/circuits/$RECURSIVE2_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE 
 else
@@ -108,7 +108,7 @@ fi
 
 
 echo "2. generate the pil files and  const polynomicals files "
-if [ ! -f "$WORKSPACE/$RECURSIVE2_CIRCUIT.pil" ]; then
+if [ $first_run = "yes" ]; then
     ${ZKIT} compressor12_setup \
         --r $WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs \
         --c $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
