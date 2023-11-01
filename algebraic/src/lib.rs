@@ -11,6 +11,8 @@ extern crate num_bigint;
 extern crate num_traits;
 extern crate rand;
 
+pub mod arch;
+
 pub mod circom_circuit;
 pub mod errors;
 pub mod field_gl;
@@ -26,6 +28,7 @@ pub use franklin_crypto::bellman as bellman_ce;
 
 #[cfg(test)]
 mod field_gl_test;
+// mod packed;
 
 #[cfg(target_arch = "wasm32")]
 extern crate wasm_bindgen;

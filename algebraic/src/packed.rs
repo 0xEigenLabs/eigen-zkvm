@@ -3,8 +3,8 @@ use core::iter::{Product, Sum};
 use core::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
 use core::slice;
 
-use crate::ops::Square;
-use crate::types::Field;
+// use crate::ops::Square;
+use crate::ff::*;
 
 /// # Safety
 /// - WIDTH is assumed to be a power of 2.
@@ -25,7 +25,7 @@ pub unsafe trait PackedField:
     + Mul<Self::Scalar, Output = Self>
     + MulAssign<Self>
     + MulAssign<Self::Scalar>
-    + Square
+    // + Square
     + Neg<Output = Self>
     + Product
     + Send
