@@ -248,6 +248,25 @@ struct Compressor12SetupOpt {
 
 /// Exec compressor12 for converting R1CS to PIL
 #[derive(Parser, Debug)]
+struct Compressor12Opt {
+    #[arg(long, default_value = "0")]
+    force_n_bits: usize,
+    // input: .r1cs, .wasm, zkin.json(input_file)
+    #[arg(long = "r", default_value = "mycircuit.verifier.r1cs")]
+    r1cs_file: String,
+    #[arg(long = "w", default_value = "mycircuit.verifier.wasm")]
+    wasm_file: String,
+    #[arg(long = "i", default_value = "mycircuit.proof.zkin.json")]
+    input_file: String,
+    // output: .const, .cm
+    #[arg(long = "c", default_value = "mycircuit.c12.const")]
+    const_file: String, // Output file required to build the constants
+    #[arg(long = "m", default_value = "mycircuit.c12.cm")]
+    commit_file: String,
+}
+
+/// Exec compressor12 for converting R1CS to PIL
+#[derive(Parser, Debug)]
 struct Compressor12ExecOpt {
     // input files :  $C12_VERIFIER.r1cs  $C12_VERIFIER.const  $C12_VERIFIER.pil
     #[arg(long = "i", default_value = "mycircuit.proof.zkin.json")]
@@ -363,6 +382,9 @@ enum Command {
     #[command(name = "analyse")]
     Analyse(AnalyseOpt),
 
+    #[command(name = "compressor12")]
+    Compressor12(Compressor12Opt),
+
     #[command(name = "compressor12_setup")]
     Compressor12Setup(Compressor12SetupOpt),
     #[command(name = "compressor12_exec")]
@@ -454,22 +476,32 @@ fn main() {
         .map_err(|e| EigenError::from(format!("stark prove error {:?}", e))),
 
         Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
-        Command::Compressor12Setup(args) => starky::compressor12_setup::setup(
-            &args.r1cs_file,
-            &args.pil_file,
-            &args.const_file,
-            &args.exec_file,
+        // Command::Compressor12Setup(args) => starky::compressor12_setup::setup(
+        //     &args.r1cs_file,
+        //     &args.pil_file,
+        //     &args.const_file,
+        //     &args.exec_file,
+        //     args.force_n_bits,
+        // )
+        // .map_err(|_| EigenError::from("compreesor12 setup error".to_string())),
+        Command::Compressor12(args) => starky::compress12(
             args.force_n_bits,
-        )
-        .map_err(|_| EigenError::from("compreesor12 setup error".to_string())),
-        Command::Compressor12Exec(args) => starky::compressor12_exec::exec(
-            &args.input_file,
+            &args.r1cs_file,
             &args.wasm_file,
-            &args.pil_file,
-            &args.exec_file,
+            &args.input_file,
+            &args.const_file,
             &args.commit_file,
         )
-        .map_err(|_| EigenError::from("compreesor12 exec error".to_string())),
+        .map_err(|_| EigenError::from("compreesor12 setup error".to_string())),
+
+        // Command::Compressor12Exec(args) => starky::compressor12_exec::exec(
+        //     &args.input_file,
+        //     &args.wasm_file,
+        //     &args.pil_file,
+        //     &args.exec_file,
+        //     &args.commit_file,
+        // )
+        // .map_err(|_| EigenError::from("compreesor12 exec error".to_string())),
         Command::JoinZkin(args) => {
             starky::zkin_join::join_zkin(&args.zkin1, &args.zkin2, &args.zkinout)
                 .map_err(|_| EigenError::from("join_zkin error".to_string()))

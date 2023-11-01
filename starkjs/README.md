@@ -27,9 +27,15 @@ export CIRCUIT=fib
 RUST_LOG=debug ../target/release/eigen-zkit compile -p goldilocks -i circuits/$CIRCUIT.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
 # Circom to Stark  
-RUST_LOG=debug ../target/release/eigen-zkit compressor12_setup  --r /tmp/$CIRCUIT.verifier.r1cs --c /tmp/c12.const  --p /tmp/c12.pil   --e /tmp/c12.exec
+#RUST_LOG=debug ../target/release/eigen-zkit compressor12_setup  --r /tmp/$CIRCUIT.verifier.r1cs --c /tmp/c12.const  --p /tmp/c12.pil   --e /tmp/c12.exec
+#RUST_LOG=debug ../target/release/eigen-zkit compressor12_exec --w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm --i circuits/$CIRCUIT.verifier.zkin.json --p /tmp/c12.pil  --e /tmp/c12.exec --m /tmp/c12.cm
 
-RUST_LOG=debug ../target/release/eigen-zkit compressor12_exec --w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm --i circuits/$CIRCUIT.verifier.zkin.json --p /tmp/c12.pil  --e /tmp/c12.exec --m /tmp/c12.cm
+RUST_LOG=debug ../target/release/eigen-zkit compressor12 \
+     --r /tmp/$CIRCUIT.verifier.r1cs \
+     --w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm\
+     --i circuits/$CIRCUIT.verifier.zkin.json \
+     --c /tmp/c12.const \
+     --m /tmp/c12.cm
 
 RUST_LOG=debug ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.bn128.json \
     -p /tmp/c12.pil.json \
