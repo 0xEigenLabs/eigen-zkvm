@@ -13,7 +13,7 @@ use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
 use std::collections::BTreeMap;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct PlonkSetup {
     // pub(crate) pil_str: String,
     pub(crate) pil_json: PIL, //todo

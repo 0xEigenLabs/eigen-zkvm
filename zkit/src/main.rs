@@ -385,10 +385,10 @@ enum Command {
     #[command(name = "compressor12")]
     Compressor12(Compressor12Opt),
 
-    #[command(name = "compressor12_setup")]
-    Compressor12Setup(Compressor12SetupOpt),
-    #[command(name = "compressor12_exec")]
-    Compressor12Exec(Compressor12ExecOpt),
+    // #[command(name = "compressor12_setup")]
+    // Compressor12Setup(Compressor12SetupOpt),
+    // #[command(name = "compressor12_exec")]
+    // Compressor12Exec(Compressor12ExecOpt),
     #[command(name = "join_zkin")]
     JoinZkin(JoinZkinExecOpt),
 
@@ -492,7 +492,7 @@ fn main() {
             &args.const_file,
             &args.commit_file,
         )
-        .map_err(|_| EigenError::from("compreesor12 setup error".to_string())),
+        .map_err(|_| EigenError::from("compreesor12 error".to_string())),
 
         // Command::Compressor12Exec(args) => starky::compressor12_exec::exec(
         //     &args.input_file,
