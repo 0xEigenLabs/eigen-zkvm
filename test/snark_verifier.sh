@@ -24,11 +24,6 @@ SNARK_INPUT=$5/final_input.zkin.json
 
 RUNDIR="${CUR_DIR}/../starkjs"
 
-SNARKJS=${CUR_DIR}/aggregation/node_modules/snarkjs/build/cli.cjs
-if [ ! -d "${CUR_DIR}/aggregation/node_modules/snarkjs" ]; then
-    cd ${CUR_DIR}/aggregation && npm install
-fi
-
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 
 if [ $first_run = "true" ]; then 
@@ -68,6 +63,10 @@ else
     if [ $CURVE != "BN128" ]; then
         echo "Not support ${CURVE}"
         exit -1
+    fi
+    SNARKJS=${CUR_DIR}/aggregation/node_modules/snarkjs/build/cli.cjs
+    if [ ! -d "${CUR_DIR}/aggregation/node_modules/snarkjs" ]; then
+        cd ${CUR_DIR}/aggregation && npm install
     fi
     if [ ! -f $BIG_SRS ]; then
         echo "downloading powersOfTau28_hez_final_${POWER}.ptau"
