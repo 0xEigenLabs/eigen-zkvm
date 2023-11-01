@@ -54,9 +54,11 @@ pub fn exec(
         .collect::<Vec<_>>();
 
     for i in 0..adds_len {
+        // add[i], PlonkAdd.2/3
         let w2 = FGL::from_raw_repr(<FGL as PrimeField>::Repr::from(adds[i * 4 + 2])).unwrap();
         let w3 = FGL::from_raw_repr(<FGL as PrimeField>::Repr::from(adds[i * 4 + 3])).unwrap();
 
+        // add[i], PlonkAdd.0/1
         let f_w = (w[adds[i * 4] as usize] * w2) + (w[adds[i * 4 + 1] as usize] * w3);
         w.push(f_w);
     }
@@ -67,6 +69,7 @@ pub fn exec(
 
     for i in 0..s_map_column_len {
         for c in 0..12 {
+            // s_map[c][i]
             let s = s_map[i * 12 + c] as usize;
 
             cm_pols.set_matrix(
