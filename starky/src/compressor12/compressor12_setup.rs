@@ -19,11 +19,11 @@ pub struct Options {
 // output: .pil, .const, .exec,
 pub fn setup(
     r1cs_file: &str,
-    pil_file: &str,
+    // pil_file: &str,
     const_file: &str,
-    exec_file: &str,
+    // exec_file: &str,
     force_n_bits: usize,
-) -> Result<()> {
+) -> Result<PlonkSetup> {
     // 0. readR1cs
     let r1cs = load_r1cs::<GL>(r1cs_file);
     let opts = Options {
@@ -33,17 +33,17 @@ pub fn setup(
     // 1. plonk setup: generate plonk circuit, the pil file.
     let res = PlonkSetup::new(&r1cs, &opts);
 
-    // 2. And write it into pil_file.
-    let mut file = File::create(pil_file).unwrap();
-    write!(file, "{}", res.pil_str).unwrap();
+    // // 2. And write it into pil_file.
+    // let mut file = File::create(pil_file).unwrap();
+    // write!(file, "{}", res.pil_str).unwrap();
 
     // 3. write const pols file
     res.const_pols.save(const_file)?;
 
-    // 4. construct and save ExecFile: plonk additions + sMap -> BigUint64Array
-    write_exec_file(exec_file, &res.plonk_additions, &res.s_map);
+    // // 4. construct and save ExecFile: plonk additions + sMap -> BigUint64Array
+    // write_exec_file(exec_file, &res.plonk_additions, &res.s_map);
 
-    Ok(())
+    Ok(res)
 }
 
 // construct and save ExecFile: plonk additions + sMap -> BigUint64Array

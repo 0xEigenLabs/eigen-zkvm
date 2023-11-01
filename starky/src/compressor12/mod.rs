@@ -2,6 +2,8 @@
 
 use crate::compressor12_exec::exec;
 use crate::compressor12_setup::setup;
+use algebraic::errors::EigenError;
+pub type Result<T> = std::result::Result<T, EigenError>;
 
 pub mod compressor12_exec;
 pub(crate) mod compressor12_pil;
@@ -25,17 +27,29 @@ pub fn compress12(
     pil_file: &str,
     exec_file: &str,
     commit_file: &str,
-) {
+) -> Result<()> {
     // todo remove the pil_file and exec_file.
 
     // setup phase:
     // input: .r1cs
     // output: .pil, .const, .exec,
     // return: todo PIL, exec file.
-    setup(r1cs_file, pil_file, const_file, exec_file, force_n_bits);
+    let plonk_setup = setup(
+        r1cs_file,
+        // pil_file,
+        const_file,
+        // exec_file,
+        force_n_bits,
+    )?;
 
     // exec phase:
     // input files: .wasm, .exec,  .pil, zkin.json(input file),
     // output: .cm
-    exec(input_file, wasm_file, pil_file, exec_file, commit_file);
+    exec(
+        plonk_setup,
+        input_file,
+        wasm_file,
+        // pil_file, exec_file,
+        commit_file,
+    )?;
 }

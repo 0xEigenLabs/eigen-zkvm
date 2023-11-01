@@ -1,3 +1,4 @@
+use crate::compressor12::plonk_setup::PlonkSetup;
 use crate::compressor12_pil::CompressorNameSpace::*;
 use crate::compressor12_pil::CompressorPolName::a;
 use crate::errors::EigenError;
@@ -18,21 +19,28 @@ pub type Result<T> = std::result::Result<T, EigenError>;
 // input files: .wasm, .exec,  .pil, zkin.json(input file),
 // output: .cm
 pub fn exec(
+    plonk_setup: PlonkSetup,
     input_file: &str,
     wasm_file: &str,
-    pil_file: &str,
-    exec_file: &str,
+    // pil_file: &str,
+    // exec_file: &str,
     commit_file: &str,
 ) -> Result<()> {
     // 0. load exec_file,
-    let (adds_len, s_map_column_len, adds, s_map) = read_exec_file(exec_file);
+    // let (adds_len, s_map_column_len, adds, s_map) = read_exec_file(exec_file);
+    let adds = plonk_setup.plonk_additions;
+    let s_map = plonk_setup.s_map;
+
+    let adds_len = adds.len();
+    let s_map_column_len = s_map[0].len();
 
     // 1. Compiles a .pil file to its json form , and save it.
     // TODO: the pil_str has been compiled in plonk_setup#3
-    let pil_json = compile_pil_from_path(pil_file);
-    let mut file = File::create(Path::new(&format!("{pil_file}.json"))).unwrap();
-    let input = serde_json::to_string(&pil_json).unwrap();
-    write!(file, "{}", input).unwrap();
+    // let pil_json = compile_pil_from_path(pil_file);
+    // let mut file = File::create(Path::new(&format!("{pil_file}.json"))).unwrap();
+    // let input = serde_json::to_string(&pil_json).unwrap();
+    // write!(file, "{}", input).unwrap();
+    let pil_json = plonk_setup.pil_json;
 
     // 2. construct cmPol: .pil.json -> .cm
     let mut cm_pols = PolsArray::new(&pil_json, PolKind::Commit);
@@ -55,11 +63,11 @@ pub fn exec(
 
     for i in 0..adds_len {
         // add[i], PlonkAdd.2/3
-        let w2 = FGL::from_raw_repr(<FGL as PrimeField>::Repr::from(adds[i * 4 + 2])).unwrap();
-        let w3 = FGL::from_raw_repr(<FGL as PrimeField>::Repr::from(adds[i * 4 + 3])).unwrap();
+        let w2 = adds[i * 4].2;
+        let w3 = adds[i * 4].3;
 
         // add[i], PlonkAdd.0/1
-        let f_w = (w[adds[i * 4] as usize] * w2) + (w[adds[i * 4 + 1] as usize] * w3);
+        let f_w = (w[adds[i * 4].0] * w2) + (w[adds[i * 4].1] * w3);
         w.push(f_w);
     }
 
@@ -70,7 +78,8 @@ pub fn exec(
     for i in 0..s_map_column_len {
         for c in 0..12 {
             // s_map[c][i]
-            let s = s_map[i * 12 + c] as usize;
+            // let s = s_map[i * 12 + c] as usize;
+            let s = s_map[c][i] as usize;
 
             cm_pols.set_matrix(
                 &pil_json,

@@ -15,8 +15,8 @@ use std::collections::BTreeMap;
 
 #[derive(Default, Debug)]
 pub struct PlonkSetup {
-    pub(crate) pil_str: String,
-    // pub(crate) pil_json: PIL, //todo
+    // pub(crate) pil_str: String,
+    pub(crate) pil_json: PIL, //todo
     pub(crate) const_pols: PolsArray,
     pub(crate) s_map: Vec<Vec<u64>>,
     pub(crate) plonk_additions: Vec<PlonkAdd>,
@@ -39,7 +39,7 @@ impl PlonkSetup {
         let (const_pols, s_map) = plonk_setup_compressor(r1cs, &pil_json, &plonk_setup_info);
 
         Self {
-            pil_str,
+            pil_json,
             const_pols,
             s_map,
             plonk_additions: plonk_setup_info.pa,
