@@ -263,6 +263,8 @@ struct Compressor12Opt {
     const_file: String, // Output file required to build the constants
     #[arg(long = "m", default_value = "mycircuit.c12.cm")]
     commit_file: String,
+    #[arg(long = "p", default_value = "mycircuit.c12.pil.json")]
+    pil_json_file: String,
 }
 
 /// Exec compressor12 for converting R1CS to PIL
@@ -491,6 +493,7 @@ fn main() {
             &args.input_file,
             &args.const_file,
             &args.commit_file,
+            &args.pil_json_file,
         )
         .map_err(|_| EigenError::from("compreesor12 error".to_string())),
 

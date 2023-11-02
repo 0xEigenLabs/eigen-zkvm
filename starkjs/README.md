@@ -34,13 +34,14 @@ RUST_LOG=debug ../target/release/eigen-zkit compressor12 \
      --r /tmp/$CIRCUIT.verifier.r1cs \
      --w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm\
      --i circuits/$CIRCUIT.verifier.zkin.json \
-     --c /tmp/c12.const \
-     --m /tmp/c12.cm
-
+     --c /tmp/c12_new.const \
+     --m /tmp/c12_new.cm \
+     --p /tmp/c12_new.pil.json
+     
 RUST_LOG=debug ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.bn128.json \
-    -p /tmp/c12.pil.json \
-    --o /tmp/c12.const \
-    --m /tmp/c12.cm -c circuits/circuit.circom --i circuits/circuit.zkin.json --norm_stage
+    -p /tmp/c12_new.pil.json \
+    --o /tmp/c12_new.const \
+    --m /tmp/c12_new.cm -c circuits/circuit.circom --i circuits/circuit.zkin.json --norm_stage
 ```
 
 ### Top Layer: Snark proof

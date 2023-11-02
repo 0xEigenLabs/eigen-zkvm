@@ -22,7 +22,7 @@ pub fn exec(
     plonk_setup: PlonkSetup,
     input_file: &str,
     wasm_file: &str,
-    // pil_file: &str,
+    pil_json_file: &str,
     // exec_file: &str,
     commit_file: &str,
 ) -> Result<()> {
@@ -41,6 +41,9 @@ pub fn exec(
     // let input = serde_json::to_string(&pil_json).unwrap();
     // write!(file, "{}", input).unwrap();
     let pil_json = plonk_setup.pil_json;
+    let mut file = File::create(Path::new(pil_json_file)).unwrap();
+    let input = serde_json::to_string(&pil_json).unwrap();
+    write!(file, "{}", input).unwrap();
 
     // 2. construct cmPol: .pil.json -> .cm
     let mut cm_pols = PolsArray::new(&pil_json, PolKind::Commit);

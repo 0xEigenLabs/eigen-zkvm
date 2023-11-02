@@ -13,7 +13,7 @@ pub(crate) mod plonk_setup;
 
 // compress12 phase:
 // input: .r1cs, .wasm, zkin.json(input_file)
-// output: .const, .cm
+// output: .const, .cm, pil.json
 pub fn compress12(
     force_n_bits: usize,
     r1cs_file: &str,
@@ -21,6 +21,7 @@ pub fn compress12(
     input_file: &str,
     const_file: &str,
     commit_file: &str,
+    pil_json_file: &str,
 ) -> Result<()> {
     // todo remove the pil_file and exec_file.
 
@@ -38,12 +39,13 @@ pub fn compress12(
 
     // exec phase:
     // input files: .wasm, .exec,  .pil, zkin.json(input file),
-    // output: .cm
+    // output: .cm, .pil.json
     exec(
         plonk_setup,
         input_file,
         wasm_file,
-        // pil_file, exec_file,
+        pil_json_file,
+        // exec_file,
         commit_file,
     )
 }
