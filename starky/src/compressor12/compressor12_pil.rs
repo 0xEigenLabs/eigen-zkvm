@@ -394,7 +394,7 @@ mod test {
         write!(file, "{}", pil_string).unwrap();
 
         let pil_json_from_str = compile_pil_from_str(&pil_string);
-        let pil_json_from_path = compile_pil_from_str(pil_file_path);
+        let pil_json_from_path = compile_pil_from_path(pil_file_path);
         assert_eq!(pil_json_from_str, pil_json_from_path);
     }
 }
