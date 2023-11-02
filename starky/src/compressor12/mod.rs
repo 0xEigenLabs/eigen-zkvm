@@ -32,7 +32,7 @@ pub fn compress12(
     // input: .r1cs
     // output: .pil, .const, .exec,
     // return: todo PIL, exec file.
-    let plonk_setup = setup(r1cs_file, pil_file, const_file, exec_file, force_n_bits)?;
+    let plonk_setup = setup(r1cs_file, const_file, exec_file, force_n_bits)?;
 
     // exec phase:
     // input files: .wasm, .exec,  .pil, zkin.json(input file),
@@ -43,7 +43,6 @@ pub fn compress12(
         wasm_file,
         pil_json_file,
         // debug one
-        pil_file,
         exec_file,
         // debug one above
         commit_file,

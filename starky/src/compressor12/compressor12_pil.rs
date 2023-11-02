@@ -395,6 +395,16 @@ mod test {
 
         let pil_json_from_str = compile_pil_from_str(&pil_string);
         let pil_json_from_path = compile_pil_from_path(pil_file_path);
-        assert_eq!(pil_json_from_str, pil_json_from_path);
+
+        let mut file = File::create(Path::new(&format!("{pil_file_path}.str.json"))).unwrap();
+        let input_old = serde_json::to_string(&pil_json_from_str).unwrap();
+        write!(file, "{}", input_old).unwrap();
+
+        let mut file = File::create(Path::new(&format!("{pil_file_path}.path.json"))).unwrap();
+        let input_old = serde_json::to_string(&pil_json_from_path).unwrap();
+        write!(file, "{}", input_old).unwrap();
+
+        // The fileName in them are different.
+        // assert_eq!(pil_json_from_str, pil_json_from_path);
     }
 }

@@ -19,7 +19,6 @@ pub struct Options {
 // output: .pil, .const, .exec,
 pub fn setup(
     r1cs_file: &str,
-    pil_file: &str,
     const_file: &str,
     exec_file: &str,
     force_n_bits: usize,
@@ -32,10 +31,6 @@ pub fn setup(
 
     // 1. plonk setup: generate plonk circuit, the pil file.
     let res = PlonkSetup::new(&r1cs, &opts);
-
-    // // 2. And write it into pil_file.
-    let mut file = File::create(pil_file).unwrap();
-    write!(file, "{}", res.pil_str).unwrap();
 
     // 3. write const pols file
     res.const_pols.save(const_file)?;
