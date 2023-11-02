@@ -3,7 +3,7 @@ use crate::compressor12_pil::CompressorNameSpace::*;
 use crate::compressor12_pil::CompressorPolName::a;
 use crate::errors::EigenError;
 use crate::io_utils::read_vec_from_file;
-use crate::pilcom::compile_pil_from_path;
+use crate::pilcom::{compile_pil_from_path, compile_pil_from_str};
 use crate::polsarray::{PolKind, PolsArray};
 use num_traits::Zero;
 use plonky::ff::PrimeField;
@@ -48,7 +48,10 @@ pub fn exec(
     write!(file, "{}", input_old).unwrap();
     // debug one above
 
-    let pil_json = plonk_setup.pil_json;
+    // TODO: Even if the pil_str has been compiled in plonk_setup#3
+    // TODO: however it can be passed as param to here. as the pil_json prior is different with pil_json here.
+    // let pil_json = plonk_setup.pil_json;
+    let pil_json = compile_pil_from_str(&plonk_setup.pil_str);
     let mut file = File::create(Path::new(pil_json_file)).unwrap();
     let input = serde_json::to_string(&pil_json_file).unwrap();
     write!(file, "{}", input).unwrap();
