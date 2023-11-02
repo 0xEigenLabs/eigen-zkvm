@@ -2,14 +2,11 @@ use crate::compressor12::plonk_setup::PlonkSetup;
 use crate::compressor12_pil::CompressorNameSpace::*;
 use crate::compressor12_pil::CompressorPolName::a;
 use crate::errors::EigenError;
-use crate::io_utils::read_vec_from_file;
-use crate::pilcom::{compile_pil_from_path, compile_pil_from_str};
 use crate::polsarray::{PolKind, PolsArray};
 use num_traits::Zero;
 use plonky::ff::PrimeField;
 use plonky::field_gl::Fr as FGL;
 use plonky::witness::{load_input_for_witness, WitnessCalculator};
-use std::fmt::format;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -104,57 +101,4 @@ pub fn exec(
 
     log::debug!("files Generated Correctly");
     Ok(())
-}
-
-#[deprecated]
-fn read_exec_file(exec_file: &str) -> (usize, usize, Vec<u64>, Vec<u64>) {
-    let mut buff = read_vec_from_file(exec_file).unwrap();
-
-    let mut new_buff = buff.split_off(2);
-    let adds_len = buff[0] as usize;
-    let s_map_column_len = buff[1] as usize;
-
-    let size = adds_len * 4 + s_map_column_len * 12;
-    assert_eq!(new_buff.len(), size);
-
-    let s_map = new_buff.split_off(adds_len * 4);
-    let adds = new_buff;
-
-    (adds_len, s_map_column_len, adds, s_map)
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::compressor12_setup::write_exec_file;
-
-    #[test]
-    fn test_write_and_read_exec_file() {
-        let file_path = String::from("/tmp/test_write_and_read_exec_file.txt");
-
-        let target_adds = vec![
-            // PlonkAdd()
-        ];
-
-        let target_s_map = vec![
-            vec![1, 2, 4],
-            vec![2, 3, 42],
-            vec![1, 1, 3],
-            vec![4, 5, 2],
-            vec![3, 4, 5],
-            vec![1, 2, 4],
-            vec![2, 3, 42],
-            vec![1, 1, 3],
-            vec![4, 5, 2],
-            vec![3, 4, 5],
-            vec![3, 4, 5],
-            vec![3, 4, 5],
-        ];
-
-        write_exec_file(&file_path, &target_adds, &target_s_map);
-
-        let (adds_len, _s_map_column_len, _adds, _s_map) = read_exec_file(&file_path);
-
-        assert_eq!(adds_len, target_adds.len());
-    }
 }
