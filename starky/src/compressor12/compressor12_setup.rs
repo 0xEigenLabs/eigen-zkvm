@@ -17,31 +17,24 @@ pub struct Options {
 // setup phase:
 // input: .r1cs
 // output: .pil, .const, .exec,
-pub fn setup(
-    r1cs_file: &str,
-    const_file: &str,
-    exec_file: &str,
-    force_n_bits: usize,
-) -> Result<PlonkSetup> {
+pub fn setup(r1cs_file: &str, const_file: &str, force_n_bits: usize) -> Result<PlonkSetup> {
     // 0. readR1cs
     let r1cs = load_r1cs::<GL>(r1cs_file);
     let opts = Options {
         force_bits: force_n_bits,
     };
 
-    // 1. plonk setup: generate plonk circuit, the pil file.
+    // 1. plonk setup: generate plonk circuit, the pil_json.
     let res = PlonkSetup::new(&r1cs, &opts);
 
-    // 3. write const pols file
+    // 2. write const pols file
     res.const_pols.save(const_file)?;
-
-    // 4. construct and save ExecFile: plonk additions + sMap -> BigUint64Array
-    write_exec_file(exec_file, &res.plonk_additions, &res.s_map);
 
     Ok(res)
 }
 
 // construct and save ExecFile: plonk additions + sMap -> BigUint64Array
+#[deprecated]
 pub(super) fn write_exec_file(exec_file: &str, adds: &Vec<PlonkAdd>, s_map: &Vec<Vec<u64>>) {
     let adds_len = adds.len();
     let s_map_row_len = s_map.len();

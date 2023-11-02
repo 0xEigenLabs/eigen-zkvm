@@ -24,19 +24,15 @@ pub fn exec(
     input_file: &str,
     wasm_file: &str,
     pil_json_file: &str,
-    exec_file: &str, // debug one
     commit_file: &str,
 ) -> Result<()> {
-    // 0. load exec_file,
-    // debug one
-    // let (adds_len_old, s_map_column_len_old, adds_old, s_map_old) = read_exec_file(exec_file);
-
+    // 0. prepare data,
     let adds = plonk_setup.plonk_additions;
     let s_map = plonk_setup.s_map;
     let adds_len = adds.len();
     let s_map_column_len = s_map[0].len();
 
-    // 1. Compiles a .pil file to its json form , and save it.
+    // 1. save pil_json data..
     let pil_json = plonk_setup.pil_json;
     let mut file = File::create(Path::new(pil_json_file)).unwrap();
     let input = serde_json::to_string(&pil_json).unwrap();
@@ -107,9 +103,10 @@ pub fn exec(
     cm_pols.save(commit_file)?;
 
     log::debug!("files Generated Correctly");
-    Result::Ok(())
+    Ok(())
 }
 
+#[deprecated]
 fn read_exec_file(exec_file: &str) -> (usize, usize, Vec<u64>, Vec<u64>) {
     let mut buff = read_vec_from_file(exec_file).unwrap();
 

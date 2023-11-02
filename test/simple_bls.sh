@@ -12,18 +12,26 @@ npm run $CIRCUIT
 ../target/release/eigen-zkit compile -p goldilocks -i circuits/$CIRCUIT.verifier.circom -l node_modules/pil-stark/circuits.gl --O2=full -o /tmp/
 
 # Circom to Stark
-../target/release/eigen-zkit compressor12_setup \
-    --r /tmp/$CIRCUIT.verifier.r1cs \
-    --c /tmp/c12.const \
-    --p /tmp/c12.pil \
-    --e /tmp/c12.exec
+#../target/release/eigen-zkit compressor12_setup \
+#    --r /tmp/$CIRCUIT.verifier.r1cs \
+#    --c /tmp/c12.const \
+#    --p /tmp/c12.pil \
+#    --e /tmp/c12.exec
+#
+#../target/release/eigen-zkit compressor12_exec \
+#    --w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm  \
+#    --i circuits/$CIRCUIT.verifier.zkin.json  \
+#    --p /tmp/c12.pil  \
+#    --e /tmp/c12.exec \
+#    --m /tmp/c12.cm
 
-../target/release/eigen-zkit compressor12_exec \
+../target/release/eigen-zkit compressor12 \
+    --r /tmp/$CIRCUIT.verifier.r1cs \
     --w /tmp/$CIRCUIT.verifier_js/$CIRCUIT.verifier.wasm  \
     --i circuits/$CIRCUIT.verifier.zkin.json  \
-    --p /tmp/c12.pil  \
-    --e /tmp/c12.exec \
-    --m /tmp/c12.cm
+    --c /tmp/c12.const \
+    --m /tmp/c12.cm \
+    --p /tmp/c12.pil.json
 
 ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.bls12381.json \
     -p /tmp/c12.pil.json \

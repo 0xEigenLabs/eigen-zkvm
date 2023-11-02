@@ -39,24 +39,32 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
 
 ../target/release/eigen-zkit compile -p goldilocks -i $WORKSPACE/circuits/$C12_VERIFIER.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/$TASK_NO
 
-# generate the pil files and  const constant polynomial files
-# input files :  $C12_VERIFIER.r1cs
-# output files :  $C12_VERIFIER.exec, $C12_VERIFIER.const  $C12_VERIFIER.pil
-../target/release/eigen-zkit compressor12_setup \
-    --r $WORKSPACE/$C12_VERIFIER.r1cs \
-    --c $WORKSPACE/$C12_VERIFIER.const \
-    --p $WORKSPACE/$C12_VERIFIER.pil \
-    --e $WORKSPACE/$C12_VERIFIER.exec
+## generate the pil files and  const constant polynomial files
+## input files :  $C12_VERIFIER.r1cs
+## output files :  $C12_VERIFIER.exec, $C12_VERIFIER.const  $C12_VERIFIER.pil
+#../target/release/eigen-zkit compressor12_setup \
+#    --r $WORKSPACE/$C12_VERIFIER.r1cs \
+#    --c $WORKSPACE/$C12_VERIFIER.const \
+#    --p $WORKSPACE/$C12_VERIFIER.pil \
+#    --e $WORKSPACE/$C12_VERIFIER.exec
+#
+## generate the commit polynomials files
+## input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil  $C12_VERIFIER.exec
+## output files :  $C12_VERIFIER.cm
+#../target/release/eigen-zkit compressor12_exec \
+#    --w $WORKSPACE/$C12_VERIFIER"_js"/$CIRCUIT.c12.wasm  \
+#    --i $WORKSPACE/circuits/$C12_VERIFIER.zkin.json  \
+#    --p $WORKSPACE/$C12_VERIFIER.pil  \
+#    --e $WORKSPACE/$C12_VERIFIER.exec \
+#    --m $WORKSPACE/$C12_VERIFIER.cm
 
-# generate the commit polynomials files
-# input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil  $C12_VERIFIER.exec
-# output files :  $C12_VERIFIER.cm
-../target/release/eigen-zkit compressor12_exec \
+../target/release/eigen-zkit compressor12 \
+    --r $WORKSPACE/$C12_VERIFIER.r1cs \
     --w $WORKSPACE/$C12_VERIFIER"_js"/$CIRCUIT.c12.wasm  \
     --i $WORKSPACE/circuits/$C12_VERIFIER.zkin.json  \
-    --p $WORKSPACE/$C12_VERIFIER.pil  \
-    --e $WORKSPACE/$C12_VERIFIER.exec \
+    --c $WORKSPACE/$C12_VERIFIER.const \
     --m $WORKSPACE/$C12_VERIFIER.cm
+    --p $WORKSPACE/$C12_VERIFIER.pil.json  \
 
 mkdir -p $WORKSPACE/aggregation/$RECURSIVE1_VERIFIER/
 

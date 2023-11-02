@@ -23,16 +23,10 @@ pub fn compress12(
     commit_file: &str,
     pil_json_file: &str,
 ) -> Result<()> {
-    // todo remove the pil_file and exec_file.
-
-    let pil_file = "/tmp/c12.pil";
-    let exec_file = "/tmp/c12.exec";
-
     // setup phase:
     // input: .r1cs
     // output: .pil, .const, .exec,
-    // return: todo PIL, exec file.
-    let plonk_setup = setup(r1cs_file, const_file, exec_file, force_n_bits)?;
+    let plonk_setup = setup(r1cs_file, const_file, force_n_bits)?;
 
     // exec phase:
     // input files: .wasm, .exec,  .pil, zkin.json(input file),
@@ -42,9 +36,6 @@ pub fn compress12(
         input_file,
         wasm_file,
         pil_json_file,
-        // debug one
-        exec_file,
-        // debug one above
         commit_file,
     )
 }

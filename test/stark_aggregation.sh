@@ -59,30 +59,39 @@ echo "2. combine input1.zkin.json with input2.zkin.json "
 ${ZKIT} join_zkin --zkin1 $input0/input.zkin.json --zkin2 $input1/input.zkin.json  --zkinout $input0/r1_input.zkin.json
 
 
-echo "3. generate the pil files and const polynomicals files "
-# generate the pil files and  const polynomicals files
-# input files :  $C12_VERIFIER.r1cs
-# output files :  $C12_VERIFIER.const  $C12_VERIFIER.pil  $C12_VERIFIER.exec
-if [ $first_run = "yes" ]; then
-    ${ZKIT} compressor12_setup  \
-        --r $WORKSPACE/$RECURSIVE_CIRCUIT.r1cs \
-        --c $WORKSPACE/$RECURSIVE_CIRCUIT.const \
-        --p $WORKSPACE/$RECURSIVE_CIRCUIT.pil \
-        --e $WORKSPACE/$RECURSIVE_CIRCUIT.exec
-fi
+#echo "3. generate the pil files and const polynomicals files "
+## generate the pil files and  const polynomicals files
+## input files :  $C12_VERIFIER.r1cs
+## output files :  $C12_VERIFIER.const  $C12_VERIFIER.pil  $C12_VERIFIER.exec
+#if [ $first_run = "yes" ]; then
+#    ${ZKIT} compressor12_setup  \
+#        --r $WORKSPACE/$RECURSIVE_CIRCUIT.r1cs \
+#        --c $WORKSPACE/$RECURSIVE_CIRCUIT.const \
+#        --p $WORKSPACE/$RECURSIVE_CIRCUIT.pil \
+#        --e $WORKSPACE/$RECURSIVE_CIRCUIT.exec
+#fi
+#
+#echo "4. generate the commit polynomicals files  "
+## generate the commit polynomicals files
+## input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil  $C12_VERIFIER.exec
+## output files :  $C12_VERIFIER.cm
+#${ZKIT} compressor12_exec \
+#    --w $WORKSPACE/$RECURSIVE_CIRCUIT"_js"/$RECURSIVE_CIRCUIT.wasm  \
+#    --i $input0/r1_input.zkin.json  \
+#    --p $WORKSPACE/$RECURSIVE_CIRCUIT.pil  \
+#    --e $WORKSPACE/$RECURSIVE_CIRCUIT.exec \
+#    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm
 
-echo "4. generate the commit polynomicals files  "
-# generate the commit polynomicals files 
-# input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil  $C12_VERIFIER.exec
-# output files :  $C12_VERIFIER.cm
-${ZKIT} compressor12_exec \
+echo "3.compressor12. generate commit/const poly and pil.json "
+../target/release/eigen-zkit compressor12 \
+    --r $WORKSPACE/$RECURSIVE_CIRCUIT.r1cs \
     --w $WORKSPACE/$RECURSIVE_CIRCUIT"_js"/$RECURSIVE_CIRCUIT.wasm  \
     --i $input0/r1_input.zkin.json  \
-    --p $WORKSPACE/$RECURSIVE_CIRCUIT.pil  \
-    --e $WORKSPACE/$RECURSIVE_CIRCUIT.exec \
+    --c $WORKSPACE/$RECURSIVE_CIRCUIT.const \
     --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm
+    --p $WORKSPACE/$RECURSIVE_CIRCUIT.pil.json  \
 
-echo "5. generate recursive2 proof"
+echo "4. generate recursive2 proof"
 # generate the stark proof and the circom circuits to verify stark proof.
 # input files : $C12_VERIFIER.pil.json(stark proof)  $C12_VERIFIER.const(const polynomials)  $C12_VERIFIER.cm (commit polynomials)
 # output files :  $RECURSIVE2_CIRCUIT.circom  $RECURSIVE2_CIRCUIT/r2_input.json
@@ -107,25 +116,32 @@ else
 fi
 
 
-echo "2. generate the pil files and  const polynomicals files "
-if [ $first_run = "yes" ]; then
-    ${ZKIT} compressor12_setup \
-        --r $WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs \
-        --c $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
-        --p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil \
-        --e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec
-fi
-
-echo "3. generate the commit polynomicals files "
-${ZKIT} compressor12_exec \
+#echo "2. generate the pil files and  const polynomicals files "
+#if [ $first_run = "yes" ]; then
+#    ${ZKIT} compressor12_setup \
+#        --r $WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs \
+#        --c $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
+#        --p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil \
+#        --e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec
+#fi
+#
+#echo "3. generate the commit polynomicals files "
+#${ZKIT} compressor12_exec \
+#    --w $WORKSPACE/$RECURSIVE2_CIRCUIT"_js"/$RECURSIVE2_CIRCUIT.wasm  \
+#    --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json   \
+#    --p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil  \
+#    --e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec \
+#    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm
+echo "2.compressor12. generate commit/const poly and pil.json "
+../target/release/eigen-zkit compressor12 \
+    --r $WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs \
     --w $WORKSPACE/$RECURSIVE2_CIRCUIT"_js"/$RECURSIVE2_CIRCUIT.wasm  \
     --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json   \
-    --p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil  \
-    --e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec \
+    --c $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
     --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm
+    --p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json  \
 
-
-echo "4. generate final proof  "
+echo "3. generate final proof  "
 # Remark: the N of final.starkStruct must be 2^20 , because the degree of $RECURSIVE2_CIRCUIT.pil is 2^20 which determined by the proocess of converting  $RECURSIVE_CIRCUIT2.circom to  $RECURSIVE_CIRCUIT2.pil
 STARK_STRUCT=$CUR_DIR/../starky/data/final.starkStruct.bls12381.json
 if [ $CURVE = "BN128" ]; then

@@ -26,10 +26,7 @@ impl PlonkSetup {
         // 1. plonk_setup_render phase
         let plonk_setup_info = PlonkSetupRenderInfo::plonk_setup_render(r1cs, opts);
         // 2. render .pil file by template.
-        // //      And save as a file.
         let pil_str = compressor12_pil::render(plonk_setup_info.n_bits, plonk_setup_info.n_publics);
-        // let mut file = File::create(out_pil.clone()).unwrap();
-        // write!(file, "{}", pil_str).unwrap();
 
         // 3. compile pil to pil_json
         let pil_json = compile_pil_from_str(&pil_str);
