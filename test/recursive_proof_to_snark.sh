@@ -63,7 +63,7 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
     --w $WORKSPACE/$C12_VERIFIER"_js"/$CIRCUIT.c12.wasm  \
     --i $WORKSPACE/circuits/$C12_VERIFIER.zkin.json  \
     --c $WORKSPACE/$C12_VERIFIER.const \
-    --m $WORKSPACE/$C12_VERIFIER.cm
+    --m $WORKSPACE/$C12_VERIFIER.cm \
     --p $WORKSPACE/$C12_VERIFIER.pil.json
 
 mkdir -p $WORKSPACE/aggregation/$RECURSIVE1_VERIFIER/

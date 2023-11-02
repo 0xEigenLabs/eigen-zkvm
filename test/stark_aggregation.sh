@@ -88,7 +88,7 @@ echo "3.compressor12. generate commit/const poly and pil.json "
     --w $WORKSPACE/$RECURSIVE_CIRCUIT"_js"/$RECURSIVE_CIRCUIT.wasm  \
     --i $input0/r1_input.zkin.json  \
     --c $WORKSPACE/$RECURSIVE_CIRCUIT.const \
-    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm
+    --m $WORKSPACE/$RECURSIVE_CIRCUIT.cm \
     --p $WORKSPACE/$RECURSIVE_CIRCUIT.pil.json
 
 echo "4. generate recursive2 proof"
@@ -138,7 +138,7 @@ echo "2.compressor12. generate commit/const poly and pil.json "
     --w $WORKSPACE/$RECURSIVE2_CIRCUIT"_js"/$RECURSIVE2_CIRCUIT.wasm  \
     --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT/r2_input.zkin.json   \
     --c $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
-    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm
+    --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm \
     --p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json
 
 echo "3. generate final proof  "
