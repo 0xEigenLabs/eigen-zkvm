@@ -373,6 +373,7 @@ macro_rules! c_mul_add {
 #[cfg(test)]
 mod test {
     use crate::compressor12_pil::render;
+    use crate::pilcom::{compile_pil_from_path, compile_pil_from_str};
     use std::fs::File;
     use std::io::Write;
     use std::path::Path;
@@ -387,8 +388,13 @@ mod test {
 
     #[test]
     fn test_render_and_compile() {
+        let pil_file_path = "/tmp/render_pil_rs.pil";
         let pil_string = render(5, 5);
-        let mut file = File::create(Path::new("/tmp/render_pil_rs.pil")).unwrap();
+        let mut file = File::create(Path::new(pil_file_path)).unwrap();
         write!(file, "{}", pil_string).unwrap();
+
+        let pil_json_from_str = compile_pil_from_str(&pil_string);
+        let pil_json_from_path = compile_pil_from_str(pil_file_path);
+        assert_eq!(pil_json_from_str, pil_json_from_path);
     }
 }
