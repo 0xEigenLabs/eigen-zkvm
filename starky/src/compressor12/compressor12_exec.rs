@@ -56,10 +56,8 @@ pub fn exec(
 
     for i in 0..adds_len {
         // TODO: here we can's assign `let w2 = adds[i].2;`. As adds[i].2 is mont form. But here w2 need mont_reduce form.?
-        let a2: u64 = adds[i].2.into();
-        let a3: u64 = adds[i].3.into();
-        let w2 = FGL::from_raw_repr(<FGL as PrimeField>::Repr::from(a2))?;
-        let w3 = FGL::from_raw_repr(<FGL as PrimeField>::Repr::from(a3))?;
+        let w2 = FGL::from_raw_repr(adds[i].2.into_raw_repr())?;
+        let w3 = FGL::from_raw_repr(adds[i].3.into_raw_repr())?;
 
         let f_w = (w[adds[i].0] * w2) + (w[adds[i].1] * w3);
         w.push(f_w);
