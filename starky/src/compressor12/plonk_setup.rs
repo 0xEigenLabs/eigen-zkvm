@@ -13,9 +13,9 @@ use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
 use std::collections::BTreeMap;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct PlonkSetup {
-    pub(crate) pil_str: String,
+    pub(crate) pil_json: PIL,
     pub(crate) const_pols: PolsArray,
     pub(crate) s_map: Vec<Vec<u64>>,
     pub(crate) plonk_additions: Vec<PlonkAdd>,
@@ -26,10 +26,7 @@ impl PlonkSetup {
         // 1. plonk_setup_render phase
         let plonk_setup_info = PlonkSetupRenderInfo::plonk_setup_render(r1cs, opts);
         // 2. render .pil file by template.
-        // //      And save as a file.
         let pil_str = compressor12_pil::render(plonk_setup_info.n_bits, plonk_setup_info.n_publics);
-        // let mut file = File::create(out_pil.clone()).unwrap();
-        // write!(file, "{}", pil_str).unwrap();
 
         // 3. compile pil to pil_json
         let pil_json = compile_pil_from_str(&pil_str);
@@ -38,7 +35,7 @@ impl PlonkSetup {
         let (const_pols, s_map) = plonk_setup_compressor(r1cs, &pil_json, &plonk_setup_info);
 
         Self {
-            pil_str,
+            pil_json,
             const_pols,
             s_map,
             plonk_additions: plonk_setup_info.pa,
