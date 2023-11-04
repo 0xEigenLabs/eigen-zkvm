@@ -1,5 +1,8 @@
-//！ Porting from plonky2
-//!  https://github.com/0xPolygonZero/plonky2/blob/main/field/src/arch/x86_64/avx512_goldilocks_field.rs
+//! Porting from plonky2
+//! https://github.com/0xPolygonZero/plonky2/blob/main/field/src/arch/x86_64/avx512_goldilocks_field.rs
+//!
+//! How to build/run/test:
+//! RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo build --release
 use crate::ff::*;
 use crate::field_gl::{Fr, FrRepr as GoldilocksField};
 use core::arch::x86_64::*;
