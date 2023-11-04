@@ -1,3 +1,5 @@
+//！ Porting from plonky2:
+//!  https://github.com/0xPolygonZero/plonky2/blob/main/field/src/arch/x86_64/avx2_goldilocks_field.rs
 use crate::ff::*;
 use crate::field_gl::{Fr, FrRepr as GoldilocksField};
 use core::arch::x86_64::*;

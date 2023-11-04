@@ -1,9 +1,10 @@
+//！ Porting from plonky2
+//!  https://github.com/0xPolygonZero/plonky2/blob/main/field/src/arch/x86_64/avx512_goldilocks_field.rs
 use crate::ff::*;
 use crate::field_gl::{Fr, FrRepr as GoldilocksField};
 use core::arch::x86_64::*;
 use core::fmt;
 use core::fmt::{Debug, Formatter};
-// use core::iter::{Product, Sum};
 use core::mem::transmute;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
