@@ -1,14 +1,11 @@
+use crate::ff::*;
+use crate::field_gl::{Fr, FrRepr as GoldilocksField};
 use core::arch::x86_64::*;
 use core::fmt;
 use core::fmt::{Debug, Formatter};
-use core::iter::{Product, Sum};
+// use core::iter::{Product, Sum};
 use core::mem::transmute;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-
-use crate::goldilocks_field::GoldilocksField;
-use crate::ops::Square;
-use crate::packed::PackedField;
-use crate::types::{Field, Field64};
 
 /// AVX512 Goldilocks Field
 ///
@@ -21,6 +18,8 @@ use crate::types::{Field, Field64};
 #[repr(transparent)]
 pub struct Avx512GoldilocksField(pub [GoldilocksField; 8]);
 
+const WIDTH: usize = 8;
+
 impl Avx512GoldilocksField {
     #[inline]
     fn new(x: __m512i) -> Self {
@@ -30,33 +29,27 @@ impl Avx512GoldilocksField {
     fn get(&self) -> __m512i {
         unsafe { transmute(*self) }
     }
-}
-
-unsafe impl PackedField for Avx512GoldilocksField {
-    const WIDTH: usize = 8;
-
-    type Scalar = GoldilocksField;
-
-    const ZEROS: Self = Self([GoldilocksField::ZERO; 8]);
-    const ONES: Self = Self([GoldilocksField::ONE; 8]);
-
     #[inline]
-    fn from_slice(slice: &[Self::Scalar]) -> &Self {
-        assert_eq!(slice.len(), Self::WIDTH);
+    pub fn from_slice(slice: &[GoldilocksField]) -> &Self {
+        assert_eq!(slice.len(), WIDTH);
         unsafe { &*slice.as_ptr().cast() }
     }
     #[inline]
-    fn from_slice_mut(slice: &mut [Self::Scalar]) -> &mut Self {
-        assert_eq!(slice.len(), Self::WIDTH);
+    pub fn from_slice_mut(slice: &mut [GoldilocksField]) -> &mut Self {
+        assert_eq!(slice.len(), WIDTH);
         unsafe { &mut *slice.as_mut_ptr().cast() }
     }
     #[inline]
-    fn as_slice(&self) -> &[Self::Scalar] {
+    pub fn as_slice(&self) -> &[GoldilocksField] {
         &self.0[..]
     }
     #[inline]
-    fn as_slice_mut(&mut self) -> &mut [Self::Scalar] {
+    pub fn as_slice_mut(&mut self) -> &mut [GoldilocksField] {
         &mut self.0[..]
+    }
+    #[inline]
+    pub fn square(&self) -> Avx512GoldilocksField {
+        Self::new(unsafe { square(self.get()) })
     }
 
     #[inline]
@@ -117,7 +110,7 @@ impl Debug for Avx512GoldilocksField {
 impl Default for Avx512GoldilocksField {
     #[inline]
     fn default() -> Self {
-        Self::ZEROS
+        Self([GoldilocksField::from(0); 8])
     }
 }
 
@@ -125,13 +118,17 @@ impl Div<GoldilocksField> for Avx512GoldilocksField {
     type Output = Self;
     #[inline]
     fn div(self, rhs: GoldilocksField) -> Self {
-        self * rhs.inverse()
+        let rhs_value = Fr::from_repr(rhs).unwrap();
+        let rhs_inverse = rhs_value.inverse().unwrap().into_repr();
+        self * rhs_inverse
     }
 }
 impl DivAssign<GoldilocksField> for Avx512GoldilocksField {
     #[inline]
     fn div_assign(&mut self, rhs: GoldilocksField) {
-        *self *= rhs.inverse();
+        let rhs_value = Fr::from_repr(rhs).unwrap();
+        let rhs_inverse = rhs_value.inverse().unwrap().into_repr();
+        *self *= rhs_inverse;
     }
 }
 
@@ -183,19 +180,12 @@ impl Neg for Avx512GoldilocksField {
     }
 }
 
-impl Product for Avx512GoldilocksField {
-    #[inline]
-    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.reduce(|x, y| x * y).unwrap_or(Self::ONES)
-    }
-}
-
-impl Square for Avx512GoldilocksField {
-    #[inline]
-    fn square(&self) -> Self {
-        Self::new(unsafe { square(self.get()) })
-    }
-}
+// impl Product for Avx512GoldilocksField {
+//     #[inline]
+//     fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+//         iter.reduce(|x, y| x * y).unwrap_or(Self::ONES)
+//     }
+// }
 
 impl Sub<Self> for Avx512GoldilocksField {
     type Output = Self;
@@ -231,15 +221,17 @@ impl SubAssign<GoldilocksField> for Avx512GoldilocksField {
     }
 }
 
-impl Sum for Avx512GoldilocksField {
-    #[inline]
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.reduce(|x, y| x + y).unwrap_or(Self::ZEROS)
-    }
-}
+// impl Sum for Avx512GoldilocksField {
+//     #[inline]
+//     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+//         iter.reduce(|x, y| x + y).unwrap_or(Self::ZEROS)
+//     }
+// }
 
-const FIELD_ORDER: __m512i = unsafe { transmute([GoldilocksField::ORDER; 8]) };
-const EPSILON: __m512i = unsafe { transmute([GoldilocksField::ORDER.wrapping_neg(); 8]) };
+const FIELD_ORDER: __m512i = unsafe { transmute([GOLDILOCKS_FIELD_ORDER; 8]) };
+const EPSILON: __m512i = unsafe { transmute([GoldilocksField([4294967295u64]); 8]) };
+// Goldilocks Order
+const GOLDILOCKS_FIELD_ORDER: u64 = 0xFFFFFFFF00000001;
 
 #[inline]
 unsafe fn canonicalize(x: __m512i) -> __m512i {
@@ -398,111 +390,218 @@ unsafe fn interleave4(x: __m512i, y: __m512i) -> (__m512i, __m512i) {
 
 #[cfg(test)]
 mod tests {
-    use crate::arch::x86_64::avx512_goldilocks_field::Avx512GoldilocksField;
-    use crate::goldilocks_field::GoldilocksField;
-    use crate::ops::Square;
-    use crate::packed::PackedField;
-    use crate::types::Field;
+    use super::Avx512GoldilocksField;
+    use crate::ff::*;
+    use crate::field_gl::{Fr, FrRepr as GoldilocksField};
+    use std::time::Instant;
 
     fn test_vals_a() -> [GoldilocksField; 8] {
         [
-            GoldilocksField::from_noncanonical_u64(14479013849828404771),
-            GoldilocksField::from_noncanonical_u64(9087029921428221768),
-            GoldilocksField::from_noncanonical_u64(2441288194761790662),
-            GoldilocksField::from_noncanonical_u64(5646033492608483824),
-            GoldilocksField::from_noncanonical_u64(2779181197214900072),
-            GoldilocksField::from_noncanonical_u64(2989742820063487116),
-            GoldilocksField::from_noncanonical_u64(727880025589250743),
-            GoldilocksField::from_noncanonical_u64(3803926346107752679),
+            GoldilocksField([14479013849828404771u64]),
+            GoldilocksField([9087029921428221768u64]),
+            GoldilocksField([2441288194761790662u64]),
+            GoldilocksField([5646033492608483824u64]),
+            GoldilocksField([2779181197214900072u64]),
+            GoldilocksField([2989742820063487116u64]),
+            GoldilocksField([727880025589250743u64]),
+            GoldilocksField([3803926346107752679u64]),
         ]
     }
     fn test_vals_b() -> [GoldilocksField; 8] {
         [
-            GoldilocksField::from_noncanonical_u64(17891926589593242302),
-            GoldilocksField::from_noncanonical_u64(11009798273260028228),
-            GoldilocksField::from_noncanonical_u64(2028722748960791447),
-            GoldilocksField::from_noncanonical_u64(7929433601095175579),
-            GoldilocksField::from_noncanonical_u64(6632528436085461172),
-            GoldilocksField::from_noncanonical_u64(2145438710786785567),
-            GoldilocksField::from_noncanonical_u64(11821483668392863016),
-            GoldilocksField::from_noncanonical_u64(15638272883309521929),
+            GoldilocksField([17891926589593242302u64]),
+            GoldilocksField([11009798273260028228u64]),
+            GoldilocksField([2028722748960791447u64]),
+            GoldilocksField([7929433601095175579u64]),
+            GoldilocksField([6632528436085461172u64]),
+            GoldilocksField([2145438710786785567u64]),
+            GoldilocksField([11821483668392863016u64]),
+            GoldilocksField([15638272883309521929u64]),
         ]
     }
 
     #[test]
-    fn test_add() {
+    fn test_add1() {
         let a_arr = test_vals_a();
         let b_arr = test_vals_b();
-
+        let start = Instant::now();
         let packed_a = *Avx512GoldilocksField::from_slice(&a_arr);
         let packed_b = *Avx512GoldilocksField::from_slice(&b_arr);
         let packed_res = packed_a + packed_b;
         let arr_res = packed_res.as_slice();
-
-        let expected = a_arr.iter().zip(b_arr).map(|(&a, b)| a + b);
-        for (exp, &res) in expected.zip(arr_res) {
-            assert_eq!(res, exp);
+        let avx512_duration = start.elapsed();
+        let start = Instant::now();
+        let expected = a_arr
+            .iter()
+            .zip(b_arr)
+            .map(|(&a, b)| Fr::from_repr(a).unwrap() + Fr::from_repr(b).unwrap());
+        let expected_values: Vec<Fr> = expected.collect();
+        // println!("expected values: {:?}", expected_values);
+        let non_accelerated_duration = start.elapsed();
+        for (exp, &res) in expected_values.iter().zip(arr_res) {
+            assert_eq!(res, exp.into_repr());
         }
+
+        println!("test_add_AVX512_accelerated time: {:?}", avx512_duration);
+        println!(
+            "test_add_Non_accelerated time: {:?}",
+            non_accelerated_duration
+        );
     }
 
     #[test]
     fn test_mul() {
         let a_arr = test_vals_a();
         let b_arr = test_vals_b();
-
+        let start = Instant::now();
         let packed_a = *Avx512GoldilocksField::from_slice(&a_arr);
         let packed_b = *Avx512GoldilocksField::from_slice(&b_arr);
         let packed_res = packed_a * packed_b;
         let arr_res = packed_res.as_slice();
+        let avx512_duration = start.elapsed();
 
-        let expected = a_arr.iter().zip(b_arr).map(|(&a, b)| a * b);
-        for (exp, &res) in expected.zip(arr_res) {
-            assert_eq!(res, exp);
+        let start = Instant::now();
+        let expected = a_arr
+            .iter()
+            .zip(b_arr)
+            .map(|(&a, b)| Fr::from_repr(a).unwrap() * Fr::from_repr(b).unwrap());
+        let expected_values: Vec<Fr> = expected.collect();
+        let non_accelerated_duration = start.elapsed();
+        // println!("expected values: {:?}", expected_values);
+
+        for (exp, &res) in expected_values.iter().zip(arr_res) {
+            assert_eq!(res, exp.into_repr());
         }
+
+        println!("test_mul_AVX512_accelerated time: {:?}", avx512_duration);
+        println!(
+            "test_mul_Non_accelerated time: {:?}",
+            non_accelerated_duration
+        );
+    }
+
+    #[test]
+    fn test_div() {
+        let a_arr = test_vals_a();
+        let start = Instant::now();
+        let packed_a = *Avx512GoldilocksField::from_slice(&a_arr);
+        let packed_res = packed_a / GoldilocksField([7929433601095175579u64]);
+        let arr_res = packed_res.as_slice();
+        let avx512_duration = start.elapsed();
+        // println!("arr_res: {:?}", arr_res);
+
+        let start = Instant::now();
+        let expected = a_arr.iter().map(|&a| {
+            Fr::from_repr(a).unwrap()
+                / Fr::from_repr(GoldilocksField([7929433601095175579u64])).unwrap()
+        });
+        let expected_values: Vec<Fr> = expected.collect();
+        let non_accelerated_duration = start.elapsed();
+        // println!("expected values: {:?}", expected_values);
+
+        for (exp, &res) in expected_values.iter().zip(arr_res) {
+            assert_eq!(res, exp.into_repr());
+        }
+
+        println!("test_div_AVX512_accelerated time: {:?}", avx512_duration);
+        println!(
+            "test_div_Non_accelerated time: {:?}",
+            non_accelerated_duration
+        );
     }
 
     #[test]
     fn test_square() {
         let a_arr = test_vals_a();
-
+        let start = Instant::now();
         let packed_a = *Avx512GoldilocksField::from_slice(&a_arr);
         let packed_res = packed_a.square();
         let arr_res = packed_res.as_slice();
+        let avx512_duration = start.elapsed();
+        // println!("arr_res: {:?}", arr_res);
 
-        let expected = a_arr.iter().map(|&a| a.square());
-        for (exp, &res) in expected.zip(arr_res) {
-            assert_eq!(res, exp);
+        let start = Instant::now();
+        let mut expected_values = Vec::new();
+        for &a in &a_arr {
+            match Fr::from_repr(a) {
+                Ok(mut fr) => {
+                    fr.square();
+                    expected_values.push(fr);
+                }
+                Err(_) => {
+                    continue;
+                }
+            }
         }
+        let non_accelerated_duration = start.elapsed();
+        // println!("expected values: {:?}", expected_values);
+        for (exp, &res) in expected_values.iter().zip(arr_res) {
+            assert_eq!(res, exp.into_repr());
+        }
+        println!("test_square_AVX512_accelerated time: {:?}", avx512_duration);
+        println!(
+            "test_square_Non_accelerated time: {:?}",
+            non_accelerated_duration
+        );
     }
 
     #[test]
     fn test_neg() {
         let a_arr = test_vals_a();
-
+        let start = Instant::now();
         let packed_a = *Avx512GoldilocksField::from_slice(&a_arr);
         let packed_res = -packed_a;
         let arr_res = packed_res.as_slice();
+        let avx512_duration = start.elapsed();
+        // println!("arr_res: {:?}", arr_res);
 
-        let expected = a_arr.iter().map(|&a| -a);
-        for (exp, &res) in expected.zip(arr_res) {
-            assert_eq!(res, exp);
+        let start = Instant::now();
+        let expected = a_arr.iter().map(|&a| -Fr::from_repr(a).unwrap());
+        let expected_values: Vec<Fr> = expected.collect();
+        let non_accelerated_duration = start.elapsed();
+        // println!("expected values: {:?}", expected_values);
+
+        for (exp, &res) in expected_values.iter().zip(arr_res) {
+            assert_eq!(res, exp.into_repr());
         }
+
+        println!("test_neg_AVX512_accelerated time: {:?}", avx512_duration);
+        println!(
+            "test_neg_Non_accelerated time: {:?}",
+            non_accelerated_duration
+        );
     }
 
     #[test]
     fn test_sub() {
         let a_arr = test_vals_a();
         let b_arr = test_vals_b();
-
+        let start = Instant::now();
         let packed_a = *Avx512GoldilocksField::from_slice(&a_arr);
         let packed_b = *Avx512GoldilocksField::from_slice(&b_arr);
         let packed_res = packed_a - packed_b;
         let arr_res = packed_res.as_slice();
+        let avx512_duration = start.elapsed();
+        // println!("arr_res: {:?}", arr_res);
 
-        let expected = a_arr.iter().zip(b_arr).map(|(&a, b)| a - b);
-        for (exp, &res) in expected.zip(arr_res) {
-            assert_eq!(res, exp);
+        let start = Instant::now();
+        let expected = a_arr
+            .iter()
+            .zip(b_arr)
+            .map(|(&a, b)| Fr::from_repr(a).unwrap() - Fr::from_repr(b).unwrap());
+        let expected_values: Vec<Fr> = expected.collect();
+        let non_accelerated_duration = start.elapsed();
+        // println!("expected values: {:?}", expected_values);
+
+        for (exp, &res) in expected_values.iter().zip(arr_res) {
+            assert_eq!(res, exp.into_repr());
         }
+
+        println!("test_sub_AVX512_accelerated time: {:?}", avx512_duration);
+        println!(
+            "test_sub_Non_accelerated time: {:?}",
+            non_accelerated_duration
+        );
     }
 
     #[test]
@@ -542,84 +641,84 @@ mod tests {
     #[test]
     fn test_interleave() {
         let in_a: [GoldilocksField; 8] = [
-            GoldilocksField::from_noncanonical_u64(00),
-            GoldilocksField::from_noncanonical_u64(01),
-            GoldilocksField::from_noncanonical_u64(02),
-            GoldilocksField::from_noncanonical_u64(03),
-            GoldilocksField::from_noncanonical_u64(04),
-            GoldilocksField::from_noncanonical_u64(05),
-            GoldilocksField::from_noncanonical_u64(06),
-            GoldilocksField::from_noncanonical_u64(07),
+            GoldilocksField([0u64]),
+            GoldilocksField([1u64]),
+            GoldilocksField([2u64]),
+            GoldilocksField([3u64]),
+            GoldilocksField([4u64]),
+            GoldilocksField([5u64]),
+            GoldilocksField([6u64]),
+            GoldilocksField([7u64]),
         ];
         let in_b: [GoldilocksField; 8] = [
-            GoldilocksField::from_noncanonical_u64(10),
-            GoldilocksField::from_noncanonical_u64(11),
-            GoldilocksField::from_noncanonical_u64(12),
-            GoldilocksField::from_noncanonical_u64(13),
-            GoldilocksField::from_noncanonical_u64(14),
-            GoldilocksField::from_noncanonical_u64(15),
-            GoldilocksField::from_noncanonical_u64(16),
-            GoldilocksField::from_noncanonical_u64(17),
+            GoldilocksField([10u64]),
+            GoldilocksField([11u64]),
+            GoldilocksField([12u64]),
+            GoldilocksField([13u64]),
+            GoldilocksField([14u64]),
+            GoldilocksField([15u64]),
+            GoldilocksField([16u64]),
+            GoldilocksField([17u64]),
         ];
         let int1_a: [GoldilocksField; 8] = [
-            GoldilocksField::from_noncanonical_u64(00),
-            GoldilocksField::from_noncanonical_u64(10),
-            GoldilocksField::from_noncanonical_u64(02),
-            GoldilocksField::from_noncanonical_u64(12),
-            GoldilocksField::from_noncanonical_u64(04),
-            GoldilocksField::from_noncanonical_u64(14),
-            GoldilocksField::from_noncanonical_u64(06),
-            GoldilocksField::from_noncanonical_u64(16),
+            GoldilocksField([0u64]),
+            GoldilocksField([10u64]),
+            GoldilocksField([2u64]),
+            GoldilocksField([12u64]),
+            GoldilocksField([4u64]),
+            GoldilocksField([14u64]),
+            GoldilocksField([6u64]),
+            GoldilocksField([16u64]),
         ];
         let int1_b: [GoldilocksField; 8] = [
-            GoldilocksField::from_noncanonical_u64(01),
-            GoldilocksField::from_noncanonical_u64(11),
-            GoldilocksField::from_noncanonical_u64(03),
-            GoldilocksField::from_noncanonical_u64(13),
-            GoldilocksField::from_noncanonical_u64(05),
-            GoldilocksField::from_noncanonical_u64(15),
-            GoldilocksField::from_noncanonical_u64(07),
-            GoldilocksField::from_noncanonical_u64(17),
+            GoldilocksField([1u64]),
+            GoldilocksField([11u64]),
+            GoldilocksField([3u64]),
+            GoldilocksField([13u64]),
+            GoldilocksField([5u64]),
+            GoldilocksField([15u64]),
+            GoldilocksField([7u64]),
+            GoldilocksField([17u64]),
         ];
         let int2_a: [GoldilocksField; 8] = [
-            GoldilocksField::from_noncanonical_u64(00),
-            GoldilocksField::from_noncanonical_u64(01),
-            GoldilocksField::from_noncanonical_u64(10),
-            GoldilocksField::from_noncanonical_u64(11),
-            GoldilocksField::from_noncanonical_u64(04),
-            GoldilocksField::from_noncanonical_u64(05),
-            GoldilocksField::from_noncanonical_u64(14),
-            GoldilocksField::from_noncanonical_u64(15),
+            GoldilocksField([0u64]),
+            GoldilocksField([1u64]),
+            GoldilocksField([10u64]),
+            GoldilocksField([11u64]),
+            GoldilocksField([4u64]),
+            GoldilocksField([5u64]),
+            GoldilocksField([14u64]),
+            GoldilocksField([15u64]),
         ];
         let int2_b: [GoldilocksField; 8] = [
-            GoldilocksField::from_noncanonical_u64(02),
-            GoldilocksField::from_noncanonical_u64(03),
-            GoldilocksField::from_noncanonical_u64(12),
-            GoldilocksField::from_noncanonical_u64(13),
-            GoldilocksField::from_noncanonical_u64(06),
-            GoldilocksField::from_noncanonical_u64(07),
-            GoldilocksField::from_noncanonical_u64(16),
-            GoldilocksField::from_noncanonical_u64(17),
+            GoldilocksField([2u64]),
+            GoldilocksField([3u64]),
+            GoldilocksField([12u64]),
+            GoldilocksField([13u64]),
+            GoldilocksField([6u64]),
+            GoldilocksField([7u64]),
+            GoldilocksField([16u64]),
+            GoldilocksField([17u64]),
         ];
         let int4_a: [GoldilocksField; 8] = [
-            GoldilocksField::from_noncanonical_u64(00),
-            GoldilocksField::from_noncanonical_u64(01),
-            GoldilocksField::from_noncanonical_u64(02),
-            GoldilocksField::from_noncanonical_u64(03),
-            GoldilocksField::from_noncanonical_u64(10),
-            GoldilocksField::from_noncanonical_u64(11),
-            GoldilocksField::from_noncanonical_u64(12),
-            GoldilocksField::from_noncanonical_u64(13),
+            GoldilocksField([0u64]),
+            GoldilocksField([1u64]),
+            GoldilocksField([2u64]),
+            GoldilocksField([3u64]),
+            GoldilocksField([10u64]),
+            GoldilocksField([11u64]),
+            GoldilocksField([12u64]),
+            GoldilocksField([13u64]),
         ];
         let int4_b: [GoldilocksField; 8] = [
-            GoldilocksField::from_noncanonical_u64(04),
-            GoldilocksField::from_noncanonical_u64(05),
-            GoldilocksField::from_noncanonical_u64(06),
-            GoldilocksField::from_noncanonical_u64(07),
-            GoldilocksField::from_noncanonical_u64(14),
-            GoldilocksField::from_noncanonical_u64(15),
-            GoldilocksField::from_noncanonical_u64(16),
-            GoldilocksField::from_noncanonical_u64(17),
+            GoldilocksField([4u64]),
+            GoldilocksField([5u64]),
+            GoldilocksField([6u64]),
+            GoldilocksField([7u64]),
+            GoldilocksField([14u64]),
+            GoldilocksField([15u64]),
+            GoldilocksField([16u64]),
+            GoldilocksField([17u64]),
         ];
 
         let packed_a = *Avx512GoldilocksField::from_slice(&in_a);
