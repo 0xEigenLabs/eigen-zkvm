@@ -1,13 +1,13 @@
 #![allow(non_snake_case)]
+use crate::constant::{OFFSET_BLS12381_2_128, OFFSET_BLS12381_2_64};
 use crate::errors::Result;
 use crate::field_bls12381::{Fr, FrRepr};
 use crate::poseidon_bls12381_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::ElementDigest;
 use ff::*;
-//use rayon::prelude::*;
-use crate::constant::{OFFSET_BLS12381_2_128, OFFSET_BLS12381_2_64};
 use plonky::field_gl::Fr as FGL;
+use rayon::prelude::*;
 
 #[derive(Default)]
 pub struct LinearHashBLS12381 {
@@ -99,7 +99,7 @@ impl LinearHashBLS12381 {
     ) -> Result<ElementDigest<4>> {
         assert_eq!(elems.len(), 16);
         let elems = elems
-            .iter()
+            .par_iter()
             .map(|e| Fr((*e).as_scalar::<Fr>()))
             .collect::<Vec<Fr>>();
         let digest = self.h.hash(&elems, init_state)?;
@@ -119,8 +119,8 @@ impl LinearHashBLS12381 {
 
         // group into 3 * 4
         let mut tmp_buf = vec![Fr::zero(); (vals.len() - 1) / 3 + 1];
-        vals.chunks(3)
-            .zip(tmp_buf.iter_mut())
+        vals.par_chunks(3)
+            .zip(tmp_buf.par_iter_mut())
             .for_each(|(ein, eout)| {
                 // padding zero to 4
                 let mut ein_4 = [FGL::ZERO; 4];

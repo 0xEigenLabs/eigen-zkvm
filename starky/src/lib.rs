@@ -68,6 +68,7 @@ pub mod pil2circom;
 pub mod pilcom;
 pub mod prove;
 pub mod serializer;
+pub(crate) mod utils;
 pub mod zkin_join;
 
 pub mod dev;

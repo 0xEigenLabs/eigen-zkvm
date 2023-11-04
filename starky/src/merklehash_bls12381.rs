@@ -61,9 +61,9 @@ impl MerkleTreeBLS12381 {
             );
 
         let out = &mut self.nodes[p_out..(p_out + n_ops)];
-        out.iter_mut()
-            .zip(nodes)
-            .for_each(|(nout, nin)| *nout = nin);
+        out.par_iter_mut()
+            .zip(nodes.par_iter())
+            .for_each(|(nout, nin)| *nout = *nin);
         Ok(())
     }
 
@@ -81,12 +81,15 @@ impl MerkleTreeBLS12381 {
         );
         let n_ops = buff_in.len() / 16;
         let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
-        buff_out64.iter_mut().zip(0..n_ops).for_each(|(out, i)| {
-            *out = self
-                .h
-                .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &Fr::zero())
-                .unwrap();
-        });
+        buff_out64
+            .par_iter_mut()
+            .zip(0..n_ops)
+            .for_each(|(out, i)| {
+                *out = self
+                    .h
+                    .hash_node(&buff_in[(i * 16)..(i * 16 + 16)], &Fr::zero())
+                    .unwrap();
+            });
         Ok(buff_out64)
     }
 
@@ -192,10 +195,12 @@ impl MerkleTree for MerkleTreeBLS12381 {
                 .zip(buff.par_chunks(n_per_thread_f * width))
                 .for_each(|(out, bb)| {
                     let cur_n = bb.len() / width;
-                    out.iter_mut().zip(0..cur_n).for_each(|(row_out, j)| {
-                        let batch = &bb[(j * width)..((j + 1) * width)];
-                        *row_out = self.h.hash_element_array(batch).unwrap();
-                    });
+                    out.par_iter_mut()
+                        .zip((0..cur_n).into_par_iter())
+                        .for_each(|(row_out, j)| {
+                            let batch = &bb[(j * width)..((j + 1) * width)];
+                            *row_out = self.h.hash_element_array(batch).unwrap();
+                        });
                 });
         }
         log::debug!("linearhash time cost: {}", now.elapsed().as_secs_f64());
