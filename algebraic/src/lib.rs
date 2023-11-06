@@ -1,5 +1,6 @@
 #![allow(clippy::unit_arg)]
-#![feature(stdsimd)]
+
+// #![feature(stdsimd)]
 
 #[macro_use]
 extern crate serde;
@@ -12,7 +13,7 @@ extern crate num_bigint;
 extern crate num_traits;
 extern crate rand;
 
-pub mod arch;
+// pub mod arch;
 
 pub mod circom_circuit;
 pub mod errors;
