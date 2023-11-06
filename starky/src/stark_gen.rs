@@ -632,7 +632,7 @@ fn calculate_H1H2<F: FieldExtension>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
         s.push((*e, i));
     }
 
-    for (_i, e) in f.iter().enumerate() {
+    for e in f.iter() {
         let idx = idx_t.get(e);
         if idx.is_none() {
             panic!("Number not included: {:?}", e);
