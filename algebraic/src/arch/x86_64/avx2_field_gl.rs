@@ -6,12 +6,12 @@
 //!
 use crate::ff::*;
 use crate::field_gl::{Fr, FrRepr as GoldilocksField};
+use crate::packed::PackedField;
 use core::arch::x86_64::*;
 use core::fmt;
 use core::fmt::{Debug, Formatter};
 use core::mem::transmute;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-// use crate::packed::PackedField;
 
 /// AVX2 Goldilocks Field
 ///
@@ -24,8 +24,6 @@ use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAss
 #[repr(transparent)]
 pub struct Avx2GoldilocksField(pub [GoldilocksField; 4]);
 
-const WIDTH: usize = 4;
-
 impl Avx2GoldilocksField {
     #[inline]
     pub fn new(x: __m256i) -> Self {
@@ -35,29 +33,35 @@ impl Avx2GoldilocksField {
     pub fn get(&self) -> __m256i {
         unsafe { transmute(*self) }
     }
-    // }
-    // unsafe impl PackedField for Avx2GoldilocksField {
-    #[inline]
-    pub fn from_slice(slice: &[GoldilocksField]) -> &Self {
-        assert_eq!(slice.len(), WIDTH);
-        unsafe { &*slice.as_ptr().cast() }
-    }
-    #[inline]
-    pub fn from_slice_mut(slice: &mut [GoldilocksField]) -> &mut Self {
-        assert_eq!(slice.len(), WIDTH);
-        unsafe { &mut *slice.as_mut_ptr().cast() }
-    }
-    #[inline]
-    pub fn as_slice(&self) -> &[GoldilocksField] {
-        &self.0[..]
-    }
-    #[inline]
-    pub fn as_slice_mut(&mut self) -> &mut [GoldilocksField] {
-        &mut self.0[..]
-    }
     #[inline]
     pub fn square(&self) -> Avx2GoldilocksField {
         Self::new(unsafe { square(self.get()) })
+    }
+}
+
+unsafe impl PackedField for Avx2GoldilocksField {
+    const WIDTH: usize = 4;
+    type Scalar = GoldilocksField;
+    const ZEROS: Self = Self([GoldilocksField([0]); 4]);
+    const ONES: Self = Self([GoldilocksField([1]); 4]);
+
+    #[inline]
+    fn from_slice(slice: &[GoldilocksField]) -> &Self {
+        assert_eq!(slice.len(), Self::WIDTH);
+        unsafe { &*slice.as_ptr().cast() }
+    }
+    #[inline]
+    fn from_slice_mut(slice: &mut [GoldilocksField]) -> &mut Self {
+        assert_eq!(slice.len(), Self::WIDTH);
+        unsafe { &mut *slice.as_mut_ptr().cast() }
+    }
+    #[inline]
+    fn as_slice(&self) -> &[GoldilocksField] {
+        &self.0[..]
+    }
+    #[inline]
+    fn as_slice_mut(&mut self) -> &mut [GoldilocksField] {
+        &mut self.0[..]
     }
 
     #[inline]
@@ -117,7 +121,7 @@ impl Debug for Avx2GoldilocksField {
 impl Default for Avx2GoldilocksField {
     #[inline]
     fn default() -> Self {
-        Self([GoldilocksField::from(0); 4])
+        Self::ZEROS
     }
 }
 
@@ -503,8 +507,8 @@ mod tests {
     use super::Avx2GoldilocksField;
     use crate::ff::*;
     use crate::field_gl::{Fr, FrRepr as GoldilocksField};
+    use crate::packed::PackedField;
     use std::time::Instant;
-    // use crate::packed::PackedField;
 
     fn test_vals_a() -> [GoldilocksField; 4] {
         [

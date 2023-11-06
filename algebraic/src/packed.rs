@@ -1,10 +1,8 @@
 use core::fmt::Debug;
-use core::iter::{Product, Sum};
+// use core::iter::{Product, Sum};
+use crate::ff::PrimeFieldRepr;
 use core::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
 use core::slice;
-
-// use crate::ops::Square;
-use crate::ff::*;
 
 /// # Safety
 /// - WIDTH is assumed to be a power of 2.
@@ -27,20 +25,20 @@ pub unsafe trait PackedField:
     + MulAssign<Self::Scalar>
     // + Square
     + Neg<Output = Self>
-    + Product
+    // + Product
     + Send
     + Sub<Self, Output = Self>
     + Sub<Self::Scalar, Output = Self>
     + SubAssign<Self>
     + SubAssign<Self::Scalar>
-    + Sum
+    // + Sum
     + Sync
 where
     Self::Scalar: Add<Self, Output = Self>,
     Self::Scalar: Mul<Self, Output = Self>,
     Self::Scalar: Sub<Self, Output = Self>,
 {
-    type Scalar: Field;
+    type Scalar: PrimeFieldRepr;
 
     const WIDTH: usize;
     const ZEROS: Self;
@@ -93,35 +91,4 @@ where
         unsafe { slice::from_raw_parts_mut(buf_ptr, n) }
     }
 
-    fn doubles(&self) -> Self {
-        *self * Self::Scalar::TWO
-    }
-}
-
-unsafe impl<F: Field> PackedField for F {
-    type Scalar = Self;
-
-    const WIDTH: usize = 1;
-    const ZEROS: Self = F::ZERO;
-    const ONES: Self = F::ONE;
-
-    fn from_slice(slice: &[Self::Scalar]) -> &Self {
-        &slice[0]
-    }
-    fn from_slice_mut(slice: &mut [Self::Scalar]) -> &mut Self {
-        &mut slice[0]
-    }
-    fn as_slice(&self) -> &[Self::Scalar] {
-        slice::from_ref(self)
-    }
-    fn as_slice_mut(&mut self) -> &mut [Self::Scalar] {
-        slice::from_mut(self)
-    }
-
-    fn interleave(&self, other: Self, block_len: usize) -> (Self, Self) {
-        match block_len {
-            1 => (*self, other),
-            _ => panic!("unsupported block length"),
-        }
-    }
 }

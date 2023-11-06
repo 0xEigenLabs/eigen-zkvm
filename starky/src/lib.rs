@@ -1,11 +1,16 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(dead_code)]
+#![feature(stdsimd)]
+#![feature(const_trait_impl)]
+
 pub mod polsarray;
 mod polutils;
 pub mod stark_verifier_circom;
 pub mod stark_verifier_circom_bn128;
 pub mod traits;
 pub mod types;
+
+pub mod arch;
 
 mod compressor12;
 pub use compressor12::*;

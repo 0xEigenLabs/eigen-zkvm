@@ -5,6 +5,7 @@
 //! RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo build --release
 use crate::ff::*;
 use crate::field_gl::{Fr, FrRepr as GoldilocksField};
+use crate::packed::PackedField;
 use core::arch::x86_64::*;
 use core::fmt;
 use core::fmt::{Debug, Formatter};
@@ -34,26 +35,35 @@ impl Avx512GoldilocksField {
         unsafe { transmute(*self) }
     }
     #[inline]
-    pub fn from_slice(slice: &[GoldilocksField]) -> &Self {
+    pub fn square(&self) -> Avx512GoldilocksField {
+        Self::new(unsafe { square(self.get()) })
+    }
+}
+
+unsafe impl PackedField for Avx512GoldilocksField {
+    const WIDTH: usize = 8;
+
+    type Scalar = GoldilocksField;
+
+    const ZEROS: Self = Self([GoldilocksField([0]); 8]);
+    const ONES: Self = Self([GoldilocksField([1]); 8]);
+    #[inline]
+    fn from_slice(slice: &[GoldilocksField]) -> &Self {
         assert_eq!(slice.len(), WIDTH);
         unsafe { &*slice.as_ptr().cast() }
     }
     #[inline]
-    pub fn from_slice_mut(slice: &mut [GoldilocksField]) -> &mut Self {
+    fn from_slice_mut(slice: &mut [GoldilocksField]) -> &mut Self {
         assert_eq!(slice.len(), WIDTH);
         unsafe { &mut *slice.as_mut_ptr().cast() }
     }
     #[inline]
-    pub fn as_slice(&self) -> &[GoldilocksField] {
+    fn as_slice(&self) -> &[GoldilocksField] {
         &self.0[..]
     }
     #[inline]
-    pub fn as_slice_mut(&mut self) -> &mut [GoldilocksField] {
+    fn as_slice_mut(&mut self) -> &mut [GoldilocksField] {
         &mut self.0[..]
-    }
-    #[inline]
-    pub fn square(&self) -> Avx512GoldilocksField {
-        Self::new(unsafe { square(self.get()) })
     }
 
     #[inline]
@@ -114,7 +124,7 @@ impl Debug for Avx512GoldilocksField {
 impl Default for Avx512GoldilocksField {
     #[inline]
     fn default() -> Self {
-        Self([GoldilocksField::from(0); 8])
+        Self::ZEROS
     }
 }
 
@@ -397,6 +407,7 @@ mod tests {
     use super::Avx512GoldilocksField;
     use crate::ff::*;
     use crate::field_gl::{Fr, FrRepr as GoldilocksField};
+    use crate::packed::PackedField;
     use std::time::Instant;
 
     fn test_vals_a() -> [GoldilocksField; 8] {
