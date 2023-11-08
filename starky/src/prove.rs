@@ -101,7 +101,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
         prover_addr,
     )
     .unwrap();
-    log::trace!("verify the proof...");
+    log::debug!("generate the proof done");
 
     let result = stark_verify::<M, T>(
         &starkproof,
@@ -113,7 +113,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     .unwrap();
 
     assert!(result);
-    log::trace!("verify the proof done");
+    log::debug!("verify the proof done");
 
     let opt = pil2circom::StarkOption {
         enable_input: false,
@@ -122,7 +122,6 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
         agg_stage,
     };
 
-    log::trace!("generate circom");
     let str_ver = pil2circom::pil2circom(
         pil,
         &setup.const_root,
@@ -133,7 +132,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     )?;
     let mut file = File::create(circom_file)?;
     write!(file, "{}", str_ver)?;
-    log::trace!("generate circom done");
+    log::debug!("generate circom done");
 
     if !norm_stage {
         starkproof.rootC = None;
@@ -142,6 +141,6 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     let input = serde_json::to_string(&starkproof)?;
     let mut file = File::create(zkin)?;
     write!(file, "{}", input)?;
-    log::trace!("generate zkin done");
+    log::debug!("generate zkin done");
     Ok(())
 }
