@@ -198,8 +198,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         prover_addr: &str,
     ) -> Result<StarkProof<M>> {
         let mut ctx = StarkContext::<M::ExtendField>::default();
-        //log::debug!("starkinfo: {}", starkinfo);
-        //log::debug!("program: {}", program);
+        //log::trace!("starkinfo: {}", starkinfo);
+        //log::trace!("program: {}", program);
 
         let mut fftobj = FFT::new();
         ctx.nbits = stark_struct.nBits;
@@ -274,11 +274,11 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             transcript.put(&b[..])?;
         }
 
-        log::debug!("Merkelizing 1....");
+        log::trace!("Merkelizing 1....");
         let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n")?;
         tree1.to_extend(&mut ctx.cm1_2ns);
 
-        log::debug!(
+        log::trace!(
             "tree1 root: {}",
             //crate::helper::fr_to_biguint(&tree1.root().into())
             tree1.root(),
@@ -288,8 +288,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ctx.challenge[0] = transcript.get_field(); //u
         ctx.challenge[1] = transcript.get_field(); //defVal
 
-        log::debug!("challenge[0] {}", ctx.challenge[0]);
-        log::debug!("challenge[1] {}", ctx.challenge[1]);
+        log::trace!("challenge[0] {}", ctx.challenge[0]);
+        log::trace!("challenge[1] {}", ctx.challenge[1]);
 
         calculate_exps_parallel(&mut ctx, starkinfo, &program.step2prev, "n", "step2prev");
 
@@ -303,11 +303,11 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             n_cm += 1;
         }
 
-        log::debug!("Merkelizing 2....");
+        log::trace!("Merkelizing 2....");
         let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n")?;
         tree2.to_extend(&mut ctx.cm2_2ns);
         transcript.put(&[tree2.root().as_elements().to_vec()])?;
-        log::debug!(
+        log::trace!(
             "tree2 root: {}",
             // crate::helper::fr_to_biguint(&tree2.root().into())
             tree2.root(),
@@ -316,13 +316,13 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         // 3.- Compute Z polynomials
         ctx.challenge[2] = transcript.get_field(); // gamma
         ctx.challenge[3] = transcript.get_field(); // betta
-        log::debug!("challenge[2] {}", ctx.challenge[2]);
-        log::debug!("challenge[3] {}", ctx.challenge[3]);
+        log::trace!("challenge[2] {}", ctx.challenge[2]);
+        log::trace!("challenge[3] {}", ctx.challenge[3]);
 
         calculate_exps_parallel(&mut ctx, starkinfo, &program.step3prev, "n", "step3prev");
 
         for (i, pu) in starkinfo.pu_ctx.iter().enumerate() {
-            log::debug!("Calculating z for plookup {}", i);
+            log::trace!("Calculating z for plookup {}", i);
             let p_num = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.num_id]);
             let p_den = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pu.den_id]);
             let z = calculate_Z(p_num, p_den);
@@ -331,7 +331,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         }
 
         for (i, pe) in starkinfo.pe_ctx.iter().enumerate() {
-            log::debug!("Calculating z for permutation {}", i);
+            log::trace!("Calculating z for permutation {}", i);
             let p_num = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.num_id]);
             let p_den = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&pe.den_id]);
             let z = calculate_Z(p_num, p_den);
@@ -339,7 +339,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             n_cm += 1;
         }
         for (i, ci) in starkinfo.ci_ctx.iter().enumerate() {
-            log::debug!("Calculating z for connection {}", i);
+            log::trace!("Calculating z for connection {}", i);
             let p_num = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&ci.num_id]);
             let p_den = get_pol(&mut ctx, starkinfo, starkinfo.exp2pol[&ci.den_id]);
             let z = calculate_Z(p_num, p_den);
@@ -349,13 +349,13 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         calculate_exps_parallel(&mut ctx, starkinfo, &program.step3, "n", "step3");
 
-        log::debug!("Merkelizing 3....");
+        log::trace!("Merkelizing 3....");
 
         let tree3 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm3_n")?;
         tree3.to_extend(&mut ctx.cm3_2ns);
         transcript.put(&[tree3.root().as_elements().to_vec()])?;
 
-        log::debug!(
+        log::trace!(
             "tree3 root: {}",
             // crate::helper::fr_to_biguint(&tree3.root().into())
             tree3.root(),
@@ -391,9 +391,9 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             );
         }
 
-        log::debug!("Merkelizing 4....");
+        log::trace!("Merkelizing 4....");
         let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
-        log::debug!(
+        log::trace!(
             "tree4 root: {}",
             // crate::helper::fr_to_biguint(&tree4.root().into())
             tree4.root(),
@@ -401,7 +401,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         transcript.put(&[tree4.root().as_elements().to_vec()])?;
 
         //if ctx.cm4_2ns.len() > 0 {
-        //    log::debug!("tree4[0] {}", ctx.cm4_2ns[0]);
+        //    log::trace!("tree4[0] {}", ctx.cm4_2ns[0]);
         //}
 
         ///////////
@@ -443,7 +443,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                 }
             };
             let l = if ev.prime { &LpEv } else { &LEv };
-            log::debug!("calculate acc: N={}", N);
+            log::trace!("calculate acc: N={}", N);
             let acc = (0..N)
                 .into_par_iter()
                 .map(|k| {
@@ -473,9 +473,9 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         ctx.challenge[5] = transcript.get_field(); // v1
         ctx.challenge[6] = transcript.get_field(); // v2
-        log::debug!("ctx.challenge[5] {}", ctx.challenge[5]);
-        log::debug!("ctx.challenge[6] {}", ctx.challenge[6]);
-        log::debug!("ctx.challenge[7] {}", ctx.challenge[7]);
+        log::trace!("ctx.challenge[5] {}", ctx.challenge[5]);
+        log::trace!("ctx.challenge[6] {}", ctx.challenge[6]);
+        log::trace!("ctx.challenge[7] {}", ctx.challenge[7]);
 
         // Calculate xDivXSubXi, xDivXSubWXi
         let xi = ctx.challenge[7];
@@ -566,10 +566,10 @@ impl<'a, M: MerkleTree> StarkProof<M> {
     ) -> T {
         ctx.tmp = vec![T::ZERO; seg.tmp_used];
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
-        log::debug!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
+        log::trace!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
 
         // just let public codegen run multiple times
-        //log::debug!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
+        //log::trace!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
         t.eval(ctx, idx)
     }
 }
@@ -756,7 +756,7 @@ pub fn calculate_exps<F: FieldExtension>(
 ) {
     ctx.tmp = vec![F::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
-    log::debug!(
+    log::trace!(
         "calculate_exps compile_code {} ctx.first:\n{}",
         step,
         c_first
@@ -774,7 +774,7 @@ pub fn calculate_exps<F: FieldExtension>(
     for i in 0..N {
         c_first.eval(ctx, i);
         if (i % 10000) == 0 {
-            log::debug!("Calculating expression.. {}/{}", i, N);
+            log::trace!("Calculating expression.. {}/{}", i, N);
         }
     }
 }
@@ -1040,7 +1040,7 @@ pub fn calculate_exps_parallel<F: FieldExtension>(
         .enumerate()
         .for_each(|(i, tmp_ctx)| {
             let cur_n = std::cmp::min(n_per_thread, n - i * n_per_thread);
-            log::debug!("execute trace LDE {}/{}", i * n_per_thread, n);
+            log::trace!("execute trace LDE {}/{}", i * n_per_thread, n);
             tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i * n_per_thread);
             for so in &exec_info.output_sections {
                 let tmp = tmp_ctx.get_mut(so.name.as_str());
@@ -1106,7 +1106,7 @@ pub mod tests {
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         end_timer!(start_stark_setup);
         let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
-        log::debug!("setup {}", fr_root);
+        log::trace!("setup {}", fr_root);
 
         let start_stark_gen = start_timer!(|| "stark_gen");
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
@@ -1121,7 +1121,7 @@ pub mod tests {
         )
         .unwrap();
         end_timer!(start_stark_gen);
-        log::debug!("verify the proof...");
+        log::trace!("verify the proof...");
 
         let start_stark_verify = start_timer!(|| "stark_verify");
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
@@ -1160,7 +1160,7 @@ pub mod tests {
         )
         .unwrap();
 
-        log::debug!("verify the proof...");
+        log::trace!("verify the proof...");
 
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
@@ -1194,7 +1194,7 @@ pub mod tests {
             "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
-        log::debug!("verify the proof...");
+        log::trace!("verify the proof...");
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
             &setup.const_root,
@@ -1227,7 +1227,7 @@ pub mod tests {
             "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
-        log::debug!("verify the proof...");
+        log::trace!("verify the proof...");
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
             &setup.const_root,
@@ -1260,7 +1260,7 @@ pub mod tests {
             "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
-        log::debug!("verify the proof...");
+        log::trace!("verify the proof...");
         let result = stark_verify::<MerkleTreeGL, TranscriptGL>(
             &starkproof,
             &setup.const_root,

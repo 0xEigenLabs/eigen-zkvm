@@ -168,7 +168,7 @@ mod tests {
 
         let lh = LinearHashBN128::new();
         let result = lh.hash_element_array(&input).unwrap();
-        log::debug!("out {}", result);
+        log::trace!("out {}", result);
         assert_eq!(result.0[0], FGL::from(15714769047018385385u64));
         assert_eq!(result.0[1], FGL::from(14080511166848616671u64));
         assert_eq!(result.0[2], FGL::from(11411897157942048316u64));
@@ -180,7 +180,7 @@ mod tests {
         ];
 
         let result = lh.hash_element_array(&input).unwrap();
-        log::debug!("out {}", result);
+        log::trace!("out {}", result);
         assert_eq!(result.0[0], FGL::from(12850950522295690944u64));
         assert_eq!(result.0[1], FGL::from(15045028186447136619u64));
         assert_eq!(result.0[2], FGL::from(11701297961637547631u64));

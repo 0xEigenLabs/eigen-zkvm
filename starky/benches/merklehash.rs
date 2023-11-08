@@ -14,7 +14,7 @@ fn run_merklehash(pols: Vec<FGL>) {
     let now = std::time::Instant::now();
     let mut tree: MerkleTreeBN128 = MerkleTree::new();
     tree.merkelize(pols, n_pols, n).unwrap();
-    log::debug!("time cost: {}", now.elapsed().as_secs());
+    log::trace!("time cost: {}", now.elapsed().as_secs());
     let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
     let root = tree.root();
     assert!(tree

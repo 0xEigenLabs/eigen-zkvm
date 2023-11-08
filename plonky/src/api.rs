@@ -20,7 +20,7 @@ pub fn setup(power: u32, srs_monomial_form: &str) -> Result<()> {
     );
     let writer = std::fs::File::create(srs_monomial_form)?;
     srs.write(writer)?;
-    log::debug!("srs_monomial_form saved to {}", srs_monomial_form);
+    log::trace!("srs_monomial_form saved to {}", srs_monomial_form);
     Result::Ok(())
 }
 
@@ -36,7 +36,7 @@ pub fn analyse(circuit_file: &str, output: &str) -> Result<()> {
     let writer = std::fs::File::create(output)?;
     serde_json::to_writer_pretty(writer, &stats)?;
     stats.constraint_stats.clear();
-    log::debug!(
+    log::trace!(
         "analyse result: {}",
         serde_json::to_string_pretty(&stats).unwrap_or_else(|_| "<failed>".to_owned())
     );

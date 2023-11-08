@@ -167,8 +167,8 @@ mod tests {
             .iter()
             .map(|e: &u64| vec![FGL::from(*e), FGL::from(*e), FGL::from(*e)])
             .collect();
-        log::debug!("{:?}", inputs[1][0].as_int());
-        log::debug!("{:?}", inputs[2][2].as_int());
+        log::trace!("{:?}", inputs[1][0].as_int());
+        log::trace!("{:?}", inputs[2][2].as_int());
 
         let st = LinearHashBLS12381::new()
             .hash_element_matrix(&inputs)
@@ -188,7 +188,7 @@ mod tests {
 
         let lh = LinearHashBLS12381::new();
         let result = lh.hash_element_array(&input).unwrap();
-        log::debug!("out {}", result);
+        log::trace!("out {}", result);
         assert_eq!(result.0[0], FGL::from(664572115127318441u64));
         assert_eq!(result.0[1], FGL::from(16413352647427919515u64));
         assert_eq!(result.0[2], FGL::from(17253685441004911215u64));
@@ -200,8 +200,8 @@ mod tests {
         ];
 
         let result = lh.hash_element_array(&input).unwrap();
-        log::debug!("out {}", result);
-        log::debug!("{:?}", result);
+        log::trace!("out {}", result);
+        log::trace!("{:?}", result);
         assert_eq!(result.0[0], FGL::from(13796980492452026086u64));
         assert_eq!(result.0[1], FGL::from(13318555390970742201u64));
         assert_eq!(result.0[2], FGL::from(9516443056151387241u64));

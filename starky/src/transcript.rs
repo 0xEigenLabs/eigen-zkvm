@@ -24,7 +24,7 @@ impl TranscriptGL {
         Ok(())
     }
     fn add_1(&mut self, e: &FGL) -> Result<()> {
-        log::debug!("add_1: {}", e);
+        log::trace!("add_1: {}", e);
         self.out = Vec::new();
         self.pending.push(*e);
         if self.pending.len() == 8 {

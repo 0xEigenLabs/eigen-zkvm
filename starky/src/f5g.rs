@@ -969,7 +969,7 @@ pub mod tests {
         ];
         let r_arr = batch_inverse(&arr);
         for i in 0..arr.len() {
-            log::debug!("{} {}", arr[i].inv(), r_arr[i]);
+            log::trace!("{} {}", arr[i].inv(), r_arr[i]);
             assert!(arr[i].inv()._eq(&r_arr[i]));
         }
     }

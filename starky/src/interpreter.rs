@@ -106,7 +106,7 @@ impl<T: FieldExtension> Block<T> {
         let mut i = 0usize;
         while i < length {
             let expr = &self.exprs[i];
-            // log::debug!("op@{} is {}", i, expr);
+            // log::trace!("op@{} is {}", i, expr);
             i += 1;
             match expr.op {
                 Ops::Ret => {
@@ -224,7 +224,7 @@ pub fn compile_code<T: FieldExtension>(
         let mut src: Vec<Expr<T>> = Vec::new();
         for k in 0..cj.src.len() {
             src.push(get_ref(ctx, starkinfo, &cj.src[k], dom, next, modulas));
-            //log::debug!("get_ref_src: {}", src[src.len() - 1]);
+            //log::trace!("get_ref_src: {}", src[src.len() - 1]);
         }
 
         let exp = match cj.op.as_str() {
@@ -324,7 +324,7 @@ fn set_ref<T: FieldExtension>(
     modulas: usize,
     body: &mut Block<T>,
 ) {
-    //log::debug!("set_ref: r {:?}  dom {} val {}", r, dom, val);
+    //log::trace!("set_ref: r {:?}  dom {} val {}", r, dom, val);
     let e_dst = match r.type_.as_str() {
         "tmp" => Expr::new(
             Ops::Refer,
@@ -407,7 +407,7 @@ fn get_ref<F: FieldExtension>(
     next: usize,
     modulas: usize,
 ) -> Expr<F> {
-    //log::debug!("get_ref: r {:?}  dom {} ", r, dom);
+    //log::trace!("get_ref: r {:?}  dom {} ", r, dom);
     match r.type_.as_str() {
         "tmp" => Expr::new(
             Ops::Refer,
@@ -545,7 +545,7 @@ fn eval_map<F: FieldExtension>(
     modulas: usize,
 ) -> Expr<F> {
     let p = &starkinfo.var_pol_map[pol_id];
-    //log::debug!("eval_map: {:?}", p);
+    //log::trace!("eval_map: {:?}", p);
     let offset = p.section_pos;
     let size = starkinfo.map_sectionsN.get(&p.section);
     let zero = 0;

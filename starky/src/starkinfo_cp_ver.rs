@@ -11,12 +11,12 @@ impl StarkInfo {
         pil: &mut PIL,
         program: &mut Program,
     ) -> Result<()> {
-        log::debug!("cp ver begin ctx {:?}, c_exp: {}", ctx, self.c_exp);
+        log::trace!("cp ver begin ctx {:?}, c_exp: {}", ctx, self.c_exp);
         pil_code_gen(ctx, pil, self.c_exp, false, "", 0, true)?;
 
-        log::debug!("cp ver buildcode ctx begin {:?}", ctx);
+        log::trace!("cp ver buildcode ctx begin {:?}", ctx);
         let mut code = build_code(ctx, pil);
-        log::debug!("cp ver buildcode {}", code);
+        log::trace!("cp ver buildcode {}", code);
 
         let mut ctx_f = ContextF {
             exp_map: HashMap::new(),
@@ -25,7 +25,7 @@ impl StarkInfo {
             tmpexps: &mut HashMap::new(),
             starkinfo: self,
         };
-        log::debug!("cp ver code.tmp_used begin {}", code.tmp_used);
+        log::trace!("cp ver code.tmp_used begin {}", code.tmp_used);
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF, _pil: &mut PIL| {
             let p = if r.prime { 1 } else { 0 };
@@ -117,10 +117,10 @@ impl StarkInfo {
         }
 
         code.tmp_used = ctx_f.tmp_used;
-        //log::debug!("ev_idx: {:?}", ctx_f.starkinfo.ev_idx);
-        //log::debug!("ev_map: {:?}", ctx_f.starkinfo.ev_map);
-        //log::debug!("cp ver code.tmp_used {}", code.tmp_used);
-        //log::debug!("cp ver code {}", code);
+        //log::trace!("ev_idx: {:?}", ctx_f.starkinfo.ev_idx);
+        //log::trace!("ev_map: {:?}", ctx_f.starkinfo.ev_map);
+        //log::trace!("cp ver code.tmp_used {}", code.tmp_used);
+        //log::trace!("cp ver code {}", code);
         program.verifier_code = code;
         Ok(())
     }

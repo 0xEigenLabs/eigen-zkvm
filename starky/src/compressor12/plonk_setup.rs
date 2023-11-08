@@ -61,7 +61,7 @@ impl NormalPlonkInfo {
         let plonk_constrains_len = plonk_constrains.len();
         for (i, c) in plonk_constrains.iter().enumerate() {
             if (i % 10000) == 0 {
-                log::debug!("Plonk info constraint processing... {i}/{plonk_constrains_len}");
+                log::trace!("Plonk info constraint processing... {i}/{plonk_constrains_len}");
             }
             let k = c.str_key();
 
@@ -272,7 +272,7 @@ pub fn plonk_setup_compressor(
     let plonk_constraints = &plonk_setup_info.pg;
     for (i, c) in plonk_constraints.iter().enumerate() {
         if (i % 10000) == 0 {
-            log::debug!("Processing constraint... {}/{}", i, plonk_constraints.len())
+            log::trace!("Processing constraint... {}/{}", i, plonk_constraints.len())
         }
         let k = c.str_key();
         let pr = partial_rows.get_mut(&k);
@@ -393,7 +393,7 @@ pub fn plonk_setup_compressor(
     let custom_gates_info = &plonk_setup_info.custom_gates_info;
     for (i, cgu) in r1cs.custom_gates_uses.iter().enumerate() {
         if (i % 10000) == 0 {
-            log::debug!(
+            log::trace!(
                 "Processing custom gates... {}/{}",
                 i,
                 r1cs.custom_gates_uses.len()
@@ -692,7 +692,7 @@ pub fn plonk_setup_compressor(
     let mut w = FGL::ONE;
     for i in 0..N {
         if (i % 10000) == 0 {
-            log::debug!("Preparing S... {}/{}", i, N);
+            log::trace!("Preparing S... {}/{}", i, N);
         }
         const_pols.set_matrix(pil, &Compressor.to_string(), &S.to_string(), 0, i, w);
         for j in 1..12 {
@@ -716,7 +716,7 @@ pub fn plonk_setup_compressor(
     let mut last_signal: BTreeMap<u64, Grid> = BTreeMap::new();
     for i in 0..r {
         if (i % 10000) == 0 {
-            log::debug!("Connection S... {}/{}", i, r);
+            log::trace!("Connection S... {}/{}", i, r);
         }
         for (j, map) in s_map.iter_mut().enumerate().take(12) {
             if i < n_used {
@@ -754,7 +754,7 @@ pub fn plonk_setup_compressor(
     // 6. Fill unused rows.
     while r < N {
         if (r % 100000) == 0 {
-            log::debug!("Empty gates... {}/{}", r, N);
+            log::trace!("Empty gates... {}/{}", r, N);
         }
         let index = r;
         for pol_name in [EVPOL4, CMULADD, GATE, POSEIDON12, PARTIAL, FFT4] {

@@ -193,7 +193,7 @@ pub fn create_verifier_contract_from_template(
         .render_template(template, &template_params)
         .expect("failed to render Verifiers.sol template");
     std::fs::write(render_to_path, res).expect("failed to wrtie Verifier.sol");
-    log::debug!("Verifier contract successfully generated");
+    log::trace!("Verifier contract successfully generated");
 }
 
 pub fn create_verifier_contract(config: Config, template_filepath: &str, render_to_path: &str) {

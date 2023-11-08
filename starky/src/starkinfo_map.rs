@@ -42,7 +42,7 @@ impl StarkInfo {
             pil.cm_dims[i] = 1
         }
 
-        log::debug!("pu: {:?}", self.pu_ctx);
+        log::trace!("pu: {:?}", self.pu_ctx);
         for (i, pu) in self.pu_ctx.iter().enumerate() {
             let dim = std::cmp::max(
                 Self::get_exp_dim(pil, &pil.expressions[pu.f_exp_id]),
@@ -236,7 +236,7 @@ impl StarkInfo {
         });
         self.f_2ns.push(ppf_2ns);
 
-        log::debug!("cm_dims: {:?}", pil.cm_dims);
+        log::trace!("cm_dims: {:?}", pil.cm_dims);
         self.map_section()?;
         let N = 1 << stark_struct.nBits;
         let Next = 1 << stark_struct.nBitsExt;
@@ -463,7 +463,7 @@ impl StarkInfo {
         pil: &mut PIL,
         tmpexps: &mut HashMap<usize, usize>,
     ) {
-        //log::debug!("fix_prover_code: {} {} {:?}", segment, dom, self.tmpexp_n);
+        //log::trace!("fix_prover_code: {} {} {:?}", segment, dom, self.tmpexp_n);
         let mut ctx_f = ContextF {
             exp_map: HashMap::new(),
             tmp_used: segment.tmp_used,
@@ -510,7 +510,7 @@ impl StarkInfo {
                     panic!("Invalid reference type {}", r.type_);
                 }
             };
-            //log::debug!(
+            //log::trace!(
             //    "node: {:?}, im_exps_list {:?} dom {} tmpexps: {:?}",
             //    r,
             //    ctx.starkinfo.im_exps_list,
@@ -546,7 +546,7 @@ impl StarkInfo {
                 }
             }
             let t = (self.map_sectionsN.get(s) - self.map_sectionsN1.get(s)) / 3;
-            //log::debug!("map_sectionN3 set {} = {}", s, t);
+            //log::trace!("map_sectionN3 set {} = {}", s, t);
             self.map_sectionsN3.set(s, t);
         }
         Ok(())
