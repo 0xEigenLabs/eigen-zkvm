@@ -1,8 +1,10 @@
-#!/bin/zsh
+#!/bin/bash
 set -ex
 
-## build
-cargo build --release
+# ## build
+# cargo build --release
+## build with avx2 feature
+RUSTFLAGS="-C target-feature=+avx2" cargo build --release
 
 export NODE_OPTIONS="--max-old-space-size=81920"
 
