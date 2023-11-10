@@ -1,6 +1,6 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/circom.rs
 use crate::errors::Result;
-use wasmer::{Function, Instance, Value};
+use wasmer::{Function, Instance, Store, Value};
 
 #[derive(Clone, Debug)]
 pub struct Wasm(Instance);
@@ -41,31 +41,36 @@ impl Wasm {
 
     pub(crate) fn get_raw_prime(&self) -> Result<()> {
         let func = self.func("getRawPrime");
-        func.call(&[])?;
+        let mut store = Store::default();
+        func.call(&mut store, &[])?;
         Ok(())
     }
 
     pub(crate) fn read_shared_rw_memory(&self, i: u32) -> Result<u32> {
         let func = self.func("readSharedRWMemory");
-        let result = func.call(&[i.into()])?;
+        let mut store = Store::default();
+        let result = func.call(&mut store, &[i.into()])?;
         Ok(result[0].unwrap_i32() as u32)
     }
 
     pub(crate) fn write_shared_rw_memory(&self, i: u32, v: u32) -> Result<()> {
         let func = self.func("writeSharedRWMemory");
-        func.call(&[i.into(), v.into()])?;
+        let mut store = Store::default();
+        func.call(&mut store, &[i.into(), v.into()])?;
         Ok(())
     }
 
     pub(crate) fn set_input_signal(&self, hmsb: u32, hlsb: u32, pos: u32) -> Result<()> {
         let func = self.func("setInputSignal");
-        func.call(&[hmsb.into(), hlsb.into(), pos.into()])?;
+        let mut store = Store::default();
+        func.call(&mut store, &[hmsb.into(), hlsb.into(), pos.into()])?;
         Ok(())
     }
 
     pub(crate) fn get_witness(&self, i: u32) -> Result<()> {
         let func = self.func("getWitness");
-        func.call(&[i.into()])?;
+        let mut store = Store::default();
+        func.call(&mut store, &[i.into()])?;
         Ok(())
     }
 
@@ -77,7 +82,8 @@ impl Wasm {
     // impl CircomBase for Wasm {
     pub(crate) fn init(&self, sanity_check: bool) -> Result<()> {
         let func = self.func("init");
-        func.call(&[Value::I32(sanity_check as i32)])?;
+        let mut store = Store::default();
+        func.call(&mut store, &[Value::I32(sanity_check as i32)])?;
         Ok(())
     }
 
@@ -87,7 +93,8 @@ impl Wasm {
 
     pub(crate) fn get_ptr_witness(&self, w: u32) -> Result<u32> {
         let func = self.func("getPWitness");
-        let res = func.call(&[w.into()])?;
+        let mut store = Store::default();
+        let res = func.call(&mut store, &[w.into()])?;
 
         Ok(res[0].unwrap_i32() as u32)
     }
@@ -100,12 +107,16 @@ impl Wasm {
         hash_lsb: u32,
     ) -> Result<()> {
         let func = self.func("getSignalOffset32");
-        func.call(&[
-            p_sig_offset.into(),
-            component.into(),
-            hash_msb.into(),
-            hash_lsb.into(),
-        ])?;
+        let mut store = Store::default();
+        func.call(
+            &mut store,
+            &[
+                p_sig_offset.into(),
+                component.into(),
+                hash_msb.into(),
+                hash_lsb.into(),
+            ],
+        )?;
 
         Ok(())
     }
@@ -118,7 +129,11 @@ impl Wasm {
         p_val: u32,
     ) -> Result<()> {
         let func = self.func("setSignal");
-        func.call(&[c_idx.into(), component.into(), signal.into(), p_val.into()])?;
+        let mut store = Store::default();
+        func.call(
+            &mut store,
+            &[c_idx.into(), component.into(), signal.into(), p_val.into()],
+        )?;
 
         Ok(())
     }
@@ -126,14 +141,18 @@ impl Wasm {
     // Default to version 1 if it isn't explicitly defined
     pub(crate) fn get_version(&self) -> Result<u32> {
         match self.0.exports.get_function("getVersion") {
-            Ok(func) => Ok(func.call(&[])?[0].unwrap_i32() as u32),
+            Ok(func) => {
+                let mut store = Store::default();
+                Ok(func.call(&mut store, &[])?[0].unwrap_i32() as u32)
+            }
             Err(_) => Ok(1),
         }
     }
 
     pub(crate) fn get_u32(&self, name: &str) -> Result<u32> {
         let func = self.func(name);
-        let result = func.call(&[])?;
+        let mut store = Store::default();
+        let result = func.call(&mut store, &[])?;
         Ok(result[0].unwrap_i32() as u32)
     }
 

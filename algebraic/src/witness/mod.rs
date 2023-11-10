@@ -12,9 +12,9 @@ pub(crate) mod memory;
 // pub(super) use memory::SafeMemory;
 
 mod circom;
-pub(super) use circom::{CircomBase, Wasm};
+// pub(super) use circom::{CircomBase, Wasm};
 
-pub(super) use circom::Circom;
+// pub(super) use circom::Circom;
 
 use fnv::FnvHasher;
 use std::hash::Hasher;

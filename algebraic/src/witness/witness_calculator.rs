@@ -1,9 +1,9 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/witness_calculator.rs
-use super::Circom;
-use super::{fnv, CircomBase, Wasm};
+// use super::Circom;
+// use super::{fnv, Wasm};
 use crate::bellman_ce::{PrimeField, ScalarEngine};
 use crate::errors::{EigenError, Result};
-use crate::witness::memory::SafeMemory;
+use crate::witness::{circom::Wasm, fnv, memory::SafeMemory};
 use num::ToPrimitive;
 use num_bigint::BigInt;
 use num_bigint::BigUint;
@@ -17,6 +17,7 @@ use wasmer::{imports, Function, Instance, Memory, MemoryType, Module, Store};
 use std::fs::OpenOptions;
 #[cfg(not(feature = "wasm"))]
 use std::io::{BufWriter, Write};
+use std::thread::scope;
 
 use byteorder::{LittleEndian, WriteBytesExt};
 
@@ -74,19 +75,28 @@ impl WitnessCalculator {
             },
             // Host function callbacks from the WASM
             "runtime" => {
-                "error" => runtime::error(store),
-                "logSetSignal" => runtime::log_signal(store),
-                "logGetSignal" => runtime::log_signal(store),
-                "logFinishComponent" => runtime::log_component(store),
-                "logStartComponent" => runtime::log_component(store),
-                "log" => runtime::log_component(store),
-                "exceptionHandler" => runtime::exception_handler(store),
-                "showSharedRWMemory" => runtime::show_memory(store),
-                "printErrorMessage" => runtime::print_error_message(store),
-                "writeBufferMessage" => runtime::write_buffer_message(store),
+                "error" => runtime::error(&mut store),
+                "logSetSignal" => runtime::log_signal(&mut store),
+                "logGetSignal" => runtime::log_signal(&mut store),
+                "logFinishComponent" => runtime::log_component(&mut store),
+                "logStartComponent" => runtime::log_component(&mut store),
+                "log" => runtime::log_component(&mut store),
+                "exceptionHandler" => runtime::exception_handler(&mut store),
+                "showSharedRWMemory" => runtime::show_memory(&mut store),
+                "printErrorMessage" => runtime::print_error_message(&mut store),
+                "writeBufferMessage" => runtime::write_buffer_message(&mut store),
             }
         };
-        let instance = Wasm::new(Instance::new(&module, &import_object)?);
+        let instance = Wasm::new(Instance::new(&mut scope, &module, &import_object)?);
+        let mut store = Store::default();
+        let env = FunctionEnv::new(&mut store, ());
+        let module = Module::new(&store, "(module)")?;
+        let imports = imports! {
+          "host" => {
+            "var" => Global::new(&mut store, Value::I32(2))
+          }
+        };
+        let instance = Instance::new(&mut store, &module, &imports)?;
 
         // Circom 2 feature flag with version 2
         fn new_circom(instance: Wasm, memory: Memory) -> Result<WitnessCalculator> {
@@ -331,7 +341,7 @@ pub fn flat_array(v: &[Value]) -> Vec<BigInt> {
 mod runtime {
     use super::*;
 
-    pub fn error(store: &Store) -> Function {
+    pub fn error(store: &mut Store) -> Function {
         #[allow(unused)]
         #[allow(clippy::many_single_char_names)]
         fn func(a: i32, b: i32, c: i32, d: i32, e: i32, f: i32) -> Result<()> {
@@ -346,40 +356,40 @@ mod runtime {
     }
 
     // Circom 2.0
-    pub fn exception_handler(store: &Store) -> Function {
+    pub fn exception_handler(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func(a: i32) {}
         Function::new_native(store, func)
     }
 
     // Circom 2.0
-    pub fn show_memory(store: &Store) -> Function {
+    pub fn show_memory(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func() {}
         Function::new_native(store, func)
     }
 
     // Circom 2.0
-    pub fn print_error_message(store: &Store) -> Function {
+    pub fn print_error_message(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func() {}
         Function::new_native(store, func)
     }
 
     // Circom 2.0
-    pub fn write_buffer_message(store: &Store) -> Function {
+    pub fn write_buffer_message(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func() {}
         Function::new_native(store, func)
     }
 
-    pub fn log_signal(store: &Store) -> Function {
+    pub fn log_signal(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func(a: i32, b: i32) {}
         Function::new_native(store, func)
     }
 
-    pub fn log_component(store: &Store) -> Function {
+    pub fn log_component(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func(a: i32) {}
         Function::new_native(store, func)
