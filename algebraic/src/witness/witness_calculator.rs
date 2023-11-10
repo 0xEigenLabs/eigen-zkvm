@@ -1,8 +1,9 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/witness_calculator.rs
 use super::Circom;
-use super::{fnv, CircomBase, SafeMemory, Wasm};
+use super::{fnv, CircomBase, Wasm};
 use crate::bellman_ce::{PrimeField, ScalarEngine};
 use crate::errors::{EigenError, Result};
+use crate::witness::memory::SafeMemory;
 use num::ToPrimitive;
 use num_bigint::BigInt;
 use num_bigint::BigUint;
@@ -14,7 +15,6 @@ use wasmer::{imports, Function, Instance, Memory, MemoryType, Module, Store};
 
 #[cfg(not(feature = "wasm"))]
 use std::fs::OpenOptions;
-
 #[cfg(not(feature = "wasm"))]
 use std::io::{BufWriter, Write};
 
@@ -63,10 +63,11 @@ impl WitnessCalculator {
     }
 
     pub fn from_module(module: Module) -> Result<Self> {
-        let store = module.store();
+        // let store = module.store();
+        let mut store = Store::default();
 
         // Set up the memory
-        let memory = Memory::new(store, MemoryType::new(2000, None, false)).unwrap();
+        let memory = Memory::new(&mut store, MemoryType::new(2000, None, false)).unwrap();
         let import_object = imports! {
             "env" => {
                 "memory" => memory.clone(),
@@ -87,10 +88,10 @@ impl WitnessCalculator {
         };
         let instance = Wasm::new(Instance::new(&module, &import_object)?);
 
-        let version = instance.get_version().unwrap_or(1);
-
         // Circom 2 feature flag with version 2
-        fn new_circom(instance: Wasm, memory: Memory, version: u32) -> Result<WitnessCalculator> {
+        fn new_circom(instance: Wasm, memory: Memory) -> Result<WitnessCalculator> {
+            let version = instance.get_version().unwrap_or(1);
+
             let n32 = instance.get_field_num_len32()?;
             let mut safe_memory = SafeMemory::new(memory, n32 as usize, BigInt::zero());
             instance.get_raw_prime()?;
@@ -112,7 +113,7 @@ impl WitnessCalculator {
             })
         }
 
-        new_circom(instance, memory, version)
+        new_circom(instance, memory)
     }
 
     pub fn calculate_witness<I: IntoIterator<Item = (String, Vec<BigInt>)>>(

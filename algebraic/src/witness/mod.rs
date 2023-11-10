@@ -8,8 +8,8 @@ use std::str::FromStr;
 pub use witness_calculator::flat_array;
 pub use witness_calculator::WitnessCalculator;
 
-mod memory;
-pub(super) use memory::SafeMemory;
+pub(crate) mod memory;
+// pub(super) use memory::SafeMemory;
 
 mod circom;
 pub(super) use circom::{CircomBase, Wasm};
