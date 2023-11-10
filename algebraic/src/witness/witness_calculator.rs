@@ -87,16 +87,7 @@ impl WitnessCalculator {
                 "writeBufferMessage" => runtime::write_buffer_message(&mut store),
             }
         };
-        let instance = Wasm::new(Instance::new(&mut scope, &module, &import_object)?);
-        let mut store = Store::default();
-        let env = FunctionEnv::new(&mut store, ());
-        let module = Module::new(&store, "(module)")?;
-        let imports = imports! {
-          "host" => {
-            "var" => Global::new(&mut store, Value::I32(2))
-          }
-        };
-        let instance = Instance::new(&mut store, &module, &imports)?;
+        let instance = Wasm::new(Instance::new(&mut store, &module, &import_object)?);
 
         // Circom 2 feature flag with version 2
         fn new_circom(instance: Wasm, memory: Memory) -> Result<WitnessCalculator> {

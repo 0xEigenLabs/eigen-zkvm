@@ -35,6 +35,7 @@ thiserror="1.0"
 fnv = { version = "1.0.3", default-features = false }
 num = { version = "0.4.0" }
 algebraic = { path = "../algebraic", default-features=false }
+rand = "0.4"
 
 [dev-dependencies]
 env_logger = "0.10"
