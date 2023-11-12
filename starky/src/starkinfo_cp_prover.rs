@@ -17,7 +17,7 @@ impl StarkInfo {
         stark_struct: &StarkStruct,
         program: &mut Program,
     ) -> Result<()> {
-        //log::debug!(
+        //log::trace!(
         //    "generate_constraint_polynomial ctx begin: {} {:?}",
         //    pil,
         //    ctx
@@ -47,7 +47,7 @@ impl StarkInfo {
             }
         }
 
-        //log::debug!("im_exps: {:?} q_deg {}", self.im_exps, self.q_deg);
+        //log::trace!("im_exps: {:?} q_deg {}", self.im_exps, self.q_deg);
 
         for k in self.im_exps.keys() {
             self.im_exps_list.push(*k);
@@ -71,7 +71,7 @@ impl StarkInfo {
             }
         }
 
-        //log::debug!(
+        //log::trace!(
         //    "generate_constraint_polynomial: c_exp: {}, pil.nQ: {:?}, im_exp2cm: {:?}, im_exps_list :{:?}",
         //    c_exp, pil.nQ, self.im_exp2cm, self.im_exps_list
         //);
@@ -91,13 +91,13 @@ impl StarkInfo {
         }
 
         program.step3 = build_code(ctx, pil);
-        //log::debug!("generate_constraint_polynomial: step3: {}", program.step3);
+        //log::trace!("generate_constraint_polynomial: step3: {}", program.step3);
 
         for (k, v) in self.im_exps.iter() {
             ctx2ns.calculated.insert(("exps", *k), *v);
             ctx2ns.calculated.insert(("expsPrime", *k), *v);
         }
-        //log::debug!("ctx2ns: {} {:?}", pil, ctx2ns);
+        //log::trace!("ctx2ns: {} {:?}", pil, ctx2ns);
         pil_code_gen(ctx2ns, pil, self.c_exp, false, "", 0, false)?;
 
         let sz = ctx2ns.code.len() - 1;
@@ -115,7 +115,7 @@ impl StarkInfo {
 
         program.step42ns = build_code(ctx2ns, pil);
         self.n_cm4 = self.q_deg;
-        //log::debug!(
+        //log::trace!(
         //    "generate_constraint_polynomial: step42ns: {}",
         //    program.step42ns
         //);
@@ -132,7 +132,7 @@ fn _calculate_im_pols(
     abs_max: usize,
     abs_max_d: &mut i32,
 ) -> (Option<HashMap<usize, bool>>, i32) {
-    //log::debug!(
+    //log::trace!(
     //    "im_expressions: {:?}, exp: {}, max_deg {}",
     //    im_expressions,
     //    exp,
@@ -141,7 +141,7 @@ fn _calculate_im_pols(
     if im_expressions.is_none() {
         return (None, -1);
     }
-    //log::debug!("_calculate_im_pols: {}", exp.op);
+    //log::trace!("_calculate_im_pols: {}", exp.op);
     if ["add", "sub", "addc", "mulc", "neg"].contains(&exp.op.as_str()) {
         let mut md = 0;
         #[allow(unused_assignments)]
@@ -282,7 +282,7 @@ pub fn calculate_im_pols(
     exp: &Expression,
     max_deg: usize,
 ) -> Result<(Option<HashMap<usize, bool>>, i32)> {
-    //log::debug!("calculate_im_pols: {} {}", exp, max_deg);
+    //log::trace!("calculate_im_pols: {} {}", exp, max_deg);
 
     let mut abs_max_d = 0;
     let im_expressions: HashMap<usize, bool> = HashMap::new();
@@ -295,7 +295,7 @@ pub fn calculate_im_pols(
         &mut abs_max_d,
     );
 
-    //log::debug!(
+    //log::trace!(
     //    "maxDeg: {}, nIm: {}, d: {}",
     //    max_deg,
     //    re.as_ref().unwrap().len(),

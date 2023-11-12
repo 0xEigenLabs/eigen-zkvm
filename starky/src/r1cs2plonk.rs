@@ -237,7 +237,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
 
     for (i, c) in r1cs.constraints.iter().enumerate() {
         if i % 100000 == 0 {
-            log::debug!("processing constraints: {}/{}", i, r1cs.constraints.len());
+            log::trace!("processing constraints: {}/{}", i, r1cs.constraints.len());
         }
         process(
             c,

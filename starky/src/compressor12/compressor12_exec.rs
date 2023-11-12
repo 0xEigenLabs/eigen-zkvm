@@ -38,8 +38,9 @@ pub fn exec(
     let mut cm_pols = PolsArray::new(&pil_json, PolKind::Commit);
 
     // 3. calculate witness. wasm+input->witness
-    let mut wtns = WitnessCalculator::new(wasm_file).unwrap();
     let inputs = load_input_for_witness(input_file);
+    // let mut wtns = WitnessCalculator::new(wasm_file).unwrap();
+    let mut wtns = WitnessCalculator::from_file(wasm_file)?;
     let w = wtns.calculate_witness(inputs, false).unwrap();
     let mut w = w
         .iter()
@@ -95,7 +96,7 @@ pub fn exec(
     // 5. save cmPol to file.
     cm_pols.save(commit_file)?;
 
-    log::debug!("files Generated Correctly");
+    log::trace!("files Generated Correctly");
     Result::Ok(())
 }
 

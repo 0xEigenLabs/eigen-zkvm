@@ -61,10 +61,10 @@ pub fn execute_project(
 
 fn generate_output_r1cs(file: &str, exporter: &dyn ConstraintExporter) -> Result<(), DslError> {
     if let Result::Ok(()) = exporter.r1cs(file, true) {
-        log::debug!("{} {}", Colour::Green.paint("Written successfully:"), file);
+        log::trace!("{} {}", Colour::Green.paint("Written successfully:"), file);
         Result::Ok(())
     } else {
-        log::debug!(
+        log::trace!(
             "{}",
             Colour::Red.paint("Could not write the output in the given path")
         );
@@ -76,7 +76,7 @@ fn generate_output_r1cs(file: &str, exporter: &dyn ConstraintExporter) -> Result
 
 fn generate_output_sym(file: &str, exporter: &dyn ConstraintExporter) -> Result<(), DslError> {
     if let Result::Ok(()) = exporter.sym(file) {
-        log::debug!("{} {}", Colour::Green.paint("Written successfully:"), file);
+        log::trace!("{} {}", Colour::Green.paint("Written successfully:"), file);
         Result::Ok(())
     } else {
         log::error!(
@@ -94,7 +94,7 @@ fn generate_json_constraints(
     exporter: &dyn ConstraintExporter,
 ) -> Result<(), DslError> {
     if let Ok(()) = exporter.json_constraints(debug) {
-        log::debug!(
+        log::trace!(
             "{} {}",
             Colour::Green.paint("Constraints written in:"),
             debug.json_constraints

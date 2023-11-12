@@ -146,7 +146,7 @@ impl PolsArray {
         let mut j = 0;
         let mut k = 0;
         while k < totalSize {
-            log::debug!(
+            log::trace!(
                 "loading {:?}.. {:?} of {}",
                 fileName,
                 k / 1024 / 1024,
@@ -154,7 +154,7 @@ impl PolsArray {
             );
             let mut n = std::cmp::min(buff8.len() / 8, totalSize - k);
             let rs = f.read(&mut buff8[..(n * 8)])?;
-            log::debug!(
+            log::trace!(
                 "read size: read size = {}, n = {}, k = {}, totalSize = {}",
                 rs,
                 n,

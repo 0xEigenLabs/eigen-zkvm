@@ -1,11 +1,9 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/witness_calculator.rs
-use super::Circom;
-use super::{fnv, CircomBase, SafeMemory, Wasm};
-use crate::bellman_ce::{PrimeField, ScalarEngine};
+use crate::bellman_ce::ScalarEngine;
 use crate::errors::{EigenError, Result};
+use crate::witness::{circom::Wasm, fnv, memory::SafeMemory};
 use num::ToPrimitive;
 use num_bigint::BigInt;
-use num_bigint::BigUint;
 use num_bigint::Sign;
 use num_traits::{One, Zero};
 use serde_json::Value;
@@ -14,15 +12,14 @@ use wasmer::{imports, Function, Instance, Memory, MemoryType, Module, Store};
 
 #[cfg(not(feature = "wasm"))]
 use std::fs::OpenOptions;
-
 #[cfg(not(feature = "wasm"))]
 use std::io::{BufWriter, Write};
 
 use byteorder::{LittleEndian, WriteBytesExt};
 
-#[derive(Clone, Debug)]
 pub struct WitnessCalculator {
     pub instance: Wasm,
+    store: Store,
     pub memory: SafeMemory,
     pub n64: u32,
     pub circom_version: u32,
@@ -52,19 +49,15 @@ fn to_array32(s: &BigInt, size: usize) -> Vec<u32> {
 }
 
 impl WitnessCalculator {
-    pub fn new(path: impl AsRef<std::path::Path>) -> Result<Self> {
-        Self::from_file(path)
-    }
-
     pub fn from_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
-        let store = Store::default();
+        let mut store = Store::default();
         let module = Module::from_file(&store, path).expect("correct wtns file");
-        Self::from_module(module)
+        let mut wtns = Self::from_module(&mut store, module).unwrap();
+        wtns.store = store;
+        Ok(wtns)
     }
 
-    pub fn from_module(module: Module) -> Result<Self> {
-        let store = module.store();
-
+    pub fn from_module(store: &mut Store, module: Module) -> Result<Self> {
         // Set up the memory
         let memory = Memory::new(store, MemoryType::new(2000, None, false)).unwrap();
         let import_object = imports! {
@@ -85,18 +78,22 @@ impl WitnessCalculator {
                 "writeBufferMessage" => runtime::write_buffer_message(store),
             }
         };
-        let instance = Wasm::new(Instance::new(&module, &import_object)?);
-
-        let version = instance.get_version().unwrap_or(1);
+        let instance = Wasm::new(Instance::new(store, &module, &import_object)?);
 
         // Circom 2 feature flag with version 2
-        fn new_circom(instance: Wasm, memory: Memory, version: u32) -> Result<WitnessCalculator> {
-            let n32 = instance.get_field_num_len32()?;
+        fn new_circom(
+            store: &mut Store,
+            instance: Wasm,
+            memory: Memory,
+        ) -> Result<WitnessCalculator> {
+            let version = instance.get_version(store).unwrap_or(1);
+
+            let n32 = instance.get_field_num_len32(store)?;
             let mut safe_memory = SafeMemory::new(memory, n32 as usize, BigInt::zero());
-            instance.get_raw_prime()?;
+            instance.get_raw_prime(store)?;
             let mut arr = vec![0; n32 as usize];
             for i in 0..n32 {
-                let res = instance.read_shared_rw_memory(i)?;
+                let res = instance.read_shared_rw_memory(store, i)?;
                 arr[(n32 as usize) - (i as usize) - 1] = res;
             }
             let prime = from_array32(arr);
@@ -106,26 +103,28 @@ impl WitnessCalculator {
 
             Ok(WitnessCalculator {
                 instance,
+                store: Store::default(),
                 memory: safe_memory,
                 n64,
                 circom_version: version,
             })
         }
 
-        new_circom(instance, memory, version)
+        new_circom(store, instance, memory)
     }
 
     pub fn calculate_witness<I: IntoIterator<Item = (String, Vec<BigInt>)>>(
         &mut self,
+        // store: &mut Store,
         inputs: I,
         sanity_check: bool,
     ) -> Result<Vec<BigInt>> {
-        self.instance.init(sanity_check)?;
+        self.instance.init(&mut self.store, sanity_check)?;
         let wtns_u32 = self.calculate_witness_circom(inputs, sanity_check)?;
-        let n32 = self.instance.get_field_num_len32()?;
+        let n32 = self.instance.get_field_num_len32(&mut self.store)?;
 
         let mut wo = Vec::new();
-        let witness_size = self.instance.get_witness_size()?;
+        let witness_size = self.instance.get_witness_size(&mut self.store)?;
         for i in 0..witness_size {
             let mut arr = vec![0u32; n32 as usize];
             for j in 0..n32 {
@@ -141,7 +140,7 @@ impl WitnessCalculator {
         inputs: I,
         sanity_check: bool,
     ) -> Result<Vec<u32>> {
-        self.instance.init(sanity_check)?;
+        self.instance.init(&mut self.store, sanity_check)?;
         self.calculate_witness_circom(inputs, sanity_check)
     }
 
@@ -151,9 +150,9 @@ impl WitnessCalculator {
         inputs: I,
         sanity_check: bool,
     ) -> Result<Vec<u32>> {
-        self.instance.init(sanity_check)?;
+        self.instance.init(&mut self.store, sanity_check)?;
 
-        let n32 = self.instance.get_field_num_len32()?;
+        let n32 = self.instance.get_field_num_len32(&mut self.store)?;
 
         // allocate the inputs
         for (name, values) in inputs.into_iter() {
@@ -162,20 +161,24 @@ impl WitnessCalculator {
             for (i, value) in values.into_iter().enumerate() {
                 let f_arr = to_array32(&value, n32 as usize);
                 for j in 0..n32 {
-                    self.instance
-                        .write_shared_rw_memory(j, f_arr[(n32 as usize) - 1 - (j as usize)])?;
+                    self.instance.write_shared_rw_memory(
+                        &mut self.store,
+                        j,
+                        f_arr[(n32 as usize) - 1 - (j as usize)],
+                    )?;
                 }
-                self.instance.set_input_signal(msb, lsb, i as u32)?;
+                self.instance
+                    .set_input_signal(&mut self.store, msb, lsb, i as u32)?;
             }
         }
 
         let mut w = Vec::new();
 
-        let witness_size = self.instance.get_witness_size()?;
+        let witness_size = self.instance.get_witness_size(&mut self.store)?;
         for i in 0..witness_size {
-            self.instance.get_witness(i)?;
+            self.instance.get_witness(&mut self.store, i)?;
             for j in 0..n32 {
-                w.push(self.instance.read_shared_rw_memory(j)?);
+                w.push(self.instance.read_shared_rw_memory(&mut self.store, j)?);
             }
         }
 
@@ -184,7 +187,7 @@ impl WitnessCalculator {
 
     #[cfg(not(feature = "wasm"))]
     pub fn save_witness_to_bin_file<E: ScalarEngine>(
-        &self,
+        &mut self,
         filename: &str,
         w: &Vec<u32>,
     ) -> Result<()> {
@@ -199,11 +202,11 @@ impl WitnessCalculator {
     }
 
     pub fn save_witness_from_bin_writer<E: ScalarEngine, W: Write>(
-        &self,
+        &mut self,
         mut writer: W,
         wtns: &Vec<u32>,
     ) -> Result<()> {
-        let n32 = self.instance.get_field_num_len32()?;
+        let n32 = self.instance.get_field_num_len32(&mut self.store)?;
         let wtns_header = [119, 116, 110, 115];
         writer.write_all(&wtns_header)?;
 
@@ -252,37 +255,6 @@ impl WitnessCalculator {
         }
         Ok(())
     }
-
-    pub fn calculate_witness_element<
-        E: ScalarEngine,
-        I: IntoIterator<Item = (String, Vec<BigInt>)>,
-    >(
-        &mut self,
-        inputs: I,
-        sanity_check: bool,
-    ) -> Result<Vec<E::Fr>> {
-        let witness = self.calculate_witness(inputs, sanity_check)?;
-        let modulus = BigUint::from_str(
-            "21888242871839275222246405745257275088548364400416034343698204186575808495617",
-        )?;
-
-        // convert it to field elements
-        use num_traits::Signed;
-        let witness = witness
-            .into_iter()
-            .map(|w| {
-                let w = if w.sign() == num_bigint::Sign::Minus {
-                    // Need to negate the witness element if negative
-                    modulus.clone() - w.abs().to_biguint().unwrap()
-                } else {
-                    w.to_biguint().unwrap()
-                };
-                E::Fr::from_str(&w.to_string()).unwrap()
-            })
-            .collect::<Vec<_>>();
-
-        Ok(witness)
-    }
 }
 
 #[allow(dead_code)]
@@ -330,58 +302,58 @@ pub fn flat_array(v: &[Value]) -> Vec<BigInt> {
 mod runtime {
     use super::*;
 
-    pub fn error(store: &Store) -> Function {
+    pub fn error(store: &mut Store) -> Function {
         #[allow(unused)]
         #[allow(clippy::many_single_char_names)]
         fn func(a: i32, b: i32, c: i32, d: i32, e: i32, f: i32) -> Result<()> {
             // NOTE: We can also get more information why it is failing, see p2str etc here:
             // https://github.com/iden3/circom_runtime/blob/master/js/witness_calculator.js#L52-L64
-            log::debug!("runtime error, exiting early: {a} {b} {c} {d} {e} {f}",);
+            log::trace!("runtime error, exiting early: {a} {b} {c} {d} {e} {f}",);
             Err(EigenError::WasmerRuntimeError(wasmer::RuntimeError::new(
                 "1",
             )))
         }
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 
     // Circom 2.0
-    pub fn exception_handler(store: &Store) -> Function {
+    pub fn exception_handler(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func(a: i32) {}
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 
     // Circom 2.0
-    pub fn show_memory(store: &Store) -> Function {
+    pub fn show_memory(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func() {}
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 
     // Circom 2.0
-    pub fn print_error_message(store: &Store) -> Function {
+    pub fn print_error_message(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func() {}
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 
     // Circom 2.0
-    pub fn write_buffer_message(store: &Store) -> Function {
+    pub fn write_buffer_message(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func() {}
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 
-    pub fn log_signal(store: &Store) -> Function {
+    pub fn log_signal(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func(a: i32, b: i32) {}
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 
-    pub fn log_component(store: &Store) -> Function {
+    pub fn log_component(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func(a: i32) {}
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 }
 
@@ -446,7 +418,7 @@ mod tests {
     // TODO: test complex samples
 
     fn run_test(case: TestCase) {
-        let mut wtns = WitnessCalculator::new(case.circuit_path).unwrap();
+        let mut wtns = WitnessCalculator::from_file(case.circuit_path).unwrap();
         assert_eq!(
             wtns.memory.prime.to_str_radix(16),
             "30644E72E131A029B85045B68181585D2833E84879B9709143E1F593F0000001".to_lowercase()

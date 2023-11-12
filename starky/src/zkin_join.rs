@@ -40,6 +40,6 @@ pub fn join_zkin(
     let input = serde_json::to_string(&zkout_map)?;
     let mut file = File::create(zkout)?;
     write!(file, "{}", input).unwrap();
-    log::debug!("zkout file Generated Correctly");
+    log::trace!("zkout file Generated Correctly");
     Ok(())
 }
