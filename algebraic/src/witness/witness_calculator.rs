@@ -1,12 +1,11 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/witness_calculator.rs
 // use super::Circom;
 // use super::{fnv, Wasm};
-use crate::bellman_ce::{PrimeField, ScalarEngine};
+use crate::bellman_ce::ScalarEngine;
 use crate::errors::{EigenError, Result};
 use crate::witness::{circom::Wasm, fnv, memory::SafeMemory};
 use num::ToPrimitive;
 use num_bigint::BigInt;
-use num_bigint::BigUint;
 use num_bigint::Sign;
 use num_traits::{One, Zero};
 use serde_json::Value;
@@ -17,7 +16,6 @@ use wasmer::{imports, Function, Instance, Memory, MemoryType, Module, Store};
 use std::fs::OpenOptions;
 #[cfg(not(feature = "wasm"))]
 use std::io::{BufWriter, Write};
-use std::thread::scope;
 
 use byteorder::{LittleEndian, WriteBytesExt};
 
@@ -318,47 +316,47 @@ mod runtime {
                 "1",
             )))
         }
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 
     // Circom 2.0
     pub fn exception_handler(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func(a: i32) {}
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 
     // Circom 2.0
     pub fn show_memory(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func() {}
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 
     // Circom 2.0
     pub fn print_error_message(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func() {}
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 
     // Circom 2.0
     pub fn write_buffer_message(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func() {}
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 
     pub fn log_signal(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func(a: i32, b: i32) {}
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 
     pub fn log_component(store: &mut Store) -> Function {
         #[allow(unused)]
         fn func(a: i32) {}
-        Function::new_native(store, func)
+        Function::new_typed(store, func)
     }
 }
 
