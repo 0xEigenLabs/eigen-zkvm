@@ -1,6 +1,4 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/witness_calculator.rs
-// use super::Circom;
-// use super::{fnv, Wasm};
 use crate::bellman_ce::ScalarEngine;
 use crate::errors::{EigenError, Result};
 use crate::witness::{circom::Wasm, fnv, memory::SafeMemory};

@@ -1,23 +1,16 @@
+mod circom;
+pub(crate) mod memory;
 pub(super) mod witness_calculator;
 
+use fnv::FnvHasher;
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::hash::Hasher;
 use std::str::FromStr;
 pub use witness_calculator::flat_array;
 pub use witness_calculator::WitnessCalculator;
-
-pub(crate) mod memory;
-// pub(super) use memory::SafeMemory;
-
-mod circom;
-// pub(super) use circom::{CircomBase, Wasm};
-
-// pub(super) use circom::Circom;`11`q=
-
-use fnv::FnvHasher;
-use std::hash::Hasher;
 
 pub(crate) fn fnv(inp: &str) -> (u32, u32) {
     let mut hasher = FnvHasher::default();
