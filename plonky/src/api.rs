@@ -84,7 +84,7 @@ pub fn prove(
 pub fn calculate_witness(wasm_file: &str, input_json: &str, output: &str) -> Result<()> {
     let inputs = load_input_for_witness(input_json);
 
-    let mut wtns = WitnessCalculator::new(wasm_file)?;
+    let mut wtns = WitnessCalculator::from_file(wasm_file)?;
     assert_eq!(
         wtns.memory.prime.to_str_radix(16),
         "30644E72E131A029B85045B68181585D2833E84879B9709143E1F593F0000001".to_lowercase()
