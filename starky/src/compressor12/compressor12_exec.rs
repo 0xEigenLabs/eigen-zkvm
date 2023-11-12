@@ -143,9 +143,9 @@ mod test {
             vec![3, 4, 5],
         ];
 
-        write_exec_file(&file_path, &target_adds, &target_s_map);
+        write_exec_file(&file_path, &target_adds, &target_s_map).unwrap();
 
-        let (adds_len, _s_map_column_len, _adds, _s_map) = read_exec_file(&file_path);
+        let (adds_len, _s_map_column_len, _adds, _s_map) = read_exec_file(&file_path).unwrap();
 
         assert_eq!(adds_len, target_adds.len());
     }

@@ -78,5 +78,5 @@ pub(super) fn write_exec_file(
         }
     }
 
-    write_vec_to_file(exec_file, &buff)
+    Ok(write_vec_to_file(exec_file, &buff)?)
 }
