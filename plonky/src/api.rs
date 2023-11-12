@@ -82,16 +82,17 @@ pub fn prove(
 }
 
 pub fn calculate_witness(wasm_file: &str, input_json: &str, output: &str) -> Result<()> {
-    let mut wtns = WitnessCalculator::new(wasm_file).unwrap();
+    let inputs = load_input_for_witness(input_json);
+
+    // let mut wtns = WitnessCalculator::new(wasm_file).unwrap();
+    let (mut store, mut wtns) = WitnessCalculator::from_file(wasm_file)?;
     assert_eq!(
         wtns.memory.prime.to_str_radix(16),
         "30644E72E131A029B85045B68181585D2833E84879B9709143E1F593F0000001".to_lowercase()
     );
 
-    let inputs = load_input_for_witness(input_json);
-
-    let wtns_buf = wtns.calculate_witness_bin(inputs, false)?;
-    wtns.save_witness_to_bin_file::<Bn256>(output, &wtns_buf)
+    let wtns_buf = wtns.calculate_witness_bin(&mut store, inputs, false)?;
+    wtns.save_witness_to_bin_file::<Bn256>(&mut store, output, &wtns_buf)
 }
 
 pub fn export_verification_key(

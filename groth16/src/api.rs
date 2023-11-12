@@ -59,9 +59,9 @@ pub fn groth16_prove(
 ) -> Result<()> {
     let mut rng = rand::thread_rng();
 
-    let mut wtns = WitnessCalculator::new(wtns_file)?;
+    let (mut store, mut wtns) = WitnessCalculator::from_file(wtns_file)?;
     let inputs = load_input_for_witness(input_file);
-    let w = wtns.calculate_witness(inputs, false)?;
+    let w = wtns.calculate_witness(&mut store, inputs, false)?;
     match curve_type {
         "BN128" => {
             let pk: Parameters<Bn256> = read_pk_from_file(pk_file, false)?;
