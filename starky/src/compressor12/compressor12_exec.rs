@@ -25,23 +25,22 @@ pub fn exec(
     commit_file: &str,
 ) -> Result<()> {
     // 0. load exec_file,
-    let (adds_len, s_map_column_len, adds, s_map) = read_exec_file(exec_file);
+    let (adds_len, s_map_column_len, adds, s_map) = read_exec_file(exec_file)?;
 
     // 1. Compiles a .pil file to its json form , and save it.
     // TODO: the pil_str has been compiled in plonk_setup#3
     let pil_json = compile_pil_from_path(pil_file);
-    let mut file = File::create(Path::new(&format!("{pil_file}.json"))).unwrap();
-    let input = serde_json::to_string(&pil_json).unwrap();
-    write!(file, "{}", input).unwrap();
+    let mut file = File::create(Path::new(&format!("{pil_file}.json")))?;
+    let input = serde_json::to_string(&pil_json)?;
+    write!(file, "{}", input)?;
 
     // 2. construct cmPol: .pil.json -> .cm
     let mut cm_pols = PolsArray::new(&pil_json, PolKind::Commit);
 
     // 3. calculate witness. wasm+input->witness
-    let inputs = load_input_for_witness(input_file);
-    // let mut wtns = WitnessCalculator::new(wasm_file).unwrap();
     let mut wtns = WitnessCalculator::from_file(wasm_file)?;
-    let w = wtns.calculate_witness(inputs, false).unwrap();
+    let inputs = load_input_for_witness(input_file);
+    let w = wtns.calculate_witness(inputs, false)?;
     let mut w = w
         .iter()
         .map(|wi| {
@@ -55,8 +54,8 @@ pub fn exec(
         .collect::<Vec<_>>();
 
     for i in 0..adds_len {
-        let w2 = FGL::from_raw_repr(<FGL as PrimeField>::Repr::from(adds[i * 4 + 2])).unwrap();
-        let w3 = FGL::from_raw_repr(<FGL as PrimeField>::Repr::from(adds[i * 4 + 3])).unwrap();
+        let w2 = FGL::from_raw_repr(<FGL as PrimeField>::Repr::from(adds[i * 4 + 2]))?;
+        let w3 = FGL::from_raw_repr(<FGL as PrimeField>::Repr::from(adds[i * 4 + 3]))?;
 
         let f_w = (w[adds[i * 4] as usize] * w2) + (w[adds[i * 4 + 1] as usize] * w3);
         w.push(f_w);
@@ -100,8 +99,8 @@ pub fn exec(
     Result::Ok(())
 }
 
-fn read_exec_file(exec_file: &str) -> (usize, usize, Vec<u64>, Vec<u64>) {
-    let mut buff = read_vec_from_file(exec_file).unwrap();
+fn read_exec_file(exec_file: &str) -> Result<(usize, usize, Vec<u64>, Vec<u64>)> {
+    let mut buff = read_vec_from_file(exec_file)?;
 
     let mut new_buff = buff.split_off(2);
     let adds_len = buff[0] as usize;
@@ -113,7 +112,7 @@ fn read_exec_file(exec_file: &str) -> (usize, usize, Vec<u64>, Vec<u64>) {
     let s_map = new_buff.split_off(adds_len * 4);
     let adds = new_buff;
 
-    (adds_len, s_map_column_len, adds, s_map)
+    Ok((adds_len, s_map_column_len, adds, s_map))
 }
 
 #[cfg(test)]
@@ -144,9 +143,9 @@ mod test {
             vec![3, 4, 5],
         ];
 
-        write_exec_file(&file_path, &target_adds, &target_s_map);
+        write_exec_file(&file_path, &target_adds, &target_s_map).unwrap();
 
-        let (adds_len, _s_map_column_len, _adds, _s_map) = read_exec_file(&file_path);
+        let (adds_len, _s_map_column_len, _adds, _s_map) = read_exec_file(&file_path).unwrap();
 
         assert_eq!(adds_len, target_adds.len());
     }
