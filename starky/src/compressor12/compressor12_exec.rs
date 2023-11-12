@@ -38,7 +38,7 @@ pub fn exec(
     let mut cm_pols = PolsArray::new(&pil_json, PolKind::Commit);
 
     // 3. calculate witness. wasm+input->witness
-    let mut wtns = WitnessCalculator::new(wasm_file)?;
+    let mut wtns = WitnessCalculator::from_file(wasm_file)?;
     let inputs = load_input_for_witness(input_file);
     let w = wtns.calculate_witness(inputs, false)?;
     let mut w = w
