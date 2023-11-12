@@ -82,7 +82,7 @@ pub fn prove(
 }
 
 pub fn calculate_witness(wasm_file: &str, input_json: &str, output: &str) -> Result<()> {
-    let mut wtns = WitnessCalculator::new(wasm_file).unwrap();
+    let mut wtns = WitnessCalculator::new(wasm_file)?;
     assert_eq!(
         wtns.memory.prime.to_str_radix(16),
         "30644E72E131A029B85045B68181585D2833E84879B9709143E1F593F0000001".to_lowercase()
@@ -121,16 +121,17 @@ pub fn verify(vk_file: &str, proof_bin: &str, transcript: &str) -> Result<()> {
     let vk = reader::load_verification_key::<Bn256>(vk_file);
     let proof = reader::load_proof::<Bn256>(proof_bin);
     let ok = plonk::verify(&vk, &proof, transcript)?;
-    if !ok {
-        return Err(EigenError::from("Proof is invalid".to_string()));
+    if ok {
+        Ok(())
+    } else {
+        Err(EigenError::from("Proof is invalid".to_string()))
     }
-    Result::Ok(())
 }
 
 pub fn generate_verifier(vk_file: &str, sol: &str) -> Result<()> {
     let vk = reader::load_verification_key::<Bn256>(vk_file);
     bellman_vk_codegen::render_verification_key_from_default_template(&vk, sol, true);
-    Result::Ok(())
+    Ok(())
 }
 
 #[cfg(not(feature = "wasm"))]
@@ -183,10 +184,11 @@ pub fn aggregation_verify(proof: &str, vk: &str) -> Result<()> {
     let vk = reader::load_aggregation_verification_key(vk);
     let proof = reader::load_aggregated_proof(proof);
     let correct = aggregation::verify(vk, proof)?;
-    if !correct {
-        return Err(EigenError::from("Proof is invalid".to_string()));
+    if correct {
+        Result::Ok(())
+    } else {
+        Err(EigenError::from("Proof is invalid".to_string()))
     }
-    Result::Ok(())
 }
 
 // check an aggregated proof is corresponding to the original proofs

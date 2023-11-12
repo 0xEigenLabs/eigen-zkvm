@@ -34,20 +34,24 @@ pub fn setup(
     let res = PlonkSetup::new(&r1cs, &opts);
 
     // 2. And write it into pil_file.
-    let mut file = File::create(pil_file).unwrap();
-    write!(file, "{}", res.pil_str).unwrap();
+    let mut file = File::create(pil_file)?;
+    write!(file, "{}", res.pil_str)?;
 
     // 3. write const pols file
     res.const_pols.save(const_file)?;
 
     // 4. construct and save ExecFile: plonk additions + sMap -> BigUint64Array
-    write_exec_file(exec_file, &res.plonk_additions, &res.s_map);
+    write_exec_file(exec_file, &res.plonk_additions, &res.s_map)?;
 
     Ok(())
 }
 
 // construct and save ExecFile: plonk additions + sMap -> BigUint64Array
-pub(super) fn write_exec_file(exec_file: &str, adds: &Vec<PlonkAdd>, s_map: &Vec<Vec<u64>>) {
+pub(super) fn write_exec_file(
+    exec_file: &str,
+    adds: &Vec<PlonkAdd>,
+    s_map: &Vec<Vec<u64>>,
+) -> Result<()> {
     let adds_len = adds.len();
     let s_map_row_len = s_map.len();
     let s_map_column_len = s_map[0].len();
@@ -74,5 +78,5 @@ pub(super) fn write_exec_file(exec_file: &str, adds: &Vec<PlonkAdd>, s_map: &Vec
         }
     }
 
-    write_vec_to_file(exec_file, &buff).unwrap();
+    write_vec_to_file(exec_file, &buff)
 }
