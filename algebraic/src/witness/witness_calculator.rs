@@ -19,9 +19,9 @@ use std::io::{BufWriter, Write};
 
 use byteorder::{LittleEndian, WriteBytesExt};
 
-#[derive(Clone, Debug)]
 pub struct WitnessCalculator {
     pub instance: Wasm,
+    store: Store,
     pub memory: SafeMemory,
     pub n64: u32,
     pub circom_version: u32,
@@ -51,11 +51,12 @@ fn to_array32(s: &BigInt, size: usize) -> Vec<u32> {
 }
 
 impl WitnessCalculator {
-    pub fn from_file(path: impl AsRef<std::path::Path>) -> Result<(Store, Self)> {
+    pub fn from_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
         let mut store = Store::default();
         let module = Module::from_file(&store, path).expect("correct wtns file");
-        let wtns = Self::from_module(&mut store, module).unwrap();
-        Ok((store, wtns))
+        let mut wtns = Self::from_module(&mut store, module).unwrap();
+        wtns.store = store;
+        Ok(wtns)
     }
 
     pub fn from_module(store: &mut Store, module: Module) -> Result<Self> {
@@ -104,6 +105,7 @@ impl WitnessCalculator {
 
             Ok(WitnessCalculator {
                 instance,
+                store: Store::default(),
                 memory: safe_memory,
                 n64,
                 circom_version: version,
@@ -115,16 +117,16 @@ impl WitnessCalculator {
 
     pub fn calculate_witness<I: IntoIterator<Item = (String, Vec<BigInt>)>>(
         &mut self,
-        store: &mut Store,
+        // store: &mut Store,
         inputs: I,
         sanity_check: bool,
     ) -> Result<Vec<BigInt>> {
-        self.instance.init(store, sanity_check)?;
-        let wtns_u32 = self.calculate_witness_circom(store, inputs, sanity_check)?;
-        let n32 = self.instance.get_field_num_len32(store)?;
+        self.instance.init(&mut self.store, sanity_check)?;
+        let wtns_u32 = self.calculate_witness_circom(inputs, sanity_check)?;
+        let n32 = self.instance.get_field_num_len32(&mut self.store)?;
 
         let mut wo = Vec::new();
-        let witness_size = self.instance.get_witness_size(store)?;
+        let witness_size = self.instance.get_witness_size(&mut self.store)?;
         for i in 0..witness_size {
             let mut arr = vec![0u32; n32 as usize];
             for j in 0..n32 {
@@ -137,24 +139,22 @@ impl WitnessCalculator {
 
     pub fn calculate_witness_bin<I: IntoIterator<Item = (String, Vec<BigInt>)>>(
         &mut self,
-        store: &mut Store,
         inputs: I,
         sanity_check: bool,
     ) -> Result<Vec<u32>> {
-        self.instance.init(store, sanity_check)?;
-        self.calculate_witness_circom(store, inputs, sanity_check)
+        self.instance.init(&mut self.store, sanity_check)?;
+        self.calculate_witness_circom(inputs, sanity_check)
     }
 
     // Circom 2 feature flag with version 2
     fn calculate_witness_circom<I: IntoIterator<Item = (String, Vec<BigInt>)>>(
         &mut self,
-        store: &mut Store,
         inputs: I,
         sanity_check: bool,
     ) -> Result<Vec<u32>> {
-        self.instance.init(store, sanity_check)?;
+        self.instance.init(&mut self.store, sanity_check)?;
 
-        let n32 = self.instance.get_field_num_len32(store)?;
+        let n32 = self.instance.get_field_num_len32(&mut self.store)?;
 
         // allocate the inputs
         for (name, values) in inputs.into_iter() {
@@ -164,22 +164,23 @@ impl WitnessCalculator {
                 let f_arr = to_array32(&value, n32 as usize);
                 for j in 0..n32 {
                     self.instance.write_shared_rw_memory(
-                        store,
+                        &mut self.store,
                         j,
                         f_arr[(n32 as usize) - 1 - (j as usize)],
                     )?;
                 }
-                self.instance.set_input_signal(store, msb, lsb, i as u32)?;
+                self.instance
+                    .set_input_signal(&mut self.store, msb, lsb, i as u32)?;
             }
         }
 
         let mut w = Vec::new();
 
-        let witness_size = self.instance.get_witness_size(store)?;
+        let witness_size = self.instance.get_witness_size(&mut self.store)?;
         for i in 0..witness_size {
-            self.instance.get_witness(store, i)?;
+            self.instance.get_witness(&mut self.store, i)?;
             for j in 0..n32 {
-                w.push(self.instance.read_shared_rw_memory(store, j)?);
+                w.push(self.instance.read_shared_rw_memory(&mut self.store, j)?);
             }
         }
 
@@ -188,8 +189,7 @@ impl WitnessCalculator {
 
     #[cfg(not(feature = "wasm"))]
     pub fn save_witness_to_bin_file<E: ScalarEngine>(
-        &self,
-        store: &mut Store,
+        &mut self,
         filename: &str,
         w: &Vec<u32>,
     ) -> Result<()> {
@@ -200,16 +200,15 @@ impl WitnessCalculator {
             .expect("unable to open.");
 
         let writer = BufWriter::new(writer);
-        self.save_witness_from_bin_writer::<E, _>(store, writer, w)
+        self.save_witness_from_bin_writer::<E, _>(writer, w)
     }
 
     pub fn save_witness_from_bin_writer<E: ScalarEngine, W: Write>(
-        &self,
-        store: &mut Store,
+        &mut self,
         mut writer: W,
         wtns: &Vec<u32>,
     ) -> Result<()> {
-        let n32 = self.instance.get_field_num_len32(store)?;
+        let n32 = self.instance.get_field_num_len32(&mut self.store)?;
         let wtns_header = [119, 116, 110, 115];
         writer.write_all(&wtns_header)?;
 
@@ -421,7 +420,7 @@ mod tests {
     // TODO: test complex samples
 
     fn run_test(case: TestCase) {
-        let (mut store, mut wtns) = WitnessCalculator::from_file(case.circuit_path).unwrap();
+        let mut wtns = WitnessCalculator::from_file(case.circuit_path).unwrap();
         assert_eq!(
             wtns.memory.prime.to_str_radix(16),
             "30644E72E131A029B85045B68181585D2833E84879B9709143E1F593F0000001".to_lowercase()
@@ -450,7 +449,7 @@ mod tests {
             })
             .collect::<HashMap<_, _>>();
 
-        let res = wtns.calculate_witness(&mut store, inputs, true).unwrap();
+        let res = wtns.calculate_witness(inputs, true).unwrap();
         for (r, w) in res.iter().zip(case.witness) {
             assert_eq!(r, &BigInt::from_str(w).unwrap());
         }

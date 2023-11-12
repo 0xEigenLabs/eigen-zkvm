@@ -83,10 +83,9 @@ mod tests {
 
         //2. Prove
         let t1 = std::time::Instant::now();
-        // let mut wtns = WitnessCalculator::new(WASM_FILE).unwrap();
-        let (mut store, mut wtns) = WitnessCalculator::from_file(WASM_FILE)?;
+        let mut wtns = WitnessCalculator::from_file(WASM_FILE)?;
         let inputs = load_input_for_witness(INPUT_FILE);
-        let w = wtns.calculate_witness(&mut store, inputs, false).unwrap();
+        let w = wtns.calculate_witness(inputs, false).unwrap();
         let w = w
             .iter()
             .map(|wi| {
@@ -140,9 +139,9 @@ mod tests {
         //2. Prove
         let t1 = std::time::Instant::now();
         // let mut wtns = WitnessCalculator::new(WASM_FILE_BLS12).unwrap();
-        let (mut store, mut wtns) = WitnessCalculator::from_file(WASM_FILE_BLS12)?;
+        let mut wtns = WitnessCalculator::from_file(WASM_FILE_BLS12)?;
         let inputs = load_input_for_witness(INPUT_FILE);
-        let w = wtns.calculate_witness(&mut store, inputs, false).unwrap();
+        let w = wtns.calculate_witness(inputs, false).unwrap();
         let w = w
             .iter()
             .map(|wi| {
