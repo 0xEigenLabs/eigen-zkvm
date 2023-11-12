@@ -100,7 +100,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
         stark_struct,
         prover_addr,
     )?;
-    log::debug!("verify the proof...");
+    log::debug!("generate the proof done");
 
     let result = stark_verify::<M, T>(
         &starkproof,
@@ -120,7 +120,6 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
         agg_stage,
     };
 
-    log::debug!("generate circom");
     let str_ver = pil2circom::pil2circom(
         pil,
         &setup.const_root,

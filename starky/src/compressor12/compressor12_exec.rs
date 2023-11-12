@@ -95,7 +95,7 @@ pub fn exec(
     // 5. save cmPol to file.
     cm_pols.save(commit_file)?;
 
-    log::debug!("files Generated Correctly");
+    log::trace!("files Generated Correctly");
     Result::Ok(())
 }
 

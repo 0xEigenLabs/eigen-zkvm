@@ -340,11 +340,11 @@ pub fn prove(
     // quick_check_if_satisifed
     let mut cs = TrivialAssembly::<Bn256, Width4WithCustomGates, Width4MainGateWithDNext>::new();
     circuit.synthesize(&mut cs).expect("should synthesize");
-    log::debug!("Raw number of gates: {}", cs.n());
+    log::trace!("Raw number of gates: {}", cs.n());
     cs.finalize();
-    log::debug!("Padded number of gates: {}", cs.n());
+    log::trace!("Padded number of gates: {}", cs.n());
     assert!(cs.is_satisfied());
-    log::debug!("satisfied {}", cs.is_satisfied());
+    log::trace!("satisfied {}", cs.is_satisfied());
     assert_eq!(cs.num_inputs, 1);
 
     let setup: Setup<Bn256, RecursiveAggregationCircuitBn256> =
@@ -422,7 +422,7 @@ pub fn verify(
     {
         inputs.push(chunk);
     }
-    log::debug!("individual_inputs: {:#?}", inputs);
+    log::trace!("individual_inputs: {:#?}", inputs);
     //notice in PlonkCore.sol the aggregate pairs from subproofs and recursive proofs are combined: 1 * inner + challenge * outer
     //and only one verify on pairing has been run to save some gas
     //here we just verify them respectively
@@ -434,7 +434,7 @@ pub fn verify(
     if !valid {
         return Ok(valid);
     }
-    log::debug!("aggregated proof is valid");
+    log::trace!("aggregated proof is valid");
     verify_subproof_limbs(&aggregated_proof, &vk)
 }
 
