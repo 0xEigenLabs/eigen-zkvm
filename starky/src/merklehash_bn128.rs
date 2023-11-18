@@ -73,7 +73,7 @@ impl MerkleTreeBN128 {
         _st_i: usize,
         _st_n: usize,
     ) -> Result<Vec<ElementDigest<4>>> {
-        log::debug!(
+        log::trace!(
             "merklizing bn128 hash start.... {}/{}, buff size {}",
             _st_i,
             _st_n,
@@ -200,7 +200,7 @@ impl MerkleTree for MerkleTreeBN128 {
                     });
                 });
         }
-        log::debug!("linearhash time cost: {}", now.elapsed().as_secs_f64());
+        log::trace!("linearhash time cost: {}", now.elapsed().as_secs_f64());
 
         // merklize level
         self.nodes = nodes;
@@ -215,7 +215,7 @@ impl MerkleTree for MerkleTreeBN128 {
         while n256 > 1 {
             let now = Instant::now();
             self.merklize_level(p_in, next_n256, p_out)?;
-            log::debug!(
+            log::trace!(
                 "merklize_level {} time cost: {}",
                 next_n256,
                 now.elapsed().as_secs_f64()

@@ -392,7 +392,7 @@ pub fn eval_exp(
     exp: &Expression,
     prime: bool,
 ) -> Result<Node> {
-    //log::debug!("eval, expression {}", exp);
+    //log::trace!("eval, expression {}", exp);
     if ExpressionOps::is_nop(exp) {
         panic!("exp: {:?}", exp);
     }
@@ -477,7 +477,7 @@ pub fn eval_exp(
         }
         "mulc" => {
             let a = eval_exp(code_ctx, pil, &values[0], prime)?;
-            log::debug!("mulc: {:?}", exp);
+            log::trace!("mulc: {:?}", exp);
             let b = Node::new(
                 "number".to_string(),
                 0,
@@ -611,7 +611,7 @@ pub fn calculate_deps(
     exp_id: usize,
     muladd: bool,
 ) -> Result<()> {
-    //log::debug!("calculate_deps: {}", expr);
+    //log::trace!("calculate_deps: {}", expr);
     if expr.op == "exp" {
         let id = expr.id.unwrap();
         if prime && expr.next() {

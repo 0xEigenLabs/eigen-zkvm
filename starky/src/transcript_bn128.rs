@@ -33,7 +33,7 @@ impl TranscriptBN128 {
     }
     fn add_1(&mut self, e: &Fr) -> Result<()> {
         self.out = VecDeque::new();
-        log::debug!("add_1: {:?}", fr_to_biguint(e));
+        log::trace!("add_1: {:?}", fr_to_biguint(e));
         self.pending.push(*e);
         if self.pending.len() == 16 {
             self.update_state()?;
@@ -70,7 +70,7 @@ impl Transcript for TranscriptBN128 {
 
     fn get_fields1(&mut self) -> Result<FGL> {
         if !self.out3.is_empty() {
-            log::debug!("get_fields1 {},", self.out3[0]);
+            log::trace!("get_fields1 {},", self.out3[0]);
             return Ok(self.out3.pop_front().unwrap());
         }
 

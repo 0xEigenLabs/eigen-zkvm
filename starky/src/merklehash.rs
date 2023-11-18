@@ -88,7 +88,7 @@ impl MerkleTreeGL {
         _st_i: usize,
         _st_n: usize,
     ) -> Result<Vec<ElementDigest<4>>> {
-        log::debug!(
+        log::trace!(
             "merklizing GL hash start.... {}/{}, buff size {}",
             _st_i,
             _st_n,
@@ -205,7 +205,7 @@ impl MerkleTree for MerkleTreeGL {
                     });
                 });
         }
-        log::debug!("linearhash time cost: {}", now.elapsed().as_secs_f64());
+        log::trace!("linearhash time cost: {}", now.elapsed().as_secs_f64());
 
         // merklize level
         self.nodes = nodes;
@@ -220,7 +220,7 @@ impl MerkleTree for MerkleTreeGL {
         while n64 > 1 {
             let now = Instant::now();
             self.merklize_level(p_in, next_n64, p_out)?;
-            log::debug!(
+            log::trace!(
                 "merklize_level {} time cost: {}",
                 next_n64,
                 now.elapsed().as_secs_f64()

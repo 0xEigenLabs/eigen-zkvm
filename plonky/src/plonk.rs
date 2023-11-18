@@ -49,7 +49,7 @@ pub fn gen_key_monomial_form(power: u32) -> Result<Crs<E, CrsForMonomialForm>> {
         Crs::<E, CrsForMonomialForm>::crs_42(1 << small_power, &Worker::new());
         let elapsed = t.elapsed().as_secs_f64();
         let estimated_time = elapsed * (1 << (power - small_power)) as f64;
-        log::debug!("estimated run time: {} secs", estimated_time);
+        log::trace!("estimated run time: {} secs", estimated_time);
     }
 
     Ok(Crs::<E, CrsForMonomialForm>::crs_42(
@@ -111,14 +111,14 @@ impl SetupForProver {
         key_lagrange_form: Option<Crs<E, CrsForLagrangeForm>>,
     ) -> Result<Self> {
         let (gates_count, hints) = transpile_with_gates_count(circuit.clone())?;
-        log::debug!(
+        log::trace!(
             "transpile done, gates_count {} hints size {}",
             gates_count,
             hints.len()
         );
         let setup_polynomials = setup(circuit, &hints)?;
         let size = setup_polynomials.n.next_power_of_two().trailing_zeros();
-        log::debug!(
+        log::trace!(
             "circuit setup_polynomials.n {:?} size {}",
             setup_polynomials.n,
             size

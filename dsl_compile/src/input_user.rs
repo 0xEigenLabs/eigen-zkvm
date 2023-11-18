@@ -68,7 +68,7 @@ pub fn get_simplification_style(
         (_, _, true, Ok(no_rounds)) => Ok(SimplificationStyle::O2(no_rounds)),
         (false, false, false, _) => Ok(SimplificationStyle::O1),
         _ => {
-            log::debug!("{}", Colour::Red.paint("invalid number of rounds"));
+            log::trace!("{}", Colour::Red.paint("invalid number of rounds"));
             Err(DslError::CircomCompileError(
                 "invalid number of rounds".to_string(),
             ))
