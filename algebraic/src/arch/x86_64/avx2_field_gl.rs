@@ -37,6 +37,10 @@ impl Avx2GoldilocksField {
     pub fn square(&self) -> Avx2GoldilocksField {
         Self::new(unsafe { square(self.get()) })
     }
+    #[inline]
+    pub fn reduce(x: __m256i, y: __m256i) -> Avx2GoldilocksField {
+        Self::new(unsafe {reduce128((x,y))})
+    }
 }
 
 unsafe impl PackedField for Avx2GoldilocksField {

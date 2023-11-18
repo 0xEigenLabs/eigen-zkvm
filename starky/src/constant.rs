@@ -1,4 +1,6 @@
 #![allow(non_snake_case)]
+#[cfg(target_feature = "avx2")]
+use crate::arch::x86_64::avx2_poseidon_gl::{load_constants_avx2, ConstantsAvx2};
 use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bn128::Fr as Fr_bn128;
 use crate::poseidon_bls12381::load_constants as load_constants_bls12381;
@@ -63,6 +65,13 @@ lazy_static::lazy_static! {
     };
     pub static ref POSEIDON_CONSTANTS_OPT: crate::poseidon_opt::Constants = {
         crate::poseidon_opt::load_constants()
+    };
+}
+
+#[cfg(target_feature = "avx2")]
+lazy_static::lazy_static! {
+    pub static ref POSEIDON_CONSTANTS_OPT_AVX2: ConstantsAvx2 = {
+        load_constants_avx2()
     };
 }
 
