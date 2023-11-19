@@ -730,7 +730,7 @@ pub mod tests {
 
         let b = a.inv();
         let c = a.mul(b);
-        assert_eq!(c, F3G::one());
+        assert_eq!(c, F3G::ONES);
     }
 
     #[test]
