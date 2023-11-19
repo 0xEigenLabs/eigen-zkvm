@@ -65,12 +65,21 @@ impl Poseidon {
     }
 
     // #[inline(always)]
-    // unsafe fn extract_u64s_from_m256i(value: __m256i) -> [u64; 4] {
+    // unsafe fn _extract_u64s_from_m256i(value: __m256i) -> [u64; 4] {
     //     mem::transmute(value)
     // }
 
     #[inline(always)]
-    fn pow7_avx2(
+    fn pow7(x: &mut Avx2GoldilocksField) {
+        let aux = *x;
+        *x = x.square();
+        *x *= aux;
+        *x = x.square();
+        *x *= aux;
+    }
+
+    #[inline(always)]
+    fn pow7_triple(
         st0: &mut Avx2GoldilocksField,
         st1: &mut Avx2GoldilocksField,
         st2: &mut Avx2GoldilocksField,
@@ -99,12 +108,24 @@ impl Poseidon {
         st2: &mut Avx2GoldilocksField,
         c: Vec<FrRepr>,
     ) {
-        let c0 = Avx2GoldilocksField::pack_slice(&c[0..4])[0];
-        let c1 = Avx2GoldilocksField::pack_slice(&c[4..8])[0];
-        let c2 = Avx2GoldilocksField::pack_slice(&c[8..12])[0];
-        *st0 = *st0 + c0;
-        *st1 = *st1 + c1;
-        *st2 = *st2 + c2;
+        let c = Avx2GoldilocksField::pack_slice(&c);
+        *st0 = *st0 + c[0];
+        *st1 = *st1 + c[1];
+        *st2 = *st2 + c[2];
+    }
+
+    #[inline(always)]
+    fn mult_add_avx(
+        st0: &mut Avx2GoldilocksField,
+        st1: &mut Avx2GoldilocksField,
+        st2: &mut Avx2GoldilocksField,
+        s0: Avx2GoldilocksField,
+        s: Vec<FrRepr>,
+    ) {
+        let s = Avx2GoldilocksField::pack_slice(&s);
+        *st0 = *st0 + s[0] * s0;
+        *st1 = *st1 + s[1] * s0;
+        *st2 = *st2 + s[2] * s0;
     }
 
     #[inline(always)]
@@ -175,10 +196,8 @@ impl Poseidon {
         st2: Avx2GoldilocksField,
         m: Vec<FrRepr>,
     ) {
-        let m0 = Avx2GoldilocksField::pack_slice(&m[0..4])[0];
-        let m1 = Avx2GoldilocksField::pack_slice(&m[4..8])[0];
-        let m2 = Avx2GoldilocksField::pack_slice(&m[8..12])[0];
-        *r = (st0 * m0) + (st1 * m1) + (st2 * m2)
+        let m = Avx2GoldilocksField::pack_slice(&m);
+        *r = (st0 * m[0]) + (st1 * m[1]) + (st2 * m[2])
     }
 
     #[inline(always)]
@@ -249,18 +268,16 @@ impl Poseidon {
         st2: Avx2GoldilocksField,
         m: Vec<FrRepr>,
     ) {
-        let m0 = Avx2GoldilocksField::pack_slice(&m[0..4])[0];
-        let m1 = Avx2GoldilocksField::pack_slice(&m[4..8])[0];
-        let m2 = Avx2GoldilocksField::pack_slice(&m[8..12])[0];
+        let m = Avx2GoldilocksField::pack_slice(&m);
         let mut c0_h = Avx2GoldilocksField::ZEROS;
         let mut c0_l = Avx2GoldilocksField::ZEROS;
         let mut c1_h = Avx2GoldilocksField::ZEROS;
         let mut c1_l = Avx2GoldilocksField::ZEROS;
         let mut c2_h = Avx2GoldilocksField::ZEROS;
         let mut c2_l = Avx2GoldilocksField::ZEROS;
-        Self::mult_avx_72(&mut c0_h, &mut c0_l, st0, m0);
-        Self::mult_avx_72(&mut c1_h, &mut c1_l, st1, m1);
-        Self::mult_avx_72(&mut c2_h, &mut c2_l, st2, m2);
+        Self::mult_avx_72(&mut c0_h, &mut c0_l, st0, m[0]);
+        Self::mult_avx_72(&mut c1_h, &mut c1_l, st1, m[1]);
+        Self::mult_avx_72(&mut c2_h, &mut c2_l, st2, m[2]);
         let c_h = c0_h + c1_h + c2_h;
         let c_l = c0_l + c1_l + c2_l;
         *r = Avx2GoldilocksField::reduce(c_h.get(), c_l.get())
@@ -302,13 +319,8 @@ impl Poseidon {
         *c_h = Avx2GoldilocksField::new(_mm256_srli_epi64(r0, 32));
     }
 
-    pub unsafe fn hash(
-        &self,
-        inp: &Vec<FGL>,
-        init_state: &[FGL],
-        out: usize,
-    ) -> Result<Vec<FGL>, String> {
-        self.hash_inner(inp, init_state, out)
+    pub fn hash(&self, inp: &Vec<FGL>, init_state: &[FGL], out: usize) -> Result<Vec<FGL>, String> {
+        unsafe { self.hash_inner(inp, init_state, out) }
     }
 
     unsafe fn hash_inner(
@@ -336,18 +348,15 @@ impl Poseidon {
         _state[8..].clone_from_slice(init_state);
 
         let state: Vec<_> = _state.iter().map(|x| x.into_repr()).collect();
-
-        let mut part0 = state[0..4].to_vec();
-        let mut part1 = state[4..8].to_vec();
-        let mut part2 = state[8..12].to_vec();
-
-        let mut st0 = Avx2GoldilocksField::pack_slice_mut(&mut part0)[0];
-        let mut st1 = Avx2GoldilocksField::pack_slice_mut(&mut part1)[0];
-        let mut st2 = Avx2GoldilocksField::pack_slice_mut(&mut part2)[0];
+        let mut state_vec = state.to_vec();
+        let st = Avx2GoldilocksField::pack_slice_mut(&mut state_vec);
+        let mut st0 = st[0];
+        let mut st1 = st[1];
+        let mut st2 = st[2];
 
         Self::add_avx(&mut st0, &mut st1, &mut st2, (&C[0..12]).to_vec());
         for r in 0..(n_rounds_f / 2 - 1) {
-            Self::pow7_avx2(&mut st0, &mut st1, &mut st2);
+            Self::pow7_triple(&mut st0, &mut st1, &mut st2);
             Self::add_avx(
                 &mut st0,
                 &mut st1,
@@ -356,168 +365,78 @@ impl Poseidon {
             );
             Self::mmult_avx_8(&mut st0, &mut st1, &mut st2, (&M[0..144]).to_vec());
         }
-        Self::pow7_avx2(&mut st0, &mut st1, &mut st2);
+        Self::pow7_triple(&mut st0, &mut st1, &mut st2);
         Self::add_avx(&mut st0, &mut st1, &mut st2, (&C[48..60]).to_vec());
         Self::mmult_avx(&mut st0, &mut st1, &mut st2, (&P[0..144]).to_vec());
 
-        let state_u64s = (unsafe { Self::extract_u64s_from_m256i(st0.get()) });
-        println!("ok! pow7_u64s- {:?}", state_u64s);
+        for r in 0..n_rounds_p {
+            let st0_slice = st0.as_slice_mut();
+            let mut s_arr = { [st0_slice[0], FrRepr([0]), FrRepr([0]), FrRepr([0])] };
+            let mut _st0 = Avx2GoldilocksField::from_slice_mut(&mut s_arr);
 
-        Ok(_state[0..out].to_vec())
+            Self::pow7(&mut _st0);
+            let c_arr = { [C[(4 + 1) * 12 + r], FrRepr([0]), FrRepr([0]), FrRepr([0])] };
+            let c = Avx2GoldilocksField::from_slice(&c_arr);
+            *_st0 = *_st0 + *c;
+            let st0_slice = st0.as_slice_mut();
+            st0_slice[0] = _st0.as_slice_mut()[0];
 
-        //         let mut tmp_state = vec![FGL::ZERO; t];
-        //         for r in 0..(n_rounds_f / 2 - 1) {
-        // state.iter_mut().for_each(Self::pow7);
-        //
-        //             println!("pow7[{}]: {:?}", r, state);
-        //             state.iter_mut().enumerate().for_each(|(i, a)| {
-        //                 a.add_assign(&C[(r + 1) * t + i]);
-        //             });
+            let mut tmp = Avx2GoldilocksField::ZEROS;
+            Self::spmv_avx_4x12(
+                &mut tmp,
+                st0,
+                st1,
+                st2,
+                S[12 * 2 * r..(12 * 2 * r + 12)].to_vec(),
+            );
+            let tmp_slice = tmp.as_slice_mut();
+            let sum = FGL::from_repr(tmp_slice[0]).unwrap()
+                + FGL::from_repr(tmp_slice[1]).unwrap()
+                + FGL::from_repr(tmp_slice[2]).unwrap()
+                + FGL::from_repr(tmp_slice[3]).unwrap();
 
-        //             let sz = state.len();
-        //             tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
-        //                 let mut acc = FGL::ZERO;
-        //                 for j in 0..sz {
-        //                     let mut tmp = M[j][i];
-        //                     tmp.mul_assign(&state[j]);
-        //                     acc.add_assign(&tmp);
-        //                 }
-        //                 *out = acc;
-        //             });
-        //             state
-        //                 .iter_mut()
-        //                 .zip(tmp_state.iter())
-        //                 .for_each(|(out, inp)| {
-        //                     *out = *inp;
-        //                 });
-        //         }
-        //         // println!("0- {:?}", state);
-        //         // state.iter_mut().for_each(Self::pow7);
-        //         state.chunks_exact_mut(4).for_each(|chunk| {
-        //             let mut field_chunk = Avx2GoldilocksField([
-        //                 chunk[0].into_repr(),
-        //                 chunk[1].into_repr(),
-        //                 chunk[2].into_repr(),
-        //                 chunk[3].into_repr(),
-        //             ]);
+            let tmp_arr = {
+                [
+                    _st0.as_slice_mut()[0],
+                    _st0.as_slice_mut()[0],
+                    _st0.as_slice_mut()[0],
+                    _st0.as_slice_mut()[0],
+                ]
+            };
+            let s0 = Avx2GoldilocksField::from_slice(&tmp_arr);
+            Self::mult_add_avx(
+                &mut st0,
+                &mut st1,
+                &mut st2,
+                *s0,
+                (&S[(12 * (2 * r + 1))..(12 * (2 * r + 2))]).to_vec(),
+            );
 
-        //             Self::pow7_avx2(&mut field_chunk);
+            let st0_slice = st0.as_slice_mut();
+            st0_slice[0] = sum.into_repr();
+        }
 
-        //             for (i, field) in field_chunk.0.iter().enumerate() {
-        //                 chunk[i] = FGL::from_repr(*field).unwrap();
-        //             }
-        //         });
-        //         println!("00- {:?}", state);
-        //         state.iter_mut().enumerate().for_each(|(i, a)| {
-        //             a.add_assign(&C[(n_rounds_f / 2 - 1 + 1) * t + i]);
-        //         }); //opt
-        //         // println!("000- {:?}", state);
-        //         let sz = state.len();
-        //         tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
-        //             let mut acc = FGL::ZERO;
-        //             for j in 0..sz {
-        //                 let mut tmp = P[j][i];
-        //                 tmp.mul_assign(&state[j]);
-        //                 acc.add_assign(&tmp);
-        //             }
-        //             *out = acc;
-        //         });
-        //         // println!("0000- {:?}", state);
-        //         state
-        //             .iter_mut()
-        //             .zip(tmp_state.iter())
-        //             .for_each(|(out, inp)| {
-        //                 *out = *inp;
-        //             });
-        // // println!("1- {:?}", state);
+        for r in 0..(n_rounds_f / 2 - 1) {
+            Self::pow7_triple(&mut st0, &mut st1, &mut st2);
+            Self::add_avx(
+                &mut st0,
+                &mut st1,
+                &mut st2,
+                (&C[((n_rounds_f / 2 + 1) * t + n_rounds_p + r * t)
+                    ..((n_rounds_f / 2 + 1) * t + n_rounds_p + r * t + 12)])
+                    .to_vec(),
+            );
+            Self::mmult_avx_8(&mut st0, &mut st1, &mut st2, (&M[0..144]).to_vec());
+        }
+        Self::pow7_triple(&mut st0, &mut st1, &mut st2);
+        Self::mmult_avx(&mut st0, &mut st1, &mut st2, (&M[0..144]).to_vec());
 
-        //         for r in 0..n_rounds_p {
-        //             Self::pow7(&mut state[0]);
-        //             state[0].add_assign(&C[(n_rounds_f / 2 + 1) * t + r]);
+        let st0_slice = st0.as_slice();
 
-        //             let sz = state.len();
-        //             let mut s0 = FGL::ZERO;
-        //             for j in 0..sz {
-        //                 let mut tmp = S[(t * 2 - 1) * r + j];
-        //                 tmp.mul_assign(&state[j]);
-        //                 s0.add_assign(&tmp);
-        //             }
+        let mut result_vec: Vec<FGL> = Vec::new();
+        result_vec.extend(st0_slice.iter().map(|&repr| FGL::from_repr(repr).unwrap()));
 
-        //             for k in 1..t {
-        //                 let mut tmp = S[(t * 2 - 1) * r + t + k - 1];
-        //                 tmp.mul_assign(&state[0]);
-        //                 state[k].add_assign(&tmp);
-        //             }
-
-        //             state[0] = s0;
-        //         }
-        // // println!("2- {:?}", state);
-        //         for r in 0..(n_rounds_f / 2 - 1) {
-        //             // state.iter_mut().for_each(Self::pow7);
-        //             state.chunks_exact_mut(4).for_each(|chunk| {
-        //                 let mut field_chunk = Avx2GoldilocksField([
-        //                     chunk[0].into_repr(),
-        //                     chunk[1].into_repr(),
-        //                     chunk[2].into_repr(),
-        //                     chunk[3].into_repr(),
-        //                 ]);
-
-        //                 Self::pow7_avx2(&mut field_chunk);
-
-        //                 for (i, field) in field_chunk.0.iter().enumerate() {
-        //                     chunk[i] = FGL::from_repr(*field).unwrap();
-        //                 }
-        //             });
-        //             state.iter_mut().enumerate().for_each(|(i, a)| {
-        //                 a.add_assign(&C[(n_rounds_f / 2 + 1) * t + n_rounds_p + r * t + i]);
-        //             });
-
-        //             let sz = state.len();
-        //             tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
-        //                 let mut acc = FGL::ZERO;
-        //                 for j in 0..sz {
-        //                     let mut tmp = M[j][i];
-        //                     tmp.mul_assign(&state[j]);
-        //                     acc.add_assign(&tmp);
-        //                 }
-        //                 *out = acc;
-        //             });
-        //             state
-        //                 .iter_mut()
-        //                 .zip(tmp_state.iter())
-        //                 .for_each(|(out, inp)| {
-        //                     *out = *inp;
-        //                 });
-        //         }
-
-        //         // state.iter_mut().for_each(Self::pow7);
-        //         state.chunks_exact_mut(4).for_each(|chunk| {
-        //             let mut field_chunk = Avx2GoldilocksField([
-        //                 chunk[0].into_repr(),
-        //                 chunk[1].into_repr(),
-        //                 chunk[2].into_repr(),
-        //                 chunk[3].into_repr(),
-        //             ]);
-
-        //             Self::pow7_avx2(&mut field_chunk);
-
-        //             for (i, field) in field_chunk.0.iter().enumerate() {
-        //                 chunk[i] = FGL::from_repr(*field).unwrap();
-        //             }
-        //         });
-        //         let sz = state.len();
-        //         tmp_state.iter_mut().enumerate().for_each(|(i, out)| {
-        //             let mut acc = FGL::ZERO;
-        //             for j in 0..sz {
-        //                 let mut tmp = M[j][i];
-        //                 tmp.mul_assign(&state[j]);
-        //                 acc.add_assign(&tmp);
-        //             }
-        //             *out = acc;
-        //         });
-        //         state = tmp_state;
-
-        //         Ok(state[0..out].to_vec())
+        Ok(result_vec)
     }
 }
 
@@ -528,64 +447,50 @@ mod tests {
     use algebraic::packed::PackedField;
     use plonky::field_gl::Fr as FGL;
     use plonky::PrimeField;
-    use rand::Rand;
-
-    // #[test]
-    // fn test_pow7_avx2() {
-    //     let mut rng = rand::thread_rng();
-    //     let x = FGL::rand(&mut rng);
-    //     let x7 = x * x * x * x * x * x * x;
-    //     let a_arr = [x.into_repr(), x.into_repr(), x.into_repr(), x.into_repr()];
-    //     let packed_a = Avx2GoldilocksField::from_slice(&a_arr);
-    //     let mut x = *packed_a;
-    //     Poseidon::pow7_avx2(&mut x);
-    //     let arr_res = x.as_slice();
-    //     assert_eq!(x7.into_repr(), arr_res[0]);
-    // }
 
     #[test]
     fn test_poseidon_opt_hash_all_0_avx() {
         let poseidon = Poseidon::new();
         let input = vec![FGL::ZERO; 8];
         let state = vec![FGL::ZERO; 4];
-        let res = unsafe { poseidon.hash(&input, &state, 4).unwrap() };
+        let res = poseidon.hash(&input, &state, 4).unwrap();
         let expected = vec![
             FGL::from(0x3c18a9786cb0b359u64),
             FGL::from(0xc4055e3364a246c3u64),
             FGL::from(0x7953db0ab48808f4u64),
             FGL::from(0xc71603f33a1144cau64),
         ];
-        // assert_eq!(res, expected);
+        assert_eq!(res, expected);
     }
 
-    // #[test]
-    // fn test_poseidon_opt_hash_1_11() {
-    //     let poseidon = Poseidon::new();
-    //     let input = (0u64..8).map(FGL::from).collect::<Vec<FGL>>();
-    //     let state = (8u64..12).map(FGL::from).collect::<Vec<FGL>>();
-    //     let res = poseidon.hash(&input, &state, 4).unwrap();
-    //     let expected = vec![
-    //         FGL::from(0xd64e1e3efc5b8e9eu64),
-    //         FGL::from(0x53666633020aaa47u64),
-    //         FGL::from(0xd40285597c6a8825u64),
-    //         FGL::from(0x613a4f81e81231d2u64),
-    //     ];
-    //     assert_eq!(res, expected);
-    // }
+    #[test]
+    fn test_poseidon_opt_hash_1_11_avx() {
+        let poseidon = Poseidon::new();
+        let input = (0u64..8).map(FGL::from).collect::<Vec<FGL>>();
+        let state = (8u64..12).map(FGL::from).collect::<Vec<FGL>>();
+        let res = poseidon.hash(&input, &state, 4).unwrap();
+        let expected = vec![
+            FGL::from(0xd64e1e3efc5b8e9eu64),
+            FGL::from(0x53666633020aaa47u64),
+            FGL::from(0xd40285597c6a8825u64),
+            FGL::from(0x613a4f81e81231d2u64),
+        ];
+        assert_eq!(res, expected);
+    }
 
-    // #[test]
-    // fn test_poseidon_opt_hash_all_neg_1() {
-    //     let poseidon = Poseidon::new();
-    //     let init = FGL::ZERO - FGL::ONE;
-    //     let input = vec![init; 8];
-    //     let state = vec![init; 4];
-    //     let res = poseidon.hash(&input, &state, 4).unwrap();
-    //     let expected = vec![
-    //         FGL::from(0xbe0085cfc57a8357u64),
-    //         FGL::from(0xd95af71847d05c09u64),
-    //         FGL::from(0xcf55a13d33c1c953u64),
-    //         FGL::from(0x95803a74f4530e82u64),
-    //     ];
-    //     assert_eq!(res, expected);
-    // }
+    #[test]
+    fn test_poseidon_opt_hash_all_neg_1_avx() {
+        let poseidon = Poseidon::new();
+        let init = FGL::ZERO - FGL::ONE;
+        let input = vec![init; 8];
+        let state = vec![init; 4];
+        let res = poseidon.hash(&input, &state, 4).unwrap();
+        let expected = vec![
+            FGL::from(0xbe0085cfc57a8357u64),
+            FGL::from(0xd95af71847d05c09u64),
+            FGL::from(0xcf55a13d33c1c953u64),
+            FGL::from(0x95803a74f4530e82u64),
+        ];
+        assert_eq!(res, expected);
+    }
 }

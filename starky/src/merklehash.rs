@@ -1,12 +1,12 @@
 #![allow(dead_code)]
-// #[cfg(target_feature = "avx2")]
-// use crate::arch::x86_64::avx2_poseidon_gl::Poseidon;
+#[cfg(target_feature = "avx2")]
+use crate::arch::x86_64::avx2_poseidon_gl::Poseidon;
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
 use crate::digest::ElementDigest;
 use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
 use crate::linearhash::LinearHash;
-// #[cfg(not(target_feature = "avx2"))]
+#[cfg(not(target_feature = "avx2"))]
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;

@@ -1,8 +1,8 @@
 #![allow(non_snake_case)]
-// #[cfg(target_feature = "avx2")]
-// use crate::arch::x86_64::avx2_poseidon_gl::Poseidon;
+#[cfg(target_feature = "avx2")]
+use crate::arch::x86_64::avx2_poseidon_gl::Poseidon;
 use crate::errors::Result;
-// #[cfg(not(target_feature = "avx2"))]
+#[cfg(not(target_feature = "avx2"))]
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::ElementDigest;

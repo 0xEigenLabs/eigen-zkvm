@@ -39,7 +39,7 @@ impl Avx2GoldilocksField {
     }
     #[inline]
     pub fn reduce(x: __m256i, y: __m256i) -> Avx2GoldilocksField {
-        Self::new(unsafe {reduce128((x,y))})
+        Self::new(unsafe { reduce128((x, y)) })
     }
 }
 
