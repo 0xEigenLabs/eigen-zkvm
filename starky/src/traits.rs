@@ -82,8 +82,8 @@ pub trait FieldExtension:
     const ZERO: Self;
     const ONE: Self;
 
-    const ZEROS: Self = Self::zero();
-    const ONES: Self = Self::one();
+    const ZEROS: Self;
+    const ONES: Self;
     const NEW_SIZE: u64 = 0;
     fn dim(&self) -> usize;
     fn from_vec(values: Vec<Fr>) -> Self;
