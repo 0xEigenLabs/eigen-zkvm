@@ -59,6 +59,19 @@ impl Default for Poseidon {
     }
 }
 
+
+#[inline]
+unsafe fn spmv_avx_4x12(
+    r: &mut Avx2GoldilocksField,
+    st0: Avx2GoldilocksField,
+    st1: Avx2GoldilocksField,
+    st2: Avx2GoldilocksField,
+    m: Vec<FrRepr>,
+) {
+    let m = Avx2GoldilocksField::pack_slice(&m);
+    *r = (st0 * m[0]) + (st1 * m[1]) + (st2 * m[2])
+}
+
 impl Poseidon {
     pub fn new() -> Poseidon {
         Self {}
@@ -159,10 +172,10 @@ impl Poseidon {
         let mut r1 = Avx2GoldilocksField::ZEROS;
         let mut r2 = Avx2GoldilocksField::ZEROS;
         let mut r3 = Avx2GoldilocksField::ZEROS;
-        Self::spmv_avx_4x12(&mut r0, st0, st1, st2, m[0..12].to_vec());
-        Self::spmv_avx_4x12(&mut r1, st0, st1, st2, m[12..24].to_vec());
-        Self::spmv_avx_4x12(&mut r2, st0, st1, st2, m[24..36].to_vec());
-        Self::spmv_avx_4x12(&mut r3, st0, st1, st2, m[36..48].to_vec());
+        spmv_avx_4x12(&mut r0, st0, st1, st2, m[0..12].to_vec());
+        spmv_avx_4x12(&mut r1, st0, st1, st2, m[12..24].to_vec());
+        spmv_avx_4x12(&mut r2, st0, st1, st2, m[24..36].to_vec());
+        spmv_avx_4x12(&mut r3, st0, st1, st2, m[36..48].to_vec());
         // Transpose: transform de 4x4 matrix stored in rows r0...r3 to the columns c0...c3
         let t0 = _mm256_permute2f128_si256(r0.get(), r2.get(), 0b00100000);
         let t1 = _mm256_permute2f128_si256(r1.get(), r3.get(), 0b00100000);
@@ -188,17 +201,6 @@ impl Poseidon {
         *tmp = c0 + c1 + c2 + c3;
     }
 
-    #[inline]
-    unsafe fn spmv_avx_4x12(
-        r: &mut Avx2GoldilocksField,
-        st0: Avx2GoldilocksField,
-        st1: Avx2GoldilocksField,
-        st2: Avx2GoldilocksField,
-        m: Vec<FrRepr>,
-    ) {
-        let m = Avx2GoldilocksField::pack_slice(&m);
-        *r = (st0 * m[0]) + (st1 * m[1]) + (st2 * m[2])
-    }
 
     #[inline(always)]
     unsafe fn mmult_avx_8(
@@ -382,7 +384,7 @@ impl Poseidon {
             st0_slice[0] = _st0.as_slice_mut()[0];
 
             let mut tmp = Avx2GoldilocksField::ZEROS;
-            Self::spmv_avx_4x12(
+            spmv_avx_4x12(
                 &mut tmp,
                 st0,
                 st1,
@@ -492,5 +494,38 @@ mod tests {
             FGL::from(0x95803a74f4530e82u64),
         ];
         assert_eq!(res, expected);
+    }
+
+    #[test]
+    fn test_spmv_avx_4x12() {
+        let mut out = Avx2GoldilocksField::ZEROS;
+        let mut in0 = Avx2GoldilocksField::from_slice(&[
+            FrRepr([18446744069414584320]),
+            FrRepr([18446744069414584320]),
+            FrRepr([18446744069414584320]),
+            FrRepr([18446744069414584320]),
+        ]);
+        let mut in1 = Avx2GoldilocksField::from_slice(&[
+            FrRepr([18446744069414584320]),
+            FrRepr([18446744069414584320]),
+            FrRepr([18446744069414584320]),
+            FrRepr([18446744069414584320]),
+        ]);
+        let mut in2 = Avx2GoldilocksField::from_slice(&[
+            FrRepr([18446744069414584320]),
+            FrRepr([18446744069414584320]),
+            FrRepr([18446744069414584320]),
+            FrRepr([18446744069414584320]),
+        ]);
+
+        let in12 = vec![FrRepr([18446744069414584320]); 12];
+        unsafe {
+            spmv_avx_4x12(&mut out, *in0, *in1, *in2, in12);
+        };
+        let tmp_slice = out.as_slice_mut();
+        let _sum = FGL::from_repr(tmp_slice[0]).unwrap()
+            + FGL::from_repr(tmp_slice[1]).unwrap()
+            + FGL::from_repr(tmp_slice[2]).unwrap()
+            + FGL::from_repr(tmp_slice[3]).unwrap();
     }
 }
