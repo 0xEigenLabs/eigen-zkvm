@@ -489,6 +489,7 @@ fn main() {
             &args.input_file,
             &args.public_input_file,
             &args.proof_file,
+            false,
         )
         .map_err(|e| EigenError::from(format!("groth16 prove error {:?}", e))),
         Command::Groth16Verify(args) => groth16_verify(

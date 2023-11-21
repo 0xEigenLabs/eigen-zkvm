@@ -56,6 +56,7 @@ pub fn groth16_prove(
     input_file: &str,
     public_input_file: &str,
     proof_file: &str,
+    to_hex: bool,
 ) -> Result<()> {
     let mut rng = rand::thread_rng();
 
@@ -77,7 +78,7 @@ pub fn groth16_prove(
                 .collect::<Vec<_>>();
             let circuit = create_circuit_from_file::<Bn256>(circuit_file, Some(w));
             let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
-            let proof_json = serialize_proof(&proof, curve_type, false)?;
+            let proof_json = serialize_proof(&proof, curve_type, to_hex)?;
             std::fs::write(proof_file, proof_json)?;
             let input_json = circuit.get_public_inputs_json();
             std::fs::write(public_input_file, input_json)?;
@@ -96,7 +97,7 @@ pub fn groth16_prove(
                 .collect::<Vec<_>>();
             let circuit = create_circuit_from_file::<Bls12>(circuit_file, Some(w));
             let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
-            let proof_json = serialize_proof(&proof, curve_type, false)?;
+            let proof_json = serialize_proof(&proof, curve_type, to_hex)?;
             std::fs::write(proof_file, proof_json)?;
             let input_json = circuit.get_public_inputs_json();
             std::fs::write(public_input_file, input_json)?;
