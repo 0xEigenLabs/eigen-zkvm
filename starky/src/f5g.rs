@@ -54,7 +54,7 @@ impl FieldExtension for F5G {
     };
     const ONES: Self = F5G {
         cube: [Fr::ONE, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
-        dim: 1,
+        dim: 5,
     };
     #[inline(always)]
     fn dim(&self) -> usize {
