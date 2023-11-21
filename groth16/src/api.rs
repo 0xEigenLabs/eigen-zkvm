@@ -48,6 +48,7 @@ pub fn groth16_setup(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn groth16_prove(
     curve_type: &str,
     circuit_file: &str,
