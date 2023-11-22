@@ -25,18 +25,19 @@ pub fn groth16_setup(
     circuit_file: &str,
     pk_file: &str,
     vk_file: &str,
+    to_hex: bool,
 ) -> Result<()> {
     let mut rng = rand::thread_rng();
     match curve_type {
         "BN128" => {
             let circuit = create_circuit_from_file::<Bn256>(circuit_file, None);
             let (pk, vk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
-            write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file)?
+            write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file, to_hex)?
         }
         "BLS12381" => {
             let circuit = create_circuit_from_file::<Bls12>(circuit_file, None);
             let (pk, vk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
-            write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file)?
+            write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file, to_hex)?
         }
         _ => {
             return Err(EigenError::Unknown(format!(
@@ -197,10 +198,11 @@ fn write_pk_vk_to_files<P: Parser>(
     vk: VerifyingKey<P>,
     pk_file: &str,
     vk_file: &str,
+    to_hex: bool,
 ) -> Result<()> {
     let writer = std::fs::File::create(pk_file)?;
     pk.write(writer)?;
-    let vk_json = serialize_vk(&vk, curve_type, false)?;
+    let vk_json = serialize_vk(&vk, curve_type, to_hex)?;
     std::fs::write(vk_file, vk_json)?;
     Ok(())
 }

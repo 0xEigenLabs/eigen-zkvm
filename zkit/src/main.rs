@@ -479,6 +479,7 @@ fn main() {
             &args.circuit_file,
             &args.pk_file,
             &args.vk_file,
+            false,
         )
         .map_err(|e| EigenError::from(format!("groth16 setup error {:?}", e))),
         Command::Groth16Prove(args) => groth16_prove(
