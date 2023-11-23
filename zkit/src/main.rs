@@ -287,6 +287,8 @@ pub struct Groth16SetupOpt {
     pk_file: String,
     #[arg(short, required = true, default_value = "verification_key.json")]
     vk_file: String,
+    #[arg(short, action= clap::ArgAction::SetTrue)]
+    to_hex: bool,
 }
 
 /// Prove with groth16
@@ -310,6 +312,8 @@ pub struct Groth16ProveOpt {
     public_input_file: String,
     #[arg(long = "proof", required = true, default_value = "proof.json")]
     proof_file: String,
+    #[arg(short, action= clap::ArgAction::SetTrue)]
+    to_hex: bool,
 }
 
 /// Verify with groth16
@@ -479,6 +483,7 @@ fn main() {
             &args.circuit_file,
             &args.pk_file,
             &args.vk_file,
+            args.to_hex,
         )
         .map_err(|e| EigenError::from(format!("groth16 setup error {:?}", e))),
         Command::Groth16Prove(args) => groth16_prove(
@@ -489,6 +494,7 @@ fn main() {
             &args.input_file,
             &args.public_input_file,
             &args.proof_file,
+            args.to_hex,
         )
         .map_err(|e| EigenError::from(format!("groth16 prove error {:?}", e))),
         Command::Groth16Verify(args) => groth16_verify(

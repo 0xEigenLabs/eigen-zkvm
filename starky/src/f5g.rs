@@ -7,6 +7,7 @@ use std::hash::{Hash, Hasher};
 use std::slice;
 
 use core::fmt::{Display, Formatter};
+
 /// Prime: 0xFFFFFFFF00000001
 /// Irreducible polynomial: x^5-3
 #[repr(C)]
@@ -47,7 +48,14 @@ impl FieldExtension for F5G {
         cube: [Fr::ONE, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
         dim: 1,
     };
-
+    const ZEROS: Self = F5G {
+        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
+        dim: 5,
+    };
+    const ONES: Self = F5G {
+        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
+        dim: 5,
+    };
     #[inline(always)]
     fn dim(&self) -> usize {
         self.dim
@@ -229,18 +237,12 @@ impl ::rand::Rand for F5G {
 impl plonky::Field for F5G {
     #[inline(always)]
     fn zero() -> Self {
-        F5G {
-            cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
-            dim: 1,
-        }
+        Self::ZEROS
     }
 
     #[inline(always)]
     fn one() -> Self {
-        F5G {
-            cube: [Fr::ONE, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
-            dim: 1,
-        }
+        Self::ONES
     }
 
     #[inline(always)]
