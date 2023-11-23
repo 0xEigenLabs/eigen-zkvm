@@ -59,7 +59,6 @@ impl Default for Poseidon {
     }
 }
 
-
 #[inline]
 unsafe fn spmv_avx_4x12(
     r: &mut Avx2GoldilocksField,
@@ -200,7 +199,6 @@ impl Poseidon {
         // Add columns to obtain result
         *tmp = c0 + c1 + c2 + c3;
     }
-
 
     #[inline(always)]
     unsafe fn mmult_avx_8(

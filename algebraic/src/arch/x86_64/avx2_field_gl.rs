@@ -426,13 +426,17 @@ unsafe fn square64(x: __m256i) -> (__m256i, __m256i) {
 #[inline]
 unsafe fn add_small_64s_64_s(x_s: __m256i, y: __m256i) -> __m256i {
     let res_wrapped_s = _mm256_add_epi64(x_s, y);
+    let high_x_wrapped_s = _mm256_srli_epi64::<32>(x_s);
+    let no_underflow_condition =
+        _mm256_cmpeq_epi32(high_x_wrapped_s, _mm256_set1_epi32(0x7fffffffu32 as i32));
     // 32-bit compare is faster than 64-bit. It's safe as long as x > res_wrapped iff x >> 32 >
     // res_wrapped >> 32. The case of x >> 32 > res_wrapped >> 32 is trivial and so is <. The case
     // where x >> 32 = res_wrapped >> 32 remains. If x >> 32 = res_wrapped >> 32, then y >> 32 =
     // 0xffffffff and the addition of the low 32 bits generated a carry. This can never occur if y
     // <= 0xffffffff00000000: if y >> 32 = 0xffffffff, then no carry can occur.
-    let mask = _mm256_cmpgt_epi32(x_s, res_wrapped_s); // -1 if overflowed else 0.
-                                                       // The mask contains 0xffffffff in the high 32 bits if wraparound occured and 0 otherwise.
+    let mask_original = _mm256_cmpgt_epi32(x_s, res_wrapped_s); // -1 if overflowed else 0.
+    let mask = _mm256_add_epi64(mask_original, no_underflow_condition);
+    // The mask contains 0xffffffff in the high 32 bits if wraparound occured and 0 otherwise.
     let wrapback_amt = _mm256_srli_epi64::<32>(mask); // -FIELD_ORDER if overflowed else 0.
     let res_s = _mm256_add_epi64(res_wrapped_s, wrapback_amt);
     res_s
@@ -443,13 +447,17 @@ unsafe fn add_small_64s_64_s(x_s: __m256i, y: __m256i) -> __m256i {
 #[inline]
 unsafe fn sub_small_64s_64_s(x_s: __m256i, y: __m256i) -> __m256i {
     let res_wrapped_s = _mm256_sub_epi64(x_s, y);
+    let high_res_wrapped_s = _mm256_srli_epi64::<32>(res_wrapped_s);
+    let no_underflow_condition =
+        _mm256_cmpeq_epi32(high_res_wrapped_s, _mm256_set1_epi32(0x7fffffffu32 as i32));
     // 32-bit compare is faster than 64-bit. It's safe as long as res_wrapped > x iff res_wrapped >>
     // 32 > x >> 32. The case of res_wrapped >> 32 > x >> 32 is trivial and so is <. The case where
     // res_wrapped >> 32 = x >> 32 remains. If res_wrapped >> 32 = x >> 32, then y >> 32 =
     // 0xffffffff and the subtraction of the low 32 bits generated a borrow. This can never occur if
     // y <= 0xffffffff00000000: if y >> 32 = 0xffffffff, then no borrow can occur.
-    let mask = _mm256_cmpgt_epi32(res_wrapped_s, x_s); // -1 if underflowed else 0.
-                                                       // The mask contains 0xffffffff in the high 32 bits if wraparound occured and 0 otherwise.
+    let mask_original = _mm256_cmpgt_epi32(res_wrapped_s, x_s); // -1 if underflowed else 0.
+    let mask = _mm256_add_epi64(mask_original, no_underflow_condition);
+    // The mask contains 0xffffffff in the high 32 bits if wraparound occured and 0 otherwise.
     let wrapback_amt = _mm256_srli_epi64::<32>(mask); // -FIELD_ORDER if underflowed else 0.
     let res_s = _mm256_sub_epi64(res_wrapped_s, wrapback_amt);
     res_s
