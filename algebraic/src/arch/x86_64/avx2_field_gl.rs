@@ -464,7 +464,7 @@ unsafe fn reduce128(x: (__m256i, __m256i)) -> __m256i {
     let t1 = _mm256_mul_epu32(hi0, EPSILON);
     let lo2_s = add_small_64s_64_s(lo1_s, t1);
     let _lo2 = canonicalize_s(lo2_s);
-    let lo2 = shift(lo2_);
+    let lo2 = shift(_lo2);
     lo2
 }
 
