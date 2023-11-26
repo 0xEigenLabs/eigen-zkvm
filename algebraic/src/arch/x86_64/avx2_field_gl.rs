@@ -333,7 +333,7 @@ unsafe fn add_no_double_overflow_64_64s_s(x: __m256i, y_s: __m256i) -> __m256i {
 unsafe fn add(x: __m256i, y: __m256i) -> __m256i {
     let y_s = shift(y);
     let res_s = add_no_double_overflow_64_64s_s(x, canonicalize_s(y_s));
-    shift(res_s)
+    shift(canonicalize_s(res_s))
 }
 
 #[inline]
