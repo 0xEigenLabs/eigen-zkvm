@@ -4,10 +4,10 @@ use crate::poseidon_constants_avx as constants;
 use algebraic::arch::x86_64::avx2_field_gl::Avx2GoldilocksField;
 use algebraic::packed::PackedField;
 use core::arch::x86_64::*;
-use core::mem;
+//use core::mem;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::FrRepr;
-use plonky::Field;
+//use plonky::Field;
 use plonky::PrimeField;
 
 #[derive(Debug)]
@@ -436,7 +436,7 @@ impl Poseidon {
         let mut result_vec: Vec<FGL> = Vec::new();
         result_vec.extend(st0_slice.iter().map(|&repr| FGL::from_repr(repr).unwrap()));
 
-        Ok(result_vec)
+        Ok(result_vec[..out].to_vec())
     }
 }
 
@@ -497,19 +497,19 @@ mod tests {
     #[test]
     fn test_spmv_avx_4x12() {
         let mut out = Avx2GoldilocksField::ZEROS;
-        let mut in0 = Avx2GoldilocksField::from_slice(&[
+        let in0 = Avx2GoldilocksField::from_slice(&[
             FrRepr([18446744069414584320]),
             FrRepr([18446744069414584320]),
             FrRepr([18446744069414584320]),
             FrRepr([18446744069414584320]),
         ]);
-        let mut in1 = Avx2GoldilocksField::from_slice(&[
+        let in1 = Avx2GoldilocksField::from_slice(&[
             FrRepr([18446744069414584320]),
             FrRepr([18446744069414584320]),
             FrRepr([18446744069414584320]),
             FrRepr([18446744069414584320]),
         ]);
-        let mut in2 = Avx2GoldilocksField::from_slice(&[
+        let in2 = Avx2GoldilocksField::from_slice(&[
             FrRepr([18446744069414584320]),
             FrRepr([18446744069414584320]),
             FrRepr([18446744069414584320]),

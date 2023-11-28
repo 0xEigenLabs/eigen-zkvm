@@ -463,8 +463,7 @@ unsafe fn reduce128(x: (__m256i, __m256i)) -> __m256i {
     let lo1_s = sub_small_64s_64_s(lo0_s, hi_hi0);
     let t1 = _mm256_mul_epu32(hi0, EPSILON);
     let lo2_s = add_small_64s_64_s(lo1_s, t1);
-    let _lo2 = canonicalize_s(lo2_s);
-    let lo2 = shift(_lo2);
+    let lo2 = shift(canonicalize_s(lo2_s));
     lo2
 }
 
@@ -539,7 +538,7 @@ mod tests {
         let start = Instant::now();
         let packed_a = Avx2GoldilocksField::from_slice(&a_arr);
         let packed_b = Avx2GoldilocksField::from_slice(&b_arr);
-        let packed_res = *packed_a + *packed_b;
+        let packed_res = *packed_a + *packed_b + *packed_a;
         let arr_res = packed_res.as_slice();
         let avx2_duration = start.elapsed();
         // log::debug!("arr_res: {:?}", arr_res);
@@ -548,7 +547,7 @@ mod tests {
         let expected = a_arr
             .iter()
             .zip(b_arr)
-            .map(|(&a, b)| Fr::from_repr(a).unwrap() + Fr::from_repr(b).unwrap());
+            .map(|(&a, b)| Fr::from_repr(a).unwrap() + Fr::from_repr(a).unwrap() + Fr::from_repr(b).unwrap());
         let expected_values: Vec<Fr> = expected.collect();
         log::debug!("expected values: {:?}", expected_values[0].as_int());
         let non_accelerated_duration = start.elapsed();
