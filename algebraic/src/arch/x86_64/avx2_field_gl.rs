@@ -333,6 +333,7 @@ unsafe fn add_no_double_overflow_64_64s_s(x: __m256i, y_s: __m256i) -> __m256i {
 unsafe fn add(x: __m256i, y: __m256i) -> __m256i {
     let y_s = shift(y);
     let res_s = add_no_double_overflow_64_64s_s(x, canonicalize_s(y_s));
+    // Added by Eigen
     shift(canonicalize_s(res_s))
 }
 
@@ -463,6 +464,7 @@ unsafe fn reduce128(x: (__m256i, __m256i)) -> __m256i {
     let lo1_s = sub_small_64s_64_s(lo0_s, hi_hi0);
     let t1 = _mm256_mul_epu32(hi0, EPSILON);
     let lo2_s = add_small_64s_64_s(lo1_s, t1);
+    // Added by Eigen
     let lo2 = shift(canonicalize_s(lo2_s));
     lo2
 }
@@ -544,10 +546,9 @@ mod tests {
         // log::debug!("arr_res: {:?}", arr_res);
 
         let start = Instant::now();
-        let expected = a_arr
-            .iter()
-            .zip(b_arr)
-            .map(|(&a, b)| Fr::from_repr(a).unwrap() + Fr::from_repr(a).unwrap() + Fr::from_repr(b).unwrap());
+        let expected = a_arr.iter().zip(b_arr).map(|(&a, b)| {
+            Fr::from_repr(a).unwrap() + Fr::from_repr(a).unwrap() + Fr::from_repr(b).unwrap()
+        });
         let expected_values: Vec<Fr> = expected.collect();
         log::debug!("expected values: {:?}", expected_values[0].as_int());
         let non_accelerated_duration = start.elapsed();
