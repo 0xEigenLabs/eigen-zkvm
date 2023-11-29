@@ -1,10 +1,13 @@
 #!/bin/bash
 set -ex
 
-# ## build
-# cargo build --release
-## build with avx2 feature
-RUSTFLAGS="-C target-feature=+avx2" cargo build --release
+# build
+if [ "x${USE_AVX2}" = "xyes" ]; then
+    # build with avx2 feature
+    RUSTFLAGS="-C target-feature=+avx2" cargo build --release
+else
+    cargo build --release
+fi
 
 export NODE_OPTIONS="--max-old-space-size=81920"
 
