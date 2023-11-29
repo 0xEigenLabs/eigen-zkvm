@@ -1,15 +1,18 @@
+use crate::ff::PrimeFieldRepr;
 use crate::packed::PackedField;
-use crate::types::Field;
 
 /// Points us to the default packing for a particular field. There may me multiple choices of
 /// PackedField for a particular Field (e.g. every Field is also a PackedField), but this is the
 /// recommended one. The recommended packing varies by target_arch and target_feature.
-pub trait Packable: Field {
+pub trait Packable: PrimeFieldRepr {
     type Packing: PackedField<Scalar = Self>;
 }
 
-impl<F: Field> Packable for F {
-    default type Packing = Self;
+impl<F> Packable for F
+where
+    F: PrimeFieldRepr + PackedField<Scalar = F>,
+{
+    type Packing = Self;
 }
 
 #[cfg(all(
@@ -23,8 +26,8 @@ impl<F: Field> Packable for F {
         target_feature = "avx512vl"
     ))
 ))]
-impl Packable for crate::goldilocks_field::GoldilocksField {
-    type Packing = crate::arch::x86_64::avx2_goldilocks_field::Avx2GoldilocksField;
+impl Packable for crate::field_gl::FrRepr {
+    type Packing = crate::arch::x86_64::avx2_field_gl::Avx2GoldilocksField;
 }
 
 #[cfg(all(
@@ -35,6 +38,6 @@ impl Packable for crate::goldilocks_field::GoldilocksField {
     target_feature = "avx512f",
     target_feature = "avx512vl"
 ))]
-impl Packable for crate::goldilocks_field::GoldilocksField {
-    type Packing = crate::arch::x86_64::avx512_goldilocks_field::Avx512GoldilocksField;
+impl Packable for crate::field_gl::FrRepr {
+    type Packing = crate::arch::x86_64::avx512_field_gl::Avx512GoldilocksField;
 }

@@ -6,12 +6,12 @@
 //!
 use crate::ff::*;
 use crate::field_gl::{Fr, FrRepr as GoldilocksField};
+use crate::packed::PackedField;
 use core::arch::x86_64::*;
 use core::fmt;
 use core::fmt::{Debug, Formatter};
 use core::mem::transmute;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-// use crate::packed::PackedField;
 
 /// AVX2 Goldilocks Field
 ///
@@ -24,8 +24,6 @@ use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAss
 #[repr(transparent)]
 pub struct Avx2GoldilocksField(pub [GoldilocksField; 4]);
 
-const WIDTH: usize = 4;
-
 impl Avx2GoldilocksField {
     #[inline]
     pub fn new(x: __m256i) -> Self {
@@ -35,29 +33,39 @@ impl Avx2GoldilocksField {
     pub fn get(&self) -> __m256i {
         unsafe { transmute(*self) }
     }
-    // }
-    // unsafe impl PackedField for Avx2GoldilocksField {
-    #[inline]
-    pub fn from_slice(slice: &[GoldilocksField]) -> &Self {
-        assert_eq!(slice.len(), WIDTH);
-        unsafe { &*slice.as_ptr().cast() }
-    }
-    #[inline]
-    pub fn from_slice_mut(slice: &mut [GoldilocksField]) -> &mut Self {
-        assert_eq!(slice.len(), WIDTH);
-        unsafe { &mut *slice.as_mut_ptr().cast() }
-    }
-    #[inline]
-    pub fn as_slice(&self) -> &[GoldilocksField] {
-        &self.0[..]
-    }
-    #[inline]
-    pub fn as_slice_mut(&mut self) -> &mut [GoldilocksField] {
-        &mut self.0[..]
-    }
     #[inline]
     pub fn square(&self) -> Avx2GoldilocksField {
         Self::new(unsafe { square(self.get()) })
+    }
+    #[inline]
+    pub fn reduce(x: __m256i, y: __m256i) -> Avx2GoldilocksField {
+        Self::new(unsafe { reduce128((x, y)) })
+    }
+}
+
+unsafe impl PackedField for Avx2GoldilocksField {
+    const WIDTH: usize = 4;
+    type Scalar = GoldilocksField;
+    const ZEROS: Self = Self([GoldilocksField([0]); 4]);
+    const ONES: Self = Self([GoldilocksField([1]); 4]);
+
+    #[inline]
+    fn from_slice(slice: &[GoldilocksField]) -> &Self {
+        assert_eq!(slice.len(), Self::WIDTH);
+        unsafe { &*slice.as_ptr().cast() }
+    }
+    #[inline]
+    fn from_slice_mut(slice: &mut [GoldilocksField]) -> &mut Self {
+        assert_eq!(slice.len(), Self::WIDTH);
+        unsafe { &mut *slice.as_mut_ptr().cast() }
+    }
+    #[inline]
+    fn as_slice(&self) -> &[GoldilocksField] {
+        &self.0[..]
+    }
+    #[inline]
+    fn as_slice_mut(&mut self) -> &mut [GoldilocksField] {
+        &mut self.0[..]
     }
 
     #[inline]
@@ -117,7 +125,7 @@ impl Debug for Avx2GoldilocksField {
 impl Default for Avx2GoldilocksField {
     #[inline]
     fn default() -> Self {
-        Self([GoldilocksField::from(0); 4])
+        Self::ZEROS
     }
 }
 
@@ -325,7 +333,8 @@ unsafe fn add_no_double_overflow_64_64s_s(x: __m256i, y_s: __m256i) -> __m256i {
 unsafe fn add(x: __m256i, y: __m256i) -> __m256i {
     let y_s = shift(y);
     let res_s = add_no_double_overflow_64_64s_s(x, canonicalize_s(y_s));
-    shift(res_s)
+    // Added by Eigen
+    shift(canonicalize_s(res_s))
 }
 
 #[inline]
@@ -455,7 +464,8 @@ unsafe fn reduce128(x: (__m256i, __m256i)) -> __m256i {
     let lo1_s = sub_small_64s_64_s(lo0_s, hi_hi0);
     let t1 = _mm256_mul_epu32(hi0, EPSILON);
     let lo2_s = add_small_64s_64_s(lo1_s, t1);
-    let lo2 = shift(lo2_s);
+    // Added by Eigen
+    let lo2 = shift(canonicalize_s(lo2_s));
     lo2
 }
 
@@ -503,12 +513,12 @@ mod tests {
     use super::Avx2GoldilocksField;
     use crate::ff::*;
     use crate::field_gl::{Fr, FrRepr as GoldilocksField};
+    use crate::packed::PackedField;
     use std::time::Instant;
-    // use crate::packed::PackedField;
 
     fn test_vals_a() -> [GoldilocksField; 4] {
         [
-            GoldilocksField([14479013849828404771u64]),
+            GoldilocksField([18446744069414584320u64]),
             GoldilocksField([9087029921428221768u64]),
             GoldilocksField([2441288194761790662u64]),
             GoldilocksField([5646033492608483824u64]),
@@ -516,7 +526,7 @@ mod tests {
     }
     fn test_vals_b() -> [GoldilocksField; 4] {
         [
-            GoldilocksField([17891926589593242302u64]),
+            GoldilocksField([18446744069414584320u64]),
             GoldilocksField([11009798273260028228u64]),
             GoldilocksField([2028722748960791447u64]),
             GoldilocksField([7929433601095175579u64]),
@@ -530,25 +540,24 @@ mod tests {
         let start = Instant::now();
         let packed_a = Avx2GoldilocksField::from_slice(&a_arr);
         let packed_b = Avx2GoldilocksField::from_slice(&b_arr);
-        let packed_res = *packed_a + *packed_b;
+        let packed_res = *packed_a + *packed_b + *packed_a;
         let arr_res = packed_res.as_slice();
         let avx2_duration = start.elapsed();
-        // println!("arr_res: {:?}", arr_res);
+        // log::debug!("arr_res: {:?}", arr_res);
 
         let start = Instant::now();
-        let expected = a_arr
-            .iter()
-            .zip(b_arr)
-            .map(|(&a, b)| Fr::from_repr(a).unwrap() + Fr::from_repr(b).unwrap());
+        let expected = a_arr.iter().zip(b_arr).map(|(&a, b)| {
+            Fr::from_repr(a).unwrap() + Fr::from_repr(a).unwrap() + Fr::from_repr(b).unwrap()
+        });
         let expected_values: Vec<Fr> = expected.collect();
-        // println!("expected values: {:?}", expected_values);
+        log::debug!("expected values: {:?}", expected_values[0].as_int());
         let non_accelerated_duration = start.elapsed();
         for (exp, &res) in expected_values.iter().zip(arr_res) {
             assert_eq!(res, exp.into_repr());
         }
 
-        println!("test_add_AVX2_accelerated time: {:?}", avx2_duration);
-        println!(
+        log::debug!("test_add_AVX2_accelerated time: {:?}", avx2_duration);
+        log::debug!(
             "test_add_Non_accelerated time: {:?}",
             non_accelerated_duration
         );
@@ -556,6 +565,7 @@ mod tests {
 
     #[test]
     fn test_mul() {
+        env_logger::try_init().unwrap_or_default();
         let a_arr = test_vals_a();
         let b_arr = test_vals_b();
         let start = Instant::now();
@@ -564,7 +574,7 @@ mod tests {
         let packed_res = packed_a * packed_b;
         let arr_res = packed_res.as_slice();
         let avx2_duration = start.elapsed();
-        // println!("arr_res: {:?}", arr_res);
+        // log::debug!("arr_res: {:?}", arr_res);
 
         let start = Instant::now();
         let expected = a_arr
@@ -573,14 +583,14 @@ mod tests {
             .map(|(&a, b)| Fr::from_repr(a).unwrap() * Fr::from_repr(b).unwrap());
         let expected_values: Vec<Fr> = expected.collect();
         let non_accelerated_duration = start.elapsed();
-        // println!("expected values: {:?}", expected_values);
+        log::debug!("expected values: {:?}", expected_values);
 
         for (exp, &res) in expected_values.iter().zip(arr_res) {
             assert_eq!(res, exp.into_repr());
         }
 
-        println!("test_mul_AVX2_accelerated time: {:?}", avx2_duration);
-        println!(
+        log::debug!("test_mul_AVX2_accelerated time: {:?}", avx2_duration);
+        log::debug!(
             "test_mul_Non_accelerated time: {:?}",
             non_accelerated_duration
         );
@@ -594,7 +604,7 @@ mod tests {
         let packed_res = packed_a / GoldilocksField([7929433601095175579u64]);
         let arr_res = packed_res.as_slice();
         let avx2_duration = start.elapsed();
-        // println!("arr_res: {:?}", arr_res);
+        // log::debug!("arr_res: {:?}", arr_res);
 
         let start = Instant::now();
         let expected = a_arr.iter().map(|&a| {
@@ -603,14 +613,14 @@ mod tests {
         });
         let expected_values: Vec<Fr> = expected.collect();
         let non_accelerated_duration = start.elapsed();
-        // println!("expected values: {:?}", expected_values);
+        // log::debug!("expected values: {:?}", expected_values);
 
         for (exp, &res) in expected_values.iter().zip(arr_res) {
             assert_eq!(res, exp.into_repr());
         }
 
-        println!("test_div_AVX2_accelerated time: {:?}", avx2_duration);
-        println!(
+        log::debug!("test_div_AVX2_accelerated time: {:?}", avx2_duration);
+        log::debug!(
             "test_div_Non_accelerated time: {:?}",
             non_accelerated_duration
         );
@@ -624,7 +634,7 @@ mod tests {
         let packed_res = packed_a.square();
         let arr_res = packed_res.as_slice();
         let avx2_duration = start.elapsed();
-        // println!("arr_res: {:?}", arr_res);
+        // log::debug!("arr_res: {:?}", arr_res);
 
         let start = Instant::now();
         let mut expected_values = Vec::new();
@@ -640,12 +650,12 @@ mod tests {
             }
         }
         let non_accelerated_duration = start.elapsed();
-        // println!("expected values: {:?}", expected_values);
+        // log::debug!("expected values: {:?}", expected_values);
         for (exp, &res) in expected_values.iter().zip(arr_res) {
             assert_eq!(res, exp.into_repr());
         }
-        println!("test_square_AVX2_accelerated time: {:?}", avx2_duration);
-        println!(
+        log::debug!("test_square_AVX2_accelerated time: {:?}", avx2_duration);
+        log::debug!(
             "test_square_Non_accelerated time: {:?}",
             non_accelerated_duration
         );
@@ -659,20 +669,20 @@ mod tests {
         let packed_res = -packed_a;
         let arr_res = packed_res.as_slice();
         let avx2_duration = start.elapsed();
-        // println!("arr_res: {:?}", arr_res);
+        // log::debug!("arr_res: {:?}", arr_res);
 
         let start = Instant::now();
         let expected = a_arr.iter().map(|&a| -Fr::from_repr(a).unwrap());
         let expected_values: Vec<Fr> = expected.collect();
         let non_accelerated_duration = start.elapsed();
-        // println!("expected values: {:?}", expected_values);
+        // log::debug!("expected values: {:?}", expected_values);
 
         for (exp, &res) in expected_values.iter().zip(arr_res) {
             assert_eq!(res, exp.into_repr());
         }
 
-        println!("test_neg_AVX2_accelerated time: {:?}", avx2_duration);
-        println!(
+        log::debug!("test_neg_AVX2_accelerated time: {:?}", avx2_duration);
+        log::debug!(
             "test_neg_Non_accelerated time: {:?}",
             non_accelerated_duration
         );
@@ -688,7 +698,7 @@ mod tests {
         let packed_res = packed_a - packed_b;
         let arr_res = packed_res.as_slice();
         let avx2_duration = start.elapsed();
-        // println!("arr_res: {:?}", arr_res);
+        // log::debug!("arr_res: {:?}", arr_res);
 
         let start = Instant::now();
         let expected = a_arr
@@ -697,14 +707,14 @@ mod tests {
             .map(|(&a, b)| Fr::from_repr(a).unwrap() - Fr::from_repr(b).unwrap());
         let expected_values: Vec<Fr> = expected.collect();
         let non_accelerated_duration = start.elapsed();
-        // println!("expected values: {:?}", expected_values);
+        // log::debug!("expected values: {:?}", expected_values);
 
         for (exp, &res) in expected_values.iter().zip(arr_res) {
             assert_eq!(res, exp.into_repr());
         }
 
-        println!("test_sub_AVX2_accelerated time: {:?}", avx2_duration);
-        println!(
+        log::debug!("test_sub_AVX2_accelerated time: {:?}", avx2_duration);
+        log::debug!(
             "test_sub_Non_accelerated time: {:?}",
             non_accelerated_duration
         );
