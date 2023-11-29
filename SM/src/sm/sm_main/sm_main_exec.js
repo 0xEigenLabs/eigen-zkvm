@@ -5,8 +5,10 @@ const { Scalar, F1Field } = require("ffjavascript");
 const { calculateStarkInput, calculateBatchHashData } = require("@0xpolygonhermez/zkevm-commonjs").contractUtils;
 const { scalar2fea, fea2scalar, fe2n, scalar2h4, h4toString,
     stringToH4, nodeIsEq, hashContractBytecode, fea2String } = require("@0xpolygonhermez/zkevm-commonjs").smtUtils;
-const SMT = require("@0xpolygonhermez/zkevm-commonjs").SMT;
+// const SMT = require("@0xpolygonhermez/zkevm-commonjs").SMT;
+const SMT = require("../../smt");
 const MemDB = require("@0xpolygonhermez/zkevm-commonjs").MemDB;
+const StateDB = require("../../db");
 const buildPoseidon = require("@0xpolygonhermez/zkevm-commonjs").getPoseidon;
 const { byteArray2HexString } = require("@0xpolygonhermez/zkevm-commonjs").utils;
 
@@ -70,7 +72,7 @@ module.exports = async function execute(pols, input, rom, config = {}, metadata 
     const FrFirst32Negative = 0xFFFFFFFF00000001n - 0xFFFFFFFFn;
     const FrLast32Positive = 0xFFFFFFFFn;
 
-    const db = new MemDB(Fr, input.db);
+    const db = new StateDB(Fr);
     const smt = new SMT(db, poseidon, Fr);
 
     let op7, op6, op5, op4, op3, op2, op1, op0;
