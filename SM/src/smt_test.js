@@ -16,23 +16,22 @@ let feaKey = {
   fe3: 1,
 }
 
-const convertKey = (key) => {
-  if (key.startsWith('0x')) {
-    return key;
-  } else {
-    return '0x' + key;
-  }
-}
-
 async function main() {
   const poseidon = await getPoseidon()
   F = poseidon.F
   let db = new StateDB(F)
   let smt = new SMT(db, poseidon, F)
-  let key = feaKey
+  // let key = feaKey
+  let root = [ 0n, 0n, 0n, 0n ]
+  let key = [
+    14833827758303204589n,
+    15154033943678652181n,
+    5489675274157668397n,
+    7250342125880245156n
+  ]
   // await smt.get(root, key)
-
-  let value = "0x123"
+  
+  let value = 1000000000000000000000n
   let setResp = await smt.set(root, key, value)
   console.log("setResp: ", setResp)
 

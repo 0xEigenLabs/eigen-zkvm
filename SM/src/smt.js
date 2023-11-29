@@ -59,6 +59,16 @@ module.exports = class SMT {
    */
   async set(oldRoot, key, value) {
     console.log("SMT set oldRoot, key, value: ", oldRoot, key, value)
+    if (oldRoot === undefined) {
+      console.log("oldRoot is undefined")
+      oldRoot = {
+        fe0: 0,
+        fe1: 0,
+        fe2: 0,
+        fe3: 0,
+      }
+    }
+
     let setRequest = {
       old_root: oldRoot,
       key: key,
