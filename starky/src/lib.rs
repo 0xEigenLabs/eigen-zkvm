@@ -1,7 +1,5 @@
 #![allow(clippy::needless_range_loop)]
 #![allow(dead_code)]
-#![feature(stdsimd)]
-#![feature(const_trait_impl)]
 
 pub mod polsarray;
 mod polutils;

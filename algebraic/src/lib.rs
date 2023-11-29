@@ -1,6 +1,4 @@
 #![allow(clippy::unit_arg)]
-#![feature(stdsimd)]
-#![feature(const_trait_impl)]
 
 #[macro_use]
 extern crate serde;
