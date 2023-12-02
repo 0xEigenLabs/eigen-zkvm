@@ -2,21 +2,21 @@
 
 eigen-zkvm is a zkVM on layered proof system, allowing the developers to write Zero-knowledge applications, proving with the layered proof system to achieve no trusted setup, constant on-chain proof size and low gas cost, and finally generating the solidity verifier.
 
-- [x] zkit: universal commandline for starky and plonky
+- [x] zkit: universal commandline for stark, plonk and groth16.
 
 - [x] Circom 2.x on PlonK prove system;
 
-- [x] Aggregation Proof over both Stark and Snark proof;
+- [x] Proof composition: proof aggregation and recursion on Stark;
 
-- [x] Generate solidity verifier;
+- [X] Proof Recursion with Snark on Stark;
 
-- [x] GPU acceleration for proving, not opensourced; 
+- [x] Solidity verifier generation;
 
-- [x] WASM friendly for single proving and verifying, NodeJS/Javascript prover and verifier, [plonkjs](https://github.com/0xEigenLabs/plonkjs)
+- [x] GPU acceleration for proving, not opensourced;
 
-- [x] Layered Proof system on Plonk and FRI.
+- [x] WASM friendly for single proving and verifying, NodeJS/Javascript prover and verifier, [plonkjs](https://github.com/0xEigenLabs/plonkjs);
 
-- [] State Machine based VM
+- [] Eigen zkVM: Risc V, Continuation.
 
 ## How layered proof system works
 
