@@ -451,7 +451,7 @@ mod tests {
         let start = Instant::now();
         let res = poseidon.hash(&input, &state, 4).unwrap();
         let hash_avx2_duration = start.elapsed();
-        println!("hash_avx2_duration_0: {:?}", hash_avx2_duration);
+        log::debug!("hash_avx2_duration_0: {:?}", hash_avx2_duration);
 
         let expected = vec![
             FGL::from(0x3c18a9786cb0b359u64),
@@ -470,7 +470,7 @@ mod tests {
         let start = Instant::now();
         let res = poseidon.hash(&input, &state, 4).unwrap();
         let hash_avx2_duration = start.elapsed();
-        println!("hash_avx2_duration_1: {:?}", hash_avx2_duration);
+        log::debug!("hash_avx2_duration_1: {:?}", hash_avx2_duration);
 
         let expected = vec![
             FGL::from(0xd64e1e3efc5b8e9eu64),
@@ -490,7 +490,7 @@ mod tests {
         let start = Instant::now();
         let res = poseidon.hash(&input, &state, 4).unwrap();
         let hash_avx2_duration = start.elapsed();
-        println!("hash_avx2_duration_2: {:?}", hash_avx2_duration);
+        log::debug!("hash_avx2_duration_2: {:?}", hash_avx2_duration);
 
         let expected = vec![
             FGL::from(0xbe0085cfc57a8357u64),
@@ -517,7 +517,7 @@ mod tests {
         }
 
         let average_duration = total_duration / iterations;
-        println!("Average hash_avx2_duration_1: {:?}", average_duration);
+        log::debug!("Average hash_avx2_duration_1: {:?}", average_duration);
     }
 
     #[test]
@@ -537,7 +537,7 @@ mod tests {
         }
 
         let average_duration = total_duration / iterations;
-        println!("Average hash_avx2_duration_2: {:?}", average_duration);
+        log::debug!("Average hash_avx2_duration_2: {:?}", average_duration);
     }
 
     #[test]
