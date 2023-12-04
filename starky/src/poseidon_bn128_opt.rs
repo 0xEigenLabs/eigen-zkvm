@@ -89,16 +89,16 @@ impl Poseidon {
 
     /// Hash function
     /// init_state would be Fr::zero() initially
-    pub fn hash(&self, inp: &Vec<Fr>, init_state: &Fr) -> Result<Fr, String> {
+    pub fn hash(&self, inp: &[Fr], init_state: &Fr) -> Result<Fr, String> {
         let result = self.hash_inner(inp, init_state, 1)?;
         Ok(result[0])
     }
 
-    pub fn hash_ex(&self, inp: &Vec<Fr>, init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
+    pub fn hash_ex(&self, inp: &[Fr], init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
         self.hash_inner(inp, init_state, out)
     }
 
-    fn hash_inner(&self, inp: &Vec<Fr>, init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
+    fn hash_inner(&self, inp: &[Fr], init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
         if inp.is_empty() || inp.len() > POSEIDON_BN128_CONSTANTS_OPT.n_rounds_p.len() {
             return Err(format!(
                 "Wrong inputs length {} > {}",

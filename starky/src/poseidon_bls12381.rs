@@ -70,7 +70,7 @@ impl Poseidon {
     pub fn new() -> Poseidon {
         Self {}
     }
-    pub fn ark(&self, state: &mut Vec<Fr>, c: &[Fr], it: usize) {
+    pub fn ark(&self, state: &mut [Fr], c: &[Fr], it: usize) {
         for i in 0..state.len() {
             state[i].add_assign(&c[it + i]);
         }
@@ -84,7 +84,7 @@ impl Poseidon {
         x.mul_assign(&aux);
     }
 
-    pub fn sbox(&self, n_rounds_f: usize, n_rounds_p: usize, state: &mut Vec<Fr>, i: usize) {
+    pub fn sbox(&self, n_rounds_f: usize, n_rounds_p: usize, state: &mut [Fr], i: usize) {
         if i < n_rounds_f / 2 || i >= n_rounds_f / 2 + n_rounds_p {
             for x in state {
                 Self::pow5(x);
@@ -109,7 +109,7 @@ impl Poseidon {
 
     /// Hash function
     /// init_state would be Fr::zero() initially
-    pub fn hash(&self, inp: &Vec<Fr>, init_state: &Fr) -> Result<Fr, String> {
+    pub fn hash(&self, inp: &[Fr], init_state: &Fr) -> Result<Fr, String> {
         let result = self.hash_inner(inp, init_state, 1)?;
         Ok(result[0])
     }

@@ -71,7 +71,7 @@ impl<F: FieldExtension> FFT<F> {
         buff
     }
 
-    pub fn ifft(&mut self, p: &Vec<F>) -> Vec<F> {
+    pub fn ifft(&mut self, p: &[F]) -> Vec<F> {
         let q = self.fft(p);
         let n = p.len();
         let n2inv = F::from(p.len()).inv();

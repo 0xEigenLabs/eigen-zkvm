@@ -75,7 +75,7 @@ impl Poseidon {
         x.mul_assign(&aux);
     }
 
-    pub fn hash(&self, inp: &Vec<FGL>, init_state: &[FGL], out: usize) -> Result<Vec<FGL>, String> {
+    pub fn hash(&self, inp: &[FGL], init_state: &[FGL], out: usize) -> Result<Vec<FGL>, String> {
         self.hash_inner(inp, init_state, out)
     }
 
