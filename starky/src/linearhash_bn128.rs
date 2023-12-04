@@ -132,7 +132,7 @@ impl LinearHashBN128 {
         // hash on each 16
         for i in (0..tmp_buf.len()).step_by(16) {
             let in_sz = std::cmp::min(16, tmp_buf.len() - i);
-            digest = self.h.hash(&tmp_buf[i..(i + in_sz)].to_vec(), &digest)?;
+            digest = self.h.hash(&tmp_buf[i..(i + in_sz)], &digest)?;
         }
 
         Ok(ElementDigest::<4>::from_scalar(&digest))
