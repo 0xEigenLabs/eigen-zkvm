@@ -36,9 +36,9 @@ impl<F: FieldExtension> FFT<F> {
         }
     }
 
-    pub fn fft(&mut self, p: &Vec<F>) -> Vec<F> {
+    pub fn fft(&mut self, p: &[F]) -> Vec<F> {
         if p.len() <= 1 {
-            return p.clone();
+            return p.to_owned();
         }
         let bits = log2_any(p.len() - 1) + 1;
         self.set_roots(bits);

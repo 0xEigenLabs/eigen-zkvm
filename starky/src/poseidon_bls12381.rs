@@ -94,7 +94,7 @@ impl Poseidon {
         }
     }
 
-    pub fn mix(&self, state: &Vec<Fr>, m: &[Vec<Fr>]) -> Vec<Fr> {
+    pub fn mix(&self, state: &[Fr], m: &[Vec<Fr>]) -> Vec<Fr> {
         let mut new_state: Vec<Fr> = Vec::new();
         for i in 0..state.len() {
             new_state.push(Fr::zero());
@@ -114,11 +114,11 @@ impl Poseidon {
         Ok(result[0])
     }
 
-    pub fn hash_ex(&self, inp: &Vec<Fr>, init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
+    pub fn hash_ex(&self, inp: &[Fr], init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
         self.hash_inner(inp, init_state, out)
     }
 
-    fn hash_inner(&self, inp: &Vec<Fr>, init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
+    fn hash_inner(&self, inp: &[Fr], init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
         if inp.is_empty() || inp.len() > POSEIDON_BLS12381_CONSTANTS.n_rounds_p.len() {
             return Err(format!(
                 "Wrong inputs length {} > {}",

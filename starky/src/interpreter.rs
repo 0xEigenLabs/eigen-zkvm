@@ -198,7 +198,7 @@ impl<T: FieldExtension> fmt::Display for Block<T> {
 pub fn compile_code<T: FieldExtension>(
     ctx: &StarkContext<T>,
     starkinfo: &StarkInfo,
-    code: &Vec<Section>,
+    code: &[Section],
     dom: &str,
     ret: bool,
 ) -> Block<T> {

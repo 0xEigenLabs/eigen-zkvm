@@ -10,7 +10,7 @@ pub fn pol_mul_axi<F: FieldExtension>(p: &mut Vec<F>, init: F, acc: &F) {
     }
 }
 
-pub fn eval_pol<F: FieldExtension>(p: &Vec<F>, x: &F) -> F {
+pub fn eval_pol<F: FieldExtension>(p: &[F], x: &F) -> F {
     if p.is_empty() {
         return F::ZERO;
     }

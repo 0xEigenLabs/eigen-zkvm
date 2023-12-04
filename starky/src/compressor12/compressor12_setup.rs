@@ -49,8 +49,8 @@ pub fn setup(
 // construct and save ExecFile: plonk additions + sMap -> BigUint64Array
 pub(super) fn write_exec_file(
     exec_file: &str,
-    adds: &Vec<PlonkAdd>,
-    s_map: &Vec<Vec<u64>>,
+    adds: &[PlonkAdd],
+    s_map: &[Vec<u64>],
 ) -> Result<()> {
     let adds_len = adds.len();
     let s_map_row_len = s_map.len();

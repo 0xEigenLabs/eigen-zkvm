@@ -266,7 +266,7 @@ impl FRI {
     }
 }
 
-fn get_transposed_buffer<F: FieldExtension>(pol: &Vec<F>, transpose_bits: usize) -> Vec<FGL> {
+fn get_transposed_buffer<F: FieldExtension>(pol: &[F], transpose_bits: usize) -> Vec<FGL> {
     let n = pol.len();
     let w = 1 << transpose_bits;
     let h = n / w;
@@ -292,7 +292,7 @@ fn get3<F: FieldExtension>(arr: &[FGL], idx: usize) -> F {
 }
 
 // TODO: Support F5G
-fn split3<F: FieldExtension>(arr: &Vec<FGL>) -> Vec<F> {
+fn split3<F: FieldExtension>(arr: &[FGL]) -> Vec<F> {
     let mut res: Vec<F> = Vec::new();
     for i in (0..arr.len()).step_by(3) {
         res.push(F::from_vec(vec![arr[i], arr[i + 1], arr[i + 2]]));
