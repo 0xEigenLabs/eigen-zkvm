@@ -56,7 +56,7 @@ pub(crate) struct NormalPlonkInfo {
 }
 
 impl NormalPlonkInfo {
-    pub(crate) fn new(plonk_constrains: &Vec<PlonkGate>) -> Self {
+    pub(crate) fn new(plonk_constrains: &[PlonkGate]) -> Self {
         let mut uses: BTreeMap<String, usize> = BTreeMap::new();
         let plonk_constrains_len = plonk_constrains.len();
         for (i, c) in plonk_constrains.iter().enumerate() {

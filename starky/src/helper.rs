@@ -86,7 +86,7 @@ pub fn biguint_bls12381_to_fr(f: &BigUint) -> Fr_bls12381 {
 }
 
 use std::fmt::{Debug, Display};
-pub fn pretty_print_array<T: Debug + Display>(cols: &Vec<T>) -> String {
+pub fn pretty_print_array<T: Debug + Display>(cols: &[T]) -> String {
     let mut msg = String::new();
     writeln!(&mut msg, "array size: {}", cols.len()).unwrap();
     writeln!(&mut msg, "[").unwrap();

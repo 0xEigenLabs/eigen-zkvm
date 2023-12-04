@@ -70,7 +70,7 @@ impl Poseidon {
     pub fn new() -> Poseidon {
         Self {}
     }
-    pub fn ark(&self, state: &mut Vec<Fr>, c: &[Fr], it: usize) {
+    pub fn ark(&self, state: &mut [Fr], c: &[Fr], it: usize) {
         for i in 0..state.len() {
             state[i].add_assign(&c[it + i]);
         }
@@ -84,7 +84,7 @@ impl Poseidon {
         x.mul_assign(&aux);
     }
 
-    pub fn sbox(&self, n_rounds_f: usize, n_rounds_p: usize, state: &mut Vec<Fr>, i: usize) {
+    pub fn sbox(&self, n_rounds_f: usize, n_rounds_p: usize, state: &mut [Fr], i: usize) {
         if i < n_rounds_f / 2 || i >= n_rounds_f / 2 + n_rounds_p {
             for x in state {
                 Self::pow5(x);
@@ -94,7 +94,7 @@ impl Poseidon {
         }
     }
 
-    pub fn mix(&self, state: &Vec<Fr>, m: &[Vec<Fr>]) -> Vec<Fr> {
+    pub fn mix(&self, state: &[Fr], m: &[Vec<Fr>]) -> Vec<Fr> {
         let mut new_state: Vec<Fr> = Vec::new();
         for i in 0..state.len() {
             new_state.push(Fr::zero());
@@ -109,16 +109,16 @@ impl Poseidon {
 
     /// Hash function
     /// init_state would be Fr::zero() initially
-    pub fn hash(&self, inp: &Vec<Fr>, init_state: &Fr) -> Result<Fr, String> {
+    pub fn hash(&self, inp: &[Fr], init_state: &Fr) -> Result<Fr, String> {
         let result = self.hash_inner(inp, init_state, 1)?;
         Ok(result[0])
     }
 
-    pub fn hash_ex(&self, inp: &Vec<Fr>, init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
+    pub fn hash_ex(&self, inp: &[Fr], init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
         self.hash_inner(inp, init_state, out)
     }
 
-    fn hash_inner(&self, inp: &Vec<Fr>, init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
+    fn hash_inner(&self, inp: &[Fr], init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
         if inp.is_empty() || inp.len() > POSEIDON_BLS12381_CONSTANTS.n_rounds_p.len() {
             return Err(format!(
                 "Wrong inputs length {} > {}",
@@ -180,43 +180,43 @@ mod tests {
         let b4: Fr = Fr::from_str("4").unwrap();
 
         let is = Fr::zero();
-        let h = poseidon.hash(&vec![b1], &is).unwrap();
+        let h = poseidon.hash(&[b1], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x49a66f6b01dbc6440d1a5f920e027b94429916f2c821a920cf6203ad3de56cea)"
         );
 
-        let h = poseidon.hash(&vec![b1, b2], &is).unwrap();
+        let h = poseidon.hash(&[b1, b2], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x28ce19420fc246a05553ad1e8c98f5c9d67166be2c18e9e4cb4b4e317dd2a78a)"
         );
 
-        let h = poseidon.hash(&vec![b1, b2, b0, b0, b0], &is).unwrap();
+        let h = poseidon.hash(&[b1, b2, b0, b0, b0], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x38a4dfeeb62c8ddc28f907fff9658ad10495c587433646531f57d7741c372226)"
         );
 
-        let h = poseidon.hash(&vec![b1, b2, b0, b0, b0, b0], &is).unwrap();
+        let h = poseidon.hash(&[b1, b2, b0, b0, b0, b0], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x4a300ef0358077f7277ded221e20d5967013c62a653bee2db65e162b6143321c)"
         );
 
-        let h = poseidon.hash(&vec![b3, b4, b0, b0, b0], &is).unwrap();
+        let h = poseidon.hash(&[b3, b4, b0, b0, b0], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x631d5456b4cf350c218dfb3c8de41ae9d05ede09f46be5982eed8d3f1d6c7c2a)"
         );
 
-        let h = poseidon.hash(&vec![b3, b4, b0, b0, b0, b0], &is).unwrap();
+        let h = poseidon.hash(&[b3, b4, b0, b0, b0, b0], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x4946ee12005b4c8f9fc919b4768499cfeccb4d35168c1db4509eae7ea5055483)"
         );
 
-        let h = poseidon.hash(&vec![b1, b2, b3, b4], &is).unwrap();
+        let h = poseidon.hash(&[b1, b2, b3, b4], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x2a918b9c9f9bd7bb509331c81e297b5707f6fc7393dcee1b13901a0b22202e18)"

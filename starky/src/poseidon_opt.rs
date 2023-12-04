@@ -75,16 +75,11 @@ impl Poseidon {
         x.mul_assign(&aux);
     }
 
-    pub fn hash(&self, inp: &Vec<FGL>, init_state: &[FGL], out: usize) -> Result<Vec<FGL>, String> {
+    pub fn hash(&self, inp: &[FGL], init_state: &[FGL], out: usize) -> Result<Vec<FGL>, String> {
         self.hash_inner(inp, init_state, out)
     }
 
-    fn hash_inner(
-        &self,
-        inp: &Vec<FGL>,
-        init_state: &[FGL],
-        out: usize,
-    ) -> Result<Vec<FGL>, String> {
+    fn hash_inner(&self, inp: &[FGL], init_state: &[FGL], out: usize) -> Result<Vec<FGL>, String> {
         if inp.len() != 8 {
             return Err(format!("Wrong inputs length {} != 8", inp.len(),));
         }
