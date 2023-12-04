@@ -2,7 +2,7 @@ use crate::constant::SHIFT;
 use crate::fft::FFT;
 use crate::traits::FieldExtension;
 
-pub fn pol_mul_axi<F: FieldExtension>(p: &mut Vec<F>, init: F, acc: &F) {
+pub fn pol_mul_axi<F: FieldExtension>(p: &mut [F], init: F, acc: &F) {
     let mut r = init;
     for pi in p {
         *pi *= r;
@@ -22,7 +22,7 @@ pub fn eval_pol<F: FieldExtension>(p: &[F], x: &F) -> F {
 }
 
 #[allow(dead_code)]
-pub fn extend_pol<F: FieldExtension>(p: &Vec<F>, extend_bits: usize) -> Vec<F> {
+pub fn extend_pol<F: FieldExtension>(p: &[F], extend_bits: usize) -> Vec<F> {
     let mut standard_fft = FFT::new();
     let mut res = standard_fft.ifft(p);
     pol_mul_axi(&mut res, F::ONE, &F::from(*SHIFT));
