@@ -252,43 +252,43 @@ mod tests {
         let b6: Fr = Fr::from_str("6").unwrap();
 
         let is = Fr::zero();
-        let h = poseidon.hash(&vec![b1], &is).unwrap();
+        let h = poseidon.hash(&[b1], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x29176100eaa962bdc1fe6c654d6a3c130e96a4d1168b33848b897dc502820133)" // "18586133768512220936620570745912940619677854269274689475585506675881198879027"
         );
 
-        let h = poseidon.hash(&vec![b1, b2], &is).unwrap();
+        let h = poseidon.hash(&[b1, b2], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x115cc0f5e7d690413df64c6b9662e9cf2a3617f2743245519e19607a4417189a)" // "7853200120776062878684798364095072458815029376092732009249414926327459813530"
         );
 
-        let h = poseidon.hash(&vec![b1, b2, b0, b0, b0], &is).unwrap();
+        let h = poseidon.hash(&[b1, b2, b0, b0, b0], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x024058dd1e168f34bac462b6fffe58fd69982807e9884c1c6148182319cee427)" // "1018317224307729531995786483840663576608797660851238720571059489595066344487"
         );
 
-        let h = poseidon.hash(&vec![b1, b2, b0, b0, b0, b0], &is).unwrap();
+        let h = poseidon.hash(&[b1, b2, b0, b0, b0, b0], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x21e82f465e00a15965e97a44fe3c30f3bf5279d8bf37d4e65765b6c2550f42a1)" // "15336558801450556532856248569924170992202208561737609669134139141992924267169"
         );
 
-        let h = poseidon.hash(&vec![b3, b4, b0, b0, b0], &is).unwrap();
+        let h = poseidon.hash(&[b3, b4, b0, b0, b0], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x0cd93f1bab9e8c9166ef00f2a1b0e1d66d6a4145e596abe0526247747cc71214)" // "5811595552068139067952687508729883632420015185677766880877743348592482390548"
         );
 
-        let h = poseidon.hash(&vec![b3, b4, b0, b0, b0, b0], &is).unwrap();
+        let h = poseidon.hash(&[b3, b4, b0, b0, b0, b0], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x1b1caddfc5ea47e09bb445a7447eb9694b8d1b75a97fff58e884398c6b22825a)" // "12263118664590987767234828103155242843640892839966517009184493198782366909018"
         );
 
-        let h = poseidon.hash(&vec![b1, b2, b3, b4, b5, b6], &is).unwrap();
+        let h = poseidon.hash(&[b1, b2, b3, b4, b5, b6], &is).unwrap();
         assert_eq!(
             h.to_string(),
             "Fr(0x2d1a03850084442813c8ebf094dea47538490a68b05f2239134a4cca2f6302e1)" // "20400040500897583745843009878988256314335038853985262692600694741116813247201"
