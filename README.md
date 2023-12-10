@@ -16,7 +16,7 @@ eigen-zkvm is a zkVM on layered proof system, allowing the developers to write Z
 
 - [x] WASM friendly for single proving and verifying, NodeJS/Javascript prover and verifier, [plonkjs](https://github.com/0xEigenLabs/plonkjs);
 
-- [] Eigen zkVM: Risc V, Fully Homomorphic Encryption.
+- [] Eigen zkVM: Risc V, Fully Homomorphic Encryption. the zkEVM using Eigen proof system is [here](https://github.com/0xEigenLabs/zkevm-executor).
 
 ## How layered proof system works
 
