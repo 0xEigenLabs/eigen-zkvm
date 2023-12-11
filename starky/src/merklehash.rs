@@ -10,12 +10,27 @@
     ))
 ))]
 use crate::arch::x86_64::avx2_poseidon_gl::Poseidon;
+#[cfg(all(
+    target_feature = "avx512bw",
+    target_feature = "avx512cd",
+    target_feature = "avx512dq",
+    target_feature = "avx512f",
+    target_feature = "avx512vl"
+))]
+use crate::arch::x86_64::avx512_poseidon_gl::Poseidon;
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
 use crate::digest::ElementDigest;
 use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
 use crate::linearhash::LinearHash;
-#[cfg(not(target_feature = "avx2"))]
+#[cfg(not(any(
+    target_feature = "avx2",
+    target_feature = "avx512bw",
+    target_feature = "avx512cd",
+    target_feature = "avx512dq",
+    target_feature = "avx512f",
+    target_feature = "avx512vl"
+)))]
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
