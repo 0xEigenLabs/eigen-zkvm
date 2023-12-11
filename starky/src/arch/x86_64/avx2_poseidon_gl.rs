@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 use crate::constant::POSEIDON_CONSTANTS_OPT_AVX2;
-use crate::poseidon_constants_avx as constants;
+use crate::poseidon_constants_avx2 as constants;
 use algebraic::arch::x86_64::avx2_field_gl::Avx2GoldilocksField;
 use algebraic::packed::PackedField;
 use core::arch::x86_64::*;

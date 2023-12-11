@@ -1,5 +1,14 @@
 #![allow(dead_code)]
-#[cfg(target_feature = "avx2")]
+#[cfg(all(
+    target_feature = "avx2",
+    not(all(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    ))
+))]
 use crate::arch::x86_64::avx2_poseidon_gl::Poseidon;
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
 use crate::digest::ElementDigest;

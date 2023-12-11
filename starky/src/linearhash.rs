@@ -1,5 +1,14 @@
 #![allow(non_snake_case)]
-#[cfg(target_feature = "avx2")]
+#[cfg(all(
+    target_feature = "avx2",
+    not(all(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    ))
+))]
 use crate::arch::x86_64::avx2_poseidon_gl::Poseidon;
 use crate::errors::Result;
 #[cfg(not(target_feature = "avx2"))]
