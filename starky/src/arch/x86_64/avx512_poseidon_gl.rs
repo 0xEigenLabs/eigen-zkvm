@@ -543,4 +543,47 @@ mod tests {
         ];
         assert_eq!(res, expected);
     }
+    #[test]
+    fn test_poseidon_opt_hash_1_11_avx512_average() {
+        let poseidon = Poseidon::new();
+        let input = vec![
+            FGL::from(0u64),
+            FGL::from(1u64),
+            FGL::from(2u64),
+            FGL::from(3u64),
+            FGL::ZERO,
+            FGL::ZERO,
+            FGL::ZERO,
+            FGL::ZERO,
+            FGL::from(4u64),
+            FGL::from(5u64),
+            FGL::from(6u64),
+            FGL::from(7u64),
+            FGL::ZERO,
+            FGL::ZERO,
+            FGL::ZERO,
+            FGL::ZERO,
+        ];
+        let state = vec![
+            FGL::from(8u64),
+            FGL::from(9u64),
+            FGL::from(10u64),
+            FGL::from(11u64),
+            FGL::ZERO,
+            FGL::ZERO,
+            FGL::ZERO,
+            FGL::ZERO,
+        ];
+        let mut total_duration = Duration::new(0, 0);
+        let iterations = 100;
+
+        for _ in 0..iterations {
+            let start = Instant::now();
+            let _res = poseidon.hash(&input, &state, 4).unwrap();
+            total_duration += start.elapsed();
+        }
+
+        let average_duration = total_duration / iterations;
+        log::debug!("Average hash_avx512_duration_1: {:?}", average_duration);
+    }
 }

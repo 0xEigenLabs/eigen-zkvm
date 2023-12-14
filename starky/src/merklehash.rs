@@ -10,27 +10,11 @@
     ))
 ))]
 use crate::arch::x86_64::avx2_poseidon_gl::Poseidon;
-#[cfg(all(
-    target_feature = "avx512bw",
-    target_feature = "avx512cd",
-    target_feature = "avx512dq",
-    target_feature = "avx512f",
-    target_feature = "avx512vl"
-))]
-use crate::arch::x86_64::avx512_poseidon_gl::Poseidon;
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
 use crate::digest::ElementDigest;
 use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
 use crate::linearhash::LinearHash;
-#[cfg(not(any(
-    target_feature = "avx2",
-    target_feature = "avx512bw",
-    target_feature = "avx512cd",
-    target_feature = "avx512dq",
-    target_feature = "avx512f",
-    target_feature = "avx512vl"
-)))]
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
@@ -106,6 +90,14 @@ impl MerkleTreeGL {
         Ok(())
     }
 
+    #[cfg(not(any(
+        target_feature = "avx2",
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    )))]
     fn do_merklize_level(
         &self,
         buff_in: &[ElementDigest<4>],
@@ -128,6 +120,54 @@ impl MerkleTreeGL {
             two[4..8].copy_from_slice(one);
             *out = self.h.hash(&two, 0).unwrap();
         });
+        Ok(buff_out64)
+    }
+
+    #[cfg(all(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    ))]
+    fn do_merklize_level(
+        &self,
+        buff_in: &[ElementDigest<4>],
+        _st_i: usize,
+        _st_n: usize,
+    ) -> Result<Vec<ElementDigest<4>>> {
+        log::trace!(
+            "merklizing GL hash start.... {}/{}, buff size {}",
+            _st_i,
+            _st_n,
+            buff_in.len()
+        );
+        let n_ops = buff_in.len() / 4;
+        let mut buff_out64: Vec<ElementDigest<4>> =
+            vec![ElementDigest::<4>::default(); buff_in.len() / 2];
+        let process = |chunk: &[ElementDigest<4>], four: &mut [FGL; 16]| {
+            for (j, item) in chunk.iter().enumerate() {
+                let one: &[FGL] = item.as_elements();
+                four[j * 4..(j + 1) * 4].copy_from_slice(one);
+            }
+            self.h.hash(four, 0).unwrap()
+        };
+
+        let mut four = [FGL::ZERO; 16];
+        if n_ops == 0 {
+            let hash_result = process(&buff_in[..2], &mut four);
+            buff_out64[0] = hash_result[0];
+        } else {
+            for i in 0..n_ops {
+                let hash_result = process(&buff_in[i * 4..i * 4 + 4], &mut four);
+                buff_out64[i * 2] = hash_result[0];
+                buff_out64[i * 2 + 1] = hash_result[1];
+            }
+            if buff_in.len() % 4 != 0 {
+                let hash_result = process(&buff_in[buff_in.len() - 2..], &mut four);
+                buff_out64[n_ops * 2] = hash_result[0];
+            }
+        }
         Ok(buff_out64)
     }
 
@@ -160,6 +200,14 @@ impl MerkleTreeGL {
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
+    #[cfg(not(any(
+        target_feature = "avx2",
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    )))]
     fn calculate_root_from_group_proof(
         &self,
         mp: &[Vec<FGL>],
@@ -168,6 +216,26 @@ impl MerkleTreeGL {
     ) -> Result<ElementDigest<4>> {
         let h = self.h.hash(vals, 0)?;
         self.merkle_calculate_root_from_proof(mp, idx, &h, 0)
+    }
+
+    #[cfg(all(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    ))]
+    fn calculate_root_from_group_proof(
+        &self,
+        mp: &[Vec<FGL>],
+        idx: usize,
+        vals: &[FGL],
+    ) -> Result<ElementDigest<4>> {
+        let mut vals_0: Vec<FGL> = Vec::with_capacity(vals.len() * 2);
+        vals_0.extend_from_slice(vals);
+        vals_0.extend_from_slice(vals);
+        let h = self.h.hash(&vals_0, 0)?;
+        self.merkle_calculate_root_from_proof(mp, idx, &h[0], 0)
     }
 }
 
@@ -199,6 +267,14 @@ impl MerkleTree for MerkleTreeGL {
             });
     }
 
+    #[cfg(not(any(
+        target_feature = "avx2",
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    )))]
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()> {
         let max_workers = get_max_workers();
 
@@ -229,6 +305,87 @@ impl MerkleTree for MerkleTreeGL {
                     });
                 });
         }
+        log::trace!("linearhash time cost: {}", now.elapsed().as_secs_f64());
+
+        // merklize level
+        self.nodes = nodes;
+        self.elements = buff;
+        self.width = width;
+        self.height = height;
+
+        let mut n64: usize = height;
+        let mut next_n64: usize = (n64 - 1) / 2 + 1;
+        let mut p_in: usize = 0;
+        let mut p_out: usize = p_in + next_n64 * 2;
+        while n64 > 1 {
+            let now = Instant::now();
+            self.merklize_level(p_in, next_n64, p_out)?;
+            log::trace!(
+                "merklize_level {} time cost: {}",
+                next_n64,
+                now.elapsed().as_secs_f64()
+            );
+            n64 = next_n64;
+            next_n64 = (n64 - 1) / 2 + 1;
+            p_in = p_out;
+            p_out = p_in + next_n64 * 2;
+        }
+
+        Ok(())
+    }
+
+    #[cfg(all(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    ))]
+    fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()> {
+        let max_workers = get_max_workers();
+
+        let mut n_per_thread_f = (height - 1) / max_workers + 1;
+
+        let div = core::cmp::max(width / 8, 1);
+        let max_corrected = MAX_OPS_PER_THREAD / div;
+        let min_corrected = MIN_OPS_PER_THREAD / div;
+
+        if n_per_thread_f > max_corrected {
+            n_per_thread_f = max_corrected;
+        }
+        if n_per_thread_f < min_corrected {
+            n_per_thread_f = min_corrected;
+        }
+
+        let mut nodes = vec![Self::MTNode::default(); get_n_nodes(height)];
+        let now = Instant::now();
+
+        if !buff.is_empty() {
+            nodes
+                .par_chunks_mut(n_per_thread_f)
+                .zip(buff.par_chunks(n_per_thread_f * width))
+                .for_each(|(out, bb)| {
+                    let cur_n = bb.len() / width / 2;
+                    (0..cur_n).for_each(|j| {
+                        let batch = &bb[(j * width * 2)..((j + 1) * width * 2)];
+                        let hash_result = self.h.hash(batch, 0).unwrap();
+                        let index = j * 2;
+                        if index < out.len() && index + 1 < out.len() {
+                            out[index] = hash_result[0];
+                            out[index + 1] = hash_result[1];
+                        }
+                    });
+                    if bb.len() % (width * 2) != 0 {
+                        let remaining = &bb[cur_n * width * 2..];
+                        let mut batch = vec![FGL::ZERO; width * 2];
+                        batch[..remaining.len()].copy_from_slice(remaining);
+                        batch[remaining.len()..].copy_from_slice(remaining);
+                        let hash_result = self.h.hash(&batch, 0).unwrap();
+                        out[cur_n * 2] = hash_result[0];
+                    }
+                });
+        }
+
         log::trace!("linearhash time cost: {}", now.elapsed().as_secs_f64());
 
         // merklize level
