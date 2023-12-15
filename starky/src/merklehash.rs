@@ -15,6 +15,16 @@ use crate::digest::ElementDigest;
 use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
 use crate::linearhash::LinearHash;
+#[cfg(any(
+    not(target_feature = "avx2"),
+    all(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    )
+))]
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
@@ -91,7 +101,6 @@ impl MerkleTreeGL {
     }
 
     #[cfg(not(any(
-        target_feature = "avx2",
         target_feature = "avx512bw",
         target_feature = "avx512cd",
         target_feature = "avx512dq",
@@ -201,7 +210,6 @@ impl MerkleTreeGL {
     }
 
     #[cfg(not(any(
-        target_feature = "avx2",
         target_feature = "avx512bw",
         target_feature = "avx512cd",
         target_feature = "avx512dq",
@@ -268,7 +276,6 @@ impl MerkleTree for MerkleTreeGL {
     }
 
     #[cfg(not(any(
-        target_feature = "avx2",
         target_feature = "avx512bw",
         target_feature = "avx512cd",
         target_feature = "avx512dq",
@@ -460,7 +467,7 @@ mod tests {
     use crate::traits::MTNodeType;
     use crate::traits::MerkleTree;
     use plonky::field_gl::Fr as FGL;
-    use std::time::Instant;
+    // use std::time::Instant;
 
     #[test]
     fn test_merklehash_gl_simple() {
@@ -474,13 +481,13 @@ mod tests {
                 cols[i * n_pols + j] = FGL::from((i + j * 1000) as u64);
             }
         }
-        let start = Instant::now();
+        // let start = Instant::now();
         let mut tree = MerkleTreeGL::new();
         tree.merkelize(cols, n_pols, n).unwrap();
         let (v, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        let duration = start.elapsed();
-        println!("time: {:?}", duration);
+        // let duration = start.elapsed();
+        // println!("time(test_merklehash_gl_simple): {:?}", duration);
         let re = root.as_elements();
         let expected = vec![
             FGL::from(11508832812350783315u64),
@@ -556,11 +563,13 @@ mod tests {
                 pols[i * n_pols + j] = FGL::from((i + j * 1000) as u64);
             }
         }
-
+        // let start = Instant::now();
         let mut tree = MerkleTreeGL::new();
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
+        // let duration = start.elapsed();
+        // println!("time(test_merklehash_gl_big): {:?}", duration);
         assert!(tree
             .verify_group_proof(&root, &mp, idx, &group_elements)
             .unwrap());

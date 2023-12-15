@@ -42,7 +42,6 @@ impl LinearHash {
         LinearHash { h: Poseidon::new() }
     }
     #[cfg(not(any(
-        target_feature = "avx2",
         target_feature = "avx512bw",
         target_feature = "avx512cd",
         target_feature = "avx512dq",
@@ -64,7 +63,6 @@ impl LinearHash {
     }
 
     #[cfg(not(any(
-        target_feature = "avx2",
         target_feature = "avx512bw",
         target_feature = "avx512cd",
         target_feature = "avx512dq",
@@ -108,7 +106,6 @@ impl LinearHash {
     }
 
     #[cfg(not(any(
-        target_feature = "avx2",
         target_feature = "avx512bw",
         target_feature = "avx512cd",
         target_feature = "avx512dq",
