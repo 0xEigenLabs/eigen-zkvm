@@ -1,7 +1,6 @@
 /// A test/bench tools
 use crate::traits::FieldExtension;
 use ff::PrimeField;
-use rayon::prelude::*;
 
 // concurrency generate random goldfields. with specific k.
 pub fn gen_rand_goldfields<F: FieldExtension>(k: usize) -> Vec<F> {
@@ -11,7 +10,7 @@ pub fn gen_rand_goldfields<F: FieldExtension>(k: usize) -> Vec<F> {
 
     if n < num_threads {
         let mut rng = ::rand::thread_rng();
-        for i in (0..n) {
+        for i in 0..n {
             parts[i] = <F as rand::Rand>::rand(&mut rng)
         }
         parts
@@ -38,7 +37,7 @@ pub fn gen_rand_fields<F: PrimeField>(k: usize) -> Vec<F> {
 
     if n < num_threads {
         let mut rng = ::rand::thread_rng();
-        for i in (0..n) {
+        for i in 0..n {
             parts[i] = <F as rand::Rand>::rand(&mut rng)
         }
         parts
