@@ -167,8 +167,8 @@ impl LinearHash {
 
         let flatvals_1: Vec<FGL> = [flatvals.clone(), flatvals.clone()].concat();
 
-        let test = self.hash(&flatvals_1, batch_size).unwrap()[0];
-        Ok(test)
+        let hash_result = self.hash(&flatvals_1, batch_size).unwrap()[0];
+        Ok(hash_result)
     }
 
     #[cfg(all(
