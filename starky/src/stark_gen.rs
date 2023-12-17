@@ -1120,7 +1120,7 @@ pub mod tests {
             "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
-        log::debug!("verify the proof...");
+        log::trace!("verify the proof...");
 
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,

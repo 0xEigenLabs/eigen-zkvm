@@ -24,7 +24,7 @@ num = { version = "0.4.0" }
 algebraic = { path = "../algebraic", default-features=false }
 rand = "0.4"
 
-profiler_macro = {git = "https://github.com/ChengYueJia/profiler-rs", branch = "main"}
+profiler_macro = {git = "https://github.com/ChengYueJia/profiler-rs", rev = "6d6a77f8"}
 ark-std = { version = "0.4.0", optional = true }
 
 [dev-dependencies]
