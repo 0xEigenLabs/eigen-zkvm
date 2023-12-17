@@ -72,9 +72,9 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     ctx.Zp =
         (ctx.challenge[7] * M::ExtendField::from(MG.0[ctx.nbits])).exp(ctx.N) - M::ExtendField::ONE;
 
-    log::debug!("verifier_code {}", program.verifier_code);
+    log::trace!("verifier_code {}", program.verifier_code);
     let res = execute_code(&mut ctx, &mut program.verifier_code.first);
-    log::debug!("starkinfo: {}", starkinfo);
+    log::trace!("starkinfo: {}", starkinfo);
 
     let mut x_acc = M::ExtendField::ONE;
     let mut q = M::ExtendField::ZERO;
@@ -94,7 +94,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     let check_query = |query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
                        idx: usize|
      -> Result<Vec<M::ExtendField>> {
-        log::debug!("Query: {}", idx);
+        log::trace!("Query: {}", idx);
         let tree = M::new();
         let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
         if !res {
@@ -194,13 +194,13 @@ fn execute_code<F: FieldExtension>(ctx: &mut StarkContext<F>, code: &mut Vec<Sec
             }
             _ => panic!("Invalid reference type, get: {}", r.type_),
         };
-        //log::debug!("verify get ref {}", t);
+        //log::trace!("verify get ref {}", t);
         t
     };
 
     let set_ref = |r: &mut Node, val: F, tmp: &mut HashMap<usize, F>| match r.type_.as_str() {
         "tmp" => {
-            //log::debug!("verify set ref {} {}", r.id, val);
+            //log::trace!("verify set ref {} {}", r.id, val);
             tmp.insert(r.id, val);
         }
         _ => {

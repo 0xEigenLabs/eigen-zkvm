@@ -32,14 +32,14 @@ pub fn stark_prove(
     zkin: &str,
     prover_addr: &str,
 ) -> Result<()> {
-    let mut pil = load_json::<PIL>(pil_file).unwrap();
+    let mut pil = load_json::<PIL>(pil_file)?;
     let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
-    const_pol.load(const_pol_file).unwrap();
+    const_pol.load(const_pol_file)?;
 
     let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
-    cm_pol.load(cm_pol_file).unwrap();
+    cm_pol.load(cm_pol_file)?;
 
-    let stark_struct = load_json::<StarkStruct>(stark_struct).unwrap();
+    let stark_struct = load_json::<StarkStruct>(stark_struct)?;
     match stark_struct.verificationHashType.as_str() {
         "BN128" => prove::<MerkleTreeBN128, TranscriptBN128>(
             &mut pil,
@@ -91,7 +91,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     zkin: &str,
     prover_addr: &str,
 ) -> Result<()> {
-    let mut setup = StarkSetup::<M>::new(const_pol, pil, stark_struct, None).unwrap();
+    let mut setup = StarkSetup::<M>::new(const_pol, pil, stark_struct, None)?;
     let mut starkproof = StarkProof::<M>::stark_gen::<T>(
         cm_pol,
         const_pol,
@@ -101,9 +101,8 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
         pil,
         stark_struct,
         prover_addr,
-    )
-    .unwrap();
-    log::debug!("verify the proof...");
+    )?;
+    log::debug!("generate the proof done");
 
     let result = stark_verify::<M, T>(
         &starkproof,
@@ -111,8 +110,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
         &setup.starkinfo,
         stark_struct,
         &mut setup.program,
-    )
-    .unwrap();
+    )?;
 
     assert!(result);
     log::debug!("verify the proof done");
@@ -124,7 +122,6 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
         agg_stage,
     };
 
-    log::debug!("generate circom");
     let str_ver = pil2circom::pil2circom(
         pil,
         &setup.const_root,

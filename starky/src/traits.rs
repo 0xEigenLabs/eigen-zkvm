@@ -81,6 +81,9 @@ pub trait FieldExtension:
     const IS_CANONICAL: bool = false;
     const ZERO: Self;
     const ONE: Self;
+
+    const ZEROS: Self;
+    const ONES: Self;
     const NEW_SIZE: u64 = 0;
     fn dim(&self) -> usize;
     fn from_vec(values: Vec<Fr>) -> Self;
@@ -97,6 +100,9 @@ pub trait FieldExtension:
     fn as_int(&self) -> u64;
     fn elements_as_bytes(elements: &[Self]) -> &[u8];
     fn as_bytes(&self) -> &[u8];
+    // TODO: Add generate rand fields vector for test/dev.
+    // fn rand_
+    // (&self) -> &[u8];
 }
 
 pub fn batch_inverse<F: FieldExtension>(elems: &[F]) -> Vec<F> {

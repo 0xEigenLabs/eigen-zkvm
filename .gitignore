@@ -38,3 +38,5 @@ dist
 typechain
 
 nohup.*
+
+.DS_Store

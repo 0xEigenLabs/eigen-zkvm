@@ -25,18 +25,19 @@ pub fn groth16_setup(
     circuit_file: &str,
     pk_file: &str,
     vk_file: &str,
+    to_hex: bool,
 ) -> Result<()> {
     let mut rng = rand::thread_rng();
     match curve_type {
         "BN128" => {
             let circuit = create_circuit_from_file::<Bn256>(circuit_file, None);
             let (pk, vk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
-            write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file)?
+            write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file, to_hex)?
         }
         "BLS12381" => {
             let circuit = create_circuit_from_file::<Bls12>(circuit_file, None);
             let (pk, vk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
-            write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file)?
+            write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file, to_hex)?
         }
         _ => {
             return Err(EigenError::Unknown(format!(
@@ -48,6 +49,7 @@ pub fn groth16_setup(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn groth16_prove(
     curve_type: &str,
     circuit_file: &str,
@@ -56,10 +58,11 @@ pub fn groth16_prove(
     input_file: &str,
     public_input_file: &str,
     proof_file: &str,
+    to_hex: bool,
 ) -> Result<()> {
     let mut rng = rand::thread_rng();
 
-    let mut wtns = WitnessCalculator::new(wtns_file)?;
+    let mut wtns = WitnessCalculator::from_file(wtns_file)?;
     let inputs = load_input_for_witness(input_file);
     let w = wtns.calculate_witness(inputs, false)?;
     match curve_type {
@@ -77,7 +80,7 @@ pub fn groth16_prove(
                 .collect::<Vec<_>>();
             let circuit = create_circuit_from_file::<Bn256>(circuit_file, Some(w));
             let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
-            let proof_json = serialize_proof(&proof, curve_type, false)?;
+            let proof_json = serialize_proof(&proof, curve_type, to_hex)?;
             std::fs::write(proof_file, proof_json)?;
             let input_json = circuit.get_public_inputs_json();
             std::fs::write(public_input_file, input_json)?;
@@ -96,7 +99,7 @@ pub fn groth16_prove(
                 .collect::<Vec<_>>();
             let circuit = create_circuit_from_file::<Bls12>(circuit_file, Some(w));
             let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
-            let proof_json = serialize_proof(&proof, curve_type, false)?;
+            let proof_json = serialize_proof(&proof, curve_type, to_hex)?;
             std::fs::write(proof_file, proof_json)?;
             let input_json = circuit.get_public_inputs_json();
             std::fs::write(public_input_file, input_json)?;
@@ -195,10 +198,11 @@ fn write_pk_vk_to_files<P: Parser>(
     vk: VerifyingKey<P>,
     pk_file: &str,
     vk_file: &str,
+    to_hex: bool,
 ) -> Result<()> {
     let writer = std::fs::File::create(pk_file)?;
     pk.write(writer)?;
-    let vk_json = serialize_vk(&vk, curve_type, false)?;
+    let vk_json = serialize_vk(&vk, curve_type, to_hex)?;
     std::fs::write(vk_file, vk_json)?;
     Ok(())
 }

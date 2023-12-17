@@ -1,9 +1,12 @@
 #![allow(dead_code)]
+#[cfg(target_feature = "avx2")]
+use crate::arch::x86_64::avx2_poseidon_gl::Poseidon;
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
 use crate::digest::ElementDigest;
 use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
 use crate::linearhash::LinearHash;
+#[cfg(not(target_feature = "avx2"))]
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
@@ -89,7 +92,7 @@ impl MerkleTreeGL {
         _st_i: usize,
         _st_n: usize,
     ) -> Result<Vec<ElementDigest<4>>> {
-        log::debug!(
+        log::trace!(
             "merklizing GL hash start.... {}/{}, buff size {}",
             _st_i,
             _st_n,
@@ -209,7 +212,7 @@ impl MerkleTree for MerkleTreeGL {
                     });
                 });
         }
-        log::debug!("linearhash time cost: {}", now.elapsed().as_secs_f64());
+        log::trace!("linearhash time cost: {}", now.elapsed().as_secs_f64());
 
         // merklize level
         self.nodes = nodes;
@@ -224,7 +227,7 @@ impl MerkleTree for MerkleTreeGL {
         while n64 > 1 {
             let now = Instant::now();
             self.merklize_level(p_in, next_n64, p_out)?;
-            log::debug!(
+            log::trace!(
                 "merklize_level {} time cost: {}",
                 next_n64,
                 now.elapsed().as_secs_f64()
@@ -283,6 +286,7 @@ mod tests {
     use crate::traits::MTNodeType;
     use crate::traits::MerkleTree;
     use plonky::field_gl::Fr as FGL;
+    use std::time::Instant;
 
     #[test]
     fn test_merklehash_gl_simple() {
@@ -296,11 +300,13 @@ mod tests {
                 cols[i * n_pols + j] = FGL::from((i + j * 1000) as u64);
             }
         }
-
+        let start = Instant::now();
         let mut tree = MerkleTreeGL::new();
         tree.merkelize(cols, n_pols, n).unwrap();
         let (v, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
+        let duration = start.elapsed();
+        println!("time: {:?}", duration);
         let re = root.as_elements();
         let expected = vec![
             FGL::from(11508832812350783315u64),

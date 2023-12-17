@@ -132,7 +132,7 @@ impl LinearHashBN128 {
         // hash on each 16
         for i in (0..tmp_buf.len()).step_by(16) {
             let in_sz = std::cmp::min(16, tmp_buf.len() - i);
-            digest = self.h.hash(&tmp_buf[i..(i + in_sz)].to_vec(), &digest)?;
+            digest = self.h.hash(&tmp_buf[i..(i + in_sz)], &digest)?;
         }
 
         Ok(ElementDigest::<4>::from_scalar(&digest))
@@ -168,7 +168,7 @@ mod tests {
 
         let lh = LinearHashBN128::new();
         let result = lh.hash_element_array(&input).unwrap();
-        log::debug!("out {}", result);
+        log::trace!("out {}", result);
         assert_eq!(result.0[0], FGL::from(15714769047018385385u64));
         assert_eq!(result.0[1], FGL::from(14080511166848616671u64));
         assert_eq!(result.0[2], FGL::from(11411897157942048316u64));
@@ -180,7 +180,7 @@ mod tests {
         ];
 
         let result = lh.hash_element_array(&input).unwrap();
-        log::debug!("out {}", result);
+        log::trace!("out {}", result);
         assert_eq!(result.0[0], FGL::from(12850950522295690944u64));
         assert_eq!(result.0[1], FGL::from(15045028186447136619u64));
         assert_eq!(result.0[2], FGL::from(11701297961637547631u64));

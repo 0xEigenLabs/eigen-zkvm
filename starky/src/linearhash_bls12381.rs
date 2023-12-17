@@ -131,7 +131,7 @@ impl LinearHashBLS12381 {
         // hash on each 16
         for i in (0..tmp_buf.len()).step_by(16) {
             let in_sz = std::cmp::min(16, tmp_buf.len() - i);
-            digest = self.h.hash(&tmp_buf[i..(i + in_sz)].to_vec(), &digest)?;
+            digest = self.h.hash(&tmp_buf[i..(i + in_sz)], &digest)?;
         }
 
         Ok(ElementDigest::<4>::from_scalar(&digest))
@@ -167,8 +167,8 @@ mod tests {
             .iter()
             .map(|e: &u64| vec![FGL::from(*e), FGL::from(*e), FGL::from(*e)])
             .collect();
-        log::debug!("{:?}", inputs[1][0].as_int());
-        log::debug!("{:?}", inputs[2][2].as_int());
+        log::trace!("{:?}", inputs[1][0].as_int());
+        log::trace!("{:?}", inputs[2][2].as_int());
 
         let st = LinearHashBLS12381::new()
             .hash_element_matrix(&inputs)
@@ -188,7 +188,7 @@ mod tests {
 
         let lh = LinearHashBLS12381::new();
         let result = lh.hash_element_array(&input).unwrap();
-        log::debug!("out {}", result);
+        log::trace!("out {}", result);
         assert_eq!(result.0[0], FGL::from(664572115127318441u64));
         assert_eq!(result.0[1], FGL::from(16413352647427919515u64));
         assert_eq!(result.0[2], FGL::from(17253685441004911215u64));
@@ -200,8 +200,8 @@ mod tests {
         ];
 
         let result = lh.hash_element_array(&input).unwrap();
-        log::debug!("out {}", result);
-        log::debug!("{:?}", result);
+        log::trace!("out {}", result);
+        log::trace!("{:?}", result);
         assert_eq!(result.0[0], FGL::from(13796980492452026086u64));
         assert_eq!(result.0[1], FGL::from(13318555390970742201u64));
         assert_eq!(result.0[2], FGL::from(9516443056151387241u64));

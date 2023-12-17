@@ -58,7 +58,7 @@ impl FRI {
         let mut pol = pol.to_owned();
         let mut standard_fft = FFT::new();
         let mut pol_bits = log2_any(pol.len());
-        log::debug!("fri prove {} {}", pol.len(), 1 << pol_bits);
+        log::trace!("fri prove {} {}", pol.len(), 1 << pol_bits);
         assert_eq!(1 << pol_bits, pol.len());
         assert_eq!(pol_bits, self.in_nbits);
 
@@ -93,7 +93,7 @@ impl FRI {
                     sinv *= wi;
                 }
             }
-            log::debug!("pol2_e 0={}, 1={}", pol2_e[0], pol2_e[1]);
+            log::trace!("pol2_e 0={}, 1={}", pol2_e[0], pol2_e[1]);
             if si < self.steps.len() - 1 {
                 let n_groups = 1 << self.steps[si + 1].nBits;
                 let group_size = (1 << stepi.nBits) / n_groups;
@@ -129,7 +129,7 @@ impl FRI {
         /*
         let query_pol_fn =
             |si: usize, idx: usize| -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)> {
-                log::debug!("query_pol_fn: si:{}, idx:{}", si, idx);
+                log::trace!("query_pol_fn: si:{}, idx:{}", si, idx);
                 vec![tree[si].get_group_proof(idx).unwrap()]
             };
         */
@@ -185,7 +185,7 @@ impl FRI {
         let n_queries = self.n_queries;
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
         let mut pol_bits = self.in_nbits;
-        log::debug!("ys: {:?}, pol_bits {}", ys, self.in_nbits);
+        log::trace!("ys: {:?}, pol_bits {}", ys, self.in_nbits);
         let mut shift = F::from(*SHIFT);
 
         let check_query_fn = |si: usize,
@@ -267,7 +267,7 @@ impl FRI {
     }
 }
 
-fn get_transposed_buffer<F: FieldExtension>(pol: &Vec<F>, transpose_bits: usize) -> Vec<FGL> {
+fn get_transposed_buffer<F: FieldExtension>(pol: &[F], transpose_bits: usize) -> Vec<FGL> {
     let n = pol.len();
     let w = 1 << transpose_bits;
     let h = n / w;
@@ -293,7 +293,7 @@ fn get3<F: FieldExtension>(arr: &[FGL], idx: usize) -> F {
 }
 
 // TODO: Support F5G
-fn split3<F: FieldExtension>(arr: &Vec<FGL>) -> Vec<F> {
+fn split3<F: FieldExtension>(arr: &[FGL]) -> Vec<F> {
     let mut res: Vec<F> = Vec::new();
     for i in (0..arr.len()).step_by(3) {
         res.push(F::from_vec(vec![arr[i], arr[i + 1], arr[i + 2]]));

@@ -25,10 +25,10 @@ impl StarkInfo {
             }
         }
 
-        //log::debug!("fri_exp {}", fri_exp);
+        //log::trace!("fri_exp {}", fri_exp);
         let mut fri1_exp = E::nop();
         let mut fri2_exp = E::nop();
-        //log::debug!(
+        //log::trace!(
         //    "ev_map: {}",
         //    serde_json::to_string_pretty(&self.ev_map).unwrap()
         //);
@@ -57,8 +57,8 @@ impl StarkInfo {
             }
         }
 
-        //log::debug!("fri1exp {}", fri1_exp);
-        //log::debug!("fri2exp {}", fri2_exp);
+        //log::trace!("fri1exp {}", fri1_exp);
+        //log::trace!("fri2exp {}", fri2_exp);
 
         if !E::is_nop(&fri_exp) {
             fri1_exp = E::mul(&fri1_exp, &E::xDivXSubXi());
@@ -78,7 +78,7 @@ impl StarkInfo {
             }
         }
 
-        //log::debug!("fri_exp {}", fri_exp);
+        //log::trace!("fri_exp {}", fri_exp);
         self.fri_exp_id = pil.expressions.len();
         fri_exp.keep2ns = Some(true);
         if E::is_nop(&fri_exp) {
@@ -93,7 +93,7 @@ impl StarkInfo {
         code[sz].dest = Node::new("f".to_string(), 0, None, 0, false, 0);
 
         program.step52ns = build_code(ctx, pil);
-        //log::debug!("step52ns:{}", program.step52ns);
+        //log::trace!("step52ns:{}", program.step52ns);
         Ok(())
     }
 }

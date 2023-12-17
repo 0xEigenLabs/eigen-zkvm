@@ -53,13 +53,13 @@ pub fn compile(config: CompilerConfig) -> Result<(), DslError> {
 
             _ => log::error!("compiler_interface::write_c"),
         };
-        log::debug!(
+        log::trace!(
             "{} {} and {}",
             Colour::Green.paint("Written successfully:"),
             config.c_file,
             config.dat_file
         );
-        log::debug!(
+        log::trace!(
             "{} {}/{}, {}, {}, {}, {}, {}, {} and {}",
             Colour::Green.paint("Written successfully:"),
             &config.c_folder,
@@ -86,7 +86,7 @@ pub fn compile(config: CompilerConfig) -> Result<(), DslError> {
 
                 _ => log::error!("compiler_interface::run_compiler"),
             };
-            log::debug!(
+            log::trace!(
                 "{} {}",
                 Colour::Green.paint("Written successfully:"),
                 config.wat_file
@@ -100,7 +100,7 @@ pub fn compile(config: CompilerConfig) -> Result<(), DslError> {
                     ));
                 }
                 Ok(()) => {
-                    log::debug!(
+                    log::trace!(
                         "{} {}",
                         Colour::Green.paint("Written successfully:"),
                         config.wasm_file
@@ -129,7 +129,7 @@ pub fn compile(config: CompilerConfig) -> Result<(), DslError> {
                     ));
                 }
                 Ok(()) => {
-                    log::debug!(
+                    log::trace!(
                         "{} {}",
                         Colour::Green.paint("Written successfully:"),
                         config.wasm_file
@@ -147,7 +147,7 @@ pub fn compile(config: CompilerConfig) -> Result<(), DslError> {
                 Ok(()) => (),
                 _ => log::error!("compiler_interface::write_wasm error"),
             };
-            log::debug!(
+            log::trace!(
                 "{} {}",
                 Colour::Green.paint("Written successfully:"),
                 config.wat_file

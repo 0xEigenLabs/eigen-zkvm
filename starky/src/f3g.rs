@@ -61,6 +61,14 @@ impl FieldExtension for F3G {
         dim: 1,
     };
 
+    const ZEROS: Self = F3G {
+        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
+        dim: 3,
+    };
+    const ONES: Self = F3G {
+        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
+        dim: 3,
+    };
     #[inline(always)]
     fn dim(&self) -> usize {
         self.dim
@@ -256,18 +264,12 @@ impl ::rand::Rand for F3G {
 impl plonky::Field for F3G {
     #[inline(always)]
     fn zero() -> Self {
-        F3G {
-            cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
-            dim: 3,
-        }
+        Self::ZEROS
     }
 
     #[inline(always)]
     fn one() -> Self {
-        F3G {
-            cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
-            dim: 3,
-        }
+        Self::ONES
     }
 
     #[inline(always)]
@@ -719,7 +721,7 @@ pub mod tests {
         ];
         let r_arr = batch_inverse(&arr);
         for i in 0..arr.len() {
-            log::debug!("{} {}", arr[i].inv(), r_arr[i]);
+            log::trace!("{} {}", arr[i].inv(), r_arr[i]);
             assert!(arr[i].inv()._eq(&r_arr[i]));
         }
     }
@@ -730,7 +732,7 @@ pub mod tests {
 
         let b = a.inv();
         let c = a.mul(b);
-        assert_eq!(c, F3G::one());
+        assert_eq!(c, F3G::ONES);
     }
 
     #[test]

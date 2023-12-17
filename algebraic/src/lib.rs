@@ -11,6 +11,8 @@ extern crate num_bigint;
 extern crate num_traits;
 extern crate rand;
 
+pub mod arch;
+
 pub mod circom_circuit;
 pub mod errors;
 pub mod field_gl;
@@ -19,6 +21,9 @@ pub mod reader;
 pub mod witness;
 
 pub mod utils;
+
+pub mod packable;
+pub mod packed;
 
 pub use bellman_ce::pairing::ff;
 pub use ff::*;
