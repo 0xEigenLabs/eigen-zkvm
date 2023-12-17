@@ -315,7 +315,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         // 3.- Compute Z polynomials
         ctx.challenge[2] = transcript.get_field(); // gamma
-        ctx.challenge[3] = transcript.get_field(); // betta
+        ctx.challenge[3] = transcript.get_field(); // beta
         log::trace!("challenge[2] {}", ctx.challenge[2]);
         log::trace!("challenge[3] {}", ctx.challenge[3]);
 
