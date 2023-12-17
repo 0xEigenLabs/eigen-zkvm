@@ -31,6 +31,7 @@ use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::ElementDigest;
 use plonky::field_gl::Fr as FGL;
+use rayon::prelude::*;
 
 #[derive(Default)]
 pub struct LinearHash {
@@ -53,12 +54,15 @@ impl LinearHash {
         vals: &[Vec<FGL>],
         batch_size: usize,
     ) -> Result<ElementDigest<4>> {
-        let mut flatvals: Vec<FGL> = vec![];
-        for col in vals.iter() {
-            for elem in col.iter() {
-                flatvals.push(*elem);
-            }
-        }
+        let mut flatvals = vec![FGL::default(); vals.len() * vals[0].len()];
+
+        flatvals
+            .par_chunks_mut(vals[0].len())
+            .zip(vals.par_iter())
+            .for_each(|(flat_chunk, col)| {
+                flat_chunk.copy_from_slice(col);
+            });
+
         self.hash(&flatvals, batch_size)
     }
 
@@ -152,13 +156,17 @@ impl LinearHash {
         vals: &[Vec<FGL>],
         batch_size: usize,
     ) -> Result<ElementDigest<4>> {
-        let mut flatvals: Vec<FGL> = vec![];
-        for col in vals.iter() {
-            for elem in col.iter() {
-                flatvals.push(*elem);
-            }
-        }
+        let mut flatvals = vec![FGL::default(); vals.len() * vals[0].len()];
+
+        flatvals
+            .par_chunks_mut(vals[0].len())
+            .zip(vals.par_iter())
+            .for_each(|(flat_chunk, col)| {
+                flat_chunk.copy_from_slice(col);
+            });
+
         let flatvals_1: Vec<FGL> = [flatvals.clone(), flatvals.clone()].concat();
+
         let test = self.hash(&flatvals_1, batch_size).unwrap()[0];
         Ok(test)
     }
