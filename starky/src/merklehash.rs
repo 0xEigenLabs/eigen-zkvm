@@ -60,7 +60,6 @@ fn get_n_nodes(n_: usize) -> usize {
 }
 
 impl MerkleTreeGL {
-    #[time_profiler()]
     fn merkle_gen_merkle_proof(&self, idx: usize, offset: usize, n: usize) -> Vec<Vec<FGL>> {
         if n <= 1 {
             return vec![];
