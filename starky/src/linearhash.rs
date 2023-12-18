@@ -1,12 +1,37 @@
 #![allow(non_snake_case)]
-#[cfg(target_feature = "avx2")]
+#[cfg(all(
+    target_feature = "avx2",
+    not(all(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    ))
+))]
 use crate::arch::x86_64::avx2_poseidon_gl::Poseidon;
+#[cfg(all(
+    target_feature = "avx512bw",
+    target_feature = "avx512cd",
+    target_feature = "avx512dq",
+    target_feature = "avx512f",
+    target_feature = "avx512vl"
+))]
+use crate::arch::x86_64::avx512_poseidon_gl::Poseidon;
 use crate::errors::Result;
-#[cfg(not(target_feature = "avx2"))]
+#[cfg(not(any(
+    target_feature = "avx2",
+    target_feature = "avx512bw",
+    target_feature = "avx512cd",
+    target_feature = "avx512dq",
+    target_feature = "avx512f",
+    target_feature = "avx512vl"
+)))]
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::ElementDigest;
 use plonky::field_gl::Fr as FGL;
+use rayon::prelude::*;
 
 #[derive(Default)]
 pub struct LinearHash {
@@ -17,21 +42,37 @@ impl LinearHash {
     pub fn new() -> Self {
         LinearHash { h: Poseidon::new() }
     }
-
+    #[cfg(not(any(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    )))]
     pub fn hash_element_matrix(
         &self,
         vals: &[Vec<FGL>],
         batch_size: usize,
     ) -> Result<ElementDigest<4>> {
-        let mut flatvals: Vec<FGL> = vec![];
-        for col in vals.iter() {
-            for elem in col.iter() {
-                flatvals.push(*elem);
-            }
-        }
+        let mut flatvals = vec![FGL::default(); vals.len() * vals[0].len()];
+
+        flatvals
+            .par_chunks_mut(vals[0].len())
+            .zip(vals.par_iter())
+            .for_each(|(flat_chunk, col)| {
+                flat_chunk.copy_from_slice(col);
+            });
+
         self.hash(&flatvals, batch_size)
     }
 
+    #[cfg(not(any(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    )))]
     pub fn hash(&self, flatvals: &[FGL], batch_size: usize) -> Result<ElementDigest<4>> {
         let mut bs = batch_size;
         if bs == 0 {
@@ -68,6 +109,13 @@ impl LinearHash {
         }
     }
 
+    #[cfg(not(any(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    )))]
     pub fn _hash(&self, flatvals: &[FGL]) -> Result<ElementDigest<4>> {
         let mut st = [FGL::ZERO; 4];
         if flatvals.len() <= 4 {
@@ -94,6 +142,166 @@ impl LinearHash {
             st.copy_from_slice(&t);
         }
         Ok(ElementDigest::<4>::new(&st))
+    }
+
+    #[cfg(all(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    ))]
+    pub fn hash_element_matrix(
+        &self,
+        vals: &[Vec<FGL>],
+        batch_size: usize,
+    ) -> Result<ElementDigest<4>> {
+        let mut flatvals = vec![FGL::default(); vals.len() * vals[0].len()];
+
+        flatvals
+            .par_chunks_mut(vals[0].len())
+            .zip(vals.par_iter())
+            .for_each(|(flat_chunk, col)| {
+                flat_chunk.copy_from_slice(col);
+            });
+
+        let flatvals_1: Vec<FGL> = [flatvals.clone(), flatvals.clone()].concat();
+
+        let hash_result = self.hash(&flatvals_1, batch_size).unwrap()[0];
+        Ok(hash_result)
+    }
+
+    #[cfg(all(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    ))]
+    pub fn hash(&self, flatvals: &[FGL], batch_size: usize) -> Result<[ElementDigest<4>; 2]> {
+        let mid = flatvals.len() / 2;
+        let flatvals0 = &flatvals[..mid];
+        let flatvals1 = &flatvals[mid..];
+
+        let mut bs = batch_size;
+        if bs == 0 {
+            bs = core::cmp::max(8, (mid + 3) / 4);
+        }
+
+        let mut st0 = [FGL::ZERO; 4];
+        let mut st1 = [FGL::ZERO; 4];
+        if mid <= 4 {
+            for (i, v) in flatvals0.iter().enumerate() {
+                st0[i] = *v;
+            }
+            for (i, v) in flatvals1.iter().enumerate() {
+                st1[i] = *v;
+            }
+            return Ok([ElementDigest::<4>::new(&st0), ElementDigest::<4>::new(&st1)]);
+        }
+
+        let hsz = (mid + bs - 1) / bs;
+        let mut hashes: Vec<FGL> = vec![FGL::ZERO; hsz * 4 * 2];
+        // NOTE flatsvals.len <= hashes.len
+        hashes
+            .chunks_mut(8)
+            .zip(flatvals0.chunks(bs))
+            .zip(flatvals1.chunks(bs))
+            .for_each(|((outs, chunk0), chunk1)| {
+                let mut inps = Vec::new();
+                inps.extend_from_slice(chunk0);
+                inps.extend_from_slice(chunk1);
+                let hash_result = self._hash(inps.as_slice()).unwrap();
+                outs.copy_from_slice(&hash_result);
+            });
+
+        if hashes.len() <= 8 {
+            let mid = hashes.len() / 2;
+            for (i, &v) in hashes.iter().take(mid).enumerate() {
+                st0[i % 4] = v;
+            }
+            for (i, &v) in hashes.iter().skip(mid).enumerate() {
+                st1[i % 4] = v;
+            }
+            return Ok([ElementDigest::<4>::new(&st0), ElementDigest::<4>::new(&st1)]);
+        } else {
+            let mut hash: Vec<FGL> = Vec::with_capacity(hashes.len());
+            for chunk in hashes.chunks(8) {
+                let (first_half, _) = chunk.split_at(4);
+                hash.extend_from_slice(first_half);
+            }
+            for chunk in hashes.chunks(8) {
+                let (_, second_half) = chunk.split_at(4);
+                hash.extend_from_slice(second_half);
+            }
+            let tmp = self._hash(&hash).unwrap();
+            return Ok([
+                ElementDigest::<4>::new(&tmp[0..4]),
+                ElementDigest::<4>::new(&tmp[4..8]),
+            ]);
+        }
+    }
+
+    #[cfg(all(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    ))]
+    pub fn _hash(&self, flatvals: &[FGL]) -> Result<[FGL; 8]> {
+        let mid = flatvals.len() / 2;
+        let flatvals0 = &flatvals[..mid];
+        let flatvals1 = &flatvals[mid..];
+        let mut st0 = [FGL::ZERO; 4];
+        let mut st1 = [FGL::ZERO; 4];
+        if mid <= 4 {
+            for (i, v) in flatvals0.iter().enumerate() {
+                st0[i] = *v;
+            }
+            for (i, v) in flatvals1.iter().enumerate() {
+                st1[i] = *v;
+            }
+            let result = [
+                st0[0], st0[1], st0[2], st0[3], st1[0], st1[1], st1[2], st1[3],
+            ];
+            return Ok(result);
+        }
+        let mut count = 0;
+        let mut st = [FGL::ZERO; 8];
+        let mut inhashes: Vec<FGL> = vec![];
+
+        for v in flatvals0.iter() {
+            inhashes.push(*v);
+            if inhashes.len() == 8 {
+                let start = count * 8;
+                let mid = start + 4;
+                let end = start + 8;
+                let first_half = &flatvals1[start..mid];
+                inhashes.splice(4..4, first_half.iter().cloned());
+                let second_half = &flatvals1[mid..end];
+                inhashes.extend_from_slice(second_half);
+                let t = self.h.hash(&inhashes, &st, 8).unwrap();
+                st.copy_from_slice(&t);
+                inhashes.clear();
+                count += 1;
+            }
+        }
+
+        if !inhashes.is_empty() {
+            while inhashes.len() < 8 {
+                inhashes.push(FGL::ZERO);
+            }
+            inhashes.extend_from_slice(&flatvals1[count * 8..]);
+            while inhashes.len() < 16 {
+                inhashes.push(FGL::ZERO);
+            }
+            let middle_chunk = inhashes.splice(4..8, vec![]).collect::<Vec<_>>();
+            inhashes.splice(8..8, middle_chunk.iter().cloned());
+            let t = self.h.hash(&inhashes, &st, 8).unwrap();
+            st.copy_from_slice(&t);
+        }
+        Ok(st)
     }
 }
 
