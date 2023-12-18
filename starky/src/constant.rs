@@ -1,6 +1,23 @@
 #![allow(non_snake_case)]
-#[cfg(target_feature = "avx2")]
+#[cfg(all(
+    target_feature = "avx2",
+    not(all(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    ))
+))]
 use crate::arch::x86_64::avx2_poseidon_gl::{load_constants_avx2, ConstantsAvx2};
+#[cfg(all(
+    target_feature = "avx512bw",
+    target_feature = "avx512cd",
+    target_feature = "avx512dq",
+    target_feature = "avx512f",
+    target_feature = "avx512vl"
+))]
+use crate::arch::x86_64::avx512_poseidon_gl::{load_constants_avx512, ConstantsAvx512};
 use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bn128::Fr as Fr_bn128;
 use crate::poseidon_bls12381::load_constants as load_constants_bls12381;
@@ -68,10 +85,32 @@ lazy_static::lazy_static! {
     };
 }
 
-#[cfg(target_feature = "avx2")]
+#[cfg(all(
+    target_feature = "avx2",
+    not(all(
+        target_feature = "avx512bw",
+        target_feature = "avx512cd",
+        target_feature = "avx512dq",
+        target_feature = "avx512f",
+        target_feature = "avx512vl"
+    ))
+))]
 lazy_static::lazy_static! {
     pub static ref POSEIDON_CONSTANTS_OPT_AVX2: ConstantsAvx2 = {
         load_constants_avx2()
+    };
+}
+
+#[cfg(all(
+    target_feature = "avx512bw",
+    target_feature = "avx512cd",
+    target_feature = "avx512dq",
+    target_feature = "avx512f",
+    target_feature = "avx512vl"
+))]
+lazy_static::lazy_static! {
+    pub static ref POSEIDON_CONSTANTS_OPT_AVX512: ConstantsAvx512 = {
+        load_constants_avx512()
     };
 }
 

@@ -5,6 +5,9 @@ set -ex
 if [ "x${USE_AVX2}" = "xyes" ]; then
     # build with avx2 feature
     RUSTFLAGS="-C target-feature=+avx2" cargo build --release
+elif [ "x${USE_AVX512}" = "xyes" ]; then
+    # build with avx512 feature
+    RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo build --features avx512 --release
 else
     cargo build --release
 fi

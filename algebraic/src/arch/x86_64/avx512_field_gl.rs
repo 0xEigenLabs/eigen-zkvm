@@ -2,7 +2,7 @@
 //! https://github.com/0xPolygonZero/plonky2/blob/main/field/src/arch/x86_64/avx512_goldilocks_field.rs
 //!
 //! How to build/run/test:
-//! RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo build --release
+//! RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo build --features "avx512" --release
 use crate::ff::*;
 use crate::field_gl::{Fr, FrRepr as GoldilocksField};
 use crate::packed::PackedField;
@@ -27,12 +27,20 @@ const WIDTH: usize = 8;
 
 impl Avx512GoldilocksField {
     #[inline]
-    fn new(x: __m512i) -> Self {
+    pub fn new(x: __m512i) -> Self {
         unsafe { transmute(x) }
     }
     #[inline]
-    fn get(&self) -> __m512i {
+    pub fn get(&self) -> __m512i {
         unsafe { transmute(*self) }
+    }
+    #[inline]
+    pub fn interleave2(x: __m512i, y: __m512i) -> (__m512i, __m512i) {
+        unsafe { interleave2(x, y) }
+    }
+    #[inline]
+    pub fn reduce(x: __m512i, y: __m512i) -> Avx512GoldilocksField {
+        Self::new(unsafe { reduce128((x, y)) })
     }
     #[inline]
     pub fn square(&self) -> Avx512GoldilocksField {
@@ -271,7 +279,8 @@ unsafe fn sub_no_double_overflow_64_64(x: __m512i, y: __m512i) -> __m512i {
 
 #[inline]
 unsafe fn add(x: __m512i, y: __m512i) -> __m512i {
-    add_no_double_overflow_64_64(x, canonicalize(y))
+    let res_s = add_no_double_overflow_64_64(x, canonicalize(y));
+    canonicalize(res_s)
 }
 
 #[inline]
@@ -356,7 +365,8 @@ unsafe fn reduce128(x: (__m512i, __m512i)) -> __m512i {
     let hi_hi0 = _mm512_srli_epi64::<32>(hi0);
     let lo1 = sub_no_double_overflow_64_64(lo0, hi_hi0);
     let t1 = _mm512_mul_epu32(hi0, EPSILON);
-    let lo2 = add_no_double_overflow_64_64(lo1, t1);
+    let _lo2 = add_no_double_overflow_64_64(lo1, t1);
+    let lo2 = canonicalize(_lo2);
     lo2
 }
 
@@ -412,7 +422,7 @@ mod tests {
 
     fn test_vals_a() -> [GoldilocksField; 8] {
         [
-            GoldilocksField([14479013849828404771u64]),
+            GoldilocksField([18446744069414584320u64]),
             GoldilocksField([9087029921428221768u64]),
             GoldilocksField([2441288194761790662u64]),
             GoldilocksField([5646033492608483824u64]),
@@ -424,7 +434,7 @@ mod tests {
     }
     fn test_vals_b() -> [GoldilocksField; 8] {
         [
-            GoldilocksField([17891926589593242302u64]),
+            GoldilocksField([18446744069414584320u64]),
             GoldilocksField([11009798273260028228u64]),
             GoldilocksField([2028722748960791447u64]),
             GoldilocksField([7929433601095175579u64]),
