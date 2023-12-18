@@ -10,7 +10,6 @@ use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use ff::Field;
 use plonky::field_gl::Fr as FGL;
-use profiler_macro::time_profiler;
 use rayon::prelude::*;
 use std::time::Instant;
 
