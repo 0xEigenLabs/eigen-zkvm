@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
+#![cfg_attr(feature = "avx512", feature(stdsimd))]
 
 pub mod polsarray;
 mod polutils;
@@ -24,7 +25,8 @@ mod poseidon_bn128;
 mod poseidon_bn128_constants;
 mod poseidon_bn128_constants_opt;
 pub mod poseidon_bn128_opt;
-mod poseidon_constants_avx;
+mod poseidon_constants_avx2;
+mod poseidon_constants_avx512;
 mod poseidon_constants_opt;
 pub mod poseidon_opt;
 

@@ -66,3 +66,7 @@ harness = false
 [[bench]]
 name = "poseidon"
 harness = false
+
+[features]
+default = []
+avx512 = ["algebraic/avx512"]

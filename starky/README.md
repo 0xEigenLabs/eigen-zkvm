@@ -102,7 +102,14 @@ Because the nExtBits reaches up to 24 so this step would be very slow. Consider 
 
 ```
 cargo bench --bench merklehash -- --profile-time=5
+
+# or with AVX enabled like this 
+
+RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo bench --features avx512 -- merklehash
+RUSTFLAGS="-C target-feature=+avx2" cargo bench -- merklehash
+
 ```
+
 
 * https://www.jibbow.com/posts/criterion-flamegraphs/
 

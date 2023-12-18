@@ -2,7 +2,7 @@
 use criterion::*;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
-use starky::merklehash_bn128::MerkleTreeBN128;
+use starky::merklehash::MerkleTreeGL;
 use starky::traits::MerkleTree;
 mod perf;
 
@@ -12,7 +12,7 @@ fn run_merklehash(pols: Vec<FGL>) {
     let n_pols = 10;
 
     let now = std::time::Instant::now();
-    let mut tree: MerkleTreeBN128 = MerkleTree::new();
+    let mut tree: MerkleTreeGL = MerkleTree::new();
     tree.merkelize(pols, n_pols, n).unwrap();
     log::trace!("time cost: {}", now.elapsed().as_secs());
     let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
