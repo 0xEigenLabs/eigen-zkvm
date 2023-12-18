@@ -171,7 +171,6 @@ impl MerkleTree for MerkleTreeBLS12381 {
             });
     }
 
-    #[time_profiler()]
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()> {
         let max_workers = get_max_workers();
 
