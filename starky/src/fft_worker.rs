@@ -2,7 +2,6 @@ use crate::constant::MG;
 use crate::traits::FieldExtension;
 use profiler_macro::time_profiler;
 
-#[time_profiler()]
 pub fn interpolate_prepare_block<F: FieldExtension>(
     buff: &mut [F],
     width: usize,
