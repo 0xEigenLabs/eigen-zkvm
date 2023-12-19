@@ -27,8 +27,6 @@ RECURSIVE1_VERIFIER=$TASK_NO/${CIRCUIT}".recursive1"
 # compile .pil file into .pil.json by pilcom.
 # input files :  .pil file
 # output files :  .pil.json, .const, .cm
-cd $RUNDIR && npm i && cd $CUR_DIR
-
 mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TASK_NO --pc $PILCACHE
 
 # generate .circom file.

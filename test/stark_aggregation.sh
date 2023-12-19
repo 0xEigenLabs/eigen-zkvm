@@ -44,7 +44,8 @@ mkdir -p $WORKSPACE/aggregation/$FINAL_CIRCUIT
 #PILEXECJS="poseidon/main_poseidon.js"
 
 c12_start=$(date +%s)
-cd ${CUR_DIR} && npm i
+cd ${CUR_DIR}/../starkjs && npm i && cd $CUR_DIR
+
 for (( i=0; i<$NUM_PROOF; i++ ))
 do
     ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "stark" $WORKSPACE
