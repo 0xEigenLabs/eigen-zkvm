@@ -4,12 +4,12 @@ set -ex
 # build
 if [ "x${USE_AVX2}" = "xyes" ]; then
     # build with avx2 feature
-    RUSTFLAGS="-C target-feature=+avx2" cargo build --release
+    RUSTFLAGS="-C target-feature=+avx2" cargo build --release --features  profiler
 elif [ "x${USE_AVX512}" = "xyes" ]; then
     # build with avx512 feature
-    RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo build --features avx512 --release
+    RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo build --features avx512 --features profiler --release
 else
-    cargo build --release
+    cargo build --release --features profiler
 fi
 
 export NODE_OPTIONS="--max-old-space-size=81920"
@@ -44,7 +44,8 @@ mkdir -p $WORKSPACE/aggregation/$FINAL_CIRCUIT
 #PILEXECJS="poseidon/main_poseidon.js"
 
 c12_start=$(date +%s)
-cd ${CUR_DIR} && npm i
+cd ${CUR_DIR}/../starkjs && npm i && cd $CUR_DIR
+
 for (( i=0; i<$NUM_PROOF; i++ ))
 do
     ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "stark" $WORKSPACE

@@ -1,4 +1,5 @@
 #![allow(non_snake_case, dead_code)]
+
 use crate::errors::Result;
 use crate::fft_p::interpolate;
 use crate::polsarray::PolsArray;
@@ -6,6 +7,7 @@ use crate::starkinfo::{self, Program, StarkInfo};
 use crate::traits::{FieldExtension, MerkleTree};
 use crate::types::{StarkStruct, PIL};
 use plonky::field_gl::Fr as FGL;
+use profiler_macro::time_profiler;
 use rayon::prelude::*;
 
 #[derive(Default)]
@@ -21,6 +23,7 @@ pub struct StarkSetup<M: MerkleTree> {
 ///  calculate the trace polynomial over extended field, return the new polynomial's coefficient.
 impl<M: MerkleTree> StarkSetup<M> {
     // global_l1: https://github.com/0xEigenLabs/eigen-zkvm/pull/91
+    #[time_profiler("stark_setup")]
     pub fn new(
         const_pol: &PolsArray,
         pil: &mut PIL,

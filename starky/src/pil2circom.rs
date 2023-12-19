@@ -3,6 +3,7 @@ use crate::errors::Result;
 use crate::starkinfo::Program;
 use crate::starkinfo::StarkInfo;
 use crate::types::{StarkStruct, PIL};
+use profiler_macro::time_profiler;
 
 pub struct StarkOption {
     pub enable_input: bool,
@@ -11,6 +12,7 @@ pub struct StarkOption {
     pub skip_main: bool,
 }
 
+#[time_profiler()]
 pub fn pil2circom(
     pil: &PIL,
     const_root: &ElementDigest<4>,

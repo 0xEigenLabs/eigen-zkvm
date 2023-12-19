@@ -31,6 +31,7 @@ use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::ElementDigest;
 use plonky::field_gl::Fr as FGL;
+use profiler_macro::time_profiler;
 use rayon::prelude::*;
 
 #[derive(Default)]
@@ -42,6 +43,8 @@ impl LinearHash {
     pub fn new() -> Self {
         LinearHash { h: Poseidon::new() }
     }
+
+    #[time_profiler()]
     #[cfg(not(any(
         target_feature = "avx512bw",
         target_feature = "avx512cd",

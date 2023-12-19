@@ -12,9 +12,11 @@ use crate::traits::FieldExtension;
 use crate::traits::{MTNodeType, MerkleTree, Transcript};
 use crate::types::StarkStruct;
 use plonky::field_gl::Fr as FGL;
+use profiler_macro::time_profiler;
 use std::collections::HashMap;
 
 //FIXME it doesn't make sense to ask for a mutable program
+#[time_profiler()]
 pub fn stark_verify<M: MerkleTree, T: Transcript>(
     proof: &StarkProof<M>,
     const_root: &M::MTNode,
