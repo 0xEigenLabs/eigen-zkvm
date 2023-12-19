@@ -4,7 +4,6 @@ use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::Node;
 use crate::starkinfo_codegen::Section;
 use crate::traits::FieldExtension;
-use profiler_macro::time_profiler;
 use std::fmt;
 
 #[derive(Clone, Debug)]
@@ -196,7 +195,6 @@ impl<T: FieldExtension> fmt::Display for Block<T> {
     }
 }
 
-#[time_profiler()]
 pub fn compile_code<T: FieldExtension>(
     ctx: &StarkContext<T>,
     starkinfo: &StarkInfo,
