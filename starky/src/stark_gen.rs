@@ -576,7 +576,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
     }
 }
 
-#[time_profiler()]
 pub fn build_Zh_Inv<T: FieldExtension>(
     nBits: usize,
     extend_bits: usize,
@@ -753,7 +752,6 @@ pub fn merkelize<M: MerkleTree>(
     Ok(tree)
 }
 
-#[time_profiler()]
 pub fn calculate_exps<F: FieldExtension>(
     ctx: &mut StarkContext<F>,
     starkinfo: &StarkInfo,
