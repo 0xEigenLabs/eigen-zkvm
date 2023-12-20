@@ -654,7 +654,6 @@ fn calculate_H1H2<F: FieldExtension>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
     (h1, h2)
 }
 
-#[time_profiler()]
 fn calculate_Z<F: FieldExtension>(num: Vec<F>, den: Vec<F>) -> Vec<F> {
     let N = num.len();
     assert_eq!(N, den.len());
