@@ -3,6 +3,7 @@ use crate::errors::{EigenError, Result};
 use crate::witness::{load_input_for_witness, WitnessCalculator};
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
 use algebraic::reader::load_r1cs;
+use profiler_macro::time_profiler;
 
 #[cfg(not(feature = "wasm"))]
 use crate::{aggregation, verifier};
@@ -10,6 +11,7 @@ use crate::{aggregation, verifier};
 use std::path::Path;
 
 // generate a monomial_form SRS, and save it to a file
+#[time_profiler("plonk_setup")]
 pub fn setup(power: u32, srs_monomial_form: &str) -> Result<()> {
     let srs = plonk::gen_key_monomial_form(power)?;
     let path = Path::new(srs_monomial_form);
@@ -25,6 +27,7 @@ pub fn setup(power: u32, srs_monomial_form: &str) -> Result<()> {
 }
 
 // circuit filename default resolver
+#[time_profiler()]
 pub fn analyse(circuit_file: &str, output: &str) -> Result<()> {
     let circuit = CircomCircuit::<Bn256> {
         r1cs: load_r1cs(circuit_file),
@@ -43,6 +46,7 @@ pub fn analyse(circuit_file: &str, output: &str) -> Result<()> {
     Result::Ok(())
 }
 
+#[time_profiler("plonk_prove")]
 #[allow(clippy::too_many_arguments)]
 pub fn prove(
     circuit_file: &str,
@@ -81,6 +85,7 @@ pub fn prove(
     Result::Ok(())
 }
 
+#[time_profiler("plonk_calculate_witness")]
 pub fn calculate_witness(wasm_file: &str, input_json: &str, output: &str) -> Result<()> {
     let inputs = load_input_for_witness(input_json);
 
@@ -117,6 +122,7 @@ pub fn export_verification_key(
     Result::Ok(())
 }
 
+#[time_profiler("plonk_verify")]
 pub fn verify(vk_file: &str, proof_bin: &str, transcript: &str) -> Result<()> {
     let vk = reader::load_verification_key::<Bn256>(vk_file);
     let proof = reader::load_proof::<Bn256>(proof_bin);

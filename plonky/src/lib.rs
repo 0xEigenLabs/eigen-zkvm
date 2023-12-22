@@ -1,4 +1,6 @@
 #![allow(clippy::unit_arg)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 
 extern crate serde;
 #[macro_use]

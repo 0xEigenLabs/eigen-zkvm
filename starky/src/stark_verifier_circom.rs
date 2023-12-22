@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+
 use crate::constant::{MG, SHIFT};
 use crate::digest::ElementDigest;
 use crate::f3g::F3G;
@@ -9,6 +10,7 @@ use crate::starkinfo_codegen::Section;
 use crate::traits::FieldExtension;
 use crate::traits::MTNodeType;
 use crate::types::{StarkStruct, PIL};
+use profiler_macro::time_profiler;
 
 fn header() -> String {
     let header = r#"pragma circom 2.1.0;
@@ -807,6 +809,7 @@ template MapValues() {{
     res
 }
 
+#[time_profiler()]
 fn stark_verifier(
     starkinfo: &StarkInfo,
     pil: &PIL,

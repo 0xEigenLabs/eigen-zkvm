@@ -16,6 +16,7 @@ use crate::traits::{batch_inverse, FieldExtension};
 use crate::traits::{MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, PIL};
 use plonky::field_gl::Fr as FGL;
+use profiler_macro::time_profiler;
 use rayon::prelude::*;
 use std::collections::HashMap;
 
@@ -187,6 +188,7 @@ pub struct StarkProof<M: MerkleTree> {
 
 impl<'a, M: MerkleTree> StarkProof<M> {
     #[allow(clippy::too_many_arguments, clippy::type_complexity)]
+    #[time_profiler()]
     pub fn stark_gen<T: Transcript>(
         cm_pols: &PolsArray,
         const_pols: &PolsArray,
@@ -623,6 +625,7 @@ fn set_pol<F: FieldExtension>(
     }
 }
 
+#[time_profiler()]
 fn calculate_H1H2<F: FieldExtension>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
     let mut idx_t: HashMap<F, usize> = HashMap::new();
     let mut s: Vec<(F, usize)> = vec![];
@@ -707,6 +710,7 @@ pub fn get_pol<F: FieldExtension>(
     res
 }
 
+#[time_profiler()]
 pub fn extend_and_merkelize<M: MerkleTree>(
     ctx: &mut StarkContext<M::ExtendField>,
     starkinfo: &StarkInfo,
@@ -729,6 +733,7 @@ pub fn extend_and_merkelize<M: MerkleTree>(
     Ok(tree)
 }
 
+#[time_profiler()]
 pub fn merkelize<M: MerkleTree>(
     ctx: &mut StarkContext<M::ExtendField>,
     starkinfo: &StarkInfo,
@@ -779,6 +784,7 @@ pub fn calculate_exps<F: FieldExtension>(
     }
 }
 
+#[time_profiler()]
 pub fn calculate_exps_parallel<F: FieldExtension>(
     ctx: &mut StarkContext<F>,
     starkinfo: &StarkInfo,
@@ -1083,32 +1089,23 @@ pub mod tests {
     fn test_stark_gen() {
         let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
 
-        let start_new_pols_array = start_timer!(|| "new_pols_array.constant");
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
-        end_timer!(start_new_pols_array);
 
-        let start_load_const = start_timer!(|| "load_const");
         const_pol.load("data/fib.const").unwrap();
-        end_timer!(start_load_const);
 
         let start_new_pols_array = start_timer!(|| "new_pols_array.commit");
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
         end_timer!(start_new_pols_array);
 
-        let start_load_cm = start_timer!(|| "load_cm");
         cm_pol.load("data/fib.cm").unwrap();
-        end_timer!(start_load_cm);
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
 
-        let start_stark_setup = start_timer!(|| "stark_setup");
         let mut setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
-        end_timer!(start_stark_setup);
         let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
         log::trace!("setup {}", fr_root);
 
-        let start_stark_gen = start_timer!(|| "stark_gen");
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             &cm_pol,
             &const_pol,
@@ -1120,10 +1117,8 @@ pub mod tests {
             "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
-        end_timer!(start_stark_gen);
         log::trace!("verify the proof...");
 
-        let start_stark_verify = start_timer!(|| "stark_verify");
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
             &setup.const_root,
@@ -1132,7 +1127,6 @@ pub mod tests {
             &mut setup.program,
         )
         .unwrap();
-        end_timer!(start_stark_verify);
         assert!(result);
     }
 

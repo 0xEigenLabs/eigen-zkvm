@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+
 use crate::constant::MG;
 use crate::helper::log2_any;
 use crate::traits::FieldExtension;
