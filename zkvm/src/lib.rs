@@ -1,4 +1,3 @@
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -23,7 +22,9 @@ mod tests {
         let pipeline = Pipeline::default().from_asm_string(powdr_asm.1, Some(PathBuf::from(case)));
         rust_continuations_dry_run::<GoldilocksField>(
             pipeline,
-            [11, 97, 2, 154, 96, 0, 82, 96, 32, 96, 0, 243].map(|i| GoldilocksField::from(i)).into(),
+            [11, 97, 2, 154, 96, 0, 82, 96, 32, 96, 0, 243]
+                .map(|i| GoldilocksField::from(i))
+                .into(),
         );
     }
 }
