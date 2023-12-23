@@ -1,8 +1,3 @@
-use riscv::{
-    compile_rust,
-    continuations::{rust_continuations, rust_continuations_dry_run},
-    CoProcessors,
-};
 
 #[cfg(test)]
 mod tests {
