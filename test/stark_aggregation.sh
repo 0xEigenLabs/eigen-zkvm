@@ -2,15 +2,22 @@
 set -ex
 
 # build
-if [ "x${USE_AVX2}" = "xyes" ]; then
-    # build with avx2 feature
-    RUSTFLAGS="-C target-feature=+avx2" cargo build --release --features  profiler
-elif [ "x${USE_AVX512}" = "xyes" ]; then
-    # build with avx512 feature
-    RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo build --features avx512 --features profiler --release
-else
-    cargo build --release --features profiler
-fi
+read -p "Choose the build option (AVX2/AVX512) or press enter for default build: " user_choice
+case $user_choice in
+    AVX2)
+        RUSTFLAGS="-C target-feature=+avx2" cargo build --release --features profiler
+        ;;
+    AVX512)
+        RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo build --features avx512 --features profiler --release
+        ;;
+    "")
+        cargo build --release --features profiler
+        ;;
+    *)
+        echo "Invalid choice. Exiting."
+        exit 1
+        ;;
+esac
 
 export NODE_OPTIONS="--max-old-space-size=81920"
 
