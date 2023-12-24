@@ -268,15 +268,22 @@ impl StarkInfo {
             f_2ns: Next,
         };
 
+        log::trace!("fix_prover_code for public");
         for i in 0..program.publics_code.len() {
             self.fix_prover_code(&mut program.publics_code[i], "n", pil, &mut tmpexps);
         }
 
+        log::trace!("fix_prover_code for step2prev");
         self.fix_prover_code(&mut program.step2prev, "n", pil, &mut tmpexps);
+        log::trace!("fix_prover_code for step3prev");
         self.fix_prover_code(&mut program.step3prev, "n", pil, &mut tmpexps);
+        log::trace!("fix_prover_code for step3");
         self.fix_prover_code(&mut program.step3, "n", pil, &mut tmpexps);
+        log::trace!("fix_prover_code for step42");
         self.fix_prover_code(&mut program.step42ns, "2ns", pil, &mut tmpexps);
+        log::trace!("fix_prover_code for step52");
         self.fix_prover_code(&mut program.step52ns, "2ns", pil, &mut tmpexps);
+        log::trace!("fix_prover_code for verfier_query_code");
         self.fix_prover_code(&mut program.verifier_query_code, "2ns", pil, &mut tmpexps);
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF, _pil: &mut PIL| {
@@ -319,6 +326,7 @@ impl StarkInfo {
             }
         }
 
+        log::trace!("set code dim");
         self.set_code_dimensions(&mut program.step2prev, 1);
         self.set_code_dimensions(&mut program.step3prev, 1);
         self.set_code_dimensions(&mut program.step3, 1);
@@ -327,6 +335,7 @@ impl StarkInfo {
         self.set_code_dimensions(&mut program.verifier_code, 3);
         self.set_code_dimensions(&mut program.verifier_query_code, 1);
 
+        log::trace!("map done");
         Ok(())
     }
 

@@ -43,8 +43,8 @@ pub fn stark_prove(
     match stark_struct.verificationHashType.as_str() {
         "BN128" => prove::<MerkleTreeBN128, TranscriptBN128>(
             &mut pil,
-            &const_pol,
-            &cm_pol,
+            const_pol,
+            cm_pol,
             &stark_struct,
             false,
             norm_stage,
@@ -54,8 +54,8 @@ pub fn stark_prove(
         ),
         "BLS12381" => prove::<MerkleTreeBLS12381, TranscriptBLS128>(
             &mut pil,
-            &const_pol,
-            &cm_pol,
+            const_pol,
+            cm_pol,
             &stark_struct,
             false,
             norm_stage,
@@ -65,8 +65,8 @@ pub fn stark_prove(
         ),
         "GL" => prove::<MerkleTreeGL, TranscriptGL>(
             &mut pil,
-            &const_pol,
-            &cm_pol,
+            const_pol,
+            cm_pol,
             &stark_struct,
             agg_stage,
             norm_stage,
@@ -82,8 +82,8 @@ pub fn stark_prove(
 #[allow(clippy::too_many_arguments)]
 fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     pil: &mut PIL,
-    const_pol: &PolsArray,
-    cm_pol: &PolsArray,
+    const_pol: PolsArray,
+    cm_pol: PolsArray,
     stark_struct: &StarkStruct,
     agg_stage: bool,
     norm_stage: bool,
@@ -91,7 +91,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     zkin: &str,
     prover_addr: &str,
 ) -> Result<()> {
-    let mut setup = StarkSetup::<M>::new(const_pol, pil, stark_struct, None)?;
+    let mut setup = StarkSetup::<M>::new(&const_pol, pil, stark_struct, None)?;
     let mut starkproof = StarkProof::<M>::stark_gen::<T>(
         cm_pol,
         const_pol,

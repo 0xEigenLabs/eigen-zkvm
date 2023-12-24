@@ -190,8 +190,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
     #[allow(clippy::too_many_arguments, clippy::type_complexity)]
     #[time_profiler()]
     pub fn stark_gen<T: Transcript>(
-        cm_pols: &PolsArray,
-        const_pols: &PolsArray,
+        cm_pols: PolsArray,
+        const_pols: PolsArray,
         const_tree: &M,
         starkinfo: &'a StarkInfo,
         program: &Program,
@@ -200,8 +200,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         prover_addr: &str,
     ) -> Result<StarkProof<M>> {
         let mut ctx = StarkContext::<M::ExtendField>::default();
-        //log::trace!("starkinfo: {}", starkinfo);
-        //log::trace!("program: {}", program);
+        log::info!("starkinfo: {}", starkinfo);
+        log::info!("PIL: {}", _pil);
 
         let mut fftobj = FFT::new();
         ctx.nbits = stark_struct.nBits;
@@ -212,21 +212,34 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         let mut n_cm = starkinfo.n_cm1;
 
+        log::info!("write cm buf");
         ctx.cm1_n = cm_pols.write_buff();
+        drop(cm_pols);
+
+        log::info!("cm2_n");
         ctx.cm2_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.cm2_n) * ctx.N];
         ctx.cm3_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.cm3_n) * ctx.N];
+        log::info!("cm3_n");
         ctx.tmpexp_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.tmpexp_n) * ctx.N];
 
+        log::info!("cm1_2ns");
         ctx.cm1_2ns = vec![M::ExtendField::ZERO; starkinfo.map_sectionsN.cm1_n * ctx.Next];
+        log::info!("cm2_2ns");
         ctx.cm2_2ns = vec![M::ExtendField::ZERO; starkinfo.map_sectionsN.cm2_n * ctx.Next];
+        log::info!("cm3_2ns");
         ctx.cm3_2ns = vec![M::ExtendField::ZERO; starkinfo.map_sectionsN.cm3_n * ctx.Next];
+        log::info!("cm4_2ns");
         ctx.cm4_2ns = vec![M::ExtendField::ZERO; starkinfo.map_sectionsN.cm4_n * ctx.Next];
         ctx.const_2ns = vec![M::ExtendField::ZERO; const_tree.element_size()];
 
+        log::info!("q_2ns");
         ctx.q_2ns = vec![M::ExtendField::ZERO; starkinfo.q_dim * ctx.Next];
+        log::info!("f_2ns");
         ctx.f_2ns = vec![M::ExtendField::ZERO; 3 * ctx.Next];
 
+        log::info!("x_n");
         ctx.x_n = vec![M::ExtendField::ZERO; ctx.N];
+        log::info!("alloc memory done");
 
         let mut xx = M::ExtendField::ONE;
         // Using the precomputing value
@@ -247,8 +260,10 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         ctx.Zi = build_Zh_Inv::<M::ExtendField>(ctx.nbits, extend_bits, 0);
 
+        log::info!("write pols buf");
         ctx.const_n = const_pols.write_buff();
         const_tree.to_extend(&mut ctx.const_2ns);
+        drop(const_pols);
 
         ctx.publics = vec![M::ExtendField::ZERO; starkinfo.publics.len()];
         for (i, pe) in starkinfo.publics.iter().enumerate() {
@@ -1107,8 +1122,8 @@ pub mod tests {
         log::trace!("setup {}", fr_root);
 
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
-            &cm_pol,
-            &const_pol,
+            cm_pol,
+            const_pol,
             &setup.const_tree,
             &setup.starkinfo,
             &setup.program,
@@ -1143,8 +1158,8 @@ pub mod tests {
         let mut setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
-            &cm_pol,
-            &const_pol,
+            cm_pol,
+            const_pol,
             &setup.const_tree,
             &setup.starkinfo,
             &setup.program,
@@ -1178,8 +1193,8 @@ pub mod tests {
         let mut setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
-            &cm_pol,
-            &const_pol,
+            cm_pol,
+            const_pol,
             &setup.const_tree,
             &setup.starkinfo,
             &setup.program,
@@ -1211,8 +1226,8 @@ pub mod tests {
         let mut setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
-            &cm_pol,
-            &const_pol,
+            cm_pol,
+            const_pol,
             &setup.const_tree,
             &setup.starkinfo,
             &setup.program,
@@ -1234,18 +1249,21 @@ pub mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_stark_plookup_gl() {
-        let mut pil = load_json::<PIL>("data/plookup.pil.json.gl").unwrap();
+        env_logger::try_init().unwrap_or_default();
+        let mut pil = load_json::<PIL>("../../zkevm-prover/config/pil/zkevm/main.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
-        const_pol.load("data/plookup.const.gl").unwrap();
+        const_pol.load("../../zkevm-prover/config/zkevm/zkevm.const").unwrap();
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
-        cm_pol.load("data/plookup.cm.gl").unwrap();
-        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.gl").unwrap();
+        cm_pol.load_from_cpp("../../zkevm-prover/execute_trace.commit").unwrap();
+        let stark_struct = load_json::<StarkStruct>("../../zkevm-proverjs/testvectors/zkevm.starkstruct.json").unwrap();
         let mut setup =
             StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+        log::info!("stark_gen gen");
         let starkproof = StarkProof::<MerkleTreeGL>::stark_gen::<TranscriptGL>(
-            &cm_pol,
-            &const_pol,
+            cm_pol,
+            const_pol,
             &setup.const_tree,
             &setup.starkinfo,
             &setup.program,

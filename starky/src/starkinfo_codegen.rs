@@ -477,7 +477,6 @@ pub fn eval_exp(
         }
         "mulc" => {
             let a = eval_exp(code_ctx, pil, &values[0], prime)?;
-            log::trace!("mulc: {:?}", exp);
             let b = Node::new(
                 "number".to_string(),
                 0,

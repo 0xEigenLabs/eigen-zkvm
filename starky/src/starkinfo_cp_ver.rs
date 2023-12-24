@@ -11,12 +11,12 @@ impl StarkInfo {
         pil: &mut PIL,
         program: &mut Program,
     ) -> Result<()> {
-        log::trace!("cp ver begin ctx {:?}, c_exp: {}", ctx, self.c_exp);
+        //log::trace!("cp ver begin ctx {:?}, c_exp: {}", ctx, self.c_exp);
         pil_code_gen(ctx, pil, self.c_exp, false, "", 0, true)?;
 
-        log::trace!("cp ver buildcode ctx begin {:?}", ctx);
+        //log::trace!("cp ver buildcode ctx begin {:?}", ctx);
         let mut code = build_code(ctx, pil);
-        log::trace!("cp ver buildcode {}", code);
+        //log::trace!("cp ver buildcode {}", code);
 
         let mut ctx_f = ContextF {
             exp_map: HashMap::new(),
@@ -25,7 +25,7 @@ impl StarkInfo {
             tmpexps: &mut HashMap::new(),
             starkinfo: self,
         };
-        log::trace!("cp ver code.tmp_used begin {}", code.tmp_used);
+        //log::trace!("cp ver code.tmp_used begin {}", code.tmp_used);
 
         let fix_ref = |r: &mut Node, ctx: &mut ContextF, _pil: &mut PIL| {
             let p = if r.prime { 1 } else { 0 };

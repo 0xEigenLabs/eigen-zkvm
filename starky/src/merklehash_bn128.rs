@@ -11,7 +11,6 @@ use crate::traits::MerkleTree;
 use ff::Field;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
-use std::time::Instant;
 
 #[derive(Default)]
 pub struct MerkleTreeBN128 {
@@ -187,7 +186,6 @@ impl MerkleTree for MerkleTreeBN128 {
         }
         // calculate the nodes of the specific height Merkle tree
         let mut nodes = vec![ElementDigest::<4>::default(); get_n_nodes(height)];
-        let now = Instant::now();
         if !buff.is_empty() {
             nodes
                 .par_chunks_mut(n_per_thread_f)
@@ -200,7 +198,6 @@ impl MerkleTree for MerkleTreeBN128 {
                     });
                 });
         }
-        log::trace!("linearhash time cost: {}", now.elapsed().as_secs_f64());
 
         // merklize level
         self.nodes = nodes;
@@ -213,13 +210,7 @@ impl MerkleTree for MerkleTreeBN128 {
         let mut p_in: usize = 0;
         let mut p_out: usize = p_in + next_n256 * 16;
         while n256 > 1 {
-            let now = Instant::now();
             self.merklize_level(p_in, next_n256, p_out)?;
-            log::trace!(
-                "merklize_level {} time cost: {}",
-                next_n256,
-                now.elapsed().as_secs_f64()
-            );
             n256 = next_n256;
             next_n256 = (n256 - 1) / 16 + 1;
             p_in = p_out;
