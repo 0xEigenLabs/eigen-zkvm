@@ -97,11 +97,18 @@ pub fn bit_reverse<F: FieldExtension>(
 
     let len = n * n_pols;
     assert_eq!(len, buffdst.len());
+    buffdst[0..len].par_iter_mut().enumerate().for_each(|(j, out)| {
+        let i = j / n_pols;
+        let k = j % n_pols;
+        *out = buffsrc[ris[i] * n_pols + k];
+    });
+    /*
     for j in 0..len {
         let i = j / n_pols;
         let k = j % n_pols;
         buffdst[j] = buffsrc[ris[i] * n_pols + k];
     }
+    */
 }
 
 pub fn interpolate_bit_reverse<F: FieldExtension>(
@@ -113,12 +120,20 @@ pub fn interpolate_bit_reverse<F: FieldExtension>(
     let n = 1 << nbits;
     let ris = BRs(0, n, nbits); // move it outside the loop. obtain it from cache.
 
+    buffdst[0..n*n_pols].par_chunks_mut(n_pols).enumerate().for_each( |(i, out)| {
+        let rii = (n - ris[i]) % n;
+        for k in 0..n_pols {
+            out[k] = buffsrc[rii * n_pols + k];
+        }
+    });
+    /*
     for i in 0..n {
         let rii = (n - ris[i]) % n;
         for k in 0..n_pols {
             buffdst[i * n_pols + k] = buffsrc[rii * n_pols + k];
         }
     }
+    */
 }
 
 pub fn inv_bit_reverse<F: FieldExtension>(
