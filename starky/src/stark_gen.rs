@@ -217,7 +217,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         drop(cm_pols);
 
         log::info!("cm2_n");
-        ctx.cm2_n = Vec::with_capacity((starkinfo.map_sectionsN.cm2_n) * ctx.N);
+        ctx.cm2_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.cm2_n) * ctx.N];
         ctx.cm3_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.cm3_n) * ctx.N];
         log::info!("cm3_n");
         ctx.tmpexp_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.tmpexp_n) * ctx.N];
@@ -241,22 +241,33 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ctx.x_n = vec![M::ExtendField::ZERO; ctx.N];
         log::info!("alloc memory done");
 
-        let mut xx = M::ExtendField::ONE;
+        let xx = M::ExtendField::ONE;
         // Using the precomputing value
         let w_nbits: M::ExtendField = M::ExtendField::from(MG.0[ctx.nbits]);
+        /*
         for i in 0..ctx.N {
             ctx.x_n[i] = xx;
             xx *= w_nbits;
         }
+        */
+        ctx.x_n.par_iter_mut().enumerate().for_each(|(k, xb)| {
+            *xb = xx * w_nbits.exp(k);
+        });
 
         let extend_bits = ctx.nbits_ext - ctx.nbits;
         ctx.x_2ns = vec![M::ExtendField::ZERO; ctx.N << extend_bits];
 
-        let mut xx: M::ExtendField = M::ExtendField::from(*SHIFT);
+        let xx: M::ExtendField = M::ExtendField::from(*SHIFT);
+        let w_nbits: M::ExtendField = M::ExtendField::from(MG.0[ctx.nbits_ext]);
+        /*
         for i in 0..(ctx.N << extend_bits) {
             ctx.x_2ns[i] = xx;
             xx *= M::ExtendField::from(MG.0[ctx.nbits_ext]);
         }
+        */
+        ctx.x_2ns.par_iter_mut().enumerate().for_each(|(k, xb)| {
+            *xb = xx * w_nbits.exp(k);
+        });
 
         ctx.Zi = build_Zh_Inv::<M::ExtendField>(ctx.nbits, extend_bits, 0);
 
@@ -291,8 +302,10 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             transcript.put(&b[..])?;
         }
 
-        log::trace!("Merkelizing 1....");
-        let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n")?;
+        //Do pre-allocation
+        let mut result = vec![M::ExtendField::ZERO; (1 << stark_struct.nBitsExt) * 10];
+        log::info!("Merkelizing 1....");
+        let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n", &mut result)?;
         tree1.to_extend(&mut ctx.cm1_2ns);
 
         log::trace!(
@@ -320,8 +333,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             n_cm += 1;
         }
 
-        log::trace!("Merkelizing 2....");
-        let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n")?;
+        log::info!("Merkelizing 2....");
+        let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n", &mut result)?;
         tree2.to_extend(&mut ctx.cm2_2ns);
         transcript.put(&[tree2.root().as_elements().to_vec()])?;
         log::trace!(
@@ -366,9 +379,9 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         calculate_exps_parallel(&mut ctx, starkinfo, &program.step3, "n", "step3");
 
-        log::trace!("Merkelizing 3....");
+        log::info!("Merkelizing 3....");
 
-        let tree3 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm3_n")?;
+        let tree3 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm3_n", &mut result)?;
         tree3.to_extend(&mut ctx.cm3_2ns);
         transcript.put(&[tree3.root().as_elements().to_vec()])?;
 
@@ -408,7 +421,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             );
         }
 
-        log::trace!("Merkelizing 4....");
+        log::info!("Merkelizing 4....");
         let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
         log::trace!(
             "tree4 root: {}",
@@ -725,18 +738,22 @@ pub fn get_pol<F: FieldExtension>(
     res
 }
 
-#[time_profiler()]
+#[time_profiler("extend_and_merkelize")]
 pub fn extend_and_merkelize<M: MerkleTree>(
     ctx: &mut StarkContext<M::ExtendField>,
     starkinfo: &StarkInfo,
     section_name: &'static str,
+    result: &mut Vec<M::ExtendField>,
 ) -> Result<M> {
     let nBitsExt = ctx.nbits_ext;
     let nBits = ctx.nbits;
     let n_pols = starkinfo.map_sectionsN.get(section_name);
-    let mut result = vec![M::ExtendField::ZERO; (1 << nBitsExt) * n_pols];
+
+    let curr_size = (1 << nBitsExt) * n_pols;
+    result.resize(curr_size, M::ExtendField::ZERO);
+
     let p = ctx.get_mut(section_name);
-    interpolate(p, n_pols, nBits, &mut result, nBitsExt);
+    interpolate(p, n_pols, nBits, result, nBitsExt);
     let mut p_be = vec![FGL::ZERO; result.len()];
     p_be.par_iter_mut()
         .zip(result)
@@ -748,7 +765,7 @@ pub fn extend_and_merkelize<M: MerkleTree>(
     Ok(tree)
 }
 
-#[time_profiler()]
+#[time_profiler("merkelize")]
 pub fn merkelize<M: MerkleTree>(
     ctx: &mut StarkContext<M::ExtendField>,
     starkinfo: &StarkInfo,
@@ -1249,15 +1266,21 @@ pub mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_stark_plookup_gl() {
         env_logger::try_init().unwrap_or_default();
-        let mut pil = load_json::<PIL>("../../zkevm-prover/config/pil/zkevm/main.pil.json").unwrap();
+        let mut pil =
+            load_json::<PIL>("../../zkevm-prover/config/pil/zkevm/main.pil.json").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
-        const_pol.load("../../zkevm-prover/config/zkevm/zkevm.const").unwrap();
+        const_pol
+            .load("../../zkevm-proverjs/build/proof/zkevm.const")
+            .unwrap();
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
-        cm_pol.load_from_cpp("../../zkevm-prover/execute_trace.commit").unwrap();
-        let stark_struct = load_json::<StarkStruct>("../../zkevm-proverjs/testvectors/zkevm.starkstruct.json").unwrap();
+        cm_pol
+            .load("../../zkevm-proverjs/build/proof/zkevm.commit")
+            .unwrap();
+        let stark_struct =
+            load_json::<StarkStruct>("../../zkevm-proverjs/testvectors/zkevm.starkstruct.json")
+                .unwrap();
         let mut setup =
             StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         log::info!("stark_gen gen");

@@ -413,7 +413,7 @@ impl StarkInfo {
         program: &mut Program,
     ) -> Result<()> {
         let ppi = pil.plookupIdentities.clone();
-        log::trace!("generate_step2: [{:?}]", ppi);
+        //log::trace!("generate_step2: [{:?}]", ppi);
         for pi in ppi.iter() {
             let u = E::challenge("u".to_string());
             let def_val = E::challenge("defVal".to_string());
@@ -484,11 +484,11 @@ impl StarkInfo {
         }
 
         program.step2prev = build_code(ctx, pil);
-        log::trace!("pu_ctx {:?}", self.pu_ctx);
-        log::trace!("step2prev {}", program.step2prev);
+        //log::trace!("pu_ctx {:?}", self.pu_ctx);
+        //log::trace!("step2prev {}", program.step2prev);
         ctx.calculated.clear();
         self.n_cm2 = pil.nCommitments - self.n_cm1;
-        log::trace!("n_cm2 {}", self.n_cm2);
+        //log::trace!("n_cm2 {}", self.n_cm2);
         Ok(())
     }
 }

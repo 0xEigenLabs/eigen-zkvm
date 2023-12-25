@@ -407,7 +407,7 @@ fn get_ref<F: FieldExtension>(
     next: usize,
     modulas: usize,
 ) -> Expr<F> {
-    //log::trace!("get_ref: r {:?}  dom {} ", r, dom);
+    log::trace!("get_ref: r {:?}  dom {} ", r, dom);
     match r.type_.as_str() {
         "tmp" => Expr::new(
             Ops::Refer,
@@ -471,12 +471,14 @@ fn get_ref<F: FieldExtension>(
                 panic!("Invalid dom");
             }
         }
-        "number" => Expr::new(
-            Ops::Vari(F::from(r.value.clone().unwrap().parse::<u64>().unwrap())),
-            vec![],
-            vec![],
-            vec![],
-        ),
+        "number" => {
+            let raw_val = r.value.as_ref().unwrap();
+            let n_val: u64 = match raw_val.starts_with("0x") {
+                true => u64::from_str_radix(&raw_val[2..], 16).unwrap(),
+                _ => u64::from_str_radix(raw_val, 10).unwrap(),
+            };
+            Expr::new(Ops::Vari(F::from(n_val)), vec![], vec![], vec![])
+        }
         "public" => Expr::new(
             Ops::Refer,
             vec!["publics".to_string()],

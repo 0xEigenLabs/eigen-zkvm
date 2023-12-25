@@ -4,10 +4,10 @@ use crate::{traits::FieldExtension, types::PIL};
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::FrRepr;
 use profiler_macro::time_profiler;
+use rayon::prelude::*;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
-use rayon::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct PolsArray {
@@ -274,11 +274,13 @@ impl PolsArray {
 
     pub fn write_buff<F: FieldExtension>(&self) -> Vec<F> {
         let mut buff: Vec<F> = vec![F::ZERO; self.n * self.nPols];
-        buff.par_chunks_mut(self.nPols).enumerate().for_each(|(i, chunk)| {
-            for j in 0..self.nPols {
-                chunk[j] = F::from(self.array[j][i]);
-            } 
-        });
+        buff.par_chunks_mut(self.nPols)
+            .enumerate()
+            .for_each(|(i, chunk)| {
+                for j in 0..self.nPols {
+                    chunk[j] = F::from(self.array[j][i]);
+                }
+            });
         /*
         let mut buff = vec![];
         for i in 0..self.n {
