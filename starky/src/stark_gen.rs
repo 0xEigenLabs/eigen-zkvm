@@ -217,7 +217,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         drop(cm_pols);
 
         log::info!("cm2_n");
-        ctx.cm2_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.cm2_n) * ctx.N];
+        ctx.cm2_n = Vec::with_capacity((starkinfo.map_sectionsN.cm2_n) * ctx.N);
         ctx.cm3_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.cm3_n) * ctx.N];
         log::info!("cm3_n");
         ctx.tmpexp_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.tmpexp_n) * ctx.N];
