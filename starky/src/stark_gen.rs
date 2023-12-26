@@ -252,9 +252,9 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ctx.x_2ns = vec![M::ExtendField::ZERO; ctx.N << extend_bits];
 
         let shift_ext: M::ExtendField = M::ExtendField::from(*SHIFT);
-        let w_nbits: M::ExtendField = M::ExtendField::from(MG.0[ctx.nbits_ext]);
+        let w_nbits_ext: M::ExtendField = M::ExtendField::from(MG.0[ctx.nbits_ext]);
         ctx.x_2ns.par_iter_mut().enumerate().for_each(|(k, xb)| {
-            *xb = shift_ext * w_nbits.exp(k);
+            *xb = shift_ext * w_nbits_ext.exp(k);
         });
 
         ctx.Zi = build_Zh_Inv::<M::ExtendField>(ctx.nbits, extend_bits, 0);
@@ -392,6 +392,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let mut cur_s = M::ExtendField::ONE;
         let shift_inv = (M::ExtendField::inv(&shift_ext)).exp(ctx.N);
 
+        log::trace!("Calculate qq2");
         for p in 0..starkinfo.q_deg {
             for i in 0..ctx.N {
                 for k in 0..starkinfo.q_dim {
@@ -433,7 +434,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         LpEv[0] = M::ExtendField::from(FGL::from(1u64));
 
         let xis = ctx.challenge[7] / shift_ext;
-        let wxis = (ctx.challenge[7] * M::ExtendField::from(MG.0[ctx.nbits])) / shift_ext;
+        let wxis = (ctx.challenge[7] * w_nbits) / shift_ext;
 
         for i in 1..ctx.N {
             LEv[i] = LEv[i - 1] * xis;
@@ -444,6 +445,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let LpEv = fftobj.ifft(&LpEv);
 
         ctx.evals = vec![M::ExtendField::ZERO; starkinfo.ev_map.len()];
+        log::trace!("Evals");
         let N = ctx.N;
         for (i, ev) in starkinfo.ev_map.iter().enumerate() {
             let p = match ev.type_.as_str() {
@@ -479,6 +481,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             ctx.evals[i] = acc;
         }
 
+        log::trace!("Add evals to transcript");
         for i in 0..ctx.evals.len() {
             let b = ctx.evals[i]
                 .as_elements()

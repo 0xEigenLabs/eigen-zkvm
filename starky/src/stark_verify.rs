@@ -170,7 +170,19 @@ fn execute_code<F: FieldExtension>(ctx: &mut StarkContext<F>, code: &mut Vec<Sec
             "tree4" => extract_val(&ctx.tree4, r.tree_pos, r.dim),
             "const" => ctx.consts[r.id].into(),
             "eval" => ctx.evals[r.id],
-            "number" => F::from(r.value.clone().unwrap().parse::<u64>().unwrap()),
+            "number" => {
+                let raw_val = r.value.as_ref().unwrap();
+                let mut n_val: i128 = match raw_val.starts_with("0x") {
+                    true => i128::from_str_radix(&raw_val[2..], 16).unwrap(),
+                    _ => raw_val.parse::<i128>().unwrap(),
+                };
+                // FIXME: Goldilocks modular, try to fetch it from FieldExtension
+                if n_val < 0 {
+                    n_val += 18446744069414584321;
+                }
+                n_val %= 18446744069414584321;
+                F::from(n_val as u64)
+            }
             "public" => ctx.publics[r.id],
             "challenge" => ctx.challenge[r.id],
             // TODO: Support F5G

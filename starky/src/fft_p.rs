@@ -148,14 +148,6 @@ pub fn inv_bit_reverse<F: FieldExtension>(
             let rii = (n - ris[i]) % n;
             *out = buffsrc[rii * n_pols + k] * n_inv;
         });
-    /*
-    for j in 0..len {
-        let i = j / n_pols;
-        let k = j % n_pols;
-        let rii = (n - ris[i]) % n;
-        buffdst[j] = buffsrc[rii * n_pols + k] * n_inv;
-    }
-    */
 }
 
 pub fn interpolate_prepare<F: FieldExtension>(buff: &mut Vec<F>, n_pols: usize, nbits: usize) {
