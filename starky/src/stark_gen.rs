@@ -391,6 +391,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         let mut cur_s = M::ExtendField::ONE;
         let shift_in = (M::ExtendField::inv(&M::ExtendField::from(*SHIFT))).exp(ctx.N);
+
         for p in 0..starkinfo.q_deg {
             for i in 0..ctx.N {
                 for k in 0..starkinfo.q_dim {
@@ -400,6 +401,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             }
             cur_s *= shift_in;
         }
+
 
         fft(
             &qq2,
@@ -643,23 +645,6 @@ fn set_pol<F: FieldExtension>(
 #[time_profiler("calculate_H1H2")]
 fn calculate_H1H2<F: FieldExtension>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
     let mut s: Vec<(F, usize)> = vec![(F::ZERO, 0); t.len() + f.len()];
-
-    /*
-    let mut idx_t: HashMap<F, usize> = HashMap::with_capacity(t.len());
-    for (i, e) in t.iter().enumerate() {
-        idx_t.insert(*e, i);
-        s.push((*e, i));
-    }
-
-
-    for e in f.iter() {
-        let idx = idx_t.get(e);
-        if idx.is_none() {
-            panic!("Number not included: {:?}", e);
-        }
-        s.push((*e, *idx.unwrap()));
-    }
-    */
     s[0..t.len()]
         .par_iter_mut()
         .zip(t.par_iter())
@@ -699,12 +684,6 @@ fn calculate_H1H2<F: FieldExtension>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
             *h1_ = s[2 * i].0;
             *h2_ = s[2 * i + 1].0;
         });
-    /*
-    for i in 0..f.len() {
-        h1[i] = s[2 * i].0;
-        h2[i] = s[2 * i + 1].0;
-    }
-    */
     (h1, h2)
 }
 
