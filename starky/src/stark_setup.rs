@@ -36,9 +36,13 @@ impl<M: MerkleTree> StarkSetup<M> {
 
         let mut p: Vec<Vec<FGL>> = vec![Vec::new(); const_pol.nPols];
         for i in 0..const_pol.nPols {
+            p[i] = vec![FGL::ZERO; const_pol.n];
+            /*
             for j in 0..const_pol.n {
                 p[i].push(const_pol.array[i][j])
             }
+            */
+            p[i].par_iter_mut().enumerate().for_each(|(j, out)| { *out = const_pol.array[i][j]; });
         }
 
         let const_buff = const_pol.write_buff();

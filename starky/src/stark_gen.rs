@@ -200,8 +200,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         prover_addr: &str,
     ) -> Result<StarkProof<M>> {
         let mut ctx = StarkContext::<M::ExtendField>::default();
-        log::info!("starkinfo: {}", starkinfo);
-        log::info!("PIL: {}", _pil);
 
         let mut fftobj = FFT::new();
         ctx.nbits = stark_struct.nBits;
