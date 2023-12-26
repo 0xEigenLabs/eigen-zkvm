@@ -475,11 +475,11 @@ fn get_ref<F: FieldExtension>(
             let raw_val = r.value.as_ref().unwrap();
             let mut n_val: i128 = match raw_val.starts_with("0x") {
                 true => i128::from_str_radix(&raw_val[2..], 16).unwrap(),
-                _ => i128::from_str_radix(raw_val, 10).unwrap(),
+                _ => raw_val.parse::<i128>().unwrap(),
             };
             // FIXME: Goldilocks modular, try to fetch it from FieldExtension
             if n_val < 0 {
-                n_val = (n_val + 18446744069414584321);
+                n_val += 18446744069414584321;
             }
             n_val %= 18446744069414584321;
             Expr::new(Ops::Vari(F::from(n_val as u64)), vec![], vec![], vec![])

@@ -105,13 +105,6 @@ pub fn bit_reverse<F: FieldExtension>(
             let k = j % n_pols;
             *out = buffsrc[ris[i] * n_pols + k];
         });
-    /*
-    for j in 0..len {
-        let i = j / n_pols;
-        let k = j % n_pols;
-        buffdst[j] = buffsrc[ris[i] * n_pols + k];
-    }
-    */
 }
 
 pub fn interpolate_bit_reverse<F: FieldExtension>(
@@ -132,14 +125,6 @@ pub fn interpolate_bit_reverse<F: FieldExtension>(
                 out[k] = buffsrc[rii * n_pols + k];
             }
         });
-    /*
-    for i in 0..n {
-        let rii = (n - ris[i]) % n;
-        for k in 0..n_pols {
-            buffdst[i * n_pols + k] = buffsrc[rii * n_pols + k];
-        }
-    }
-    */
 }
 
 pub fn inv_bit_reverse<F: FieldExtension>(
@@ -154,12 +139,23 @@ pub fn inv_bit_reverse<F: FieldExtension>(
 
     let len = n * n_pols;
     assert_eq!(len, buffdst.len());
+    buffdst[0..len]
+        .par_iter_mut()
+        .enumerate()
+        .for_each(|(j, out)| {
+            let i = j / n_pols;
+            let k = j % n_pols;
+            let rii = (n - ris[i]) % n;
+            *out = buffsrc[rii * n_pols + k] * n_inv;
+        });
+    /*
     for j in 0..len {
         let i = j / n_pols;
         let k = j % n_pols;
         let rii = (n - ris[i]) % n;
         buffdst[j] = buffsrc[rii * n_pols + k] * n_inv;
     }
+    */
 }
 
 pub fn interpolate_prepare<F: FieldExtension>(buff: &mut Vec<F>, n_pols: usize, nbits: usize) {

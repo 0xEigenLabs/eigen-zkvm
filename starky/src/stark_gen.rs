@@ -244,12 +244,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let xx = M::ExtendField::ONE;
         // Using the precomputing value
         let w_nbits: M::ExtendField = M::ExtendField::from(MG.0[ctx.nbits]);
-        /*
-        for i in 0..ctx.N {
-            ctx.x_n[i] = xx;
-            xx *= w_nbits;
-        }
-        */
         ctx.x_n.par_iter_mut().enumerate().for_each(|(k, xb)| {
             *xb = xx * w_nbits.exp(k);
         });
@@ -259,12 +253,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         let xx: M::ExtendField = M::ExtendField::from(*SHIFT);
         let w_nbits: M::ExtendField = M::ExtendField::from(MG.0[ctx.nbits_ext]);
-        /*
-        for i in 0..(ctx.N << extend_bits) {
-            ctx.x_2ns[i] = xx;
-            xx *= M::ExtendField::from(MG.0[ctx.nbits_ext]);
-        }
-        */
         ctx.x_2ns.par_iter_mut().enumerate().for_each(|(k, xb)| {
             *xb = xx * w_nbits.exp(k);
         });
@@ -303,7 +291,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         }
 
         //Do pre-allocation
-        let mut result = vec![M::ExtendField::ZERO; (1 << stark_struct.nBitsExt) * 10];
+        let mut result = vec![M::ExtendField::ZERO; (1 << stark_struct.nBitsExt) * 8];
         log::info!("Merkelizing 1....");
         let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n", &mut result)?;
         tree1.to_extend(&mut ctx.cm1_2ns);
@@ -396,6 +384,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         calculate_exps_parallel(&mut ctx, starkinfo, &program.step42ns, "2ns", "step4");
 
+        log::trace!("Calculate c polynomial");
         let mut qq1 = vec![M::ExtendField::ZERO; ctx.q_2ns.len()];
         let mut qq2 = vec![M::ExtendField::ZERO; starkinfo.q_dim * ctx.Next * starkinfo.q_deg];
         ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
@@ -412,14 +401,12 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             cur_s *= shift_in;
         }
 
-        if starkinfo.q_deg > 0 {
-            fft(
-                &qq2,
-                starkinfo.q_dim * starkinfo.q_deg,
-                ctx.nbits_ext,
-                &mut ctx.cm4_2ns,
-            );
-        }
+        fft(
+            &qq2,
+            starkinfo.q_dim * starkinfo.q_deg,
+            ctx.nbits_ext,
+            &mut ctx.cm4_2ns,
+        );
 
         log::info!("Merkelizing 4....");
         let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
@@ -653,15 +640,17 @@ fn set_pol<F: FieldExtension>(
     }
 }
 
-#[time_profiler()]
+#[time_profiler("calculate_H1H2")]
 fn calculate_H1H2<F: FieldExtension>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
-    let mut idx_t: HashMap<F, usize> = HashMap::new();
-    let mut s: Vec<(F, usize)> = vec![];
+    let mut s: Vec<(F, usize)> = vec![(F::ZERO, 0); t.len() + f.len()];
 
+    /*
+    let mut idx_t: HashMap<F, usize> = HashMap::with_capacity(t.len());
     for (i, e) in t.iter().enumerate() {
         idx_t.insert(*e, i);
         s.push((*e, i));
     }
+
 
     for e in f.iter() {
         let idx = idx_t.get(e);
@@ -670,15 +659,52 @@ fn calculate_H1H2<F: FieldExtension>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
         }
         s.push((*e, *idx.unwrap()));
     }
+    */
+    s[0..t.len()]
+        .par_iter_mut()
+        .zip(t.par_iter())
+        .enumerate()
+        .for_each(|(i, (out, in_))| {
+            *out = (*in_, i);
+        });
+
+    let idx_t: HashMap<F, usize> = s[0..t.len()]
+        .par_iter()
+        .fold(HashMap::new, |mut acc, (k, v)| {
+            acc.insert(*k, *v);
+            acc
+        })
+        .reduce(HashMap::new, |mut acc, other| {
+            acc.extend(other);
+            acc
+        });
+
+    s[t.len()..]
+        .par_iter_mut()
+        .zip(f.par_iter())
+        .for_each(|(out, in_)| {
+            let idx = idx_t.get(in_);
+            assert!(idx.is_some());
+            *out = (*in_, *idx.unwrap());
+        });
 
     s.sort_by(|a, b| a.1.cmp(&b.1));
 
     let mut h1 = vec![F::ZERO; f.len()];
     let mut h2 = vec![F::ZERO; f.len()];
+    h1.par_iter_mut()
+        .zip(h2.par_iter_mut())
+        .enumerate()
+        .for_each(|(i, (h1_, h2_))| {
+            *h1_ = s[2 * i].0;
+            *h2_ = s[2 * i + 1].0;
+        });
+    /*
     for i in 0..f.len() {
         h1[i] = s[2 * i].0;
         h2[i] = s[2 * i + 1].0;
     }
+    */
     (h1, h2)
 }
 
