@@ -3,6 +3,7 @@
 use crate::constant::MG;
 use crate::helper::log2_any;
 use crate::traits::FieldExtension;
+use rayon::prelude::*;
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Default)]
@@ -77,9 +78,12 @@ impl<F: FieldExtension> FFT<F> {
         let n = p.len();
         let n2inv = F::from(p.len()).inv();
         let mut res = vec![F::ZERO; q.len()];
-        for i in 0..n {
-            res[(n - i) % n] = q[i] * n2inv;
-        }
+
+        res[0] = q[0] * n2inv;
+        res[1..]
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(i, out)| *out = q[n - i - 1] * n2inv);
         res
     }
 }

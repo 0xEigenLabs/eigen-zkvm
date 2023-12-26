@@ -251,10 +251,10 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         let extend_bits = ctx.nbits_ext - ctx.nbits;
         ctx.x_2ns = vec![M::ExtendField::ZERO; ctx.N << extend_bits];
 
-        let xx: M::ExtendField = M::ExtendField::from(*SHIFT);
+        let shift_ext: M::ExtendField = M::ExtendField::from(*SHIFT);
         let w_nbits: M::ExtendField = M::ExtendField::from(MG.0[ctx.nbits_ext]);
         ctx.x_2ns.par_iter_mut().enumerate().for_each(|(k, xb)| {
-            *xb = xx * w_nbits.exp(k);
+            *xb = shift_ext * w_nbits.exp(k);
         });
 
         ctx.Zi = build_Zh_Inv::<M::ExtendField>(ctx.nbits, extend_bits, 0);
@@ -390,7 +390,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         ifft(&ctx.q_2ns, starkinfo.q_dim, ctx.nbits_ext, &mut qq1);
 
         let mut cur_s = M::ExtendField::ONE;
-        let shift_in = (M::ExtendField::inv(&M::ExtendField::from(*SHIFT))).exp(ctx.N);
+        let shift_inv = (M::ExtendField::inv(&shift_ext)).exp(ctx.N);
 
         for p in 0..starkinfo.q_deg {
             for i in 0..ctx.N {
@@ -399,9 +399,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                         qq1[p * ctx.N * starkinfo.q_dim + i * starkinfo.q_dim + k] * cur_s;
                 }
             }
-            cur_s *= shift_in;
+            cur_s *= shift_inv;
         }
-
 
         fft(
             &qq2,
@@ -433,9 +432,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         LEv[0] = M::ExtendField::from(FGL::from(1u64));
         LpEv[0] = M::ExtendField::from(FGL::from(1u64));
 
-        let xis = ctx.challenge[7] / M::ExtendField::from(*SHIFT);
-        let wxis = (ctx.challenge[7] * M::ExtendField::from(MG.0[ctx.nbits]))
-            / M::ExtendField::from(*SHIFT);
+        let xis = ctx.challenge[7] / shift_ext;
+        let wxis = (ctx.challenge[7] * M::ExtendField::from(MG.0[ctx.nbits])) / shift_ext;
 
         for i in 1..ctx.N {
             LEv[i] = LEv[i - 1] * xis;
@@ -509,9 +507,9 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         let mut x_buff = vec![M::ExtendField::ZERO; extend_size];
 
+        let w_ext = M::ExtendField::from(MG.0[ctx.nbits + extend_bits]);
         x_buff.par_iter_mut().enumerate().for_each(|(k, xb)| {
-            *xb = M::ExtendField::from(*SHIFT)
-                * M::ExtendField::from(MG.0[ctx.nbits + extend_bits]).exp(k);
+            *xb = shift_ext * w_ext.exp(k);
         });
 
         tmp_den
