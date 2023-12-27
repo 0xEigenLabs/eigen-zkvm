@@ -632,34 +632,21 @@ fn set_pol<F: FieldExtension>(
 
 #[time_profiler("calculate_H1H2")]
 fn calculate_H1H2<F: FieldExtension>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
+    let mut idx_t: HashMap<F, usize> = HashMap::with_capacity(t.len());
     let mut s: Vec<(F, usize)> = vec![(F::ZERO, 0); t.len() + f.len()];
-    s[0..t.len()]
-        .par_iter_mut()
-        .zip(t.par_iter())
-        .enumerate()
-        .for_each(|(i, (out, in_))| {
-            *out = (*in_, i);
-        });
 
-    let idx_t = s[..t.len()]
-        .par_iter()
-        .fold(HashMap::new, |mut map, (key, value)| {
-            map.insert(*key, *value);
-            map
-        })
-        .reduce(HashMap::new, |mut acc, other| {
-            acc.extend(other);
-            acc
-        });
+    for (i, e) in t.iter().enumerate() {
+        idx_t.insert(*e, i);
+        s.push((*e, i));
+    }
 
-    s[t.len()..]
-        .par_iter_mut()
-        .zip(f.par_iter())
-        .for_each(|(out, in_)| {
-            let idx = idx_t.get(in_);
-            assert!(idx.is_some());
-            *out = (*in_, *idx.unwrap());
-        });
+    for e in f.iter() {
+        let idx = idx_t.get(e);
+        if idx.is_none() {
+            panic!("Number not included: {:?}", e);
+        }
+        s.push((*e, *idx.unwrap()));
+    }
 
     s.sort_by(|a, b| a.1.cmp(&b.1));
 
