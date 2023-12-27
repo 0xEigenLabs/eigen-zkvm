@@ -281,14 +281,6 @@ impl PolsArray {
                     chunk[j] = F::from(self.array[j][i]);
                 }
             });
-        /*
-        let mut buff = vec![];
-        for i in 0..self.n {
-            for j in 0..self.nPols {
-                buff.push(F::from(self.array[j][i]));
-            }
-        }
-        */
         buff
     }
 }

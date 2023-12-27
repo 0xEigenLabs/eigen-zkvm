@@ -159,7 +159,6 @@ impl StarkInfo {
             pil.nQ += 1;
             num_exp.keep = Some(true);
             pu_ctx.num_id = pil.expressions.len();
-            log::trace!("num_exp: {} {}", i, num_exp);
             pil.expressions.push(num_exp);
 
             // G(\beta, \gamma)
@@ -178,7 +177,6 @@ impl StarkInfo {
             pil.nQ += 1;
             pu_ctx.den_id = pil.expressions.len();
             den_exp.keep = Some(true);
-            log::trace!("den_exp: {} {}", i, den_exp);
             pil.expressions.push(den_exp);
 
             let num = E::exp(pu_ctx.num_id, None);

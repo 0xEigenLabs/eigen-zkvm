@@ -37,14 +37,12 @@ impl<M: MerkleTree> StarkSetup<M> {
         let mut p: Vec<Vec<FGL>> = vec![Vec::new(); const_pol.nPols];
         for i in 0..const_pol.nPols {
             p[i] = vec![FGL::ZERO; const_pol.n];
-            /*
-            for j in 0..const_pol.n {
-                p[i].push(const_pol.array[i][j])
-            }
-            */
-            p[i].par_iter_mut().enumerate().for_each(|(j, out)| { *out = const_pol.array[i][j]; });
+            p[i].par_iter_mut().enumerate().for_each(|(j, out)| {
+                *out = const_pol.array[i][j];
+            });
         }
 
+        log::trace!("Write const pol buff and interpolate");
         let const_buff = const_pol.write_buff();
         //extend and merkelize
         let mut const_pols_array_e = vec![M::ExtendField::ZERO; (1 << nBitsExt) * pil.nConstants];
@@ -66,6 +64,7 @@ impl<M: MerkleTree> StarkSetup<M> {
             });
 
         let mut const_tree = M::new();
+        log::trace!("Merkelize const tree");
         const_tree.merkelize(
             const_pols_array_e_be,
             const_pol.nPols,

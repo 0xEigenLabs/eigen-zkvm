@@ -407,7 +407,7 @@ fn get_ref<F: FieldExtension>(
     next: usize,
     modulas: usize,
 ) -> Expr<F> {
-    log::trace!("get_ref: r {:?}  dom {} ", r, dom);
+    //log::trace!("get_ref: r {:?}  dom {} ", r, dom);
     match r.type_.as_str() {
         "tmp" => Expr::new(
             Ops::Refer,

@@ -210,34 +210,24 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         let mut n_cm = starkinfo.n_cm1;
 
-        log::info!("write cm buf");
+        log::trace!("Alloc context memory");
         ctx.cm1_n = cm_pols.write_buff();
         drop(cm_pols);
 
-        log::info!("cm2_n");
         ctx.cm2_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.cm2_n) * ctx.N];
         ctx.cm3_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.cm3_n) * ctx.N];
-        log::info!("cm3_n");
         ctx.tmpexp_n = vec![M::ExtendField::ZERO; (starkinfo.map_sectionsN.tmpexp_n) * ctx.N];
 
-        log::info!("cm1_2ns");
         ctx.cm1_2ns = vec![M::ExtendField::ZERO; starkinfo.map_sectionsN.cm1_n * ctx.Next];
-        log::info!("cm2_2ns");
         ctx.cm2_2ns = vec![M::ExtendField::ZERO; starkinfo.map_sectionsN.cm2_n * ctx.Next];
-        log::info!("cm3_2ns");
         ctx.cm3_2ns = vec![M::ExtendField::ZERO; starkinfo.map_sectionsN.cm3_n * ctx.Next];
-        log::info!("cm4_2ns");
         ctx.cm4_2ns = vec![M::ExtendField::ZERO; starkinfo.map_sectionsN.cm4_n * ctx.Next];
         ctx.const_2ns = vec![M::ExtendField::ZERO; const_tree.element_size()];
 
-        log::info!("q_2ns");
         ctx.q_2ns = vec![M::ExtendField::ZERO; starkinfo.q_dim * ctx.Next];
-        log::info!("f_2ns");
         ctx.f_2ns = vec![M::ExtendField::ZERO; 3 * ctx.Next];
 
-        log::info!("x_n");
         ctx.x_n = vec![M::ExtendField::ZERO; ctx.N];
-        log::info!("alloc memory done");
 
         let xx = M::ExtendField::ONE;
         // Using the precomputing value
@@ -257,7 +247,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         ctx.Zi = build_Zh_Inv::<M::ExtendField>(ctx.nbits, extend_bits, 0);
 
-        log::info!("write pols buf");
+        log::trace!("Convert const pols to array");
         ctx.const_n = const_pols.write_buff();
         const_tree.to_extend(&mut ctx.const_2ns);
         drop(const_pols);
@@ -290,7 +280,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         //Do pre-allocation
         let mut result = vec![M::ExtendField::ZERO; (1 << stark_struct.nBitsExt) * 8];
-        log::info!("Merkelizing 1....");
+        log::trace!("Merkelizing 1....");
         let tree1 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm1_n", &mut result)?;
         tree1.to_extend(&mut ctx.cm1_2ns);
 
@@ -319,7 +309,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             n_cm += 1;
         }
 
-        log::info!("Merkelizing 2....");
+        log::trace!("Merkelizing 2....");
         let tree2 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm2_n", &mut result)?;
         tree2.to_extend(&mut ctx.cm2_2ns);
         transcript.put(&[tree2.root().as_elements().to_vec()])?;
@@ -365,7 +355,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         calculate_exps_parallel(&mut ctx, starkinfo, &program.step3, "n", "step3");
 
-        log::info!("Merkelizing 3....");
+        log::trace!("Merkelizing 3....");
 
         let tree3 = extend_and_merkelize::<M>(&mut ctx, starkinfo, "cm3_n", &mut result)?;
         tree3.to_extend(&mut ctx.cm3_2ns);
@@ -408,7 +398,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             &mut ctx.cm4_2ns,
         );
 
-        log::info!("Merkelizing 4....");
+        log::trace!("Merkelizing 4....");
         let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
         log::trace!(
             "tree4 root: {}",
@@ -460,7 +450,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
                 }
             };
             let l = if ev.prime { &LpEv } else { &LEv };
-            log::trace!("calculate acc: N={}", N);
             let acc = (0..N)
                 .into_par_iter()
                 .map(|k| {
@@ -584,7 +573,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
     ) -> T {
         ctx.tmp = vec![T::ZERO; seg.tmp_used];
         let t = compile_code(ctx, starkinfo, &seg.first, "n", true);
-        log::trace!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
+        //log::trace!("calculate_exp_at_point compile_code ctx.first:\n{}", t);
 
         // just let public codegen run multiple times
         //log::trace!("{} = {} @ {}", res, ctx.cm1_n[1 + 2 * idx], idx);
@@ -792,18 +781,18 @@ pub fn calculate_exps<F: FieldExtension>(
     starkinfo: &StarkInfo,
     seg: &Segment,
     dom: &str,
-    step: &str,
+    //step: &str,
     N: usize,
 ) {
     ctx.tmp = vec![F::ZERO; seg.tmp_used];
     let c_first = compile_code(ctx, starkinfo, &seg.first, dom, false);
+    /*
     log::trace!(
         "calculate_exps compile_code {} ctx.first:\n{}",
         step,
         c_first
     );
 
-    /*
     let mut N = if dom == "n" { ctx.N } else { ctx.Next };
     let _c_i = compile_code(ctx, starkinfo, &seg.i, dom, false);
     let _c_last = compile_code(ctx, starkinfo, &seg.last, dom, false);
@@ -1090,7 +1079,7 @@ pub fn calculate_exps_parallel<F: FieldExtension>(
                     *tmp = vec![F::ZERO; so.width * (cur_n + next)];
                 }
             }
-            calculate_exps(tmp_ctx, starkinfo, seg, dom, step, cur_n);
+            calculate_exps(tmp_ctx, starkinfo, seg, dom, cur_n);
         });
 
     // write back the output
@@ -1271,23 +1260,14 @@ pub mod tests {
 
     #[test]
     fn test_stark_plookup_gl() {
-        env_logger::try_init().unwrap_or_default();
-        let mut pil =
-            load_json::<PIL>("../../zkevm-prover/config/pil/zkevm/main.pil.json").unwrap();
+        let mut pil = load_json::<PIL>("data/plookup.pil.json.gl").unwrap();
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
-        const_pol
-            .load("../../zkevm-proverjs/build/proof/zkevm.const")
-            .unwrap();
+        const_pol.load("data/plookup.const.gl").unwrap();
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
-        cm_pol
-            .load("../../zkevm-proverjs/build/proof/zkevm.commit")
-            .unwrap();
-        let stark_struct =
-            load_json::<StarkStruct>("../../zkevm-proverjs/testvectors/zkevm.starkstruct.json")
-                .unwrap();
+        cm_pol.load("data/plookup.cm.gl").unwrap();
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.gl").unwrap();
         let mut setup =
             StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
-        log::info!("stark_gen gen");
         let starkproof = StarkProof::<MerkleTreeGL>::stark_gen::<TranscriptGL>(
             cm_pol,
             const_pol,
