@@ -10,13 +10,14 @@ use crate::starkinfo_codegen::{Node, Section};
 use crate::traits;
 use crate::traits::FieldExtension;
 use crate::traits::{MTNodeType, MerkleTree, Transcript};
+use crate::types::parse_pil_number;
 use crate::types::StarkStruct;
 use plonky::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 use std::collections::HashMap;
 
 //FIXME it doesn't make sense to ask for a mutable program
-#[time_profiler()]
+#[time_profiler("stark_verify")]
 pub fn stark_verify<M: MerkleTree, T: Transcript>(
     proof: &StarkProof<M>,
     const_root: &M::MTNode,
@@ -170,19 +171,7 @@ fn execute_code<F: FieldExtension>(ctx: &mut StarkContext<F>, code: &mut Vec<Sec
             "tree4" => extract_val(&ctx.tree4, r.tree_pos, r.dim),
             "const" => ctx.consts[r.id].into(),
             "eval" => ctx.evals[r.id],
-            "number" => {
-                let raw_val = r.value.as_ref().unwrap();
-                let mut n_val: i128 = match raw_val.starts_with("0x") {
-                    true => i128::from_str_radix(&raw_val[2..], 16).unwrap(),
-                    _ => raw_val.parse::<i128>().unwrap(),
-                };
-                // FIXME: Goldilocks modular, try to fetch it from FieldExtension
-                if n_val < 0 {
-                    n_val += 18446744069414584321;
-                }
-                n_val %= 18446744069414584321;
-                F::from(n_val as u64)
-            }
+            "number" => F::from(parse_pil_number(r.value.as_ref().unwrap())),
             "public" => ctx.publics[r.id],
             "challenge" => ctx.challenge[r.id],
             // TODO: Support F5G

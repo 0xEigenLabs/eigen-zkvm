@@ -15,10 +15,10 @@ use crate::starkinfo_codegen::{Polynom, Segment};
 use crate::traits::{batch_inverse, FieldExtension};
 use crate::traits::{MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, PIL};
+use hashbrown::HashMap;
 use plonky::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 use rayon::prelude::*;
-use std::collections::HashMap;
 
 pub struct StarkContext<F: FieldExtension> {
     pub nbits: usize,
@@ -641,11 +641,11 @@ fn calculate_H1H2<F: FieldExtension>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
             *out = (*in_, i);
         });
 
-    let idx_t: HashMap<F, usize> = s[0..t.len()]
+    let idx_t = s[..t.len()]
         .par_iter()
-        .fold(HashMap::new, |mut acc, (k, v)| {
-            acc.insert(*k, *v);
-            acc
+        .fold(HashMap::new, |mut map, (key, value)| {
+            map.insert(*key, *value);
+            map
         })
         .reduce(HashMap::new, |mut acc, other| {
             acc.extend(other);
