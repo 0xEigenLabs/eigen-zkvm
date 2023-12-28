@@ -20,11 +20,14 @@ mod tests {
         log::info!("Write to {:?}", temp_dir);
         let case = "vm/evm";
         let coprocessors = CoProcessors::base().with_poseidon();
+        // Compile REVM to powdr asm
         let powdr_asm = compile_rust(case, &temp_dir, true, &coprocessors, true).unwrap();
 
+        // Load the powdr asm
         let pipeline_factory =
             || Pipeline::default().from_asm_string(powdr_asm.1.clone(), Some(PathBuf::from(case)));
 
+        // Execute the evm and generate inputs for segment
         let bootloader_inputs = rust_continuations_dry_run::<GoldilocksField>(
             pipeline_factory(),
             [11, 97, 2, 154, 96, 0, 82, 96, 32, 96, 0, 243]
@@ -32,6 +35,7 @@ mod tests {
                 .into(),
         );
 
+        // Build the wtns and proof
         let prove_with = Some(BackendType::EStark);
         let generate_witness_and_prove_maybe =
             |mut pipeline: Pipeline<F>| -> Result<(), Vec<String>> {
