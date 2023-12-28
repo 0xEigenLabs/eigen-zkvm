@@ -1,17 +1,12 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
     use compiler::pipeline::Pipeline;
     use mktemp::Temp;
     use number::GoldilocksField;
-    use riscv::{
-        compile_rust,
-        continuations::{rust_continuations, rust_continuations_dry_run},
-        CoProcessors,
-    };
+    use riscv::{compile_rust, continuations::rust_continuations_dry_run, CoProcessors};
     use std::path::PathBuf;
     #[test]
-    #[ignore]
+
     fn compile_rust_riscv() {
         env_logger::try_init().unwrap_or_default();
         let temp_dir = Temp::new_dir().unwrap();
@@ -24,7 +19,7 @@ mod tests {
         rust_continuations_dry_run::<GoldilocksField>(
             pipeline,
             [11, 97, 2, 154, 96, 0, 82, 96, 32, 96, 0, 243]
-                .map(|i| GoldilocksField::from(i))
+                .map(GoldilocksField::from)
                 .into(),
         );
     }
