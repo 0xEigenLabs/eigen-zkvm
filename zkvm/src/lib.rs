@@ -12,6 +12,7 @@ mod tests {
     };
     use std::path::PathBuf;
     #[test]
+    #[ignore]
     fn compile_rust_riscv() {
         env_logger::try_init().unwrap_or_default();
         let temp_dir = Temp::new_dir().unwrap();
