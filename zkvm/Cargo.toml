@@ -16,6 +16,7 @@ log = "0.4.0"
 compiler = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "compiler" }
 riscv = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "riscv" }
 number = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "number" }
+backend = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "backend" }
 
 [dev-dependencies]
 env_logger = "0.10"

@@ -1,26 +1,50 @@
 #[cfg(test)]
 mod tests {
-    use compiler::pipeline::Pipeline;
+    use backend::BackendType;
+    use compiler::pipeline::{Pipeline, Stage};
     use mktemp::Temp;
-    use number::GoldilocksField;
-    use riscv::{compile_rust, continuations::rust_continuations_dry_run, CoProcessors};
+    use number::{FieldElement, GoldilocksField};
+    use riscv::{
+        compile_rust,
+        continuations::{rust_continuations, rust_continuations_dry_run},
+        CoProcessors,
+    };
     use std::path::PathBuf;
-    #[test]
 
+    #[test]
     fn compile_rust_riscv() {
+        type F = GoldilocksField;
+
         env_logger::try_init().unwrap_or_default();
         let temp_dir = Temp::new_dir().unwrap();
         log::info!("Write to {:?}", temp_dir);
-        let case = "tests/evm";
+        let case = "vm/evm";
         let coprocessors = CoProcessors::base().with_poseidon();
         let powdr_asm = compile_rust(case, &temp_dir, true, &coprocessors, true).unwrap();
 
-        let pipeline = Pipeline::default().from_asm_string(powdr_asm.1, Some(PathBuf::from(case)));
-        rust_continuations_dry_run::<GoldilocksField>(
-            pipeline,
+        let pipeline_factory =
+            || Pipeline::default().from_asm_string(powdr_asm.1.clone(), Some(PathBuf::from(case)));
+
+        let bootloader_inputs = rust_continuations_dry_run::<GoldilocksField>(
+            pipeline_factory(),
             [11, 97, 2, 154, 96, 0, 82, 96, 32, 96, 0, 243]
                 .map(GoldilocksField::from)
                 .into(),
         );
+
+        let prove_with = Some(BackendType::EStark);
+        let generate_witness_and_prove_maybe =
+            |mut pipeline: Pipeline<F>| -> Result<(), Vec<String>> {
+                pipeline.advance_to(Stage::GeneratedWitness).unwrap();
+                prove_with.map(|backend| pipeline.with_backend(backend).proof().unwrap());
+                Ok(())
+            };
+
+        rust_continuations(
+            pipeline_factory,
+            generate_witness_and_prove_maybe,
+            bootloader_inputs,
+        )
+        .unwrap();
     }
 }
