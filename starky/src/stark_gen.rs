@@ -391,12 +391,15 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             cur_s *= shift_inv;
         }
 
-        fft(
-            &qq2,
-            starkinfo.q_dim * starkinfo.q_deg,
-            ctx.nbits_ext,
-            &mut ctx.cm4_2ns,
-        );
+        // powdr may produce constant polynomial only
+        if starkinfo.q_deg > 0 {
+            fft(
+                &qq2,
+                starkinfo.q_dim * starkinfo.q_deg,
+                ctx.nbits_ext,
+                &mut ctx.cm4_2ns,
+            );
+        }
 
         log::trace!("Merkelizing 4....");
         let tree4 = merkelize::<M>(&mut ctx, starkinfo, "cm4_2ns").unwrap();
