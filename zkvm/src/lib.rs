@@ -3,7 +3,7 @@ mod tests {
     use backend::BackendType;
     use compiler::pipeline::{Pipeline, Stage};
     use mktemp::Temp;
-    use number::{FieldElement, GoldilocksField};
+    use number::GoldilocksField;
     use riscv::{
         compile_rust,
         continuations::{rust_continuations, rust_continuations_dry_run},
@@ -13,9 +13,9 @@ mod tests {
 
     #[test]
     fn compile_rust_riscv() {
-        type F = GoldilocksField;
-
         env_logger::try_init().unwrap_or_default();
+
+        type F = GoldilocksField;
         let temp_dir = Temp::new_dir().unwrap();
         log::info!("Write to {:?}", temp_dir);
         let case = "vm/evm";
