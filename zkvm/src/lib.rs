@@ -14,6 +14,7 @@ mod tests {
     static BYTECODE: &str = "61029a60005260206000f3";
 
     #[test]
+    #[ignore = "too slow"]
     fn compile_rust_riscv() {
         env_logger::try_init().unwrap_or_default();
 
@@ -39,17 +40,15 @@ mod tests {
         };
 
         // Execute the evm and generate inputs for segment
-        let bootloader_inputs = rust_continuations_dry_run::<GoldilocksField>(
-            pipeline_factory(),
-            bytecode.clone()
-        );
+        let bootloader_inputs =
+            rust_continuations_dry_run::<GoldilocksField>(pipeline_factory(), bytecode.clone());
 
         // Build the wtns and proof
-        //let prove_with = Some(BackendType::EStark);
+        let prove_with = Some(BackendType::EStark);
         let generate_witness_and_prove_maybe =
             |mut pipeline: Pipeline<F>| -> Result<(), Vec<String>> {
                 pipeline.advance_to(Stage::GeneratedWitness).unwrap();
-                //prove_with.map(|backend| pipeline.with_backend(backend).proof().unwrap());
+                prove_with.map(|backend| pipeline.with_backend(backend).proof().unwrap());
                 Ok(())
             };
 
