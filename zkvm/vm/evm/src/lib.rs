@@ -18,6 +18,8 @@ fn main() {
     const CONTRACT_ADDR: Address = address!("0d4a11d5EEaaC28EC3F61d100daF4d40471f1852");
     const CODE_HASH: B256 =
         b256!("e3c84e69bac71c159b2ff0d62b9a5c231887a809a96cb4a262a4b96ed78a1db2");
+
+    // TODO: get the block data from inputs
     let mut db = CacheDB::new(EmptyDB::default());
 
     let bytecode_len = get_data_len(0);
@@ -46,6 +48,7 @@ fn main() {
 
     let result = evm.transact().unwrap();
 
+    // TODO: check the outputs
     match result.result {
         revm::primitives::ExecutionResult::Success {
             reason: _,

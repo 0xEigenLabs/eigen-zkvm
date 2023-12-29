@@ -18,6 +18,16 @@ riscv = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", pack
 number = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "number" }
 backend = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "backend" }
 
+revm = { version = "3.5.0", features = ["std", "ethersdb", "serde"] }
+
 [dev-dependencies]
 env_logger = "0.10"
 hex = "0.4.3"
+indicatif = "*"
+ethers-providers = { version = "2.0", features = ["ws"] }
+ethers-core = { version = "2.0" }
+tokio = { version = "1.35", features = [
+    "rt-multi-thread",
+    "macros",
+] }
+futures = { version = "0.3.30" }
