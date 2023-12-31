@@ -27,7 +27,7 @@ pub mod packable;
 pub mod packed;
 
 pub use bellman_ce::pairing::ff;
-pub use ff::*;
+pub use crate::ff::*;
 pub use franklin_crypto::bellman as bellman_ce;
 
 #[cfg(test)]
