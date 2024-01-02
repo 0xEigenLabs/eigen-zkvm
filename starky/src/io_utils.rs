@@ -22,7 +22,7 @@ mod test {
     #[test]
     fn test_read_write_vec_with_file() -> std::io::Result<()> {
         let target: Vec<u64> = vec![1, 2, 3, 4, 5, 1111112121, 2667022304383014929];
-        let path = String::from("./vec_data.txt");
+        let path = String::from("/tmp/vec_data.txt");
         write_vec_to_file(&path, &target)?;
 
         let actual = read_vec_from_file(&path)?;
