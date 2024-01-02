@@ -1,0 +1,10 @@
+[package]
+name = "evm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+revm = { version = "3.5.0", default-features = false }
+runtime = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "runtime" }
+
+[workspace]
