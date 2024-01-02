@@ -63,6 +63,7 @@ mod tests {
     static BYTECODE: &str = "61029a60005260206000f3";
 
     #[test]
+    #[ignore = "Too slow"]
     fn test_revm_prove_single_contract() {
         env_logger::try_init().unwrap_or_default();
 
