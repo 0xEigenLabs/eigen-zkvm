@@ -63,7 +63,7 @@ async fn main() {
 
     // Params
     let chain_id: u64 = 1;
-    let block_number = 1;
+    let block_number = 10889447;
 
     // Fetch the transaction-rich block
     let block = match client.get_block_with_txs(block_number).await {
