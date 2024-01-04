@@ -18,7 +18,7 @@ riscv = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", pack
 number = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "number" }
 backend = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "backend" }
 
-revm = { version = "3.5.0", features = ["std", "ethersdb", "serde"] }
+revm = { git = "https://github.com/bluealloy/revm", features = ["std", "ethersdb", "serde"] }
 
 [dev-dependencies]
 env_logger = "0.10"
