@@ -1,5 +1,4 @@
 {
-    "blockInfo" : {
         "_info" : {
             "comment" : "Ori Pomerantz qbzzt1@gmail.com",
             "filling-rpc-server" : "evm version 1.13.5-unstable-cd295356-20231019",
@@ -414,5 +413,4 @@
                 "0x01"
             ]
         }
-    }
 }
