@@ -1,7 +1,7 @@
 #![no_std]
 
 use revm::{
-    db::{CacheDB, EmptyDB, CacheState},
+    db::CacheState,
     interpreter::CreateScheme,
     primitives::{
         address, b256, calc_excess_blob_gas, keccak256, Env, HashMap, SpecId, ruint::Uint, AccountInfo, Address, Bytecode, Bytes, TransactTo, B256, U256,
@@ -9,7 +9,7 @@ use revm::{
     EVM,
 };
 //use runtime::{print, get_prover_input, coprocessors::{get_data, get_data_len}};
-use powdr_riscv_rt::{print, get_prover_input, coprocessors::{get_data, get_data_len}};
+use powdr_riscv_rt::{print, coprocessors::{get_data, get_data_len}};
 
 use models::*;
 
@@ -37,12 +37,12 @@ fn ethereum_tests_simple() {
     assert!(execute_test(&suite).is_ok());
 }
 
-fn read_suite(s: &String) -> TestSuite {
-    let suite: TestSuite = serde_json::from_str(s).map_err(|e| e).unwrap();
+fn read_suite(s: &String) -> TestUnit {
+    let suite: TestUnit = serde_json::from_str(s).map_err(|e| e).unwrap();
     suite
 }
 
-fn execute_test(suite: &TestSuite) -> Result<(), String> {
+fn execute_test(unit: &TestUnit) -> Result<(), String> {
     let map_caller_keys: HashMap<_, _> = [
         (
             b256!("45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8"),
@@ -71,7 +71,6 @@ fn execute_test(suite: &TestSuite) -> Result<(), String> {
     ]
     .into();
 
-    for (name, unit) in &suite.0 {
         // Create database and insert cache
         let mut cache_state = CacheState::new(false);
         for (address, info) in &unit.pre {
@@ -136,7 +135,7 @@ fn execute_test(suite: &TestSuite) -> Result<(), String> {
 
             env.cfg.spec_id = spec_name.to_spec_id();
 
-            for (index, test) in tests.into_iter().enumerate() {
+            for test in tests {
                 env.tx.gas_limit = unit.transaction.gas_limit[test.indexes.gas].saturating_to();
 
                 env.tx.data = unit
@@ -223,6 +222,5 @@ fn execute_test(suite: &TestSuite) -> Result<(), String> {
                 return Err(e);
             }
         }
-    }
     Ok(())
 }

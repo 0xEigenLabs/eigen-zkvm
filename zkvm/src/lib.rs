@@ -8,22 +8,20 @@ use powdr::riscv::continuations::{
 use powdr::riscv::{compile_rust, CoProcessors};
 use powdr::riscv_executor;
 
-use std::path::{Path};
+use std::path::Path;
 use std::time::Instant;
-
-
 
 use thiserror::Error;
 
-use revm::{
-    primitives::{
-        Address, B256,
-    },
-};
+use revm::primitives::{Address, B256};
 
 use std::collections::HashMap as STDHashMap;
 
-pub fn zkvm_evm_prove_one(suite_json: String, _addr: Address, _chain_id: u64) -> Result<(), String> {
+pub fn zkvm_evm_prove_one(
+    suite_json: String,
+    _addr: Address,
+    _chain_id: u64,
+) -> Result<(), String> {
     println!("Compiling Rust...");
     let (asm_file_path, asm_contents) = compile_rust(
         "vm/evm",
@@ -168,15 +166,13 @@ pub enum TestErrorKind {
 #[cfg(test)]
 mod tests {
     use super::zkvm_evm_prove_one;
-    
+
     use revm::primitives::address;
-    
 
     #[test]
     fn test_zkvm_evm_prove() {
         let test_file = "test-vectors/blockInfo.json";
         let suite_json = std::fs::read_to_string(test_file).unwrap();
-        println!("suite json: {:?}", suite_json);
 
         let addr = address!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b");
         zkvm_evm_prove_one(suite_json, addr, 1).unwrap();

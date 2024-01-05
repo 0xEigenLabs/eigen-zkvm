@@ -8,8 +8,6 @@ edition = "2021"
 [dependencies]
 itertools = "0.12.0"
 # serialization
-serde = { version = "1.0", features = [ "derive" ] }
-mktemp = "0.5.1"
 log = "0.4.0"
 
 powdr = { git = "https://github.com/powdr-labs/powdr", branch = "continuations-data-input" }
@@ -22,12 +20,3 @@ serde_json = "1.0.108"
 
 [dev-dependencies]
 env_logger = "0.10"
-hex = "0.4.3"
-indicatif = "*"
-ethers-providers = { version = "2.0", features = ["ws"] }
-ethers-core = { version = "2.0" }
-tokio = { version = "1.35", features = [
-    "rt-multi-thread",
-    "macros",
-] }
-futures = { version = "0.3.30" }
