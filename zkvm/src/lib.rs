@@ -1,106 +1,192 @@
-#![allow(unused_macros)]
-#![allow(dead_code)]
-use std::io::BufWriter;
-use std::io::Write;
-use std::sync::Arc;
-use std::sync::Mutex;
+use powdr::number::{FieldElement, GoldilocksField};
+use powdr::pipeline::{Pipeline, Stage, parse_query};
+use powdr::riscv::continuations::{
+    bootloader::default_input, rust_continuations, rust_continuations_dry_run,
+};
+use powdr::riscv::{compile_rust, CoProcessors};
+use powdr::riscv_executor;
+use powdr::executor::witgen::QueryCallback;
+use backend::BackendType;
 
-macro_rules! local_fill {
-    ($left:expr, $right:expr, $fun:expr) => {
-        if let Some(right) = $right {
-            $left = $fun(right.0)
-        }
+use std::path::{Path, PathBuf};
+use std::time::Instant;
+
+use models::*;
+
+use thiserror::Error;
+
+use revm::{
+    db::{CacheDB, CacheState, EmptyDB},
+    interpreter::CreateScheme,
+    primitives::{
+        address, b256, calc_excess_blob_gas, keccak256, ruint::Uint, AccountInfo, Address,
+        Bytecode, Bytes, Env, HashMap, SpecId, TransactTo, B256, U256,
+    },
+    EVM,
+};
+
+use std::collections::HashMap as STDHashMap;
+
+pub fn zkvm_evm_prove_one(suite_json: String, addr: Address, chain_id: u64) -> Result<(), String> {
+     println!("Compiling Rust...");
+    let (asm_file_path, asm_contents) = compile_rust(
+        "./evm",
+        Path::new("/tmp/test"),
+        true,
+        &CoProcessors::base().with_poseidon(),
+        true,
+    )
+    .ok_or_else(|| vec!["could not compile rust".to_string()])
+    .unwrap();
+
+    let mk_pipeline = || {
+        Pipeline::<GoldilocksField>::default()
+            .from_asm_string(asm_contents.clone(), Some(asm_file_path.clone()))
     };
-    ($left:expr, $right:expr) => {
-        if let Some(right) = $right {
-            $left = Address::from(right.as_fixed_bytes())
-        }
+
+    println!("Creating data callback...");
+    let mut suite_json_bytes: Vec<GoldilocksField> = suite_json
+        .into_bytes()
+        .iter()
+        .map(|b| (*b as u32).into())
+        .collect();
+    suite_json_bytes.insert(0, (suite_json_bytes.len() as u32).into());
+
+    let mut data: STDHashMap<GoldilocksField, Vec<GoldilocksField>> = STDHashMap::default();
+    data.insert(666.into(), suite_json_bytes);
+
+    let output_dir = Path::new("/tmp/test");
+    let force_overwrite = true;
+
+    println!("Running powdr-riscv executor in fast mode...");
+    let start = Instant::now();
+    let (trace, mem) = riscv_executor::execute::<GoldilocksField>(
+        &asm_contents,
+        &data,
+        &default_input(),
+        riscv_executor::ExecMode::Fast,
+    );
+    let duration = start.elapsed();
+    println!("Fast executor took: {:?}", duration);
+    println!("Trace length: {}", trace.len);
+
+    println!("Running powdr-riscv executor in trace mode for continuations...");
+    let start = Instant::now();
+    let bootloader_inputs = rust_continuations_dry_run(mk_pipeline(), data.clone());
+    let duration = start.elapsed();
+    println!("Trace executor took: {:?}", duration);
+
+    let prove_with = Some(BackendType::EStark);
+    let generate_witness = |mut pipeline: Pipeline<GoldilocksField>| -> Result<(), Vec<String>> {
+        let data = data_to_query_callback(data.clone());
+        let mut pipeline = pipeline.add_query_callback(Box::new(data));
+        pipeline.advance_to(Stage::GeneratedWitness)?;
+        prove_with.map(|backend| pipeline.with_backend(backend).proof().unwrap());
+        Ok(())
     };
+
+    println!("Running witness generation...");
+    let start = Instant::now();
+    rust_continuations(
+        mk_pipeline,
+        generate_witness,
+        bootloader_inputs,
+    ).unwrap();
+    let duration = start.elapsed();
+    println!("Witness generation took: {:?}", duration);
+    Ok(())
 }
 
-struct FlushWriter {
-    writer: Arc<Mutex<BufWriter<std::fs::File>>>,
-}
-
-impl FlushWriter {
-    fn new(writer: Arc<Mutex<BufWriter<std::fs::File>>>) -> Self {
-        Self { writer }
+fn access_element<T: FieldElement>(
+    name: &str,
+    elements: &[T],
+    index_str: &str,
+) -> Result<Option<T>, String> {
+    let index = index_str
+        .parse::<usize>()
+        .map_err(|e| format!("Error parsing index: {e})"))?;
+    let value = elements.get(index).cloned();
+    if let Some(value) = value {
+        Ok(Some(value))
+    } else {
+        Err(format!(
+            "Error accessing {name}: Index {index} out of bounds {}",
+            elements.len()
+        ))
     }
 }
 
-impl Write for FlushWriter {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.writer.lock().unwrap().write(buf)
-    }
+#[allow(clippy::print_stdout)]
+fn data_to_query_callback<T: FieldElement>(
+    data: STDHashMap<T, Vec<T>>,
+) -> impl QueryCallback<T> {
+    move |query: &str| -> Result<Option<T>, String> {
+        // TODO In the future, when match statements need to be exhaustive,
+        // This function probably gets an Option as argument and it should
+        // answer None by Ok(None).
 
-    fn flush(&mut self) -> std::io::Result<()> {
-        self.writer.lock().unwrap().flush()
+        match &parse_query(query)?[..] {
+            ["\"input\"", index] => access_element("prover inputs", &data[&T::zero()], index),
+            ["\"data\"", index, what] => {
+                let what = what
+                    .parse::<usize>()
+                    .map_err(|e| format!("Error parsing what: {e})"))?;
+
+                access_element("prover inputs", &data[&(what as u64).into()], index)
+            }
+            ["\"print_char\"", ch] => {
+                print!(
+                    "{}",
+                    ch.parse::<u8>()
+                        .map_err(|e| format!("Invalid char to print: {e}"))?
+                        as char
+                );
+                // We do not answer None because we don't want this function to be
+                // called again.
+                Ok(Some(0.into()))
+            }
+            ["\"hint\"", value] => Ok(Some(T::from_str(value))),
+            k => Err("Unsupported query".to_string()),
+        }
     }
+}
+
+#[derive(Debug, Error)]
+#[error("Test {name} failed: {kind}")]
+pub struct TestError {
+    pub name: String,
+    pub kind: TestErrorKind,
+}
+
+#[derive(Debug, Error)]
+pub enum TestErrorKind {
+    #[error("logs root mismatch: expected {expected:?}, got {got:?}")]
+    LogsRootMismatch { got: B256, expected: B256 },
+    #[error("state root mismatch: expected {expected:?}, got {got:?}")]
+    StateRootMismatch { got: B256, expected: B256 },
+    #[error("Unknown private key: {0:?}")]
+    UnknownPrivateKey(B256),
+    #[error("Unexpected exception: {got_exception:?} but test expects:{expected_exception:?}")]
+    UnexpectedException {
+        expected_exception: Option<String>,
+        got_exception: Option<String>,
+    },
+    #[error(transparent)]
+    SerdeDeserialize(#[from] serde_json::Error),
 }
 
 #[cfg(test)]
 mod tests {
-
-    use backend::BackendType;
-    use compiler::pipeline::{Pipeline, Stage};
-
-    use mktemp::Temp;
-    use number::GoldilocksField;
-
-    use riscv::{
-        compile_rust,
-        continuations::{rust_continuations, rust_continuations_dry_run},
-        CoProcessors,
-    };
-
-    use std::path::PathBuf;
-
-    static BYTECODE: &str = "61029a60005260206000f3";
+    use super::zkvm_evm_prove_one;
 
     #[test]
-    #[ignore = "Too slow"]
-    fn test_revm_prove_single_contract() {
-        env_logger::try_init().unwrap_or_default();
+    fn test_zkvm_evm_prove() {
+        let test_file = "test-vectors/blockInfo.json";
+        let suite_json = std::fs::read_to_string(test_file).unwrap();
+        println!("suite json: {:?}", suite_json);
 
-        type F = GoldilocksField;
-        let temp_dir = Temp::new_dir().unwrap();
-        log::info!("Write to {:?}", temp_dir);
-        let case = "vm/evm";
-        let coprocessors = CoProcessors::base().with_poseidon();
-        // Compile REVM to powdr asm
-        let powdr_asm = compile_rust(case, &temp_dir, true, &coprocessors, true).unwrap();
-
-        let bytes = hex::decode(BYTECODE).unwrap();
-
-        let length: GoldilocksField = (bytes.len() as u64).into();
-        let mut bytecode: Vec<GoldilocksField> = vec![length];
-        bytecode.extend(bytes.into_iter().map(|x| GoldilocksField::from(x as u64)));
-
-        // Load the powdr asm
-        let pipeline_factory = || {
-            Pipeline::default()
-                .from_asm_string(powdr_asm.1.clone(), Some(PathBuf::from(case)))
-                .with_prover_inputs(bytecode.clone())
-        };
-
-        // Execute the evm and generate inputs for segment
-        let bootloader_inputs =
-            rust_continuations_dry_run::<GoldilocksField>(pipeline_factory(), bytecode.clone());
-
-        // Build the wtns and proof
-        let prove_with = Some(BackendType::EStark);
-        let generate_witness_and_prove_maybe =
-            |mut pipeline: Pipeline<F>| -> Result<(), Vec<String>> {
-                pipeline.advance_to(Stage::GeneratedWitness).unwrap();
-                prove_with.map(|backend| pipeline.with_backend(backend).proof().unwrap());
-                Ok(())
-            };
-
-        rust_continuations(
-            pipeline_factory,
-            generate_witness_and_prove_maybe,
-            bootloader_inputs,
-        )
-        .unwrap();
+        let addr = address!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b");
+        let t: STDHashMap<String, TestUnit> = serde_json::from_str(&suite_json).unwrap();
+        zkvm_evm_prove_one(&t["blockInfo"], addr, 1).unwrap();
     }
 }
