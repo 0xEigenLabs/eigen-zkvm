@@ -4,9 +4,8 @@ use revm::{
     db::CacheState,
     interpreter::CreateScheme,
     primitives::{
-        address, b256, calc_excess_blob_gas, keccak256, Env, HashMap, SpecId, ruint::Uint, AccountInfo, Address, Bytecode, Bytes, TransactTo, B256, U256,
+        address, b256, calc_excess_blob_gas, keccak256, Env, HashMap, SpecId, AccountInfo, Bytecode, TransactTo, U256,
     },
-    EVM,
 };
 //use runtime::{print, get_prover_input, coprocessors::{get_data, get_data_len}};
 use powdr_riscv_rt::{print, coprocessors::{get_data, get_data_len}};
@@ -74,7 +73,7 @@ fn execute_test(unit: &TestUnit) -> Result<(), String> {
         // Create database and insert cache
         let mut cache_state = CacheState::new(false);
         for (address, info) in &unit.pre {
-            let acc_info = revm::primitives::AccountInfo {
+            let acc_info = AccountInfo {
                 balance: info.balance,
                 code_hash: keccak256(&info.code),
                 code: Some(Bytecode::new_raw(info.code.clone())),
@@ -203,7 +202,7 @@ fn execute_test(unit: &TestUnit) -> Result<(), String> {
                         // do nothing
                         (None, Ok(_)) => (),
                         // return okay, exception is expected.
-                        (Some(_), Err(e)) => {
+                        (Some(_), Err(_e)) => {
                             //print!("ERROR: {e}");
                             return Ok(());
                         }

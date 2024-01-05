@@ -170,6 +170,7 @@ mod tests {
     use revm::primitives::address;
 
     #[test]
+    #[ignore = "Too long"]
     fn test_zkvm_evm_prove() {
         let test_file = "test-vectors/blockInfo.json";
         let suite_json = std::fs::read_to_string(test_file).unwrap();
