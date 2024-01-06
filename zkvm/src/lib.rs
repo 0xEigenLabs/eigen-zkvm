@@ -7,28 +7,26 @@ use powdr::riscv::continuations::{
 };
 use powdr::riscv::{compile_rust, CoProcessors};
 use powdr::riscv_executor;
-
 use std::path::Path;
 use std::time::Instant;
-
-use thiserror::Error;
-
-use revm::primitives::{Address, B256};
-
+use revm::primitives::Address;
 use std::collections::HashMap as STDHashMap;
 
 pub fn zkvm_evm_prove_one(
     suite_json: String,
     _addr: Address,
     _chain_id: u64,
+    output_path: &str,
 ) -> Result<(), String> {
     println!("Compiling Rust...");
+    let force_overwrite = true;
+    let with_bootloader = true;
     let (asm_file_path, asm_contents) = compile_rust(
         "vm/evm",
-        Path::new("/tmp/test"),
-        true,
+        Path::new(output_path),
+        force_overwrite,
         &CoProcessors::base().with_poseidon(),
-        true,
+        with_bootloader,
     )
     .ok_or_else(|| vec!["could not compile rust".to_string()])
     .unwrap();
@@ -48,9 +46,6 @@ pub fn zkvm_evm_prove_one(
 
     let mut data: STDHashMap<GoldilocksField, Vec<GoldilocksField>> = STDHashMap::default();
     data.insert(666.into(), suite_json_bytes);
-
-    let _output_dir = Path::new("/tmp/test");
-    let _force_overwrite = true;
 
     println!("Running powdr-riscv executor in fast mode...");
     let start = Instant::now();
@@ -139,30 +134,6 @@ fn data_to_query_callback<T: FieldElement>(data: STDHashMap<T, Vec<T>>) -> impl 
     }
 }
 
-#[derive(Debug, Error)]
-#[error("Test {name} failed: {kind}")]
-pub struct TestError {
-    pub name: String,
-    pub kind: TestErrorKind,
-}
-
-#[derive(Debug, Error)]
-pub enum TestErrorKind {
-    #[error("logs root mismatch: expected {expected:?}, got {got:?}")]
-    LogsRootMismatch { got: B256, expected: B256 },
-    #[error("state root mismatch: expected {expected:?}, got {got:?}")]
-    StateRootMismatch { got: B256, expected: B256 },
-    #[error("Unknown private key: {0:?}")]
-    UnknownPrivateKey(B256),
-    #[error("Unexpected exception: {got_exception:?} but test expects:{expected_exception:?}")]
-    UnexpectedException {
-        expected_exception: Option<String>,
-        got_exception: Option<String>,
-    },
-    #[error(transparent)]
-    SerdeDeserialize(#[from] serde_json::Error),
-}
-
 #[cfg(test)]
 mod tests {
     use super::zkvm_evm_prove_one;
@@ -176,6 +147,6 @@ mod tests {
         let suite_json = std::fs::read_to_string(test_file).unwrap();
 
         let addr = address!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b");
-        zkvm_evm_prove_one(suite_json, addr, 1).unwrap();
+        zkvm_evm_prove_one(suite_json, addr, 1, "/tmp/test").unwrap();
     }
 }
