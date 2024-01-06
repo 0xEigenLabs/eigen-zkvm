@@ -18,7 +18,7 @@ pub fn zkvm_evm_prove_one(
     _chain_id: u64,
     output_path: &str,
 ) -> Result<(), String> {
-    println!("Compiling Rust...");
+    log::debug!("Compiling Rust...");
     let force_overwrite = true;
     let with_bootloader = true;
     let (asm_file_path, asm_contents) = compile_rust(
@@ -36,7 +36,7 @@ pub fn zkvm_evm_prove_one(
             .from_asm_string(asm_contents.clone(), Some(asm_file_path.clone()))
     };
 
-    println!("Creating data callback...");
+    log::debug!("Creating data callback...");
     let mut suite_json_bytes: Vec<GoldilocksField> = suite_json
         .into_bytes()
         .iter()
@@ -47,7 +47,7 @@ pub fn zkvm_evm_prove_one(
     let mut data: STDHashMap<GoldilocksField, Vec<GoldilocksField>> = STDHashMap::default();
     data.insert(666.into(), suite_json_bytes);
 
-    println!("Running powdr-riscv executor in fast mode...");
+    log::debug!("Running powdr-riscv executor in fast mode...");
     let start = Instant::now();
     let (trace, _mem) = riscv_executor::execute::<GoldilocksField>(
         &asm_contents,
@@ -56,14 +56,14 @@ pub fn zkvm_evm_prove_one(
         riscv_executor::ExecMode::Fast,
     );
     let duration = start.elapsed();
-    println!("Fast executor took: {:?}", duration);
-    println!("Trace length: {}", trace.len);
+    log::debug!("Fast executor took: {:?}", duration);
+    log::debug!("Trace length: {}", trace.len);
 
-    println!("Running powdr-riscv executor in trace mode for continuations...");
+    log::debug!("Running powdr-riscv executor in trace mode for continuations...");
     let start = Instant::now();
     let bootloader_inputs = rust_continuations_dry_run(mk_pipeline(), data.clone());
     let duration = start.elapsed();
-    println!("Trace executor took: {:?}", duration);
+    log::debug!("Trace executor took: {:?}", duration);
 
     let prove_with = Some(BackendType::EStark);
     let generate_witness = |pipeline: Pipeline<GoldilocksField>| -> Result<(), Vec<String>> {
@@ -74,11 +74,11 @@ pub fn zkvm_evm_prove_one(
         Ok(())
     };
 
-    println!("Running witness generation...");
+    log::debug!("Running witness generation...");
     let start = Instant::now();
     rust_continuations(mk_pipeline, generate_witness, bootloader_inputs).unwrap();
     let duration = start.elapsed();
-    println!("Witness generation took: {:?}", duration);
+    log::debug!("Witness generation took: {:?}", duration);
     Ok(())
 }
 
@@ -143,6 +143,7 @@ mod tests {
     #[test]
     #[ignore = "Too long"]
     fn test_zkvm_evm_prove() {
+        env_logger::try_init().unwrap_or_default();
         //let test_file = "test-vectors/blockInfo.json";
         let test_file = "test-vectors/solidityExample.json";
         let suite_json = std::fs::read_to_string(test_file).unwrap();
