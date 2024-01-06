@@ -143,7 +143,8 @@ mod tests {
     #[test]
     #[ignore = "Too long"]
     fn test_zkvm_evm_prove() {
-        let test_file = "test-vectors/blockInfo.json";
+        //let test_file = "test-vectors/blockInfo.json";
+        let test_file = "test-vectors/solidityExample.json";
         let suite_json = std::fs::read_to_string(test_file).unwrap();
 
         let addr = address!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b");
