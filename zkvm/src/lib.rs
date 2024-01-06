@@ -7,10 +7,10 @@ use powdr::riscv::continuations::{
 };
 use powdr::riscv::{compile_rust, CoProcessors};
 use powdr::riscv_executor;
-use std::path::Path;
-use std::time::Instant;
 use revm::primitives::Address;
 use std::collections::HashMap as STDHashMap;
+use std::path::Path;
+use std::time::Instant;
 
 pub fn zkvm_evm_prove_one(
     suite_json: String,
