@@ -10,5 +10,6 @@ models = { git = "https://github.com/powdr-labs/powdr_revm", branch = "continuat
 
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive", "rc"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+ahash = { version = "=0.8.6", default-features = false }
 
 [workspace]
