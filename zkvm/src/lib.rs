@@ -1,236 +1,154 @@
-#![allow(unused_macros)]
-#![allow(dead_code)]
-use std::io::BufWriter;
-use std::io::Write;
-use std::sync::Arc;
-use std::sync::Mutex;
+use backend::BackendType;
+use powdr::executor::witgen::QueryCallback;
+use powdr::number::{FieldElement, GoldilocksField};
+use powdr::pipeline::{parse_query, Pipeline, Stage};
+use powdr::riscv::continuations::{
+    bootloader::default_input, rust_continuations, rust_continuations_dry_run,
+};
+use powdr::riscv::{compile_rust, CoProcessors};
+use powdr::riscv_executor;
+use revm::primitives::Address;
+use std::collections::HashMap as STDHashMap;
+use std::path::Path;
+use std::time::Instant;
 
-macro_rules! local_fill {
-    ($left:expr, $right:expr, $fun:expr) => {
-        if let Some(right) = $right {
-            $left = $fun(right.0)
-        }
+pub fn zkvm_evm_prove_one(
+    suite_json: String,
+    _addr: Address,
+    _chain_id: u64,
+    output_path: &str,
+) -> Result<(), String> {
+    log::debug!("Compiling Rust...");
+    let force_overwrite = true;
+    let with_bootloader = true;
+    let (asm_file_path, asm_contents) = compile_rust(
+        "vm/evm",
+        Path::new(output_path),
+        force_overwrite,
+        &CoProcessors::base().with_poseidon(),
+        with_bootloader,
+    )
+    .ok_or_else(|| vec!["could not compile rust".to_string()])
+    .unwrap();
+
+    let mk_pipeline = || {
+        Pipeline::<GoldilocksField>::default()
+            .from_asm_string(asm_contents.clone(), Some(asm_file_path.clone()))
     };
-    ($left:expr, $right:expr) => {
-        if let Some(right) = $right {
-            $left = Address::from(right.as_fixed_bytes())
-        }
+
+    log::debug!("Creating data callback...");
+    let mut suite_json_bytes: Vec<GoldilocksField> = suite_json
+        .into_bytes()
+        .iter()
+        .map(|b| (*b as u32).into())
+        .collect();
+    suite_json_bytes.insert(0, (suite_json_bytes.len() as u32).into());
+
+    let mut data: STDHashMap<GoldilocksField, Vec<GoldilocksField>> = STDHashMap::default();
+    data.insert(666.into(), suite_json_bytes);
+
+    log::debug!("Running powdr-riscv executor in fast mode...");
+    let start = Instant::now();
+    let (trace, _mem) = riscv_executor::execute::<GoldilocksField>(
+        &asm_contents,
+        &data,
+        &default_input(),
+        riscv_executor::ExecMode::Fast,
+    );
+    let duration = start.elapsed();
+    log::debug!("Fast executor took: {:?}", duration);
+    log::debug!("Trace length: {}", trace.len);
+
+    log::debug!("Running powdr-riscv executor in trace mode for continuations...");
+    let start = Instant::now();
+    let bootloader_inputs = rust_continuations_dry_run(mk_pipeline(), data.clone());
+    let duration = start.elapsed();
+    log::debug!("Trace executor took: {:?}", duration);
+
+    let prove_with = Some(BackendType::EStark);
+    let generate_witness = |pipeline: Pipeline<GoldilocksField>| -> Result<(), Vec<String>> {
+        let data = data_to_query_callback(data.clone());
+        let mut pipeline = pipeline.add_query_callback(Box::new(data));
+        pipeline.advance_to(Stage::GeneratedWitness)?;
+        prove_with.map(|backend| pipeline.with_backend(backend).proof().unwrap());
+        Ok(())
     };
+
+    log::debug!("Running witness generation...");
+    let start = Instant::now();
+    rust_continuations(mk_pipeline, generate_witness, bootloader_inputs).unwrap();
+    let duration = start.elapsed();
+    log::debug!("Witness generation took: {:?}", duration);
+    Ok(())
 }
 
-struct FlushWriter {
-    writer: Arc<Mutex<BufWriter<std::fs::File>>>,
-}
-
-impl FlushWriter {
-    fn new(writer: Arc<Mutex<BufWriter<std::fs::File>>>) -> Self {
-        Self { writer }
+fn access_element<T: FieldElement>(
+    name: &str,
+    elements: &[T],
+    index_str: &str,
+) -> Result<Option<T>, String> {
+    let index = index_str
+        .parse::<usize>()
+        .map_err(|e| format!("Error parsing index: {e})"))?;
+    let value = elements.get(index).cloned();
+    if let Some(value) = value {
+        Ok(Some(value))
+    } else {
+        Err(format!(
+            "Error accessing {name}: Index {index} out of bounds {}",
+            elements.len()
+        ))
     }
 }
 
-impl Write for FlushWriter {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.writer.lock().unwrap().write(buf)
-    }
+#[allow(clippy::print_stdout)]
+fn data_to_query_callback<T: FieldElement>(data: STDHashMap<T, Vec<T>>) -> impl QueryCallback<T> {
+    move |query: &str| -> Result<Option<T>, String> {
+        // TODO In the future, when match statements need to be exhaustive,
+        // This function probably gets an Option as argument and it should
+        // answer None by Ok(None).
 
-    fn flush(&mut self) -> std::io::Result<()> {
-        self.writer.lock().unwrap().flush()
+        match &parse_query(query)?[..] {
+            ["\"input\"", index] => access_element("prover inputs", &data[&T::zero()], index),
+            ["\"data\"", index, what] => {
+                let what = what
+                    .parse::<usize>()
+                    .map_err(|e| format!("Error parsing what: {e})"))?;
+
+                access_element("prover inputs", &data[&(what as u64).into()], index)
+            }
+            ["\"print_char\"", ch] => {
+                print!(
+                    "{}",
+                    ch.parse::<u8>()
+                        .map_err(|e| format!("Invalid char to print: {e}"))?
+                        as char
+                );
+                // We do not answer None because we don't want this function to be
+                // called again.
+                Ok(Some(0.into()))
+            }
+            ["\"hint\"", value] => Ok(Some(T::from_str(value))),
+            _k => Err("Unsupported query".to_string()),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use backend::BackendType;
-    use compiler::pipeline::{Pipeline, Stage};
-    use ethers_providers::Middleware;
-    use ethers_providers::{Http, Provider};
-    use indicatif::ProgressBar;
-    use mktemp::Temp;
-    use number::GoldilocksField;
-    use revm::db::{CacheDB, EmptyDB};
-    use revm::inspectors::TracerEip3155;
-    use revm::primitives::{Address, Env, TransactTo, U256};
-    use revm::EVM;
-    use riscv::{
-        compile_rust,
-        continuations::{rust_continuations, rust_continuations_dry_run},
-        CoProcessors,
-    };
-    use std::fs::OpenOptions;
-    use std::path::PathBuf;
+    use super::zkvm_evm_prove_one;
 
-    static BYTECODE: &str = "61029a60005260206000f3";
+    use revm::primitives::address;
 
     #[test]
-    #[ignore = "Too slow"]
-    fn test_revm_prove_single_contract() {
+    #[ignore = "Too long"]
+    fn test_zkvm_evm_prove() {
         env_logger::try_init().unwrap_or_default();
+        //let test_file = "test-vectors/blockInfo.json";
+        let test_file = "test-vectors/solidityExample.json";
+        let suite_json = std::fs::read_to_string(test_file).unwrap();
 
-        type F = GoldilocksField;
-        let temp_dir = Temp::new_dir().unwrap();
-        log::info!("Write to {:?}", temp_dir);
-        let case = "vm/evm";
-        let coprocessors = CoProcessors::base().with_poseidon();
-        // Compile REVM to powdr asm
-        let powdr_asm = compile_rust(case, &temp_dir, true, &coprocessors, true).unwrap();
-
-        let bytes = hex::decode(BYTECODE).unwrap();
-
-        let length: GoldilocksField = (bytes.len() as u64).into();
-        let mut bytecode: Vec<GoldilocksField> = vec![length];
-        bytecode.extend(bytes.into_iter().map(|x| GoldilocksField::from(x as u64)));
-
-        // Load the powdr asm
-        let pipeline_factory = || {
-            Pipeline::default()
-                .from_asm_string(powdr_asm.1.clone(), Some(PathBuf::from(case)))
-                .with_prover_inputs(bytecode.clone())
-        };
-
-        // Execute the evm and generate inputs for segment
-        let bootloader_inputs =
-            rust_continuations_dry_run::<GoldilocksField>(pipeline_factory(), bytecode.clone());
-
-        // Build the wtns and proof
-        let prove_with = Some(BackendType::EStark);
-        let generate_witness_and_prove_maybe =
-            |mut pipeline: Pipeline<F>| -> Result<(), Vec<String>> {
-                pipeline.advance_to(Stage::GeneratedWitness).unwrap();
-                prove_with.map(|backend| pipeline.with_backend(backend).proof().unwrap());
-                Ok(())
-            };
-
-        rust_continuations(
-            pipeline_factory,
-            generate_witness_and_prove_maybe,
-            bootloader_inputs,
-        )
-        .unwrap();
-    }
-
-    #[tokio::test]
-    async fn test_revm_prove_full_block() {
-        // Create ethers client and wrap it in Arc<M>
-        let client = Provider::<Http>::try_from(
-            "https://mainnet.infura.io/v3/c60b0bb42f8a4c6481ecd229eddaca27",
-        )
-        .unwrap();
-        let client = Arc::new(client);
-
-        // Params
-        let chain_id: u64 = 1;
-        let block_number = 0x5BAD55;
-
-        // Fetch the transaction-rich block
-        let block = match client.get_block_with_txs(block_number).await {
-            Ok(Some(block)) => block,
-            Ok(None) => panic!("Block not found"),
-            Err(error) => panic!("Error: {:?}", error),
-        };
-        println!("Fetched block number: {}", block.number.unwrap().0[0]);
-        //let previous_block_number = block_number - 1;
-
-        // Use the previous block state as the db with caching
-        //let _prev_id: BlockId = previous_block_number.into();
-        // SAFETY: This cannot fail since this is in the top-level tokio runtime
-        //let state_db = EthersDB::new(Arc::clone(&client), Some(prev_id)).expect("panic");
-        let cache_db = CacheDB::new(EmptyDB::default());
-        let mut evm: EVM<CacheDB<EmptyDB>> = EVM::new();
-        evm.database(cache_db);
-
-        let mut env = Env::default();
-        if let Some(number) = block.number {
-            let nn = number.0[0];
-            env.block.number = U256::from(nn);
-        }
-        local_fill!(env.block.coinbase, block.author);
-        local_fill!(env.block.timestamp, Some(block.timestamp), U256::from_limbs);
-        local_fill!(
-            env.block.difficulty,
-            Some(block.difficulty),
-            U256::from_limbs
-        );
-        local_fill!(env.block.gas_limit, Some(block.gas_limit), U256::from_limbs);
-        if let Some(base_fee) = block.base_fee_per_gas {
-            local_fill!(env.block.basefee, Some(base_fee), U256::from_limbs);
-        }
-
-        let txs = block.transactions.len();
-        println!("Found {txs} transactions.");
-
-        let console_bar = Arc::new(ProgressBar::new(txs as u64));
-        let elapsed = std::time::Duration::ZERO;
-
-        // Create the traces directory if it doesn't exist
-        std::fs::create_dir_all("traces").expect("Failed to create traces directory");
-
-        // Fill in CfgEnv
-        env.cfg.chain_id = chain_id;
-        for tx in block.transactions {
-            env.tx.caller = Address::from(tx.from.as_fixed_bytes());
-            env.tx.gas_limit = tx.gas.as_u64();
-            local_fill!(env.tx.gas_price, tx.gas_price, U256::from_limbs);
-            local_fill!(env.tx.value, Some(tx.value), U256::from_limbs);
-            env.tx.data = tx.input.0.into();
-            let mut gas_priority_fee = U256::ZERO;
-            local_fill!(
-                gas_priority_fee,
-                tx.max_priority_fee_per_gas,
-                U256::from_limbs
-            );
-            env.tx.gas_priority_fee = Some(gas_priority_fee);
-            env.tx.chain_id = Some(chain_id);
-            env.tx.nonce = Some(tx.nonce.as_u64());
-            if let Some(access_list) = tx.access_list {
-                env.tx.access_list = access_list
-                    .0
-                    .into_iter()
-                    .map(|item| {
-                        let new_keys: Vec<U256> = item
-                            .storage_keys
-                            .into_iter()
-                            .map(|h256| U256::from_le_bytes(h256.0))
-                            .collect();
-                        (Address::from(item.address.as_fixed_bytes()), new_keys)
-                    })
-                    .collect();
-            } else {
-                env.tx.access_list = Default::default();
-            }
-
-            env.tx.transact_to = match tx.to {
-                Some(to_address) => TransactTo::Call(Address::from(to_address.as_fixed_bytes())),
-                None => TransactTo::create(),
-            };
-
-            evm.env = env.clone();
-
-            // Construct the file writer to write the trace to
-            let tx_number = tx.transaction_index.unwrap().0[0];
-            let file_name = format!("traces/{}.json", tx_number);
-            let write = OpenOptions::new().write(true).create(true).open(file_name);
-            let inner = Arc::new(Mutex::new(BufWriter::new(
-                write.expect("Failed to open file"),
-            )));
-            let writer = FlushWriter::new(Arc::clone(&inner));
-
-            // Inspect and commit the transaction to the EVM
-            let inspector = TracerEip3155::new(Box::new(writer), true, true);
-            if let Err(error) = evm.inspect_commit(inspector) {
-                println!("Got error: {:?}", error);
-            }
-
-            // Flush the file writer
-            inner.lock().unwrap().flush().expect("Failed to flush file");
-
-            console_bar.inc(1);
-        }
-
-        console_bar.finish_with_message("Finished all transactions.");
-        println!(
-            "Finished execution. Total CPU time: {:.6}s",
-            elapsed.as_secs_f64()
-        );
+        let addr = address!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b");
+        zkvm_evm_prove_one(suite_json, addr, 1, "/tmp/test").unwrap();
     }
 }
