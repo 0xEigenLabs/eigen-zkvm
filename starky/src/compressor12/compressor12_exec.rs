@@ -1,6 +1,5 @@
 use crate::compressor12_pil::CompressorNameSpace::*;
 use crate::compressor12_pil::CompressorPolName::a;
-use crate::errors::EigenError;
 use crate::io_utils::read_vec_from_file;
 use crate::pilcom::compile_pil_from_path;
 use crate::polsarray::{PolKind, PolsArray};
