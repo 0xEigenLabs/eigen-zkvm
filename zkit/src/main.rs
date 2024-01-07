@@ -1,4 +1,5 @@
 extern crate clap;
+pub use anyhow::{bail, Result};
 use clap::{command, Parser};
 use dsl_compile::circom_compiler;
 use groth16::api::*;
@@ -403,8 +404,7 @@ fn main() {
             args.output,
             args.no_simplification,
             args.reduced_simplification,
-        )
-        .map_err(|_| EigenError::from("compile error".to_string())),
+        ),
         Command::CalculateWitness(args) => {
             calculate_witness(&args.wasm_file, &args.input_json, &args.output)
         }
@@ -454,9 +454,7 @@ fn main() {
             &args.circom_file,
             &args.zkin,
             &args.prover_addr,
-        )
-        .map_err(|e| EigenError::from(format!("stark prove error {:?}", e))),
-
+        ),
         Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
         Command::Compressor12Setup(args) => starky::compressor12_setup::setup(
             &args.r1cs_file,
@@ -464,19 +462,16 @@ fn main() {
             &args.const_file,
             &args.exec_file,
             args.force_n_bits,
-        )
-        .map_err(|_| EigenError::from("compreesor12 setup error".to_string())),
+        ),
         Command::Compressor12Exec(args) => starky::compressor12_exec::exec(
             &args.input_file,
             &args.wasm_file,
             &args.pil_file,
             &args.exec_file,
             &args.commit_file,
-        )
-        .map_err(|_| EigenError::from("compreesor12 exec error".to_string())),
+        ),
         Command::JoinZkin(args) => {
             starky::zkin_join::join_zkin(&args.zkin1, &args.zkin2, &args.zkinout)
-                .map_err(|_| EigenError::from("join_zkin error".to_string()))
         }
         Command::Groth16Setup(args) => groth16_setup(
             &args.curve_type,
@@ -484,8 +479,7 @@ fn main() {
             &args.pk_file,
             &args.vk_file,
             args.to_hex,
-        )
-        .map_err(|e| EigenError::from(format!("groth16 setup error {:?}", e))),
+        ),
         Command::Groth16Prove(args) => groth16_prove(
             &args.curve_type,
             &args.circuit_file,
@@ -495,15 +489,13 @@ fn main() {
             &args.public_input_file,
             &args.proof_file,
             args.to_hex,
-        )
-        .map_err(|e| EigenError::from(format!("groth16 prove error {:?}", e))),
+        ),
         Command::Groth16Verify(args) => groth16_verify(
             &args.curve_type,
             &args.vk_file,
             &args.public_input_file,
             &args.proof_file,
-        )
-        .map_err(|e| EigenError::from(format!("groth16 verify error {:?}", e))),
+        ),
     };
     match exec_result {
         Err(x) => {

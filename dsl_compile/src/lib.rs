@@ -1,6 +1,6 @@
 //! It's for: Domain Specific Language(DSL) compiler: now only include circom compile.
 
-use crate::errors::DslError;
+use crate::errors::{bail, DslError, Result};
 use std::path::Path;
 
 mod compilation_user;
@@ -22,7 +22,7 @@ pub fn circom_compiler(
     output: String,
     no_simplification: bool,
     reduced_simplification: bool,
-) -> Result<(), DslError> {
+) -> Result<()> {
     use compilation_user::CompilerConfig;
     use execution_user::ExecutionConfig;
     let fullopt = !full_simplification.is_empty();

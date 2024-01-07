@@ -11,6 +11,7 @@ use crate::traits;
 use crate::traits::FieldExtension;
 use crate::traits::{MTNodeType, MerkleTree, Transcript};
 use crate::types::StarkStruct;
+use anyhow::bail;
 use plonky::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 use std::collections::HashMap;
@@ -98,23 +99,23 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
         let tree = M::new();
         let res = tree.verify_group_proof(&proof.root1, &query[0].1, idx, &query[0].0)?;
         if !res {
-            return Err(FRIVerifierFailed);
+            bail!(FRIVerifierFailed);
         }
         let res = tree.verify_group_proof(&proof.root2, &query[1].1, idx, &query[1].0)?;
         if !res {
-            return Err(FRIVerifierFailed);
+            bail!(FRIVerifierFailed);
         }
         let res = tree.verify_group_proof(&proof.root3, &query[2].1, idx, &query[2].0)?;
         if !res {
-            return Err(FRIVerifierFailed);
+            bail!(FRIVerifierFailed);
         }
         let res = tree.verify_group_proof(&proof.root4, &query[3].1, idx, &query[3].0)?;
         if !res {
-            return Err(FRIVerifierFailed);
+            bail!(FRIVerifierFailed);
         }
         let res = tree.verify_group_proof(const_root, &query[4].1, idx, &query[4].0)?;
         if !res {
-            return Err(FRIVerifierFailed);
+            bail!(FRIVerifierFailed);
         }
         let mut ctx_query = StarkContext::<<M as traits::MerkleTree>::ExtendField> {
             tree1: query[0].0.clone(),

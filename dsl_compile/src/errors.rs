@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+pub use anyhow::{bail, Result};
+
 #[derive(Error, Debug)]
 pub enum DslError {
     #[error("invalid range proof, `{0}`")]
