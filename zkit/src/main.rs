@@ -1,5 +1,4 @@
 extern crate clap;
-pub use anyhow::{bail, Result};
 use clap::{command, Parser};
 use dsl_compile::circom_compiler;
 use groth16::api::*;
@@ -8,7 +7,6 @@ use plonky::api::{
     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
     generate_verifier, prove as plonky_prove, setup, verify,
 };
-use plonky::errors::EigenError;
 use starky::prove::stark_prove;
 use std::time::Instant;
 
