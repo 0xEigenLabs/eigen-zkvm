@@ -6,6 +6,7 @@ use crate::starkinfo_codegen::{
     PolType, Segment,
 };
 use crate::types::{Expression, Public, StarkStruct, PIL};
+use anyhow::bail;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt;
@@ -226,11 +227,11 @@ impl StarkInfo {
         let stark_deg = 2usize.pow(stark_struct.nBits as u32);
 
         if stark_deg != pil_deg {
-            return Err(EigenError::MustEqualDegreeError(stark_deg, pil_deg));
+            bail!(EigenError::MustEqualDegreeError(stark_deg, pil_deg));
         }
 
         if stark_struct.nBitsExt != stark_struct.steps[0].nBits {
-            return Err(EigenError::MustEqualDegreeError(
+            bail!(EigenError::MustEqualDegreeError(
                 stark_struct.nBitsExt,
                 stark_struct.steps[0].nBits,
             ));

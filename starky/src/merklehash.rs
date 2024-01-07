@@ -28,6 +28,7 @@ use crate::linearhash::LinearHash;
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
+use anyhow::bail;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use std::time::Instant;
@@ -429,7 +430,7 @@ impl MerkleTree for MerkleTreeGL {
     // the path always returns 2-dim array likes [[x,x,x,x], ...]
     fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<FGL>>)> {
         if idx >= self.height {
-            return Err(EigenError::MerkleTreeError(
+            bail!(EigenError::MerkleTreeError(
                 "access invalid node".to_string(),
             ));
         }
