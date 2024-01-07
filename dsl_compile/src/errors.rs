@@ -4,9 +4,6 @@ pub use anyhow::{bail, Result};
 
 #[derive(Error, Debug)]
 pub enum DslError {
-    #[error("invalid range proof, `{0}`")]
-    InvalidValue(String),
-
     #[error("circom compiler error, '{0}'")]
     CircomCompileError(String),
 

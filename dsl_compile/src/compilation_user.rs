@@ -2,9 +2,6 @@ use crate::errors::{bail, DslError, Result};
 use ansi_term::Colour;
 use compiler::compiler_interface;
 use compiler::compiler_interface::{Config, VCP};
-use program_structure::error_code::ReportCode;
-use program_structure::error_definition::Report;
-use program_structure::file_definition::FileLibrary;
 
 pub struct CompilerConfig {
     pub js_folder: String,

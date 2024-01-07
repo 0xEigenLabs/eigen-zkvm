@@ -1,6 +1,6 @@
 //! It's for: Domain Specific Language(DSL) compiler: now only include circom compile.
 
-use crate::errors::{bail, DslError, Result};
+use crate::errors::Result;
 use std::path::Path;
 
 mod compilation_user;

@@ -302,7 +302,6 @@ pub fn flat_array(v: &[Value]) -> Vec<BigInt> {
 // callback hooks for debugging
 mod runtime {
     use super::*;
-    use anyhow::bail;
 
     pub fn error(store: &mut Store) -> Function {
         #[allow(unused)]

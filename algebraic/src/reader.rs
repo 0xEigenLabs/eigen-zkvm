@@ -1,5 +1,5 @@
 use crate::errors::{EigenError, Result};
-use anyhow::{bail, Context};
+use anyhow::bail;
 use byteorder::{LittleEndian, ReadBytesExt};
 use itertools::Itertools;
 use std::collections::BTreeMap;
