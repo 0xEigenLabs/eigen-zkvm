@@ -1,10 +1,10 @@
-use crate::errors::DslError;
+use crate::errors::{bail, DslError, Result};
 use crate::input_user::Input;
 use crate::CIRCOM_VERSION;
 use program_structure::error_definition::Report;
 use program_structure::program_archive::ProgramArchive;
 
-pub fn parse_project(input_info: &Input) -> Result<ProgramArchive, DslError> {
+pub fn parse_project(input_info: &Input) -> Result<ProgramArchive> {
     let initial_file = input_info.input_file().to_string();
     let result_program_archive = parser::run_parser(
         initial_file,
@@ -14,7 +14,7 @@ pub fn parse_project(input_info: &Input) -> Result<ProgramArchive, DslError> {
     match result_program_archive {
         Err((file_library, report_collection)) => {
             Report::print_reports(&report_collection, &file_library);
-            Err(DslError::CircomCompileError(
+            bail!(DslError::CircomCompileError(
                 "parser::run_parser error".to_string(),
             ))
         }

@@ -12,6 +12,7 @@ wast = "39.0.0"
 
 # error and log
 thiserror="1.0"
+anyhow = { version = "1.0", default-features = false }
 log = "0.4.0"
 
 ## from circom

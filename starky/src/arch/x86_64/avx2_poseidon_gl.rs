@@ -8,6 +8,8 @@ use core::arch::x86_64::*;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::FrRepr;
 //use plonky::Field;
+use crate::errors::Result;
+use anyhow::bail;
 use plonky::PrimeField;
 
 #[derive(Debug)]
@@ -319,7 +321,7 @@ impl Poseidon {
         *c_h = Avx2GoldilocksField::new(_mm256_srli_epi64(r0, 32));
     }
 
-    pub fn hash(&self, inp: &Vec<FGL>, init_state: &[FGL], out: usize) -> Result<Vec<FGL>, String> {
+    pub fn hash(&self, inp: &Vec<FGL>, init_state: &[FGL], out: usize) -> Result<Vec<FGL>> {
         unsafe { self.hash_inner(inp, init_state, out) }
     }
 
@@ -328,12 +330,12 @@ impl Poseidon {
         inp: &Vec<FGL>,
         init_state: &[FGL],
         out: usize,
-    ) -> Result<Vec<FGL>, String> {
+    ) -> Result<Vec<FGL>> {
         if inp.len() != 8 {
-            return Err(format!("Wrong inputs length {} != 8", inp.len(),));
+            bail!(format!("Wrong inputs length {} != 8", inp.len(),));
         }
         if init_state.len() != 4 {
-            return Err(format!("Capacity inputs length {} != 4", init_state.len(),));
+            bail!(format!("Capacity inputs length {} != 4", init_state.len(),));
         }
         let t = 12;
         let n_rounds_f = POSEIDON_CONSTANTS_OPT_AVX2.n_rounds_f;

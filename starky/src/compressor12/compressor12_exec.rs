@@ -1,9 +1,9 @@
 use crate::compressor12_pil::CompressorNameSpace::*;
 use crate::compressor12_pil::CompressorPolName::a;
-use crate::errors::EigenError;
 use crate::io_utils::read_vec_from_file;
 use crate::pilcom::compile_pil_from_path;
 use crate::polsarray::{PolKind, PolsArray};
+use anyhow::Result;
 use num_traits::Zero;
 use plonky::ff::PrimeField;
 use plonky::field_gl::Fr as FGL;
@@ -11,8 +11,6 @@ use plonky::witness::{load_input_for_witness, WitnessCalculator};
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-
-pub type Result<T> = std::result::Result<T, EigenError>;
 
 // exec phase:
 // input files: .wasm, .exec,  .pil, zkin.json(input file),
