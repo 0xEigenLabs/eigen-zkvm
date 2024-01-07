@@ -9,6 +9,7 @@ use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::FrRepr;
 //use plonky::Field;
 use crate::errors::Result;
+use anyhow::bail;
 use plonky::PrimeField;
 
 #[derive(Debug)]
@@ -326,10 +327,10 @@ impl Poseidon {
         out: usize,
     ) -> Result<Vec<FGL>> {
         if inp.len() != 16 {
-            return Err(format!("Wrong inputs length {} != 16", inp.len(),));
+            bail!(format!("Wrong inputs length {} != 16", inp.len(),));
         }
         if init_state.len() != 8 {
-            return Err(format!("Capacity inputs length {} != 8", init_state.len(),));
+            bail!(format!("Capacity inputs length {} != 8", init_state.len(),));
         }
         let t = 24;
         let n_rounds_f = POSEIDON_CONSTANTS_OPT_AVX512.n_rounds_f;
