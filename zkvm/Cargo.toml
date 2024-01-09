@@ -8,26 +8,15 @@ edition = "2021"
 [dependencies]
 itertools = "0.12.0"
 # serialization
-serde = { version = "1.0", features = [ "derive" ] }
-serde_json = "1.0"
-mktemp = "0.5.1"
 log = "0.4.0"
 
-compiler = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "compiler" }
-riscv = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "riscv" }
-number = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "number" }
-backend = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "backend" }
-
-revm = { version = "3.5.0", features = ["std", "ethersdb", "serde"] }
+powdr = { git = "https://github.com/powdr-labs/powdr", branch = "continuations-data-input" }
+backend = { git = "https://github.com/powdr-labs/powdr", branch = "continuations-data-input", package = "backend" }
+models = { git = "https://github.com/powdr-labs/powdr_revm", branch = "continuations", package = "models" }
+hex = "0.4.3"
+thiserror = "1.0"
+revm = { git = "https://github.com/powdr-labs/revm", branch = "serde-no-std", default-features = false, features = [ "serde" ] }
+serde_json = "1.0.108"
 
 [dev-dependencies]
 env_logger = "0.10"
-hex = "0.4.3"
-indicatif = "*"
-ethers-providers = { version = "2.0", features = ["ws"] }
-ethers-core = { version = "2.0" }
-tokio = { version = "1.35", features = [
-    "rt-multi-thread",
-    "macros",
-] }
-futures = { version = "0.3.30" }
