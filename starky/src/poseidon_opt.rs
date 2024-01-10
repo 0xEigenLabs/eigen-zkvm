@@ -1,6 +1,8 @@
 #![allow(non_snake_case)]
 use crate::constant::POSEIDON_CONSTANTS_OPT;
+use crate::errors::Result;
 use crate::poseidon_constants_opt as constants;
+use anyhow::bail;
 use plonky::field_gl::Fr as FGL;
 use plonky::Field;
 
@@ -75,13 +77,13 @@ impl Poseidon {
         x.mul_assign(&aux);
     }
 
-    pub fn hash(&self, inp: &[FGL], init_state: &[FGL], out: usize) -> Result<Vec<FGL>, String> {
+    pub fn hash(&self, inp: &[FGL], init_state: &[FGL], out: usize) -> Result<Vec<FGL>> {
         self.hash_inner(inp, init_state, out)
     }
 
-    fn hash_inner(&self, inp: &[FGL], init_state: &[FGL], out: usize) -> Result<Vec<FGL>, String> {
+    fn hash_inner(&self, inp: &[FGL], init_state: &[FGL], out: usize) -> Result<Vec<FGL>> {
         if inp.len() != 8 {
-            return Err(format!("Wrong inputs length {} != 8", inp.len(),));
+            bail!(format!("Wrong inputs length {} != 8", inp.len(),));
         }
 
         let t = 12;
@@ -94,7 +96,7 @@ impl Poseidon {
 
         let mut state = vec![FGL::ZERO; t];
         if init_state.len() != 4 {
-            return Err(format!("Capacity inputs length {} != 4", init_state.len(),));
+            bail!(format!("Capacity inputs length {} != 4", init_state.len(),));
         }
 
         state[0..8].clone_from_slice(inp);

@@ -9,6 +9,8 @@ use crate::poseidon_bls12381_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use anyhow::bail;
+
 use ff::Field;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
@@ -270,7 +272,7 @@ impl MerkleTree for MerkleTreeBLS12381 {
     // the path always returns 2-dim array likes [[x..14..x], ...]
     fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<Fr>>)> {
         if idx >= self.height {
-            return Err(EigenError::MerkleTreeError(
+            bail!(EigenError::MerkleTreeError(
                 "access invalid node".to_string(),
             ));
         }

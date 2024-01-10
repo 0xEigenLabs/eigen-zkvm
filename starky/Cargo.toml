@@ -28,6 +28,7 @@ hashbrown = { version = "0.14.3", features = ["rayon"] }
 
 # error and log
 thiserror="1.0"
+anyhow = { version = "1.0", default-features = false }
 log = "0.4.0"
 
 # R1CS and Goldilocks

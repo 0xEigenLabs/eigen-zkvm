@@ -5,6 +5,7 @@ use crate::helper::log2_any;
 use crate::polutils::{eval_pol, pol_mul_axi};
 use crate::traits::{FieldExtension, MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, Step};
+use anyhow::bail;
 use plonky::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 
@@ -193,7 +194,7 @@ impl FRI {
                 tree.verify_group_proof(&proof.queries[si].root, &query[0].1, idx, &query[0].0)?;
             if !res {
                 log::error!("check_query_fn failed si:{},idx:{}", si, idx);
-                return Err(FRIVerifierFailed);
+                bail!(FRIVerifierFailed);
             }
             Ok(split3(&query[0].0))
         };
