@@ -661,7 +661,7 @@ pub fn expression_error(_pil: &PIL, strerr: String, _e1: usize, _e2: usize) -> R
     bail!(EigenError::ExpressionError(strerr))
 }
 
-pub fn build_code(ctx: &mut Context, pil: &mut PIL) -> Segment {
+pub fn build_code(ctx: &mut Context, pil: &PIL) -> Segment {
     let seg = Segment {
         first: build_linear_code(ctx, pil, "first"),
         i: build_linear_code(ctx, pil, "i"),
@@ -680,7 +680,7 @@ pub fn build_code(ctx: &mut Context, pil: &mut PIL) -> Segment {
     seg
 }
 
-pub fn build_linear_code(ctx: &mut Context, pil: &PIL, loop_pos: &str) -> Vec<Section> {
+pub fn build_linear_code(ctx: &Context, pil: &PIL, loop_pos: &str) -> Vec<Section> {
     let exp_and_expprimes = match loop_pos {
         "i" | "last" => get_exp_and_expprimes(ctx, pil),
         _ => HashMap::<usize, bool>::new(),
@@ -703,7 +703,7 @@ pub fn build_linear_code(ctx: &mut Context, pil: &PIL, loop_pos: &str) -> Vec<Se
 }
 
 //FIXME where is the exp_id from
-fn get_exp_and_expprimes(ctx: &mut Context, pil: &PIL) -> HashMap<usize, bool> {
+fn get_exp_and_expprimes(ctx: &Context, pil: &PIL) -> HashMap<usize, bool> {
     let mut calc_exps = HashMap::<usize, usize>::new();
     for i in 0..ctx.code.len() {
         if (pil.expressions[ctx.code[i].exp_id].idQ.is_some())

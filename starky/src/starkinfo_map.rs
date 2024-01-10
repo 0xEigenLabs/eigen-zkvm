@@ -345,12 +345,7 @@ impl StarkInfo {
         }
     }
 
-    fn get_dim(
-        &mut self,
-        r: &mut Node,
-        tmp_dim: &mut HashMap<usize, usize>,
-        dim_x: usize,
-    ) -> usize {
+    fn get_dim(&mut self, r: &mut Node, tmp_dim: &HashMap<usize, usize>, dim_x: usize) -> usize {
         #[allow(unused_assignments)]
         let mut d = 0;
         match r.type_.as_str() {
