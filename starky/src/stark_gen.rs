@@ -1226,7 +1226,7 @@ pub mod tests {
         let setup_ =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
 
-        let sp = "/tmp/plonkup.setup";
+        let sp = "/tmp/connection.setup";
         setup_.save(sp, true).unwrap();
         let mut setup = StarkSetup::load(sp).unwrap();
 

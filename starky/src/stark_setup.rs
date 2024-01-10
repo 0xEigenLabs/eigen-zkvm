@@ -7,7 +7,6 @@ use crate::errors::Result;
 use crate::fft_p::interpolate;
 use crate::polsarray::PolsArray;
 use crate::starkinfo::{self, Program, StarkInfo};
-use crate::traits::MTNodeType;
 use crate::traits::{FieldExtension, MerkleTree};
 use crate::types::{StarkStruct, PIL};
 use plonky::field_gl::Fr as FGL;
@@ -34,7 +33,6 @@ impl<M: MerkleTree> StarkSetup<M> {
             .write(true)
             .open(ct)?;
         self.const_tree.save(&mut writer)?;
-        self.const_root.save(&mut writer)?;
 
         let si = base_dir.join("starkinfo");
         let si = fs::OpenOptions::new()
@@ -57,7 +55,7 @@ impl<M: MerkleTree> StarkSetup<M> {
         let ct = base_dir.join("const_tree");
         let mut reader = fs::File::open(ct)?;
         let const_tree = M::load(&mut reader)?;
-        let const_root = M::MTNode::load(&mut reader)?;
+        let const_root = const_tree.root();
 
         let si = base_dir.join("starkinfo");
         let si = fs::File::open(si)?;
