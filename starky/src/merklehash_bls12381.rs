@@ -12,6 +12,7 @@ use ff::Field;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use std::time::Instant;
+use std::io::{Write, Read};
 
 #[derive(Default)]
 pub struct MerkleTreeBLS12381 {
@@ -155,6 +156,12 @@ impl MerkleTree for MerkleTreeBLS12381 {
             height: 0,
             poseidon: Poseidon::new(),
         }
+    }
+    fn save<W: Write>(&self, mut writer: &mut W) -> Result<()> {
+        Ok(())
+    }
+    fn load<R: Read>(mut input: &mut R) -> Result<Self> {
+        Ok(Self::new())
     }
 
     fn element_size(&self) -> usize {

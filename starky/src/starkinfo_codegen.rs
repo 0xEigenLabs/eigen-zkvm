@@ -5,7 +5,7 @@ use crate::starkinfo::StarkInfo;
 use crate::traits::FieldExtension;
 use crate::types::Expression;
 use crate::types::PIL;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use std::fmt;
 
@@ -42,7 +42,7 @@ pub struct Code {
     pub idQ: Option<usize>,
 }
 
-#[derive(Clone, Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Node {
     pub type_: String,
     pub id: usize,
@@ -78,14 +78,14 @@ impl Node {
 }
 
 /// Subcode
-#[derive(Clone, Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Section {
     pub op: String,
     pub dest: Node,
     pub src: Vec<Node>,
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Segment {
     pub first: Vec<Section>,
     pub i: Vec<Section>,
@@ -115,7 +115,7 @@ impl Segment {
     }
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct IndexVec {
     pub cm1_n: Vec<usize>,
     pub cm1_2ns: Vec<usize>,
@@ -149,7 +149,7 @@ impl IndexVec {
     }
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Index {
     pub cm1_n: usize,
     pub cm1_2ns: usize,
@@ -222,7 +222,7 @@ impl Index {
     }
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct PolType {
     pub section: String,
     pub section_pos: usize,
@@ -239,7 +239,7 @@ pub struct Polynom<'a, F: FieldExtension> {
     pub dim: usize,
 }
 
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct EVIdx {
     pub cm: HashMap<(usize, usize), usize>,
     pub const_: HashMap<(usize, usize), usize>,

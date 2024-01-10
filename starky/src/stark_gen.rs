@@ -12,8 +12,8 @@ use crate::interpreter::compile_code;
 use crate::polsarray::PolsArray;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{Polynom, Segment};
-use crate::traits::{batch_inverse, FieldExtension};
-use crate::traits::{MTNodeType, MerkleTree, Transcript};
+use crate::polutils::batch_inverse;
+use crate::traits::{MTNodeType, MerkleTree, Transcript, FieldExtension};
 use crate::types::{StarkStruct, PIL};
 use hashbrown::HashMap;
 use plonky::field_gl::Fr as FGL;
@@ -1256,8 +1256,13 @@ pub mod tests {
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
         cm_pol.load("data/plookup.cm.gl").unwrap();
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json.gl").unwrap();
-        let mut setup =
+        let setup_ =
             StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+
+        let sp = "/tmp/plonkup.setup";
+        setup_.save(sp, true).unwrap();
+        let mut setup = StarkSetup::load(sp).unwrap();
+
         let starkproof = StarkProof::<MerkleTreeGL>::stark_gen::<TranscriptGL>(
             cm_pol,
             const_pol,

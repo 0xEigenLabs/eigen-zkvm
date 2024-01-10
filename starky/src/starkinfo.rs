@@ -6,11 +6,11 @@ use crate::starkinfo_codegen::{
     PolType, Segment,
 };
 use crate::types::{Expression, Public, StarkStruct, PIL};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use std::fmt;
 
-#[derive(Default, Debug, Serialize)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct PCCTX {
     pub f_exp_id: usize,
     pub t_exp_id: usize,
@@ -23,7 +23,7 @@ pub struct PCCTX {
     pub den_id: usize,
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Program {
     pub publics_code: Vec<Segment>,
     pub step2prev: Segment,
@@ -46,7 +46,7 @@ impl fmt::Display for Program {
     }
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct StarkInfo {
     pub var_pol_map: Vec<PolType>,
     pub n_cm1: usize,

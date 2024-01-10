@@ -31,6 +31,8 @@ use crate::traits::MerkleTree;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use std::time::Instant;
+use std::io::{Read, Write};
+use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
 
 #[derive(Default)]
 pub struct MerkleTreeGL {
@@ -260,6 +262,41 @@ impl MerkleTree for MerkleTreeGL {
             height: 0,
             poseidon: Poseidon::new(),
         }
+    }
+
+    fn save<W: Write>(&self, mut writer: &mut W) -> Result<()> {
+        writer.write_u64::<LittleEndian>(self.width as u64)?;
+        writer.write_u64::<LittleEndian>(self.height as u64)?;
+        writer.write_u64::<LittleEndian>(self.elements.len() as u64)?;
+        for i in &self.elements {
+            writer.write_u64::<LittleEndian>(i.as_int())?;
+        }
+        writer.write_u64::<LittleEndian>(self.nodes.len() as u64)?;
+        for i in &self.nodes {
+            i.save(writer)?;
+        }
+        Ok(())
+    }
+
+    fn load<R: Read>(mut reader: &mut R) -> Result<Self> {
+        let mut mt = Self::new();
+        mt.width = reader.read_u64::<LittleEndian>()? as usize;
+        mt.height = reader.read_u64::<LittleEndian>()? as usize;
+
+        let es = reader.read_u64::<LittleEndian>()? as usize;
+        mt.elements = vec![FGL::ZERO; es];
+        for i in 0..es {
+            let e = reader.read_u64::<LittleEndian>()?;
+            mt.elements[i] = FGL::from(e);
+        }
+
+        let ns = reader.read_u64::<LittleEndian>()? as usize;
+        mt.nodes = vec![ElementDigest::<4>::new(&[FGL::ZERO, FGL::ZERO, FGL::ZERO, FGL::ZERO]); ns];
+        for i in 0..ns {
+            mt.nodes[i] = ElementDigest::<4>::load(reader)?;
+        }
+
+        Ok(mt)
     }
 
     fn element_size(&self) -> usize {

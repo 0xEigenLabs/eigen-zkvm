@@ -725,7 +725,8 @@ impl F5G {
 #[cfg(test)]
 pub mod tests {
     use crate::f5g::F5G;
-    use crate::traits::{batch_inverse, FieldExtension};
+    use crate::polutils::batch_inverse;
+    use crate::traits::FieldExtension;
     use plonky::field_gl::Fr;
     use plonky::Field;
     use std::ops::{Add, Mul};

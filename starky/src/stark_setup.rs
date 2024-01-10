@@ -1,4 +1,7 @@
 #![allow(non_snake_case, dead_code)]
+use rayon::prelude::*;
+use std::fs;
+use std::path;
 
 use crate::errors::Result;
 use crate::fft_p::interpolate;
@@ -8,7 +11,7 @@ use crate::traits::{FieldExtension, MerkleTree};
 use crate::types::{StarkStruct, PIL};
 use plonky::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
-use rayon::prelude::*;
+use crate::traits::MTNodeType;
 
 #[derive(Default)]
 pub struct StarkSetup<M: MerkleTree> {
@@ -16,6 +19,51 @@ pub struct StarkSetup<M: MerkleTree> {
     pub const_root: M::MTNode,
     pub starkinfo: StarkInfo,
     pub program: Program,
+}
+
+impl <M: MerkleTree>StarkSetup<M> {
+    pub fn save(&self, base_dir: &str, overwrite: bool) -> Result<()> {
+        if overwrite {
+            fs::remove_dir_all(base_dir)?;
+        }
+        std::fs::create_dir_all(base_dir)?;
+        let base_dir = path::Path::new(base_dir);
+        let ct = base_dir.join("const_tree");
+        let mut writer = fs::OpenOptions::new().create_new(true).write(true).open(ct)?;
+        self.const_tree.save(&mut writer)?;
+        self.const_root.save(&mut writer)?;
+
+        let si = base_dir.join("starkinfo");
+        let si = fs::OpenOptions::new().create_new(true).write(true).open(si)?;
+        serde_json::to_writer(si, &self.starkinfo)?;
+
+        let pg = base_dir.join("program");
+        let pg = fs::OpenOptions::new().create_new(true).write(true).open(pg)?;
+        serde_json::to_writer(pg, &self.program)?;
+        Ok(())
+    }
+
+    pub fn load(base_dir: &str) -> Result<Self> {
+        let base_dir = path::Path::new(base_dir);
+        let ct = base_dir.join("const_tree");
+        let mut reader = fs::File::open(ct)?;
+        let const_tree = M::load(&mut reader)?;
+        let const_root = M::MTNode::load(&mut reader)?;
+
+        let si = base_dir.join("starkinfo");
+        let si = fs::File::open(si)?;
+        let starkinfo: StarkInfo = serde_json::from_reader(si)?;
+
+        let pg = base_dir.join("program");
+        let pg = fs::File::open(pg)?;
+        let program: Program = serde_json::from_reader(pg)?;
+        Ok(StarkSetup {
+            const_tree,
+            const_root,
+            starkinfo,
+            program,
+        })
+    }
 }
 
 /// STARK SETUP

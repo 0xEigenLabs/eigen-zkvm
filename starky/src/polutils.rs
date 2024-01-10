@@ -31,3 +31,23 @@ pub fn extend_pol<F: FieldExtension>(p: &[F], extend_bits: usize) -> Vec<F> {
     res.extend_from_slice(&zeros);
     standard_fft.fft(&res)
 }
+
+pub fn batch_inverse<F: FieldExtension>(elems: &[F]) -> Vec<F> {
+    if elems.is_empty() {
+        return vec![];
+    }
+
+    let mut tmp: Vec<F> = vec![F::ZERO; elems.len()];
+    tmp[0] = elems[0];
+    for i in 1..elems.len() {
+        tmp[i] = elems[i] * (tmp[i - 1]);
+    }
+    let mut z = tmp[tmp.len() - 1].inv();
+    let mut res: Vec<F> = vec![F::ZERO; elems.len()];
+    for i in (1..elems.len()).rev() {
+        res[i] = z * tmp[i - 1];
+        z *= elems[i];
+    }
+    res[0] = z;
+    res
+}

@@ -11,6 +11,7 @@ use crate::traits::MerkleTree;
 use ff::Field;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
+use std::io::{Read, Write};
 
 #[derive(Default)]
 pub struct MerkleTreeBN128 {
@@ -155,6 +156,12 @@ impl MerkleTree for MerkleTreeBN128 {
             height: 0,
             poseidon: Poseidon::new(),
         }
+    }
+    fn save<W: Write>(&self, mut writer: &mut W) -> Result<()> {
+        Ok(())
+    }
+    fn load<R: Read>(mut input: &mut R) -> Result<Self> {
+        Ok(Self::new())
     }
 
     fn element_size(&self) -> usize {
