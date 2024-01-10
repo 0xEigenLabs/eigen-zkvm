@@ -5,9 +5,9 @@ use crate::starkinfo::StarkInfo;
 use crate::traits::FieldExtension;
 use crate::types::Expression;
 use crate::types::PIL;
-use serde::{Serialize, Deserialize};
 use serde::de::Deserializer;
 use serde::ser::SerializeSeq;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
 
@@ -256,7 +256,7 @@ fn serialize_map<S, K: Serialize, V: Serialize>(
 where
     S: serde::Serializer,
 {
-    let mut vec_map = value.iter().collect::<Vec<_>>();
+    let vec_map = value.iter().collect::<Vec<_>>();
     let mut map = serializer.serialize_seq(Some(value.len()))?;
     for v in &vec_map {
         map.serialize_element(v)?;
@@ -264,7 +264,9 @@ where
     map.end()
 }
 
-fn deserialize_map<'de, D>(deserializer: D) -> std::result::Result<HashMap<(usize, usize), usize>, D::Error>
+fn deserialize_map<'de, D>(
+    deserializer: D,
+) -> std::result::Result<HashMap<(usize, usize), usize>, D::Error>
 where
     D: Deserializer<'de>,
 {

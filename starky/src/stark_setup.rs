@@ -7,11 +7,11 @@ use crate::errors::Result;
 use crate::fft_p::interpolate;
 use crate::polsarray::PolsArray;
 use crate::starkinfo::{self, Program, StarkInfo};
+use crate::traits::MTNodeType;
 use crate::traits::{FieldExtension, MerkleTree};
 use crate::types::{StarkStruct, PIL};
 use plonky::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
-use crate::traits::MTNodeType;
 
 #[derive(Default)]
 pub struct StarkSetup<M: MerkleTree> {
@@ -21,7 +21,7 @@ pub struct StarkSetup<M: MerkleTree> {
     pub program: Program,
 }
 
-impl <M: MerkleTree>StarkSetup<M> {
+impl<M: MerkleTree> StarkSetup<M> {
     pub fn save(&self, base_dir: &str, overwrite: bool) -> Result<()> {
         if overwrite && path::Path::new(base_dir).exists() {
             fs::remove_dir_all(base_dir)?;
@@ -29,16 +29,25 @@ impl <M: MerkleTree>StarkSetup<M> {
         std::fs::create_dir_all(base_dir)?;
         let base_dir = path::Path::new(base_dir);
         let ct = base_dir.join("const_tree");
-        let mut writer = fs::OpenOptions::new().create_new(true).write(true).open(ct)?;
+        let mut writer = fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(ct)?;
         self.const_tree.save(&mut writer)?;
         self.const_root.save(&mut writer)?;
 
         let si = base_dir.join("starkinfo");
-        let si = fs::OpenOptions::new().create_new(true).write(true).open(si)?;
+        let si = fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(si)?;
         serde_json::to_writer(si, &self.starkinfo)?;
 
         let pg = base_dir.join("program");
-        let pg = fs::OpenOptions::new().create_new(true).write(true).open(pg)?;
+        let pg = fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(pg)?;
         serde_json::to_writer(pg, &self.program)?;
         Ok(())
     }

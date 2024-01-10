@@ -6,7 +6,7 @@ use crate::starkinfo_codegen::{
     PolType, Segment,
 };
 use crate::types::{Expression, Public, StarkStruct, PIL};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
 

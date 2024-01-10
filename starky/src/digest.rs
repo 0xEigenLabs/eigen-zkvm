@@ -1,14 +1,14 @@
 #![allow(non_snake_case)]
+use crate::errors::Result;
 use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bls12381::FrRepr as FrRepr_bls12381;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::traits::MTNodeType;
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use ff::*;
 use plonky::field_gl::Fr as FGL;
 use std::fmt::Display;
 use std::io::{Read, Write};
-use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
-use crate::errors::Result;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

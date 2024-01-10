@@ -28,11 +28,11 @@ use crate::linearhash::LinearHash;
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
-use std::time::Instant;
 use std::io::{Read, Write};
-use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
+use std::time::Instant;
 
 #[derive(Default)]
 pub struct MerkleTreeGL {
@@ -264,7 +264,7 @@ impl MerkleTree for MerkleTreeGL {
         }
     }
 
-    fn save<W: Write>(&self, mut writer: &mut W) -> Result<()> {
+    fn save<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_u64::<LittleEndian>(self.width as u64)?;
         writer.write_u64::<LittleEndian>(self.height as u64)?;
         writer.write_u64::<LittleEndian>(self.elements.len() as u64)?;
@@ -278,7 +278,7 @@ impl MerkleTree for MerkleTreeGL {
         Ok(())
     }
 
-    fn load<R: Read>(mut reader: &mut R) -> Result<Self> {
+    fn load<R: Read>(reader: &mut R) -> Result<Self> {
         let mut mt = Self::new();
         mt.width = reader.read_u64::<LittleEndian>()? as usize;
         mt.height = reader.read_u64::<LittleEndian>()? as usize;

@@ -8,11 +8,11 @@ use plonky::Field;
 use serde::ser::Serialize;
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
-use std::io::{Write, Read};
+use std::io::{Read, Write};
 
 pub trait MTNodeType
 where
-    Self: Sized
+    Self: Sized,
 {
     fn as_elements(&self) -> &[FGL];
     fn new(value: &[FGL]) -> Self;
@@ -25,7 +25,7 @@ where
 #[allow(clippy::type_complexity)]
 pub trait MerkleTree
 where
-    Self: Sized
+    Self: Sized,
 {
     type MTNode: Copy + std::fmt::Display + Clone + Default + MTNodeType + core::fmt::Debug;
     type BaseField: Clone
