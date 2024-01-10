@@ -23,7 +23,7 @@ pub struct StarkSetup<M: MerkleTree> {
 
 impl <M: MerkleTree>StarkSetup<M> {
     pub fn save(&self, base_dir: &str, overwrite: bool) -> Result<()> {
-        if overwrite {
+        if overwrite && path::Path::new(base_dir).exists() {
             fs::remove_dir_all(base_dir)?;
         }
         std::fs::create_dir_all(base_dir)?;
