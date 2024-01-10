@@ -265,6 +265,7 @@ impl MerkleTree for MerkleTreeGL {
         }
     }
 
+    // TODO: https://github.com/0xEigenLabs/eigen-zkvm/issues/187
     fn save<W: Write>(&self, writer: &mut W) -> Result<()> {
         writer.write_u64::<LittleEndian>(self.width as u64)?;
         writer.write_u64::<LittleEndian>(self.height as u64)?;
