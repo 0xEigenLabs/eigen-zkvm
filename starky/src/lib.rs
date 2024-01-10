@@ -5,7 +5,7 @@
 #![cfg_attr(feature = "avx512", feature(stdsimd))]
 
 pub mod polsarray;
-mod polutils;
+pub mod polutils;
 pub mod stark_verifier_circom;
 pub mod stark_verifier_circom_bn128;
 pub mod traits;
