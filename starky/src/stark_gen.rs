@@ -1223,8 +1223,13 @@ pub mod tests {
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
         cm_pol.load("data/connection.cm").unwrap();
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
-        let mut setup =
+        let setup_ =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+
+        let sp = "/tmp/plonkup.setup";
+        setup_.save(sp, true).unwrap();
+        let mut setup = StarkSetup::load(sp).unwrap();
+
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             cm_pol,
             const_pol,
