@@ -37,11 +37,7 @@ pub fn stark_prove(
     const_pol.load(const_pol_file)?;
 
     let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
-
-    match std::env::var("LOAD_FROM_CPP") {
-        Ok(_) => cm_pol.load_from_cpp(cm_pol_file)?,
-        _ => cm_pol.load(cm_pol_file)?,
-    };
+    cm_pol.load(cm_pol_file)?;
 
     let stark_struct = load_json::<StarkStruct>(stark_struct)?;
     match stark_struct.verificationHashType.as_str() {

@@ -140,54 +140,6 @@ impl PolsArray {
         pol.id + k
     }
 
-    #[time_profiler("load_pols_array_from_cpp")]
-    pub fn load_from_cpp(&mut self, fileName: &str) -> Result<()> {
-        let mut f = File::open(fileName)?;
-        let maxBufferSize = 1024 * 1024 * 32;
-        let totalSize = self.nPols * self.n;
-        let mut buff8: Vec<u8> = vec![0u8; std::cmp::min(totalSize, maxBufferSize) * 8];
-
-        let mut i = 0;
-        let mut j = 0;
-        let mut k = 0;
-        while k < totalSize {
-            log::trace!(
-                "loading {:?}.. {:?} of {}",
-                fileName,
-                k / 1024 / 1024,
-                totalSize / 1024 / 1024
-            );
-            let mut n = std::cmp::min(buff8.len() / 8, totalSize - k);
-            let rs = f.read(&mut buff8[..(n * 8)])?;
-            log::trace!(
-                "read size: read size = {}, n = {}, k = {}, totalSize = {}",
-                rs,
-                n,
-                k,
-                totalSize
-            );
-            let buff: &[u64] = unsafe {
-                std::slice::from_raw_parts(
-                    buff8.as_ptr() as *const u64,
-                    buff8.len() / std::mem::size_of::<u64>(),
-                )
-            };
-            n = rs / 8;
-
-            for l in 0..n {
-                self.array[i][j] = FGL(FrRepr([buff[l]]));
-                i += 1;
-                if i == self.nPols {
-                    i = 0;
-                    j += 1;
-                }
-            }
-            k += n;
-        }
-
-        Ok(())
-    }
-
     #[time_profiler("load_cm_pols_array")]
     pub fn load(&mut self, fileName: &str) -> Result<()> {
         let mut f = File::open(fileName)?;
