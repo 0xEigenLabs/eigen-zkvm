@@ -6,6 +6,8 @@ use crate::traits::FieldExtension;
 use crate::types::Expression;
 use crate::types::PIL;
 use serde::{Serialize, Deserialize};
+use serde::de::Deserializer;
+use serde::ser::SerializeMap;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -241,8 +243,33 @@ pub struct Polynom<'a, F: FieldExtension> {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct EVIdx {
+    #[serde(serialize_with = "serialize_map", deserialize_with = "deserialize_map")]
     pub cm: HashMap<(usize, usize), usize>,
+    #[serde(serialize_with = "serialize_map", deserialize_with = "deserialize_map")]
     pub const_: HashMap<(usize, usize), usize>,
+}
+
+fn serialize_map<S, K: Serialize, V: Serialize>(
+    value: &HashMap<K, V>,
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let mut vec_map = value.iter().collect::<Vec<_>>();
+    let mut map = serializer.serialize_map(Some(value.len()))?;
+    for (k, v) in vec_map {
+        map.serialize_entry(k, v)?;
+    }
+    map.end()
+}
+
+fn deserialize_map<'de, D>(deserializer: D) -> std::result::Result<HashMap<(usize, usize), usize>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let vec = Vec::deserialize(deserializer)?;
+    Ok(HashMap::from_iter(vec))
 }
 
 impl EVIdx {
