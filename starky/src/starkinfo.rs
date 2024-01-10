@@ -8,7 +8,6 @@ use crate::starkinfo_codegen::{
 use crate::types::{Expression, Public, StarkStruct, PIL};
 use serde::{Deserialize, Serialize};
 use anyhow::bail;
-use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt;
 
