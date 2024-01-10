@@ -7,7 +7,7 @@ use crate::types::Expression;
 use crate::types::PIL;
 use serde::{Serialize, Deserialize};
 use serde::de::Deserializer;
-use serde::ser::SerializeMap;
+use serde::ser::SerializeSeq;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -257,9 +257,9 @@ where
     S: serde::Serializer,
 {
     let mut vec_map = value.iter().collect::<Vec<_>>();
-    let mut map = serializer.serialize_map(Some(value.len()))?;
-    for (k, v) in vec_map {
-        map.serialize_entry(k, v)?;
+    let mut map = serializer.serialize_seq(Some(value.len()))?;
+    for v in &vec_map {
+        map.serialize_element(v)?;
     }
     map.end()
 }
