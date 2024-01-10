@@ -1227,7 +1227,7 @@ pub mod tests {
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
 
         let sp = "/tmp/connection.setup";
-        setup_.save(sp, true).unwrap();
+        setup_.save(sp).unwrap();
         let mut setup = StarkSetup::load(sp).unwrap();
 
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
@@ -1265,7 +1265,7 @@ pub mod tests {
             StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
 
         let sp = "/tmp/plonkup.setup";
-        setup_.save(sp, true).unwrap();
+        setup_.save(sp).unwrap();
         let mut setup = StarkSetup::load(sp).unwrap();
 
         let starkproof = StarkProof::<MerkleTreeGL>::stark_gen::<TranscriptGL>(

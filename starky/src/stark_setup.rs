@@ -21,31 +21,22 @@ pub struct StarkSetup<M: MerkleTree> {
 }
 
 impl<M: MerkleTree> StarkSetup<M> {
-    pub fn save(&self, base_dir: &str, overwrite: bool) -> Result<()> {
-        if overwrite && path::Path::new(base_dir).exists() {
+    pub fn save(&self, base_dir: &str) -> Result<()> {
+        if path::Path::new(base_dir).exists() {
             fs::remove_dir_all(base_dir)?;
         }
         std::fs::create_dir_all(base_dir)?;
         let base_dir = path::Path::new(base_dir);
         let ct = base_dir.join("const_tree");
-        let mut writer = fs::OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(ct)?;
+        let mut writer = fs::File::create(ct)?;
         self.const_tree.save(&mut writer)?;
 
         let si = base_dir.join("starkinfo");
-        let si = fs::OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(si)?;
+        let si = fs::File::create(si)?;
         serde_json::to_writer(si, &self.starkinfo)?;
 
         let pg = base_dir.join("program");
-        let pg = fs::OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(pg)?;
+        let pg = fs::File::create(pg)?;
         serde_json::to_writer(pg, &self.program)?;
         Ok(())
     }
