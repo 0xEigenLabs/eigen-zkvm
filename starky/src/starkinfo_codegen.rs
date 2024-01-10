@@ -5,10 +5,10 @@ use crate::starkinfo::StarkInfo;
 use crate::traits::FieldExtension;
 use crate::types::Expression;
 use crate::types::PIL;
+use anyhow::bail;
 use serde::de::Deserializer;
 use serde::ser::SerializeSeq;
 use serde::{Deserialize, Serialize};
-use anyhow::bail;
 use std::collections::HashMap;
 use std::fmt;
 

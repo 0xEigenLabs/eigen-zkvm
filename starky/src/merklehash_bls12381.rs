@@ -8,8 +8,8 @@ use crate::linearhash_bls12381::LinearHashBLS12381;
 use crate::poseidon_bls12381_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use anyhow::bail;
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
 use ff::Field;
 use plonky::field_gl::Fr as FGL;
