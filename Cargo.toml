@@ -9,3 +9,7 @@ members = [
   "dsl_compile"
 ]
 resolver = "2"
+
+[patch."https://github.com/0xEigenLabs/eigen-zkvm"]
+plonky = { path = "plonky" }
+starky = { path = "starky" }
