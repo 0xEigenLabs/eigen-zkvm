@@ -1,14 +1,12 @@
 #![allow(non_snake_case)]
 use crate::compressor12::plonk_setup::PlonkSetup;
-use crate::errors::EigenError;
 use crate::io_utils::write_vec_to_file;
 use crate::r1cs2plonk::PlonkAdd;
 use algebraic::reader::load_r1cs;
+use anyhow::Result;
 use plonky::field_gl::GL;
 use std::fs::File;
 use std::io::Write;
-
-pub type Result<T> = std::result::Result<T, EigenError>;
 
 pub struct Options {
     pub force_bits: usize,

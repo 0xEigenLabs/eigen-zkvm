@@ -1,8 +1,10 @@
 #![allow(non_snake_case)]
 use crate::constant::POSEIDON_BN128_CONSTANTS_OPT;
+use crate::errors::Result;
 use crate::field_bn128::Fr;
 use crate::poseidon_bn128::Constants;
 use crate::poseidon_bn128_constants_opt as constants;
+use anyhow::bail;
 use ff::{from_hex, Field};
 
 pub fn load_constants() -> Constants {
@@ -89,18 +91,18 @@ impl Poseidon {
 
     /// Hash function
     /// init_state would be Fr::zero() initially
-    pub fn hash(&self, inp: &[Fr], init_state: &Fr) -> Result<Fr, String> {
+    pub fn hash(&self, inp: &[Fr], init_state: &Fr) -> Result<Fr> {
         let result = self.hash_inner(inp, init_state, 1)?;
         Ok(result[0])
     }
 
-    pub fn hash_ex(&self, inp: &[Fr], init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
+    pub fn hash_ex(&self, inp: &[Fr], init_state: &Fr, out: usize) -> Result<Vec<Fr>> {
         self.hash_inner(inp, init_state, out)
     }
 
-    fn hash_inner(&self, inp: &[Fr], init_state: &Fr, out: usize) -> Result<Vec<Fr>, String> {
+    fn hash_inner(&self, inp: &[Fr], init_state: &Fr, out: usize) -> Result<Vec<Fr>> {
         if inp.is_empty() || inp.len() > POSEIDON_BN128_CONSTANTS_OPT.n_rounds_p.len() {
-            return Err(format!(
+            bail!(format!(
                 "Wrong inputs length {} > {}",
                 inp.len(),
                 POSEIDON_BN128_CONSTANTS_OPT.n_rounds_p.len()

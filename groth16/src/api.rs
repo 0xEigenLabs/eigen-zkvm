@@ -17,6 +17,7 @@ use algebraic::{
     witness::{load_input_for_witness, WitnessCalculator},
     Field, PrimeField,
 };
+use anyhow::bail;
 use num_traits::Zero;
 use rand;
 
@@ -40,7 +41,7 @@ pub fn groth16_setup(
             write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file, to_hex)?
         }
         _ => {
-            return Err(EigenError::Unknown(format!(
+            bail!(EigenError::Unknown(format!(
                 "Unknown curve type: {}",
                 curve_type
             )))
@@ -105,7 +106,7 @@ pub fn groth16_prove(
             std::fs::write(public_input_file, input_json)?;
         }
         _ => {
-            return Err(EigenError::Unknown(format!(
+            bail!(EigenError::Unknown(format!(
                 "Unknown curve type: {}",
                 curve_type
             )))
@@ -131,7 +132,7 @@ pub fn groth16_verify(
                 Groth16::<_, CircomCircuit<Bn256>>::verify_with_processed_vk(&vk, &inputs, &proof);
 
             if verification_result.is_err() || !verification_result.unwrap() {
-                return Err(EigenError::Unknown("verify failed".to_string()));
+                bail!(EigenError::Unknown("verify failed".to_string()));
             }
         }
 
@@ -144,12 +145,12 @@ pub fn groth16_verify(
                 Groth16::<_, CircomCircuit<Bls12>>::verify_with_processed_vk(&vk, &inputs, &proof);
 
             if verification_result.is_err() || !verification_result.unwrap() {
-                return Err(EigenError::Unknown("verify failed".to_string()));
+                bail!(EigenError::Unknown("verify failed".to_string()));
             }
         }
 
         _ => {
-            return Err(EigenError::Unknown(format!(
+            bail!(EigenError::Unknown(format!(
                 "Unknown curve type: {}",
                 curve_type
             )))

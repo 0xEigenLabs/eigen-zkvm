@@ -1,4 +1,4 @@
-use crate::errors::DslError;
+use crate::errors::{bail, DslError, Result};
 use ansi_term::Colour;
 use std::path::{Path, PathBuf};
 
@@ -56,7 +56,7 @@ pub fn get_simplification_style(
     o_1: bool,
     o_2: bool,
     o_2_argument: &str,
-) -> Result<SimplificationStyle, DslError> {
+) -> Result<SimplificationStyle> {
     let no_rounds = if o_2_argument == "full" {
         Ok(usize::MAX)
     } else {
@@ -69,7 +69,7 @@ pub fn get_simplification_style(
         (false, false, false, _) => Ok(SimplificationStyle::O1),
         _ => {
             log::trace!("{}", Colour::Red.paint("invalid number of rounds"));
-            Err(DslError::CircomCompileError(
+            bail!(DslError::CircomCompileError(
                 "invalid number of rounds".to_string(),
             ))
         }
@@ -83,7 +83,7 @@ impl Input {
         o_style: SimplificationStyle,
         prime: String,
         paths: Vec<String>,
-    ) -> Result<Input, DslError> {
+    ) -> Result<Input> {
         let file_name = input.file_stem().unwrap().to_str().unwrap().to_string();
         let output_c_path = Input::build_folder(output_path, &file_name, CPP);
         let output_js_path = Input::build_folder(output_path, &file_name, JS);

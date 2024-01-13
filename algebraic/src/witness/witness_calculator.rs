@@ -2,6 +2,7 @@
 use crate::bellman_ce::ScalarEngine;
 use crate::errors::{EigenError, Result};
 use crate::witness::{circom::Wasm, fnv, memory::SafeMemory};
+use anyhow::bail;
 use num::ToPrimitive;
 use num_bigint::BigInt;
 use num_bigint::Sign;
@@ -228,13 +229,13 @@ impl WitnessCalculator {
         // write prime
         let (sign, prime_buf) = self.memory.prime.to_bytes_le();
         if sign != Sign::Plus {
-            return Err(EigenError::Unknown(format!(
+            bail!(EigenError::Unknown(format!(
                 "Invalid prime: {}, must be positive",
                 self.memory.prime
             )));
         }
         if prime_buf.len() as u32 != field_size {
-            return Err(EigenError::Unknown(format!(
+            bail!(EigenError::Unknown(format!(
                 "Invalid prime: {}, len must be of {}",
                 self.memory.prime,
                 prime_buf.len()
@@ -305,7 +306,14 @@ mod runtime {
     pub fn error(store: &mut Store) -> Function {
         #[allow(unused)]
         #[allow(clippy::many_single_char_names)]
-        fn func(a: i32, b: i32, c: i32, d: i32, e: i32, f: i32) -> Result<()> {
+        fn func(
+            a: i32,
+            b: i32,
+            c: i32,
+            d: i32,
+            e: i32,
+            f: i32,
+        ) -> std::result::Result<(), EigenError> {
             // NOTE: We can also get more information why it is failing, see p2str etc here:
             // https://github.com/iden3/circom_runtime/blob/master/js/witness_calculator.js#L52-L64
             log::trace!("runtime error, exiting early: {a} {b} {c} {d} {e} {f}",);

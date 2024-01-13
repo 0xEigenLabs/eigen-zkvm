@@ -7,15 +7,14 @@ use powdr::riscv::continuations::{
 };
 use powdr::riscv::{compile_rust, CoProcessors};
 use powdr::riscv_executor;
-use revm::primitives::Address;
 use std::collections::HashMap as STDHashMap;
 use std::path::Path;
 use std::time::Instant;
 
 pub fn zkvm_evm_prove_one(
     suite_json: String,
-    _addr: Address,
-    _chain_id: u64,
+    addr: &str,
+    chain_id: u32,
     output_path: &str,
 ) -> Result<(), String> {
     log::debug!("Compiling Rust...");
@@ -36,6 +35,21 @@ pub fn zkvm_evm_prove_one(
             .from_asm_string(asm_contents.clone(), Some(asm_file_path.clone()))
     };
 
+    log::debug!("Creating pipeline from powdr-asm...");
+    let start = Instant::now();
+    let pipeline = mk_pipeline();
+    let duration = start.elapsed();
+    log::debug!("Pipeline from powdr-asm took: {:?}", duration);
+
+    log::debug!("Advancing pipeline to fixed columns...");
+    let start = Instant::now();
+    let pil_with_evaluated_fixed_cols = pipeline.pil_with_evaluated_fixed_cols().unwrap();
+    let duration = start.elapsed();
+    log::debug!("Advancing pipeline took: {:?}", duration);
+
+    let mk_pipeline_opt =
+        || mk_pipeline().from_pil_with_evaluated_fixed_cols(pil_with_evaluated_fixed_cols.clone());
+
     log::debug!("Creating data callback...");
     let mut suite_json_bytes: Vec<GoldilocksField> = suite_json
         .into_bytes()
@@ -46,6 +60,13 @@ pub fn zkvm_evm_prove_one(
 
     let mut data: STDHashMap<GoldilocksField, Vec<GoldilocksField>> = STDHashMap::default();
     data.insert(666.into(), suite_json_bytes);
+    data.insert(
+        667.into(),
+        [1, chain_id].iter().map(|b| (*b).into()).collect(),
+    );
+    let mut addr: Vec<_> = addr.as_bytes().iter().map(|b| (*b as u32).into()).collect();
+    addr.insert(0, (addr.len() as u32).into());
+    data.insert(668.into(), addr);
 
     log::debug!("Running powdr-riscv executor in fast mode...");
     let start = Instant::now();
@@ -76,7 +97,7 @@ pub fn zkvm_evm_prove_one(
 
     log::debug!("Running witness generation...");
     let start = Instant::now();
-    rust_continuations(mk_pipeline, generate_witness, bootloader_inputs).unwrap();
+    rust_continuations(mk_pipeline_opt, generate_witness, bootloader_inputs).unwrap();
     let duration = start.elapsed();
     log::debug!("Witness generation took: {:?}", duration);
     Ok(())
@@ -138,17 +159,47 @@ fn data_to_query_callback<T: FieldElement>(data: STDHashMap<T, Vec<T>>) -> impl 
 mod tests {
     use super::zkvm_evm_prove_one;
 
-    use revm::primitives::address;
+    //use revm::primitives::address;
 
     #[test]
-    #[ignore = "Too long"]
+    #[ignore]
     fn test_zkvm_evm_prove() {
         env_logger::try_init().unwrap_or_default();
         //let test_file = "test-vectors/blockInfo.json";
         let test_file = "test-vectors/solidityExample.json";
         let suite_json = std::fs::read_to_string(test_file).unwrap();
 
-        let addr = address!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b");
+        /*
+        let map_caller_keys: HashMap<_, _> = [
+            (
+                b256!("45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8"),
+                address!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b"),
+            ),
+            (
+                b256!("c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4"),
+                address!("cd2a3d9f938e13cd947ec05abc7fe734df8dd826"),
+            ),
+            (
+                b256!("044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d"),
+                address!("82a978b3f5962a5b0957d9ee9eef472ee55b42f1"),
+            ),
+            (
+                b256!("6a7eeac5f12b409d42028f66b0b2132535ee158cfda439e3bfdd4558e8f4bf6c"),
+                address!("c9c5a15a403e41498b6f69f6f89dd9f5892d21f7"),
+            ),
+            (
+                b256!("a95defe70ebea7804f9c3be42d20d24375e2a92b9d9666b832069c5f3cd423dd"),
+                address!("3fb1cd2cd96c6d5c0b5eb3322d807b34482481d4"),
+            ),
+            (
+                b256!("fe13266ff57000135fb9aa854bbfe455d8da85b21f626307bf3263a0c2a8e7fe"),
+                address!("dcc5ba93a1ed7e045690d722f2bf460a51c61415"),
+            ),
+        ]
+        .into();
+        */
+
+        let addr = "a94f5374fce5edbc8e2a8697c15331677e6ebf0b";
         zkvm_evm_prove_one(suite_json, addr, 1, "/tmp/test").unwrap();
     }
 }

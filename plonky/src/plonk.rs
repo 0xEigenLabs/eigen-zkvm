@@ -18,6 +18,7 @@ use crate::bellman_ce::{
 use crate::circom_circuit::CircomCircuit;
 use crate::errors::{EigenError, Result};
 use crate::transpile::{transpile_with_gates_count, ConstraintStat, TranspilerWrapper};
+use anyhow::bail;
 
 type E = Bn256;
 use franklin_crypto::plonk::circuit::bigint::field::RnsParameters;
@@ -32,7 +33,7 @@ const SETUP_MAX_POW2: u32 = 26;
 // generate a monomial_form SRS
 pub fn gen_key_monomial_form(power: u32) -> Result<Crs<E, CrsForMonomialForm>> {
     if (!SETUP_MIN_POW2..=SETUP_MAX_POW2).contains(&power) {
-        return Err(EigenError::OutOfRangeError {
+        bail!(EigenError::OutOfRangeError {
             expected: format!(
                 "setup power of two is not in the correct range {:?}..={:?}",
                 SETUP_MIN_POW2, SETUP_MAX_POW2
@@ -125,7 +126,7 @@ impl SetupForProver {
         );
         let setup_power_of_two = std::cmp::max(size, SETUP_MIN_POW2);
         if (!SETUP_MIN_POW2..=SETUP_MAX_POW2).contains(&setup_power_of_two) {
-            return Err(EigenError::OutOfRangeError {
+            bail!(EigenError::OutOfRangeError {
                 expected: format!(
                     "setup power of two is not in the correct range {:?}..={:?}",
                     SETUP_MIN_POW2, SETUP_MAX_POW2
