@@ -79,7 +79,9 @@ impl WitnessCalculator {
                 "writeBufferMessage" => runtime::write_buffer_message(store),
             }
         };
-        let instance = Wasm::new(Instance::new(store, &module, &import_object)?);
+        let instance = Wasm::new(
+            Instance::new(store, &module, &import_object).expect("Error to new Wasm Instance"),
+        );
 
         // Circom 2 feature flag with version 2
         fn new_circom(
@@ -209,22 +211,34 @@ impl WitnessCalculator {
     ) -> Result<()> {
         let n32 = self.instance.get_field_num_len32(&mut self.store)?;
         let wtns_header = [119, 116, 110, 115];
-        writer.write_all(&wtns_header)?;
+        writer
+            .write_all(&wtns_header)
+            .expect("Error to write_all witness header");
 
         let version = self.circom_version;
-        writer.write_u32::<LittleEndian>(version)?;
+        writer
+            .write_u32::<LittleEndian>(version)
+            .expect("Error to write_u32 version");
         let num_section = 2u32;
-        writer.write_u32::<LittleEndian>(num_section)?;
+        writer
+            .write_u32::<LittleEndian>(num_section)
+            .expect("Error to write_u32 num_section");
 
         // id section 1
         let id_section = 1u32;
-        writer.write_u32::<LittleEndian>(id_section)?;
+        writer
+            .write_u32::<LittleEndian>(id_section)
+            .expect("Error to write_u32 id");
 
         let sec_size: u64 = (n32 * 4 + 8) as u64;
-        writer.write_u64::<LittleEndian>(sec_size)?;
+        writer
+            .write_u64::<LittleEndian>(sec_size)
+            .expect("Error to write_u32 size");
 
         let field_size: u32 = n32 * 4;
-        writer.write_u32::<LittleEndian>(field_size)?;
+        writer
+            .write_u32::<LittleEndian>(field_size)
+            .expect("Error to write_u32 field_size");
 
         // write prime
         let (sign, prime_buf) = self.memory.prime.to_bytes_le();
@@ -241,18 +255,28 @@ impl WitnessCalculator {
                 prime_buf.len()
             )));
         }
-        writer.write_all(&prime_buf)?;
+        writer
+            .write_all(&prime_buf)
+            .expect("Error to write_u32 prime");
 
         // write witness size
         let wtns_size = wtns.len() as u32 / n32;
-        writer.write_u32::<LittleEndian>(wtns_size)?;
+        writer
+            .write_u32::<LittleEndian>(wtns_size)
+            .expect("Error to write_u32 witness_size");
         // sec type
-        writer.write_u32::<LittleEndian>(2)?;
+        writer
+            .write_u32::<LittleEndian>(2)
+            .expect("Error to write_u32 sec_type");
         // sec size
-        writer.write_u64::<LittleEndian>((wtns_size * field_size) as u64)?;
+        writer
+            .write_u64::<LittleEndian>((wtns_size * field_size) as u64)
+            .expect("Error to write_u32 sec_size");
 
         for w in wtns {
-            writer.write_u32::<LittleEndian>(*w)?;
+            writer
+                .write_u32::<LittleEndian>(*w)
+                .expect("Error to write_u32 w");
         }
         Ok(())
     }

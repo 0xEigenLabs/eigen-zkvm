@@ -12,19 +12,23 @@ impl Wasm {
 
     pub(crate) fn get_raw_prime(&self, store: &mut Store) -> Result<()> {
         let func = self.func("getRawPrime");
-        func.call(store, &[])?;
+        func.call(store, &[])
+            .expect("Error to call getRawPrime func ");
         Ok(())
     }
 
     pub(crate) fn read_shared_rw_memory(&self, store: &mut Store, i: u32) -> Result<u32> {
         let func = self.func("readSharedRWMemory");
-        let result = func.call(store, &[i.into()])?;
+        let result = func
+            .call(store, &[i.into()])
+            .expect("Error to call readSharedRWMemory func ");
         Ok(result[0].unwrap_i32() as u32)
     }
 
     pub(crate) fn write_shared_rw_memory(&self, store: &mut Store, i: u32, v: u32) -> Result<()> {
         let func = self.func("writeSharedRWMemory");
-        func.call(store, &[i.into(), v.into()])?;
+        func.call(store, &[i.into(), v.into()])
+            .expect("Error to call writeSharedRWMemory func ");
         Ok(())
     }
 
@@ -36,13 +40,15 @@ impl Wasm {
         pos: u32,
     ) -> Result<()> {
         let func = self.func("setInputSignal");
-        func.call(store, &[hmsb.into(), hlsb.into(), pos.into()])?;
+        func.call(store, &[hmsb.into(), hlsb.into(), pos.into()])
+            .expect("Error to call setInputSignal func ");
         Ok(())
     }
 
     pub(crate) fn get_witness(&self, store: &mut Store, i: u32) -> Result<()> {
         let func = self.func("getWitness");
-        func.call(store, &[i.into()])?;
+        func.call(store, &[i.into()])
+            .expect("Error to call getWitness func ");
         Ok(())
     }
 
@@ -52,7 +58,8 @@ impl Wasm {
 
     pub(crate) fn init(&self, store: &mut Store, sanity_check: bool) -> Result<()> {
         let func = self.func("init");
-        func.call(store, &[Value::I32(sanity_check as i32)])?;
+        func.call(store, &[Value::I32(sanity_check as i32)])
+            .expect("Error to call init func ");
         Ok(())
     }
 
@@ -109,14 +116,19 @@ impl Wasm {
     // Default to version 1 if it isn't explicitly defined
     pub(crate) fn get_version(&self, store: &mut Store) -> Result<u32> {
         match self.0.exports.get_function("getVersion") {
-            Ok(func) => Ok(func.call(store, &[])?[0].unwrap_i32() as u32),
+            Ok(func) => Ok(func
+                .call(store, &[])
+                .expect("Error to call getVersion func ")[0]
+                .unwrap_i32() as u32),
             Err(_) => Ok(1),
         }
     }
 
     pub(crate) fn get_u32(&self, store: &mut Store, name: &str) -> Result<u32> {
         let func = self.func(name);
-        let result = func.call(store, &[])?;
+        let result = func
+            .call(store, &[])
+            .expect(&format!("Error to call {:?} func ", name));
         Ok(result[0].unwrap_i32() as u32)
     }
 
