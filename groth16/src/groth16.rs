@@ -1,5 +1,6 @@
 use crate::bellman_ce::{groth16::*, Circuit};
 use algebraic::errors::Result;
+use anyhow::anyhow;
 use franklin_crypto::bellman::pairing::Engine;
 use rand::Rng;
 use std::marker::PhantomData;
@@ -14,7 +15,8 @@ impl<E: Engine, C: Circuit<E>> Groth16<E, C> {
         circuit: C,
         rng: &mut R,
     ) -> Result<(Parameters<E>, VerifyingKey<E>)> {
-        let pk: Parameters<E> = generate_random_parameters::<E, C, R>(circuit, rng)?;
+        let pk: Parameters<E> =
+            generate_random_parameters::<E, C, R>(circuit, rng).map_err(|e| anyhow!(e))?;
         let vk = pk.vk.clone();
 
         Ok((pk, vk))
@@ -25,7 +27,8 @@ impl<E: Engine, C: Circuit<E>> Groth16<E, C> {
         input_and_witness: C,
         rng: &mut R,
     ) -> Result<Proof<E>> {
-        let result = create_random_proof::<E, _, _, _>(input_and_witness, circuit_pk, rng)?;
+        let result = create_random_proof::<E, _, _, _>(input_and_witness, circuit_pk, rng)
+            .map_err(|e| anyhow!(e))?;
 
         Ok(result)
     }
@@ -36,7 +39,7 @@ impl<E: Engine, C: Circuit<E>> Groth16<E, C> {
         proof: &Proof<E>,
     ) -> Result<bool> {
         let circuit_pvk = prepare_verifying_key(circuit_vk);
-        let result = verify_proof(&circuit_pvk, proof, public_input)?;
+        let result = verify_proof(&circuit_pvk, proof, public_input).map_err(|e| anyhow!(e))?;
 
         Ok(result)
     }
@@ -77,7 +80,7 @@ mod tests {
             aux_offset: 0,
         };
         let mut rng = rand::thread_rng();
-        let params = Groth16::circuit_specific_setup(circuit, &mut rng)?;
+        let params = Groth16::circuit_specific_setup(circuit, &mut rng);
         let elapsed = t.elapsed().as_secs_f64();
         println!("1-groth16-bn128 setup run time: {} secs", elapsed);
 
