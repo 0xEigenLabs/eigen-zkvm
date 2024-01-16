@@ -202,7 +202,7 @@ pub fn serialize_vk<P: Parser>(
             .collect::<Vec<_>>(),
     };
 
-    Ok(to_string(&verifying_key_file).map_err(|e| anyhow!(e))?)
+    to_string(&verifying_key_file).map_err(|e| anyhow!(e))
 }
 
 pub fn serialize_proof<P: Parser>(p: &Proof<P>, curve_type: &str, to_hex: bool) -> Result<String> {
@@ -214,7 +214,7 @@ pub fn serialize_proof<P: Parser>(p: &Proof<P>, curve_type: &str, to_hex: bool) 
         curve: curve_type.to_string(),
     };
 
-    Ok(to_string(&proof_file).map_err(|e| anyhow!(e))?)
+    to_string(&proof_file).map_err(|e| anyhow!(e))
 }
 
 pub fn to_verification_key<P: Parser>(s: &str) -> VerifyingKey<P> {

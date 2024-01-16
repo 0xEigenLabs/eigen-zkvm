@@ -80,7 +80,7 @@ mod tests {
             aux_offset: 0,
         };
         let mut rng = rand::thread_rng();
-        let params = Groth16::circuit_specific_setup(circuit, &mut rng);
+        let params = Groth16::circuit_specific_setup(circuit, &mut rng)?;
         let elapsed = t.elapsed().as_secs_f64();
         println!("1-groth16-bn128 setup run time: {} secs", elapsed);
 

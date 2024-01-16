@@ -165,7 +165,7 @@ fn create_circuit_from_file<E: Engine>(
 fn read_pk_from_file<E: Engine>(file_path: &str, checked: bool) -> Result<Parameters<E>> {
     let file = std::fs::File::open(file_path).map_err(|e| anyhow!(e))?;
     let mut reader = std::io::BufReader::new(file);
-    Ok(Parameters::<E>::read(&mut reader, checked).map_err(|e| anyhow!(e))?)
+    Parameters::<E>::read(&mut reader, checked).map_err(|e| anyhow!(e))
 }
 
 fn read_vk_from_file<P: Parser>(file_path: &str) -> Result<VerifyingKey<P>> {
