@@ -1,11 +1,10 @@
 #![allow(dead_code, non_snake_case)]
-use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps;
 use crate::starkinfo::StarkInfo;
 use crate::traits::FieldExtension;
 use crate::types::Expression;
 use crate::types::PIL;
-use anyhow::bail;
+use anyhow::{bail, Result};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt;
@@ -600,7 +599,7 @@ pub fn eval_exp(
         "xDivXSubXi" => Ok(Node::new("xDivXSubXi".to_string(), 0, None, 0, false, 0)),
         "xDivXSubWXi" => Ok(Node::new("xDivXSubWXi".to_string(), 0, None, 0, false, 0)),
         "x" => Ok(Node::new("x".to_string(), 0, None, 0, false, 0)),
-        _ => bail!(EigenError::InvalidOperator(format!("eval_exp: {}", exp.op))),
+        _ => bail!(format!("InvalidOperator: eval_exp: {}", exp.op)),
     }
 }
 
@@ -630,7 +629,7 @@ pub fn calculate_deps(
 
 pub fn expression_error(_pil: &PIL, strerr: String, _e1: usize, _e2: usize) -> Result<()> {
     //TODO
-    bail!(EigenError::ExpressionError(strerr))
+    bail!(strerr);
 }
 
 pub fn build_code(ctx: &mut Context, pil: &mut PIL) -> Segment {
