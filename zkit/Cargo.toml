@@ -28,3 +28,4 @@ anyhow = { version = "1.0", default-features = false }
 [features]
 default = []
 profiler = ["plonky/profiler", "starky/profiler", "groth16/profiler"]
+avx512 = ["starky/avx512", "algebraic/avx512"]

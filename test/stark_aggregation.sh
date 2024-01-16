@@ -1,6 +1,8 @@
 #!/bin/bash
 set -ex
 
+CUR_DIR=$(cd $(dirname $0);pwd)
+cd "$CUR_DIR/../zkit"
 # build
 if [ "x${USE_AVX2}" = "xyes" ]; then
     # build with avx2 feature
@@ -11,13 +13,13 @@ elif [ "x${USE_AVX512}" = "xyes" ]; then
 else
     cargo build --release --features profiler
 fi
+cd "$CUR_DIR"
 
 export NODE_OPTIONS="--max-old-space-size=81920"
 
 BIG_POWER=26
 NUM_PROOF=2
 NUM_INPUT=2
-CUR_DIR=$(cd $(dirname $0);pwd)
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 CIRCUIT="fibonacci"
 PILEXECJS="fibonacci/fibonacci.js"
