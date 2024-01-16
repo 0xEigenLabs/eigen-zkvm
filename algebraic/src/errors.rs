@@ -3,6 +3,7 @@ use thiserror::Error;
 
 pub use anyhow::Result;
 
+#[deprecated]
 #[derive(Error, Debug)]
 pub enum EigenError {
     #[error("invalid range proof, `{0}`")]
