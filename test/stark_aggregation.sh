@@ -1,23 +1,25 @@
 #!/bin/bash
 set -ex
 
+CUR_DIR=$(cd $(dirname $0);pwd)
+cd "$CUR_DIR/../zkit"
 # build
 if [ "x${USE_AVX2}" = "xyes" ]; then
     # build with avx2 feature
-    RUSTFLAGS="-C target-feature=+avx2" cargo build --manifest-path ../zkit/Cargo.toml --release --features profiler
+    RUSTFLAGS="-C target-feature=+avx2" cargo build --release --features  profiler
 elif [ "x${USE_AVX512}" = "xyes" ]; then
     # build with avx512 feature
-    RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo build --manifest-path ../zkit/Cargo.toml --release --features "profiler,avx512" 
+    RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo build --features avx512 --features profiler --release
 else
-    cargo build --manifest-path ../zkit/Cargo.toml --release --features profiler
+    cargo build --release --features profiler
 fi
+cd "$CUR_DIR"
 
 export NODE_OPTIONS="--max-old-space-size=81920"
 
 BIG_POWER=26
 NUM_PROOF=2
 NUM_INPUT=2
-CUR_DIR=$(cd $(dirname $0);pwd)
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 CIRCUIT="fibonacci"
 PILEXECJS="fibonacci/fibonacci.js"
