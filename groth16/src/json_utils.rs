@@ -1,6 +1,5 @@
 use crate::bellman_ce::pairing::{bls12_381::Bls12, bn256::Bn256};
 use algebraic::{errors::Result, utils::repr_to_big, PrimeField};
-use anyhow::anyhow;
 use franklin_crypto::bellman::{
     bls12_381::{
         Fq2 as Fq2_bls12381, G1Affine as G1Affine_bls12381, G2Affine as G2Affine_bls12381,
@@ -202,7 +201,7 @@ pub fn serialize_vk<P: Parser>(
             .collect::<Vec<_>>(),
     };
 
-    to_string(&verifying_key_file).map_err(|e| anyhow!(e))
+    Ok(to_string(&verifying_key_file)?)
 }
 
 pub fn serialize_proof<P: Parser>(p: &Proof<P>, curve_type: &str, to_hex: bool) -> Result<String> {
@@ -214,7 +213,7 @@ pub fn serialize_proof<P: Parser>(p: &Proof<P>, curve_type: &str, to_hex: bool) 
         curve: curve_type.to_string(),
     };
 
-    to_string(&proof_file).map_err(|e| anyhow!(e))
+    Ok(to_string(&proof_file)?)
 }
 
 pub fn to_verification_key<P: Parser>(s: &str) -> VerifyingKey<P> {

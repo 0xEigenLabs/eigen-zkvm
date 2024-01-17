@@ -1,7 +1,7 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/witness_calculator.rs
 use crate::bellman_ce::ScalarEngine;
 use crate::witness::{circom::Wasm, fnv, memory::SafeMemory};
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use num::ToPrimitive;
 use num_bigint::BigInt;
 use num_bigint::Sign;
@@ -78,8 +78,7 @@ impl WitnessCalculator {
                 "writeBufferMessage" => runtime::write_buffer_message(store),
             }
         };
-        let instance =
-            Wasm::new(Instance::new(store, &module, &import_object).map_err(|e| anyhow!(e))?);
+        let instance = Wasm::new(Instance::new(store, &module, &import_object)?);
 
         // Circom 2 feature flag with version 2
         fn new_circom(
@@ -192,11 +191,7 @@ impl WitnessCalculator {
         filename: &str,
         w: &Vec<u32>,
     ) -> Result<()> {
-        let writer = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(filename)
-            .map_err(|e| anyhow!(e))?;
+        let writer = OpenOptions::new().write(true).create(true).open(filename)?;
 
         let writer = BufWriter::new(writer);
         self.save_witness_from_bin_writer::<E, _>(writer, w)
@@ -209,32 +204,22 @@ impl WitnessCalculator {
     ) -> Result<()> {
         let n32 = self.instance.get_field_num_len32(&mut self.store)?;
         let wtns_header = [119, 116, 110, 115];
-        writer.write_all(&wtns_header).map_err(|e| anyhow!(e))?;
+        writer.write_all(&wtns_header)?;
 
         let version = self.circom_version;
-        writer
-            .write_u32::<LittleEndian>(version)
-            .map_err(|e| anyhow!(e))?;
+        writer.write_u32::<LittleEndian>(version)?;
         let num_section = 2u32;
-        writer
-            .write_u32::<LittleEndian>(num_section)
-            .map_err(|e| anyhow!(e))?;
+        writer.write_u32::<LittleEndian>(num_section)?;
 
         // id section 1
         let id_section = 1u32;
-        writer
-            .write_u32::<LittleEndian>(id_section)
-            .map_err(|e| anyhow!(e))?;
+        writer.write_u32::<LittleEndian>(id_section)?;
 
         let sec_size: u64 = (n32 * 4 + 8) as u64;
-        writer
-            .write_u64::<LittleEndian>(sec_size)
-            .map_err(|e| anyhow!(e))?;
+        writer.write_u64::<LittleEndian>(sec_size)?;
 
         let field_size: u32 = n32 * 4;
-        writer
-            .write_u32::<LittleEndian>(field_size)
-            .map_err(|e| anyhow!(e))?;
+        writer.write_u32::<LittleEndian>(field_size)?;
 
         // write prime
         let (sign, prime_buf) = self.memory.prime.to_bytes_le();
@@ -251,26 +236,18 @@ impl WitnessCalculator {
                 prime_buf.len()
             ));
         }
-        writer.write_all(&prime_buf).map_err(|e| anyhow!(e))?;
+        writer.write_all(&prime_buf)?;
 
         // write witness size
         let wtns_size = wtns.len() as u32 / n32;
-        writer
-            .write_u32::<LittleEndian>(wtns_size)
-            .map_err(|e| anyhow!(e))?;
+        writer.write_u32::<LittleEndian>(wtns_size)?;
         // sec type
-        writer
-            .write_u32::<LittleEndian>(2)
-            .map_err(|e| anyhow!(e))?;
+        writer.write_u32::<LittleEndian>(2)?;
         // sec size
-        writer
-            .write_u64::<LittleEndian>((wtns_size * field_size) as u64)
-            .map_err(|e| anyhow!(e))?;
+        writer.write_u64::<LittleEndian>((wtns_size * field_size) as u64)?;
 
         for w in wtns {
-            writer
-                .write_u32::<LittleEndian>(*w)
-                .map_err(|e| anyhow!(e))?;
+            writer.write_u32::<LittleEndian>(*w)?;
         }
         Ok(())
     }

@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/circom.rs
 use crate::errors::Result;
 use wasmer::{Function, Instance, Store, Value};
@@ -13,20 +12,19 @@ impl Wasm {
 
     pub(crate) fn get_raw_prime(&self, store: &mut Store) -> Result<()> {
         let func = self.func("getRawPrime");
-        func.call(store, &[]).map_err(|e| anyhow!(e))?;
+        func.call(store, &[])?;
         Ok(())
     }
 
     pub(crate) fn read_shared_rw_memory(&self, store: &mut Store, i: u32) -> Result<u32> {
         let func = self.func("readSharedRWMemory");
-        let result = func.call(store, &[i.into()]).map_err(|e| anyhow!(e))?;
+        let result = func.call(store, &[i.into()])?;
         Ok(result[0].unwrap_i32() as u32)
     }
 
     pub(crate) fn write_shared_rw_memory(&self, store: &mut Store, i: u32, v: u32) -> Result<()> {
         let func = self.func("writeSharedRWMemory");
-        func.call(store, &[i.into(), v.into()])
-            .map_err(|e| anyhow!(e))?;
+        func.call(store, &[i.into(), v.into()])?;
         Ok(())
     }
 
@@ -38,14 +36,13 @@ impl Wasm {
         pos: u32,
     ) -> Result<()> {
         let func = self.func("setInputSignal");
-        func.call(store, &[hmsb.into(), hlsb.into(), pos.into()])
-            .map_err(|e| anyhow!(e))?;
+        func.call(store, &[hmsb.into(), hlsb.into(), pos.into()])?;
         Ok(())
     }
 
     pub(crate) fn get_witness(&self, store: &mut Store, i: u32) -> Result<()> {
         let func = self.func("getWitness");
-        func.call(store, &[i.into()]).map_err(|e| anyhow!(e))?;
+        func.call(store, &[i.into()])?;
         Ok(())
     }
 
@@ -55,8 +52,7 @@ impl Wasm {
 
     pub(crate) fn init(&self, store: &mut Store, sanity_check: bool) -> Result<()> {
         let func = self.func("init");
-        func.call(store, &[Value::I32(sanity_check as i32)])
-            .map_err(|e| anyhow!(e))?;
+        func.call(store, &[Value::I32(sanity_check as i32)])?;
         Ok(())
     }
 
@@ -113,14 +109,14 @@ impl Wasm {
     // Default to version 1 if it isn't explicitly defined
     pub(crate) fn get_version(&self, store: &mut Store) -> Result<u32> {
         match self.0.exports.get_function("getVersion") {
-            Ok(func) => Ok(func.call(store, &[]).map_err(|e| anyhow!(e))?[0].unwrap_i32() as u32),
+            Ok(func) => Ok(func.call(store, &[])?[0].unwrap_i32() as u32),
             Err(_) => Ok(1),
         }
     }
 
     pub(crate) fn get_u32(&self, store: &mut Store, name: &str) -> Result<u32> {
         let func = self.func(name);
-        let result = func.call(store, &[]).map_err(|e| anyhow!(e))?;
+        let result = func.call(store, &[])?;
         Ok(result[0].unwrap_i32() as u32)
     }
 

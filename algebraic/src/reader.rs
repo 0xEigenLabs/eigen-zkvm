@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use byteorder::{LittleEndian, ReadBytesExt};
 use itertools::Itertools;
 use std::collections::BTreeMap;
@@ -88,56 +88,54 @@ pub fn load_witness_from_array<E: ScalarEngine>(buffer: Vec<u8>) -> Result<Vec<E
 /// load witness from u8 array by a reader
 pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> Result<Vec<E::Fr>> {
     let mut wtns_header = [0u8; 4];
-    reader
-        .read_exact(&mut wtns_header)
-        .map_err(|e| anyhow!(e))?;
+    reader.read_exact(&mut wtns_header)?;
     if wtns_header != [119, 116, 110, 115] {
         // python -c 'print([ord(c) for c in "wtns"])' => [119, 116, 110, 115]
         // bail!("Invalid file header".to_string()));
         bail!("Invalid file header");
     }
-    let version = reader.read_u32::<LittleEndian>().map_err(|e| anyhow!(e))?;
+    let version = reader.read_u32::<LittleEndian>()?;
     log::trace!("wtns version {}", version);
     if version > 2 {
         bail!("unsupported file version");
     }
-    let num_sections = reader.read_u32::<LittleEndian>().map_err(|e| anyhow!(e))?;
+    let num_sections = reader.read_u32::<LittleEndian>()?;
     if num_sections != 2 {
         bail!("invalid num sections".to_string());
     }
     // read the first section
-    let sec_type = reader.read_u32::<LittleEndian>().map_err(|e| anyhow!(e))?;
+    let sec_type = reader.read_u32::<LittleEndian>()?;
     if sec_type != 1 {
         bail!("invalid section type".to_string());
     }
-    let sec_size = reader.read_u64::<LittleEndian>().map_err(|e| anyhow!(e))?;
+    let sec_size = reader.read_u64::<LittleEndian>()?;
     if sec_size != 4 + 32 + 4 {
         bail!("invalid section len".to_string());
     }
-    let field_size = reader.read_u32::<LittleEndian>().map_err(|e| anyhow!(e))?;
+    let field_size = reader.read_u32::<LittleEndian>()?;
     if field_size != 32 {
         bail!("invalid field byte size".to_string());
     }
     let mut prime = vec![0u8; field_size as usize];
-    reader.read_exact(&mut prime).map_err(|e| anyhow!(e))?;
+    reader.read_exact(&mut prime)?;
     if prime != hex!("010000f093f5e1439170b97948e833285d588181b64550b829a031e1724e6430") {
         bail!("invalid curve prime".to_string());
     }
-    let witness_len = reader.read_u32::<LittleEndian>().map_err(|e| anyhow!(e))?;
+    let witness_len = reader.read_u32::<LittleEndian>()?;
     log::trace!("witness len {}", witness_len);
-    let sec_type = reader.read_u32::<LittleEndian>().map_err(|e| anyhow!(e))?;
+    let sec_type = reader.read_u32::<LittleEndian>()?;
     if sec_type != 2 {
         bail!("invalid section type".to_string());
     }
-    let sec_size = reader.read_u64::<LittleEndian>().map_err(|e| anyhow!(e))?;
+    let sec_size = reader.read_u64::<LittleEndian>()?;
     if sec_size != (witness_len * field_size) as u64 {
         bail!(format!("Invalid witness section size {}", sec_size));
     }
     let mut result = Vec::with_capacity(witness_len as usize);
     for _ in 0..witness_len {
         let mut repr = E::Fr::zero().into_repr();
-        repr.read_le(&mut reader).map_err(|e| anyhow!(e))?;
-        result.push(E::Fr::from_repr(repr).map_err(|e| anyhow!(e))?);
+        repr.read_le(&mut reader)?;
+        result.push(E::Fr::from_repr(repr)?);
     }
     Ok(result)
 }

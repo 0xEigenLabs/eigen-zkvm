@@ -16,7 +16,7 @@ use algebraic::{
     witness::{load_input_for_witness, WitnessCalculator},
     Field, PrimeField,
 };
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use num_traits::Zero;
 use rand;
 
@@ -78,9 +78,9 @@ pub fn groth16_prove(
             let circuit = create_circuit_from_file::<Bn256>(circuit_file, Some(w));
             let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
             let proof_json = serialize_proof(&proof, curve_type, to_hex)?;
-            std::fs::write(proof_file, proof_json).map_err(|e| anyhow!(e))?;
+            std::fs::write(proof_file, proof_json)?;
             let input_json = circuit.get_public_inputs_json();
-            std::fs::write(public_input_file, input_json).map_err(|e| anyhow!(e))?;
+            std::fs::write(public_input_file, input_json)?;
         }
         "BLS12381" => {
             let pk: Parameters<Bls12> = read_pk_from_file(pk_file, false)?;
@@ -97,9 +97,9 @@ pub fn groth16_prove(
             let circuit = create_circuit_from_file::<Bls12>(circuit_file, Some(w));
             let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
             let proof_json = serialize_proof(&proof, curve_type, to_hex)?;
-            std::fs::write(proof_file, proof_json).map_err(|e| anyhow!(e))?;
+            std::fs::write(proof_file, proof_json)?;
             let input_json = circuit.get_public_inputs_json();
-            std::fs::write(public_input_file, input_json).map_err(|e| anyhow!(e))?;
+            std::fs::write(public_input_file, input_json)?;
         }
         _ => {
             bail!(format!("Unknown curve type: {}", curve_type))
@@ -163,23 +163,23 @@ fn create_circuit_from_file<E: Engine>(
 }
 
 fn read_pk_from_file<E: Engine>(file_path: &str, checked: bool) -> Result<Parameters<E>> {
-    let file = std::fs::File::open(file_path).map_err(|e| anyhow!(e))?;
+    let file = std::fs::File::open(file_path)?;
     let mut reader = std::io::BufReader::new(file);
-    Parameters::<E>::read(&mut reader, checked).map_err(|e| anyhow!(e))
+    Ok(Parameters::<E>::read(&mut reader, checked)?)
 }
 
 fn read_vk_from_file<P: Parser>(file_path: &str) -> Result<VerifyingKey<P>> {
-    let json_data = std::fs::read_to_string(file_path).map_err(|e| anyhow!(e))?;
+    let json_data = std::fs::read_to_string(file_path)?;
     Ok(to_verification_key::<P>(&json_data))
 }
 
 fn read_public_input_from_file<T: PrimeField>(file_path: &str) -> Result<Vec<T>> {
-    let json_data = std::fs::read_to_string(file_path).map_err(|e| anyhow!(e))?;
+    let json_data = std::fs::read_to_string(file_path)?;
     Ok(to_public_input::<T>(&json_data))
 }
 
 fn read_proof_from_file<P: Parser>(file_path: &str) -> Result<Proof<P>> {
-    let json_data = std::fs::read_to_string(file_path).map_err(|e| anyhow!(e))?;
+    let json_data = std::fs::read_to_string(file_path)?;
     Ok(to_proof::<P>(&json_data))
 }
 
@@ -191,9 +191,9 @@ fn write_pk_vk_to_files<P: Parser>(
     vk_file: &str,
     to_hex: bool,
 ) -> Result<()> {
-    let writer = std::fs::File::create(pk_file).map_err(|e| anyhow!(e))?;
-    pk.write(writer).map_err(|e| anyhow!(e))?;
-    let vk_json = serialize_vk(&vk, curve_type, to_hex).map_err(|e| anyhow!(e))?;
-    std::fs::write(vk_file, vk_json).map_err(|e| anyhow!(e))?;
+    let writer = std::fs::File::create(pk_file)?;
+    pk.write(writer)?;
+    let vk_json = serialize_vk(&vk, curve_type, to_hex)?;
+    std::fs::write(vk_file, vk_json)?;
     Ok(())
 }
