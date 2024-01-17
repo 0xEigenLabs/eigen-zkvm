@@ -16,7 +16,7 @@ use crate::circom_circuit::{CircuitJson, R1CS};
 
 /// get universal setup file by filename
 fn get_universal_setup_file_buff_reader(setup_file_name: &str) -> Result<BufReader<File>> {
-    let setup_file = File::open(setup_file_name).expect("Error to get universal setup file");
+    let setup_file = File::open(setup_file_name)?;
     Ok(BufReader::with_capacity(1 << 29, setup_file))
 }
 
