@@ -12,7 +12,6 @@
 use crate::arch::x86_64::avx2_poseidon_gl::Poseidon;
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
 use crate::digest::ElementDigest;
-use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
 use crate::linearhash::LinearHash;
 #[cfg(any(
@@ -28,7 +27,7 @@ use crate::linearhash::LinearHash;
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
-use anyhow::bail;
+use anyhow::{bail, Result};
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use std::time::Instant;
@@ -430,9 +429,7 @@ impl MerkleTree for MerkleTreeGL {
     // the path always returns 2-dim array likes [[x,x,x,x], ...]
     fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<FGL>>)> {
         if idx >= self.height {
-            bail!(EigenError::MerkleTreeError(
-                "access invalid node".to_string(),
-            ));
+            bail!("MerkleTreeError: access invalid node");
         }
 
         let v = (0..self.width)

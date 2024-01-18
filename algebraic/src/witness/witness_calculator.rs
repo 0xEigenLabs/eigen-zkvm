@@ -1,8 +1,7 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/witness_calculator.rs
 use crate::bellman_ce::ScalarEngine;
-use crate::errors::{EigenError, Result};
 use crate::witness::{circom::Wasm, fnv, memory::SafeMemory};
-use anyhow::bail;
+use anyhow::{bail, Result};
 use num::ToPrimitive;
 use num_bigint::BigInt;
 use num_bigint::Sign;
@@ -192,11 +191,7 @@ impl WitnessCalculator {
         filename: &str,
         w: &Vec<u32>,
     ) -> Result<()> {
-        let writer = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(filename)
-            .expect("unable to open.");
+        let writer = OpenOptions::new().write(true).create(true).open(filename)?;
 
         let writer = BufWriter::new(writer);
         self.save_witness_from_bin_writer::<E, _>(writer, w)
@@ -229,17 +224,17 @@ impl WitnessCalculator {
         // write prime
         let (sign, prime_buf) = self.memory.prime.to_bytes_le();
         if sign != Sign::Plus {
-            bail!(EigenError::Unknown(format!(
+            bail!(format!(
                 "Invalid prime: {}, must be positive",
                 self.memory.prime
-            )));
+            ));
         }
         if prime_buf.len() as u32 != field_size {
-            bail!(EigenError::Unknown(format!(
+            bail!(format!(
                 "Invalid prime: {}, len must be of {}",
                 self.memory.prime,
                 prime_buf.len()
-            )));
+            ));
         }
         writer.write_all(&prime_buf)?;
 
@@ -313,13 +308,11 @@ mod runtime {
             d: i32,
             e: i32,
             f: i32,
-        ) -> std::result::Result<(), EigenError> {
+        ) -> std::result::Result<(), wasmer::RuntimeError> {
             // NOTE: We can also get more information why it is failing, see p2str etc here:
             // https://github.com/iden3/circom_runtime/blob/master/js/witness_calculator.js#L52-L64
             log::trace!("runtime error, exiting early: {a} {b} {c} {d} {e} {f}",);
-            Err(EigenError::WasmerRuntimeError(wasmer::RuntimeError::new(
-                "1",
-            )))
+            Err(wasmer::RuntimeError::new("1"))
         }
         Function::new_typed(store, func)
     }
