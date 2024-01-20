@@ -1,16 +1,13 @@
 #![allow(dead_code)]
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MIN_OPS_PER_THREAD};
 use crate::digest::ElementDigest;
-use crate::errors::{EigenError, Result};
 use crate::f3g::F3G;
 use crate::field_bls12381::Fr;
 use crate::linearhash_bls12381::LinearHashBLS12381;
 use crate::poseidon_bls12381_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
-use anyhow::bail;
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-
+use anyhow::{bail, Result};
 use ff::Field;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
@@ -272,9 +269,7 @@ impl MerkleTree for MerkleTreeBLS12381 {
     // the path always returns 2-dim array likes [[x..14..x], ...]
     fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<Fr>>)> {
         if idx >= self.height {
-            bail!(EigenError::MerkleTreeError(
-                "access invalid node".to_string(),
-            ));
+            bail!("MerkleTreeError: access invalid node");
         }
 
         let v = (0..self.width)

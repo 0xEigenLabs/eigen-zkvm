@@ -339,7 +339,7 @@ pub fn prove(
         _m: std::marker::PhantomData,
     };
 
-    // quick_check_if_satisifed
+    // quick_check_if_satisfied
     let mut cs = TrivialAssembly::<Bn256, Width4WithCustomGates, Width4MainGateWithDNext>::new();
     circuit.synthesize(&mut cs).expect("should synthesize");
     log::trace!("Raw number of gates: {}", cs.n());

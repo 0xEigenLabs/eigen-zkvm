@@ -1,7 +1,7 @@
 module.exports = {
   // Security parameter:
   // * Size of the prime field q
-  // * Length of the exectuion trace t
+  // * Length of the execution trace t
   // * Maximum degree of constraints d
   // * Domain blowup factor b
   // * Collision resistance of the hash function c

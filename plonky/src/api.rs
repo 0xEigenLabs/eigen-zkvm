@@ -1,9 +1,8 @@
 use crate::bellman_ce::pairing::bn256::Bn256;
-use crate::errors::{EigenError, Result};
 use crate::witness::{load_input_for_witness, WitnessCalculator};
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
 use algebraic::reader::load_r1cs;
-use anyhow::bail;
+use anyhow::{bail, Result};
 use profiler_macro::time_profiler;
 
 #[cfg(not(feature = "wasm"))]
@@ -131,7 +130,7 @@ pub fn verify(vk_file: &str, proof_bin: &str, transcript: &str) -> Result<()> {
     if ok {
         Ok(())
     } else {
-        bail!(EigenError::from("Proof is invalid".to_string()))
+        bail!("Proof is invalid")
     }
 }
 
@@ -194,7 +193,7 @@ pub fn aggregation_verify(proof: &str, vk: &str) -> Result<()> {
     if correct {
         Result::Ok(())
     } else {
-        bail!(EigenError::from("Proof is invalid".to_string()))
+        bail!("Proof is invalid")
     }
 }
 
@@ -208,9 +207,7 @@ pub fn aggregation_check(old_proof_list: &str, old_vk: &str, new_proof: &str) ->
     let expected = aggregation::get_aggregated_input(old_proofs, old_vk)?;
 
     if expected != new_proof.proof.inputs[0] {
-        bail!(EigenError::from(
-            "Aggregation hash input mismatch".to_string(),
-        ));
+        bail!("Aggregation hash input mismatch");
     }
     Result::Ok(())
 }

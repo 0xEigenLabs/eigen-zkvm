@@ -1,13 +1,12 @@
 #![allow(non_snake_case)]
-use crate::errors::{EigenError, Result};
 use crate::expressionops::ExpressionOps as E;
 use crate::starkinfo_codegen::{
     build_code, iterate_code, pil_code_gen, Context, ContextF, EVIdx, Index, IndexVec, Node,
     PolType, Segment,
 };
 use crate::types::{Expression, Public, StarkStruct, PIL};
-use anyhow::bail;
-use serde::{Deserialize, Serialize};
+use anyhow::{bail, Result};
+use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -227,14 +226,11 @@ impl StarkInfo {
         let stark_deg = 2usize.pow(stark_struct.nBits as u32);
 
         if stark_deg != pil_deg {
-            bail!(EigenError::MustEqualDegreeError(stark_deg, pil_deg));
+            bail!("stark_deg != pil_deg");
         }
 
         if stark_struct.nBitsExt != stark_struct.steps[0].nBits {
-            bail!(EigenError::MustEqualDegreeError(
-                stark_struct.nBitsExt,
-                stark_struct.steps[0].nBits,
-            ));
+            bail!("MustEqualDegreeError: stark_struct.nBitsExt != stark_struct.steps[0].nBits");
         }
 
         let mut info = StarkInfo {

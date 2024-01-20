@@ -12,12 +12,11 @@ use crate::{
 use algebraic::{
     bellman_ce::Engine,
     circom_circuit::CircomCircuit,
-    errors::{EigenError, Result},
     reader::load_r1cs,
     witness::{load_input_for_witness, WitnessCalculator},
     Field, PrimeField,
 };
-use anyhow::bail;
+use anyhow::{bail, Result};
 use num_traits::Zero;
 use rand;
 
@@ -41,10 +40,7 @@ pub fn groth16_setup(
             write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file, to_hex)?
         }
         _ => {
-            bail!(EigenError::Unknown(format!(
-                "Unknown curve type: {}",
-                curve_type
-            )))
+            bail!(format!("Unknown curve type: {}", curve_type))
         }
     };
     Ok(())
@@ -106,10 +102,7 @@ pub fn groth16_prove(
             std::fs::write(public_input_file, input_json)?;
         }
         _ => {
-            bail!(EigenError::Unknown(format!(
-                "Unknown curve type: {}",
-                curve_type
-            )))
+            bail!(format!("Unknown curve type: {}", curve_type))
         }
     };
 
@@ -132,7 +125,7 @@ pub fn groth16_verify(
                 Groth16::<_, CircomCircuit<Bn256>>::verify_with_processed_vk(&vk, &inputs, &proof);
 
             if verification_result.is_err() || !verification_result.unwrap() {
-                bail!(EigenError::Unknown("verify failed".to_string()));
+                bail!("verify failed");
             }
         }
 
@@ -145,15 +138,12 @@ pub fn groth16_verify(
                 Groth16::<_, CircomCircuit<Bls12>>::verify_with_processed_vk(&vk, &inputs, &proof);
 
             if verification_result.is_err() || !verification_result.unwrap() {
-                bail!(EigenError::Unknown("verify failed".to_string()));
+                bail!("verify failed");
             }
         }
 
         _ => {
-            bail!(EigenError::Unknown(format!(
-                "Unknown curve type: {}",
-                curve_type
-            )))
+            bail!(format!("Unknown curve type: {}", curve_type))
         }
     }
 

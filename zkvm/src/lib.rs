@@ -35,6 +35,21 @@ pub fn zkvm_evm_prove_one(
             .from_asm_string(asm_contents.clone(), Some(asm_file_path.clone()))
     };
 
+    log::debug!("Creating pipeline from powdr-asm...");
+    let start = Instant::now();
+    let pipeline = mk_pipeline();
+    let duration = start.elapsed();
+    log::debug!("Pipeline from powdr-asm took: {:?}", duration);
+
+    log::debug!("Advancing pipeline to fixed columns...");
+    let start = Instant::now();
+    let pil_with_evaluated_fixed_cols = pipeline.pil_with_evaluated_fixed_cols().unwrap();
+    let duration = start.elapsed();
+    log::debug!("Advancing pipeline took: {:?}", duration);
+
+    let mk_pipeline_opt =
+        || mk_pipeline().from_pil_with_evaluated_fixed_cols(pil_with_evaluated_fixed_cols.clone());
+
     log::debug!("Creating data callback...");
     let mut suite_json_bytes: Vec<GoldilocksField> = suite_json
         .into_bytes()
@@ -82,7 +97,7 @@ pub fn zkvm_evm_prove_one(
 
     log::debug!("Running witness generation...");
     let start = Instant::now();
-    rust_continuations(mk_pipeline, generate_witness, bootloader_inputs).unwrap();
+    rust_continuations(mk_pipeline_opt, generate_witness, bootloader_inputs).unwrap();
     let duration = start.elapsed();
     log::debug!("Witness generation took: {:?}", duration);
     Ok(())

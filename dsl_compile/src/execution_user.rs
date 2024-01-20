@@ -26,6 +26,8 @@ pub fn execute_project(program_archive: ProgramArchive, config: ExecutionConfig)
     use constraint_generation::{build_circuit, BuildConfig};
     let debug = DebugWriter::new(config.json_constraints).unwrap();
     let build_config = BuildConfig {
+        // https://github.com/iden3/circom/commit/a43f93135a9dc22bd374d29ba57722e9fe1d4646
+        json_substitutions: String::new(),
         no_rounds: config.no_rounds,
         flag_json_sub: config.json_substitution_flag,
         flag_s: config.flag_s,
