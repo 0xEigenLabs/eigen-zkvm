@@ -8,6 +8,7 @@ use crate::poseidon_bn128_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use anyhow::{bail, Result};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use ff::Field;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
