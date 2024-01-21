@@ -14,7 +14,6 @@ use models::*;
 
 extern crate alloc;
 use alloc::vec::Vec;
-use alloc::vec;
 use alloc::string::String;
 use alloc::string::ToString;
 
