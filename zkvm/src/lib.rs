@@ -9,10 +9,7 @@ use powdr::riscv_executor;
 use std::path::Path;
 use std::time::Instant;
 
-pub fn zkvm_evm_prove_one(
-    suite_json: String,
-    output_path: &str,
-) -> Result<(), String> {
+pub fn zkvm_evm_prove_one(suite_json: String, output_path: &str) -> Result<(), String> {
     log::debug!("Compiling Rust...");
     let force_overwrite = true;
     let with_bootloader = true;
