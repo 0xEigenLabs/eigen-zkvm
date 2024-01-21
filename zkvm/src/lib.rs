@@ -11,7 +11,6 @@ use std::time::Instant;
 
 pub fn zkvm_evm_prove_one(
     suite_json: String,
-    chain_id: u32,
     output_path: &str,
 ) -> Result<(), String> {
     log::debug!("Compiling Rust...");
@@ -45,10 +44,7 @@ pub fn zkvm_evm_prove_one(
     let duration = start.elapsed();
     log::debug!("Advancing pipeline took: {:?}", duration);
 
-    let mk_pipeline_with_data = || {
-        mk_pipeline()
-            .add_data(666, &suite_json)
-    };
+    let mk_pipeline_with_data = || mk_pipeline().add_data(666, &suite_json);
 
     let mk_pipeline_opt = || {
         mk_pipeline_with_data()
@@ -75,24 +71,30 @@ pub fn zkvm_evm_prove_one(
 
     let prove_with = Some(BackendType::EStark);
 
-    let generate_witness_and_prove = |mut pipeline: Pipeline<GoldilocksField>| -> Result<(), Vec<String>> {
-        let start = Instant::now();
-        log::debug!("Generating witness...");
-        pipeline.advance_to(Stage::GeneratedWitness)?;
-        let duration = start.elapsed();
-        log::debug!("Generating witness took: {:?}", duration);
+    let generate_witness_and_prove =
+        |mut pipeline: Pipeline<GoldilocksField>| -> Result<(), Vec<String>> {
+            let start = Instant::now();
+            log::debug!("Generating witness...");
+            pipeline.advance_to(Stage::GeneratedWitness)?;
+            let duration = start.elapsed();
+            log::debug!("Generating witness took: {:?}", duration);
 
-        let start = Instant::now();
-        log::debug!("Proving ...");
-        prove_with.map(|backend| pipeline.with_backend(backend).proof().unwrap());
-        let duration = start.elapsed();
-        log::debug!("Proving took: {:?}", duration);
-        Ok(())
-    };
+            let start = Instant::now();
+            log::debug!("Proving ...");
+            prove_with.map(|backend| pipeline.with_backend(backend).proof().unwrap());
+            let duration = start.elapsed();
+            log::debug!("Proving took: {:?}", duration);
+            Ok(())
+        };
 
     log::debug!("Running witness generation...");
     let start = Instant::now();
-    rust_continuations(mk_pipeline_opt, generate_witness_and_prove, bootloader_inputs).unwrap();
+    rust_continuations(
+        mk_pipeline_opt,
+        generate_witness_and_prove,
+        bootloader_inputs,
+    )
+    .unwrap();
     let duration = start.elapsed();
     log::debug!("Witness generation took: {:?}", duration);
     Ok(())
@@ -142,6 +144,6 @@ mod tests {
         .into();
         */
 
-        zkvm_evm_prove_one(suite_json, 1, "/tmp/test").unwrap();
+        zkvm_evm_prove_one(suite_json, "/tmp/test").unwrap();
     }
 }

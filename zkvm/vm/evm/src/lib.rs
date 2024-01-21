@@ -24,11 +24,10 @@ fn main() {
     print!("suite_json: {suite_json}\n");
     let suite = read_suite(&suite_json);
 
-    let chain_id = 1;
     /*
     let addr = address!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b");
     */
-    assert!(execute_test(&suite, chain_id).is_ok());
+    assert!(execute_test(&suite).is_ok());
 }
 
 fn read_suite(s: &String) -> TestUnit {
@@ -36,7 +35,7 @@ fn read_suite(s: &String) -> TestUnit {
     suite
 }
 
-fn execute_test(unit: &TestUnit, chain_id: u64) -> Result<(), String> {
+fn execute_test(unit: &TestUnit) -> Result<(), String> {
     // Create database and insert cache
     let mut cache_state = CacheState::new(false);
     for (address, info) in &unit.pre {
@@ -50,8 +49,10 @@ fn execute_test(unit: &TestUnit, chain_id: u64) -> Result<(), String> {
     }
 
     let mut env = Env::default();
-    // for mainnet
-    env.cfg.chain_id = chain_id;
+    env.cfg.chain_id = match unit.chain_id {
+        Some(chain_id) => chain_id,
+        _ => 1, // mainnet by default
+    };
     // env.cfg.spec_id is set down the road
 
     // block env
