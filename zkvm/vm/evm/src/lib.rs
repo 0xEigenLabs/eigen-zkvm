@@ -4,50 +4,38 @@ use revm::{
     interpreter::CreateScheme,
     primitives::{
         Address,
-        calc_excess_blob_gas, keccak256, Env, SpecId, AccountInfo, Bytecode, TransactTo, U256,
+        calc_excess_blob_gas, keccak256, Env, AccountInfo, Bytecode, TransactTo, U256, SpecId
     },
 };
 //use runtime::{print, get_prover_input, coprocessors::{get_data, get_data_len}};
-use powdr_riscv_rt::{print, coprocessors::{get_data, get_data_len}};
+use powdr_riscv_rt::{print, coprocessors::get_data_serde};
 
 use models::*;
 
 extern crate alloc;
 use alloc::vec::Vec;
-use alloc::vec;
 use alloc::string::String;
 use alloc::string::ToString;
 
+use k256::ecdsa::SigningKey;
+
+/// Recover the address from a private key (SigningKey).
+pub fn recover_address(private_key: &[u8]) -> Option<Address> {
+    let key = SigningKey::from_slice(private_key).ok()?;
+    let public_key = key.verifying_key().to_encoded_point(false);
+    Some(Address::from_raw_public_key(&public_key.as_bytes()[1..]))
+}
+
 #[no_mangle]
 fn main() {
-    let suite_len = get_data_len(666);
-    let mut suite_json = vec![0; suite_len];
-    get_data(666, &mut suite_json);
-    let suite_json: Vec<u8> = suite_json.into_iter().map(|x| x as u8).collect();
-    let suite_json_str = String::from_utf8(suite_json).unwrap();
-    let suite = read_suite(&suite_json_str);
-
-    let chain_id_len = get_data_len(667);
-    let mut chain_id_in = vec![0; chain_id_len];
-    get_data(667, &mut chain_id_in);
-    let chain_id: u64 = chain_id_in[0].into();
-    print!("chain_id: {chain_id}\n");
-
-    let addr_len = get_data_len(668);
-    let mut addr_in = vec![0; addr_len];
-    print!("addr: {addr_len}\n");
-    get_data(668, &mut addr_in);
-    let addr_in: Vec<u8> = addr_in.into_iter().map(|x| x as u8).collect();
-    let addr_in = String::from_utf8(addr_in).unwrap();
-    print!("addr: {:?}\n", addr_in);
-    let addr: Address = addr_in.parse().unwrap();
+    let suite_json: String = get_data_serde(666);
+    print!("suite_json: {suite_json}\n");
+    let suite = read_suite(&suite_json);
 
     /*
-    let chain_id = 1;
     let addr = address!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b");
     */
-
-    assert!(execute_test(&suite, addr, chain_id).is_ok());
+    assert!(execute_test(&suite).is_ok());
 }
 
 fn read_suite(s: &String) -> TestUnit {
@@ -55,7 +43,7 @@ fn read_suite(s: &String) -> TestUnit {
     suite
 }
 
-fn execute_test(unit: &TestUnit, addr: Address, chain_id: u64) -> Result<(), String> {
+fn execute_test(unit: &TestUnit) -> Result<(), String> {
     // Create database and insert cache
     let mut cache_state = CacheState::new(false);
     for (address, info) in &unit.pre {
@@ -69,8 +57,10 @@ fn execute_test(unit: &TestUnit, addr: Address, chain_id: u64) -> Result<(), Str
     }
 
     let mut env = Env::default();
-    // for mainnet
-    env.cfg.chain_id = chain_id;
+    env.cfg.chain_id = match unit.chain_id {
+        Some(chain_id) => chain_id,
+        _ => 1, // mainnet by default
+    };
     // env.cfg.spec_id is set down the road
 
     // block env
@@ -95,7 +85,11 @@ fn execute_test(unit: &TestUnit, addr: Address, chain_id: u64) -> Result<(), Str
     }
 
     // tx env
-    env.tx.caller = addr; 
+    env.tx.caller = match unit.transaction.sender {
+            Some(address) => address,
+            _ => recover_address(unit.transaction.secret_key.as_slice())
+                .ok_or_else(|| String::new())?,
+        };
     env.tx.gas_price = unit
         .transaction
         .gas_price
@@ -117,7 +111,7 @@ fn execute_test(unit: &TestUnit, addr: Address, chain_id: u64) -> Result<(), Str
             continue;
         }
 
-        env.cfg.spec_id = spec_name.to_spec_id();
+        //env.cfg.spec_id = spec_name.to_spec_id();
 
         for test in tests {
             env.tx.gas_limit = unit.transaction.gas_limit[test.indexes.gas].saturating_to();
@@ -153,19 +147,23 @@ fn execute_test(unit: &TestUnit, addr: Address, chain_id: u64) -> Result<(), Str
                 None => TransactTo::Create(CreateScheme::Create),
             };
             env.tx.transact_to = to;
+            let spec_id = spec_name.to_spec_id();
 
-            let mut cache = cache_state.clone();
-            cache.set_state_clear_flag(SpecId::enabled(
-                    env.cfg.spec_id,
+             let mut cache = cache_state.clone();
+                cache.set_state_clear_flag(SpecId::enabled(
+                    spec_id,
                     revm::primitives::SpecId::SPURIOUS_DRAGON,
-                    ));
+                ));
             let mut state = revm::db::State::builder()
                 .with_cached_prestate(cache)
                 .with_bundle_update()
                 .build();
-            let mut evm = revm::new();
-            evm.database(&mut state);
-            evm.env = env.clone();
+
+            let mut evm = revm::Evm::builder()
+                    .with_db(&mut state)
+                    .modify_env(|e| *e = env.clone())
+                    .spec_id(spec_id)
+                    .build();
 
             // do the deed
             let exec_result = evm.transact_commit();
