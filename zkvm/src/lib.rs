@@ -1,3 +1,4 @@
+use anyhow::Result;
 use backend::BackendType;
 use powdr::number::GoldilocksField;
 use powdr::pipeline::{Pipeline, Stage};
@@ -9,12 +10,12 @@ use powdr::riscv_executor;
 use std::path::Path;
 use std::time::Instant;
 
-pub fn zkvm_evm_prove_one(suite_json: String, output_path: &str) -> Result<(), String> {
+pub fn zkvm_evm_prove_one(task: &str, suite_json: String, output_path: &str) -> Result<()> {
     log::debug!("Compiling Rust...");
     let force_overwrite = true;
     let with_bootloader = true;
     let (asm_file_path, asm_contents) = compile_rust(
-        "vm/evm",
+        &format!("vm/{task}"),
         Path::new(output_path),
         force_overwrite,
         &CoProcessors::base().with_poseidon(),
@@ -103,6 +104,7 @@ mod tests {
 
     //use revm::primitives::address;
 
+    // RUST_MIN_STACK=2073741821 RUST_LOG=debug proxychains nohup cargo test --release test_zkvm_evm_prove -- --nocapture  &
     #[test]
     #[ignore]
     fn test_zkvm_evm_prove() {
@@ -111,36 +113,17 @@ mod tests {
         let test_file = "test-vectors/solidityExample.json";
         let suite_json = std::fs::read_to_string(test_file).unwrap();
 
-        /*
-        let map_caller_keys: HashMap<_, _> = [
-            (
-                b256!("45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8"),
-                address!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b"),
-            ),
-            (
-                b256!("c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4"),
-                address!("cd2a3d9f938e13cd947ec05abc7fe734df8dd826"),
-            ),
-            (
-                b256!("044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d"),
-                address!("82a978b3f5962a5b0957d9ee9eef472ee55b42f1"),
-            ),
-            (
-                b256!("6a7eeac5f12b409d42028f66b0b2132535ee158cfda439e3bfdd4558e8f4bf6c"),
-                address!("c9c5a15a403e41498b6f69f6f89dd9f5892d21f7"),
-            ),
-            (
-                b256!("a95defe70ebea7804f9c3be42d20d24375e2a92b9d9666b832069c5f3cd423dd"),
-                address!("3fb1cd2cd96c6d5c0b5eb3322d807b34482481d4"),
-            ),
-            (
-                b256!("fe13266ff57000135fb9aa854bbfe455d8da85b21f626307bf3263a0c2a8e7fe"),
-                address!("dcc5ba93a1ed7e045690d722f2bf460a51c61415"),
-            ),
-        ]
-        .into();
-        */
+        zkvm_evm_prove_one("evm", suite_json, "/tmp/test_evm").unwrap();
+    }
 
-        zkvm_evm_prove_one(suite_json, "/tmp/test").unwrap();
+    #[test]
+    #[ignore]
+    fn test_zkvm_lr_prove() {
+        env_logger::try_init().unwrap_or_default();
+        //let test_file = "test-vectors/blockInfo.json";
+        let test_file = "test-vectors/solidityExample.json";
+        let suite_json = std::fs::read_to_string(test_file).unwrap();
+
+        zkvm_evm_prove_one("lr", suite_json, "/tmp/test_lr").unwrap();
     }
 }
