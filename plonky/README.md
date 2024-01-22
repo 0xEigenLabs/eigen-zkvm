@@ -54,7 +54,7 @@ Snark proof size: 1.2k
 Snark time cost(GPU): 546s
 ```
 
-* e4([aggregation proof](../test/test_aggregation_fibonacci_verifier.sh))
+* e4([aggregation proof](../test/test_aggregation_verifier.sh))
 
 The starkStruct is same as e1.
 
