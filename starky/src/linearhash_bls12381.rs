@@ -1,9 +1,9 @@
 #![allow(non_snake_case)]
-use anyhow::Result;
 use crate::field_bls12381::{Fr, FrRepr};
 use crate::poseidon_bls12381_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::ElementDigest;
+use anyhow::Result;
 use ff::*;
 //use rayon::prelude::*;
 use crate::constant::{OFFSET_BLS12381_2_128, OFFSET_BLS12381_2_64};

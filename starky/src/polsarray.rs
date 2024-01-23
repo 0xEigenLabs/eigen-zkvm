@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
-use anyhow::Result;
 use crate::{traits::FieldExtension, types::PIL};
+use anyhow::Result;
 use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 use rayon::prelude::*;

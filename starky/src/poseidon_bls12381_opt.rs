@@ -1,10 +1,10 @@
 #![allow(non_snake_case)]
 use crate::constant::POSEIDON_BLS12381_CONSTANTS_OPT;
-use anyhow::Result;
 use crate::field_bls12381::Fr;
 use crate::poseidon_bls12381::Constants;
 use crate::poseidon_bls12381_constants_opt as constants;
 use anyhow::bail;
+use anyhow::Result;
 use ff::{from_hex, Field};
 
 pub fn load_constants() -> Constants {

@@ -15,8 +15,8 @@ extern crate rand;
 pub mod circom_circuit;
 pub mod r1cs_file;
 pub mod reader;
-pub mod witness;
 pub mod utils;
+pub mod witness;
 
 pub use crate::ff::*;
 pub use bellman_ce::pairing::ff;

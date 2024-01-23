@@ -1,7 +1,7 @@
-use anyhow::Result;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Context};
 use crate::types::PIL;
+use anyhow::Result;
 
 impl StarkInfo {
     pub fn generate_fri_verifier(

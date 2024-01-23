@@ -2,10 +2,10 @@
 mod export;
 mod expression_counter;
 
-use starky::types::PIL;
 use number::GoldilocksField;
-use std::path::Path;
 use pil_analyzer;
+use starky::types::PIL;
+use std::path::Path;
 
 pub fn compile_pil_from_str(pil_str: &str) -> PIL {
     let analyze = pil_analyzer::analyze_string::<GoldilocksField>(pil_str);

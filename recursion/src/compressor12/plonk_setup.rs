@@ -3,15 +3,15 @@ use super::{
     compressor12_pil, compressor12_pil::CompressorNameSpace::*,
     compressor12_pil::CompressorPolName::*, compressor12_setup::Options, constants::CPOSEIDON,
 };
-use starky::helper;
 use crate::pilcom::compile_pil_from_str;
-use starky::polsarray::{PolKind, PolsArray};
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
-use starky::types::PIL;
 use array_tool::vec::Shift;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
+use starky::helper;
+use starky::polsarray::{PolKind, PolsArray};
+use starky::types::PIL;
 use std::collections::BTreeMap;
 
 #[derive(Default, Debug)]

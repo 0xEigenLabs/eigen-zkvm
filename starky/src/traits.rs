@@ -1,5 +1,5 @@
-use anyhow::Result;
 use ::rand::Rand;
+use anyhow::Result;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use ff::PrimeField;
 use fields::field_gl::Fr as FGL;

@@ -1,8 +1,8 @@
 #![allow(non_snake_case)]
 use crate::constant::POSEIDON_CONSTANTS_OPT;
-use anyhow::Result;
 use crate::poseidon_constants_opt as constants;
 use anyhow::bail;
+use anyhow::Result;
 use fields::field_gl::Fr as FGL;
 use fields::Field;
 

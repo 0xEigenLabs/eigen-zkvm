@@ -1,8 +1,8 @@
 #![cfg(not(target_arch = "wasm32"))]
 // refers to https://github.com/matter-labs/recursive_aggregation_circuit/blob/master/src/circuit/mod.rs
 #![allow(clippy::needless_range_loop)]
-use anyhow::Result;
 use crate::{bellman_ce, utils};
+use anyhow::Result;
 use bellman_ce::{
     kate_commitment::{Crs, CrsForMonomialForm},
     pairing::bn256,

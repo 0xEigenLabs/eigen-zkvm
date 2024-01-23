@@ -3,12 +3,12 @@ use rayon::prelude::*;
 use std::fs;
 use std::path;
 
-use anyhow::Result;
 use crate::fft_p::interpolate;
 use crate::polsarray::PolsArray;
 use crate::starkinfo::{self, Program, StarkInfo};
 use crate::traits::{FieldExtension, MerkleTree};
 use crate::types::{StarkStruct, PIL};
+use anyhow::Result;
 use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 

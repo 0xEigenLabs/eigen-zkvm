@@ -18,7 +18,6 @@ use crate::arch::x86_64::avx2_poseidon_gl::Poseidon;
     target_feature = "avx512vl"
 ))]
 use crate::arch::x86_64::avx512_poseidon_gl::Poseidon;
-use anyhow::Result;
 #[cfg(not(any(
     target_feature = "avx2",
     target_feature = "avx512bw",
@@ -30,6 +29,7 @@ use anyhow::Result;
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::ElementDigest;
+use anyhow::Result;
 use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 use rayon::prelude::*;

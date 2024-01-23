@@ -1,15 +1,15 @@
 #![allow(dead_code)]
 use crate::digest::ElementDigest;
-use anyhow::Result;
 use crate::ff::Field;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::helper::{biguint_to_be, fr_to_biguint};
 use crate::poseidon_bn128_opt::Poseidon;
 use crate::traits::Transcript;
 use crate::traits::{FieldExtension, MTNodeType};
+use anyhow::Result;
 use ff::*;
-use num_bigint::BigUint;
 use fields::field_gl::Fr as FGL;
+use num_bigint::BigUint;
 use std::collections::VecDeque;
 
 pub struct TranscriptBN128 {

@@ -1,8 +1,8 @@
 use crate::digest::ElementDigest;
-use anyhow::Result;
 use crate::starkinfo::Program;
 use crate::starkinfo::StarkInfo;
 use crate::types::{StarkStruct, PIL};
+use anyhow::Result;
 use profiler_macro::time_profiler;
 
 pub struct StarkOption {
