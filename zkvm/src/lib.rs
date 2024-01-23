@@ -117,7 +117,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_zkvm_lr_prove() {
         env_logger::try_init().unwrap_or_default();
         //let test_file = "test-vectors/blockInfo.json";

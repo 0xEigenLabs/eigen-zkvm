@@ -1,7 +1,7 @@
 #![no_std]
 extern crate alloc;
 use alloc::{vec, vec::Vec};
-use runtime::get_prover_input;
+//use runtime::get_prover_input;
 
 fn simple_linear_regression(values: &[(f64, f64)]) -> (f64, f64) {
     let (x, y): (Vec<f64>, Vec<f64>) = values.iter().cloned().unzip();
