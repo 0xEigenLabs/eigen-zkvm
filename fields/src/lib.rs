@@ -1,3 +1,4 @@
+#![cfg_attr(feature = "avx512", feature(stdsimd))]
 extern crate rand;
 
 pub mod arch;

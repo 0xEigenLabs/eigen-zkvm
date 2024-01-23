@@ -1,16 +1,13 @@
 #![allow(non_snake_case)]
 use crate::constant::POSEIDON_CONSTANTS_OPT_AVX512;
 use crate::poseidon_constants_avx512 as constants;
-use algebraic::arch::x86_64::avx512_field_gl::Avx512GoldilocksField;
-use algebraic::packed::PackedField;
+use fields::arch::x86_64::avx512_field_gl::Avx512GoldilocksField;
+use fields::packed::PackedField;
 use core::arch::x86_64::*;
-// use core::mem;
-use plonky::field_gl::Fr as FGL;
-use plonky::field_gl::FrRepr;
-//use plonky::Field;
-use crate::errors::Result;
+use fields::field_gl::{Fr as FGL, FrRepr};
+use anyhow::Result;
 use anyhow::bail;
-use plonky::PrimeField;
+use fields::PrimeField;
 
 #[derive(Debug)]
 pub struct ConstantsAvx512 {
@@ -469,7 +466,7 @@ mod tests {
     use algebraic::arch::x86_64::avx512_field_gl::Avx512GoldilocksField;
     use algebraic::packed::PackedField;
     use plonky::field_gl::Fr as FGL;
-    use plonky::PrimeField;
+    use fields::PrimeField;
     use std::time::{Duration, Instant};
 
     #[test]
