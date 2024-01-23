@@ -5,7 +5,10 @@ use crate::traits::FieldExtension;
 use crate::types::Expression;
 use crate::types::PIL;
 use anyhow::{bail, Result};
-use serde::Serialize;
+use serde::ser::SerializeSeq;
+use serde::Deserializer;
+use serde::{Deserialize, Serialize};
+
 use std::collections::HashMap;
 use std::fmt;
 
@@ -42,7 +45,7 @@ pub struct Code {
     pub idQ: Option<usize>,
 }
 
-#[derive(Clone, Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Node {
     pub type_: String,
     pub id: usize,
@@ -78,14 +81,14 @@ impl Node {
 }
 
 /// Subcode
-#[derive(Clone, Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Section {
     pub op: String,
     pub dest: Node,
     pub src: Vec<Node>,
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Segment {
     pub first: Vec<Section>,
     pub i: Vec<Section>,
@@ -115,7 +118,7 @@ impl Segment {
     }
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct IndexVec {
     pub cm1_n: Vec<usize>,
     pub cm1_2ns: Vec<usize>,
@@ -149,7 +152,7 @@ impl IndexVec {
     }
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Index {
     pub cm1_n: usize,
     pub cm1_2ns: usize,
@@ -222,7 +225,7 @@ impl Index {
     }
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct PolType {
     pub section: String,
     pub section_pos: usize,
@@ -239,10 +242,37 @@ pub struct Polynom<'a, F: FieldExtension> {
     pub dim: usize,
 }
 
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct EVIdx {
+    #[serde(serialize_with = "serialize_map", deserialize_with = "deserialize_map")]
     pub cm: HashMap<(usize, usize), usize>,
+    #[serde(serialize_with = "serialize_map", deserialize_with = "deserialize_map")]
     pub const_: HashMap<(usize, usize), usize>,
+}
+
+fn serialize_map<S, K: Serialize, V: Serialize>(
+    value: &HashMap<K, V>,
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let vec_map = value.iter().collect::<Vec<_>>();
+    let mut map = serializer.serialize_seq(Some(value.len()))?;
+    for v in &vec_map {
+        map.serialize_element(v)?;
+    }
+    map.end()
+}
+
+fn deserialize_map<'de, D>(
+    deserializer: D,
+) -> std::result::Result<HashMap<(usize, usize), usize>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let vec = Vec::deserialize(deserializer)?;
+    Ok(HashMap::from_iter(vec))
 }
 
 impl EVIdx {
@@ -477,7 +507,6 @@ pub fn eval_exp(
         }
         "mulc" => {
             let a = eval_exp(code_ctx, pil, &values[0], prime)?;
-            log::trace!("mulc: {:?}", exp);
             let b = Node::new(
                 "number".to_string(),
                 0,
@@ -632,7 +661,7 @@ pub fn expression_error(_pil: &PIL, strerr: String, _e1: usize, _e2: usize) -> R
     bail!(strerr);
 }
 
-pub fn build_code(ctx: &mut Context, pil: &mut PIL) -> Segment {
+pub fn build_code(ctx: &mut Context, pil: &PIL) -> Segment {
     let seg = Segment {
         first: build_linear_code(ctx, pil, "first"),
         i: build_linear_code(ctx, pil, "i"),
@@ -651,7 +680,7 @@ pub fn build_code(ctx: &mut Context, pil: &mut PIL) -> Segment {
     seg
 }
 
-pub fn build_linear_code(ctx: &mut Context, pil: &PIL, loop_pos: &str) -> Vec<Section> {
+pub fn build_linear_code(ctx: &Context, pil: &PIL, loop_pos: &str) -> Vec<Section> {
     let exp_and_expprimes = match loop_pos {
         "i" | "last" => get_exp_and_expprimes(ctx, pil),
         _ => HashMap::<usize, bool>::new(),
@@ -674,7 +703,7 @@ pub fn build_linear_code(ctx: &mut Context, pil: &PIL, loop_pos: &str) -> Vec<Se
 }
 
 //FIXME where is the exp_id from
-fn get_exp_and_expprimes(ctx: &mut Context, pil: &PIL) -> HashMap<usize, bool> {
+fn get_exp_and_expprimes(ctx: &Context, pil: &PIL) -> HashMap<usize, bool> {
     let mut calc_exps = HashMap::<usize, usize>::new();
     for i in 0..ctx.code.len() {
         if (pil.expressions[ctx.code[i].exp_id].idQ.is_some())

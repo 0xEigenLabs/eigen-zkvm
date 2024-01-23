@@ -1,11 +1,14 @@
 #![allow(non_snake_case)]
+use crate::errors::Result;
 use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bls12381::FrRepr as FrRepr_bls12381;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::traits::MTNodeType;
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use ff::*;
 use plonky::field_gl::Fr as FGL;
 use std::fmt::Display;
+use std::io::{Read, Write};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -45,6 +48,21 @@ impl<const N: usize> MTNodeType for ElementDigest<N> {
             *ti = self.0[i].as_int();
         }
         y
+    }
+
+    fn save<W: Write>(&self, writer: &mut W) -> Result<()> {
+        for i in &self.0 {
+            writer.write_u64::<LittleEndian>(i.as_int())?;
+        }
+        Ok(())
+    }
+
+    fn load<R: Read>(reader: &mut R) -> Result<Self> {
+        let e1 = reader.read_u64::<LittleEndian>()?;
+        let e2 = reader.read_u64::<LittleEndian>()?;
+        let e3 = reader.read_u64::<LittleEndian>()?;
+        let e4 = reader.read_u64::<LittleEndian>()?;
+        Ok(Self::new(&[e1.into(), e2.into(), e3.into(), e4.into()]))
     }
 }
 

@@ -4,7 +4,8 @@ extern crate criterion;
 use criterion::{BenchmarkId, Criterion};
 use starky::dev::gen_rand_goldfields;
 use starky::f3g::F3G;
-use starky::traits::{batch_inverse, FieldExtension};
+use starky::polutils::batch_inverse;
+use starky::traits::FieldExtension;
 
 const MIN_K: usize = 6;
 const MAX_K: usize = 24;

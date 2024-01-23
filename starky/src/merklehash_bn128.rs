@@ -8,10 +8,11 @@ use crate::poseidon_bn128_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use anyhow::{bail, Result};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use ff::Field;
 use plonky::field_gl::Fr as FGL;
 use rayon::prelude::*;
-use std::time::Instant;
+use std::io::{Read, Write};
 
 #[derive(Default)]
 pub struct MerkleTreeBN128 {
@@ -158,6 +159,41 @@ impl MerkleTree for MerkleTreeBN128 {
         }
     }
 
+    fn save<W: Write>(&self, writer: &mut W) -> Result<()> {
+        writer.write_u64::<LittleEndian>(self.width as u64)?;
+        writer.write_u64::<LittleEndian>(self.height as u64)?;
+        writer.write_u64::<LittleEndian>(self.elements.len() as u64)?;
+        for i in &self.elements {
+            writer.write_u64::<LittleEndian>(i.as_int())?;
+        }
+        writer.write_u64::<LittleEndian>(self.nodes.len() as u64)?;
+        for i in &self.nodes {
+            i.save(writer)?;
+        }
+        Ok(())
+    }
+
+    fn load<R: Read>(reader: &mut R) -> Result<Self> {
+        let mut mt = Self::new();
+        mt.width = reader.read_u64::<LittleEndian>()? as usize;
+        mt.height = reader.read_u64::<LittleEndian>()? as usize;
+
+        let es = reader.read_u64::<LittleEndian>()? as usize;
+        mt.elements = vec![FGL::ZERO; es];
+        for i in 0..es {
+            let e = reader.read_u64::<LittleEndian>()?;
+            mt.elements[i] = FGL::from(e);
+        }
+
+        let ns = reader.read_u64::<LittleEndian>()? as usize;
+        mt.nodes = vec![ElementDigest::<4>::new(&[FGL::ZERO, FGL::ZERO, FGL::ZERO, FGL::ZERO]); ns];
+        for i in 0..ns {
+            mt.nodes[i] = ElementDigest::<4>::load(reader)?;
+        }
+
+        Ok(mt)
+    }
+
     fn element_size(&self) -> usize {
         self.elements.len()
     }
@@ -187,7 +223,6 @@ impl MerkleTree for MerkleTreeBN128 {
         }
         // calculate the nodes of the specific height Merkle tree
         let mut nodes = vec![ElementDigest::<4>::default(); get_n_nodes(height)];
-        let now = Instant::now();
         if !buff.is_empty() {
             nodes
                 .par_chunks_mut(n_per_thread_f)
@@ -200,7 +235,6 @@ impl MerkleTree for MerkleTreeBN128 {
                     });
                 });
         }
-        log::trace!("linearhash time cost: {}", now.elapsed().as_secs_f64());
 
         // merklize level
         self.nodes = nodes;
@@ -213,13 +247,7 @@ impl MerkleTree for MerkleTreeBN128 {
         let mut p_in: usize = 0;
         let mut p_out: usize = p_in + next_n256 * 16;
         while n256 > 1 {
-            let now = Instant::now();
             self.merklize_level(p_in, next_n256, p_out)?;
-            log::trace!(
-                "merklize_level {} time cost: {}",
-                next_n256,
-                now.elapsed().as_secs_f64()
-            );
             n256 = next_n256;
             next_n256 = (n256 - 1) / 16 + 1;
             p_in = p_out;

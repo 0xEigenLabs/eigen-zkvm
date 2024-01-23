@@ -1,4 +1,7 @@
 #![allow(non_snake_case, dead_code)]
+use rayon::prelude::*;
+use std::fs;
+use std::path;
 
 use crate::errors::Result;
 use crate::fft_p::interpolate;
@@ -8,7 +11,6 @@ use crate::traits::{FieldExtension, MerkleTree};
 use crate::types::{StarkStruct, PIL};
 use plonky::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
-use rayon::prelude::*;
 
 #[derive(Default)]
 pub struct StarkSetup<M: MerkleTree> {
@@ -16,6 +18,50 @@ pub struct StarkSetup<M: MerkleTree> {
     pub const_root: M::MTNode,
     pub starkinfo: StarkInfo,
     pub program: Program,
+}
+
+impl<M: MerkleTree> StarkSetup<M> {
+    pub fn save(&self, base_dir: &str) -> Result<()> {
+        if path::Path::new(base_dir).exists() {
+            fs::remove_dir_all(base_dir)?;
+        }
+        std::fs::create_dir_all(base_dir)?;
+        let base_dir = path::Path::new(base_dir);
+        let ct = base_dir.join("const_tree");
+        let mut writer = fs::File::create(ct)?;
+        self.const_tree.save(&mut writer)?;
+
+        let si = base_dir.join("starkinfo");
+        let si = fs::File::create(si)?;
+        serde_json::to_writer(si, &self.starkinfo)?;
+
+        let pg = base_dir.join("program");
+        let pg = fs::File::create(pg)?;
+        serde_json::to_writer(pg, &self.program)?;
+        Ok(())
+    }
+
+    pub fn load(base_dir: &str) -> Result<Self> {
+        let base_dir = path::Path::new(base_dir);
+        let ct = base_dir.join("const_tree");
+        let mut reader = fs::File::open(ct)?;
+        let const_tree = M::load(&mut reader)?;
+        let const_root = const_tree.root();
+
+        let si = base_dir.join("starkinfo");
+        let si = fs::File::open(si)?;
+        let starkinfo: StarkInfo = serde_json::from_reader(si)?;
+
+        let pg = base_dir.join("program");
+        let pg = fs::File::open(pg)?;
+        let program: Program = serde_json::from_reader(pg)?;
+        Ok(StarkSetup {
+            const_tree,
+            const_root,
+            starkinfo,
+            program,
+        })
+    }
 }
 
 /// STARK SETUP
@@ -36,11 +82,13 @@ impl<M: MerkleTree> StarkSetup<M> {
 
         let mut p: Vec<Vec<FGL>> = vec![Vec::new(); const_pol.nPols];
         for i in 0..const_pol.nPols {
-            for j in 0..const_pol.n {
-                p[i].push(const_pol.array[i][j])
-            }
+            p[i] = vec![FGL::ZERO; const_pol.n];
+            p[i].par_iter_mut().enumerate().for_each(|(j, out)| {
+                *out = const_pol.array[i][j];
+            });
         }
 
+        log::trace!("Write const pol buff and interpolate");
         let const_buff = const_pol.write_buff();
         //extend and merkelize
         let mut const_pols_array_e = vec![M::ExtendField::ZERO; (1 << nBitsExt) * pil.nConstants];
@@ -62,6 +110,7 @@ impl<M: MerkleTree> StarkSetup<M> {
             });
 
         let mut const_tree = M::new();
+        log::trace!("Merkelize const tree");
         const_tree.merkelize(
             const_pols_array_e_be,
             const_pol.nPols,

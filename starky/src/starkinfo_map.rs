@@ -42,7 +42,7 @@ impl StarkInfo {
             pil.cm_dims[i] = 1
         }
 
-        log::trace!("pu: {:?}", self.pu_ctx);
+        //log::trace!("pu: {:?}", self.pu_ctx);
         for (i, pu) in self.pu_ctx.iter().enumerate() {
             let dim = std::cmp::max(
                 Self::get_exp_dim(pil, &pil.expressions[pu.f_exp_id]),
@@ -236,7 +236,7 @@ impl StarkInfo {
         });
         self.f_2ns.push(ppf_2ns);
 
-        log::trace!("cm_dims: {:?}", pil.cm_dims);
+        //log::trace!("cm_dims: {:?}", pil.cm_dims);
         self.map_section()?;
         let N = 1 << stark_struct.nBits;
         let Next = 1 << stark_struct.nBitsExt;
@@ -345,12 +345,7 @@ impl StarkInfo {
         }
     }
 
-    fn get_dim(
-        &mut self,
-        r: &mut Node,
-        tmp_dim: &mut HashMap<usize, usize>,
-        dim_x: usize,
-    ) -> usize {
+    fn get_dim(&mut self, r: &mut Node, tmp_dim: &HashMap<usize, usize>, dim_x: usize) -> usize {
         #[allow(unused_assignments)]
         let mut d = 0;
         match r.type_.as_str() {

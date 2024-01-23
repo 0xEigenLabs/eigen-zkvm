@@ -9,6 +9,7 @@ use crate::starkinfo_codegen::{Node, Section};
 use crate::traits;
 use crate::traits::FieldExtension;
 use crate::traits::{MTNodeType, MerkleTree, Transcript};
+use crate::types::parse_pil_number;
 use crate::types::StarkStruct;
 use anyhow::{bail, Result};
 use plonky::field_gl::Fr as FGL;
@@ -16,7 +17,7 @@ use profiler_macro::time_profiler;
 use std::collections::HashMap;
 
 //FIXME it doesn't make sense to ask for a mutable program
-#[time_profiler()]
+#[time_profiler("stark_verify")]
 pub fn stark_verify<M: MerkleTree, T: Transcript>(
     proof: &StarkProof<M>,
     const_root: &M::MTNode,
@@ -73,7 +74,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
         (ctx.challenge[7] * M::ExtendField::from(MG.0[ctx.nbits])).exp(ctx.N) - M::ExtendField::ONE;
 
     log::trace!("verifier_code {}", program.verifier_code);
-    let res = execute_code(&mut ctx, &mut program.verifier_code.first);
+    let res = execute_code(&ctx, &mut program.verifier_code.first);
     log::trace!("starkinfo: {}", starkinfo);
 
     let mut x_acc = M::ExtendField::ONE;
@@ -136,7 +137,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
         .as_elements();
 
         let vals = vec![execute_code(
-            &mut ctx_query,
+            &ctx_query,
             &mut program.verifier_query_code.first,
         )];
 
@@ -146,7 +147,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     fri.verify(&mut transcript, &proof.fri_proof, check_query)
 }
 
-fn execute_code<F: FieldExtension>(ctx: &mut StarkContext<F>, code: &mut Vec<Section>) -> F {
+fn execute_code<F: FieldExtension>(ctx: &StarkContext<F>, code: &mut Vec<Section>) -> F {
     let mut tmp: HashMap<usize, F> = HashMap::new();
 
     let extract_val = |arr: &Vec<FGL>, pos: usize, dim: usize| -> F {
@@ -170,7 +171,7 @@ fn execute_code<F: FieldExtension>(ctx: &mut StarkContext<F>, code: &mut Vec<Sec
             "tree4" => extract_val(&ctx.tree4, r.tree_pos, r.dim),
             "const" => ctx.consts[r.id].into(),
             "eval" => ctx.evals[r.id],
-            "number" => F::from(r.value.clone().unwrap().parse::<u64>().unwrap()),
+            "number" => F::from(parse_pil_number(r.value.as_ref().unwrap())),
             "public" => ctx.publics[r.id],
             "challenge" => ctx.challenge[r.id],
             // TODO: Support F5G

@@ -6,11 +6,11 @@ use crate::starkinfo_codegen::{
 };
 use crate::types::{Expression, Public, StarkStruct, PIL};
 use anyhow::{bail, Result};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
 
-#[derive(Default, Debug, Serialize)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct PCCTX {
     pub f_exp_id: usize,
     pub t_exp_id: usize,
@@ -23,7 +23,7 @@ pub struct PCCTX {
     pub den_id: usize,
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Program {
     pub publics_code: Vec<Segment>,
     pub step2prev: Segment,
@@ -46,7 +46,7 @@ impl fmt::Display for Program {
     }
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct StarkInfo {
     pub var_pol_map: Vec<PolType>,
     pub n_cm1: usize,
@@ -410,7 +410,7 @@ impl StarkInfo {
         program: &mut Program,
     ) -> Result<()> {
         let ppi = pil.plookupIdentities.clone();
-        log::trace!("generate_step2: [{:?}]", ppi);
+        //log::trace!("generate_step2: [{:?}]", ppi);
         for pi in ppi.iter() {
             let u = E::challenge("u".to_string());
             let def_val = E::challenge("defVal".to_string());
@@ -481,11 +481,11 @@ impl StarkInfo {
         }
 
         program.step2prev = build_code(ctx, pil);
-        log::trace!("pu_ctx {:?}", self.pu_ctx);
-        log::trace!("step2prev {}", program.step2prev);
+        //log::trace!("pu_ctx {:?}", self.pu_ctx);
+        //log::trace!("step2prev {}", program.step2prev);
         ctx.calculated.clear();
         self.n_cm2 = pil.nCommitments - self.n_cm1;
-        log::trace!("n_cm2 {}", self.n_cm2);
+        //log::trace!("n_cm2 {}", self.n_cm2);
         Ok(())
     }
 }

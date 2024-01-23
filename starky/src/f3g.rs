@@ -629,7 +629,8 @@ impl Display for F3G {
 #[cfg(test)]
 pub mod tests {
     use crate::f3g::F3G;
-    use crate::traits::{batch_inverse, FieldExtension};
+    use crate::polutils::batch_inverse;
+    use crate::traits::FieldExtension;
     use plonky::field_gl::Fr;
     use plonky::Field;
     use std::ops::{Add, Mul};

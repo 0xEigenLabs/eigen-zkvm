@@ -4,6 +4,7 @@ use crate::starkinfo::StarkInfo;
 use crate::starkinfo_codegen::Node;
 use crate::starkinfo_codegen::Section;
 use crate::traits::FieldExtension;
+use crate::types::parse_pil_number;
 use std::fmt;
 
 #[derive(Clone, Debug)]
@@ -471,12 +472,10 @@ fn get_ref<F: FieldExtension>(
                 panic!("Invalid dom");
             }
         }
-        "number" => Expr::new(
-            Ops::Vari(F::from(r.value.clone().unwrap().parse::<u64>().unwrap())),
-            vec![],
-            vec![],
-            vec![],
-        ),
+        "number" => {
+            let n_val = parse_pil_number(r.value.as_ref().unwrap());
+            Expr::new(Ops::Vari(F::from(n_val)), vec![], vec![], vec![])
+        }
         "public" => Expr::new(
             Ops::Refer,
             vec!["publics".to_string()],

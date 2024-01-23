@@ -3,6 +3,7 @@ use crate::errors::Result;
 use crate::{traits::FieldExtension, types::PIL};
 use plonky::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
+use rayon::prelude::*;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -138,7 +139,7 @@ impl PolsArray {
         pol.id + k
     }
 
-    #[time_profiler("load_pols_array")]
+    #[time_profiler("load_cm_pols_array")]
     pub fn load(&mut self, fileName: &str) -> Result<()> {
         let mut f = File::open(fileName)?;
         let maxBufferSize = 1024 * 1024 * 32;
@@ -223,12 +224,14 @@ impl PolsArray {
     }
 
     pub fn write_buff<F: FieldExtension>(&self) -> Vec<F> {
-        let mut buff: Vec<F> = vec![];
-        for i in 0..self.n {
-            for j in 0..self.nPols {
-                buff.push(F::from(self.array[j][i]));
-            }
-        }
+        let mut buff: Vec<F> = vec![F::ZERO; self.n * self.nPols];
+        buff.par_chunks_mut(self.nPols)
+            .enumerate()
+            .for_each(|(i, chunk)| {
+                for j in 0..self.nPols {
+                    chunk[j] = F::from(self.array[j][i]);
+                }
+            });
         buff
     }
 }

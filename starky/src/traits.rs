@@ -8,16 +8,25 @@ use plonky::Field;
 use serde::ser::Serialize;
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
+use std::io::{Read, Write};
 
-pub trait MTNodeType {
+pub trait MTNodeType
+where
+    Self: Sized,
+{
     fn as_elements(&self) -> &[FGL];
     fn new(value: &[FGL]) -> Self;
     fn from_scalar<T: PrimeField>(e: &T) -> Self;
     fn as_scalar<T: PrimeField>(&self) -> T::Repr;
+    fn save<W: Write>(&self, writer: &mut W) -> Result<()>;
+    fn load<R: Read>(reader: &mut R) -> Result<Self>;
 }
 
 #[allow(clippy::type_complexity)]
-pub trait MerkleTree {
+pub trait MerkleTree
+where
+    Self: Sized,
+{
     type MTNode: Copy + std::fmt::Display + Clone + Default + MTNodeType + core::fmt::Debug;
     type BaseField: Clone
         + Default
@@ -39,6 +48,8 @@ pub trait MerkleTree {
     fn root(&self) -> Self::MTNode;
     fn eq_root(&self, r1: &Self::MTNode, r2: &Self::MTNode) -> bool;
     fn element_size(&self) -> usize;
+    fn save<W: Write>(&self, writer: &mut W) -> Result<()>;
+    fn load<R: Read>(reader: &mut R) -> Result<Self>;
 }
 
 pub trait Transcript {
@@ -103,24 +114,4 @@ pub trait FieldExtension:
     // TODO: Add generate rand fields vector for test/dev.
     // fn rand_
     // (&self) -> &[u8];
-}
-
-pub fn batch_inverse<F: FieldExtension>(elems: &[F]) -> Vec<F> {
-    if elems.is_empty() {
-        return vec![];
-    }
-
-    let mut tmp: Vec<F> = vec![F::ZERO; elems.len()];
-    tmp[0] = elems[0];
-    for i in 1..elems.len() {
-        tmp[i] = elems[i] * (tmp[i - 1]);
-    }
-    let mut z = tmp[tmp.len() - 1].inv();
-    let mut res: Vec<F> = vec![F::ZERO; elems.len()];
-    for i in (1..elems.len()).rev() {
-        res[i] = z * tmp[i - 1];
-        z *= elems[i];
-    }
-    res[0] = z;
-    res
 }
