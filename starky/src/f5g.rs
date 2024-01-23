@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 use crate::traits::FieldExtension;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use plonky::field_gl::Fr;
-use plonky::Field;
+use fields::field_gl::Fr;
+use fields::Field;
 use std::hash::{Hash, Hasher};
 use std::slice;
 
@@ -234,7 +234,7 @@ impl ::rand::Rand for F5G {
     }
 }
 
-impl plonky::Field for F5G {
+impl fields::Field for F5G {
     #[inline(always)]
     fn zero() -> Self {
         Self::ZEROS
@@ -328,7 +328,7 @@ impl plonky::Field for F5G {
     }
 }
 
-// `F5G` must implement `std::fmt::Display` trait when implement `plonky::Field` trait
+// `F5G` must implement `std::fmt::Display` trait when implement `fields::Field` trait
 impl Display for F5G {
     fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
         let elems = self.as_elements();
@@ -727,8 +727,8 @@ pub mod tests {
     use crate::f5g::F5G;
     use crate::polutils::batch_inverse;
     use crate::traits::FieldExtension;
-    use plonky::field_gl::Fr;
-    use plonky::Field;
+    use fields::field_gl::Fr;
+    use fields::Field;
     use std::ops::{Add, Mul};
 
     impl F5G {

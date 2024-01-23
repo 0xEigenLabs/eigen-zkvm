@@ -6,7 +6,7 @@ use std::fmt;
 use std::fs::File;
 use std::io::Read;
 
-use crate::errors::Result;
+use anyhow::Result;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct Public {

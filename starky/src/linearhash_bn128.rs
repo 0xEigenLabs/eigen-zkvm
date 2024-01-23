@@ -1,13 +1,13 @@
 #![allow(non_snake_case)]
-use crate::errors::Result;
 use crate::field_bn128::{Fr, FrRepr};
 use crate::poseidon_bn128_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::ElementDigest;
+use anyhow::Result;
 use ff::*;
 //use rayon::prelude::*;
 use crate::constant::{OFFSET_2_128, OFFSET_2_64};
-use plonky::field_gl::Fr as FGL;
+use fields::field_gl::Fr as FGL;
 
 #[derive(Default)]
 pub struct LinearHashBN128 {
@@ -142,7 +142,7 @@ impl LinearHashBN128 {
 #[cfg(test)]
 mod tests {
     use crate::linearhash_bn128::LinearHashBN128;
-    use plonky::field_gl::Fr as FGL;
+    use fields::field_gl::Fr as FGL;
 
     #[test]
     fn test_linearhash_matrix_bn128() {

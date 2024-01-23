@@ -454,14 +454,14 @@ fn main() {
             &args.prover_addr,
         ),
         Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
-        Command::Compressor12Setup(args) => starky::compressor12_setup::setup(
+        Command::Compressor12Setup(args) => recursion::compressor12_setup::setup(
             &args.r1cs_file,
             &args.pil_file,
             &args.const_file,
             &args.exec_file,
             args.force_n_bits,
         ),
-        Command::Compressor12Exec(args) => starky::compressor12_exec::exec(
+        Command::Compressor12Exec(args) => recursion::compressor12_exec::exec(
             &args.input_file,
             &args.wasm_file,
             &args.pil_file,

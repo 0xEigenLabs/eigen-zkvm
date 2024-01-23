@@ -3,13 +3,13 @@ use number::FieldElement;
 use std::cmp;
 use std::collections::HashMap;
 
-use crate::types::{
-    ConnectionIdentity, Expression as StarkyExpr, PermutationIdentity, PlookupIdentity,
-    PolIdentity, Public, Reference, PIL,
-};
 use ast::analyzed::{
     AlgebraicBinaryOperator, AlgebraicExpression as Expression, AlgebraicUnaryOperator, Analyzed,
     IdentityKind, PolyID, PolynomialType, StatementIdentifier, SymbolKind,
+};
+use starky::types::{
+    ConnectionIdentity, Expression as StarkyExpr, PermutationIdentity, PlookupIdentity,
+    PolIdentity, Public, Reference, PIL,
 };
 
 use super::expression_counter::compute_intermediate_expression_ids;

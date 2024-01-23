@@ -1,16 +1,12 @@
 #![allow(non_snake_case)]
 use crate::constant::POSEIDON_CONSTANTS_OPT_AVX2;
 use crate::poseidon_constants_avx2 as constants;
-use algebraic::arch::x86_64::avx2_field_gl::Avx2GoldilocksField;
-use algebraic::packed::PackedField;
+use anyhow::{bail, Result};
 use core::arch::x86_64::*;
-//use core::mem;
-use plonky::field_gl::Fr as FGL;
-use plonky::field_gl::FrRepr;
-//use plonky::Field;
-use crate::errors::Result;
-use anyhow::bail;
-use plonky::PrimeField;
+use fields::arch::x86_64::avx2_field_gl::Avx2GoldilocksField;
+use fields::field_gl::{Fr as FGL, FrRepr};
+use fields::packed::PackedField;
+use fields::PrimeField;
 
 #[derive(Debug)]
 pub struct ConstantsAvx2 {

@@ -1,6 +1,6 @@
 #![allow(clippy::needless_range_loop)]
 use criterion::*;
-use plonky::field_gl::Fr as FGL;
+use fields::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use starky::merklehash::MerkleTreeGL;
 use starky::traits::MerkleTree;

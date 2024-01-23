@@ -2,7 +2,6 @@
 #![allow(clippy::needless_range_loop)]
 
 use crate::constant::{get_max_workers, MAX_OPS_PER_THREAD, MG, MIN_OPS_PER_THREAD, SHIFT};
-use crate::errors::Result;
 use crate::fft::FFT;
 use crate::fft_p::{fft, ifft, interpolate};
 use crate::fri::FRIProof;
@@ -15,8 +14,9 @@ use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{Polynom, Segment};
 use crate::traits::{FieldExtension, MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, PIL};
+use anyhow::Result;
+use fields::field_gl::Fr as FGL;
 use hashbrown::HashMap;
-use plonky::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 use rayon::prelude::*;
 

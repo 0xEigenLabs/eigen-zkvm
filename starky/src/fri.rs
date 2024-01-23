@@ -5,7 +5,7 @@ use crate::polutils::{eval_pol, pol_mul_axi};
 use crate::traits::{FieldExtension, MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, Step};
 use anyhow::{bail, Result};
-use plonky::field_gl::Fr as FGL;
+use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 
 #[allow(clippy::upper_case_acronyms)]

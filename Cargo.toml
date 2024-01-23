@@ -7,5 +7,5 @@ members = [
   "algebraic",
   "groth16",
   "dsl_compile"
-]
+, "fields", "recursion"]
 resolver = "2"

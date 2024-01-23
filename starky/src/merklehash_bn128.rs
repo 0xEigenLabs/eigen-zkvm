@@ -10,7 +10,7 @@ use crate::traits::MerkleTree;
 use anyhow::{bail, Result};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use ff::Field;
-use plonky::field_gl::Fr as FGL;
+use fields::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use std::io::{Read, Write};
 
@@ -301,7 +301,7 @@ mod tests {
     use crate::traits::MTNodeType;
     use crate::traits::MerkleTree;
     use ff::PrimeField;
-    use plonky::field_gl::Fr as FGL;
+    use fields::field_gl::Fr as FGL;
 
     #[test]
     fn test_merklehash() {

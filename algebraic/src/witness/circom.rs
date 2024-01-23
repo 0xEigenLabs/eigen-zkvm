@@ -1,5 +1,5 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/circom.rs
-use crate::errors::Result;
+use anyhow::Result;
 use wasmer::{Function, Instance, Store, Value};
 
 #[derive(Clone, Debug)]

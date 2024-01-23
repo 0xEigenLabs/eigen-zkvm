@@ -26,8 +26,8 @@ use crate::poseidon_bls12381_opt::load_constants as load_constants_bls12381_opt;
 use crate::poseidon_bn128::{load_constants, Constants};
 use crate::poseidon_bn128_opt::load_constants as load_constants_opt;
 use ff::*;
-use plonky::field_gl::Fr;
-use plonky::Field;
+use fields::field_gl::Fr;
+use fields::Field;
 use std::collections::HashMap;
 
 lazy_static::lazy_static! {

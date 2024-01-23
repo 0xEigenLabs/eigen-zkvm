@@ -4,13 +4,14 @@ use super::{
     compressor12_pil::CompressorPolName::*, compressor12_setup::Options, constants::CPOSEIDON,
 };
 use crate::pilcom::compile_pil_from_str;
-use crate::polsarray::{PolKind, PolsArray};
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
-use crate::types::PIL;
 use array_tool::vec::Shift;
 use plonky::circom_circuit::R1CS;
 use plonky::field_gl::Fr as FGL;
 use plonky::field_gl::GL;
+use starky::helper;
+use starky::polsarray::{PolKind, PolsArray};
+use starky::types::PIL;
 use std::collections::BTreeMap;
 
 #[derive(Default, Debug)]
@@ -195,7 +196,7 @@ impl PlonkSetupRenderInfo {
                 + custom_gates_info.n_fft * 2
                 + custom_gates_info.n_ev_pol * 2) as usize;
 
-        let mut n_bits = crate::helper::log2_any(n_used - 1) + 1;
+        let mut n_bits = helper::log2_any(n_used - 1) + 1;
         if opts.force_bits > 0 {
             n_bits = opts.force_bits;
         }
@@ -688,7 +689,7 @@ pub fn plonk_setup_compressor(
 
     // 5. Calculate S Polynomials
     let N = 1 << plonk_setup_info.n_bits;
-    let ks = crate::helper::get_ks(11);
+    let ks = helper::get_ks(11);
     let mut w = FGL::ONE;
     for i in 0..N {
         if (i % 10000) == 0 {
@@ -705,7 +706,7 @@ pub fn plonk_setup_compressor(
                 w * ks[j - 1],
             );
         }
-        w = w * (crate::constant::MG.0[plonk_setup_info.n_bits]);
+        w = w * (starky::constant::MG.0[plonk_setup_info.n_bits]);
     }
 
     #[derive(Debug)]

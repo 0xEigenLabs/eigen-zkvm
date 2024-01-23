@@ -1,8 +1,8 @@
-use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Context, Node};
 use crate::types::PIL;
+use anyhow::Result;
 use profiler_macro::time_profiler;
 
 impl StarkInfo {

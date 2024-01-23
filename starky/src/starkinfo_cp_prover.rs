@@ -1,10 +1,10 @@
-use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::Section;
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Context, Node};
 use crate::types::Expression;
 use crate::types::{StarkStruct, PIL};
+use anyhow::Result;
 use std::collections::HashMap;
 
 impl StarkInfo {

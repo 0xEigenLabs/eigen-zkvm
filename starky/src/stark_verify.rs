@@ -12,7 +12,7 @@ use crate::traits::{MTNodeType, MerkleTree, Transcript};
 use crate::types::parse_pil_number;
 use crate::types::StarkStruct;
 use anyhow::{bail, Result};
-use plonky::field_gl::Fr as FGL;
+use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 use std::collections::HashMap;
 

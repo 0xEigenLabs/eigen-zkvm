@@ -1,5 +1,5 @@
 use crate::bellman_ce::{groth16::*, Circuit};
-use algebraic::errors::Result;
+use anyhow::Result;
 use franklin_crypto::bellman::pairing::Engine;
 use rand::Rng;
 use std::marker::PhantomData;

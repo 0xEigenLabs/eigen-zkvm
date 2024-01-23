@@ -1,0 +1,26 @@
+[package]
+name = "fields"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+proptest = "1.1"
+itertools = "0.8.1"
+num-bigint = "0.3.3"
+num-traits = "0.2.8"
+serde = { version = "1.0", features = [ "derive" ] }
+hex = "*"
+byteorder = "1"
+franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = [ "plonk" ], version = "0.0.5"}
+#franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
+
+rand = "0.4"
+
+[features]
+default = ["franklin-crypto/multicore"]
+avx512 = []

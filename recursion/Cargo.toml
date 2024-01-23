@@ -1,11 +1,7 @@
 [package]
-name = "algebraic"
-version = "0.0.1"
+name = "recursion"
+version = "0.1.0"
 edition = "2021"
-license = "Apache-2.0"
-description = "Eigen Algbraic based on R1CS"
-documentation = "eigen.cash"
-homepage = "eigen.cash"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -13,6 +9,8 @@ crate-type = ["cdylib", "rlib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+array_tool = "1.0.3"
+proptest = "1.1"
 hex-literal = "0.2.1"
 itertools = "0.8.1"
 log = "0.4.11"
@@ -29,6 +27,15 @@ num = { version = "0.4.0" }
 byteorder = "1"
 franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = [ "plonk" ], version = "0.0.5"}
 #franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
+ff = {package="ff_ce" , version="0.11", features = ["derive"]}
+fields = { path = "../fields", default-features = false }
+starky = { path = "../starky", default-features = false }
+plonky = { path = "../plonky", default-features = false }
+algebraic = { path = "../algebraic", default-features = false }
+
+pil_analyzer = {git = "https://github.com/powdr-labs/powdr.git", rev = "0170064", package = "pil_analyzer"}
+number = {git = "https://github.com/powdr-labs/powdr.git", rev = "0170064",  package = "number"}
+ast = {git = "https://github.com/powdr-labs/powdr.git", rev = "0170064" ,package = "ast"}
 
 [dev-dependencies]
 env_logger = "0.10"
@@ -45,5 +52,6 @@ rand = { version="0.6.5", features = ["wasm-bindgen"] }
 wasm-bindgen-test = "0.3"
 
 [features]
-default = ["franklin-crypto/multicore", "wasmer/default"]
+default = ["franklin-crypto/multicore", "wasmer/default", "starky/default", "plonky/default"]
 wasm = ["wasmer/js-default"]
+avx512 = ["fields/avx512"]

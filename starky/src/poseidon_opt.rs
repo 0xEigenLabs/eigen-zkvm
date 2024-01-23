@@ -1,10 +1,10 @@
 #![allow(non_snake_case)]
 use crate::constant::POSEIDON_CONSTANTS_OPT;
-use crate::errors::Result;
 use crate::poseidon_constants_opt as constants;
 use anyhow::bail;
-use plonky::field_gl::Fr as FGL;
-use plonky::Field;
+use anyhow::Result;
+use fields::field_gl::Fr as FGL;
+use fields::Field;
 
 #[derive(Debug)]
 pub struct Constants {
@@ -219,7 +219,7 @@ impl Poseidon {
 #[cfg(test)]
 mod tests {
     use crate::poseidon_opt::*;
-    use plonky::field_gl::Fr as FGL;
+    use fields::field_gl::Fr as FGL;
     use rand::Rand;
 
     #[test]

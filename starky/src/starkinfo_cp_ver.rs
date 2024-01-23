@@ -1,7 +1,7 @@
-use crate::errors::Result;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{build_code, iterate_code, pil_code_gen, Context, ContextF, Node};
 use crate::types::PIL;
+use anyhow::Result;
 use std::collections::HashMap;
 
 impl StarkInfo {

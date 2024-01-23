@@ -1,10 +1,10 @@
-use crate::errors::Result;
 use ::rand::Rand;
+use anyhow::Result;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use ff::PrimeField;
-use plonky::field_gl::Fr as FGL;
-use plonky::field_gl::Fr;
-use plonky::Field;
+use fields::field_gl::Fr as FGL;
+use fields::field_gl::Fr;
+use fields::Field;
 use serde::ser::Serialize;
 use std::fmt::{Debug, Display};
 use std::hash::Hash;

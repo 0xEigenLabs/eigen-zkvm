@@ -1,12 +1,12 @@
 #![allow(non_snake_case, dead_code)]
 use crate::constant::GLOBAL_L1;
-use crate::errors::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::helper::get_ks;
 use crate::starkinfo::PCCTX;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{build_code, pil_code_gen, Context};
 use crate::types::{PolIdentity, PIL};
+use anyhow::Result;
 
 impl StarkInfo {
     pub fn generate_step3(

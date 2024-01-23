@@ -1,4 +1,3 @@
-use crate::errors::Result;
 use crate::{
     merklehash::MerkleTreeGL,
     merklehash_bls12381::MerkleTreeBLS12381,
@@ -15,6 +14,7 @@ use crate::{
     types::*,
     ElementDigest,
 };
+use anyhow::Result;
 use profiler_macro::time_profiler;
 use std::fs::File;
 use std::io::Write;

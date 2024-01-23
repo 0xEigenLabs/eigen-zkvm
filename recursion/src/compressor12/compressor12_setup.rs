@@ -4,7 +4,7 @@ use crate::io_utils::write_vec_to_file;
 use crate::r1cs2plonk::PlonkAdd;
 use algebraic::reader::load_r1cs;
 use anyhow::Result;
-use plonky::field_gl::GL;
+use fields::field_gl::GL;
 use std::fs::File;
 use std::io::Write;
 

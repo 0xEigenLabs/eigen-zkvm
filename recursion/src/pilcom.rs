@@ -2,8 +2,9 @@
 mod export;
 mod expression_counter;
 
-use crate::types::PIL;
 use number::GoldilocksField;
+use pil_analyzer;
+use starky::types::PIL;
 use std::path::Path;
 
 pub fn compile_pil_from_str(pil_str: &str) -> PIL {
@@ -20,7 +21,7 @@ pub fn compile_pil_from_path(pil_path: &str) -> PIL {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::types::load_json;
+    use starky::types::load_json;
     use std::fs;
     use std::fs::File;
     use std::io::Write;

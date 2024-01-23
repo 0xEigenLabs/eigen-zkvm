@@ -1,8 +1,8 @@
 #![allow(non_snake_case)]
-use crate::errors::Result;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{iterate_code, ContextF, Index, Node, PolType, Section, Segment};
 use crate::types::{Expression, StarkStruct, PIL};
+use anyhow::Result;
 use std::collections::HashMap;
 
 impl StarkInfo {
