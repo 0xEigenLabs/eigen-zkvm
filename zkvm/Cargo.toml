@@ -10,8 +10,8 @@ itertools = "0.12.0"
 # serialization
 log = "0.4.0"
 
-powdr = { git = "https://github.com/eigmax/powdr", branch = "main" }
-backend = { git = "https://github.com/eigmax/powdr", branch = "main", package = "backend" }
+powdr = { git = "https://github.com/powdr-labs/powdr", rev = "01700640c2004a7a610854017311cf4b1861a628" }
+backend = { git = "https://github.com/powdr-labs/powdr", rev = "01700640c2004a7a610854017311cf4b1861a628" }
 models = { git = "https://github.com/eigmax/powdr_revm", branch = "continuations", package = "models" }
 hex = "0.4.3"
 thiserror = "1.0"
