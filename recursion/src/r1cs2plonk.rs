@@ -1,9 +1,8 @@
 #![allow(non_snake_case)]
 use array_tool::vec::Shift;
-use plonky::circom_circuit::Constraint;
-use plonky::circom_circuit::R1CS;
-use plonky::field_gl::Fr as FGL;
-use plonky::field_gl::{Fr, GL};
+use algebraic::circom_circuit::{Constraint, R1CS};
+use fields::field_gl::Fr as FGL;
+use fields::field_gl::{Fr, GL};
 use std::collections::BTreeMap;
 use std::ops::Neg;
 

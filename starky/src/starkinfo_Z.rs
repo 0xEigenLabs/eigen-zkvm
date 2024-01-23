@@ -1,6 +1,6 @@
 #![allow(non_snake_case, dead_code)]
 use crate::constant::GLOBAL_L1;
-use crate::errors::Result;
+use anyhow::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::helper::get_ks;
 use crate::starkinfo::PCCTX;

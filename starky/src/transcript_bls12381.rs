@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use crate::digest::ElementDigest;
-use crate::errors::Result;
+use anyhow::Result;
 use crate::ff::Field;
 use crate::field_bls12381::{Fr, FrRepr};
 use crate::helper::{biguint_to_be, fr_bls12381_to_biguint};
@@ -9,7 +9,7 @@ use crate::traits::Transcript;
 use crate::traits::{FieldExtension, MTNodeType};
 use ff::*;
 use num_bigint::BigUint;
-use plonky::field_gl::Fr as FGL;
+use fields::field_gl::Fr as FGL;
 use std::collections::VecDeque;
 
 pub struct TranscriptBLS128 {

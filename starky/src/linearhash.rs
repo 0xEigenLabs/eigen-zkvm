@@ -18,7 +18,7 @@ use crate::arch::x86_64::avx2_poseidon_gl::Poseidon;
     target_feature = "avx512vl"
 ))]
 use crate::arch::x86_64::avx512_poseidon_gl::Poseidon;
-use crate::errors::Result;
+use anyhow::Result;
 #[cfg(not(any(
     target_feature = "avx2",
     target_feature = "avx512bw",
@@ -30,7 +30,7 @@ use crate::errors::Result;
 use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::ElementDigest;
-use plonky::field_gl::Fr as FGL;
+use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 use rayon::prelude::*;
 
@@ -313,7 +313,7 @@ mod tests {
     use crate::digest::ElementDigest;
     use crate::linearhash::LinearHash;
     use crate::traits::MTNodeType;
-    use plonky::field_gl::Fr as FGL;
+    use fields::field_gl::Fr as FGL;
 
     #[test]
     fn test_linearhash_gl_hash() {

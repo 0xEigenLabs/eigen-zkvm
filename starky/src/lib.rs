@@ -13,9 +13,6 @@ pub mod types;
 
 pub mod arch;
 
-mod compressor12;
-pub use compressor12::*;
-
 pub mod linearhash;
 pub mod linearhash_bls12381;
 pub mod linearhash_bn128;
@@ -44,7 +41,7 @@ pub mod merklehash_bn128;
 mod digest;
 pub use digest::ElementDigest;
 
-mod constant;
+pub mod constant;
 mod expressionops;
 pub mod f3g;
 pub mod f5g;
@@ -52,7 +49,7 @@ pub mod fft;
 pub mod fft_p;
 mod fft_worker;
 mod fri;
-mod helper;
+pub mod helper;
 mod interpreter;
 pub mod stark_gen;
 pub mod stark_setup;
@@ -69,11 +66,7 @@ pub mod transcript;
 pub mod transcript_bls12381;
 pub mod transcript_bn128;
 
-pub mod r1cs2plonk;
-
-mod io_utils;
 pub mod pil2circom;
-pub mod pilcom;
 pub mod prove;
 pub mod serializer;
 pub mod zkin_join;
@@ -86,5 +79,3 @@ extern crate serde_json;
 extern crate ff;
 extern crate lazy_static;
 extern crate log;
-
-pub use algebraic::errors;

@@ -1,4 +1,4 @@
-use crate::errors::Result;
+use anyhow::Result;
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::Write;

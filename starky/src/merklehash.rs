@@ -29,7 +29,7 @@ use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use anyhow::{bail, Result};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use plonky::field_gl::Fr as FGL;
+use fields::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use std::io::{Read, Write};
 use std::time::Instant;
@@ -502,7 +502,7 @@ mod tests {
     use crate::merklehash::MerkleTreeGL;
     use crate::traits::MTNodeType;
     use crate::traits::MerkleTree;
-    use plonky::field_gl::Fr as FGL;
+    use fields::field_gl::Fr as FGL;
     use std::time::Instant;
 
     #[test]

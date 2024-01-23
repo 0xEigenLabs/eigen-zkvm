@@ -1,4 +1,4 @@
-use crate::errors::Result;
+use anyhow::Result;
 use crate::expressionops::ExpressionOps as E;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::Section;

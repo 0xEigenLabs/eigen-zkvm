@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 use crate::constant::POSEIDON_BN128_CONSTANTS_OPT;
-use crate::errors::Result;
+use anyhow::Result;
 use crate::field_bn128::Fr;
 use crate::poseidon_bn128::Constants;
 use crate::poseidon_bn128_constants_opt as constants;

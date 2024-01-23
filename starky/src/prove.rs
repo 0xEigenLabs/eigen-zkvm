@@ -1,4 +1,4 @@
-use crate::errors::Result;
+use anyhow::Result;
 use crate::{
     merklehash::MerkleTreeGL,
     merklehash_bls12381::MerkleTreeBLS12381,

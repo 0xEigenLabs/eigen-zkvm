@@ -1,5 +1,5 @@
 use crate::digest::ElementDigest;
-use crate::errors::Result;
+use anyhow::Result;
 use crate::starkinfo::Program;
 use crate::starkinfo::StarkInfo;
 use crate::types::{StarkStruct, PIL};

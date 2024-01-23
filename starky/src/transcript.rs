@@ -1,9 +1,9 @@
-use crate::errors::Result;
+use anyhow::Result;
 use crate::poseidon_opt::Poseidon;
 use crate::traits::FieldExtension;
 use crate::traits::Transcript;
 use num_bigint::BigUint;
-use plonky::field_gl::Fr as FGL;
+use fields::field_gl::Fr as FGL;
 
 pub struct TranscriptGL {
     state: [FGL; 4],

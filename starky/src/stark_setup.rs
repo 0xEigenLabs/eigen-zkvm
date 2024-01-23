@@ -3,13 +3,13 @@ use rayon::prelude::*;
 use std::fs;
 use std::path;
 
-use crate::errors::Result;
+use anyhow::Result;
 use crate::fft_p::interpolate;
 use crate::polsarray::PolsArray;
 use crate::starkinfo::{self, Program, StarkInfo};
 use crate::traits::{FieldExtension, MerkleTree};
 use crate::types::{StarkStruct, PIL};
-use plonky::field_gl::Fr as FGL;
+use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 
 #[derive(Default)]
@@ -139,7 +139,7 @@ pub mod tests {
     use crate::traits::MTNodeType;
     use crate::ElementDigest;
     use ff::*;
-    use plonky::field_gl::Fr as FGL;
+    use fields::field_gl::Fr as FGL;
 
     #[test]
     fn test_stark_setup() {

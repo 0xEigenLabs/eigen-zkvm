@@ -4,7 +4,7 @@ use crate::field_bn128::Fr;
 use ff::*;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
-use plonky::field_gl::Fr as FGL;
+use fields::field_gl::Fr as FGL;
 use std::fmt::Write;
 use std::ops::Mul;
 

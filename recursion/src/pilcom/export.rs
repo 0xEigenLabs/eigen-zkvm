@@ -3,7 +3,7 @@ use number::FieldElement;
 use std::cmp;
 use std::collections::HashMap;
 
-use crate::types::{
+use starky::types::{
     ConnectionIdentity, Expression as StarkyExpr, PermutationIdentity, PlookupIdentity,
     PolIdentity, Public, Reference, PIL,
 };

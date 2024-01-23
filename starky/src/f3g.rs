@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 use crate::traits::FieldExtension;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use plonky::field_gl::Fr;
-use plonky::Field;
+use fields::field_gl::Fr;
+use fields::Field;
 use std::hash::{Hash, Hasher};
 use std::{slice, usize};
 
@@ -261,7 +261,7 @@ impl ::rand::Rand for F3G {
     }
 }
 
-impl plonky::Field for F3G {
+impl fields::Field for F3G {
     #[inline(always)]
     fn zero() -> Self {
         Self::ZEROS
@@ -631,8 +631,8 @@ pub mod tests {
     use crate::f3g::F3G;
     use crate::polutils::batch_inverse;
     use crate::traits::FieldExtension;
-    use plonky::field_gl::Fr;
-    use plonky::Field;
+    use fields::field_gl::Fr;
+    use fields::Field;
     use std::ops::{Add, Mul};
 
     #[test]

@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use crate::errors::Result;
+use anyhow::Result;
 use crate::field_bls12381::{Fr, FrRepr};
 use crate::poseidon_bls12381_opt::Poseidon;
 use crate::traits::MTNodeType;
@@ -7,7 +7,7 @@ use crate::ElementDigest;
 use ff::*;
 //use rayon::prelude::*;
 use crate::constant::{OFFSET_BLS12381_2_128, OFFSET_BLS12381_2_64};
-use plonky::field_gl::Fr as FGL;
+use fields::field_gl::Fr as FGL;
 
 #[derive(Default)]
 pub struct LinearHashBLS12381 {
@@ -141,7 +141,7 @@ impl LinearHashBLS12381 {
 #[cfg(test)]
 mod tests {
     use crate::linearhash_bls12381::LinearHashBLS12381;
-    use plonky::field_gl::Fr as FGL;
+    use fields::field_gl::Fr as FGL;
 
     #[test]
     fn test_linearhash_matrix_bls12381() {

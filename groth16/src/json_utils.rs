@@ -1,5 +1,6 @@
 use crate::bellman_ce::pairing::{bls12_381::Bls12, bn256::Bn256};
-use algebraic::{errors::Result, utils::repr_to_big, PrimeField};
+use algebraic::{utils::repr_to_big, PrimeField};
+use anyhow::Result;
 use franklin_crypto::bellman::{
     bls12_381::{
         Fq2 as Fq2_bls12381, G1Affine as G1Affine_bls12381, G2Affine as G2Affine_bls12381,
