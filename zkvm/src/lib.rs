@@ -26,6 +26,7 @@ pub fn zkvm_evm_prove_one(task: &str, suite_json: String, output_path: &str) -> 
 
     let mk_pipeline = || {
         Pipeline::<GoldilocksField>::default()
+            .with_output(output_path.into(), true)
             .from_asm_string(asm_contents.clone(), Some(asm_file_path.clone()))
             .with_prover_inputs(vec![])
     };
