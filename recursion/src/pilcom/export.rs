@@ -1,9 +1,10 @@
 //! porting it from powdr
-use number::FieldElement;
+use powdr_number::FieldElement;
 use std::cmp;
 use std::collections::HashMap;
+use std::path::PathBuf;
 
-use ast::analyzed::{
+use powdr_ast::analyzed::{
     AlgebraicBinaryOperator, AlgebraicExpression as Expression, AlgebraicUnaryOperator, Analyzed,
     IdentityKind, PolyID, PolynomialType, StatementIdentifier, SymbolKind,
 };
@@ -76,7 +77,17 @@ pub fn export<T: FieldElement>(analyzed: &Analyzed<T>) -> PIL {
             }
             StatementIdentifier::Identity(id) => {
                 let identity = &analyzed.identities[*id];
-                let file_name = identity.source.file.clone();
+                let file_name = identity
+                    .source
+                    .file
+                    .as_deref()
+                    .and_then(|s| {
+                        PathBuf::from(s)
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .map(String::from)
+                    })
+                    .unwrap_or_default();
                 let line = identity.source.line;
                 let selector_degree = if identity.kind == IdentityKind::Polynomial {
                     2
@@ -311,7 +322,6 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
             Expression::UnaryOperation(op, value) => {
                 let (deg, value) = self.expression_to_json(value);
                 match op {
-                    AlgebraicUnaryOperator::Plus => (deg, value),
                     AlgebraicUnaryOperator::Minus => (
                         deg,
                         StarkyExpr {

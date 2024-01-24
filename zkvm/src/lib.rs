@@ -1,12 +1,11 @@
 use anyhow::Result;
-use backend::BackendType;
-use powdr::number::GoldilocksField;
-use powdr::pipeline::{Pipeline, Stage};
-use powdr::riscv::continuations::{
+use powdr_backend::BackendType;
+use powdr_number::GoldilocksField;
+use powdr_pipeline::{Pipeline, Stage};
+use powdr_riscv::continuations::{
     bootloader::default_input, rust_continuations, rust_continuations_dry_run,
 };
-use powdr::riscv::{compile_rust, CoProcessors};
-use powdr::riscv_executor;
+use powdr_riscv::{compile_rust, CoProcessors};
 use std::path::Path;
 use std::time::Instant;
 
@@ -52,11 +51,11 @@ pub fn zkvm_evm_prove_one(task: &str, suite_json: String, output_path: &str) -> 
 
     log::debug!("Running powdr-riscv executor in fast mode...");
     let start = Instant::now();
-    let (trace, _mem) = riscv_executor::execute::<GoldilocksField>(
+    let (trace, _mem) = powdr_riscv_executor::execute::<GoldilocksField>(
         &asm_contents,
         mk_pipeline_with_data().data_callback().unwrap(),
         &default_input(&[]),
-        riscv_executor::ExecMode::Fast,
+        powdr_riscv_executor::ExecMode::Fast,
     );
     let duration = start.elapsed();
     log::debug!("Fast executor took: {:?}", duration);
