@@ -10,8 +10,12 @@ itertools = "0.12.0"
 # serialization
 log = "0.4.0"
 
-powdr = { git = "https://github.com/powdr-labs/powdr", rev = "8c0c4b8" }
-backend = { git = "https://github.com/powdr-labs/powdr", package = "backend", rev = "8c0c4b8" }
+powdr-backend = { git = "https://github.com/powdr-labs/powdr", rev = "8c0c4b8" }
+powdr-pipeline = { git = "https://github.com/powdr-labs/powdr", rev = "8c0c4b8" }
+powdr-riscv = { git = "https://github.com/powdr-labs/powdr", rev = "8c0c4b8" }
+powdr-riscv-executor = { git = "https://github.com/powdr-labs/powdr", rev = "8c0c4b8" }
+powdr-number = { git = "https://github.com/powdr-labs/powdr", rev = "8c0c4b8" }
+
 hex = "0.4.3"
 thiserror = "1.0"
 serde_json = "1.0.108"

@@ -2,18 +2,18 @@
 mod export;
 mod expression_counter;
 
-use number::GoldilocksField;
-use pil_analyzer;
+use powdr_number::GoldilocksField;
+use powdr_pil_analyzer;
 use starky::types::PIL;
 use std::path::Path;
 
 pub fn compile_pil_from_str(pil_str: &str) -> PIL {
-    let analyze = pil_analyzer::analyze_string::<GoldilocksField>(pil_str);
+    let analyze = powdr_pil_analyzer::analyze_string::<GoldilocksField>(pil_str);
 
     export::export(&analyze)
 }
 pub fn compile_pil_from_path(pil_path: &str) -> PIL {
-    let analyze = pil_analyzer::analyze::<GoldilocksField>(Path::new(pil_path));
+    let analyze = powdr_pil_analyzer::analyze::<GoldilocksField>(Path::new(pil_path));
 
     export::export(&analyze)
 }
