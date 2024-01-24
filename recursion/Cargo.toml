@@ -33,9 +33,10 @@ starky = { path = "../starky", default-features = false }
 plonky = { path = "../plonky", default-features = false }
 algebraic = { path = "../algebraic", default-features = false }
 
-pil_analyzer = {git = "https://github.com/powdr-labs/powdr.git", rev = "0170064", package = "pil_analyzer"}
-number = {git = "https://github.com/powdr-labs/powdr.git", rev = "0170064",  package = "number"}
-ast = {git = "https://github.com/powdr-labs/powdr.git", rev = "0170064" ,package = "ast"}
+#pil_analyzer = {git = "https://github.com/powdr-labs/powdr.git", rev = "8c0c4b8", package = "pil_analyzer"}
+#number = {git = "https://github.com/powdr-labs/powdr.git", rev = "8c0c4b8",  package = "number"}
+#ast = {git = "https://github.com/powdr-labs/powdr.git", rev = "8c0c4b8" ,package = "ast"}
+powdr = {git = "https://github.com/powdr-labs/powdr.git", rev = "8c0c4b8" }
 
 [dev-dependencies]
 env_logger = "0.10"
