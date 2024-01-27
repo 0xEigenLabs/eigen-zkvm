@@ -1,5 +1,6 @@
 use anyhow::Result;
 use powdr_backend::BackendType;
+use powdr_number::FieldElement;
 use powdr_number::GoldilocksField;
 use powdr_pipeline::{Pipeline, Stage};
 use powdr_riscv::continuations::{
@@ -150,7 +151,8 @@ pub fn zkvm_evm_generate_chunks(
 pub fn zkvm_evm_prove_only(
     task: &str,
     suite_json: &String,
-    bootloader_inputs: Vec<Vec<GoldilocksField>>,
+    bootloader_input: Vec<GoldilocksField>,
+    i: usize,
     output_path: &str,
 ) -> Result<()> {
     log::debug!("Compiling Rust...");
@@ -183,14 +185,50 @@ pub fn zkvm_evm_prove_only(
 
     log::debug!("Running witness generation...");
     let start = Instant::now();
-    rust_continuations(
+    rust_continuation(
         mk_pipeline_with_data,
         generate_witness_and_prove,
-        bootloader_inputs,
+        bootloader_input,
+        i,
     )
     .unwrap();
     let duration = start.elapsed();
     log::debug!("Witness generation took: {:?}", duration);
+    Ok(())
+}
+
+pub fn rust_continuation<F: FieldElement, PipelineFactory, PipelineCallback, E>(
+    pipeline_factory: PipelineFactory,
+    pipeline_callback: PipelineCallback,
+    bootloader_inputs: Vec<F>,
+    i: usize,
+) -> Result<(), E>
+where
+    PipelineFactory: Fn() -> Pipeline<F>,
+    PipelineCallback: Fn(Pipeline<F>) -> Result<(), E>,
+{
+    let num_chunks = bootloader_inputs.len();
+
+    log::info!("Advancing pipeline to PilWithEvaluatedFixedCols stage...");
+    let pipeline = pipeline_factory();
+    let pil_with_evaluated_fixed_cols = pipeline.pil_with_evaluated_fixed_cols().unwrap();
+
+    // This returns the same pipeline as pipeline_factory() (with the same name, output dir, etc...)
+    // but starting from the PilWithEvaluatedFixedCols stage. This is more efficient, because we can advance
+    // to that stage once before we branch into different chunks.
+    let optimized_pipeline_factory = || {
+        pipeline_factory().from_pil_with_evaluated_fixed_cols(pil_with_evaluated_fixed_cols.clone())
+    };
+
+    log::info!("\nRunning chunk {} / {}...", i + 1, num_chunks);
+    let pipeline = optimized_pipeline_factory();
+    let name = format!("{}_chunk_{}", pipeline.name(), i);
+    let pipeline = pipeline.with_name(name);
+    let pipeline = pipeline.add_external_witness_values(vec![(
+        "main.bootloader_input_value".to_string(),
+        bootloader_inputs,
+    )]);
+    pipeline_callback(pipeline)?;
     Ok(())
 }
 
@@ -254,7 +292,7 @@ mod tests {
             });
 
         // load each chunk, generate witness and prove
-        bi_files.iter().for_each(|filename| {
+        bi_files.iter().enumerate().for_each(|(i, filename)| {
             let mut f = fs::File::open(filename).unwrap();
             let metadata = fs::metadata(filename).unwrap();
             let file_size = metadata.len() as usize;
@@ -266,7 +304,7 @@ mod tests {
                 *out = GoldilocksField::from_bytes_le(bin);
             });
 
-            zkvm_evm_prove_only(task, &suite_json, vec![bi], output_path).unwrap();
+            zkvm_evm_prove_only(task, &suite_json, bi, i, output_path).unwrap();
         });
     }
 }
