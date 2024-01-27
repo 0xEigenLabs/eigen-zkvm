@@ -72,8 +72,8 @@ ${ZKIT} join_zkin --zkin1 $input0/input.zkin.json --zkin2 $input1/input.zkin.jso
 
 echo "3. generate the pil files and const polynomicals files "
 # generate the pil files and  const polynomicals files
-# input files :  $C12_VERIFIER.r1cs
-# output files :  $C12_VERIFIER.const  $C12_VERIFIER.pil  $C12_VERIFIER.exec
+# input files :  $RECURSIVE_CIRCUIT.r1cs
+# output files :  $RECURSIVE_CIRCUIT.const  $RECURSIVE_CIRCUIT.pil  $RECURSIVE_CIRCUIT.exec
 if [ $first_run = "yes" ]; then
     ${ZKIT} compressor12_setup  \
         --r $WORKSPACE/$RECURSIVE_CIRCUIT.r1cs \
@@ -84,8 +84,8 @@ fi
 
 echo "4. generate the commit polynomicals files  "
 # generate the commit polynomicals files 
-# input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil  $C12_VERIFIER.exec
-# output files :  $C12_VERIFIER.cm
+# input files :  $RECURSIVE_CIRCUIT.wasm  $input0/r1_input.zkin.json  $RECURSIVE_CIRCUIT.pil  $RECURSIVE_CIRCUIT.exec
+# output files :  $RECURSIVE_CIRCUIT.cm
 ${ZKIT} compressor12_exec \
     --w $WORKSPACE/$RECURSIVE_CIRCUIT"_js"/$RECURSIVE_CIRCUIT.wasm  \
     --i $input0/r1_input.zkin.json  \
@@ -95,7 +95,7 @@ ${ZKIT} compressor12_exec \
 
 echo "5. generate recursive2 proof"
 # generate the stark proof and the circom circuits to verify stark proof.
-# input files : $C12_VERIFIER.pil.json(stark proof)  $C12_VERIFIER.const(const polynomials)  $C12_VERIFIER.cm (commit polynomials)
+# input files : $RECURSIVE_CIRCUIT.pil.json  $RECURSIVE_CIRCUIT.const(const polynomials)  $RECURSIVE_CIRCUIT.cm (commit polynomials)
 # output files :  $RECURSIVE2_CIRCUIT.circom  $RECURSIVE2_CIRCUIT/r2_input.json
 # Remark: the N of r2.starkStruct must be 2^20 , because the degree of $RECURSIVE_CIRCUIT.pil is 2^20 which determined by the proocess of converting  $RECURSIVE_CIRCUIT.circom to  $RECURSIVE_CIRCUIT.pil
 $ZKIT stark_prove -s ../starky/data/r2.starkStruct.json \
