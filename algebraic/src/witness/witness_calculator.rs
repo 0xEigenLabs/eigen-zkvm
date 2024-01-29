@@ -51,15 +51,15 @@ fn to_array32(s: &BigInt, size: usize) -> Vec<u32> {
 impl WitnessCalculator {
     pub fn from_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
         let mut store = Store::default();
-        let module = Module::from_file(&store, path).expect("correct wtns file");
-        let mut wtns = Self::from_module(&mut store, module).unwrap();
+        let module = Module::from_file(&store, path)?;
+        let mut wtns = Self::from_module(&mut store, module)?;
         wtns.store = store;
         Ok(wtns)
     }
 
     pub fn from_module(store: &mut Store, module: Module) -> Result<Self> {
         // Set up the memory
-        let memory = Memory::new(store, MemoryType::new(2000, None, false)).unwrap();
+        let memory = Memory::new(store, MemoryType::new(2000, None, false))?;
         let import_object = imports! {
             "env" => {
                 "memory" => memory.clone(),
@@ -257,7 +257,11 @@ impl WitnessCalculator {
 pub fn value_to_bigint(v: Value) -> BigInt {
     match v {
         Value::String(inner) => BigInt::from_str(&inner).unwrap(),
-        Value::Number(inner) => BigInt::from(inner.as_u64().expect("not a u32")),
+        Value::Number(inner) => BigInt::from(
+            inner
+                .as_u64()
+                .unwrap_or_else(|| panic!("{} not a u32", inner)),
+        ),
         _ => panic!("unsupported type {:?}", v),
     }
 }
