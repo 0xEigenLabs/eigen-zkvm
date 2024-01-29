@@ -2,16 +2,15 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
-extern crate serde;
-#[macro_use]
-extern crate hex_literal;
 extern crate bellman_vk_codegen;
 extern crate byteorder;
 extern crate franklin_crypto;
+extern crate hex_literal;
 extern crate itertools;
 extern crate num_bigint;
 extern crate num_traits;
 extern crate rand;
+extern crate serde;
 
 pub use algebraic::circom_circuit;
 pub use algebraic::r1cs_file;
@@ -25,7 +24,6 @@ pub mod reader;
 pub mod aggregation;
 
 pub mod transpile;
-pub mod utils;
 pub mod verifier;
 
 pub use bellman_ce::pairing::ff;

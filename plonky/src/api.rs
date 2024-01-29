@@ -1,7 +1,9 @@
 use crate::bellman_ce::pairing::bn256::Bn256;
 use crate::witness::{load_input_for_witness, WitnessCalculator};
 use crate::{circom_circuit::CircomCircuit, plonk, reader};
-use algebraic::reader::load_r1cs;
+use algebraic::reader::{
+    load_key_monomial_form, load_r1cs, load_witness_from_file, maybe_load_key_lagrange_form,
+};
 use anyhow::{bail, Result};
 use profiler_macro::time_profiler;
 
@@ -60,15 +62,15 @@ pub fn prove(
 ) -> Result<()> {
     let circuit = CircomCircuit {
         r1cs: load_r1cs(circuit_file),
-        witness: Some(reader::load_witness_from_file::<Bn256>(witness)),
+        witness: Some(load_witness_from_file::<Bn256>(witness)),
         wire_mapping: None,
         aux_offset: plonk::AUX_OFFSET,
     };
 
     let setup = plonk::SetupForProver::prepare_setup_for_prover(
         circuit.clone(),
-        reader::load_key_monomial_form(srs_monomial_form),
-        reader::maybe_load_key_lagrange_form(srs_lagrange_form),
+        load_key_monomial_form(srs_monomial_form),
+        maybe_load_key_lagrange_form(srs_lagrange_form),
     )?;
 
     let proof = setup.prove(circuit, transcript)?;
@@ -113,7 +115,7 @@ pub fn export_verification_key(
 
     let setup = plonk::SetupForProver::prepare_setup_for_prover(
         circuit,
-        reader::load_key_monomial_form(srs_monomial_form),
+        load_key_monomial_form(srs_monomial_form),
         None,
     )?;
     let vk = setup.make_verification_key()?;
@@ -147,7 +149,7 @@ pub fn export_aggregation_verification_key(
     srs_monomial_form: &str,
     vk_file: &str,
 ) -> Result<()> {
-    let big_crs = reader::load_key_monomial_form(srs_monomial_form);
+    let big_crs = load_key_monomial_form(srs_monomial_form);
     let vk = aggregation::export_vk(num_proofs_to_check, num_inputs, &big_crs)?;
     let path = Path::new(vk_file);
     assert!(!path.exists(), "dumpcate proof file: {}", path.display());
@@ -164,7 +166,7 @@ pub fn aggregation_prove(
     new_proof: &str,
     proofjson: &str,
 ) -> Result<()> {
-    let big_crs = reader::load_key_monomial_form(srs_monomial_form);
+    let big_crs = load_key_monomial_form(srs_monomial_form);
     let old_proofs = reader::load_proofs_from_list::<Bn256>(old_proof_list);
     let old_vk = reader::load_verification_key::<Bn256>(old_vk);
     let proof = aggregation::prove(big_crs, old_proofs, old_vk)?;

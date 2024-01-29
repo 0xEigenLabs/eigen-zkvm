@@ -1,7 +1,9 @@
 use crate::bellman_ce::bn256::Bn256;
 use crate::circom_circuit::CircomCircuit;
 use crate::{plonk, reader};
-use algebraic::reader::load_r1cs;
+use algebraic::reader::{
+    load_key_monomial_form, load_r1cs, load_witness_from_file, maybe_load_key_lagrange_form,
+};
 use std::fs;
 
 const CIRCUIT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.r1cs");
@@ -41,7 +43,7 @@ fn test_export_verification_key() {
 
     let setup = plonk::SetupForProver::prepare_setup_for_prover(
         circuit,
-        reader::load_key_monomial_form(MONOMIAL_KEY_FILE),
+        load_key_monomial_form(MONOMIAL_KEY_FILE),
         None,
     )
     .expect("prepare err");
@@ -56,15 +58,15 @@ fn test_export_verification_key() {
 fn test_prove() {
     let circuit = CircomCircuit {
         r1cs: load_r1cs(CIRCUIT_FILE),
-        witness: Some(reader::load_witness_from_file::<Bn256>(WITNESS_FILE)),
+        witness: Some(load_witness_from_file::<Bn256>(WITNESS_FILE)),
         wire_mapping: None,
         aux_offset: plonk::AUX_OFFSET,
     };
 
     let setup = plonk::SetupForProver::prepare_setup_for_prover(
         circuit.clone(),
-        reader::load_key_monomial_form(MONOMIAL_KEY_FILE),
-        reader::maybe_load_key_lagrange_form(None),
+        load_key_monomial_form(MONOMIAL_KEY_FILE),
+        maybe_load_key_lagrange_form(None),
     )
     .unwrap();
 
