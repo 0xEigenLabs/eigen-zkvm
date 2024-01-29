@@ -191,7 +191,11 @@ impl WitnessCalculator {
         filename: &str,
         w: &Vec<u32>,
     ) -> Result<()> {
-        let writer = OpenOptions::new().write(true).create(true).open(filename)?;
+        let writer = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(filename)?;
 
         let writer = BufWriter::new(writer);
         self.save_witness_from_bin_writer::<E, _>(writer, w)
