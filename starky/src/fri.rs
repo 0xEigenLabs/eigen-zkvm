@@ -160,7 +160,7 @@ impl FRI {
     ) -> Result<bool> {
         let tree = M::new();
         let mut standard_fft = FFT::new();
-        assert_eq!(proof.queries.len(), self.steps.len()); // the last +1 is ommited
+        assert_eq!(proof.queries.len(), self.steps.len()); // the last +1 is omitted
         let mut special_x: Vec<F> = vec![];
         for si in 0..self.steps.len() {
             special_x.push(transcript.get_field());
