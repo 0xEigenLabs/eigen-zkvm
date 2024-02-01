@@ -290,7 +290,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             tree1.root(),
         );
         transcript.put(&[tree1.root().as_elements().to_vec()])?;
-        // 2.- Caluculate plookups h1 and h2
+        // 2.- Calculate plookups h1 and h2
         ctx.challenge[0] = transcript.get_field(); //u
         ctx.challenge[1] = transcript.get_field(); //defVal
 

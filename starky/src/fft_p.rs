@@ -313,7 +313,7 @@ pub fn interpolate<F: FieldExtension>(
         n_transposes += ((nbits - 1) / blockbits) + 1;
     }
 
-    n_transposes += 1; // The middle convertion
+    n_transposes += 1; // The middle conversion
 
     let mut blockbitsext = log2_any(n_ext * n_pols / ideal_n_blocks);
     if blockbitsext < minblockbits {
