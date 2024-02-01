@@ -21,7 +21,7 @@ pub(crate) fn fnv(inp: &str) -> (u32, u32) {
 }
 
 pub fn load_input_for_witness(input_file: &str) -> HashMap<String, Vec<BigInt>> {
-    let inputs_str = std::fs::read_to_string(input_file).unwrap();
+    let inputs_str = std::fs::read_to_string(input_file).unwrap_or_else(|_|  panic!("Unable to load {}", input_file));
     let inputs: std::collections::HashMap<String, serde_json::Value> =
         serde_json::from_str(&inputs_str).unwrap();
 

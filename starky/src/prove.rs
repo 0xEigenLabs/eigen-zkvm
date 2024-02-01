@@ -134,7 +134,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     write!(file, "{}", str_ver)?;
     log::debug!("generate circom done");
 
-    if !norm_stage {
+    if !norm_stage && !agg_stage {
         starkproof.rootC = None;
     }
 
