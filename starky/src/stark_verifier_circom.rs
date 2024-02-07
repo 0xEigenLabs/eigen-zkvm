@@ -1787,7 +1787,7 @@ template Recursive2() {{
             if options.verkey_input {
                 res.push_str(
                     r#"
-component main {public [publics, rootC]}= StarkVerifier();
+component main {public [publics, rootC]}= Recursive2();
     "#,
                 );
             } else {
