@@ -184,6 +184,10 @@ pub struct StarkProof<M: MerkleTree> {
     pub rootC: Option<M::MTNode>,
     pub stark_struct: StarkStruct,
     pub prover_addr: String,
+
+    // for aggregation proof
+    pub a_rootC: Option<M::MTNode>,
+    pub b_rootC: Option<M::MTNode>,
 }
 
 impl<'a, M: MerkleTree> StarkProof<M> {
@@ -565,6 +569,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             publics: ctx.publics.clone(),
             stark_struct: stark_struct.clone(),
             prover_addr: prover_addr.to_string(),
+            a_rootC: None,
+            b_rootC: None,
         })
     }
 

@@ -7,7 +7,7 @@ use crate::{
     stark_gen::StarkProof,
     stark_setup::StarkSetup,
     stark_verify::stark_verify,
-    traits::{MerkleTree, Transcript},
+    traits::{MTNodeType, MerkleTree, Transcript},
     transcript::TranscriptGL,
     transcript_bls12381::TranscriptBLS128,
     transcript_bn128::TranscriptBN128,
@@ -31,6 +31,7 @@ pub fn stark_prove(
     circom_file: &str,
     zkin: &str,
     prover_addr: &str,
+    pre_zkin: Option<String>,
 ) -> Result<()> {
     let mut pil = load_json::<PIL>(pil_file)?;
     let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
@@ -51,6 +52,7 @@ pub fn stark_prove(
             circom_file,
             zkin,
             prover_addr,
+            pre_zkin,
         ),
         "BLS12381" => prove::<MerkleTreeBLS12381, TranscriptBLS128>(
             &mut pil,
@@ -62,6 +64,7 @@ pub fn stark_prove(
             circom_file,
             zkin,
             prover_addr,
+            pre_zkin,
         ),
         "GL" => prove::<MerkleTreeGL, TranscriptGL>(
             &mut pil,
@@ -73,6 +76,7 @@ pub fn stark_prove(
             circom_file,
             zkin,
             prover_addr,
+            pre_zkin,
         ),
         _ => panic!("Invalid hashtype {}", stark_struct.verificationHashType),
     }
@@ -90,6 +94,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     circom_file: &str,
     zkin: &str,
     prover_addr: &str,
+    pre_zkin: Option<String>,
 ) -> Result<()> {
     let mut setup = StarkSetup::<M>::new(&const_pol, pil, stark_struct, None)?;
     let mut starkproof = StarkProof::<M>::stark_gen::<T>(
@@ -134,7 +139,16 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     write!(file, "{}", str_ver)?;
     log::debug!("generate circom done");
 
-    if !norm_stage {
+    // if agg_stage is true, a_rootC and b_rootC are required in zkin
+    if agg_stage {
+        let proofjson = std::fs::read_to_string(pre_zkin.unwrap())?;
+        let pre_starkproof: StarkProof<M> = serde_json::from_str(&proofjson)?;
+        assert!(pre_starkproof.rootC.is_some());
+        starkproof.a_rootC = pre_starkproof.rootC;
+        starkproof.b_rootC = starkproof.rootC;
+    }
+
+    if !norm_stage || agg_stage {
         starkproof.rootC = None;
     }
 
