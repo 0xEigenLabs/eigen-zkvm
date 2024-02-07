@@ -25,6 +25,7 @@ pub fn stark_prove(
     stark_struct: &str,
     pil_file: &str,
     norm_stage: bool,
+    skip_main: bool,
     agg_stage: bool,
     const_pol_file: &str,
     cm_pol_file: &str,
@@ -48,6 +49,7 @@ pub fn stark_prove(
             &stark_struct,
             false,
             norm_stage,
+            skip_main,
             circom_file,
             zkin,
             prover_addr,
@@ -59,6 +61,7 @@ pub fn stark_prove(
             &stark_struct,
             false,
             norm_stage,
+            skip_main,
             circom_file,
             zkin,
             prover_addr,
@@ -70,6 +73,7 @@ pub fn stark_prove(
             &stark_struct,
             agg_stage,
             norm_stage,
+            skip_main,
             circom_file,
             zkin,
             prover_addr,
@@ -87,6 +91,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     stark_struct: &StarkStruct,
     agg_stage: bool,
     norm_stage: bool,
+    skip_main: bool,
     circom_file: &str,
     zkin: &str,
     prover_addr: &str,
@@ -118,7 +123,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     let opt = pil2circom::StarkOption {
         enable_input: false,
         verkey_input: norm_stage,
-        skip_main: false,
+        skip_main,
         agg_stage,
     };
 
@@ -134,9 +139,9 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
     write!(file, "{}", str_ver)?;
     log::debug!("generate circom done");
 
-    if !norm_stage {
-        starkproof.rootC = None;
-    }
+    // if agg_stage {
+    //     starkproof.rootC = None;
+    // }
 
     let input = serde_json::to_string(&starkproof)?;
     let mut file = File::create(zkin)?;

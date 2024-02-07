@@ -22,7 +22,14 @@ pub fn join_zkin(
     let mut zkout_map = BTreeMap::new();
 
     for (k, v) in zkin1_map {
-        zkout_map.insert(format!("a_{k}"), v);
+        // TODO: remove this
+        zkout_map.insert(format!("a_{k}"), v.clone());
+        if k == "publics" {
+            zkout_map.insert(k.to_string(), v.clone());
+        }
+        if k == "rootC" {
+            zkout_map.insert(k.to_string(), v.clone());
+        }
     }
     for (k, v) in zkin2_map {
         zkout_map.insert(format!("b_{k}"), v);
