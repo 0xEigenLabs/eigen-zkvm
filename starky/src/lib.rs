@@ -38,6 +38,7 @@ pub mod merklehash_bls12381;
 
 pub mod merklehash_bn128;
 
+mod deserializer;
 mod digest;
 pub use digest::ElementDigest;
 
