@@ -34,7 +34,7 @@ mod test {
             .canonicalize()
             .unwrap();
 
-        let pil_str = fs::read_to_string(path.clone()).unwrap();
+        let pil_str = fs::read_to_string(path).unwrap();
         // The target and actual pil_json
         let actual = compile_pil_from_str(&pil_str);
         let _target = load_json::<PIL>("data/fib.pil.json").unwrap();

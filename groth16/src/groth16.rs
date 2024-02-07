@@ -104,7 +104,7 @@ mod tests {
             aux_offset: 0,
         };
         let inputs = circuit1.get_public_inputs().unwrap();
-        let proof = Groth16::prove(&params.0, circuit1.clone(), &mut rng)?;
+        let proof = Groth16::prove(&params.0, circuit1, &mut rng)?;
         let elapsed1 = t1.elapsed().as_secs_f64();
         println!("2-groth16-bn128 prove run time: {} secs", elapsed1);
 
@@ -160,7 +160,7 @@ mod tests {
             aux_offset: 0,
         };
         let inputs = circuit1.get_public_inputs().unwrap();
-        let proof = Groth16::prove(&params.0, circuit1.clone(), &mut rng)?;
+        let proof = Groth16::prove(&params.0, circuit1, &mut rng)?;
         let elapsed1 = t1.elapsed().as_secs_f64();
         println!("2-groth16-bls12381 prove run time: {} secs", elapsed1);
 
