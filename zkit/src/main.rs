@@ -215,6 +215,8 @@ struct StarkProveOpt {
         default_value = "273030697313060285579891744179749754319274977764"
     )]
     prover_addr: String,
+    #[arg(short, default_value = "pre_zkin")]
+    pre_zkin: Option<String>,
 }
 
 /// Check aggregation proof
@@ -452,6 +454,7 @@ fn main() {
             &args.circom_file,
             &args.zkin,
             &args.prover_addr,
+            args.pre_zkin,
         ),
         Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
         Command::Compressor12Setup(args) => recursion::compressor12_setup::setup(
