@@ -1,7 +1,7 @@
 #![cfg(not(target_arch = "wasm32"))]
 // refers to https://github.com/matter-labs/recursive_aggregation_circuit/blob/master/src/circuit/mod.rs
 #![allow(clippy::needless_range_loop)]
-use crate::{bellman_ce, utils};
+use crate::bellman_ce;
 use anyhow::Result;
 use bellman_ce::{
     kate_commitment::{Crs, CrsForMonomialForm},
@@ -43,6 +43,7 @@ use recursive_aggregation_circuit::circuit::{
     make_aggregate, make_public_input_and_limbed_aggregate, RecursiveAggregationCircuitBn256,
 };
 
+use algebraic::utils;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use ethabi::ethereum_types::U256;
 use itertools::Itertools;

@@ -340,7 +340,7 @@ impl StarkInfo {
                 r.dim = dim;
             }
             _ => {
-                panic!("Invalid referenece type set {}", r.type_);
+                panic!("Invalid reference type set {}", r.type_);
             }
         }
     }
