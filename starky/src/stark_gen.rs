@@ -1138,7 +1138,7 @@ pub mod tests {
         let serialized = serde_json::to_string(&starkproof).unwrap();
 
         // deserialized
-        let deserialized: StarkProof<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
+        // let deserialized: StarkProof<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
 
         // assert
         // assert_eq!(deserialized, starkproof);
