@@ -173,6 +173,7 @@ impl<F: FieldExtension> StarkContext<F> {
     }
 }
 
+#[derive(Default)]
 pub struct StarkProof<M: MerkleTree> {
     pub root1: M::MTNode,
     pub root2: M::MTNode,
