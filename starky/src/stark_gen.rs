@@ -1102,6 +1102,49 @@ pub mod tests {
     use ark_std::{end_timer, start_timer};
 
     #[test]
+    fn test_stark_serialize() {
+        let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
+
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
+
+        const_pol.load("data/fib.const").unwrap();
+
+        let start_new_pols_array = start_timer!(|| "new_pols_array.commit");
+        let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
+        end_timer!(start_new_pols_array);
+
+        cm_pol.load("data/fib.cm").unwrap();
+
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
+
+        let mut setup =
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+        let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
+        log::trace!("setup {}", fr_root);
+
+        let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
+            cm_pol,
+            const_pol,
+            &setup.const_tree,
+            &setup.starkinfo,
+            &setup.program,
+            &pil,
+            &stark_struct,
+            "273030697313060285579891744179749754319274977764",
+        )
+        .unwrap();
+
+        // serde to json
+        let serialized = serde_json::to_string(&starkproof).unwrap();
+
+        // deserialized
+        let deserialized: StarkProof<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
+
+        // assert
+        // assert_eq!(deserialized, starkproof);
+    }
+
+    #[test]
     fn test_stark_gen() {
         let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
 

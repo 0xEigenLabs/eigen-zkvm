@@ -1,5 +1,6 @@
 // input json of plonk
 #![allow(non_snake_case)]
+
 use crate::f3g::F3G;
 use crate::f5g::F5G;
 use crate::field_bls12381::Fr as Fr_bls12381;
@@ -121,10 +122,12 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
     where
         S: Serializer,
     {
-        // root, evals, friProof * 3, s0_val{1,2,3,4,C},  s0_siblings{1,2,3,4,C}, finalPol
-        let len = 16 + (self.fri_proof.queries.len() - 1) * 3;
-        let mut map = serializer.serialize_map(Some(len))?;
+        // root, evals, friProof * 3, s0_val{1,2,3,4,C},  s0_siblings{1,2,3,4,C}, finalPol，
+        let len = 17 + (self.fri_proof.queries.len() - 1) * 3;
+        let fri_proof_queries_len = self.fri_proof.queries.len();
+        let fri_proof_pol_queries_len = self.fri_proof.queries[0].pol_queries.len();
 
+        let mut map = serializer.serialize_map(Some(len))?;
         let hashtype = &self.stark_struct.verificationHashType;
         match &self.rootC {
             Some(value) => {
@@ -312,6 +315,10 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         if hashtype.as_str() == "BN128" || hashtype.as_str() == "BLS12381" {
             map.serialize_entry("proverAddr", &self.prover_addr)?;
         }
+        // NOTE: Need push those length last as the deserializing needs it.
+        map.serialize_entry("fri_proof_queries_len", &fri_proof_queries_len)?;
+        map.serialize_entry("fri_proof_pol_queries_len", &fri_proof_pol_queries_len)?;
+
         map.end()
     }
 }
