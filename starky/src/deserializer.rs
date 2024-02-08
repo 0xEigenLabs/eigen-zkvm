@@ -10,6 +10,7 @@ use fields::field_gl::Fr as FGL;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::fmt;
 use std::marker::PhantomData;
+use crate::fri::{FRIProof, Query};
 
 use serde::de::{Deserialize, Deserializer, MapAccess, Visitor};
 
@@ -40,9 +41,9 @@ impl<M: MerkleTree> StarkProofVisitor<M> {
 // By default those methods will return an error, which makes sense
 // because we cannot deserialize a StarkProof from an integer or string.
 impl<'de, M: MerkleTree> Visitor<'de> for StarkProofVisitor<M>
-where
-    K: Deserialize<'de>,
-    V: Deserialize<'de>,
+    where
+        K: Deserialize<'de>,
+        V: Deserialize<'de>,
 {
     // The type that our Visitor is going to produce.
     type Value = StarkProof<M>;
@@ -66,24 +67,22 @@ where
     //     Ok(Duration::new(secs, nanos))
     // }
     fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
-    where
-        M: MapAccess<'de>,
+        where
+            M: MapAccess<'de>,
     {
         // let mut map = StarkProof::with_capacity(access.size_hint().unwrap_or(0));
         //
-        // // While there are entries remaining in the input, add them
-        // // into our map.
-        // while let Some((key, value)) = access.next_entry()? {
-        //     map.insert(key, value);
-        // }
-        let map_len = map.size_hint().unwrap_or(0);
+        // While there are entries remaining in the input, add them
+        // into our map.
         // root, evals, friProof * 3, s0_val{1,2,3,4,C},  s0_siblings{1,2,3,4,C}, finalPol
         // let len = 16 + (self.fri_proof.queries.len() - 1) * 3;
-        let fri_proof_querier_len =( map_len - 16)/3 +1;
+        let map_len = map.size_hint().unwrap_or(0);
+        let fri_proof_querier_len = (map_len - 16) / 3 + 1;
+        // let pol_queries_len = ;
 
         let mut stark_proof = StarkProof::default();
-        let stark_struct =  StarkStruct::default;
-        let fri_proof= FRIProof::<M::ExtendField, M>::default();
+        let stark_struct = StarkStruct::default;
+        let fri_proof = FRIProof::<M::ExtendField, M>::default();
         // #[derive(Default)]
         // pub struct StarkProof<M: MerkleTree> {
         //     pub root1: M::MTNode,
@@ -101,7 +100,6 @@ where
             match key {
                 "rootC" => {
                     let input: Input::<M::MTNode> = map.next_value()?;
-                    // pub struct Input<T: MTNodeType>(T, String);
                     stark_proof.rootC = input.0;
                 }
                 "root1" => {
@@ -113,19 +111,74 @@ where
                 }
                 "root2" => {
                     let input: Input::<M::MTNode> = map.next_value()?;
-                    // pub struct Input<T: MTNodeType>(T, String);
                     stark_proof.root2 = input.0;
-                }        "root3" => {
+                }
+                "root3" => {
                     let input: Input::<M::MTNode> = map.next_value()?;
-                    // pub struct Input<T: MTNodeType>(T, String);
                     stark_proof.root3 = input.0;
-                }        "root4" => {
+                }
+                "root4" => {
                     let input: Input::<M::MTNode> = map.next_value()?;
-                    // pub struct Input<T: MTNodeType>(T, String);
                     stark_proof.root4 = input.0;
                 }
                 "evals" => {
                     stark_proof.evals = Some(map.next_value()?);
+                }
+                "s0_vals1" => {
+                    let s0_vals1: Vec<Vec<F3G>> = map.next_value()?;
+                    // TODO
+                    // stark_proof.evals = Some(map.next_value()?);
+                }
+                "s0_vals2" => {
+                    let s0_vals2: Vec<Vec<F3G>> = map.next_value()?;
+                    // #[derive(Debug, Clone, Default)]
+                    // pub struct FRIProof<F: FieldExtension, M: MerkleTree<ExtendField = F>> {
+                    //     pub queries: Vec<Query<M::BaseField, M::MTNode>>,
+                    //     pub last: Vec<F>,
+                    // }
+                    // stark_proof.evals = Some(map.next_value()?);
+
+
+                }
+                "s0_vals3" => {
+                    let s0_vals3: Vec<Vec<F3G>> = map.next_value()?;
+
+                    // stark_proof.evals = Some(map.next_value()?);
+                }
+                "s0_vals4" => {
+                    let s0_vals4: Vec<Vec<F3G>> = map.next_value()?;
+
+                    // stark_proof.evals = Some(map.next_value()?);
+                }
+                "s0_valsC" => {
+                    let s0_valsC: Vec<Vec<F3G>> = map.next_value()?;
+
+                    // stark_proof.evals = Some(map.next_value()?);
+                }
+                "s0_siblings1" => {
+                    let s0_siblings1: Vec<Vec<Vec<Input<M::MTNode>>>> = map.next_value()?;
+
+                    // stark_proof.evals = Some(map.next_value()?);
+                }
+                "s0_siblings2" => {
+                    let s0_siblings2: Vec<Vec<Vec<Input<M::MTNode>>>> = map.next_value()?;
+
+                    // stark_proof.evals = Some(map.next_value()?);
+                }
+                "s0_siblings3" => {
+                    let s0_siblings3: Vec<Vec<Vec<Input<M::MTNode>>>> = map.next_value()?;
+
+                    // stark_proof.evals = Some(map.next_value()?);
+                }
+                "s0_siblings4" => {
+                    let s0_siblings4: Vec<Vec<Vec<Input<M::MTNode>>>> = map.next_value()?;
+
+                    // stark_proof.evals = Some(map.next_value()?);
+                }
+                "s0_siblingsC" => {
+                    let s0_siblingsC: Vec<Vec<Vec<Input<M::MTNode>>>> = map.next_value()?;
+
+                    // stark_proof.evals = Some(map.next_value()?);
                 }
             }
         }
@@ -159,6 +212,8 @@ where
             map.serialize_entry("evals", &self.evals)?;
         }
 
+
+        // TODO: Below are the serilized one.
 
         for i in 1..(self.fri_proof.queries.len()) {
             map.serialize_entry(
@@ -330,13 +385,13 @@ where
 
 // This is the trait that informs Serde how to deserialize StarkProof.
 impl<'de, M> Deserialize<'de> for StarkProof<M>
-where
-    K: Deserialize<'de>,
-    V: Deserialize<'de>,
+    where
+        K: Deserialize<'de>,
+        V: Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
+        where
+            D: Deserializer<'de>,
     {
         // Instantiate our Visitor and ask the Deserializer to drive
         // it over the input data, resulting in an instance of StarkProof.
