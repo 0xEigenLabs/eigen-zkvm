@@ -173,7 +173,6 @@ impl<F: FieldExtension> StarkContext<F> {
     }
 }
 
-#[derive(Default)]
 pub struct StarkProof<M: MerkleTree> {
     pub root1: M::MTNode,
     pub root2: M::MTNode,
@@ -1100,9 +1099,11 @@ pub mod tests {
     use crate::types::load_json;
     use crate::types::{StarkStruct, PIL};
     use ark_std::{end_timer, start_timer};
+    use std::fs::File;
+    use std::io::Write;
 
     #[test]
-    fn test_stark_serialize() {
+    fn test_stark_proof_serialize() {
         let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
 
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
@@ -1136,7 +1137,8 @@ pub mod tests {
 
         // serde to json
         let serialized = serde_json::to_string(&starkproof).unwrap();
-
+        let mut file = File::create("test_stark_proof_serialize.json").unwrap();
+        write!(file, "{}", serialized).unwrap();
         // deserialized
         // let deserialized: StarkProof<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
 
