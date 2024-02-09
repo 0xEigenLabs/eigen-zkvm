@@ -221,7 +221,7 @@ impl StarkInfo {
         stark_struct: &StarkStruct,
         global_l1: Option<String>,
     ) -> Result<(StarkInfo, Program)> {
-        let pil_deg = pil.references.values().nth(0).unwrap().polDeg;
+        let pil_deg = pil.references.values().next().unwrap().polDeg;
 
         let stark_deg = 2usize.pow(stark_struct.nBits as u32);
 
