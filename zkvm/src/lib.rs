@@ -100,7 +100,7 @@ pub fn zkvm_evm_execute_and_prove(task: &str, suite_json: String, output_path: &
 }
 
 pub fn zkvm_evm_generate_chunks(
-    task: &str,
+    workspace: &str,
     suite_json: &String,
     output_path: &str,
 ) -> Result<Vec<Vec<GoldilocksField>>> {
@@ -108,7 +108,7 @@ pub fn zkvm_evm_generate_chunks(
     let force_overwrite = true;
     let with_bootloader = true;
     let (asm_file_path, asm_contents) = compile_rust(
-        &format!("vm/{task}"),
+        workspace,
         Path::new(output_path),
         force_overwrite,
         &CoProcessors::base().with_poseidon(),
@@ -276,7 +276,9 @@ mod tests {
 
         let output_path = "/tmp/test_lr";
         let task = "lr";
-        let bootloader_inputs = zkvm_evm_generate_chunks(task, &suite_json, output_path).unwrap();
+        let workspace = format!("vm/{}", task);
+        let bootloader_inputs =
+            zkvm_evm_generate_chunks(workspace.as_str(), &suite_json, output_path).unwrap();
         // save the chunks
         let bi_files: Vec<_> = (0..bootloader_inputs.len())
             .map(|i| Path::new(output_path).join(format!("{task}_chunks_{i}.data")))
