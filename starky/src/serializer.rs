@@ -10,6 +10,11 @@ use crate::traits::FieldExtension;
 use crate::traits::{MTNodeType, MerkleTree};
 use fields::field_gl::Fr as FGL;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
+use serde::{
+    de::{self, MapAccess, SeqAccess, Visitor},
+    Deserialize, Deserializer,
+};
+use std::fmt;
 
 impl Serialize for F3G {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -28,6 +33,44 @@ impl Serialize for F3G {
         } else {
             panic!("Invalid dim {}", self);
         }
+    }
+}
+
+impl<'de> Deserialize<'de> for F3G {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct EntriesVisitor;
+
+        impl<'de> Visitor<'de> for EntriesVisitor {
+            type Value = F3G;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct F3G")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let mut entries = Vec::new();
+                while let Some(entry) = seq.next_element::<String>()? {
+                    let entry: u64 = entry.parse().unwrap();
+                    entries.push(FGL::from(entry));
+                }
+                Ok(F3G::from_vec(entries))
+            }
+
+            fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                let ien: u64 = s.parse().unwrap();
+                Ok(F3G::from(ien))
+            }
+        }
+        deserializer.deserialize_any(EntriesVisitor)
     }
 }
 
@@ -51,11 +94,49 @@ impl Serialize for F5G {
     }
 }
 
-pub struct Input<T: MTNodeType>(T, String);
+impl<'de> Deserialize<'de> for F5G {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct EntriesVisitor;
 
-impl<T: MTNodeType> Input<T> {
+        impl<'de> Visitor<'de> for EntriesVisitor {
+            type Value = F5G;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct F5G")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let mut entries = Vec::new();
+                while let Some(entry) = seq.next_element::<String>()? {
+                    let entry: u64 = entry.parse().unwrap();
+                    entries.push(FGL::from(entry));
+                }
+                Ok(F5G::from_vec(entries))
+            }
+
+            fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                let ien: u64 = s.parse().unwrap();
+                Ok(F5G::from(ien))
+            }
+        }
+        deserializer.deserialize_any(EntriesVisitor)
+    }
+}
+
+pub struct NodeWrapper<T: MTNodeType>(T, String);
+
+impl<T: MTNodeType> NodeWrapper<T> {
     pub fn new(e: T, hashtype: String) -> Self {
-        Input(e, hashtype)
+        NodeWrapper(e, hashtype)
     }
     pub fn is_dim_1(&self) -> bool {
         let e = self.0.as_elements();
@@ -63,15 +144,11 @@ impl<T: MTNodeType> Input<T> {
     }
 }
 
-impl<T: MTNodeType + Clone> Serialize for Input<T> {
+impl<T: MTNodeType + Clone> Serialize for NodeWrapper<T> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let e = self.0.as_elements();
-        if self.is_dim_1() {
-            return serializer.serialize_str(&e[0].as_int().to_string());
-        }
         match self.1.as_str() {
             "BN128" => {
                 let r: Fr = Fr(self.0.clone().as_scalar::<Fr>());
@@ -82,36 +159,81 @@ impl<T: MTNodeType + Clone> Serialize for Input<T> {
                 serializer.serialize_str(&helper::fr_bls12381_to_biguint(&r).to_string())
             }
             "GL" => {
-                let mut seq = serializer.serialize_seq(Some(4))?;
-                for v in e.iter() {
-                    seq.serialize_element(&v.as_int().to_string())?;
+                let e = self.0.as_elements();
+                if self.is_dim_1() {
+                    serializer.serialize_str(&e[0].as_int().to_string())
+                } else {
+                    let mut seq = serializer.serialize_seq(Some(4))?;
+                    for v in e.iter() {
+                        seq.serialize_element(&v.as_int().to_string())?;
+                    }
+                    seq.end()
                 }
-                seq.end()
             }
             _ => panic!("Invalid hashtype {}", self.1),
         }
     }
 }
 
-impl<T: MTNodeType> From<Fr> for Input<T> {
+/*
+impl<'de, T: MTNodeType> Deserialize<'de> for NodeWrapper<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct EntriesVisitor;
+
+        impl<'de> Visitor<'de> for EntriesVisitor {
+            type Value = NodeWrapper<T>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct NodeWrapper")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let mut entries = Vec::new();
+                while let Some(entry) = seq.next_element::<String>()? {
+                    let entry: u64 = entry.parse().unwrap();
+                    entries.push(FGL::from(entry));
+                }
+                Ok(F5G::from_vec(entries))
+            }
+
+            fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                let ien: u64 = s.parse().unwrap();
+                Ok(F5G::from(ien))
+            }
+        }
+        deserializer.deserialize_any(EntriesVisitor)
+    }
+}
+*/
+
+impl<T: MTNodeType> From<Fr> for NodeWrapper<T> {
     fn from(val: Fr) -> Self {
         let e = T::from_scalar(&val);
-        Self(e, "".to_string())
+        Self(e, "BN128".to_string())
     }
 }
 
-impl<T: MTNodeType> From<Fr_bls12381> for Input<T> {
+impl<T: MTNodeType> From<Fr_bls12381> for NodeWrapper<T> {
     fn from(val: Fr_bls12381) -> Self {
         let e = T::from_scalar(&val);
-        Self(e, "".to_string())
+        Self(e, "BLS12381".to_string())
     }
 }
 
-impl<T: MTNodeType> From<FGL> for Input<T> {
+impl<T: MTNodeType> From<FGL> for NodeWrapper<T> {
     fn from(val: FGL) -> Self {
         Self(
             T::new(&[val, FGL::ZERO, FGL::ZERO, FGL::ZERO]),
-            "".to_string(),
+            "GL".to_string(),
         )
     }
 }
@@ -128,35 +250,38 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         let hashtype = &self.stark_struct.verificationHashType;
         match &self.rootC {
             Some(value) => {
-                map.serialize_entry("rootC", &Input::<M::MTNode>::new(*value, hashtype.clone()))?;
+                map.serialize_entry(
+                    "rootC",
+                    &NodeWrapper::<M::MTNode>::new(*value, hashtype.clone()),
+                )?;
             }
             None => {}
         }
         map.serialize_entry(
             "root1",
-            &Input::<M::MTNode>::new(self.root1, hashtype.clone()),
+            &NodeWrapper::<M::MTNode>::new(self.root1, hashtype.clone()),
         )?;
         map.serialize_entry(
             "root2",
-            &Input::<M::MTNode>::new(self.root2, hashtype.clone()),
+            &NodeWrapper::<M::MTNode>::new(self.root2, hashtype.clone()),
         )?;
         map.serialize_entry(
             "root3",
-            &Input::<M::MTNode>::new(self.root3, hashtype.clone()),
+            &NodeWrapper::<M::MTNode>::new(self.root3, hashtype.clone()),
         )?;
         map.serialize_entry(
             "root4",
-            &Input::<M::MTNode>::new(self.root4, hashtype.clone()),
+            &NodeWrapper::<M::MTNode>::new(self.root4, hashtype.clone()),
         )?;
         map.serialize_entry("evals", &self.evals)?;
 
         for i in 1..(self.fri_proof.queries.len()) {
             map.serialize_entry(
                 &format!("s{}_root", i),
-                &Input::new(self.fri_proof.queries[i].root, hashtype.clone()),
+                &NodeWrapper::new(self.fri_proof.queries[i].root, hashtype.clone()),
             )?;
             let mut vals: Vec<Vec<F3G>> = vec![];
-            let mut sibs: Vec<Vec<Vec<Input<M::MTNode>>>> = vec![];
+            let mut sibs: Vec<Vec<Vec<NodeWrapper<M::MTNode>>>> = vec![];
             for q in 0..self.fri_proof.queries[0].pol_queries.len() {
                 let qe = &self.fri_proof.queries[i].pol_queries[q];
                 vals.push(qe[0].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
@@ -167,13 +292,13 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .map(|e| {
                             e.iter()
                                 .map(|ee| {
-                                    let mut res: Input<M::MTNode> = ee.clone().into();
+                                    let mut res: NodeWrapper<M::MTNode> = ee.clone().into();
                                     res.1 = hashtype.clone();
                                     res
                                 })
-                                .collect::<Vec<Input<M::MTNode>>>()
+                                .collect::<Vec<NodeWrapper<M::MTNode>>>()
                         })
-                        .collect::<Vec<Vec<Input<M::MTNode>>>>(),
+                        .collect::<Vec<Vec<NodeWrapper<M::MTNode>>>>(),
                 );
             }
             map.serialize_entry(&format!("s{}_vals", i), &vals)?;
@@ -185,11 +310,11 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         let mut s0_vals3: Vec<Vec<F3G>> = vec![];
         let mut s0_vals4: Vec<Vec<F3G>> = vec![];
         let mut s0_valsC: Vec<Vec<F3G>> = vec![];
-        let mut s0_siblings1: Vec<Vec<Vec<Input<M::MTNode>>>> = vec![];
-        let mut s0_siblings2: Vec<Vec<Vec<Input<M::MTNode>>>> = vec![];
-        let mut s0_siblings3: Vec<Vec<Vec<Input<M::MTNode>>>> = vec![];
-        let mut s0_siblings4: Vec<Vec<Vec<Input<M::MTNode>>>> = vec![];
-        let mut s0_siblingsC: Vec<Vec<Vec<Input<M::MTNode>>>> = vec![];
+        let mut s0_siblings1: Vec<Vec<Vec<NodeWrapper<M::MTNode>>>> = vec![];
+        let mut s0_siblings2: Vec<Vec<Vec<NodeWrapper<M::MTNode>>>> = vec![];
+        let mut s0_siblings3: Vec<Vec<Vec<NodeWrapper<M::MTNode>>>> = vec![];
+        let mut s0_siblings4: Vec<Vec<Vec<NodeWrapper<M::MTNode>>>> = vec![];
+        let mut s0_siblingsC: Vec<Vec<Vec<NodeWrapper<M::MTNode>>>> = vec![];
 
         for i in 0..self.fri_proof.queries[0].pol_queries.len() {
             //(leaf, path) represents each query
@@ -202,13 +327,13 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                     .map(|e| {
                         e.iter()
                             .map(|ee| {
-                                let mut res: Input<M::MTNode> = ee.clone().into();
+                                let mut res: NodeWrapper<M::MTNode> = ee.clone().into();
                                 res.1 = hashtype.clone();
                                 res
                             })
-                            .collect::<Vec<Input<M::MTNode>>>()
+                            .collect::<Vec<NodeWrapper<M::MTNode>>>()
                     })
-                    .collect::<Vec<Vec<Input<M::MTNode>>>>(),
+                    .collect::<Vec<Vec<NodeWrapper<M::MTNode>>>>(),
             );
 
             if !qe[1].0.is_empty() {
@@ -220,13 +345,13 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .map(|e| {
                             e.iter()
                                 .map(|ee| {
-                                    let mut res: Input<M::MTNode> = ee.clone().into();
+                                    let mut res: NodeWrapper<M::MTNode> = ee.clone().into();
                                     res.1 = hashtype.clone();
                                     res
                                 })
-                                .collect::<Vec<Input<M::MTNode>>>()
+                                .collect::<Vec<NodeWrapper<M::MTNode>>>()
                         })
-                        .collect::<Vec<Vec<Input<M::MTNode>>>>(),
+                        .collect::<Vec<Vec<NodeWrapper<M::MTNode>>>>(),
                 );
             }
 
@@ -239,13 +364,13 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .map(|e| {
                             e.iter()
                                 .map(|ee| {
-                                    let mut res: Input<M::MTNode> = ee.clone().into();
+                                    let mut res: NodeWrapper<M::MTNode> = ee.clone().into();
                                     res.1 = hashtype.clone();
                                     res
                                 })
-                                .collect::<Vec<Input<M::MTNode>>>()
+                                .collect::<Vec<NodeWrapper<M::MTNode>>>()
                         })
-                        .collect::<Vec<Vec<Input<M::MTNode>>>>(),
+                        .collect::<Vec<Vec<NodeWrapper<M::MTNode>>>>(),
                 );
             }
 
@@ -259,13 +384,13 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .map(|e| {
                             e.iter()
                                 .map(|ee| {
-                                    let mut res: Input<M::MTNode> = ee.clone().into();
+                                    let mut res: NodeWrapper<M::MTNode> = ee.clone().into();
                                     res.1 = hashtype.clone();
                                     res
                                 })
-                                .collect::<Vec<Input<M::MTNode>>>()
+                                .collect::<Vec<NodeWrapper<M::MTNode>>>()
                         })
-                        .collect::<Vec<Vec<Input<M::MTNode>>>>(),
+                        .collect::<Vec<Vec<NodeWrapper<M::MTNode>>>>(),
                 );
             }
 
@@ -278,13 +403,13 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .map(|e| {
                             e.iter()
                                 .map(|ee| {
-                                    let mut res: Input<M::MTNode> = ee.clone().into();
+                                    let mut res: NodeWrapper<M::MTNode> = ee.clone().into();
                                     res.1 = hashtype.clone();
                                     res
                                 })
-                                .collect::<Vec<Input<M::MTNode>>>()
+                                .collect::<Vec<NodeWrapper<M::MTNode>>>()
                         })
-                        .collect::<Vec<Vec<Input<M::MTNode>>>>(),
+                        .collect::<Vec<Vec<NodeWrapper<M::MTNode>>>>(),
                 );
             }
         }
@@ -314,4 +439,68 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         }
         map.end()
     }
+}
+
+/*
+impl<'de, M: MerkleTree> Deserialize<'de> for StarkProof<M> {
+fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+where D: Deserializer<'de> {
+
+
+}
+}
+*/
+
+#[cfg(test)]
+mod tests {
+    use crate::f3g::F3G;
+    use crate::f5g::F5G;
+    use crate::traits::FieldExtension;
+    use fields::field_gl::Fr as FGL;
+    use rand::Rand;
+
+    #[test]
+    fn test_serialize_f3g() {
+        let input = F3G::from(123);
+        let ser_input = serde_json::to_string(&input).unwrap();
+        let de_input = serde_json::from_str(&ser_input).unwrap();
+        assert_eq!(input, de_input);
+
+        let mut rng = rand::thread_rng();
+        let input = F3G::from_vec(
+            [
+                FGL::rand(&mut rng),
+                FGL::rand(&mut rng),
+                FGL::rand(&mut rng),
+            ]
+            .to_vec(),
+        );
+        let ser_input = serde_json::to_string(&input).unwrap();
+        let de_input = serde_json::from_str(&ser_input).unwrap();
+        assert_eq!(input, de_input);
+    }
+
+    #[test]
+    fn test_serialize_f5g() {
+        let input = F5G::from(123);
+        let ser_input = serde_json::to_string(&input).unwrap();
+        let de_input = serde_json::from_str(&ser_input).unwrap();
+        assert_eq!(input, de_input);
+
+        let mut rng = rand::thread_rng();
+        let input = F5G::from_vec(
+            [
+                FGL::rand(&mut rng),
+                FGL::rand(&mut rng),
+                FGL::rand(&mut rng),
+                FGL::rand(&mut rng),
+                FGL::rand(&mut rng),
+            ]
+            .to_vec(),
+        );
+        let ser_input = serde_json::to_string(&input).unwrap();
+        let de_input = serde_json::from_str(&ser_input).unwrap();
+        assert_eq!(input, de_input);
+    }
+    fn test_stark_proof_ser_der() {}
 }

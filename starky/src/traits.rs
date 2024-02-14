@@ -31,7 +31,7 @@ where
     type BaseField: Clone
         + Default
         + core::fmt::Debug
-        + Into<crate::serializer::Input<Self::MTNode>>;
+        + Into<crate::serializer::NodeWrapper<Self::MTNode>>;
     type ExtendField: FieldExtension;
     fn new() -> Self;
     fn to_extend(&self, p_be: &mut Vec<Self::ExtendField>);
