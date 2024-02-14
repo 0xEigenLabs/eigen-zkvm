@@ -15,6 +15,7 @@ use serde::{
     Deserialize, Deserializer,
 };
 use std::fmt;
+use std::marker::PhantomData;
 
 impl Serialize for F3G {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -175,16 +176,15 @@ impl<T: MTNodeType + Clone> Serialize for NodeWrapper<T> {
     }
 }
 
-/*
 impl<'de, T: MTNodeType> Deserialize<'de> for NodeWrapper<T> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        struct EntriesVisitor;
+        struct EntriesVisitor<MT: MTNodeType>(PhantomData<MT>);
 
-        impl<'de> Visitor<'de> for EntriesVisitor {
-            type Value = NodeWrapper<T>;
+        impl<'de, MT: MTNodeType> Visitor<'de> for EntriesVisitor<MT> {
+            type Value = NodeWrapper<MT>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("struct NodeWrapper")
@@ -199,21 +199,25 @@ impl<'de, T: MTNodeType> Deserialize<'de> for NodeWrapper<T> {
                     let entry: u64 = entry.parse().unwrap();
                     entries.push(FGL::from(entry));
                 }
-                Ok(F5G::from_vec(entries))
+                Ok(NodeWrapper(MT::new(&entries), "GL".to_string()))
             }
 
+            // it could be one-dim GL, BN128, or BLS12381
+            /*
             fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
             where
                 E: de::Error,
             {
-                let ien: u64 = s.parse().unwrap();
-                Ok(F5G::from(ien))
+                let t = MTNodeType::from_scalar;
+                Ok(
+                    NodeWrapper::from()
+                )
             }
+            */
         }
-        deserializer.deserialize_any(EntriesVisitor)
+        deserializer.deserialize_any(EntriesVisitor::<T>(Default::default()))
     }
 }
-*/
 
 impl<T: MTNodeType> From<Fr> for NodeWrapper<T> {
     fn from(val: Fr) -> Self {
