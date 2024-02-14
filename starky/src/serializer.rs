@@ -10,7 +10,7 @@ use crate::helper;
 use crate::stark_gen::StarkProof;
 use crate::traits::FieldExtension;
 use crate::traits::{MTNodeType, MerkleTree};
-use ff::PrimeField;
+use ff::{to_hex, PrimeField};
 use fields::field_gl::Fr as FGL;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 use serde::{
@@ -253,8 +253,18 @@ impl<T: MTNodeType> From<FGL> for NodeWrapper<T> {
 // convert FieldType to MTNode: convert FieldType to specific PrimeField, like FGL, or BN128.
 // then we can use NodeWrapper::from to get the target type.
 fn to_<M: MerkleTree>(e: &<M::MTNode as MTNodeType>::FieldType) -> NodeWrapper<M::MTNode> {
-    let e = <M::MTNode as MTNodeType>::from_scalar(e);
-    NodeWrapper(e)
+    let source = TypeId::of::<<M::MTNode as MTNodeType>::FieldType>();
+    if source == TypeId::of::<FGL>() {
+        // one-dim GL elements, it's hacky.
+        let repr = to_hex(e);
+        let repr_10 = u64::from_str_radix(&repr, 16).unwrap();
+        let val: FGL = FGL::from(repr_10);
+        NodeWrapper::from(val)
+    } else {
+        // BN128 or BLS12381
+        let e = <M::MTNode as MTNodeType>::from_scalar(e);
+        NodeWrapper(e)
+    }
 }
 
 impl<M: MerkleTree> Serialize for StarkProof<M> {
@@ -485,7 +495,6 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
                 // search all s{i}_root keys, to avoid regex matching, we assume the max query is
                 // less than 32
                 let num_query: usize = (1..32)
-                    .into_iter()
                     .map(|i| {
                         let key = map.get(&format!("s{}_root", i));
                         if key.is_some() {
@@ -503,19 +512,6 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
                     let root: NodeWrapper<MT::MTNode> =
                         serde_json::from_value(key.unwrap().clone()).unwrap();
                     fri_proof.queries[i].root = root.0;
-
-                    // handle query 0
-                    let num_pol_query0: usize = (0..32)
-                        .into_iter()
-                        .map(|i| {
-                            let key = map.get(&format!("s{}_vals", i));
-                            if key.is_some() {
-                                1
-                            } else {
-                                0
-                            }
-                        })
-                        .sum();
 
                     let key = map.get(&format!("s{}_vals", i));
                     let val: Vec<Vec<F3G>> = serde_json::from_value(key.unwrap().clone()).unwrap();
@@ -543,8 +539,6 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
                                 .map(|e2| {
                                     e2.iter()
                                         .map(|e3| {
-                                            // MTNodeType::FieldType -> NodeWrapper: ok
-                                            // NodeWrapper -> MTNodeType::FieldType
                                             let repr = e3
                                                 .0
                                                 .as_scalar::<<MT::MTNode as MTNodeType>::FieldType>(
@@ -562,22 +556,65 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
                     fri_proof.queries[i].pol_queries.push(pol_query0);
                 }
 
-                sp.fri_proof = fri_proof;
+                // handle queries[0]
+                for _j in ["1", "2", "3", "4", "C"] {
+                    let key = map.get(&"s0_vals{_j}".to_string());
+                    if key.is_none() {
+                        continue;
+                    }
+                    let s0_vals: Vec<Vec<F3G>> =
+                        serde_json::from_value(key.unwrap().clone()).unwrap();
+                    let s0_vals: Vec<Vec<FGL>> = s0_vals
+                        .iter()
+                        .map(|e| {
+                            let iv: Vec<FGL> = e
+                                .iter()
+                                .map(|e2| {
+                                    let ea = e2.as_elements();
+                                    ea[0]
+                                })
+                                .collect();
+                            iv
+                        })
+                        .collect();
 
-                /* make StarkProof
-                let mut sp = StarkProof {
-                    --root1: MT::MTNode,
-                    --root2: MT::MTNode,
-                    --root3: MT::MTNode,
-                    --root4: MT::MTNode,
-                    fri_proof: FRIProof<MT::ExtendField, M>,
-                    --evals: Vec<MT::ExtendField>,
-                    --publics: Vec<MT::ExtendField>,
-                    --rootC: Option<MT::MTNode>,
-                    XXX stark_struct: StarkStruct,
-                    --prover_addr: String,
-                };
-                */
+                    let key = map.get(&"s0_siblings{_j}".to_string());
+                    let s0_siblings: Vec<Vec<Vec<NodeWrapper<MT::MTNode>>>> =
+                        serde_json::from_value(key.unwrap().clone()).unwrap();
+                    let s0_siblings: Vec<Vec<Vec<<MT::MTNode as MTNodeType>::FieldType>>> =
+                        s0_siblings
+                            .iter()
+                            .map(|e| {
+                                e.iter()
+                                    .map(|e2| {
+                                        e2.iter()
+                                            .map(|e3| {
+                                                let repr = e3
+                                                .0
+                                                .as_scalar::<<MT::MTNode as MTNodeType>::FieldType>(
+                                                );
+                                                <<MT::MTNode as MTNodeType>::FieldType>::from_repr(
+                                                    repr,
+                                                )
+                                                .unwrap()
+                                            })
+                                            .collect()
+                                    })
+                                    .collect()
+                            })
+                            .collect();
+                    let pol_query0 = s0_vals
+                        .iter()
+                        .cloned()
+                        .zip(s0_siblings.iter().cloned())
+                        .collect();
+                    fri_proof.queries[0].pol_queries.push(pol_query0);
+                }
+
+                // handle finalPol
+                let key = map.get(&"finalPol".to_string());
+                fri_proof.last = serde_json::from_value(key.unwrap().clone()).unwrap();
+                sp.fri_proof = fri_proof;
                 Ok(sp)
             }
         }
@@ -703,7 +740,7 @@ mod tests {
         cm_pol.load("data/fib.cm").unwrap();
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
 
-        let mut setup =
+        let setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
         log::trace!("setup {}", fr_root);
@@ -728,7 +765,8 @@ mod tests {
         let deserialized: StarkProof<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
         log::debug!("stark proof der: {:?}", deserialized);
 
-        // assert
-        // assert_eq!(deserialized, starkproof);
+        // TODO: assert
+        assert_eq!(deserialized, starkproof);
+        // TODO: test GL and BLS12381
     }
 }

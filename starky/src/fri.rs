@@ -17,13 +17,13 @@ pub struct FRI {
     pub steps: Vec<Step>,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Query<F: Clone, MN: MTNodeType> {
     pub pol_queries: Vec<Vec<(Vec<FGL>, Vec<Vec<F>>)>>,
     pub root: MN,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct FRIProof<F: FieldExtension, M: MerkleTree<ExtendField = F>> {
     pub queries: Vec<Query<<M::MTNode as MTNodeType>::FieldType, M::MTNode>>,
     pub last: Vec<F>,

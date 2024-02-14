@@ -15,7 +15,7 @@ use rayon::prelude::*;
 use std::io::{Read, Write};
 use std::time::Instant;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq)]
 pub struct MerkleTreeBLS12381 {
     pub elements: Vec<FGL>,
     pub width: usize,
@@ -146,7 +146,6 @@ impl MerkleTreeBLS12381 {
 }
 
 impl MerkleTree for MerkleTreeBLS12381 {
-    //type BaseField = Fr;
     type MTNode = ElementDigest<4, Fr>;
     type ExtendField = F3G;
     fn new() -> Self {

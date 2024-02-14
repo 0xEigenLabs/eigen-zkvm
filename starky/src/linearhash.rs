@@ -34,7 +34,7 @@ use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 use rayon::prelude::*;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq)]
 pub struct LinearHash {
     h: Poseidon,
 }
