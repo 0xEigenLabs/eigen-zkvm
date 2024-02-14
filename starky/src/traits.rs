@@ -5,7 +5,7 @@ use ff::PrimeField;
 use fields::field_gl::Fr as FGL;
 use fields::field_gl::Fr;
 use fields::Field;
-use serde::ser::Serialize;
+use serde::{de::DeserializeOwned, ser::Serialize};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 use std::io::{Read, Write};
@@ -14,7 +14,7 @@ pub trait MTNodeType
 where
     Self: Sized,
 {
-    type FieldType: PrimeField;
+    type FieldType: PrimeField + Default;
     fn as_elements(&self) -> &[FGL];
     fn new(value: &[FGL]) -> Self;
     fn from_scalar<T: PrimeField>(e: &T) -> Self;
@@ -28,21 +28,20 @@ pub trait MerkleTree
 where
     Self: Sized,
 {
-    type MTNode: Copy + std::fmt::Display + Clone + Default + MTNodeType + core::fmt::Debug;
-    type BaseField: Clone
-        + Default
-        + core::fmt::Debug
-        + Into<crate::serializer::NodeWrapper<Self::MTNode>>;
+    type MTNode: Copy + Display + Clone + Default + MTNodeType + Debug;
     type ExtendField: FieldExtension;
     fn new() -> Self;
     fn to_extend(&self, p_be: &mut Vec<Self::ExtendField>);
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()>;
     fn get_element(&self, idx: usize, sub_idx: usize) -> FGL;
-    fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<Self::BaseField>>)>;
+    fn get_group_proof(
+        &self,
+        idx: usize,
+    ) -> Result<(Vec<FGL>, Vec<Vec<<Self::MTNode as MTNodeType>::FieldType>>)>;
     fn verify_group_proof(
         &self,
         root: &Self::MTNode,
-        mp: &[Vec<Self::BaseField>],
+        mp: &[Vec<<Self::MTNode as MTNodeType>::FieldType>],
         idx: usize,
         group_elements: &[FGL],
     ) -> Result<bool>;
@@ -88,6 +87,7 @@ pub trait FieldExtension:
     + Sync
     + Field
     + Serialize
+    + DeserializeOwned
 {
     const ELEMENT_BYTES: usize;
     const IS_CANONICAL: bool = false;

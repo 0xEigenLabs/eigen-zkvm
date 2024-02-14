@@ -4,6 +4,8 @@ use crate::f3g::F3G;
 use crate::f5g::F5G;
 use crate::field_bls12381::Fr as Fr_BLS12381;
 use crate::field_bn128::Fr;
+use crate::fri::FRIProof;
+use crate::fri::Query;
 use crate::helper;
 use crate::stark_gen::StarkProof;
 use crate::traits::FieldExtension;
@@ -16,6 +18,7 @@ use serde::{
     Deserialize, Deserializer,
 };
 use std::any::TypeId;
+use std::collections::HashMap;
 use std::fmt;
 use std::marker::PhantomData;
 
@@ -136,6 +139,7 @@ impl<'de> Deserialize<'de> for F5G {
 }
 
 // Is it making sense to wrap?
+#[derive(Clone)]
 pub struct NodeWrapper<T: MTNodeType>(T);
 
 impl<T: MTNodeType> NodeWrapper<T> {
@@ -246,6 +250,13 @@ impl<T: MTNodeType> From<FGL> for NodeWrapper<T> {
     }
 }
 
+// convert FieldType to MTNode: convert FieldType to specific PrimeField, like FGL, or BN128.
+// then we can use NodeWrapper::from to get the target type.
+fn to_<M: MerkleTree>(e: &<M::MTNode as MTNodeType>::FieldType) -> NodeWrapper<M::MTNode> {
+    let e = <M::MTNode as MTNodeType>::from_scalar(e);
+    NodeWrapper(e)
+}
+
 impl<M: MerkleTree> Serialize for StarkProof<M> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -283,7 +294,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .iter()
                         .map(|e| {
                             e.iter()
-                                .map(|ee| ee.clone().into())
+                                .map(|ee| to_::<M>(ee))
                                 .collect::<Vec<NodeWrapper<M::MTNode>>>()
                         })
                         .collect::<Vec<Vec<NodeWrapper<M::MTNode>>>>(),
@@ -314,7 +325,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                     .iter()
                     .map(|e| {
                         e.iter()
-                            .map(|ee| ee.clone().into())
+                            .map(|ee| to_::<M>(ee))
                             .collect::<Vec<NodeWrapper<M::MTNode>>>()
                     })
                     .collect::<Vec<Vec<NodeWrapper<M::MTNode>>>>(),
@@ -328,7 +339,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .iter()
                         .map(|e| {
                             e.iter()
-                                .map(|ee| ee.clone().into())
+                                .map(|ee| to_::<M>(ee))
                                 .collect::<Vec<NodeWrapper<M::MTNode>>>()
                         })
                         .collect::<Vec<Vec<NodeWrapper<M::MTNode>>>>(),
@@ -343,7 +354,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .iter()
                         .map(|e| {
                             e.iter()
-                                .map(|ee| ee.clone().into())
+                                .map(|ee| to_::<M>(ee))
                                 .collect::<Vec<NodeWrapper<M::MTNode>>>()
                         })
                         .collect::<Vec<Vec<NodeWrapper<M::MTNode>>>>(),
@@ -359,7 +370,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .iter()
                         .map(|e| {
                             e.iter()
-                                .map(|ee| ee.clone().into())
+                                .map(|ee| to_::<M>(ee))
                                 .collect::<Vec<NodeWrapper<M::MTNode>>>()
                         })
                         .collect::<Vec<Vec<NodeWrapper<M::MTNode>>>>(),
@@ -374,7 +385,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .iter()
                         .map(|e| {
                             e.iter()
-                                .map(|ee| ee.clone().into())
+                                .map(|ee| to_::<M>(ee))
                                 .collect::<Vec<NodeWrapper<M::MTNode>>>()
                         })
                         .collect::<Vec<Vec<NodeWrapper<M::MTNode>>>>(),
@@ -411,14 +422,168 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
     }
 }
 
-/*
-impl<'de, M: MerkleTree> Deserialize<'de> for StarkProof<M> {
+impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de> {
+    where
+        D: Deserializer<'de>,
+    {
+        struct EntriesVisitor<MT: MerkleTree>(PhantomData<MT>);
 
+        impl<'de, MT: MerkleTree + Default> Visitor<'de> for EntriesVisitor<MT> {
+            type Value = StarkProof<MT>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct StarkProof")
+            }
+
+            fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut map: HashMap<String, serde_json::Value> =
+                    HashMap::with_capacity(access.size_hint().unwrap_or(0));
+                while let Some((key, value)) = access.next_entry()? {
+                    map.insert(key, value);
+                }
+                let mut sp: StarkProof<MT> = Default::default();
+                let root: NodeWrapper<MT::MTNode> =
+                    serde_json::from_value(map.get(&"root1".to_string()).unwrap().clone()).unwrap();
+                sp.root1 = root.0;
+
+                let root: NodeWrapper<MT::MTNode> =
+                    serde_json::from_value(map.get(&"root2".to_string()).unwrap().clone()).unwrap();
+                sp.root2 = root.0;
+
+                let root: NodeWrapper<MT::MTNode> =
+                    serde_json::from_value(map.get(&"root3".to_string()).unwrap().clone()).unwrap();
+                sp.root3 = root.0;
+
+                let root: NodeWrapper<MT::MTNode> =
+                    serde_json::from_value(map.get(&"root4".to_string()).unwrap().clone()).unwrap();
+                sp.root4 = root.0;
+
+                let root = map.get(&"rootC".to_string());
+                if root.is_some() {
+                    let root: NodeWrapper<MT::MTNode> =
+                        serde_json::from_value(root.unwrap().clone()).unwrap();
+                    sp.rootC = Some(root.0);
+                }
+
+                let prover_addr = map.get(&"proverAddr".to_string());
+                if prover_addr.is_some() {
+                    sp.prover_addr = serde_json::from_value(prover_addr.unwrap().clone()).unwrap();
+                }
+                sp.evals =
+                    serde_json::from_value(map.get(&"evals".to_string()).unwrap().clone()).unwrap();
+
+                sp.publics =
+                    serde_json::from_value(map.get(&"publics".to_string()).unwrap().clone())
+                        .unwrap();
+
+                let mut fri_proof: FRIProof<MT::ExtendField, MT> = FRIProof::default();
+
+                // search all s{i}_root keys, to avoid regex matching, we assume the max query is
+                // less than 32
+                let num_query: usize = (1..32)
+                    .into_iter()
+                    .map(|i| {
+                        let key = map.get(&format!("s{}_root", i));
+                        if key.is_some() {
+                            1
+                        } else {
+                            0
+                        }
+                    })
+                    .sum();
+
+                fri_proof.queries = vec![Query::default(); num_query + 1];
+                // handle query 1 to num_query
+                for i in 1..=num_query {
+                    let key = map.get(&format!("s{}_root", i));
+                    let root: NodeWrapper<MT::MTNode> =
+                        serde_json::from_value(key.unwrap().clone()).unwrap();
+                    fri_proof.queries[i].root = root.0;
+
+                    // handle query 0
+                    let num_pol_query0: usize = (0..32)
+                        .into_iter()
+                        .map(|i| {
+                            let key = map.get(&format!("s{}_vals", i));
+                            if key.is_some() {
+                                1
+                            } else {
+                                0
+                            }
+                        })
+                        .sum();
+
+                    let key = map.get(&format!("s{}_vals", i));
+                    let val: Vec<Vec<F3G>> = serde_json::from_value(key.unwrap().clone()).unwrap();
+                    let vals: Vec<Vec<FGL>> = val
+                        .iter()
+                        .map(|e| {
+                            let iv: Vec<FGL> = e
+                                .iter()
+                                .map(|e2| {
+                                    let ea = e2.as_elements();
+                                    ea[0]
+                                })
+                                .collect();
+                            iv
+                        })
+                        .collect();
+
+                    let key = map.get(&format!("s{}_siblings", i));
+                    let sibs: Vec<Vec<Vec<NodeWrapper<MT::MTNode>>>> =
+                        serde_json::from_value(key.unwrap().clone()).unwrap();
+                    let sibs: Vec<Vec<Vec<<MT::MTNode as MTNodeType>::FieldType>>> = sibs
+                        .iter()
+                        .map(|e| {
+                            e.iter()
+                                .map(|e2| {
+                                    e2.iter()
+                                        .map(|e3| {
+                                            // MTNodeType::FieldType -> NodeWrapper: ok
+                                            // NodeWrapper -> MTNodeType::FieldType
+                                            let repr = e3
+                                                .0
+                                                .as_scalar::<<MT::MTNode as MTNodeType>::FieldType>(
+                                                );
+                                            <<MT::MTNode as MTNodeType>::FieldType>::from_repr(repr)
+                                                .unwrap()
+                                        })
+                                        .collect()
+                                })
+                                .collect()
+                        })
+                        .collect();
+
+                    let pol_query0 = vals.iter().cloned().zip(sibs.iter().cloned()).collect();
+                    fri_proof.queries[i].pol_queries.push(pol_query0);
+                }
+
+                sp.fri_proof = fri_proof;
+
+                /* make StarkProof
+                let mut sp = StarkProof {
+                    --root1: MT::MTNode,
+                    --root2: MT::MTNode,
+                    --root3: MT::MTNode,
+                    --root4: MT::MTNode,
+                    fri_proof: FRIProof<MT::ExtendField, M>,
+                    --evals: Vec<MT::ExtendField>,
+                    --publics: Vec<MT::ExtendField>,
+                    --rootC: Option<MT::MTNode>,
+                    XXX stark_struct: StarkStruct,
+                    --prover_addr: String,
+                };
+                */
+                Ok(sp)
+            }
+        }
+        deserializer.deserialize_any(EntriesVisitor::<T>(Default::default()))
     }
 }
-*/
 
 #[cfg(test)]
 mod tests {
@@ -427,11 +592,22 @@ mod tests {
     use crate::f5g::F5G;
     use crate::field_bls12381::Fr as Fr_BLS12381;
     use crate::field_bn128::Fr;
+    use crate::merklehash_bn128::MerkleTreeBN128;
+    use crate::polsarray::PolKind;
+    use crate::polsarray::PolsArray;
     use crate::serializer::NodeWrapper;
+    use crate::serializer::StarkProof;
+    use crate::stark_setup::StarkSetup;
     use crate::traits::FieldExtension;
     use crate::traits::MTNodeType;
+    use crate::transcript_bn128::TranscriptBN128;
+    use crate::types::load_json;
+    use crate::types::StarkStruct;
+    use crate::types::PIL;
     use fields::field_gl::Fr as FGL;
     use rand::Rand;
+    use std::fs::File;
+    use std::io::Write;
 
     #[test]
     fn test_serialize_f3g() {
@@ -519,5 +695,40 @@ mod tests {
     }
 
     #[test]
-    fn test_stark_proof_ser_der() {}
+    fn test_serialize_stark_proof_ser_der() {
+        let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
+        const_pol.load("data/fib.const").unwrap();
+        let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
+        cm_pol.load("data/fib.cm").unwrap();
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
+
+        let mut setup =
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+        let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
+        log::trace!("setup {}", fr_root);
+
+        let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
+            cm_pol,
+            const_pol,
+            &setup.const_tree,
+            &setup.starkinfo,
+            &setup.program,
+            &pil,
+            &stark_struct,
+            "273030697313060285579891744179749754319274977764",
+        )
+        .unwrap();
+
+        // serde to json
+        let serialized = serde_json::to_string(&starkproof).unwrap();
+        let mut file = File::create("/tmp/test_stark_proof_serialize.json").unwrap();
+        write!(file, "{}", serialized).unwrap();
+        // deserialized
+        let deserialized: StarkProof<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
+        log::debug!("stark proof der: {:?}", deserialized);
+
+        // assert
+        // assert_eq!(deserialized, starkproof);
+    }
 }

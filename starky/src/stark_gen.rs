@@ -173,6 +173,7 @@ impl<F: FieldExtension> StarkContext<F> {
     }
 }
 
+#[derive(Default, Debug)]
 pub struct StarkProof<M: MerkleTree> {
     pub root1: M::MTNode,
     pub root2: M::MTNode,
@@ -542,15 +543,16 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             ]);
         });
 
-        let query_pol = |idx: usize| -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)> {
-            vec![
-                tree1.get_group_proof(idx).unwrap(),
-                tree2.get_group_proof(idx).unwrap(),
-                tree3.get_group_proof(idx).unwrap(),
-                tree4.get_group_proof(idx).unwrap(),
-                const_tree.get_group_proof(idx).unwrap(),
-            ]
-        };
+        let query_pol =
+            |idx: usize| -> Vec<(Vec<FGL>, Vec<Vec<<M::MTNode as MTNodeType>::FieldType>>)> {
+                vec![
+                    tree1.get_group_proof(idx).unwrap(),
+                    tree2.get_group_proof(idx).unwrap(),
+                    tree3.get_group_proof(idx).unwrap(),
+                    tree4.get_group_proof(idx).unwrap(),
+                    const_tree.get_group_proof(idx).unwrap(),
+                ]
+            };
         let mut fri = FRI::new(stark_struct);
         let friProof = fri.prove::<M::ExtendField, M, T>(&mut transcript, &fri_pol, query_pol)?;
 

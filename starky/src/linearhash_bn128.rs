@@ -9,7 +9,7 @@ use ff::*;
 use crate::constant::{OFFSET_2_128, OFFSET_2_64};
 use fields::field_gl::Fr as FGL;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct LinearHashBN128 {
     h: Poseidon,
 }

@@ -826,7 +826,7 @@ template MapValues() {{
 }
 
 #[time_profiler()]
-fn stark_verifier<F: ff::PrimeField>(
+fn stark_verifier<F: ff::PrimeField + Default>(
     starkinfo: &StarkInfo,
     pil: &PIL,
     stark_struct: &StarkStruct,
@@ -1864,7 +1864,7 @@ component main {} = Main();
     res
 }
 
-pub fn render<F: ff::PrimeField>(
+pub fn render<F: ff::PrimeField + Default>(
     starkinfo: &StarkInfo,
     prorgam: &Program,
     pil: &PIL,

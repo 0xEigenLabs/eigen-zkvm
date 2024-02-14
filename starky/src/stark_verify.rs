@@ -92,7 +92,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     }
 
     let fri = FRI::new(stark_struct);
-    let check_query = |query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
+    let check_query = |query: &Vec<(Vec<FGL>, Vec<Vec<<M::MTNode as MTNodeType>::FieldType>>)>,
                        idx: usize|
      -> Result<Vec<M::ExtendField>> {
         log::trace!("Query: {}", idx);

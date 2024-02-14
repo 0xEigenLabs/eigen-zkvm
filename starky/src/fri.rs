@@ -18,21 +18,21 @@ pub struct FRI {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct Query<MB: Clone + std::default::Default, MN: MTNodeType> {
-    pub pol_queries: Vec<Vec<(Vec<FGL>, Vec<Vec<MB>>)>>,
+pub struct Query<F: Clone, MN: MTNodeType> {
+    pub pol_queries: Vec<Vec<(Vec<FGL>, Vec<Vec<F>>)>>,
     pub root: MN,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct FRIProof<F: FieldExtension, M: MerkleTree<ExtendField = F>> {
-    pub queries: Vec<Query<M::BaseField, M::MTNode>>,
+    pub queries: Vec<Query<<M::MTNode as MTNodeType>::FieldType, M::MTNode>>,
     pub last: Vec<F>,
 }
 
 impl<F: FieldExtension, M: MerkleTree<ExtendField = F>> FRIProof<F, M> {
     pub fn new(qs: usize) -> Self {
         FRIProof {
-            queries: vec![Query::<M::BaseField, M::MTNode>::default(); qs],
+            queries: vec![Query::<<M::MTNode as MTNodeType>::FieldType, M::MTNode>::default(); qs],
             last: Vec::new(),
         }
     }
@@ -53,7 +53,10 @@ impl FRI {
         &mut self,
         transcript: &mut T,
         pol: &[M::ExtendField],
-        mut query_pol: impl FnMut(usize) -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
+        mut query_pol: impl FnMut(
+            usize,
+        )
+            -> Vec<(Vec<FGL>, Vec<Vec<<M::MTNode as MTNodeType>::FieldType>>)>,
     ) -> Result<FRIProof<F, M>> {
         let mut pol = pol.to_owned();
         let mut standard_fft = FFT::new();
@@ -126,7 +129,7 @@ impl FRI {
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
         /*
         let query_pol_fn =
-            |si: usize, idx: usize| -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)> {
+            |si: usize, idx: usize| -> Vec<(Vec<FGL>, Vec<Vec<<M::MTNode as MTNodeType>::FieldType>>)> {
                 log::trace!("query_pol_fn: si:{}, idx:{}", si, idx);
                 vec![tree[si].get_group_proof(idx).unwrap()]
             };
@@ -156,7 +159,10 @@ impl FRI {
         &self,
         transcript: &mut T,
         proof: &FRIProof<F, M>,
-        mut check_query: impl FnMut(&Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>, usize) -> Result<Vec<F>>,
+        mut check_query: impl FnMut(
+            &Vec<(Vec<FGL>, Vec<Vec<<M::MTNode as MTNodeType>::FieldType>>)>,
+            usize,
+        ) -> Result<Vec<F>>,
     ) -> Result<bool> {
         let tree = M::new();
         let mut standard_fft = FFT::new();
@@ -186,7 +192,10 @@ impl FRI {
         let mut shift = F::from(*SHIFT);
 
         let check_query_fn = |si: usize,
-                              query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
+                              query: &Vec<(
+            Vec<FGL>,
+            Vec<Vec<<M::MTNode as MTNodeType>::FieldType>>,
+        )>,
                               idx: usize|
          -> Result<Vec<F>> {
             let res =

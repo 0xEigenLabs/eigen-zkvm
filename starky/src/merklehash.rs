@@ -34,7 +34,7 @@ use rayon::prelude::*;
 use std::io::{Read, Write};
 use std::time::Instant;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct MerkleTreeGL {
     pub elements: Vec<FGL>,
     pub width: usize,
@@ -251,7 +251,7 @@ impl MerkleTreeGL {
 }
 
 impl MerkleTree for MerkleTreeGL {
-    type BaseField = FGL;
+    //type BaseField = FGL;
     type MTNode = ElementDigest<4, FGL>;
     type ExtendField = F3G;
     fn new() -> Self {

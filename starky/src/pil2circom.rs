@@ -13,7 +13,7 @@ pub struct StarkOption {
 }
 
 #[time_profiler()]
-pub fn pil2circom<F: ff::PrimeField>(
+pub fn pil2circom<F: ff::PrimeField + Default>(
     pil: &PIL,
     const_root: &ElementDigest<4, F>,
     stark_struct: &StarkStruct,

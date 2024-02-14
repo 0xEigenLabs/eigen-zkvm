@@ -14,7 +14,7 @@ use fields::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use std::io::{Read, Write};
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct MerkleTreeBN128 {
     pub elements: Vec<FGL>,
     pub width: usize,
@@ -145,7 +145,7 @@ impl MerkleTreeBN128 {
 }
 
 impl MerkleTree for MerkleTreeBN128 {
-    type BaseField = Fr;
+    //type BaseField = Fr;
     type MTNode = ElementDigest<4, Fr>;
     type ExtendField = F3G;
 

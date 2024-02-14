@@ -69,6 +69,7 @@ pub fn load_constants() -> Constants {
     }
 }
 
+#[derive(Debug)]
 pub struct Poseidon;
 
 impl Default for Poseidon {

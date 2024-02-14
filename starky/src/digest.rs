@@ -14,9 +14,9 @@ use std::marker::PhantomData;
 /// the trait F is used to keep track of source data type, so we can implement its deserializer
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct ElementDigest<const N: usize, F: PrimeField>(pub [FGL; N], PhantomData<F>);
+pub struct ElementDigest<const N: usize, F: PrimeField + Default>(pub [FGL; N], PhantomData<F>);
 
-impl<const N: usize, F: PrimeField> MTNodeType for ElementDigest<N, F> {
+impl<const N: usize, F: PrimeField + Default> MTNodeType for ElementDigest<N, F> {
     type FieldType = F;
     #[inline(always)]
     fn new(value: &[FGL]) -> Self {
@@ -69,7 +69,7 @@ impl<const N: usize, F: PrimeField> MTNodeType for ElementDigest<N, F> {
     }
 }
 
-impl<const N: usize, F: PrimeField> Display for ElementDigest<N, F> {
+impl<const N: usize, F: PrimeField + Default> Display for ElementDigest<N, F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for i in 0..N {
             writeln!(f, "{}", self.0[i].as_int())?;
@@ -78,7 +78,7 @@ impl<const N: usize, F: PrimeField> Display for ElementDigest<N, F> {
     }
 }
 
-impl<const N: usize, F: PrimeField> Default for ElementDigest<N, F> {
+impl<const N: usize, F: PrimeField + Default> Default for ElementDigest<N, F> {
     #[inline(always)]
     fn default() -> Self {
         ElementDigest::<N, F>([FGL::ZERO; N], Default::default())
