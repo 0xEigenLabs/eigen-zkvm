@@ -39,7 +39,7 @@ pub struct MerkleTreeGL {
     pub elements: Vec<FGL>,
     pub width: usize,
     pub height: usize,
-    pub nodes: Vec<ElementDigest<4>>,
+    pub nodes: Vec<ElementDigest<4, FGL>>,
     h: LinearHash,
     poseidon: Poseidon,
 }
@@ -88,8 +88,8 @@ impl MerkleTreeGL {
             .enumerate()
             .map(|(i, bb)| self.do_merklize_level(bb, i, n_ops).unwrap())
             .reduce(
-                Vec::<ElementDigest<4>>::new,
-                |mut a: Vec<ElementDigest<4>>, mut b: Vec<ElementDigest<4>>| {
+                Vec::<ElementDigest<4, FGL>>::new,
+                |mut a: Vec<ElementDigest<4, FGL>>, mut b: Vec<ElementDigest<4, FGL>>| {
                     a.append(&mut b);
                     a
                 },
@@ -111,10 +111,10 @@ impl MerkleTreeGL {
     )))]
     fn do_merklize_level(
         &self,
-        buff_in: &[ElementDigest<4>],
+        buff_in: &[ElementDigest<4, FGL>],
         _st_i: usize,
         _st_n: usize,
-    ) -> Result<Vec<ElementDigest<4>>> {
+    ) -> Result<Vec<ElementDigest<4, FGL>>> {
         log::trace!(
             "merklizing GL hash start.... {}/{}, buff size {}",
             _st_i,
@@ -122,7 +122,8 @@ impl MerkleTreeGL {
             buff_in.len()
         );
         let n_ops = buff_in.len() / 2;
-        let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
+        let mut buff_out64: Vec<ElementDigest<4, FGL>> =
+            vec![ElementDigest::<4, FGL>::default(); n_ops];
         buff_out64.iter_mut().zip(0..n_ops).for_each(|(out, i)| {
             let mut two = [FGL::ZERO; 8];
             let one: &[FGL] = buff_in[i * 2].as_elements();
@@ -143,10 +144,10 @@ impl MerkleTreeGL {
     ))]
     fn do_merklize_level(
         &self,
-        buff_in: &[ElementDigest<4>],
+        buff_in: &[ElementDigest<4, FGL>],
         _st_i: usize,
         _st_n: usize,
-    ) -> Result<Vec<ElementDigest<4>>> {
+    ) -> Result<Vec<ElementDigest<4, FGL>>> {
         log::trace!(
             "merklizing GL hash start.... {}/{}, buff size {}",
             _st_i,
@@ -154,9 +155,9 @@ impl MerkleTreeGL {
             buff_in.len()
         );
         let n_ops = buff_in.len() / 4;
-        let mut buff_out64: Vec<ElementDigest<4>> =
-            vec![ElementDigest::<4>::default(); buff_in.len() / 2];
-        let process = |chunk: &[ElementDigest<4>], four: &mut [FGL; 16]| {
+        let mut buff_out64: Vec<ElementDigest<4, FGL>> =
+            vec![ElementDigest::<4, FGL>::default(); buff_in.len() / 2];
+        let process = |chunk: &[ElementDigest<4, FGL>], four: &mut [FGL; 16]| {
             for (j, item) in chunk.iter().enumerate() {
                 let one: &[FGL] = item.as_elements();
                 four[j * 4..(j + 1) * 4].copy_from_slice(one);
@@ -186,9 +187,9 @@ impl MerkleTreeGL {
         &self,
         mp: &[Vec<FGL>],
         idx: usize,
-        value: &ElementDigest<4>,
+        value: &ElementDigest<4, FGL>,
         offset: usize,
-    ) -> Result<ElementDigest<4>> {
+    ) -> Result<ElementDigest<4, FGL>> {
         if mp.len() == offset {
             return Ok(*value);
         }
@@ -207,7 +208,7 @@ impl MerkleTreeGL {
             inhash[4..8].copy_from_slice(one);
         }
         let next = self.poseidon.hash(&inhash, &init, 4)?;
-        let next_value = ElementDigest::<4>::new(&next);
+        let next_value = ElementDigest::<4, FGL>::new(&next);
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
@@ -223,7 +224,7 @@ impl MerkleTreeGL {
         mp: &[Vec<FGL>],
         idx: usize,
         vals: &[FGL],
-    ) -> Result<ElementDigest<4>> {
+    ) -> Result<ElementDigest<4, FGL>> {
         let h = self.h.hash(vals, 0)?;
         self.merkle_calculate_root_from_proof(mp, idx, &h, 0)
     }
@@ -240,7 +241,7 @@ impl MerkleTreeGL {
         mp: &[Vec<FGL>],
         idx: usize,
         vals: &[FGL],
-    ) -> Result<ElementDigest<4>> {
+    ) -> Result<ElementDigest<4, FGL>> {
         let mut vals_0: Vec<FGL> = Vec::with_capacity(vals.len() * 2);
         vals_0.extend_from_slice(vals);
         vals_0.extend_from_slice(vals);
@@ -251,7 +252,7 @@ impl MerkleTreeGL {
 
 impl MerkleTree for MerkleTreeGL {
     type BaseField = FGL;
-    type MTNode = ElementDigest<4>;
+    type MTNode = ElementDigest<4, FGL>;
     type ExtendField = F3G;
     fn new() -> Self {
         Self {
@@ -292,9 +293,10 @@ impl MerkleTree for MerkleTreeGL {
         }
 
         let ns = reader.read_u64::<LittleEndian>()? as usize;
-        mt.nodes = vec![ElementDigest::<4>::new(&[FGL::ZERO, FGL::ZERO, FGL::ZERO, FGL::ZERO]); ns];
+        mt.nodes =
+            vec![ElementDigest::<4, FGL>::new(&[FGL::ZERO, FGL::ZERO, FGL::ZERO, FGL::ZERO]); ns];
         for i in 0..ns {
-            mt.nodes[i] = ElementDigest::<4>::load(reader)?;
+            mt.nodes[i] = ElementDigest::<4, FGL>::load(reader)?;
         }
 
         Ok(mt)

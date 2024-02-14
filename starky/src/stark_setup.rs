@@ -167,7 +167,7 @@ pub mod tests {
         let setup =
             StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
 
-        let expect_root = ElementDigest::<4>::new(&[
+        let expect_root = ElementDigest::<4, FGL>::new(&[
             FGL::from(15302509084042343527u64),
             FGL::from(985081440042889555u64),
             FGL::from(14692153289195851822u64),

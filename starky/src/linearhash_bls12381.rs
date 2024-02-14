@@ -69,7 +69,7 @@ impl LinearHashBLS12381 {
     /// convert to BLS12381 in montgomery
     #[inline(always)]
     pub fn to_bls12381_mont(st64: [FGL; 4]) -> [FGL; 4] {
-        let bn: Fr = Fr(ElementDigest::<4>::new(&st64).as_scalar::<Fr>());
+        let bn: Fr = Fr(ElementDigest::<4, Fr>::new(&st64).as_scalar::<Fr>());
         let bn_mont = match Fr::from_repr(bn.into_raw_repr()) {
             Ok(x) => x,
             _ => {
@@ -85,7 +85,7 @@ impl LinearHashBLS12381 {
                 r
             }
         };
-        ElementDigest::<4>::from_scalar(&bn_mont)
+        ElementDigest::<4, Fr>::from_scalar(&bn_mont)
             .as_elements()
             .try_into()
             .unwrap()
@@ -94,19 +94,19 @@ impl LinearHashBLS12381 {
     #[inline(always)]
     pub fn hash_node(
         &self,
-        elems: &[ElementDigest<4>],
+        elems: &[ElementDigest<4, Fr>],
         init_state: &Fr,
-    ) -> Result<ElementDigest<4>> {
+    ) -> Result<ElementDigest<4, Fr>> {
         assert_eq!(elems.len(), 16);
         let elems = elems
             .iter()
             .map(|e| Fr((*e).as_scalar::<Fr>()))
             .collect::<Vec<Fr>>();
         let digest = self.h.hash(&elems, init_state)?;
-        Ok(ElementDigest::<4>::from_scalar(&digest))
+        Ok(ElementDigest::<4, Fr>::from_scalar(&digest))
     }
 
-    pub fn hash_element_array(&self, vals: &[FGL]) -> Result<ElementDigest<4>> {
+    pub fn hash_element_array(&self, vals: &[FGL]) -> Result<ElementDigest<4, Fr>> {
         let mut st64 = [FGL::ZERO; 4];
         let mut digest: Fr = Fr::zero();
         if vals.len() <= 4 {
@@ -114,7 +114,7 @@ impl LinearHashBLS12381 {
                 st64[i] = *v;
             }
             let gl_mont = Self::to_bls12381_mont(st64);
-            return Ok(ElementDigest::<4>::new(&gl_mont));
+            return Ok(ElementDigest::<4, Fr>::new(&gl_mont));
         }
 
         // group into 3 * 4
@@ -134,7 +134,7 @@ impl LinearHashBLS12381 {
             digest = self.h.hash(&tmp_buf[i..(i + in_sz)], &digest)?;
         }
 
-        Ok(ElementDigest::<4>::from_scalar(&digest))
+        Ok(ElementDigest::<4, Fr>::from_scalar(&digest))
     }
 }
 

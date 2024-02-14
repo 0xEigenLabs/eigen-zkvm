@@ -19,7 +19,7 @@ pub struct MerkleTreeBN128 {
     pub elements: Vec<FGL>,
     pub width: usize,
     pub height: usize,
-    pub nodes: Vec<ElementDigest<4>>,
+    pub nodes: Vec<ElementDigest<4, Fr>>,
     h: LinearHashBN128,
     poseidon: Poseidon,
 }
@@ -54,8 +54,8 @@ impl MerkleTreeBN128 {
             .enumerate()
             .map(|(i, bb)| self.do_merklize_level(bb, i, n_ops).unwrap())
             .reduce(
-                Vec::<ElementDigest<4>>::new,
-                |mut a: Vec<ElementDigest<4>>, mut b: Vec<ElementDigest<4>>| {
+                Vec::<ElementDigest<4, Fr>>::new,
+                |mut a: Vec<ElementDigest<4, Fr>>, mut b: Vec<ElementDigest<4, Fr>>| {
                     a.append(&mut b);
                     a
                 },
@@ -70,10 +70,10 @@ impl MerkleTreeBN128 {
 
     fn do_merklize_level(
         &self,
-        buff_in: &[ElementDigest<4>],
+        buff_in: &[ElementDigest<4, Fr>],
         _st_i: usize,
         _st_n: usize,
-    ) -> Result<Vec<ElementDigest<4>>> {
+    ) -> Result<Vec<ElementDigest<4, Fr>>> {
         log::trace!(
             "merklizing bn128 hash start.... {}/{}, buff size {}",
             _st_i,
@@ -81,7 +81,8 @@ impl MerkleTreeBN128 {
             buff_in.len()
         );
         let n_ops = buff_in.len() / 16;
-        let mut buff_out64: Vec<ElementDigest<4>> = vec![ElementDigest::<4>::default(); n_ops];
+        let mut buff_out64: Vec<ElementDigest<4, Fr>> =
+            vec![ElementDigest::<4, Fr>::default(); n_ops];
         buff_out64.iter_mut().zip(0..n_ops).for_each(|(out, i)| {
             *out = self
                 .h
@@ -114,9 +115,9 @@ impl MerkleTreeBN128 {
         &self,
         mp: &[Vec<Fr>],
         idx: usize,
-        value: &ElementDigest<4>,
+        value: &ElementDigest<4, Fr>,
         offset: usize,
-    ) -> Result<ElementDigest<4>> {
+    ) -> Result<ElementDigest<4, Fr>> {
         if mp.len() == offset {
             return Ok(*value);
         }
@@ -128,7 +129,7 @@ impl MerkleTreeBN128 {
         }
         let init = Fr::zero();
         let next_value = self.poseidon.hash(&vals, &init)?;
-        let next_value = ElementDigest::<4>::from_scalar(&next_value);
+        let next_value = ElementDigest::<4, Fr>::from_scalar(&next_value);
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
@@ -137,15 +138,15 @@ impl MerkleTreeBN128 {
         mp: &[Vec<Fr>],
         idx: usize,
         vals: &[FGL],
-    ) -> Result<ElementDigest<4>> {
+    ) -> Result<ElementDigest<4, Fr>> {
         let h = self.h.hash_element_matrix(&[vals.to_vec()])?;
-        self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::<4>::from_scalar(&h), 0)
+        self.merkle_calculate_root_from_proof(mp, idx, &ElementDigest::<4, Fr>::from_scalar(&h), 0)
     }
 }
 
 impl MerkleTree for MerkleTreeBN128 {
     type BaseField = Fr;
-    type MTNode = ElementDigest<4>;
+    type MTNode = ElementDigest<4, Fr>;
     type ExtendField = F3G;
 
     fn new() -> Self {
@@ -186,9 +187,10 @@ impl MerkleTree for MerkleTreeBN128 {
         }
 
         let ns = reader.read_u64::<LittleEndian>()? as usize;
-        mt.nodes = vec![ElementDigest::<4>::new(&[FGL::ZERO, FGL::ZERO, FGL::ZERO, FGL::ZERO]); ns];
+        mt.nodes =
+            vec![ElementDigest::<4, Fr>::new(&[FGL::ZERO, FGL::ZERO, FGL::ZERO, FGL::ZERO]); ns];
         for i in 0..ns {
-            mt.nodes[i] = ElementDigest::<4>::load(reader)?;
+            mt.nodes[i] = ElementDigest::<4, Fr>::load(reader)?;
         }
 
         Ok(mt)
@@ -222,7 +224,7 @@ impl MerkleTree for MerkleTreeBN128 {
             n_per_thread_f = MAX_OPS_PER_THREAD;
         }
         // calculate the nodes of the specific height Merkle tree
-        let mut nodes = vec![ElementDigest::<4>::default(); get_n_nodes(height)];
+        let mut nodes = vec![ElementDigest::<4, Fr>::default(); get_n_nodes(height)];
         if !buff.is_empty() {
             nodes
                 .par_chunks_mut(n_per_thread_f)

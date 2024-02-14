@@ -9,18 +9,21 @@ use ff::*;
 use fields::field_gl::Fr as FGL;
 use std::fmt::Display;
 use std::io::{Read, Write};
+use std::marker::PhantomData;
 
+/// the trait F is used to keep track of source data type, so we can implement its deserializer
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct ElementDigest<const N: usize>(pub [FGL; N]);
+pub struct ElementDigest<const N: usize, F: PrimeField>(pub [FGL; N], PhantomData<F>);
 
-impl<const N: usize> MTNodeType for ElementDigest<N> {
+impl<const N: usize, F: PrimeField> MTNodeType for ElementDigest<N, F> {
+    type FieldType = F;
     #[inline(always)]
     fn new(value: &[FGL]) -> Self {
         assert!(value.len() >= N);
         let mut fv = [FGL::ZERO; N];
         fv[..N].copy_from_slice(&value[..N]);
-        Self(fv)
+        Self(fv, Default::default())
     }
 
     #[inline(always)]
@@ -66,7 +69,7 @@ impl<const N: usize> MTNodeType for ElementDigest<N> {
     }
 }
 
-impl<const N: usize> Display for ElementDigest<N> {
+impl<const N: usize, F: PrimeField> Display for ElementDigest<N, F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for i in 0..N {
             writeln!(f, "{}", self.0[i].as_int())?;
@@ -75,10 +78,10 @@ impl<const N: usize> Display for ElementDigest<N> {
     }
 }
 
-impl<const N: usize> Default for ElementDigest<N> {
+impl<const N: usize, F: PrimeField> Default for ElementDigest<N, F> {
     #[inline(always)]
     fn default() -> Self {
-        ElementDigest::<N>([FGL::ZERO; N])
+        ElementDigest::<N, F>([FGL::ZERO; N], Default::default())
     }
 }
 
@@ -140,7 +143,7 @@ mod tests {
         let b4 = ElementDigest::new(&b4);
         let f1: Fr = Fr(b4.as_scalar::<Fr>());
 
-        let b4_: ElementDigest<4> = ElementDigest::from_scalar(&f1);
+        let b4_: ElementDigest<4, Fr> = ElementDigest::from_scalar(&f1);
         assert_eq!(b4, b4_);
 
         let f: Fr = Fr::from_str(
@@ -148,7 +151,7 @@ mod tests {
         )
         .unwrap();
 
-        let e = ElementDigest::<4>::from_scalar(&f);
+        let e = ElementDigest::<4, Fr>::from_scalar(&f);
         let f2: Fr = Fr(e.as_scalar::<Fr>());
         assert_eq!(f, f2);
     }

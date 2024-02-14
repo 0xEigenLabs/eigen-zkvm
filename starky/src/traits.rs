@@ -14,6 +14,7 @@ pub trait MTNodeType
 where
     Self: Sized,
 {
+    type FieldType: PrimeField;
     fn as_elements(&self) -> &[FGL];
     fn new(value: &[FGL]) -> Self;
     fn from_scalar<T: PrimeField>(e: &T) -> Self;

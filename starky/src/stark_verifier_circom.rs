@@ -810,11 +810,11 @@ template MapValues() {{
 }
 
 #[time_profiler()]
-fn stark_verifier(
+fn stark_verifier<F: ff::PrimeField>(
     starkinfo: &StarkInfo,
     pil: &PIL,
     stark_struct: &StarkStruct,
-    const_root: &ElementDigest<4>,
+    const_root: &ElementDigest<4, F>,
     options: &StarkOption,
 ) -> String {
     let mut res = format!(
@@ -1805,12 +1805,12 @@ component main {public [publics]}= StarkVerifier();
     res
 }
 
-pub fn render(
+pub fn render<F: ff::PrimeField>(
     starkinfo: &StarkInfo,
     prorgam: &Program,
     pil: &PIL,
     stark_struct: &StarkStruct,
-    const_root: &ElementDigest<4>,
+    const_root: &ElementDigest<4, F>,
     options: &StarkOption,
 ) -> String {
     let mut res = header();
