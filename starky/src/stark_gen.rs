@@ -183,7 +183,7 @@ pub struct StarkProof<M: MerkleTree> {
     pub evals: Vec<M::ExtendField>,
     pub publics: Vec<M::ExtendField>,
     pub rootC: Option<M::MTNode>,
-    pub stark_struct: StarkStruct,
+    //pub stark_struct: StarkStruct,
     pub prover_addr: String,
 }
 
@@ -565,7 +565,6 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             fri_proof: friProof,
             evals: ctx.evals.clone(),
             publics: ctx.publics.clone(),
-            stark_struct: stark_struct.clone(),
             prover_addr: prover_addr.to_string(),
         })
     }

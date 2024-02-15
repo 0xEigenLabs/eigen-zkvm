@@ -424,8 +424,9 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         map.serialize_entry("finalPol", &self.fri_proof.last)?;
         map.serialize_entry("publics", &self.publics)?;
 
-        let hashtype = &self.stark_struct.verificationHashType;
-        if hashtype.as_str() == "BN128" || hashtype.as_str() == "BLS12381" {
+        let source = TypeId::of::<<M::MTNode as MTNodeType>::FieldType>();
+        if source != TypeId::of::<FGL>() {
+            //hashtype.as_str() == "BN128" || hashtype.as_str() == "BLS12381"
             map.serialize_entry("proverAddr", &self.prover_addr)?;
         }
         map.end()
@@ -762,11 +763,24 @@ mod tests {
         let mut file = File::create("/tmp/test_stark_proof_serialize.json").unwrap();
         write!(file, "{}", serialized).unwrap();
         // deserialized
-        let deserialized: StarkProof<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
-        log::debug!("stark proof der: {:?}", deserialized);
+        let expected: StarkProof<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
+        //log::debug!("stark proof der: {:?}", expected);
 
-        // TODO: assert
-        assert_eq!(deserialized, starkproof);
+        let mut file = File::create("/tmp/test_stark_proof_serialize.expected.json").unwrap();
+        let serialized2 = serde_json::to_string(&expected).unwrap();
+        write!(file, "{}", serialized2).unwrap();
+
+        // assert
+        assert_eq!(expected.root1, starkproof.root1);
+        assert_eq!(expected.root2, starkproof.root2);
+        assert_eq!(expected.root3, starkproof.root3);
+        assert_eq!(expected.root4, starkproof.root4);
+        assert_eq!(expected.rootC, starkproof.rootC);
+        assert_eq!(expected.publics, starkproof.publics);
+        assert_eq!(expected.evals, starkproof.evals);
+        assert_eq!(expected.fri_proof, starkproof.fri_proof);
+        assert_eq!(expected, starkproof);
+
         // TODO: test GL and BLS12381
     }
 }
