@@ -17,22 +17,52 @@ pub struct FRI {
     pub steps: Vec<Step>,
 }
 
-#[derive(Debug, Default, Clone, PartialEq)]
-pub struct Query<F: Clone, MN: MTNodeType> {
-    pub pol_queries: Vec<Vec<(Vec<FGL>, Vec<Vec<F>>)>>,
+#[derive(Debug, Default, Clone)]
+pub struct Query<MB: Clone + Default + PartialEq, MN: MTNodeType> {
+    pub pol_queries: Vec<Vec<(Vec<FGL>, Vec<Vec<MB>>)>>,
     pub root: MN,
+}
+
+// Impl deep equality
+impl<MB: Clone + Default + PartialEq, MN: MTNodeType> PartialEq for Query<MB, MN> {
+    fn eq(&self, other: &Self) -> bool {
+        self.root == other.root && {
+            self.pol_queries
+                .iter()
+                .zip(other.pol_queries.iter())
+                .map(|(e, e2)| {
+                    e.iter()
+                        .zip(e2.iter())
+                        .map(|(ee, ee2)| {
+                            ee.0 == ee2.0 && {
+                                ee.1.iter()
+                                    .zip(ee2.1.iter())
+                                    .map(|(e3, e32)| {
+                                        e3.iter()
+                                            .zip(e32.iter())
+                                            .map(|(e4, e42)| e4 == e42)
+                                            .all(|x| x)
+                                    })
+                                    .all(|x| x)
+                            }
+                        })
+                        .all(|x| x)
+                })
+                .all(|x| x)
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct FRIProof<F: FieldExtension, M: MerkleTree<ExtendField = F>> {
-    pub queries: Vec<Query<<M::MTNode as MTNodeType>::FieldType, M::MTNode>>,
+    pub queries: Vec<Query<M::BaseField, M::MTNode>>,
     pub last: Vec<F>,
 }
 
 impl<F: FieldExtension, M: MerkleTree<ExtendField = F>> FRIProof<F, M> {
     pub fn new(qs: usize) -> Self {
         FRIProof {
-            queries: vec![Query::<<M::MTNode as MTNodeType>::FieldType, M::MTNode>::default(); qs],
+            queries: vec![Query::<M::BaseField, M::MTNode>::default(); qs],
             last: Vec::new(),
         }
     }
@@ -53,10 +83,7 @@ impl FRI {
         &mut self,
         transcript: &mut T,
         pol: &[M::ExtendField],
-        mut query_pol: impl FnMut(
-            usize,
-        )
-            -> Vec<(Vec<FGL>, Vec<Vec<<M::MTNode as MTNodeType>::FieldType>>)>,
+        mut query_pol: impl FnMut(usize) -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
     ) -> Result<FRIProof<F, M>> {
         let mut pol = pol.to_owned();
         let mut standard_fft = FFT::new();
@@ -129,7 +156,7 @@ impl FRI {
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
         /*
         let query_pol_fn =
-            |si: usize, idx: usize| -> Vec<(Vec<FGL>, Vec<Vec<<M::MTNode as MTNodeType>::FieldType>>)> {
+            |si: usize, idx: usize| -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)> {
                 log::trace!("query_pol_fn: si:{}, idx:{}", si, idx);
                 vec![tree[si].get_group_proof(idx).unwrap()]
             };
@@ -159,10 +186,7 @@ impl FRI {
         &self,
         transcript: &mut T,
         proof: &FRIProof<F, M>,
-        mut check_query: impl FnMut(
-            &Vec<(Vec<FGL>, Vec<Vec<<M::MTNode as MTNodeType>::FieldType>>)>,
-            usize,
-        ) -> Result<Vec<F>>,
+        mut check_query: impl FnMut(&Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>, usize) -> Result<Vec<F>>,
     ) -> Result<bool> {
         let tree = M::new();
         let mut standard_fft = FFT::new();
@@ -192,10 +216,7 @@ impl FRI {
         let mut shift = F::from(*SHIFT);
 
         let check_query_fn = |si: usize,
-                              query: &Vec<(
-            Vec<FGL>,
-            Vec<Vec<<M::MTNode as MTNodeType>::FieldType>>,
-        )>,
+                              query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
                               idx: usize|
          -> Result<Vec<F>> {
             let res =

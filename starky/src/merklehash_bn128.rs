@@ -129,7 +129,7 @@ impl MerkleTreeBN128 {
         }
         let init = Fr::zero();
         let next_value = self.poseidon.hash(&vals, &init)?;
-        let next_value = ElementDigest::<4, Fr>::from_scalar(&next_value);
+        let next_value = <Self as MerkleTree>::MTNode::from_scalar(&next_value);
         self.merkle_calculate_root_from_proof(mp, next_idx, &next_value, offset + 1)
     }
 
@@ -145,6 +145,7 @@ impl MerkleTreeBN128 {
 }
 
 impl MerkleTree for MerkleTreeBN128 {
+    type BaseField = Fr;
     type MTNode = ElementDigest<4, Fr>;
     type ExtendField = F3G;
 
@@ -206,6 +207,10 @@ impl MerkleTree for MerkleTreeBN128 {
             .for_each(|(be_out, f3g_in)| {
                 *be_out = F3G::from(*f3g_in);
             });
+    }
+
+    fn to_basefield(node: &Self::MTNode) -> Vec<Self::BaseField> {
+        vec![Fr(node.as_scalar::<Fr>())]
     }
 
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()> {

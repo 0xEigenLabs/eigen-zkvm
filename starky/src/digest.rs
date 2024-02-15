@@ -17,7 +17,7 @@ use std::marker::PhantomData;
 pub struct ElementDigest<const N: usize, F: PrimeField + Default>(pub [FGL; N], PhantomData<F>);
 
 impl<const N: usize, F: PrimeField + Default> MTNodeType for ElementDigest<N, F> {
-    type FieldType = F;
+    type BaseField = F;
     #[inline(always)]
     fn new(value: &[FGL]) -> Self {
         assert!(value.len() >= N);

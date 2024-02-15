@@ -251,6 +251,7 @@ impl MerkleTreeGL {
 }
 
 impl MerkleTree for MerkleTreeGL {
+    type BaseField = FGL;
     type MTNode = ElementDigest<4, FGL>;
     type ExtendField = F3G;
     fn new() -> Self {
@@ -312,6 +313,11 @@ impl MerkleTree for MerkleTreeGL {
             .for_each(|(be_out, f3g_in)| {
                 *be_out = F3G::from(*f3g_in);
             });
+    }
+
+    // For any MTNode in GL MerkleTree, it's a format of [val, 0, 0, 0]
+    fn to_basefield(node: &Self::MTNode) -> Vec<Self::BaseField> {
+        vec![node.as_elements().to_vec()[0]]
     }
 
     #[cfg(not(any(
