@@ -14,6 +14,12 @@ use crate::{
     types::*,
     ElementDigest,
 };
+
+use crate::field_bls12381::Fr as Fr_BLS12381;
+use crate::field_bn128::Fr as Fr_BN128;
+use ff::PrimeField;
+use fields::field_gl::Fr as FGL;
+
 use anyhow::Result;
 use profiler_macro::time_profiler;
 use std::fs::File;
@@ -42,7 +48,7 @@ pub fn stark_prove(
 
     let stark_struct = load_json::<StarkStruct>(stark_struct)?;
     match stark_struct.verificationHashType.as_str() {
-        "BN128" => prove::<MerkleTreeBN128, TranscriptBN128>(
+        "BN128" => prove::<Fr_BN128, MerkleTreeBN128, TranscriptBN128>(
             &mut pil,
             const_pol,
             cm_pol,
@@ -54,7 +60,7 @@ pub fn stark_prove(
             prover_addr,
             pre_zkin,
         ),
-        "BLS12381" => prove::<MerkleTreeBLS12381, TranscriptBLS128>(
+        "BLS12381" => prove::<Fr_BLS12381, MerkleTreeBLS12381, TranscriptBLS128>(
             &mut pil,
             const_pol,
             cm_pol,
@@ -66,7 +72,7 @@ pub fn stark_prove(
             prover_addr,
             pre_zkin,
         ),
-        "GL" => prove::<MerkleTreeGL, TranscriptGL>(
+        "GL" => prove::<FGL, MerkleTreeGL, TranscriptGL>(
             &mut pil,
             const_pol,
             cm_pol,
@@ -84,7 +90,7 @@ pub fn stark_prove(
 
 // Adopt with different curve, eg: BN128, BLS12381, Goldilocks
 #[allow(clippy::too_many_arguments)]
-fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
+fn prove<F: PrimeField + Default, M: MerkleTree<MTNode = ElementDigest<4, F>>, T: Transcript>(
     pil: &mut PIL,
     const_pol: PolsArray,
     cm_pol: PolsArray,
@@ -127,7 +133,7 @@ fn prove<M: MerkleTree<MTNode = ElementDigest<4>>, T: Transcript>(
         agg_stage,
     };
 
-    let str_ver = pil2circom::pil2circom(
+    let str_ver = pil2circom::pil2circom::<F>(
         pil,
         &setup.const_root,
         stark_struct,

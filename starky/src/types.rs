@@ -186,12 +186,12 @@ impl fmt::Display for PIL {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Step {
     pub nBits: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct StarkStruct {
     pub nBits: usize,
     pub nBitsExt: usize,

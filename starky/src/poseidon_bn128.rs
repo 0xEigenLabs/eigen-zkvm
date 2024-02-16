@@ -58,6 +58,7 @@ pub fn load_constants() -> Constants {
     since = "0.1.0",
     note = "please use `poseidon_bn128_opt::Poseidon` instead"
 )]
+#[derive(Debug, PartialEq)]
 pub struct Poseidon;
 
 impl Default for Poseidon {

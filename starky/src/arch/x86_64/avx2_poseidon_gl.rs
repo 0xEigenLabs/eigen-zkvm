@@ -49,6 +49,7 @@ pub fn load_constants_avx2() -> ConstantsAvx2 {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Poseidon;
 
 impl Default for Poseidon {

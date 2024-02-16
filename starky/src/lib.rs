@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
-#![cfg_attr(feature = "avx512", feature(stdsimd))]
+#![feature(stdarch_x86_avx512)]
 
 pub mod polsarray;
 pub mod polutils;
