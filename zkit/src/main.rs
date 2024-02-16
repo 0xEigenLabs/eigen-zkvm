@@ -215,7 +215,7 @@ struct StarkProveOpt {
         default_value = "273030697313060285579891744179749754319274977764"
     )]
     prover_addr: String,
-    #[arg(short, default_value = "pre_zkin")]
+    #[arg(long = "pre_zkin", default_value = "recursive1_chunk_2.zkin.json")]
     pre_zkin: Option<String>,
 }
 
