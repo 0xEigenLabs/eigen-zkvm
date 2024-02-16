@@ -268,20 +268,14 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
 
         match &self.a_rootC {
             Some(value) => {
-                map.serialize_entry(
-                    "a_rootC",
-                    &Input::<M::MTNode>::new(*value, hashtype.clone()),
-                )?;
+                map.serialize_entry("a_rootC", &NodeWrapper::<M::MTNode>::new(*value))?;
             }
             None => {}
         }
 
         match &self.b_rootC {
             Some(value) => {
-                map.serialize_entry(
-                    "b_rootC",
-                    &Input::<M::MTNode>::new(*value, hashtype.clone()),
-                )?;
+                map.serialize_entry("b_rootC", &NodeWrapper::<M::MTNode>::new(*value))?;
             }
             None => {}
         }

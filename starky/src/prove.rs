@@ -7,7 +7,7 @@ use crate::{
     stark_gen::StarkProof,
     stark_setup::StarkSetup,
     stark_verify::stark_verify,
-    traits::{MTNodeType, MerkleTree, Transcript},
+    traits::{MerkleTree, Transcript},
     transcript::TranscriptGL,
     transcript_bls12381::TranscriptBLS128,
     transcript_bn128::TranscriptBN128,
@@ -90,7 +90,7 @@ pub fn stark_prove(
 
 // Adopt with different curve, eg: BN128, BLS12381, Goldilocks
 #[allow(clippy::too_many_arguments)]
-fn prove<F: PrimeField + Default, M: MerkleTree<MTNode = ElementDigest<4, F>>, T: Transcript>(
+fn prove<F: PrimeField + Default, M: MerkleTree<MTNode = ElementDigest<4, F>> + Default, T: Transcript>(
     pil: &mut PIL,
     const_pol: PolsArray,
     cm_pol: PolsArray,
