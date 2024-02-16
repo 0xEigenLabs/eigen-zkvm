@@ -1,3 +1,5 @@
+#![allow(clippy::to_string_trait_impl)]
+
 pub enum CompressorNameSpace {
     Global,
     Compressor,
@@ -120,7 +122,7 @@ namespace Compressor(%N);
     pol a910 = a[9]*a[10];
     pol g91011 = C[9]*a910 + C[6]*a[9] + C[7]*a[10] + C[8]*a[11] + C[10];
     g91011*GATE = 0;
-    
+
     // POSEIDON12 GATE
     "#,
     );
@@ -209,7 +211,7 @@ namespace Compressor(%N);
     CMULADD * (ca11 - (cB - cD + cE) - ca8) = 0;
 
     // FFT4
-    
+
     pol g0 = C[0]*a[0] + C[1]*a[3] + C[2]*a[6] + C[3]*a[9]  + C[6]*a[0] + C[7]*a[3];
     pol g1 = C[0]*a[1] + C[1]*a[4] + C[2]*a[7] + C[3]*a[10] + C[6]*a[1] + C[7]*a[4];
     pol g2 = C[0]*a[2] + C[1]*a[5] + C[2]*a[8] + C[3]*a[11] + C[6]*a[2] + C[7]*a[5];

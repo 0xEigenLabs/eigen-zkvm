@@ -9,7 +9,7 @@ use ff::*;
 use crate::constant::{OFFSET_2_128, OFFSET_2_64};
 use fields::field_gl::Fr as FGL;
 
-#[derive(Default)]
+#[derive(Default, Debug, PartialEq)]
 pub struct LinearHashBN128 {
     h: Poseidon,
 }
@@ -69,7 +69,7 @@ impl LinearHashBN128 {
     /// convert to BN128 in montgomery
     #[inline(always)]
     pub fn to_bn128_mont(st64: [FGL; 4]) -> [FGL; 4] {
-        let bn: Fr = Fr(ElementDigest::<4>::new(&st64).as_scalar::<Fr>());
+        let bn: Fr = Fr(ElementDigest::<4, Fr>::new(&st64).as_scalar::<Fr>());
         let bn_mont = match Fr::from_repr(bn.into_raw_repr()) {
             Ok(x) => x,
             _ => {
@@ -86,7 +86,7 @@ impl LinearHashBN128 {
                 r
             }
         };
-        ElementDigest::<4>::from_scalar(&bn_mont)
+        ElementDigest::<4, Fr>::from_scalar(&bn_mont)
             .as_elements()
             .try_into()
             .unwrap()
@@ -95,19 +95,19 @@ impl LinearHashBN128 {
     #[inline(always)]
     pub fn hash_node(
         &self,
-        elems: &[ElementDigest<4>],
+        elems: &[ElementDigest<4, Fr>],
         init_state: &Fr,
-    ) -> Result<ElementDigest<4>> {
+    ) -> Result<ElementDigest<4, Fr>> {
         assert_eq!(elems.len(), 16);
         let elems = elems
             .iter()
             .map(|e| Fr((*e).as_scalar::<Fr>()))
             .collect::<Vec<Fr>>();
         let digest = self.h.hash(&elems, init_state)?;
-        Ok(ElementDigest::<4>::from_scalar(&digest))
+        Ok(ElementDigest::<4, Fr>::from_scalar(&digest))
     }
 
-    pub fn hash_element_array(&self, vals: &[FGL]) -> Result<ElementDigest<4>> {
+    pub fn hash_element_array(&self, vals: &[FGL]) -> Result<ElementDigest<4, Fr>> {
         let mut st64 = [FGL::ZERO; 4];
         let mut digest: Fr = Fr::zero();
         if vals.len() <= 4 {
@@ -115,7 +115,7 @@ impl LinearHashBN128 {
                 st64[i] = *v;
             }
             let gl_mont = Self::to_bn128_mont(st64);
-            return Ok(ElementDigest::<4>::new(&gl_mont));
+            return Ok(ElementDigest::<4, Fr>::new(&gl_mont));
         }
 
         // group into 3 * 4
@@ -135,7 +135,7 @@ impl LinearHashBN128 {
             digest = self.h.hash(&tmp_buf[i..(i + in_sz)], &digest)?;
         }
 
-        Ok(ElementDigest::<4>::from_scalar(&digest))
+        Ok(ElementDigest::<4, Fr>::from_scalar(&digest))
     }
 }
 
