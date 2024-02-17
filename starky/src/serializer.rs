@@ -631,6 +631,7 @@ mod tests {
     use crate::field_bls12381::Fr as Fr_BLS12381;
     use crate::field_bn128::Fr;
     use crate::merklehash::MerkleTreeGL;
+    use crate::merklehash_bls12381::MerkleTreeBLS12381;
     use crate::merklehash_bn128::MerkleTreeBN128;
     use crate::polsarray::PolKind;
     use crate::polsarray::PolsArray;
@@ -764,6 +765,58 @@ mod tests {
         let actual: StarkProof<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
 
         let mut file = File::create("/tmp/test_stark_proof_serialize.actual.json").unwrap();
+        let serialized2 = serde_json::to_string(&actual).unwrap();
+        write!(file, "{}", serialized2).unwrap();
+
+        // assert
+        assert_eq!(serialized, serialized2);
+        assert_eq!(actual.root1, starkproof.root1);
+        assert_eq!(actual.root2, starkproof.root2);
+        assert_eq!(actual.root3, starkproof.root3);
+        assert_eq!(actual.root4, starkproof.root4);
+        assert_eq!(actual.rootC, starkproof.rootC);
+        assert_eq!(actual.publics, starkproof.publics);
+        assert_eq!(actual.evals, starkproof.evals);
+        assert_eq!(actual.fri_proof, starkproof.fri_proof);
+        assert_eq!(actual, starkproof);
+    }
+
+    #[test]
+    fn test_serialize_stark_proof_bls12381_ser_der() {
+        env_logger::try_init().unwrap_or_default();
+        let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
+        const_pol.load("data/fib.const").unwrap();
+        let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
+        cm_pol.load("data/fib.cm").unwrap();
+        let stark_struct =
+            load_json::<StarkStruct>("data/final.starkStruct.bls12381.json").unwrap();
+
+        let setup =
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+        //let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
+
+        let starkproof = StarkProof::<MerkleTreeBLS12381>::stark_gen::<TranscriptBN128>(
+            cm_pol,
+            const_pol,
+            &setup.const_tree,
+            &setup.starkinfo,
+            &setup.program,
+            &pil,
+            &stark_struct,
+            "273030697313060285579891744179749754319274977764",
+        )
+        .unwrap();
+
+        // serde to json
+        let serialized = serde_json::to_string(&starkproof).unwrap();
+        let mut file = File::create("/tmp/test_stark_proof_serialize.bls12381.json").unwrap();
+        write!(file, "{}", serialized).unwrap();
+        // deserialized
+        let actual: StarkProof<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
+
+        let mut file =
+            File::create("/tmp/test_stark_proof_serialize.bls12381.actual.json").unwrap();
         let serialized2 = serde_json::to_string(&actual).unwrap();
         write!(file, "{}", serialized2).unwrap();
 
