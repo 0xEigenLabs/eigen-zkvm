@@ -840,7 +840,7 @@ mod tests {
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
         cm_pol.load("data/fib.cm").unwrap();
         let stark_struct =
-            load_json::<StarkStruct>("data/final.starkStruct.bls12381.json").unwrap();
+            load_json::<StarkStruct>("data/starkStruct.json.bls12381").unwrap();
 
         let setup =
             StarkSetup::<MerkleTreeBLS12381>::new(&const_pol, &mut pil, &stark_struct, None)
