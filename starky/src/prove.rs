@@ -37,7 +37,6 @@ pub fn stark_prove(
     circom_file: &str,
     zkin: &str,
     prover_addr: &str,
-    pre_zkin: Option<String>,
 ) -> Result<()> {
     let mut pil = load_json::<PIL>(pil_file)?;
     let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
@@ -58,7 +57,6 @@ pub fn stark_prove(
             circom_file,
             zkin,
             prover_addr,
-            pre_zkin,
         ),
         "BLS12381" => prove::<Fr_BLS12381, MerkleTreeBLS12381, TranscriptBLS128>(
             &mut pil,
@@ -70,7 +68,6 @@ pub fn stark_prove(
             circom_file,
             zkin,
             prover_addr,
-            pre_zkin,
         ),
         "GL" => prove::<FGL, MerkleTreeGL, TranscriptGL>(
             &mut pil,
@@ -82,7 +79,6 @@ pub fn stark_prove(
             circom_file,
             zkin,
             prover_addr,
-            pre_zkin,
         ),
         _ => panic!("Invalid hashtype {}", stark_struct.verificationHashType),
     }
@@ -104,7 +100,6 @@ fn prove<
     circom_file: &str,
     zkin: &str,
     prover_addr: &str,
-    pre_zkin: Option<String>,
 ) -> Result<()> {
     let mut setup = StarkSetup::<M>::new(&const_pol, pil, stark_struct, None)?;
     let mut starkproof = StarkProof::<M>::stark_gen::<T>(
@@ -150,6 +145,7 @@ fn prove<
     log::debug!("generate circom done");
 
     // if agg_stage is true, a_rootC and b_rootC are required in zkin
+    /*
     if agg_stage {
         let proofjson = std::fs::read_to_string(pre_zkin.unwrap())?;
         let pre_starkproof: StarkProof<M> = serde_json::from_str(&proofjson)?;
@@ -157,6 +153,7 @@ fn prove<
         starkproof.a_rootC = pre_starkproof.rootC;
         starkproof.b_rootC = starkproof.rootC;
     }
+    */
 
     if !norm_stage || agg_stage {
         starkproof.rootC = None;

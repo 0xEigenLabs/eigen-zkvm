@@ -259,25 +259,8 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         let len = 16 + (self.fri_proof.queries.len() - 1) * 3;
         let mut map = serializer.serialize_map(Some(len))?;
 
-        match &self.rootC {
-            Some(value) => {
-                map.serialize_entry("rootC", &NodeWrapper::<M::MTNode>::new(*value))?;
-            }
-            None => {}
-        }
-
-        match &self.a_rootC {
-            Some(value) => {
-                map.serialize_entry("a_rootC", &NodeWrapper::<M::MTNode>::new(*value))?;
-            }
-            None => {}
-        }
-
-        match &self.b_rootC {
-            Some(value) => {
-                map.serialize_entry("b_rootC", &NodeWrapper::<M::MTNode>::new(*value))?;
-            }
-            None => {}
+        if self.rootC.is_some() {
+            map.serialize_entry("rootC", &NodeWrapper::<M::MTNode>::new(self.rootC.unwrap()))?;
         }
 
         map.serialize_entry("root1", &NodeWrapper::<M::MTNode>::new(self.root1))?;
