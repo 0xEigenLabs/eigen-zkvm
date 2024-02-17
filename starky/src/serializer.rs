@@ -641,6 +641,7 @@ mod tests {
     use crate::traits::FieldExtension;
     use crate::traits::MTNodeType;
     use crate::transcript::TranscriptGL;
+    use crate::transcript_bls12381::TranscriptBLS128;
     use crate::transcript_bn128::TranscriptBN128;
     use crate::types::load_json;
     use crate::types::StarkStruct;
@@ -649,7 +650,6 @@ mod tests {
     use rand::Rand;
     use std::fs::File;
     use std::io::Write;
-    use crate::transcript_bls12381::TranscriptBLS128;
 
     #[test]
     fn test_serialize_f3g() {
@@ -843,7 +843,8 @@ mod tests {
             load_json::<StarkStruct>("data/final.starkStruct.bls12381.json").unwrap();
 
         let setup =
-            StarkSetup::<MerkleTreeBLS12381>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+            StarkSetup::<MerkleTreeBLS12381>::new(&const_pol, &mut pil, &stark_struct, None)
+                .unwrap();
         //let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
 
         let starkproof = StarkProof::<MerkleTreeBLS12381>::stark_gen::<TranscriptBLS128>(
@@ -856,7 +857,7 @@ mod tests {
             &stark_struct,
             "273030697313060285579891744179749754319274977764",
         )
-            .unwrap();
+        .unwrap();
 
         // serde to json
         let serialized = serde_json::to_string(&starkproof).unwrap();
@@ -882,5 +883,4 @@ mod tests {
         assert_eq!(actual.fri_proof, starkproof.fri_proof);
         assert_eq!(actual, starkproof);
     }
-
 }
