@@ -829,7 +829,7 @@ template StarkVerifier() {{
         pil.publics.len()
     );
 
-    if options.verkey_input {
+    if options.verkey_input || (options.agg_stage && !options.verkey_input) {
         res.push_str(
             r#"
     signal input rootC[4];
