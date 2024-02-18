@@ -144,18 +144,7 @@ fn prove<
     write!(file, "{}", str_ver)?;
     log::debug!("generate circom done");
 
-    // if agg_stage is true, a_rootC and b_rootC are required in zkin
-    /*
-    if agg_stage {
-        let proofjson = std::fs::read_to_string(pre_zkin.unwrap())?;
-        let pre_starkproof: StarkProof<M> = serde_json::from_str(&proofjson)?;
-        assert!(pre_starkproof.rootC.is_some());
-        starkproof.a_rootC = pre_starkproof.rootC;
-        starkproof.b_rootC = starkproof.rootC;
-    }
-    */
-
-    if !norm_stage || agg_stage {
+    if !norm_stage {
         starkproof.rootC = None;
     }
 
