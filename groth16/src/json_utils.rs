@@ -252,8 +252,6 @@ pub fn to_proof<P: Parser>(s: &str) -> Proof<P> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bellman_ce::groth16::{Proof, VerifyingKey};
-    use crate::bellman_ce::pairing::{bls12_381::Bls12, bn256::Bn256};
 
     #[test]
     fn test_serialize_vk() {
