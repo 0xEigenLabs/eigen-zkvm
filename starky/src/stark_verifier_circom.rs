@@ -1789,14 +1789,14 @@ template Recursive2() {{
         // rootC, but the previous root should be fixed in advance.
         if options.agg_stage {
             res.push_str(
-                    r#"
-                    component main {public [a_publics, a_rootC, b_publics,b_rootC]}= Recursive2();"#,
-                );
+                r#"
+component main {public [a_publics, a_rootC, b_publics,b_rootC]}= Recursive2();"#,
+            );
         } else if options.verkey_input {
             res.push_str(
                 r#"
-                component main {public [publics, rootC]}= StarkVerifier();
-                "#,
+component main {public [publics, rootC]}= StarkVerifier();
+    "#,
             );
         } else {
             res.push_str(

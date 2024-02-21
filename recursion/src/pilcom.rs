@@ -3,7 +3,6 @@ mod export;
 mod expression_counter;
 
 use powdr_number::GoldilocksField;
-use powdr_pil_analyzer;
 use starky::types::PIL;
 use std::path::Path;
 
