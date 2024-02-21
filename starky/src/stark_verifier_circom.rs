@@ -829,7 +829,7 @@ template StarkVerifier() {{
         pil.publics.len()
     );
 
-    if options.verkey_input || (options.agg_stage && !options.verkey_input) {
+    if options.verkey_input {
         res.push_str(
             r#"
     signal input rootC[4];
@@ -1788,23 +1788,15 @@ template Recursive2() {{
         // if both `agg_stage` and `norm_stage` are true, we supporse to use one public and one
         // rootC, but the previous root should be fixed in advance.
         if options.agg_stage {
-            if options.verkey_input {
-                res.push_str(
+            res.push_str(
                     r#"
-component main {public [publics, rootC]}= Recursive2();
-    "#,
+                    component main {public [a_publics, a_rootC, b_publics,b_rootC]}= Recursive2();"#,
                 );
-            } else {
-                res.push_str(
-                    r#"
-component main {public [a_publics, a_rootC, b_publics,b_rootC]}= Recursive2();"#,
-                );
-            }
         } else if options.verkey_input {
             res.push_str(
                 r#"
-component main {public [publics, rootC]}= StarkVerifier();
-    "#,
+                component main {public [publics, rootC]}= StarkVerifier();
+                "#,
             );
         } else {
             res.push_str(
