@@ -3,7 +3,6 @@ mod export;
 mod expression_counter;
 
 use powdr_number::GoldilocksField;
-use powdr_pil_analyzer;
 use starky::types::PIL;
 use std::path::Path;
 
@@ -25,7 +24,6 @@ mod test {
     use std::fs;
     use std::fs::File;
     use std::io::Write;
-    use std::path::Path;
 
     // This test is check whether the js_res the js version pilcom.compile equals to compile_pil_from_str.
     #[test]

@@ -18,7 +18,6 @@ use algebraic::{
 };
 use anyhow::{bail, Result};
 use num_traits::Zero;
-use rand;
 
 pub fn groth16_setup(
     curve_type: &str,
