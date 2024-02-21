@@ -239,7 +239,7 @@ impl PolsArray {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::types::{self, PIL};
+    use crate::types;
 
     #[test]
     fn test_load_polsarray() {

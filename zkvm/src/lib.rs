@@ -236,7 +236,6 @@ where
 mod tests {
     use super::*;
     use num_traits::identities::Zero;
-    use powdr_number::FieldElement;
     use std::io::{Read, Write};
 
     use std::fs;

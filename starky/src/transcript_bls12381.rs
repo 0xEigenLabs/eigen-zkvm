@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 use crate::digest::ElementDigest;
-use crate::ff::Field;
 use crate::field_bls12381::{Fr, FrRepr};
 use crate::helper::{biguint_to_be, fr_bls12381_to_biguint};
 use crate::poseidon_bls12381_opt::Poseidon;

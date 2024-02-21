@@ -5,10 +5,15 @@ use crate::types::{StarkStruct, PIL};
 use anyhow::Result;
 use profiler_macro::time_profiler;
 
+/// The option to control the generation of recursive verifier
 pub struct StarkOption {
+    // enable the stark verifier
     pub enable_input: bool,
+    // normalize the proof
     pub verkey_input: bool,
+    // aggragte the proof
     pub agg_stage: bool,
+    // generate the main component in Circom
     pub skip_main: bool,
 }
 

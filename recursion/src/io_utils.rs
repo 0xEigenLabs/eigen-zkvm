@@ -9,8 +9,8 @@ pub fn write_vec_to_file(path: &str, vec: &[u64]) -> std::io::Result<()> {
 }
 
 pub fn read_vec_from_file(input_file: &str) -> std::io::Result<Vec<u64>> {
-    let inputs_str = std::fs::read_to_string(input_file).unwrap();
-    let output: Vec<u64> = serde_json::from_str(&inputs_str).unwrap();
+    let inputs_str = std::fs::read_to_string(input_file)?;
+    let output: Vec<u64> = serde_json::from_str(&inputs_str)?;
     Ok(output)
 }
 

@@ -1782,7 +1782,11 @@ template Recursive2() {{
         )
     }
 
+    // generate the main component
     if !options.skip_main {
+        // if it's an `agg_stage` only, we should generate a new proof including `a_proof` and `b_proof`.
+        // if both `agg_stage` and `norm_stage` are true, we supporse to use one public and one
+        // rootC, but the previous root should be fixed in advance.
         if options.agg_stage {
             res.push_str(
                 r#"
