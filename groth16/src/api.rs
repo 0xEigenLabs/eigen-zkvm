@@ -16,7 +16,7 @@ use algebraic::{
     witness::{load_input_for_witness, WitnessCalculator},
     Field, PrimeField,
 };
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use num_traits::Zero;
 
 pub fn groth16_setup(
@@ -162,7 +162,8 @@ fn create_circuit_from_file<E: Engine>(
 }
 
 fn read_pk_from_file<E: Engine>(file_path: &str, checked: bool) -> Result<Parameters<E>> {
-    let file = std::fs::File::open(file_path)?;
+    let file =
+        std::fs::File::open(file_path).map_err(|e| anyhow!("Open {}, {:?}", file_path, e))?;
     let mut reader = std::io::BufReader::new(file);
     Ok(Parameters::<E>::read(&mut reader, checked)?)
 }
