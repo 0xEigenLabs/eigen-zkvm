@@ -28,7 +28,7 @@ pub fn exec(
     // 1. Compiles a .pil file to its json form , and save it.
     // TODO: the pil_str has been compiled in plonk_setup#3
     let pil_json = compile_pil_from_path(pil_file);
-    let mut file = File::create(Path::new(&format!("{pil_file}.json")))?;
+    let mut file = File::create(Path::new(&format!("{pil_file}.json"))).unwrap_or_else(|_| panic!("{:?}", pil_file));
     let input = serde_json::to_string(&pil_json)?;
     write!(file, "{}", input)?;
 

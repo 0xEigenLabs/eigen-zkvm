@@ -11,7 +11,7 @@ elif [ "x${USE_AVX512}" = "xyes" ]; then
     # build with avx512 feature
     RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo build --features avx512 --features profiler --release
 else
-    cargo build --release --features profiler
+    cargo build --release
 fi
 cd "$CUR_DIR"
 

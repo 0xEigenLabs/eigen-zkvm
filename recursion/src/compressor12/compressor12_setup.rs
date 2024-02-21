@@ -3,7 +3,7 @@ use crate::compressor12::plonk_setup::PlonkSetup;
 use crate::io_utils::write_vec_to_file;
 use crate::r1cs2plonk::PlonkAdd;
 use algebraic::reader::load_r1cs;
-use anyhow::Result;
+use anyhow::{Result, bail};
 use fields::field_gl::GL;
 use std::fs::File;
 use std::io::Write;
@@ -32,7 +32,7 @@ pub fn setup(
     let res = PlonkSetup::new(&r1cs, &opts);
 
     // 2. And write it into pil_file.
-    let mut file = File::create(pil_file)?;
+    let mut file = File::create(pil_file).unwrap_or_else(|_| panic!("crate file error, {}", pil_file));
     write!(file, "{}", res.pil_str)?;
 
     // 3. write const pols file

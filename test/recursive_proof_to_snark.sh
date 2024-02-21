@@ -17,7 +17,8 @@ RUST_LOG=info
 mkdir -p $WORKSPACE/$TASK_NO
 mkdir -p $WORKSPACE/circuits/$TASK_NO
 
-C12_VERIFIER=$TASK_NO/${CIRCUIT}".c12"
+C12=$TASK_NO/${CIRCUIT}".c12"
+C12_VERIFIER=$TASK_NO/${CIRCUIT}".c12.verifier"
 RECURSIVE1_VERIFIER=$TASK_NO/${CIRCUIT}".recursive1"
 
 
@@ -35,8 +36,47 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
 ../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
     -p $WORKSPACE/$TASK_NO/$CIRCUIT.pil.json \
     --o $WORKSPACE/$TASK_NO/$CIRCUIT.const \
-    --m $WORKSPACE/$TASK_NO/$CIRCUIT.cm -c $WORKSPACE/circuits/$C12_VERIFIER.circom --i $WORKSPACE/circuits/$C12_VERIFIER.zkin.json
+    --m $WORKSPACE/$TASK_NO/$CIRCUIT.cm -c $WORKSPACE/circuits/$C12.circom --i $WORKSPACE/circuits/$C12.zkin.json
 
+
+#--- norm
+
+../target/release/eigen-zkit compile -p goldilocks -i $WORKSPACE/circuits/$C12.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/$TASK_NO
+
+# generate the pil files and  const constant polynomial files
+# input files :  $C12.r1cs
+# output files :  $C12.exec, $C12.const  $C12.pil
+../target/release/eigen-zkit compressor12_setup \
+    --r $WORKSPACE/$C12.r1cs \
+    --c $WORKSPACE/$C12.const \
+    --p $WORKSPACE/$C12.pil \
+    --force-n-bits 18 \
+    --e $WORKSPACE/$C12.exec
+
+# generate the commit polynomials files
+# input files :  $CIRCUIT.c12.wasm  $C12.zkin.json  $C12.pil  $C12.exec
+# output files :  $C12.cm
+../target/release/eigen-zkit compressor12_exec \
+    --w $WORKSPACE/$C12"_js"/$CIRCUIT.c12.wasm  \
+    --i $WORKSPACE/circuits/$C12.zkin.json  \
+    --p $WORKSPACE/$C12.pil  \
+    --e $WORKSPACE/$C12.exec \
+    --m $WORKSPACE/$C12.cm
+
+mkdir -p $WORKSPACE/aggregation/$RECURSIVE1_VERIFIER/
+
+echo "Generate stark proof"
+# generate the stark proof and the circom circuits to verify stark proof.
+# input files : $C12_VERIFIER.pil.json(stark proof)  $C12_VERIFIER.const(const polynomials)  $C12_VERIFIER.cm (commit polynomials)
+# output files :  $RECURSIVE1_VERIFIER.circom  $RECURSIVE1_VERIFIER/input.json
+../target/release/eigen-zkit stark_prove -s ../starky/data/c12.verifier.starkStruct.json \
+    -p $WORKSPACE/$C12.pil.json \
+    --o $WORKSPACE/$C12.const \
+    --m $WORKSPACE/$C12.cm -c $WORKSPACE/circuits/$C12_VERIFIER.circom --i $WORKSPACE/circuits/$C12_VERIFIER.zkin.json --norm_stage
+
+#--- norm
+
+echo "Norm proof"
 ../target/release/eigen-zkit compile -p goldilocks -i $WORKSPACE/circuits/$C12_VERIFIER.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/$TASK_NO
 
 # generate the pil files and  const constant polynomial files
@@ -52,7 +92,7 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
 # input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil  $C12_VERIFIER.exec
 # output files :  $C12_VERIFIER.cm
 ../target/release/eigen-zkit compressor12_exec \
-    --w $WORKSPACE/$C12_VERIFIER"_js"/$CIRCUIT.c12.wasm  \
+    --w $WORKSPACE/$C12_VERIFIER"_js"/${CIRCUIT}.c12.verifier.wasm  \
     --i $WORKSPACE/circuits/$C12_VERIFIER.zkin.json  \
     --p $WORKSPACE/$C12_VERIFIER.pil  \
     --e $WORKSPACE/$C12_VERIFIER.exec \
