@@ -18,7 +18,12 @@ clippy: ## Run clippy checks over all workspace members and formatted correctly
 fix: ## Automatically apply lint suggestions. This flag implies `--no-deps` and `--all-targets`
 	@cargo clippy --fix
 
-test: ## Run tests for all the workspace members
+unit_test: ## Run tests for all the workspace members
 	@cargo test --release --all
+
+
+test: ## Run tests for all the workspace members
+	@cd test && ./stark_aggregation.sh NO BN128 && cd ..
+
 
 .PHONY: clippy fmt test
