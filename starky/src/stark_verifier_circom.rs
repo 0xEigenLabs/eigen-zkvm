@@ -1850,7 +1850,7 @@ template Main() {{
     ///////
 
     if options.agg_stage {
-        let const_roots = const_root.as_elements();
+        //let const_roots = const_root.as_elements();
         res.push_str(&format!(
             r#"
 template Main() {{

@@ -60,7 +60,7 @@ c12_end=$(date +%s)
 
 
 aggregation_start=$(date +%s)
-echo " ==> aggregation stage <== "
+echo " ==> aggregation proof 0 and 1 <== "
 echo "1. combine input1.zkin.json with input2.zkin.json "
 ${ZKIT} join_zkin --zkin1 $input0/$RECURSIVE1_CIRCUIT.zkin.json --zkin2 $input1/$RECURSIVE1_CIRCUIT.zkin.json  --zkinout $WORKSPACE/aggregation/r01_input.zkin.json
 
@@ -96,12 +96,11 @@ ${ZKIT} stark_prove -s ../starky/data/r1.starkStruct.json \
     --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $WORKSPACE/aggregation/$FINAL_CIRCUIT.circom \
     --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT"_0".zkin.json  --norm_stage
 
-#     --prover_addr 273030697313060285579891744179749754319274977764
-counter=0
+echo " ==> aggregation proof 01, 2, and 3 <== "
 for (( i=0; i<NUM_PROOF-2; i++ ))
 do
-    suffix=$(printf "_%d" $((counter)))
-    next_suffix=$(printf "_%d" $((counter+1)))
+    suffix=$(printf "_%d" $((i)))
+    next_suffix=$(printf "_%d" $((i + 1)))
     input="$WORKSPACE/aggregation/$((i + 2))"
 
     ${ZKIT} join_zkin \
@@ -123,8 +122,6 @@ do
         --m $WORKSPACE/$RECURSIVE2_CIRCUIT$suffix.cm \
         -c $WORKSPACE/aggregation/$FINAL_CIRCUIT.circom \
         --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT$next_suffix.zkin.json --norm_stage
-    
-    ((counter++))
 done
 
 aggregation_end=$(date +%s)

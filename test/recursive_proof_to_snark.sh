@@ -17,6 +17,7 @@ RUST_LOG=info
 mkdir -p $WORKSPACE/$TASK_NO
 mkdir -p $WORKSPACE/circuits/$TASK_NO
 
+BATCH_VERIFIER=${CIRCUIT}.verifier
 C12_VERIFIER=$TASK_NO/${CIRCUIT}".c12"
 RECURSIVE1_CIRCUIT=${CIRCUIT}".recursive1"
 RECURSIVE2_CIRCUIT=${CIRCUIT}.recursive2
@@ -37,15 +38,16 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
 ../target/release/eigen-zkit stark_prove -s ../starky/data/starkStruct.json.gl \
     -p $WORKSPACE/$TASK_NO/$CIRCUIT.pil.json \
     --o $WORKSPACE/$TASK_NO/$CIRCUIT.const \
-    --m $WORKSPACE/$TASK_NO/$CIRCUIT.cm -c $WORKSPACE/circuits/$TASK_NO/fibonacci.verifier.circom --i $WORKSPACE/circuits/$TASK_NO/fibonacci.zkin.json --skip_main
+    --m $WORKSPACE/$TASK_NO/$CIRCUIT.cm -c $WORKSPACE/circuits/$TASK_NO/${BATCH_VERIFIER}.circom --i $WORKSPACE/circuits/$TASK_NO/${BATCH_VERIFIER}.zkin.json --skip_main
 
-../target/release/eigen-zkit compile -p goldilocks -i $WORKSPACE/circuits/$TASK_NO/fibonacci.verifier.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/$TASK_NO
+../target/release/eigen-zkit compile -p goldilocks -i $WORKSPACE/circuits/$TASK_NO/${BATCH_VERIFIER}.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/$TASK_NO
 
 # generate the pil files and  const constant polynomial files
 # input files :  $C12_VERIFIER.r1cs
 # output files :  $C12_VERIFIER.exec, $C12_VERIFIER.const  $C12_VERIFIER.pil
+# We use the first circom by default
 ../target/release/eigen-zkit compressor12_setup \
-    --r $WORKSPACE/0/fibonacci.verifier.r1cs \
+    --r $WORKSPACE/0/${BATCH_VERIFIER}.r1cs \
     --c $WORKSPACE/$C12_VERIFIER.const \
     --p $WORKSPACE/$C12_VERIFIER.pil \
     --e $WORKSPACE/$C12_VERIFIER.exec
@@ -54,8 +56,8 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
 # input files :  $CIRCUIT.c12.wasm  $C12_VERIFIER.zkin.json  $C12_VERIFIER.pil  $C12_VERIFIER.exec
 # output files :  $C12_VERIFIER.cm(c12a.commit(Figure 24))
 ../target/release/eigen-zkit compressor12_exec \
-    --w $WORKSPACE/$TASK_NO/fibonacci.verifier_js/fibonacci.verifier.wasm  \
-    --i $WORKSPACE/circuits/$TASK_NO/fibonacci.zkin.json  \
+    --w $WORKSPACE/$TASK_NO/${BATCH_VERIFIER}_js/${BATCH_VERIFIER}.wasm  \
+    --i $WORKSPACE/circuits/$TASK_NO/${BATCH_VERIFIER}.zkin.json  \
     --p $WORKSPACE/$C12_VERIFIER.pil  \
     --e $WORKSPACE/$C12_VERIFIER.exec \
     --m $WORKSPACE/$C12_VERIFIER.cm
@@ -95,15 +97,3 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
     --o $WORKSPACE/$RECURSIVE1_CIRCUIT.const \
     --m $WORKSPACE/$RECURSIVE1_CIRCUIT.cm -c $WORKSPACE/circuits/$TASK_NO/$RECURSIVE2_CIRCUIT.circom \
     --i $WORKSPACE/aggregation/$TASK_NO/$RECURSIVE1_CIRCUIT.zkin.json --norm_stage --agg_stage
-
-# if [ "$GENERATE_PROOF_TYPE" = "stark" ]; then 
-# else 
-#     echo "Generate snark proof"
-#      # generate the stark proof and the circom circuits to verify stark proof.
-#     # input files : $C12_VERIFIER.pil.json(stark proof)  $C12_VERIFIER.const(const polynomials)  $C12_VERIFIER.cm (commit polynomials)
-#     # output files :  $RECURSIVE1_CIRCUIT.circom  $RECURSIVE1_CIRCUIT/input.json
-#     ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.bn128.json \
-#         -p $WORKSPACE/$C12_VERIFIER.pil.json \
-#         --o $WORKSPACE/$C12_VERIFIER.const \
-#         --m $WORKSPACE/$C12_VERIFIER.cm -c $WORKSPACE/circuits/$RECURSIVE1_CIRCUIT.circom --i $WORKSPACE/aggregation/$RECURSIVE1_CIRCUIT/input.json
-# fi 

@@ -107,7 +107,7 @@ fn prove<
     prover_addr: &str,
 ) -> Result<()> {
     let mut setup = StarkSetup::<M>::new(&const_pol, pil, stark_struct, None)?;
-    let mut starkproof = StarkProof::<M>::stark_gen::<T>(
+    let starkproof = StarkProof::<M>::stark_gen::<T>(
         cm_pol,
         const_pol,
         &setup.const_tree,
