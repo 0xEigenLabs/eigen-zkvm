@@ -92,11 +92,42 @@ ${ZKIT} stark_prove -s ../starky/data/r1.starkStruct.json \
     -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
     --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $WORKSPACE/aggregation/$FINAL_CIRCUIT.circom \
-    --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT.zkin.json  --norm_stage
+    --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT"_0".zkin.json  --norm_stage
 
 #     --prover_addr 273030697313060285579891744179749754319274977764
 
 aggregation_end=$(date +%s)
+
+#### mock aggregation test
+counter=0
+num_loops=2
+
+for (( i=0; i<$num_loops; i++ ))
+do
+    suffix=$(printf "_%d" $((counter)))
+    next_suffix=$(printf "_%d" $((counter+1)))
+    ${ZKIT} join_zkin \
+        --zkin1 $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT$suffix.zkin.json \
+        --zkin2 $input1/$RECURSIVE1_CIRCUIT.zkin.json \
+        --zkinout $WORKSPACE/aggregation/r01$suffix"_input.zkin.json"
+
+    ${ZKIT} compressor12_exec \
+        --w $WORKSPACE/$RECURSIVE2_CIRCUIT"_js"/$RECURSIVE2_CIRCUIT.wasm \
+        --i $WORKSPACE/aggregation/r01$suffix"_input.zkin.json" \
+        --p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil \
+        --e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec \
+        --m $WORKSPACE/$RECURSIVE2_CIRCUIT$suffix.cm
+
+    ${ZKIT} stark_prove \
+        -s ../starky/data/r1.starkStruct.json \
+        -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json \
+        --o $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
+        --m $WORKSPACE/$RECURSIVE2_CIRCUIT$suffix.cm \
+        -c $WORKSPACE/aggregation/$FINAL_CIRCUIT.circom \
+        --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT$next_suffix.zkin.json --norm_stage
+    
+    ((counter++))
+done
 
 
 final_start=$(date +%s)
@@ -122,13 +153,13 @@ fi
 echo "3. generate the commit polynomicals files "
 ${ZKIT} compressor12_exec \
     --w $WORKSPACE/$FINAL_CIRCUIT"_js"/$FINAL_CIRCUIT.wasm  \
-    --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT.zkin.json \
+    --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT"_"$num_loops.zkin.json \
     --p $WORKSPACE/$FINAL_CIRCUIT.pil  \
     --e $WORKSPACE/$FINAL_CIRCUIT.exec \
     --m $WORKSPACE/$FINAL_CIRCUIT.cm
 
 # # Remark: the N of final.starkStruct must be 2^20 , because the degree of $RECURSIVE2_CIRCUIT.pil is 2^20 which determined by the proocess of converting  $RECURSIVE1_CIRCUIT2.circom to  $RECURSIVE1_CIRCUIT2.pil
-# STARK_STRUCT=$CUR_DIR/../starky/data/final.starkStruct.bls12381.json
+STARK_STRUCT=$CUR_DIR/../starky/data/final.starkStruct.bls12381.json
 if [ $CURVE = "BN128" ]; then
     STARK_STRUCT=$CUR_DIR/../starky/data/final.starkStruct.bn128.json
 fi
