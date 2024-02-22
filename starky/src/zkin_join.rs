@@ -1,4 +1,5 @@
 use anyhow::Result;
+use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::Write;
@@ -22,7 +23,24 @@ pub fn join_zkin(
     let mut zkout_map = BTreeMap::new();
 
     for (k, v) in zkin1_map {
-        zkout_map.insert(format!("a_{k}"), v);
+        // TODO: remove this
+        zkout_map.insert(format!("a_{k}"), v.clone());
+        if k == "publics" {
+            if let Value::Array(ref arr) = v {
+                if arr.len() >= 4 {
+                    let exclude_last_four = &arr[..(arr.len() - 4)];
+                    zkout_map.insert(
+                        "publics".to_string(),
+                        Value::Array(exclude_last_four.to_vec()),
+                    );
+                } else {
+                    zkout_map.insert("publics".to_string(), v.clone());
+                }
+            }
+        }
+        if k == "rootC" {
+            zkout_map.insert(k.to_string(), v.clone());
+        }
     }
     for (k, v) in zkin2_map {
         zkout_map.insert(format!("b_{k}"), v);

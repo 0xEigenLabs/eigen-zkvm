@@ -200,6 +200,8 @@ struct StarkProveOpt {
     piljson: String,
     #[arg(short, long = "norm_stage", action= clap::ArgAction::SetTrue)]
     norm_stage: bool,
+    #[arg(short, long = "skip_main", action= clap::ArgAction::SetTrue)]
+    skip_main: bool,
     #[arg(short, long = "agg_stage", action= clap::ArgAction::SetTrue)]
     agg_stage: bool,
     #[arg(long = "o", default_value = "pols.const")]
@@ -446,6 +448,7 @@ fn main() {
             &args.stark_struct,
             &args.piljson,
             args.norm_stage,
+            args.skip_main,
             args.agg_stage,
             &args.const_pols,
             &args.cm_pols,
