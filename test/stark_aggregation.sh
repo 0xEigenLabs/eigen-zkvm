@@ -42,7 +42,6 @@ input2=$WORKSPACE/aggregation/2 && mkdir -p $input2
 input3=$WORKSPACE/aggregation/3 && mkdir -p $input3
 
 mkdir -p $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT
-mkdir -p $WORKSPACE/aggregation/$FINAL_CIRCUIT
 mkdir -p $WORKSPACE/aggregation/$FINAL_CIRCUIT_VERIFIER
 
 # test poseidon
