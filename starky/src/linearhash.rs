@@ -34,7 +34,7 @@ use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 use rayon::prelude::*;
 
-#[derive(Default)]
+#[derive(Default, Debug, PartialEq)]
 pub struct LinearHash {
     h: Poseidon,
 }
@@ -56,7 +56,7 @@ impl LinearHash {
         &self,
         vals: &[Vec<FGL>],
         batch_size: usize,
-    ) -> Result<ElementDigest<4>> {
+    ) -> Result<ElementDigest<4, FGL>> {
         let mut flatvals = vec![FGL::default(); vals.len() * vals[0].len()];
 
         flatvals
@@ -76,7 +76,7 @@ impl LinearHash {
         target_feature = "avx512f",
         target_feature = "avx512vl"
     )))]
-    pub fn hash(&self, flatvals: &[FGL], batch_size: usize) -> Result<ElementDigest<4>> {
+    pub fn hash(&self, flatvals: &[FGL], batch_size: usize) -> Result<ElementDigest<4, FGL>> {
         let mut bs = batch_size;
         if bs == 0 {
             bs = core::cmp::max(8, (flatvals.len() + 3) / 4);
@@ -87,7 +87,7 @@ impl LinearHash {
             for (i, v) in flatvals.iter().enumerate() {
                 st[i] = *v;
             }
-            return Ok(ElementDigest::<4>::new(&st));
+            return Ok(ElementDigest::<4, FGL>::new(&st));
         }
 
         let hsz = (flatvals.len() + bs - 1) / bs;
@@ -106,7 +106,7 @@ impl LinearHash {
             for (i, v) in hashes.iter().enumerate() {
                 st[i] = *v;
             }
-            Ok(ElementDigest::<4>::new(&st))
+            Ok(ElementDigest::<4, FGL>::new(&st))
         } else {
             self._hash(&hashes)
         }
@@ -119,13 +119,13 @@ impl LinearHash {
         target_feature = "avx512f",
         target_feature = "avx512vl"
     )))]
-    pub fn _hash(&self, flatvals: &[FGL]) -> Result<ElementDigest<4>> {
+    pub fn _hash(&self, flatvals: &[FGL]) -> Result<ElementDigest<4, FGL>> {
         let mut st = [FGL::ZERO; 4];
         if flatvals.len() <= 4 {
             for (i, v) in flatvals.iter().enumerate() {
                 st[i] = *v;
             }
-            return Ok(ElementDigest::<4>::new(&st));
+            return Ok(ElementDigest::<4, FGL>::new(&st));
         }
 
         let mut inhashes: Vec<FGL> = vec![];
@@ -144,7 +144,7 @@ impl LinearHash {
             let t = self.h.hash(&inhashes, &st, 4).unwrap();
             st.copy_from_slice(&t);
         }
-        Ok(ElementDigest::<4>::new(&st))
+        Ok(ElementDigest::<4, FGL>::new(&st))
     }
 
     #[cfg(all(
@@ -158,7 +158,7 @@ impl LinearHash {
         &self,
         vals: &[Vec<FGL>],
         batch_size: usize,
-    ) -> Result<ElementDigest<4>> {
+    ) -> Result<ElementDigest<4, FGL>> {
         let mut flatvals = vec![FGL::default(); vals.len() * vals[0].len()];
 
         flatvals
@@ -181,7 +181,7 @@ impl LinearHash {
         target_feature = "avx512f",
         target_feature = "avx512vl"
     ))]
-    pub fn hash(&self, flatvals: &[FGL], batch_size: usize) -> Result<[ElementDigest<4>; 2]> {
+    pub fn hash(&self, flatvals: &[FGL], batch_size: usize) -> Result<[ElementDigest<4, FGL>; 2]> {
         let mid = flatvals.len() / 2;
         let flatvals0 = &flatvals[..mid];
         let flatvals1 = &flatvals[mid..];
@@ -200,7 +200,10 @@ impl LinearHash {
             for (i, v) in flatvals1.iter().enumerate() {
                 st1[i] = *v;
             }
-            return Ok([ElementDigest::<4>::new(&st0), ElementDigest::<4>::new(&st1)]);
+            return Ok([
+                ElementDigest::<4, FGL>::new(&st0),
+                ElementDigest::<4, FGL>::new(&st1),
+            ]);
         }
 
         let hsz = (mid + bs - 1) / bs;
@@ -226,7 +229,10 @@ impl LinearHash {
             for (i, &v) in hashes.iter().skip(mid).enumerate() {
                 st1[i % 4] = v;
             }
-            return Ok([ElementDigest::<4>::new(&st0), ElementDigest::<4>::new(&st1)]);
+            return Ok([
+                ElementDigest::<4, FGL>::new(&st0),
+                ElementDigest::<4, FGL>::new(&st1),
+            ]);
         } else {
             let mut hash: Vec<FGL> = Vec::with_capacity(hashes.len());
             for chunk in hashes.chunks(8) {
@@ -239,8 +245,8 @@ impl LinearHash {
             }
             let tmp = self._hash(&hash).unwrap();
             return Ok([
-                ElementDigest::<4>::new(&tmp[0..4]),
-                ElementDigest::<4>::new(&tmp[4..8]),
+                ElementDigest::<4, FGL>::new(&tmp[0..4]),
+                ElementDigest::<4, FGL>::new(&tmp[4..8]),
             ]);
         }
     }
@@ -333,7 +339,7 @@ mod tests {
             .collect::<Vec<Vec<FGL>>>();
 
         let res = lh.hash_element_matrix(&raw_inputs, 0).unwrap();
-        let expected = ElementDigest::<4>::new(&[
+        let expected = ElementDigest::<4, FGL>::new(&[
             FGL::from(17618903473682537397u64),
             FGL::from(11844743283521766961u64),
             FGL::from(185773432536380223u64),
@@ -360,7 +366,7 @@ mod tests {
             .collect::<Vec<Vec<FGL>>>();
 
         let res = lh.hash_element_matrix(&raw_inputs, 0).unwrap();
-        let expected = ElementDigest::<4>::new(&[
+        let expected = ElementDigest::<4, FGL>::new(&[
             FGL::from(1u64),
             FGL::from(2u64),
             FGL::from(3u64),

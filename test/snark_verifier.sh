@@ -20,7 +20,7 @@ WORK_DIR=$5/$CIRCUIT_NAME
 mkdir -p $WORK_DIR
 
 SNARK_CIRCOM=$5/$CIRCUIT_NAME.circom
-SNARK_INPUT=$5/final_input.zkin.json
+SNARK_INPUT=$5/fibonacci.final.zkin.json
 
 RUNDIR="${CUR_DIR}/../starkjs"
 

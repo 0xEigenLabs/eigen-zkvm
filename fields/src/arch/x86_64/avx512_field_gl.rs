@@ -3,6 +3,7 @@
 //!
 //! How to build/run/test:
 //! RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo build --features "avx512" --release
+#![feature(stdarch_x86_avx512)]
 use crate::ff::*;
 use crate::field_gl::{Fr, FrRepr as GoldilocksField};
 use crate::packed::PackedField;

@@ -56,54 +56,15 @@ do
 done
 c12_end=$(date +%s)
 
-recursive1_start=$(date +%s)
-for (( i=0; i<$NUM_PROOF; i++ ))
-do
-    if [ $first_run = "yes" ]; then
-        echo "1. compile circuit, use task 0 by default"
-        ${ZKIT} compile -p goldilocks -i $WORKSPACE/circuits/$i/$RECURSIVE1_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE/circuits/$i
-    else
-        echo "1.no need compile circom : "$WORKSPACE/circuits/$i/$RECURSIVE1_CIRCUIT.r1cs" already generated"
-    fi
-    echo "2. generate the pil files and const polynomicals files "
-    # generate the pil files and  const polynomicals files
-    # input files :  $RECURSIVE1_CIRCUIT.r1cs
-    # output files :  $RECURSIVE1_CIRCUIT.const  $RECURSIVE1_CIRCUIT.pil  $RECURSIVE1_CIRCUIT.exec
-    # ==recursive1_setup
-    if [ $first_run = "yes" ]; then
-        ${ZKIT} compressor12_setup  \
-            --r $WORKSPACE/circuits/0/$RECURSIVE1_CIRCUIT.r1cs \
-            --c $WORKSPACE/circuits/$i/$RECURSIVE1_CIRCUIT.const \
-            --p $WORKSPACE/circuits/$i/$RECURSIVE1_CIRCUIT.pil \
-            --e $WORKSPACE/circuits/$i/$RECURSIVE1_CIRCUIT.exec
-    fi
-    echo "3. generate the commit polynomicals files  "
-    # generate the commit polynomicals files 
-    # input files :  $RECURSIVE1_CIRCUIT.wasm  $input0/r1_input.zkin.json  $RECURSIVE1_CIRCUIT.pil  $RECURSIVE1_CIRCUIT.exec
-    # output files :  $RECURSIVE1_CIRCUIT.cm
-    ${ZKIT} compressor12_exec \
-        --w $WORKSPACE/circuits/$i/$RECURSIVE1_CIRCUIT"_js"/$RECURSIVE1_CIRCUIT.wasm  \
-        --i $WORKSPACE/circuits/$i/c12a.zkin.json  \
-        --p $WORKSPACE/circuits/$i/$RECURSIVE1_CIRCUIT.pil  \
-        --e $WORKSPACE/circuits/$i/$RECURSIVE1_CIRCUIT.exec \
-        --m $WORKSPACE/circuits/$i/$RECURSIVE1_CIRCUIT.cm
-    echo "4. generate the recursive1 proof  "
-    ${ZKIT} stark_prove -s ../starky/data/r1.starkStruct.json \
-        -p $WORKSPACE/circuits/$i/$RECURSIVE1_CIRCUIT.pil.json \
-        --o $WORKSPACE/circuits/$i/$RECURSIVE1_CIRCUIT.const \
-        --m $WORKSPACE/circuits/$i/$RECURSIVE1_CIRCUIT.cm -c $WORKSPACE/circuits/$RECURSIVE2_CIRCUIT.circom \
-        --i $WORKSPACE/aggregation/$i/$RECURSIVE1_CIRCUIT.zkin.json --norm_stage --agg_stage
-done
-recursive1_end=$(date +%s)
 
 aggregation_start=$(date +%s)
 echo " ==> aggregation stage <== "
 echo "1. combine input1.zkin.json with input2.zkin.json "
-${ZKIT} join_zkin --zkin1 $input0/$RECURSIVE1_CIRCUIT.zkin.json --zkin2 $input1/$RECURSIVE1_CIRCUIT.zkin.json  --zkinout $WORKSPACE/aggregation/r1_input.zkin.json
+${ZKIT} join_zkin --zkin1 $input0/$RECURSIVE1_CIRCUIT.zkin.json --zkin2 $input1/$RECURSIVE1_CIRCUIT.zkin.json  --zkinout $WORKSPACE/aggregation/r01_input.zkin.json
 
 if [ $first_run = "yes" ]; then
     echo "2. compile circuit and generate r1cs and wasm"
-    ${ZKIT} compile -p goldilocks -i $WORKSPACE/circuits/$RECURSIVE2_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE 
+    ${ZKIT} compile -p goldilocks -i $WORKSPACE/circuits/0/$RECURSIVE2_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.gl" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE 
 else
     echo "2.no need compile circom : "$WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs" already generated"
 fi
@@ -114,19 +75,20 @@ if [ $first_run = "yes" ]; then
         --r $WORKSPACE/$RECURSIVE2_CIRCUIT.r1cs \
         --c $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
         --p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil \
-        --e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec
+        --e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec \
+        --force-n-bits 18
 fi
 
 echo "4. generate the commit polynomicals files "
 ${ZKIT} compressor12_exec \
     --w $WORKSPACE/$RECURSIVE2_CIRCUIT"_js"/$RECURSIVE2_CIRCUIT.wasm  \
-    --i $WORKSPACE/aggregation/r1_input.zkin.json  \
+    --i $WORKSPACE/aggregation/r01_input.zkin.json  \
     --p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil  \
     --e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec \
     --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm
 
 echo "5. generate recursive2 proof "
-${ZKIT} stark_prove -s ../starky/data/r2.starkStruct.json \
+${ZKIT} stark_prove -s ../starky/data/r1.starkStruct.json \
     -p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil.json \
     --o $WORKSPACE/$RECURSIVE2_CIRCUIT.const \
     --m $WORKSPACE/$RECURSIVE2_CIRCUIT.cm -c $WORKSPACE/aggregation/$FINAL_CIRCUIT.circom \
@@ -135,8 +97,6 @@ ${ZKIT} stark_prove -s ../starky/data/r2.starkStruct.json \
 #     --prover_addr 273030697313060285579891744179749754319274977764
 
 aggregation_end=$(date +%s)
-
-
 
 
 final_start=$(date +%s)
@@ -177,7 +137,7 @@ ${ZKIT} stark_prove -s $STARK_STRUCT \
     -p $WORKSPACE/$FINAL_CIRCUIT.pil.json \
     --o $WORKSPACE/$FINAL_CIRCUIT.const \
     --m $WORKSPACE/$FINAL_CIRCUIT.cm -c $WORKSPACE/aggregation/$FINAL_CIRCUIT_VERIFIER.circom \
-    --i $WORKSPACE/aggregation/$FINAL_CIRCUIT.zkin.json  --skip_main
+    --i $WORKSPACE/aggregation/$FINAL_CIRCUIT.zkin.json
 
 final_end=$(date +%s)
 
@@ -193,7 +153,6 @@ fi
 snark_end=$(date +%s)
 
 echo "C12 Stage Time Cost ($((c12_end - c12_start))s)"
-echo "Nomalization Stage Time Cost ($((recursive1_end - recursive1_start))s)"
 echo "Aggregation Stage Time Cost ($((aggregation_end - aggregation_start))s)"
 echo "Final Stage Time Cost ($((final_end - final_start))s)"
 echo "Recursive Snark Stage Time Cost ($((snark_end - snark_start))s)"

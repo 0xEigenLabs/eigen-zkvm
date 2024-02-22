@@ -53,7 +53,6 @@ use std::io::{Read, Write};
 
 pub mod ethereum_serializer {
     use super::*;
-    use ethabi::ethereum_types::U256;
 
     pub fn serialize_g1(point: &<Bn256 as Engine>::G1Affine) -> (U256, U256) {
         if point.is_zero() {

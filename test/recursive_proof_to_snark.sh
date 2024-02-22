@@ -18,10 +18,11 @@ mkdir -p $WORKSPACE/$TASK_NO
 mkdir -p $WORKSPACE/circuits/$TASK_NO
 
 C12_VERIFIER=$TASK_NO/${CIRCUIT}".c12"
-RECURSIVE1_VERIFIER=$TASK_NO/${CIRCUIT}".recursive1"
+RECURSIVE1_CIRCUIT=${CIRCUIT}".recursive1"
+RECURSIVE2_CIRCUIT=${CIRCUIT}.recursive2
 
 
-##### PIL-STARK Setup Phase
+##### 0. PIL-STARK Setup Phase
 
 # Compilation With PILCOM
 # compile .pil file into .pil.json by pilcom.
@@ -29,6 +30,7 @@ RECURSIVE1_VERIFIER=$TASK_NO/${CIRCUIT}".recursive1"
 # output files :  .pil.json, .const, .cm
 mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TASK_NO --pc $PILCACHE
 
+#### 1. Generate stark proof
 # generate .circom file.
 # input files :  .pil json & starkStruct.json.gl
 # output files : .circom
@@ -58,25 +60,50 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
     --e $WORKSPACE/$C12_VERIFIER.exec \
     --m $WORKSPACE/$C12_VERIFIER.cm
 
-mkdir -p $WORKSPACE/aggregation/$RECURSIVE1_VERIFIER/
+#### 2. Genrate c12a stark proof
+# generate the stark proof and the circom circuits to verify stark proof.
+# input files : $C12_VERIFIER.pil.json(stark proof)  $C12_VERIFIER.const(const polynomials)  $C12_VERIFIER.cm (commit polynomials)
+# output files :  $RECURSIVE1_CIRCUIT.circom  $RECURSIVE1_CIRCUIT/input.json
+../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json \
+    -p $WORKSPACE/$C12_VERIFIER.pil.json \
+    --o $WORKSPACE/$C12_VERIFIER.const \
+    --m $WORKSPACE/$C12_VERIFIER.cm -c $WORKSPACE/circuits/$TASK_NO/$RECURSIVE1_CIRCUIT.circom --i $WORKSPACE/circuits/$TASK_NO/c12a.zkin.json
 
-if [ "$GENERATE_PROOF_TYPE" = "stark" ]; then 
-    echo "Generate stark proof"
-    # generate the stark proof and the circom circuits to verify stark proof.
-    # input files : $C12_VERIFIER.pil.json(stark proof)  $C12_VERIFIER.const(const polynomials)  $C12_VERIFIER.cm (commit polynomials)
-    # output files :  $RECURSIVE1_VERIFIER.circom  $RECURSIVE1_VERIFIER/input.json
-    ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.json \
-        -p $WORKSPACE/$C12_VERIFIER.pil.json \
-        --o $WORKSPACE/$C12_VERIFIER.const \
-        --m $WORKSPACE/$C12_VERIFIER.cm -c $WORKSPACE/circuits/$RECURSIVE1_VERIFIER.circom --i $WORKSPACE/circuits/$TASK_NO/c12a.zkin.json
+../target/release/eigen-zkit compile -p goldilocks -i $WORKSPACE/circuits/$TASK_NO/$RECURSIVE1_CIRCUIT.circom -l $RUNDIR/node_modules/pil-stark/circuits.gl --O2=full -o $WORKSPACE/$TASK_NO
+# generate the pil files and  const polynomicals files
+# input files :  $RECURSIVE1_CIRCUIT.r1cs
+# output files :  $RECURSIVE1_CIRCUIT.const  $RECURSIVE1_CIRCUIT.pil  $RECURSIVE1_CIRCUIT.exec
+../target/release/eigen-zkit compressor12_setup \
+    --r $WORKSPACE/0/$RECURSIVE1_CIRCUIT.r1cs \
+    --c $WORKSPACE/$RECURSIVE1_CIRCUIT.const \
+    --p $WORKSPACE/$RECURSIVE1_CIRCUIT.pil \
+    --e $WORKSPACE/$RECURSIVE1_CIRCUIT.exec \
+    --force-n-bits 18
 
-else 
-    echo "Generate snark proof"
-     # generate the stark proof and the circom circuits to verify stark proof.
-    # input files : $C12_VERIFIER.pil.json(stark proof)  $C12_VERIFIER.const(const polynomials)  $C12_VERIFIER.cm (commit polynomials)
-    # output files :  $RECURSIVE1_VERIFIER.circom  $RECURSIVE1_VERIFIER/input.json
-    ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.bn128.json \
-        -p $WORKSPACE/$C12_VERIFIER.pil.json \
-        --o $WORKSPACE/$C12_VERIFIER.const \
-        --m $WORKSPACE/$C12_VERIFIER.cm -c $WORKSPACE/circuits/$RECURSIVE1_VERIFIER.circom --i $WORKSPACE/aggregation/$RECURSIVE1_VERIFIER/input.json
-fi 
+# generate the commit polynomicals files 
+# input files :  $RECURSIVE1_CIRCUIT.wasm  $input0/r1_input.zkin.json  $RECURSIVE1_CIRCUIT.pil  $RECURSIVE1_CIRCUIT.exec
+# output files :  $RECURSIVE1_CIRCUIT.cm
+../target/release/eigen-zkit compressor12_exec \
+    --w $WORKSPACE/0/$RECURSIVE1_CIRCUIT"_js"/$RECURSIVE1_CIRCUIT.wasm  \
+    --i $WORKSPACE/circuits/$TASK_NO/c12a.zkin.json  \
+    --p $WORKSPACE/$RECURSIVE1_CIRCUIT.pil  \
+    --e $WORKSPACE/$RECURSIVE1_CIRCUIT.exec \
+    --m $WORKSPACE/$RECURSIVE1_CIRCUIT.cm
+
+../target/release/eigen-zkit stark_prove -s ../starky/data/r1.starkStruct.json \
+    -p $WORKSPACE/$RECURSIVE1_CIRCUIT.pil.json \
+    --o $WORKSPACE/$RECURSIVE1_CIRCUIT.const \
+    --m $WORKSPACE/$RECURSIVE1_CIRCUIT.cm -c $WORKSPACE/circuits/$TASK_NO/$RECURSIVE2_CIRCUIT.circom \
+    --i $WORKSPACE/aggregation/$TASK_NO/$RECURSIVE1_CIRCUIT.zkin.json --norm_stage --agg_stage
+
+# if [ "$GENERATE_PROOF_TYPE" = "stark" ]; then 
+# else 
+#     echo "Generate snark proof"
+#      # generate the stark proof and the circom circuits to verify stark proof.
+#     # input files : $C12_VERIFIER.pil.json(stark proof)  $C12_VERIFIER.const(const polynomials)  $C12_VERIFIER.cm (commit polynomials)
+#     # output files :  $RECURSIVE1_CIRCUIT.circom  $RECURSIVE1_CIRCUIT/input.json
+#     ../target/release/eigen-zkit stark_prove -s ../starky/data/c12.starkStruct.bn128.json \
+#         -p $WORKSPACE/$C12_VERIFIER.pil.json \
+#         --o $WORKSPACE/$C12_VERIFIER.const \
+#         --m $WORKSPACE/$C12_VERIFIER.cm -c $WORKSPACE/circuits/$RECURSIVE1_CIRCUIT.circom --i $WORKSPACE/aggregation/$RECURSIVE1_CIRCUIT/input.json
+# fi 

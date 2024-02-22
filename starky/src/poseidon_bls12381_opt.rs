@@ -69,6 +69,7 @@ pub fn load_constants() -> Constants {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Poseidon;
 
 impl Default for Poseidon {
@@ -243,9 +244,8 @@ impl Poseidon {
 
 #[cfg(test)]
 mod tests {
-    use crate::field_bls12381::Fr;
     use crate::poseidon_bls12381_opt::*;
-    use ff::{Field, PrimeField};
+    use ff::PrimeField;
 
     #[test]
     fn test_poseidon_opt_hash() {
