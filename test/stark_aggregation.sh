@@ -18,7 +18,7 @@ cd "$CUR_DIR"
 export NODE_OPTIONS="--max-old-space-size=81920"
 
 BIG_POWER=26
-NUM_PROOF=2
+NUM_PROOF=4
 NUM_INPUT=2
 ZKIT="${CUR_DIR}/../target/release/eigen-zkit"
 CIRCUIT="fibonacci"
@@ -38,6 +38,8 @@ FINAL_CIRCUIT_VERIFIER=$CIRCUIT.final.verifier
 
 input0=$WORKSPACE/aggregation/0 && mkdir -p $input0
 input1=$WORKSPACE/aggregation/1 && mkdir -p $input1
+input2=$WORKSPACE/aggregation/2 && mkdir -p $input2
+input3=$WORKSPACE/aggregation/3 && mkdir -p $input3
 
 mkdir -p $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT
 mkdir -p $WORKSPACE/aggregation/$FINAL_CIRCUIT
@@ -95,25 +97,21 @@ ${ZKIT} stark_prove -s ../starky/data/r1.starkStruct.json \
     --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT"_0".zkin.json  --norm_stage
 
 #     --prover_addr 273030697313060285579891744179749754319274977764
-
-aggregation_end=$(date +%s)
-
-#### mock aggregation test
 counter=0
-num_loops=2
-
-for (( i=0; i<$num_loops; i++ ))
+for (( i=0; i<NUM_PROOF-2; i++ ))
 do
     suffix=$(printf "_%d" $((counter)))
     next_suffix=$(printf "_%d" $((counter+1)))
+    input="$WORKSPACE/aggregation/$((i + 2))"
+
     ${ZKIT} join_zkin \
         --zkin1 $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT$suffix.zkin.json \
-        --zkin2 $input1/$RECURSIVE1_CIRCUIT.zkin.json \
-        --zkinout $WORKSPACE/aggregation/r01$suffix"_input.zkin.json"
+        --zkin2 $input/$RECURSIVE1_CIRCUIT.zkin.json \
+        --zkinout $WORKSPACE/aggregation/r$suffix"_input".zkin.json
 
     ${ZKIT} compressor12_exec \
         --w $WORKSPACE/$RECURSIVE2_CIRCUIT"_js"/$RECURSIVE2_CIRCUIT.wasm \
-        --i $WORKSPACE/aggregation/r01$suffix"_input.zkin.json" \
+        --i $WORKSPACE/aggregation/r$suffix"_input".zkin.json \
         --p $WORKSPACE/$RECURSIVE2_CIRCUIT.pil \
         --e $WORKSPACE/$RECURSIVE2_CIRCUIT.exec \
         --m $WORKSPACE/$RECURSIVE2_CIRCUIT$suffix.cm
@@ -129,6 +127,7 @@ do
     ((counter++))
 done
 
+aggregation_end=$(date +%s)
 
 final_start=$(date +%s)
 # final recursive stage 
@@ -153,7 +152,7 @@ fi
 echo "3. generate the commit polynomicals files "
 ${ZKIT} compressor12_exec \
     --w $WORKSPACE/$FINAL_CIRCUIT"_js"/$FINAL_CIRCUIT.wasm  \
-    --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT"_"$num_loops.zkin.json \
+    --i $WORKSPACE/aggregation/$RECURSIVE2_CIRCUIT"_"$((NUM_PROOF - 2)).zkin.json \
     --p $WORKSPACE/$FINAL_CIRCUIT.pil  \
     --e $WORKSPACE/$FINAL_CIRCUIT.exec \
     --m $WORKSPACE/$FINAL_CIRCUIT.cm

@@ -62,8 +62,12 @@ console.log("pilCache:", pilCache)
 let input;
 if (argv.input == "0") {
   input = [1, 2]
-} else {
+} else if (argv.input == "1") {
   input = [3, 4]
+} else if (argv.input == "2") {
+  input = [5, 6]
+} else {
+  input = [7, 8]
 }
 
 pil_verifier.generate(argv.workspace, pilFile, pilConfig, pilCache, new FibonacciJS(), starkStruct, proverAddr, input).then(() => {
