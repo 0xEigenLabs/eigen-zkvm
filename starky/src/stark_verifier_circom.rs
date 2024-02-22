@@ -1854,21 +1854,12 @@ template Main() {{
         res.push_str(&format!(
             r#"
 template Main() {{
-    var rootCSingle[4];
-    rootCSingle[0] = {};
-    rootCSingle[1] = {};
-    rootCSingle[2] = {};
-    rootCSingle[3] = {};
 
     signal input publics[{}];
     signal input rootC[4];
 
     "#,
-            const_roots[0].as_int(),
-            const_roots[1].as_int(),
-            const_roots[2].as_int(),
-            const_roots[3].as_int(),
-            pil.publics.len(),
+            pil.publics.len() - 4,
         ));
         res.push_str(&format!(
             r#"
@@ -1877,12 +1868,14 @@ template Main() {{
     signal input a_root2[4];
     signal input a_root3[4];
     signal input a_root4[4];
+    signal input a_rootC[4];
 
     signal input b_publics[{}];
     signal input b_root1[4];
     signal input b_root2[4];
     signal input b_root3[4];
     signal input b_root4[4];
+    signal input b_rootC[4];
     "#,
             pil.publics.len(),
             pil.publics.len()
@@ -2054,12 +2047,12 @@ template Main() {{
     for (var i=0; i<{}; i++) {{
         vA.publics[i] <== a_publics[i];
     }}
-    vA.rootC <== rootCSingle;
 
     vA.root1 <== a_root1;
     vA.root2 <== a_root2;
     vA.root3 <== a_root3;
     vA.root4 <== a_root4;
+    vA.rootC <== a_rootC;
     vA.evals <== a_evals;
     vA.s0_vals1 <== a_s0_vals1;
     vA.s0_vals3 <== a_s0_vals3;
@@ -2095,12 +2088,12 @@ template Main() {{
     for (var i=0; i<{}; i++) {{
         vB.publics[i] <== b_publics[i];
     }}
-    vB.rootC <== rootCSingle;
 
     vB.root1 <== b_root1;
     vB.root2 <== b_root2;
     vB.root3 <== b_root3;
     vB.root4 <== b_root4;
+    vB.rootC <== b_rootC;
     vB.evals <== b_evals;
     vB.s0_vals1 <== b_s0_vals1;
     vB.s0_vals3 <== b_s0_vals3;
