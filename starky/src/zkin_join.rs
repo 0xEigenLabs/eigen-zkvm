@@ -1,8 +1,8 @@
 use anyhow::Result;
+use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::Write;
-use serde_json::Value;
 
 /// Combine the `input1.zkin.json` and `input1.zkin.json` into one(`out.zkin.json`)
 // ../../target/release/eigen-zkit join_zkin --zkin1 0/fibonacci.recursive1/input.zkin.json  --zkin2 1/fibonacci.recursive1/input.zkin.json  --zkinout 0/fibonacci.recursive1/r1_input-rs.zkin.json
@@ -29,7 +29,10 @@ pub fn join_zkin(
             if let Value::Array(ref arr) = v {
                 if arr.len() >= 4 {
                     let exclude_last_four = &arr[..(arr.len() - 4)];
-                    zkout_map.insert("publics".to_string(), Value::Array(exclude_last_four.to_vec()));
+                    zkout_map.insert(
+                        "publics".to_string(),
+                        Value::Array(exclude_last_four.to_vec()),
+                    );
                 } else {
                     zkout_map.insert("publics".to_string(), v.clone());
                 }
