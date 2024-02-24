@@ -57,13 +57,13 @@ pub fn load_witness_from_json_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
-        .unwrap_or_else(|_| panic!("unable to open {}.", filename));
+        .unwrap_or_else(|_| panic!("Unable to open {}.", filename));
     load_witness_from_json::<E, BufReader<File>>(BufReader::new(reader))
 }
 
 /// load witness from json by a reader
 fn load_witness_from_json<E: ScalarEngine, R: Read>(reader: R) -> Vec<E::Fr> {
-    let witness: Vec<String> = serde_json::from_reader(reader).expect("unable to read.");
+    let witness: Vec<String> = serde_json::from_reader(reader).expect("Unable to read.");
     witness
         .into_iter()
         .map(|x| E::Fr::from_str(&x).unwrap())
@@ -75,7 +75,7 @@ pub fn load_witness_from_bin_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr>
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
-        .unwrap_or_else(|_| panic!("unable to open {}.", filename));
+        .unwrap_or_else(|_| panic!("Unable to open {}.", filename));
     load_witness_from_bin_reader::<E, BufReader<File>>(BufReader::new(reader))
         .expect("read witness failed")
 }
@@ -154,13 +154,13 @@ fn load_r1cs_from_json_file<E: ScalarEngine>(filename: &str) -> R1CS<E> {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
-        .unwrap_or_else(|_| panic!("unable to open {}.", filename));
+        .unwrap_or_else(|_| panic!("Unable to open {}.", filename));
     load_r1cs_from_json(BufReader::new(reader))
 }
 
 /// load r1cs from json by a reader
 fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
-    let circuit_json: CircuitJson = serde_json::from_reader(reader).expect("unable to read.");
+    let circuit_json: CircuitJson = serde_json::from_reader(reader).expect("Unable to read.");
 
     let num_inputs = circuit_json.num_inputs + circuit_json.num_outputs + 1;
     let num_aux = circuit_json.num_variables - num_inputs;
@@ -199,13 +199,13 @@ fn load_r1cs_from_bin_file<E: ScalarEngine>(filename: &str) -> (R1CS<E>, Vec<usi
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
-        .unwrap_or_else(|_| panic!("unable to open {}.", filename));
+        .unwrap_or_else(|_| panic!("Unable to open {}.", filename));
     load_r1cs_from_bin(BufReader::new(reader))
 }
 
 /// load r1cs from bin by a reader
 pub fn load_r1cs_from_bin<R: Read + Seek, E: ScalarEngine>(reader: R) -> (R1CS<E>, Vec<usize>) {
-    let file = crate::r1cs_file::from_reader::<R, E>(reader).expect("unable to read.");
+    let file = crate::r1cs_file::from_reader::<R, E>(reader).expect("Unable to read.");
     let num_inputs = (1 + file.header.n_pub_in + file.header.n_pub_out) as usize;
     let num_variables = file.header.n_wires as usize;
     let num_aux = num_variables - num_inputs;

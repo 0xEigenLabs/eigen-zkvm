@@ -6,7 +6,7 @@ use std::fmt;
 use std::fs::File;
 use std::io::Read;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct Public {
@@ -204,7 +204,7 @@ pub fn load_json<T>(filename: &str) -> Result<T>
 where
     T: serde::de::DeserializeOwned,
 {
-    let mut file = File::open(filename)?;
+    let mut file = File::open(filename).map_err(|e| anyhow!("open {} error: {:?}", filename, e))?;
     let mut data = String::new();
     file.read_to_string(&mut data)?;
     read_json(data)
