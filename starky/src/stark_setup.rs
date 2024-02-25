@@ -11,6 +11,7 @@ use crate::types::{StarkStruct, PIL};
 use anyhow::Result;
 use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
+use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 #[derive(Default)]
 pub struct StarkSetup<M: MerkleTree> {
@@ -21,6 +22,9 @@ pub struct StarkSetup<M: MerkleTree> {
 }
 
 impl<M: MerkleTree> StarkSetup<M> {
+    // Rename as serialize
+    // TODO: io.read, io.write as param
+    // The three file merge into one.
     pub fn save(&self, base_dir: &str) -> Result<()> {
         if path::Path::new(base_dir).exists() {
             fs::remove_dir_all(base_dir)?;
@@ -174,5 +178,26 @@ pub mod tests {
             FGL::from(1611894784155222896u64),
         ]);
         assert_eq!(expect_root, setup.const_root);
+    }
+
+    #[test]
+    fn test_stark_setup_save_and_load() {
+        let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
+        const_pol.load("data/fib.const").unwrap();
+
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
+        let setup =
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+
+        let setup_file = "/tmp/connection.setup";
+        setup.save(setup_file).unwrap();
+
+        let expect_setup = StarkSetup::<MerkleTreeBN128>::load(setup_file).unwrap();
+        let root: Fr = Fr(expect_setup.const_root.as_scalar::<Fr>());
+
+        let expect_root =
+            "4658128321472362347225942316135505030498162093259225938328465623672244875764";
+        assert_eq!(Fr::from_str(expect_root).unwrap(), root);
     }
 }

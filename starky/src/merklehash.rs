@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+
 #[cfg(all(
     target_feature = "avx2",
     not(all(
@@ -510,6 +511,7 @@ mod tests {
     use crate::traits::MTNodeType;
     use crate::traits::MerkleTree;
     use fields::field_gl::Fr as FGL;
+    use std::fs;
     use std::time::Instant;
 
     #[test]
@@ -615,5 +617,17 @@ mod tests {
             .verify_group_proof(&root, &mp, idx, &group_elements)
             .unwrap());
     }
-    //TODO save and restore to file
+
+    #[test]
+    fn test_merkle_tree_gl_save_and_load() {
+        let mut expect_tree = MerkleTreeGL::new();
+
+        let file = "/tmp/tree_gl";
+        let mut writer = fs::File::create(file).unwrap();
+        expect_tree.save(&mut writer).unwrap();
+
+        let mut reader = fs::File::open(file).unwrap();
+        let actual_tree = MerkleTreeGL::load(&mut reader).unwrap();
+        assert_eq!(expect_tree, actual_tree);
+    }
 }
