@@ -57,21 +57,6 @@ impl<const N: usize, F: PrimeField + Default> MTNodeType for ElementDigest<N, F>
         }
         y
     }
-
-    fn save<W: Write>(&self, writer: &mut W) -> Result<()> {
-        for i in &self.0 {
-            writer.write_u64::<LittleEndian>(i.as_int())?;
-        }
-        Ok(())
-    }
-
-    fn load<R: Read>(reader: &mut R) -> Result<Self> {
-        let e1 = reader.read_u64::<LittleEndian>()?;
-        let e2 = reader.read_u64::<LittleEndian>()?;
-        let e3 = reader.read_u64::<LittleEndian>()?;
-        let e4 = reader.read_u64::<LittleEndian>()?;
-        Ok(Self::new(&[e1.into(), e2.into(), e3.into(), e4.into()]))
-    }
 }
 
 impl<const N: usize, F: PrimeField + Default> Display for ElementDigest<N, F> {
@@ -193,21 +178,6 @@ mod tests {
     use num_traits::ToPrimitive;
     use rand::Rand;
     use std::fs;
-
-    #[test]
-    fn test_save_and_load_Eelement() {
-        const N: usize = 3;
-        let feilds = vec![FGL::zero(); N];
-        let mut expect = ElementDigest::<N, Fr>::new(&feilds);
-
-        let file = "/tmp/ElementDigest.bin";
-        let mut writer = fs::File::create(file).unwrap();
-        expect.save(&mut writer).unwrap();
-
-        let mut reader = fs::File::open(file).unwrap();
-        let actual = ElementDigest::<N, Fr>::load(&mut reader).unwrap();
-        assert_eq!(expect, actual);
-    }
 
     #[test]
     fn test_fr_to_element_digest_and_versus() {

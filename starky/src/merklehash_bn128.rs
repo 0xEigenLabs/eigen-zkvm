@@ -161,42 +161,6 @@ impl MerkleTree for MerkleTreeBN128 {
         }
     }
 
-    fn save<W: Write>(&self, writer: &mut W) -> Result<()> {
-        writer.write_u64::<LittleEndian>(self.width as u64)?;
-        writer.write_u64::<LittleEndian>(self.height as u64)?;
-        writer.write_u64::<LittleEndian>(self.elements.len() as u64)?;
-        for i in &self.elements {
-            writer.write_u64::<LittleEndian>(i.as_int())?;
-        }
-        writer.write_u64::<LittleEndian>(self.nodes.len() as u64)?;
-        for i in &self.nodes {
-            i.save(writer)?;
-        }
-        Ok(())
-    }
-
-    fn load<R: Read>(reader: &mut R) -> Result<Self> {
-        let mut mt = Self::new();
-        mt.width = reader.read_u64::<LittleEndian>()? as usize;
-        mt.height = reader.read_u64::<LittleEndian>()? as usize;
-
-        let es = reader.read_u64::<LittleEndian>()? as usize;
-        mt.elements = vec![FGL::ZERO; es];
-        for i in 0..es {
-            let e = reader.read_u64::<LittleEndian>()?;
-            mt.elements[i] = FGL::from(e);
-        }
-
-        let ns = reader.read_u64::<LittleEndian>()? as usize;
-        mt.nodes =
-            vec![ElementDigest::<4, Fr>::new(&[FGL::ZERO, FGL::ZERO, FGL::ZERO, FGL::ZERO]); ns];
-        for i in 0..ns {
-            mt.nodes[i] = ElementDigest::<4, Fr>::load(reader)?;
-        }
-
-        Ok(mt)
-    }
-
     fn element_size(&self) -> usize {
         self.elements.len()
     }

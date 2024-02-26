@@ -23,7 +23,7 @@ unit_test: ## Run tests for all the workspace members
 
 
 test: ## Run tests for all the workspace members
-	@cd test && ./stark_aggregation.sh NO BN128 && cd ..
+	@cd test && ./stark_aggregation.sh yes BN128 && cd ..
 
 
 .PHONY: clippy fmt test

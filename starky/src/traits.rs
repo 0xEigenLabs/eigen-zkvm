@@ -21,8 +21,6 @@ where
     fn new(value: &[FGL]) -> Self;
     fn from_scalar<T: PrimeField>(e: &T) -> Self;
     fn as_scalar<T: PrimeField>(&self) -> T::Repr;
-    fn save<W: Write>(&self, writer: &mut W) -> Result<()>;
-    fn load<R: Read>(reader: &mut R) -> Result<Self>;
 }
 
 #[allow(clippy::type_complexity)]
@@ -57,8 +55,6 @@ where
     fn root(&self) -> Self::MTNode;
     fn eq_root(&self, r1: &Self::MTNode, r2: &Self::MTNode) -> bool;
     fn element_size(&self) -> usize;
-    fn save<W: Write>(&self, writer: &mut W) -> Result<()>;
-    fn load<R: Read>(reader: &mut R) -> Result<Self>;
 }
 
 pub trait Transcript {

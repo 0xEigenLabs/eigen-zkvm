@@ -267,43 +267,6 @@ impl MerkleTree for MerkleTreeGL {
         }
     }
 
-    // TODO: https://github.com/0xEigenLabs/eigen-zkvm/issues/187
-    fn save<W: Write>(&self, writer: &mut W) -> Result<()> {
-        writer.write_u64::<LittleEndian>(self.width as u64)?;
-        writer.write_u64::<LittleEndian>(self.height as u64)?;
-        writer.write_u64::<LittleEndian>(self.elements.len() as u64)?;
-        for i in &self.elements {
-            writer.write_u64::<LittleEndian>(i.as_int())?;
-        }
-        writer.write_u64::<LittleEndian>(self.nodes.len() as u64)?;
-        for i in &self.nodes {
-            i.save(writer)?;
-        }
-        Ok(())
-    }
-
-    fn load<R: Read>(reader: &mut R) -> Result<Self> {
-        let mut mt = Self::new();
-        mt.width = reader.read_u64::<LittleEndian>()? as usize;
-        mt.height = reader.read_u64::<LittleEndian>()? as usize;
-
-        let es = reader.read_u64::<LittleEndian>()? as usize;
-        mt.elements = vec![FGL::ZERO; es];
-        for i in 0..es {
-            let e = reader.read_u64::<LittleEndian>()?;
-            mt.elements[i] = FGL::from(e);
-        }
-
-        let ns = reader.read_u64::<LittleEndian>()? as usize;
-        mt.nodes =
-            vec![ElementDigest::<4, FGL>::new(&[FGL::ZERO, FGL::ZERO, FGL::ZERO, FGL::ZERO]); ns];
-        for i in 0..ns {
-            mt.nodes[i] = ElementDigest::<4, FGL>::load(reader)?;
-        }
-
-        Ok(mt)
-    }
-
     fn element_size(&self) -> usize {
         self.elements.len()
     }
@@ -617,19 +580,6 @@ mod tests {
         assert!(tree
             .verify_group_proof(&root, &mp, idx, &group_elements)
             .unwrap());
-    }
-
-    #[test]
-    fn test_merkle_tree_gl_save_and_load() {
-        let mut expect_tree = MerkleTreeGL::new();
-
-        let file = "/tmp/tree_gl";
-        let mut writer = fs::File::create(file).unwrap();
-        expect_tree.save(&mut writer).unwrap();
-
-        let mut reader = fs::File::open(file).unwrap();
-        let actual_tree = MerkleTreeGL::load(&mut reader).unwrap();
-        assert_eq!(expect_tree, actual_tree);
     }
 
     #[test]
