@@ -6,7 +6,7 @@ use crate::serializer::NodeWrapper;
 use ff::PrimeField;
 use fields::field_gl::Fr as FGL;
 use fields::Field;
-use serde::{de::DeserializeOwned, ser::Serialize};
+use serde::{de::DeserializeOwned, ser::Serialize, Deserialize};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 use std::io::{Read, Write};
@@ -30,7 +30,14 @@ pub trait MerkleTree
 where
     Self: Sized,
 {
-    type MTNode: Copy + Display + Clone + Default + MTNodeType + Debug;
+    type MTNode: Copy
+        + Display
+        + Clone
+        + Default
+        + MTNodeType
+        + Debug
+        + Serialize
+        + DeserializeOwned;
     // TODO: the BaseField is the container of flatten MTNode, merge BaseField and MTNode
     type BaseField: Clone + Default + Debug + PartialEq + Into<NodeWrapper<Self::MTNode>>;
     type ExtendField: FieldExtension;

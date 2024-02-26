@@ -11,8 +11,9 @@ use crate::types::{StarkStruct, PIL};
 use anyhow::Result;
 use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
+use serde::{Deserialize, Serialize};
 
-#[derive(Default)]
+#[derive(Default, Serialize, Deserialize)]
 pub struct StarkSetup<M: MerkleTree> {
     pub const_tree: M,
     pub const_root: M::MTNode,
@@ -194,6 +195,27 @@ pub mod tests {
 
         let expect_setup = StarkSetup::<MerkleTreeBN128>::load(setup_file).unwrap();
         let root: Fr = Fr(expect_setup.const_root.as_scalar::<Fr>());
+
+        let expect_root =
+            "4658128321472362347225942316135505030498162093259225938328465623672244875764";
+        assert_eq!(Fr::from_str(expect_root).unwrap(), root);
+    }
+
+    #[test]
+    fn test_stark_setup_serialize_and_deserialize() {
+        let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
+        let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
+        const_pol.load("data/fib.const").unwrap();
+
+        let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
+        let data =
+            StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+
+        let serialized = serde_json::to_string(&data).unwrap();
+        println!("Serialized: {}", serialized);
+
+        let expect: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
+        let root: Fr = Fr(expect.const_root.as_scalar::<Fr>());
 
         let expect_root =
             "4658128321472362347225942316135505030498162093259225938328465623672244875764";
