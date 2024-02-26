@@ -8,12 +8,10 @@ use crate::poseidon_bls12381_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use anyhow::{bail, Result};
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use ff::Field;
 use fields::field_gl::Fr as FGL;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Write};
 use std::time::Instant;
 
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize)]

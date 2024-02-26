@@ -2,9 +2,7 @@
 use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bls12381::FrRepr as FrRepr_bls12381;
 use crate::field_bn128::{Fr, FrRepr};
-use crate::traits::{MTNodeType, MerkleTree};
-use anyhow::Result;
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use crate::traits::MTNodeType;
 use ff::*;
 use fields::field_gl::Fr as FGL;
 use serde::de::{SeqAccess, Visitor};
@@ -12,7 +10,6 @@ use serde::ser::SerializeSeq;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
 use std::fmt::Display;
-use std::io::{Read, Write};
 use std::marker::PhantomData;
 
 /// the trait F is used to keep track of source data type, so we can implement its deserializer
@@ -177,7 +174,6 @@ mod tests {
     use num_traits::Num;
     use num_traits::ToPrimitive;
     use rand::Rand;
-    use std::fs;
 
     #[test]
     fn test_fr_to_element_digest_and_versus() {
