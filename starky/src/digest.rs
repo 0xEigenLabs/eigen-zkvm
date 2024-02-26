@@ -1,18 +1,24 @@
 #![allow(non_snake_case)]
 
+use crate::f3g::F3G;
 use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bls12381::FrRepr as FrRepr_bls12381;
 use crate::field_bn128::{Fr, FrRepr};
-use crate::traits::MTNodeType;
+use crate::traits::{MTNodeType, MerkleTree};
 use anyhow::Result;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use ff::*;
 use fields::field_gl::Fr as FGL;
+use serde::de::{SeqAccess, Visitor};
+use serde::ser::SerializeSeq;
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt;
 use std::fmt::Display;
 use std::io::{Read, Write};
 use std::marker::PhantomData;
 
 /// the trait F is used to keep track of source data type, so we can implement its deserializer
+// TODO: Remove the generic type: F.
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct ElementDigest<const N: usize, F: PrimeField + Default>(pub [FGL; N], PhantomData<F>);
@@ -83,6 +89,64 @@ impl<const N: usize, F: PrimeField + Default> Default for ElementDigest<N, F> {
     #[inline(always)]
     fn default() -> Self {
         ElementDigest::<N, F>([FGL::ZERO; N], Default::default())
+    }
+}
+
+impl<const N: usize, F: PrimeField + Default> Serialize for ElementDigest<N, F> {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let elems = self.0.to_vec();
+
+        let mut seq = serializer.serialize_seq(Some(elems.len()))?;
+        for v in elems.iter() {
+            seq.serialize_element(&v.as_int().to_string())?;
+        }
+        seq.end()
+    }
+}
+
+#[feature(generic_const_exprs)]
+impl<'de, const N: usize, F: PrimeField + Default> Deserialize<'de> for ElementDigest<N, F> {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct EntriesVisitor<const N: usize, F: PrimeField + Default>(PhantomData<F>);
+
+        impl<'de, const N: usize, F: PrimeField + Default> Visitor<'de> for EntriesVisitor<N, F> {
+            type Value = ElementDigest<N, F>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct ElementDigest")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> std::result::Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let mut entries = Vec::with_capacity(N);
+                while let Some(entry) = seq.next_element::<String>()? {
+                    let entry: u64 = entry.parse().unwrap();
+
+                    entries.push(FGL::from_repr(fields::field_gl::FrRepr::from(entry)).unwrap());
+                }
+                Ok(ElementDigest::<N, F>::new(&entries))
+            }
+
+            fn visit_str<E>(self, s: &str) -> std::result::Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                let entry: u64 = s.parse().unwrap();
+
+                let data = vec![FGL::from_repr(fields::field_gl::FrRepr::from(entry)).unwrap(); N];
+
+                Ok(ElementDigest::<N, F>::new(&data))
+            }
+        }
+        deserializer.deserialize_any(EntriesVisitor::<N, F>(Default::default()))
     }
 }
 
@@ -250,5 +314,18 @@ mod tests {
         .try_into()
         .unwrap();
         assert_eq!(expected, e1);
+    }
+
+    #[test]
+    fn test_element_digest_serialize_and_deserialize() {
+        const N: usize = 3;
+        let fields = vec![FGL::one(); N];
+        let data = ElementDigest::<N, FGL>::new(&fields);
+        let serialized = serde_json::to_string(&data).unwrap();
+        println!("Serialized: {}", serialized);
+
+        let expect: ElementDigest<N, FGL> = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(data, expect);
     }
 }

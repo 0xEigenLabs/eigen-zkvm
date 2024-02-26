@@ -11,7 +11,6 @@ use crate::types::{StarkStruct, PIL};
 use anyhow::Result;
 use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
-use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 #[derive(Default)]
 pub struct StarkSetup<M: MerkleTree> {
