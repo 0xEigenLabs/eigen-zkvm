@@ -1,10 +1,13 @@
 #![allow(unused_imports)]
+
 use crate::ff::*;
 use core::ops::{Add, Div, Mul, Neg, Sub};
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
-#[derive(Eq)]
+#[derive(Eq, Serialize, Deserialize)]
 pub struct Fr(pub FrRepr);
+
 /// This is the modulus m of the prime field
 pub const MODULUS: FrRepr = FrRepr([18446744069414584321u64]);
 /// The number of bits needed to represent the modulus.
@@ -22,10 +25,13 @@ const GENERATOR: FrRepr = FrRepr([18446744039349813249u64]);
 const S: u32 = 32u32;
 /// 2^s root of unity computed by GENERATOR^t
 pub const ROOT_OF_UNITY: FrRepr = FrRepr([959634606461954525u64]);
-#[derive(Eq)]
+
+#[derive(Eq, Serialize, Deserialize)]
 pub struct FrRepr(pub [u64; 1usize]);
+
 #[automatically_derived]
 impl ::core::marker::Copy for FrRepr {}
+
 #[automatically_derived]
 impl std::clone::Clone for FrRepr {
     #[inline]
@@ -34,6 +40,7 @@ impl std::clone::Clone for FrRepr {
         *self
     }
 }
+
 #[automatically_derived]
 impl ::core::cmp::PartialEq for FrRepr {
     #[inline]
@@ -60,6 +67,7 @@ impl ::core::default::Default for FrRepr {
         FrRepr(::core::default::Default::default())
     }
 }
+
 impl ::std::fmt::Debug for FrRepr {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         f.write_fmt(format_args!("0x"))?;
@@ -69,12 +77,14 @@ impl ::std::fmt::Debug for FrRepr {
         Ok(())
     }
 }
+
 impl ::rand::Rand for FrRepr {
     #[inline(always)]
     fn rand<R: ::rand::Rng>(rng: &mut R) -> Self {
         FrRepr(rng.gen())
     }
 }
+
 impl ::std::fmt::Display for FrRepr {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         f.write_fmt(format_args!("0x"))?;
@@ -84,6 +94,7 @@ impl ::std::fmt::Display for FrRepr {
         Ok(())
     }
 }
+
 impl std::hash::Hash for FrRepr {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         for limb in self.0.iter() {
@@ -91,18 +102,21 @@ impl std::hash::Hash for FrRepr {
         }
     }
 }
+
 impl AsRef<[u64]> for FrRepr {
     #[inline(always)]
     fn as_ref(&self) -> &[u64] {
         &self.0
     }
 }
+
 impl AsMut<[u64]> for FrRepr {
     #[inline(always)]
     fn as_mut(&mut self) -> &mut [u64] {
         &mut self.0
     }
 }
+
 impl From<u64> for FrRepr {
     #[inline(always)]
     fn from(val: u64) -> FrRepr {
@@ -112,6 +126,7 @@ impl From<u64> for FrRepr {
         repr
     }
 }
+
 impl Ord for FrRepr {
     #[inline(always)]
     fn cmp(&self, other: &FrRepr) -> Ordering {
@@ -123,12 +138,14 @@ impl Ord for FrRepr {
         ::std::cmp::Ordering::Equal
     }
 }
+
 impl PartialOrd for FrRepr {
     #[inline(always)]
     fn partial_cmp(&self, other: &FrRepr) -> Option<::std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
+
 impl crate::ff::PrimeFieldRepr for FrRepr {
     #[inline(always)]
     fn is_odd(&self) -> bool {
@@ -242,23 +259,28 @@ impl crate::ff::PrimeFieldRepr for FrRepr {
         }
     }
 }
+
 impl ::std::marker::Copy for Fr {}
+
 impl ::std::clone::Clone for Fr {
     fn clone(&self) -> Fr {
         *self
     }
 }
+
 impl ::std::cmp::PartialEq for Fr {
     fn eq(&self, other: &Fr) -> bool {
         self.0 == other.0
     }
 }
+
 //impl ::std::cmp::Eq for Fr {}
 impl ::std::fmt::Debug for Fr {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         f.write_fmt(format_args!("{0}({1:?})", "Fr", self.into_repr()))
     }
 }
+
 /// Elements are ordered lexicographically.
 impl Ord for Fr {
     #[inline(always)]
@@ -266,17 +288,20 @@ impl Ord for Fr {
         self.into_repr().cmp(&other.into_repr())
     }
 }
+
 impl PartialOrd for Fr {
     #[inline(always)]
     fn partial_cmp(&self, other: &Fr) -> Option<::std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
+
 impl ::std::fmt::Display for Fr {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         f.write_fmt(format_args!("{0}({1})", "Fr", self.into_repr()))
     }
 }
+
 impl ::rand::Rand for Fr {
     /// Computes a uniformly random element using rejection sampling.
     fn rand<R: ::rand::Rng>(rng: &mut R) -> Self {
@@ -288,11 +313,13 @@ impl ::rand::Rand for Fr {
         }
     }
 }
+
 impl From<Fr> for FrRepr {
     fn from(e: Fr) -> FrRepr {
         e.into_repr()
     }
 }
+
 impl crate::ff::PrimeField for Fr {
     type Repr = FrRepr;
     fn from_repr(r: FrRepr) -> Result<Fr, crate::ff::PrimeFieldDecodingError> {
@@ -340,6 +367,7 @@ impl crate::ff::PrimeField for Fr {
         Fr(ROOT_OF_UNITY)
     }
 }
+
 impl crate::ff::Field for Fr {
     #[inline]
     fn zero() -> Self {
@@ -456,6 +484,7 @@ impl std::default::Default for Fr {
         Self::zero()
     }
 }
+
 impl std::hash::Hash for Fr {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         for limb in self.0.as_ref().iter() {
@@ -514,6 +543,7 @@ impl Fr {
         self.into_repr().0[0]
     }
 }
+
 impl crate::ff::SqrtField for Fr {
     fn legendre(&self) -> crate::ff::LegendreSymbol {
         let s = self.pow([9223372034707292160u64]);
@@ -624,6 +654,7 @@ fn exp_acc<const N: usize>(base: Fr, tail: Fr) -> Fr {
 
 #[derive(Clone, Copy, Debug)]
 pub struct GL;
+
 impl ScalarEngine for GL {
     type Fr = Fr;
 }
@@ -702,6 +733,16 @@ mod tests {
                 }
             }
         }
+    }
 
+    #[test]
+    fn test_serde_and_deserde() {
+        let data = Fr::one();
+        let serialized = serde_json::to_string(&data).unwrap();
+        println!("Serialized: {}", serialized);
+
+        let expect: Fr = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(data, expect);
     }
 }

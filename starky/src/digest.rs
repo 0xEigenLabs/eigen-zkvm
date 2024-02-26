@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+
 use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bls12381::FrRepr as FrRepr_bls12381;
 use crate::field_bn128::{Fr, FrRepr};
@@ -123,13 +124,30 @@ mod tests {
     use crate::field_bls12381::Fr as Fr_bls12381;
     use crate::field_bn128::Fr;
     use crate::helper::{fr_bls12381_to_biguint, fr_to_biguint};
+    use crate::merklehash::MerkleTreeGL;
     use crate::traits::MTNodeType;
-    use ff::PrimeField;
+    use ff::{Field, PrimeField};
     use fields::field_gl::Fr as FGL;
     use num_bigint::BigUint;
     use num_traits::Num;
     use num_traits::ToPrimitive;
     use rand::Rand;
+    use std::fs;
+
+    #[test]
+    fn test_save_and_load_Eelement() {
+        const N: usize = 3;
+        let feilds = vec![FGL::zero(); N];
+        let mut expect = ElementDigest::<N, Fr>::new(&feilds);
+
+        let file = "/tmp/ElementDigest.bin";
+        let mut writer = fs::File::create(file).unwrap();
+        expect.save(&mut writer).unwrap();
+
+        let mut reader = fs::File::open(file).unwrap();
+        let actual = ElementDigest::<N, Fr>::load(&mut reader).unwrap();
+        assert_eq!(expect, actual);
+    }
 
     #[test]
     fn test_fr_to_element_digest_and_versus() {
