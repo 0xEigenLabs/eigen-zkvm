@@ -5,11 +5,12 @@ use crate::traits::MTNodeType;
 use crate::ElementDigest;
 use anyhow::Result;
 use ff::*;
+use serde::{Deserialize, Serialize};
 //use rayon::prelude::*;
 use crate::constant::{OFFSET_2_128, OFFSET_2_64};
 use fields::field_gl::Fr as FGL;
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinearHashBN128 {
     h: Poseidon,
 }

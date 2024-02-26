@@ -32,10 +32,11 @@ use anyhow::{bail, Result};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use fields::field_gl::Fr as FGL;
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use std::time::Instant;
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MerkleTreeGL {
     pub elements: Vec<FGL>,
     pub width: usize,
@@ -629,5 +630,17 @@ mod tests {
         let mut reader = fs::File::open(file).unwrap();
         let actual_tree = MerkleTreeGL::load(&mut reader).unwrap();
         assert_eq!(expect_tree, actual_tree);
+    }
+
+    #[test]
+    fn test_merkle_tree_gl_serialize_and_deserialize() {
+        let data = MerkleTreeGL::new();
+
+        let serialized = serde_json::to_string(&data).unwrap();
+        println!("Serialized: {}", serialized);
+
+        let expect: MerkleTreeGL = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(data, expect);
     }
 }

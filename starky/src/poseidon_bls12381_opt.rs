@@ -6,6 +6,7 @@ use crate::poseidon_bls12381_constants_opt as constants;
 use anyhow::bail;
 use anyhow::Result;
 use ff::{from_hex, Field};
+use serde::{Deserialize, Serialize};
 
 pub fn load_constants() -> Constants {
     let (c_str, m_str, p_str, s_str) = constants::constants();
@@ -69,7 +70,7 @@ pub fn load_constants() -> Constants {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Poseidon;
 
 impl Default for Poseidon {

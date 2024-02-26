@@ -33,8 +33,9 @@ use anyhow::Result;
 use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinearHash {
     h: Poseidon,
 }

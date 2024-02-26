@@ -12,9 +12,10 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use ff::Field;
 use fields::field_gl::Fr as FGL;
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MerkleTreeBN128 {
     pub elements: Vec<FGL>,
     pub width: usize,
@@ -401,5 +402,15 @@ mod tests {
             .verify_group_proof(&root, &mp, idx, &group_elements)
             .unwrap());
     }
-    //TODO save and restore to file
+    #[test]
+    fn test_merkle_tree_bn128_serialize_and_deserialize() {
+        let data = MerkleTreeBN128::new();
+
+        let serialized = serde_json::to_string(&data).unwrap();
+        println!("Serialized: {}", serialized);
+
+        let expect: MerkleTreeBN128 = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(data, expect);
+    }
 }

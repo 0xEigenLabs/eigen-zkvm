@@ -1,6 +1,4 @@
 #![allow(non_snake_case)]
-
-use crate::f3g::F3G;
 use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bls12381::FrRepr as FrRepr_bls12381;
 use crate::field_bn128::{Fr, FrRepr};
@@ -18,7 +16,7 @@ use std::io::{Read, Write};
 use std::marker::PhantomData;
 
 /// the trait F is used to keep track of source data type, so we can implement its deserializer
-// TODO: Remove the generic type: F.
+// TODO: Remove the generic type: F. As it's never used.
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct ElementDigest<const N: usize, F: PrimeField + Default>(pub [FGL; N], PhantomData<F>);
@@ -107,7 +105,6 @@ impl<const N: usize, F: PrimeField + Default> Serialize for ElementDigest<N, F> 
     }
 }
 
-#[feature(generic_const_exprs)]
 impl<'de, const N: usize, F: PrimeField + Default> Deserialize<'de> for ElementDigest<N, F> {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
@@ -188,7 +185,6 @@ mod tests {
     use crate::field_bls12381::Fr as Fr_bls12381;
     use crate::field_bn128::Fr;
     use crate::helper::{fr_bls12381_to_biguint, fr_to_biguint};
-    use crate::merklehash::MerkleTreeGL;
     use crate::traits::MTNodeType;
     use ff::{Field, PrimeField};
     use fields::field_gl::Fr as FGL;
