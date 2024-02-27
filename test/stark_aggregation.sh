@@ -4,7 +4,7 @@ set -ex
 # Usage: ./stark_aggregation.sh [ARG_FIRST_RUN] [ARG_CURVE]
 
 ARG_FIRST_RUN=${1-no} # Init some files and directories if it's the first run, default is no
-ARG_CURVE=${2-BN128} # The curve to use, BN128 or BLS12_381, default is BN128
+ARG_CURVE=${2-BN128} # The curve to use, BN128 or BLS12381, default is BN128
 
 # Common variables and constants
 
