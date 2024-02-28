@@ -7,6 +7,7 @@ use fields::arch::x86_64::avx2_field_gl::Avx2GoldilocksField;
 use fields::field_gl::{Fr as FGL, FrRepr};
 use fields::packed::PackedField;
 use fields::PrimeField;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub struct ConstantsAvx2 {
@@ -49,7 +50,7 @@ pub fn load_constants_avx2() -> ConstantsAvx2 {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Poseidon;
 
 impl Default for Poseidon {
