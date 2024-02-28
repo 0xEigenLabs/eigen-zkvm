@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+
 use crate::expressionops::ExpressionOps as E;
 use crate::starkinfo_codegen::{
     build_code, iterate_code, pil_code_gen, Context, ContextF, EVIdx, Index, IndexVec, Node,
@@ -381,10 +382,13 @@ impl StarkInfo {
                 let fix_ref = |r: &mut Node, ctx: &mut ContextF, _pil: &mut PIL| {
                     let p = if r.prime { 1 } else { 0 };
                     if r.type_.as_str() == "exp" {
-                        if ctx.exp_map.get(&(p, r.id)).is_none() {
-                            ctx.exp_map.insert((p, r.id), ctx.tmp_used);
+                        if let std::collections::hash_map::Entry::Vacant(e) =
+                            ctx.exp_map.entry((p, r.id))
+                        {
+                            e.insert(ctx.tmp_used);
                             ctx.tmp_used += 1;
                         }
+
                         r.prime = false;
                         r.type_ = "tmp".to_string();
                         r.id = *ctx.exp_map.get(&(p, r.id)).unwrap();

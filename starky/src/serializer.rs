@@ -439,38 +439,35 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
                 }
                 let mut sp: StarkProof<MT> = Default::default();
                 let root: NodeWrapper<MT::MTNode> =
-                    serde_json::from_value(map.get(&"root1".to_string()).unwrap().clone()).unwrap();
+                    serde_json::from_value(map.get("root1").unwrap().clone()).unwrap();
                 sp.root1 = root.0;
 
                 let root: NodeWrapper<MT::MTNode> =
-                    serde_json::from_value(map.get(&"root2".to_string()).unwrap().clone()).unwrap();
+                    serde_json::from_value(map.get("root2").unwrap().clone()).unwrap();
                 sp.root2 = root.0;
 
                 let root: NodeWrapper<MT::MTNode> =
-                    serde_json::from_value(map.get(&"root3".to_string()).unwrap().clone()).unwrap();
+                    serde_json::from_value(map.get("root3").unwrap().clone()).unwrap();
                 sp.root3 = root.0;
 
                 let root: NodeWrapper<MT::MTNode> =
-                    serde_json::from_value(map.get(&"root4".to_string()).unwrap().clone()).unwrap();
+                    serde_json::from_value(map.get("root4").unwrap().clone()).unwrap();
                 sp.root4 = root.0;
 
-                let root = map.get(&"rootC".to_string());
+                let root = map.get("rootC");
                 if root.is_some() {
                     let root: NodeWrapper<MT::MTNode> =
                         serde_json::from_value(root.unwrap().clone()).unwrap();
                     sp.rootC = Some(root.0);
                 }
 
-                let prover_addr = map.get(&"proverAddr".to_string());
+                let prover_addr = map.get("proverAddr");
                 if prover_addr.is_some() {
                     sp.prover_addr = serde_json::from_value(prover_addr.unwrap().clone()).unwrap();
                 }
-                sp.evals =
-                    serde_json::from_value(map.get(&"evals".to_string()).unwrap().clone()).unwrap();
+                sp.evals = serde_json::from_value(map.get("evals").unwrap().clone()).unwrap();
 
-                sp.publics =
-                    serde_json::from_value(map.get(&"publics".to_string()).unwrap().clone())
-                        .unwrap();
+                sp.publics = serde_json::from_value(map.get("publics").unwrap().clone()).unwrap();
 
                 let mut fri_proof: FRIProof<MT::ExtendField, MT> = FRIProof::default();
 
@@ -611,7 +608,7 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
                 }
 
                 // handle finalPol
-                let key = map.get(&"finalPol".to_string());
+                let key = map.get("finalPol");
                 fri_proof.last = serde_json::from_value(key.unwrap().clone()).unwrap();
                 sp.fri_proof = fri_proof;
                 Ok(sp)

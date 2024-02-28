@@ -63,10 +63,13 @@ impl StarkInfo {
                         r.type_ = "eval".to_string();
                     } else {
                         let p = if r.prime { 1 } else { 0 };
-                        if ctx.exp_map.get(&(p, r.id)).is_none() {
-                            ctx.exp_map.insert((p, r.id), ctx.tmp_used);
+                        if let std::collections::hash_map::Entry::Vacant(e) =
+                            ctx.exp_map.entry((p, r.id))
+                        {
+                            e.insert(ctx.tmp_used);
                             ctx.tmp_used += 1;
                         }
+
                         r.type_ = "tmp".to_string();
                         r.exp_id = r.id;
                         r.id = *ctx.exp_map.get(&(p, r.id)).unwrap();

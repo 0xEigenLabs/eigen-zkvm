@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::{iterate_code, ContextF, Index, Node, PolType, Section, Segment};
 use crate::types::{Expression, StarkStruct, PIL};
@@ -19,7 +20,7 @@ impl StarkInfo {
 
         let mut tmpexps: HashMap<usize, usize> = HashMap::new();
         let im_exps_none =
-            |id: &usize| -> bool { self.im_exps.get(id).is_none() || !self.im_exps[id] };
+            |id: &usize| -> bool { !self.im_exps.contains_key(id) || !self.im_exps[id] };
 
         pil.cm_dims = vec![0usize; self.n_cm1 + self.n_cm2 + self.n_cm3 + self.n_cm4]; //FIXME
         for i in 0..self.n_cm1 {
@@ -87,7 +88,7 @@ impl StarkInfo {
             self.map_sections.cm2_2ns.push(pph2_2ns);
             pil.cm_dims[self.n_cm1 + i * 2 + 1] = dim;
 
-            if im_exps_none(&pu.f_exp_id) && tmpexps.get(&pu.f_exp_id).is_none() {
+            if im_exps_none(&pu.f_exp_id) && !tmpexps.contains_key(&pu.f_exp_id) {
                 tmpexps.insert(pu.f_exp_id, self.tmpexp_n.len());
                 let ppf_n = add_pol(PolType {
                     section: "tmpexp_n".to_string(),
@@ -100,7 +101,7 @@ impl StarkInfo {
                 self.exp2pol.insert(pu.f_exp_id, ppf_n);
             }
 
-            if im_exps_none(&pu.t_exp_id) && tmpexps.get(&pu.t_exp_id).is_none() {
+            if im_exps_none(&pu.t_exp_id) && !tmpexps.contains_key(&pu.t_exp_id) {
                 tmpexps.insert(pu.t_exp_id, self.tmpexp_n.len());
                 let ppt_n = add_pol(PolType {
                     section: "tmpexp_n".to_string(),
@@ -142,7 +143,7 @@ impl StarkInfo {
             self.map_sections.cm3_2ns.push(ppz_2ns);
             pil.cm_dims[self.n_cm1 + self.n_cm2 + i] = 3;
 
-            if im_exps_none(&o.num_id) && tmpexps.get(&o.num_id).is_none() {
+            if im_exps_none(&o.num_id) && !tmpexps.contains_key(&o.num_id) {
                 tmpexps.insert(o.num_id, self.tmpexp_n.len());
                 let pp_num_n = add_pol(PolType {
                     section: "tmpexp_n".to_string(),
@@ -156,7 +157,7 @@ impl StarkInfo {
                 self.exp2pol.insert(o.num_id, pp_num_n);
             }
 
-            if im_exps_none(&o.den_id) && tmpexps.get(&o.den_id).is_none() {
+            if im_exps_none(&o.den_id) && !tmpexps.contains_key(&o.den_id) {
                 tmpexps.insert(o.den_id, self.tmpexp_n.len());
                 let pp_den_n = add_pol(PolType {
                     section: "tmpexp_n".to_string(),
@@ -490,10 +491,13 @@ impl StarkInfo {
                         r.id = ctx.tmpexps[&r.id];
                     } else {
                         let p = if r.prime { 1 } else { 0 };
-                        if ctx.exp_map.get(&(p, r.id)).is_none() {
-                            ctx.exp_map.insert((p, r.id), ctx.tmp_used);
+                        if let std::collections::hash_map::Entry::Vacant(e) =
+                            ctx.exp_map.entry((p, r.id))
+                        {
+                            e.insert(ctx.tmp_used);
                             ctx.tmp_used += 1;
                         }
+
                         r.type_ = "tmp".to_string();
                         r.exp_id = r.id;
                         r.id = *ctx.exp_map.get(&(p, r.id)).unwrap();
@@ -505,13 +509,6 @@ impl StarkInfo {
                     panic!("Invalid reference type {}", r.type_);
                 }
             };
-            //log::trace!(
-            //    "node: {:?}, im_exps_list {:?} dom {} tmpexps: {:?}",
-            //    r,
-            //    ctx.starkinfo.im_exps_list,
-            //    ctx.dom,
-            //    ctx.tmpexps
-            //);
         };
 
         iterate_code(segment, fix_ref, &mut ctx_f, pil);
