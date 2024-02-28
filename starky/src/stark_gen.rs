@@ -91,6 +91,7 @@ impl<F: FieldExtension> std::fmt::Debug for StarkContext<F> {
 }
 
 unsafe impl<F: FieldExtension> Send for StarkContext<F> {}
+
 unsafe impl<F: FieldExtension> Sync for StarkContext<F> {}
 
 impl<F: FieldExtension> Default for StarkContext<F> {
@@ -321,7 +322,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
 
         // 3.- Compute Z polynomials
         ctx.challenge[2] = transcript.get_field(); // gamma
-        ctx.challenge[3] = transcript.get_field(); // beta
+        ctx.challenge[3] = transcript.get_field();
+        // beta
         log::trace!("challenge[2] {}", ctx.challenge[2]);
         log::trace!("challenge[3] {}", ctx.challenge[3]);
 
@@ -482,7 +484,8 @@ impl<'a, M: MerkleTree> StarkProof<M> {
         }
 
         ctx.challenge[5] = transcript.get_field(); // v1
-        ctx.challenge[6] = transcript.get_field(); // v2
+        ctx.challenge[6] = transcript.get_field();
+        // v2
         log::trace!("ctx.challenge[5] {}", ctx.challenge[5]);
         log::trace!("ctx.challenge[6] {}", ctx.challenge[6]);
         log::trace!("ctx.challenge[7] {}", ctx.challenge[7]);
@@ -1115,8 +1118,11 @@ pub mod tests {
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
 
-        let mut setup =
+        let setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+        let serialized = serde_json::to_string(&setup).unwrap();
+        let mut setup: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
+
         let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
         log::trace!("setup {}", fr_root);
 
@@ -1154,8 +1160,11 @@ pub mod tests {
         cm_pol.load("data/pe.cm").unwrap();
 
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
-        let mut setup =
+        let setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+        let serialized = serde_json::to_string(&setup).unwrap();
+        let mut setup: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
+
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             cm_pol,
             const_pol,
@@ -1189,8 +1198,10 @@ pub mod tests {
         let mut cm_pol = PolsArray::new(&pil, PolKind::Commit);
         cm_pol.load("data/plookup.cm").unwrap();
         let stark_struct = load_json::<StarkStruct>("data/starkStruct.json").unwrap();
-        let mut setup =
+        let setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
+        let serialized = serde_json::to_string(&setup).unwrap();
+        let mut setup: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             cm_pol,
             const_pol,
@@ -1225,9 +1236,8 @@ pub mod tests {
         let setup_ =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
 
-        let sp = "/tmp/connection.setup";
-        setup_.save(sp).unwrap();
-        let mut setup = StarkSetup::load(sp).unwrap();
+        let serialized = serde_json::to_string(&setup_).unwrap();
+        let mut setup: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
 
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             cm_pol,
@@ -1263,9 +1273,8 @@ pub mod tests {
         let setup_ =
             StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
 
-        let sp = "/tmp/plonkup.setup";
-        setup_.save(sp).unwrap();
-        let mut setup = StarkSetup::load(sp).unwrap();
+        let serialized = serde_json::to_string(&setup_).unwrap();
+        let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_str(&serialized).unwrap();
 
         let starkproof = StarkProof::<MerkleTreeGL>::stark_gen::<TranscriptGL>(
             cm_pol,

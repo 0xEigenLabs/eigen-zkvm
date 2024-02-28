@@ -315,7 +315,7 @@ pub fn pil_code_gen(
     muladd: bool,
 ) -> Result<()> {
     let prime_idx = if prime { "expsPrime" } else { "exps" };
-    if ctx.calculated.get(&(prime_idx, exp_id)).is_some() {
+    if ctx.calculated.contains_key(&(prime_idx, exp_id)) {
         if !res_type.is_empty() {
             let idx = ctx
                 .code

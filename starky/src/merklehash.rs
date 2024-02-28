@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+
 #[cfg(all(
     target_feature = "avx2",
     not(all(
@@ -28,13 +29,12 @@ use crate::poseidon_opt::Poseidon;
 use crate::traits::MTNodeType;
 use crate::traits::MerkleTree;
 use anyhow::{bail, Result};
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use fields::field_gl::Fr as FGL;
 use rayon::prelude::*;
-use std::io::{Read, Write};
+use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MerkleTreeGL {
     pub elements: Vec<FGL>,
     pub width: usize,
@@ -263,43 +263,6 @@ impl MerkleTree for MerkleTreeGL {
             height: 0,
             poseidon: Poseidon::new(),
         }
-    }
-
-    // TODO: https://github.com/0xEigenLabs/eigen-zkvm/issues/187
-    fn save<W: Write>(&self, writer: &mut W) -> Result<()> {
-        writer.write_u64::<LittleEndian>(self.width as u64)?;
-        writer.write_u64::<LittleEndian>(self.height as u64)?;
-        writer.write_u64::<LittleEndian>(self.elements.len() as u64)?;
-        for i in &self.elements {
-            writer.write_u64::<LittleEndian>(i.as_int())?;
-        }
-        writer.write_u64::<LittleEndian>(self.nodes.len() as u64)?;
-        for i in &self.nodes {
-            i.save(writer)?;
-        }
-        Ok(())
-    }
-
-    fn load<R: Read>(reader: &mut R) -> Result<Self> {
-        let mut mt = Self::new();
-        mt.width = reader.read_u64::<LittleEndian>()? as usize;
-        mt.height = reader.read_u64::<LittleEndian>()? as usize;
-
-        let es = reader.read_u64::<LittleEndian>()? as usize;
-        mt.elements = vec![FGL::ZERO; es];
-        for i in 0..es {
-            let e = reader.read_u64::<LittleEndian>()?;
-            mt.elements[i] = FGL::from(e);
-        }
-
-        let ns = reader.read_u64::<LittleEndian>()? as usize;
-        mt.nodes =
-            vec![ElementDigest::<4, FGL>::new(&[FGL::ZERO, FGL::ZERO, FGL::ZERO, FGL::ZERO]); ns];
-        for i in 0..ns {
-            mt.nodes[i] = ElementDigest::<4, FGL>::load(reader)?;
-        }
-
-        Ok(mt)
     }
 
     fn element_size(&self) -> usize {
@@ -615,5 +578,16 @@ mod tests {
             .verify_group_proof(&root, &mp, idx, &group_elements)
             .unwrap());
     }
-    //TODO save and restore to file
+
+    #[test]
+    fn test_merkle_tree_gl_serialize_and_deserialize() {
+        let data = MerkleTreeGL::new();
+
+        let serialized = serde_json::to_string(&data).unwrap();
+        println!("Serialized: {}", serialized);
+
+        let expect: MerkleTreeGL = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(data, expect);
+    }
 }

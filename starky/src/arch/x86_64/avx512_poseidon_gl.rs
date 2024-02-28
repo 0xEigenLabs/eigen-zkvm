@@ -8,6 +8,7 @@ use fields::arch::x86_64::avx512_field_gl::Avx512GoldilocksField;
 use fields::field_gl::{Fr as FGL, FrRepr};
 use fields::packed::PackedField;
 use fields::PrimeField;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub struct ConstantsAvx512 {
@@ -50,7 +51,7 @@ pub fn load_constants_avx512() -> ConstantsAvx512 {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Poseidon;
 
 impl Default for Poseidon {

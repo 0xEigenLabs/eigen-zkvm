@@ -1,15 +1,13 @@
+use crate::serializer::NodeWrapper;
 use ::rand::Rand;
 use anyhow::Result;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-//use ff::to_hex;
-use crate::serializer::NodeWrapper;
 use ff::PrimeField;
 use fields::field_gl::Fr as FGL;
 use fields::Field;
 use serde::{de::DeserializeOwned, ser::Serialize};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
-use std::io::{Read, Write};
 
 pub trait MTNodeType
 where
@@ -21,8 +19,6 @@ where
     fn new(value: &[FGL]) -> Self;
     fn from_scalar<T: PrimeField>(e: &T) -> Self;
     fn as_scalar<T: PrimeField>(&self) -> T::Repr;
-    fn save<W: Write>(&self, writer: &mut W) -> Result<()>;
-    fn load<R: Read>(reader: &mut R) -> Result<Self>;
 }
 
 #[allow(clippy::type_complexity)]
@@ -30,7 +26,14 @@ pub trait MerkleTree
 where
     Self: Sized,
 {
-    type MTNode: Copy + Display + Clone + Default + MTNodeType + Debug;
+    type MTNode: Copy
+        + Display
+        + Clone
+        + Default
+        + MTNodeType
+        + Debug
+        + Serialize
+        + DeserializeOwned;
     // TODO: the BaseField is the container of flatten MTNode, merge BaseField and MTNode
     type BaseField: Clone + Default + Debug + PartialEq + Into<NodeWrapper<Self::MTNode>>;
     type ExtendField: FieldExtension;
@@ -50,8 +53,6 @@ where
     fn root(&self) -> Self::MTNode;
     fn eq_root(&self, r1: &Self::MTNode, r2: &Self::MTNode) -> bool;
     fn element_size(&self) -> usize;
-    fn save<W: Write>(&self, writer: &mut W) -> Result<()>;
-    fn load<R: Read>(reader: &mut R) -> Result<Self>;
 }
 
 pub trait Transcript {

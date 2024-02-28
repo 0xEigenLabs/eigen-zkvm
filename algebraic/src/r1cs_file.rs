@@ -230,8 +230,8 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
 
     reader.seek(SeekFrom::Start(*section_offsets.get(&HEADER_TYPE).unwrap()))?;
     let mut header = read_header(&mut reader, *section_sizes.get(&HEADER_TYPE).unwrap())?;
-    if section_offsets.get(&CUSTOM_GATES_USE).is_some()
-        && section_offsets.get(&CUSTOM_GATES_LIST).is_some()
+    if section_offsets.contains_key(&CUSTOM_GATES_USE)
+        && section_offsets.contains_key(&CUSTOM_GATES_LIST)
     {
         header.use_custom_gates = true;
     }
@@ -273,7 +273,7 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
         &header,
     )?;
     let mut custom_gates: Vec<CustomGates<E>> = vec![];
-    if section_offsets.get(&CUSTOM_GATES_LIST).is_some() {
+    if section_offsets.contains_key(&CUSTOM_GATES_LIST) {
         reader.seek(SeekFrom::Start(
             *section_offsets.get(&CUSTOM_GATES_LIST).unwrap(),
         ))?;
@@ -285,7 +285,7 @@ pub fn from_reader<R: Read + Seek, E: ScalarEngine>(mut reader: R) -> Result<R1C
     }
 
     let mut custom_gates_uses: Vec<CustomGatesUses> = vec![];
-    if section_offsets.get(&CUSTOM_GATES_USE).is_some() {
+    if section_offsets.contains_key(&CUSTOM_GATES_USE) {
         reader.seek(SeekFrom::Start(
             *section_offsets.get(&CUSTOM_GATES_USE).unwrap(),
         ))?;

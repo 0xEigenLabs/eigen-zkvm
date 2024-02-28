@@ -124,7 +124,7 @@ impl StarkInfo {
             let z = E::cm(pu_ctx.z_id, None);
             let zp = E::cm(pu_ctx.z_id, Some(true));
 
-            if pil.references.get(global_l1).is_none() {
+            if !pil.references.contains_key(global_l1) {
                 panic!("{} must be defined: {:?}", global_l1, pil.references);
             }
 
@@ -219,7 +219,7 @@ impl StarkInfo {
             let z = E::cm(self.pe_ctx[i].z_id, None);
             let zp = E::cm(self.pe_ctx[i].z_id, Some(true));
 
-            if pil.references.get(global_l1).is_none() {
+            if !pil.references.contains_key(global_l1) {
                 panic!("{} must be defined", global_l1);
             }
             let l1 = E::const_(pil.references[global_l1].id, None);
@@ -383,7 +383,7 @@ impl StarkInfo {
             let z = E::cm(ci_ctx.z_id, None);
             let zp = E::cm(ci_ctx.z_id, Some(true));
 
-            if pil.references.get(global_l1).is_none() {
+            if !pil.references.contains_key(global_l1) {
                 panic!("{} must be defined", global_l1);
             }
             let l1 = E::const_(pil.references[global_l1].id, None);
