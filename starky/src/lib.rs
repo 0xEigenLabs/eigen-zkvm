@@ -7,6 +7,7 @@
 pub mod polsarray;
 pub mod polutils;
 pub mod stark_verifier_circom;
+pub mod stark_verifier_circom_bls12381;
 pub mod stark_verifier_circom_bn128;
 pub mod traits;
 pub mod types;
