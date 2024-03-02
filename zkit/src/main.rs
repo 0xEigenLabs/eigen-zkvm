@@ -431,7 +431,8 @@ fn main() {
                     groth16::api::generate_verifier(&args.vk_file, &args.sol)
                 }
                 _ => {
-                    bail!("unknown protocol")
+                    println!("unknown protocol");
+                    std::process::exit(400);
                 }
             }
         }

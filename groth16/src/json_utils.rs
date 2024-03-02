@@ -13,6 +13,7 @@ use num_bigint::BigUint;
 use num_traits::Num;
 use serde::{Deserialize, Serialize};
 use serde_json::to_string;
+use std::fmt;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct G1 {
     pub x: String,
@@ -23,6 +24,19 @@ pub struct G1 {
 pub struct G2 {
     pub x: [String; 2],
     pub y: [String; 2],
+}
+
+impl fmt::Display for G1 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}, {}", self.x, self.y)
+    }
+}
+
+impl fmt::Display for G2 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[{}, {}], [{}, {}]",
+               self.x[0], self.x[1], self.y[0], self.y[1])
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -9,7 +9,6 @@ edition = "2021"
 byteorder = "1"
 franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = [ "plonk" ], version = "0.0.5"}
 #franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
-zokrates_proof_systems = { git = "https://github.com/Zokrates/ZoKrates", branch = "develop", package = "zokrates_proof_systems"}
 
 hex-literal = "0.2.1"
 itertools = "0.8.1"

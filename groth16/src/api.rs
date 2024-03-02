@@ -1,5 +1,3 @@
-use std::fmt::format;
-use std::rt::panic_count::finished_panic_hook;
 use crate::{bellman_ce::{
     groth16::{Parameters, Proof, VerifyingKey},
     pairing::{
@@ -17,7 +15,6 @@ use algebraic::{
 use anyhow::{anyhow, bail, Result};
 use num_traits::Zero;
 use regex::Regex;
-use std::fs::File;
 use std::io::Write;
 use constant::CONTRACT_TEMPLATE;
 
@@ -155,28 +152,10 @@ pub fn generate_verifier(vk_file_path: &str, sol_file_path: &str) -> Result<()> 
     let vk_file: VerifyingKeyFile =
         serde_json::from_str(&json_data).expect("Error during deserialization of the JSON data");
 
-    let vk_alpha = format!("{}, {}",  vk_file.alpha_g1.x, vk_file.alpha_g1.y);
-    let vk_beta = format!(
-        "[{}, {}], [{}, {}]",
-        vk_file.beta_g2.x[0],
-        vk_file.beta_g2.x[1],
-        vk_file.beta_g2.y[0],
-        vk_file.beta_g2.y[1]
-    );
-    let vk_gamma = format!(
-        "[{}, {}], [{}, {}]",
-        vk_file.gamma_g2.x[0],
-        vk_file.gamma_g2.x[1],
-        vk_file.gamma_g2.y[0],
-        vk_file.gamma_g2.y[1]
-    );
-    let vk_delta = format!(
-        "[{}, {}], [{}, {}]",
-        vk_file.delta_g2.x[0],
-        vk_file.delta_g2.x[1],
-        vk_file.delta_g2.y[0],
-        vk_file.delta_g2.y[1]
-    );
+    let vk_alpha = vk_file.alpha_g1.to_string();
+    let vk_beta = vk_file.beta_g2.to_string();
+    let vk_gamma = vk_file.gamma_g2.to_string();
+    let vk_delta = vk_file.delta_g2.to_string();
     let vk_gamma_abc = vk_file.ic;
 
     let (mut template_text, solidity_pairing_lib_sans_bn256g2) =
@@ -273,7 +252,7 @@ pub fn generate_verifier(vk_file_path: &str, sol_file_path: &str) -> Result<()> 
             bail!("write sol file failed, {:?}", e)
         }
     }
-
+    Ok(())
 }
 
 fn create_circuit_from_file<E: Engine>(
