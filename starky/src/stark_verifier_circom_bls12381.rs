@@ -852,7 +852,8 @@ template StarkVerifier() {{
 "#,
         );
     } else {
-        let c: Fr = Fr((*const_root).as_scalar::<Fr>());
+        let repr = (*const_root).as_scalar::<F>();
+        let c: F = F::from_raw_repr(repr);
         res.push_str(&format!(
             r#"
     signal rootC;
