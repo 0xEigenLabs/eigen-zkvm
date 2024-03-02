@@ -1,14 +1,12 @@
-use crate::{
-    bellman_ce::{
-        groth16::{Parameters, Proof, VerifyingKey},
-        pairing::{
-            bls12_381::{Bls12, Fr as Fr_bls12381},
-            bn256::{Bn256, Fr},
-        },
+use std::fmt::format;
+use std::rt::panic_count::finished_panic_hook;
+use crate::{bellman_ce::{
+    groth16::{Parameters, Proof, VerifyingKey},
+    pairing::{
+        bls12_381::{Bls12, Fr as Fr_bls12381},
+        bn256::{Bn256, Fr},
     },
-    groth16::Groth16,
-    json_utils::*,
-};
+}, constant, groth16::Groth16, json_utils::*};
 use algebraic::{
     bellman_ce::Engine,
     circom_circuit::CircomCircuit,
@@ -18,6 +16,10 @@ use algebraic::{
 };
 use anyhow::{anyhow, bail, Result};
 use num_traits::Zero;
+use regex::Regex;
+use std::fs::File;
+use std::io::Write;
+use constant::CONTRACT_TEMPLATE;
 
 pub fn groth16_setup(
     curve_type: &str,
@@ -148,6 +150,131 @@ pub fn groth16_verify(
 
     Ok(())
 }
+pub fn generate_verifier(vk_file_path: &str, sol_file_path: &str) -> Result<()> {
+    let json_data = std::fs::read_to_string(vk_file_path)?;
+    let vk_file: VerifyingKeyFile =
+        serde_json::from_str(&json_data).expect("Error during deserialization of the JSON data");
+
+    let vk_alpha = format!("{}, {}",  vk_file.alpha_g1.x, vk_file.alpha_g1.y);
+    let vk_beta = format!(
+        "[{}, {}], [{}, {}]",
+        vk_file.beta_g2.x[0],
+        vk_file.beta_g2.x[1],
+        vk_file.beta_g2.y[0],
+        vk_file.beta_g2.y[1]
+    );
+    let vk_gamma = format!(
+        "[{}, {}], [{}, {}]",
+        vk_file.gamma_g2.x[0],
+        vk_file.gamma_g2.x[1],
+        vk_file.gamma_g2.y[0],
+        vk_file.gamma_g2.y[1]
+    );
+    let vk_delta = format!(
+        "[{}, {}], [{}, {}]",
+        vk_file.delta_g2.x[0],
+        vk_file.delta_g2.x[1],
+        vk_file.delta_g2.y[0],
+        vk_file.delta_g2.y[1]
+    );
+    let vk_gamma_abc = vk_file.ic;
+
+    let (mut template_text, solidity_pairing_lib_sans_bn256g2) =
+        (String::from(CONTRACT_TEMPLATE), solidity_pairing_lib(false));
+
+    let vk_regex = Regex::new(r#"(<%vk_[^i%]*%>)"#).unwrap();
+    let vk_gamma_abc_len_regex = Regex::new(r#"(<%vk_gamma_abc_length%>)"#).unwrap();
+    let vk_gamma_abc_repeat_regex = Regex::new(r#"(<%vk_gamma_abc_pts%>)"#).unwrap();
+    let vk_input_len_regex = Regex::new(r#"(<%vk_input_length%>)"#).unwrap();
+    let input_loop = Regex::new(r#"(<%input_loop%>)"#).unwrap();
+    let input_argument = Regex::new(r#"(<%input_argument%>)"#).unwrap();
+
+    template_text = vk_regex
+        .replace(template_text.as_str(), vk_alpha.as_str())
+        .into_owned();
+
+    template_text = vk_regex
+        .replace(template_text.as_str(), vk_beta.to_string().as_str())
+        .into_owned();
+
+    template_text = vk_regex
+        .replace(template_text.as_str(), vk_gamma.to_string().as_str())
+        .into_owned();
+
+    template_text = vk_regex
+        .replace(template_text.as_str(), vk_delta.to_string().as_str())
+        .into_owned();
+
+    let gamma_abc_count: usize = vk_gamma_abc.len();
+    template_text = vk_gamma_abc_len_regex
+        .replace(
+            template_text.as_str(),
+            format!("{}", gamma_abc_count).as_str(),
+        )
+        .into_owned();
+
+    template_text = vk_input_len_regex
+        .replace(
+            template_text.as_str(),
+            format!("{}", gamma_abc_count - 1).as_str(),
+        )
+        .into_owned();
+
+    // feed input values only if there are any
+    template_text = if gamma_abc_count > 1 {
+        input_loop.replace(
+            template_text.as_str(),
+            r#"
+        for(uint i = 0; i < input.length; i++){
+            inputValues[i] = input[i];
+        }"#,
+        )
+    } else {
+        input_loop.replace(template_text.as_str(), "")
+    }
+        .to_string();
+
+    // take input values as argument only if there are any
+    template_text = if gamma_abc_count > 1 {
+        input_argument.replace(
+            template_text.as_str(),
+            format!(", uint[{}] memory input", gamma_abc_count - 1).as_str(),
+        )
+    } else {
+        input_argument.replace(template_text.as_str(), "")
+    }
+        .to_string();
+
+    let mut gamma_abc_repeat_text = String::new();
+    for (i, g1) in vk_gamma_abc.iter().enumerate() {
+        gamma_abc_repeat_text.push_str(
+            format!(
+                "vk.gamma_abc[{}] = Pairing.G1Point({});",
+                i,
+                g1.to_string().as_str()
+            )
+                .as_str(),
+        );
+        if i < gamma_abc_count - 1 {
+            gamma_abc_repeat_text.push_str("\n        ");
+        }
+    }
+
+    template_text = vk_gamma_abc_repeat_regex
+        .replace(template_text.as_str(), gamma_abc_repeat_text.as_str())
+        .into_owned();
+
+    let re = Regex::new(r"(?P<v>0[xX][0-9a-fA-F]{64})").unwrap();
+    template_text = re.replace_all(&template_text, "uint256($v)").to_string();
+
+    match std::fs::write(sol_file_path, format!("{}{}", solidity_pairing_lib_sans_bn256g2, template_text)) {
+        Ok(()) => println!("Generate solidity verifier successfully!"),
+        Err(e) =>{
+            bail!("write sol file failed, {:?}", e)
+        }
+    }
+
+}
 
 fn create_circuit_from_file<E: Engine>(
     circuit_file: &str,
@@ -196,4 +323,171 @@ fn write_pk_vk_to_files<P: Parser>(
     let vk_json = serialize_vk(&vk, curve_type, to_hex)?;
     std::fs::write(vk_file, vk_json)?;
     Ok(())
+}
+
+fn solidity_pairing_lib(with_g2_addition: bool) -> String {
+    let pairing_lib_beginning = r#"// This file is MIT Licensed.
+//
+// Copyright 2017 Christian Reitwiessner
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+pragma solidity ^0.8.0;
+library Pairing {
+    struct G1Point {
+        uint X;
+        uint Y;
+    }
+    // Encoding of field elements is: X[0] * z + X[1]
+    struct G2Point {
+        uint[2] X;
+        uint[2] Y;
+    }
+    /// @return the generator of G1
+    function P1() pure internal returns (G1Point memory) {
+        return G1Point(1, 2);
+    }
+    /// @return the generator of G2
+    function P2() pure internal returns (G2Point memory) {
+        return G2Point(
+            [10857046999023057135944570762232829481370756359578518086990519993285655852781,
+             11559732032986387107991004021392285783925812861821192530917403151452391805634],
+            [8495653923123431417604973247489272438418190587263600148770280649306958101930,
+             4082367875863433681332203403145435568316851327593401208105741076214120093531]
+        );
+    }
+    /// @return the negation of p, i.e. p.addition(p.negate()) should be zero.
+    function negate(G1Point memory p) pure internal returns (G1Point memory) {
+        // The prime q in the base field F_q for G1
+        uint q = 21888242871839275222246405745257275088696311157297823662689037894645226208583;
+        if (p.X == 0 && p.Y == 0)
+            return G1Point(0, 0);
+        return G1Point(p.X, q - (p.Y % q));
+    }
+    /// @return r the sum of two points of G1
+    function addition(G1Point memory p1, G1Point memory p2) internal view returns (G1Point memory r) {
+        uint[4] memory input;
+        input[0] = p1.X;
+        input[1] = p1.Y;
+        input[2] = p2.X;
+        input[3] = p2.Y;
+        bool success;
+        assembly {
+            success := staticcall(sub(gas(), 2000), 6, input, 0xc0, r, 0x60)
+            // Use "invalid" to make gas estimation work
+            switch success case 0 { invalid() }
+        }
+        require(success);
+    }
+"#;
+
+    let pairing_lib_g2_addition = r#"
+    /// @return r the sum of two points of G2
+    function addition(G2Point memory p1, G2Point memory p2) internal view returns (G2Point memory r) {
+        (r.X[0], r.X[1], r.Y[0], r.Y[1]) = BN256G2.ECTwistAdd(p1.X[0],p1.X[1],p1.Y[0],p1.Y[1],p2.X[0],p2.X[1],p2.Y[0],p2.Y[1]);
+    }
+"#;
+
+    let pairing_lib_ending = r#"
+    /// @return r the product of a point on G1 and a scalar, i.e.
+    /// p == p.scalar_mul(1) and p.addition(p) == p.scalar_mul(2) for all points p.
+    function scalar_mul(G1Point memory p, uint s) internal view returns (G1Point memory r) {
+        uint[3] memory input;
+        input[0] = p.X;
+        input[1] = p.Y;
+        input[2] = s;
+        bool success;
+        assembly {
+            success := staticcall(sub(gas(), 2000), 7, input, 0x80, r, 0x60)
+            // Use "invalid" to make gas estimation work
+            switch success case 0 { invalid() }
+        }
+        require (success);
+    }
+    /// @return the result of computing the pairing check
+    /// e(p1[0], p2[0]) *  .... * e(p1[n], p2[n]) == 1
+    /// For example pairing([P1(), P1().negate()], [P2(), P2()]) should
+    /// return true.
+    function pairing(G1Point[] memory p1, G2Point[] memory p2) internal view returns (bool) {
+        require(p1.length == p2.length);
+        uint elements = p1.length;
+        uint inputSize = elements * 6;
+        uint[] memory input = new uint[](inputSize);
+        for (uint i = 0; i < elements; i++)
+        {
+            input[i * 6 + 0] = p1[i].X;
+            input[i * 6 + 1] = p1[i].Y;
+            input[i * 6 + 2] = p2[i].X[1];
+            input[i * 6 + 3] = p2[i].X[0];
+            input[i * 6 + 4] = p2[i].Y[1];
+            input[i * 6 + 5] = p2[i].Y[0];
+        }
+        uint[1] memory out;
+        bool success;
+        assembly {
+            success := staticcall(sub(gas(), 2000), 8, add(input, 0x20), mul(inputSize, 0x20), out, 0x20)
+            // Use "invalid" to make gas estimation work
+            switch success case 0 { invalid() }
+        }
+        require(success);
+        return out[0] != 0;
+    }
+    /// Convenience method for a pairing check for two pairs.
+    function pairingProd2(G1Point memory a1, G2Point memory a2, G1Point memory b1, G2Point memory b2) internal view returns (bool) {
+        G1Point[] memory p1 = new G1Point[](2);
+        G2Point[] memory p2 = new G2Point[](2);
+        p1[0] = a1;
+        p1[1] = b1;
+        p2[0] = a2;
+        p2[1] = b2;
+        return pairing(p1, p2);
+    }
+    /// Convenience method for a pairing check for three pairs.
+    function pairingProd3(
+            G1Point memory a1, G2Point memory a2,
+            G1Point memory b1, G2Point memory b2,
+            G1Point memory c1, G2Point memory c2
+    ) internal view returns (bool) {
+        G1Point[] memory p1 = new G1Point[](3);
+        G2Point[] memory p2 = new G2Point[](3);
+        p1[0] = a1;
+        p1[1] = b1;
+        p1[2] = c1;
+        p2[0] = a2;
+        p2[1] = b2;
+        p2[2] = c2;
+        return pairing(p1, p2);
+    }
+    /// Convenience method for a pairing check for four pairs.
+    function pairingProd4(
+            G1Point memory a1, G2Point memory a2,
+            G1Point memory b1, G2Point memory b2,
+            G1Point memory c1, G2Point memory c2,
+            G1Point memory d1, G2Point memory d2
+    ) internal view returns (bool) {
+        G1Point[] memory p1 = new G1Point[](4);
+        G2Point[] memory p2 = new G2Point[](4);
+        p1[0] = a1;
+        p1[1] = b1;
+        p1[2] = c1;
+        p1[3] = d1;
+        p2[0] = a2;
+        p2[1] = b2;
+        p2[2] = c2;
+        p2[3] = d2;
+        return pairing(p1, p2);
+    }
+}
+"#;
+
+    if !with_g2_addition {
+        [pairing_lib_beginning, pairing_lib_ending].join("\n")
+    } else {
+        [
+            pairing_lib_beginning,
+            pairing_lib_g2_addition,
+            pairing_lib_ending,
+        ]
+            .join("\n")
+    }
 }
