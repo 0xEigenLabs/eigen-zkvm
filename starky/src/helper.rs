@@ -50,6 +50,7 @@ pub fn log2_any(val: usize) -> usize {
     }) | (if (val & 0xAAAAAAAA) != 0 { 1 } else { 0 })
 }
 
+// TODO abstracct.
 #[inline(always)]
 pub fn fr_to_biguint(f: &Fr) -> BigUint {
     let repr = f.into_repr();

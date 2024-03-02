@@ -1,3 +1,4 @@
+use crate::circom_stark_verifier::FieldsType::{FieldType, Goldilocks};
 use crate::digest::ElementDigest;
 use crate::starkinfo::Program;
 use crate::starkinfo::StarkInfo;
@@ -55,5 +56,12 @@ pub fn pil2circom<F: ff::PrimeField + Default>(
         ),
         _ => panic!("Invalid hash type: {}", stark_struct.verificationHashType),
     };
+    // let res = match stark_struct.verificationHashType {
+    //     FieldType::Goldilocks(_) => {
+    //         let gl = Goldilocks;
+    //         <Goldilocks as crate::circom_stark_verifier::CircomStarkVerifierReader>::
+    //     }
+    //
+    // }
     Ok(res)
 }

@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use crate::circom_stark_verifier::FieldsType::FieldType;
 use crate::constant::{MG, SHIFT};
 use crate::digest::ElementDigest;
 use crate::f3g::F3G;
@@ -160,8 +161,8 @@ impl Transcript {
         let NFields = (totalBits - 1) / 253 + 1;
         let mut n2b: Vec<String> = vec![];
         let n2bt = match self.stark_struct.verificationHashType.as_str() {
-            "BN128" => "Num2Bits_strict()".to_string(),
-            "BLS12381" => "Num2Bits(255)".to_string(),
+            FieldType::BN128(_) => "Num2Bits_strict()".to_string(),
+            FieldType::BLS12381(_) => "Num2Bits(255)".to_string(),
             _ => todo!(),
         };
         for i in 0..NFields {
