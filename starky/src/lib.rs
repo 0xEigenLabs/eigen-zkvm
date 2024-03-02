@@ -3,7 +3,6 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 #![feature(stdarch_x86_avx512)]
-#![feature(associated_type_defaults)]
 
 pub mod polsarray;
 pub mod polutils;
@@ -74,7 +73,6 @@ pub mod serializer;
 pub mod zkin_join;
 
 pub mod dev;
-mod circom_stark_verifier;
 
 #[macro_use]
 extern crate serde_json;
