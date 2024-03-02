@@ -73,8 +73,8 @@ pub mod prove;
 pub mod serializer;
 pub mod zkin_join;
 
-mod circom_stark_verifier;
 pub mod dev;
+mod circom_stark_verifier;
 
 #[macro_use]
 extern crate serde_json;

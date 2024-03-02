@@ -6,7 +6,6 @@ use std::fmt;
 use std::fs::File;
 use std::io::Read;
 
-use crate::circom_stark_verifier::FieldsType::FieldType;
 use anyhow::{anyhow, Result};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
@@ -197,7 +196,7 @@ pub struct StarkStruct {
     pub nBits: usize,
     pub nBitsExt: usize,
     pub nQueries: usize,
-    pub verificationHashType: FieldType,
+    pub verificationHashType: String,
     pub steps: Vec<Step>,
 }
 

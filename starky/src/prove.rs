@@ -20,7 +20,6 @@ use crate::field_bn128::Fr as Fr_BN128;
 use ff::PrimeField;
 use fields::field_gl::Fr as FGL;
 
-use crate::circom_stark_verifier::FieldsType::FieldType;
 use anyhow::Result;
 use profiler_macro::time_profiler;
 use std::fs::File;
@@ -48,8 +47,8 @@ pub fn stark_prove(
     cm_pol.load(cm_pol_file)?;
 
     let stark_struct = load_json::<StarkStruct>(stark_struct)?;
-    match stark_struct.verificationHashType {
-        FieldType::BN128(_) => prove::<Fr_BN128, MerkleTreeBN128, TranscriptBN128>(
+    match stark_struct.verificationHashType.as_str() {
+        "BN128" => prove::<Fr_BN128, MerkleTreeBN128, TranscriptBN128>(
             &mut pil,
             const_pol,
             cm_pol,
@@ -61,7 +60,7 @@ pub fn stark_prove(
             zkin,
             prover_addr,
         ),
-        FieldType::BLS12381(_) => prove::<Fr_BLS12381, MerkleTreeBLS12381, TranscriptBLS128>(
+        "BLS12381" => prove::<Fr_BLS12381, MerkleTreeBLS12381, TranscriptBLS128>(
             &mut pil,
             const_pol,
             cm_pol,
@@ -73,7 +72,7 @@ pub fn stark_prove(
             zkin,
             prover_addr,
         ),
-        FieldType::Goldilocks(_) => prove::<FGL, MerkleTreeGL, TranscriptGL>(
+        "GL" => prove::<FGL, MerkleTreeGL, TranscriptGL>(
             &mut pil,
             const_pol,
             cm_pol,
@@ -85,10 +84,7 @@ pub fn stark_prove(
             zkin,
             prover_addr,
         ),
-        _ => panic!(
-            "Invalid hashtype {}",
-            stark_struct.verificationHashType.to_string()
-        ),
+        _ => panic!("Invalid hashtype {}", stark_struct.verificationHashType),
     }
 }
 

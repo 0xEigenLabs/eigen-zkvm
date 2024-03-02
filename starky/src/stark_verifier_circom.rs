@@ -37,7 +37,7 @@ include "iszero.circom";
 }
 
 #[derive(Default)]
-pub(crate) struct Transcript {
+struct Transcript {
     state: [String; 4],
     pending: Vec<String>,
     out: Vec<String>,
@@ -63,7 +63,7 @@ impl Transcript {
         }
     }
 
-    pub(crate) fn getField(&mut self, v: &str, _l: usize) {
+    fn getField(&mut self, v: &str, _l: usize) {
         let tmp = self.getFields1();
         self.code.push(format!("{}[0] <== {};", v, tmp));
         let tmp = self.getFields1();
