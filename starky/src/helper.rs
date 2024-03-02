@@ -67,13 +67,8 @@ pub fn biguint_to_be(f: &BigUint) -> FGL {
 }
 
 #[inline(always)]
-pub fn biguint_to_fr(f: &BigUint) -> Fr {
-    Fr::from_str(&f.to_string()).unwrap()
-}
-
-#[inline(always)]
-pub fn biguint_bls12381_to_fr(f: &BigUint) -> Fr_bls12381 {
-    Fr_bls12381::from_str(&f.to_string()).unwrap()
+pub fn biguint_to_fr<F: PrimeField>(f: &BigUint) -> F {
+    F::from_str(&f.to_string()).unwrap()
 }
 
 use std::fmt::{Debug, Display};
