@@ -51,16 +51,7 @@ pub fn log2_any(val: usize) -> usize {
 }
 
 #[inline(always)]
-pub fn fr_to_biguint(f: &Fr) -> BigUint {
-    let repr = f.into_repr();
-    let required_length = repr.as_ref().len() * 8;
-    let mut buf: Vec<u8> = Vec::with_capacity(required_length);
-    repr.write_be(&mut buf).unwrap();
-    BigUint::from_bytes_be(&buf)
-}
-
-#[inline(always)]
-pub fn fr_bls12381_to_biguint(f: &Fr_bls12381) -> BigUint {
+pub fn fr_to_biguint<F: PrimeField>(f: &F) -> BigUint {
     let repr = f.into_repr();
     let required_length = repr.as_ref().len() * 8;
     let mut buf: Vec<u8> = Vec::with_capacity(required_length);

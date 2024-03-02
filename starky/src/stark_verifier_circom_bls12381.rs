@@ -859,7 +859,7 @@ template StarkVerifier() {{
     signal rootC;
     rootC <== {};
 "#,
-            crate::helper::fr_bls12381_to_biguint(&c)
+            crate::helper::fr_to_biguint(&c)
         ));
     }
 
