@@ -1,6 +1,4 @@
 #![allow(dead_code)]
-use crate::field_bls12381::Fr as Fr_bls12381;
-use crate::field_bn128::Fr;
 use ff::*;
 use fields::field_gl::Fr as FGL;
 use num_bigint::BigUint;

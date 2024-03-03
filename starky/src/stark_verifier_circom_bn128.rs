@@ -3,7 +3,6 @@
 use crate::constant::{MG, SHIFT};
 use crate::digest::ElementDigest;
 use crate::f3g::F3G;
-use crate::field_bn128::Fr;
 use crate::pil2circom::StarkOption;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::Node;
