@@ -45,7 +45,7 @@ pub fn pil2circom<F: ff::PrimeField + Default>(
             const_root,
             options,
         ),
-        "BLS12381" => crate::stark_verifier_circom_bls12381::render(
+        "BLS12381" => crate::stark_verifier_circom_bn128::render(
             starkinfo,
             program,
             pil,
