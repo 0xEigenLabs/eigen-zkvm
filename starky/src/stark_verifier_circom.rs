@@ -2146,6 +2146,7 @@ component main {public [publics]}= StarkVerifier();
     res
 }
 
+// Support goldilocks
 pub fn render<F: ff::PrimeField + Default>(
     starkinfo: &StarkInfo,
     prorgam: &Program,

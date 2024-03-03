@@ -1864,6 +1864,7 @@ component main {} = Main();
     res
 }
 
+// Suport bn128 && bls12381
 pub fn render<F: ff::PrimeField + Default>(
     starkinfo: &StarkInfo,
     prorgam: &Program,
