@@ -164,7 +164,7 @@ impl<T: MTNodeType + fmt::Debug + Clone> Serialize for NodeWrapper<T> {
         }
         if source == TypeId::of::<Fr_BLS12381>() {
             let r: Fr_BLS12381 = Fr_BLS12381(self.0.clone().as_scalar::<Fr_BLS12381>());
-            return serializer.serialize_str(&helper::fr_bls12381_to_biguint(&r).to_string());
+            return serializer.serialize_str(&helper::fr_to_biguint(&r).to_string());
         }
         if source == TypeId::of::<FGL>() {
             let e = self.0.as_elements();

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use crate::digest::ElementDigest;
 use crate::field_bls12381::{Fr, FrRepr};
-use crate::helper::{biguint_to_be, fr_bls12381_to_biguint};
+use crate::helper::{biguint_to_be, fr_to_biguint};
 use crate::poseidon_bls12381_opt::Poseidon;
 use crate::traits::Transcript;
 use crate::traits::{FieldExtension, MTNodeType};
@@ -32,7 +32,7 @@ impl TranscriptBLS128 {
     }
     fn add_1(&mut self, e: &Fr) -> Result<()> {
         self.out = VecDeque::new();
-        log::trace!("add_1: {:?}", fr_bls12381_to_biguint(e));
+        log::trace!("add_1: {:?}", fr_to_biguint(e));
         self.pending.push(*e);
         if self.pending.len() == 16 {
             self.update_state()?;
@@ -75,7 +75,7 @@ impl Transcript for TranscriptBLS128 {
 
         if !self.out.is_empty() {
             let v = self.out.pop_front().unwrap();
-            let bv = fr_bls12381_to_biguint(&v);
+            let bv = fr_to_biguint(&v);
             let mask = BigUint::from(0xFFFFFFFFFFFFFFFFu128);
             self.out3.push_back(biguint_to_be(&(&bv & &mask)));
             self.out3.push_back(biguint_to_be(&((&bv >> 64) & &mask))); //FIXME: optimization
@@ -106,7 +106,7 @@ impl Transcript for TranscriptBLS128 {
         let n_fields = (total_bits - 1) / 253 + 1;
         let mut fields: Vec<BigUint> = Vec::new();
         for _i in 0..n_fields {
-            fields.push(fr_bls12381_to_biguint(&self.get_fields253()?));
+            fields.push(fr_to_biguint(&self.get_fields253()?));
         }
         let mut res: Vec<usize> = vec![];
         let mut cur_field = 0;
