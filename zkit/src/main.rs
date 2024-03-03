@@ -109,7 +109,7 @@ struct VerifyOpt {
 struct GenerateVerifierOpt {
     #[arg(short, default_value = "vk.bin")]
     vk_file: String,
-    #[arg(short, default_value = "groth16")]
+    #[arg(short, default_value = "plonk")]
     protocal: String,
     #[arg(short, default_value = "verifier.sol")]
     sol: String,
@@ -431,8 +431,7 @@ fn main() {
                     groth16::api::generate_verifier(&args.vk_file, &args.sol)
                 }
                 _ => {
-                    println!("unknown protocol");
-                    std::process::exit(400);
+                    panic!("unknown protocol")
                 }
             }
         }

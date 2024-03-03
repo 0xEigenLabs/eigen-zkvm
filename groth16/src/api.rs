@@ -147,6 +147,8 @@ pub fn groth16_verify(
 
     Ok(())
 }
+
+// Acknowledgement: The Solidity verifier template was modified from ZoKrates implementation.
 pub fn generate_verifier(vk_file_path: &str, sol_file_path: &str) -> Result<()> {
     let json_data = std::fs::read_to_string(vk_file_path)?;
     let vk_file: VerifyingKeyFile =
