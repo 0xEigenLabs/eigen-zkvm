@@ -35,7 +35,7 @@ where
         + Serialize
         + DeserializeOwned;
     // TODO: the BaseField is the container of flatten MTNode, merge BaseField and MTNode
-    type BaseField: Clone + Default + Debug + PartialEq + Into<NodeWrapper<Self::MTNode>>;
+    type BaseField: Clone + Default + Debug + PartialEq + Serialize + DeserializeOwned;
     type ExtendField: FieldExtension;
     fn new() -> Self;
     fn to_extend(&self, p_be: &mut Vec<Self::ExtendField>);

@@ -1,7 +1,8 @@
 #![allow(unused_imports, clippy::too_many_arguments)]
 use ff::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(PrimeField)]
+#[derive(PrimeField, Serialize, Deserialize)]
 #[PrimeFieldModulus = "21888242871839275222246405745257275088548364400416034343698204186575808495617"]
 #[PrimeFieldGenerator = "7"]
 pub struct Fr(pub FrRepr);
