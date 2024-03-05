@@ -1,4 +1,3 @@
-use crate::serializer::NodeWrapper;
 use ::rand::Rand;
 use anyhow::Result;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -24,7 +23,7 @@ where
 #[allow(clippy::type_complexity)]
 pub trait MerkleTree
 where
-    Self: Sized,
+    Self: Sized + Default,
 {
     type MTNode: Copy
         + Display

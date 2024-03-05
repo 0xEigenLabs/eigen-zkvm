@@ -1,16 +1,57 @@
 #![allow(unused_imports, clippy::too_many_arguments)]
-use ff::*;
-use serde::{Deserialize, Serialize};
 
-#[derive(PrimeField, Serialize, Deserialize)]
+use crate::f3g::F3G;
+use ff::*;
+use serde::de::{SeqAccess, Visitor};
+use serde::ser::SerializeSeq;
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt;
+
+#[derive(PrimeField)]
 #[PrimeFieldModulus = "21888242871839275222246405745257275088548364400416034343698204186575808495617"]
 #[PrimeFieldGenerator = "7"]
 pub struct Fr(pub FrRepr);
+
+impl Serialize for Fr {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let elems = self.to_string();
+        serializer.serialize_str(&elems)
+    }
+}
+
+impl<'de> Deserialize<'de> for Fr {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct EntriesVisitor;
+
+        impl<'de> Visitor<'de> for EntriesVisitor {
+            type Value = Fr;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct F3G")
+            }
+
+            fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(Fr::from_str(s).unwrap())
+            }
+        }
+        deserializer.deserialize_any(EntriesVisitor)
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use crate::field_bn128::*;
     use ff::*;
+
     #[test]
     fn test_ff() {
         let a = Fr::from_repr(FrRepr::from(2)).unwrap();
@@ -28,5 +69,16 @@ mod tests {
             to_hex(&b)
         );
         assert_eq!(&a, &b);
+    }
+
+    #[test]
+    fn test_bn128_fr_serde_and_deserde() {
+        let data = Fr::one();
+        let serialized = serde_json::to_string(&data).unwrap();
+        println!("Serialized: {}", serialized);
+
+        let expect: Fr = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(data, expect);
     }
 }

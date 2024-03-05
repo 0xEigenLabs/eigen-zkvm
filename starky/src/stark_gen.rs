@@ -19,6 +19,7 @@ use fields::field_gl::Fr as FGL;
 use hashbrown::HashMap;
 use profiler_macro::time_profiler;
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub struct StarkContext<F: FieldExtension> {
     pub nbits: usize,
@@ -174,13 +175,13 @@ impl<F: FieldExtension> StarkContext<F> {
     }
 }
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StarkProof<M: MerkleTree> {
     pub root1: M::MTNode,
     pub root2: M::MTNode,
     pub root3: M::MTNode,
     pub root4: M::MTNode,
-    pub fri_proof: FRIProof<M::ExtendField, M>,
+    pub fri_proof: FRIProof<M>,
     pub evals: Vec<M::ExtendField>,
     pub publics: Vec<M::ExtendField>,
     pub rootC: Option<M::MTNode>,
@@ -555,7 +556,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             ]
         };
         let mut fri = FRI::new(stark_struct);
-        let friProof = fri.prove::<M::ExtendField, M, T>(&mut transcript, &fri_pol, query_pol)?;
+        let friProof = fri.prove::<M, T>(&mut transcript, &fri_pol, query_pol)?;
 
         Ok(StarkProof {
             rootC: Some(const_tree.root()),

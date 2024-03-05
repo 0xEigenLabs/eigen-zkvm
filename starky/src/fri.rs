@@ -7,6 +7,7 @@ use crate::types::{StarkStruct, Step};
 use anyhow::{bail, Result};
 use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
+use serde::{Deserialize, Serialize};
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Debug)]
@@ -17,14 +18,14 @@ pub struct FRI {
     pub steps: Vec<Step>,
 }
 
-#[derive(Debug, Default, Clone)]
-pub struct Query<MB: Clone + Default + PartialEq, MN: MTNodeType> {
-    pub pol_queries: Vec<Vec<(Vec<FGL>, Vec<Vec<MB>>)>>,
-    pub root: MN,
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct Query<M: MerkleTree> {
+    pub pol_queries: Vec<Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>>,
+    pub root: M::MTNode,
 }
 
 // Impl deep equality
-impl<MB: Clone + Default + PartialEq, MN: MTNodeType> PartialEq for Query<MB, MN> {
+impl<M: MerkleTree> PartialEq for Query<M> {
     fn eq(&self, other: &Self) -> bool {
         self.root == other.root && {
             self.pol_queries
@@ -53,16 +54,17 @@ impl<MB: Clone + Default + PartialEq, MN: MTNodeType> PartialEq for Query<MB, MN
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
-pub struct FRIProof<F: FieldExtension, M: MerkleTree<ExtendField = F>> {
-    pub queries: Vec<Query<M::BaseField, M::MTNode>>,
-    pub last: Vec<F>,
+// TODO inheritate M: MerkleTree instead of now ones.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FRIProof<M: MerkleTree> {
+    pub queries: Vec<Query<M>>,
+    pub last: Vec<M::ExtendField>,
 }
 
-impl<F: FieldExtension, M: MerkleTree<ExtendField = F>> FRIProof<F, M> {
+impl<M: MerkleTree> FRIProof<M> {
     pub fn new(qs: usize) -> Self {
         FRIProof {
-            queries: vec![Query::<M::BaseField, M::MTNode>::default(); qs],
+            queries: vec![Query::default(); qs],
             last: Vec::new(),
         }
     }
@@ -79,45 +81,45 @@ impl FRI {
     }
 
     #[time_profiler("fri_prove")]
-    pub fn prove<F: FieldExtension, M: MerkleTree<ExtendField = F>, T: Transcript>(
+    pub fn prove<M: MerkleTree, T: Transcript>(
         &mut self,
         transcript: &mut T,
         pol: &[M::ExtendField],
         mut query_pol: impl FnMut(usize) -> Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
-    ) -> Result<FRIProof<F, M>> {
+    ) -> Result<FRIProof<M>> {
         let mut pol = pol.to_owned();
         let mut standard_fft = FFT::new();
         let mut pol_bits = log2_any(pol.len());
         assert_eq!(1 << pol_bits, pol.len());
         assert_eq!(pol_bits, self.in_nbits);
 
-        let mut shift_inv = F::from(*SHIFT_INV);
-        let mut shift = F::from(*SHIFT);
+        let mut shift_inv = M::ExtendField::from(*SHIFT_INV);
+        let mut shift = M::ExtendField::from(*SHIFT);
         let mut tree: Vec<M> = vec![];
 
-        let mut proof: FRIProof<F, M> = FRIProof::<F, M>::new(self.steps.len());
+        let mut proof: FRIProof<M> = FRIProof::<M>::new(self.steps.len());
         for (si, stepi) in self.steps.iter().enumerate() {
             let reduction_bits = pol_bits - stepi.nBits;
             let pol2_n = 1 << (pol_bits - reduction_bits);
             let n_x = pol.len() / pol2_n;
 
-            let mut pol2_e = vec![F::ZERO; pol2_n];
+            let mut pol2_e = vec![M::ExtendField::ZERO; pol2_n];
             let special_x = transcript.get_field();
 
             let mut sinv = shift_inv;
-            let wi = F::inv(&F::from(MG.0[pol_bits]));
+            let wi = M::ExtendField::inv(&M::ExtendField::from(MG.0[pol_bits]));
 
             for g in 0..(pol.len() / n_x) {
                 if si == 0 {
                     pol2_e[g] = pol[g];
                 } else {
-                    let mut ppar = vec![F::ZERO; n_x];
+                    let mut ppar = vec![M::ExtendField::ZERO; n_x];
                     for i in 0..n_x {
                         ppar[i] = pol[i * pol2_n + g];
                     }
 
                     let mut ppar_c = standard_fft.ifft(&ppar);
-                    pol_mul_axi(&mut ppar_c, F::ONE, &sinv);
+                    pol_mul_axi(&mut ppar_c, M::ExtendField::ONE, &sinv);
                     pol2_e[g] = eval_pol(&ppar_c, &special_x);
                     sinv *= wi;
                 }
@@ -147,7 +149,7 @@ impl FRI {
                 shift = shift * shift;
             }
         }
-        let mut last_pol: Vec<F> = vec![];
+        let mut last_pol: Vec<M::ExtendField> = vec![];
         for p in pol.iter() {
             last_pol.push(*p);
         }
@@ -182,16 +184,19 @@ impl FRI {
     }
 
     #[time_profiler("fri_verify")]
-    pub fn verify<F: FieldExtension, M: MerkleTree<ExtendField = F>, T: Transcript>(
+    pub fn verify<M: MerkleTree, T: Transcript>(
         &self,
         transcript: &mut T,
-        proof: &FRIProof<F, M>,
-        mut check_query: impl FnMut(&Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>, usize) -> Result<Vec<F>>,
+        proof: &FRIProof<M>,
+        mut check_query: impl FnMut(
+            &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
+            usize,
+        ) -> Result<Vec<M::ExtendField>>,
     ) -> Result<bool> {
         let tree = M::new();
         let mut standard_fft = FFT::new();
         assert_eq!(proof.queries.len(), self.steps.len()); // the last +1 is omitted
-        let mut special_x: Vec<F> = vec![];
+        let mut special_x: Vec<M::ExtendField> = vec![];
         for si in 0..self.steps.len() {
             special_x.push(transcript.get_field());
             if si < self.steps.len() - 1 {
@@ -213,12 +218,12 @@ impl FRI {
         let n_queries = self.n_queries;
         let mut ys = transcript.get_permutations(self.n_queries, self.steps[0].nBits)?;
         let mut pol_bits = self.in_nbits;
-        let mut shift = F::from(*SHIFT);
+        let mut shift = M::ExtendField::from(*SHIFT);
 
         let check_query_fn = |si: usize,
                               query: &Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>,
                               idx: usize|
-         -> Result<Vec<F>> {
+         -> Result<Vec<M::ExtendField>> {
             let res =
                 tree.verify_group_proof(&proof.queries[si].root, &query[0].1, idx, &query[0].0)?;
             if !res {
@@ -231,7 +236,7 @@ impl FRI {
             let proof_item = &proof.queries[si];
             let reduction_bits = pol_bits - stepi.nBits;
             for i in 0..n_queries {
-                let pgroup_e: Vec<F> = match si {
+                let pgroup_e: Vec<M::ExtendField> = match si {
                     0 => {
                         let pgroup_e = check_query(&proof_item.pol_queries[i], ys[i])?;
                         if pgroup_e.is_empty() {
@@ -244,7 +249,9 @@ impl FRI {
                 };
 
                 let pgroup_c = standard_fft.ifft(&pgroup_e);
-                let sinv = F::inv(&(shift * (F::from(MG.0[pol_bits]).exp(ys[i]))));
+                let sinv = M::ExtendField::inv(
+                    &(shift * (M::ExtendField::from(MG.0[pol_bits]).exp(ys[i]))),
+                );
                 let ev = eval_pol(&pgroup_c, &(special_x[si] * sinv));
 
                 if si < self.steps.len() - 1 {
