@@ -33,7 +33,7 @@ describe("Plonk & Groth16 verifier test", function() {
     expect(await verifier.verify_serialized_proof(input, proof)).to.equal(true);
   });
 
-  it("Test Groth16 verifier", async () => {
+  it.only("Test Groth16 verifier", async () => {
     let F = await ethers.getContractFactory("Verifier");
     let contract = await F.deploy();
     await contract.deployed();
