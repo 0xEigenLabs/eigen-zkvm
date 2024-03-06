@@ -18,10 +18,18 @@ pub struct FRI {
     pub steps: Vec<Step>,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Query<M: MerkleTree> {
     pub pol_queries: Vec<Vec<(Vec<FGL>, Vec<Vec<M::BaseField>>)>>,
     pub root: M::MTNode,
+}
+impl<M: MerkleTree> Default for Query<M> {
+    fn default() -> Self {
+        Self {
+            pol_queries: vec![],
+            root: M::MTNode::default(),
+        }
+    }
 }
 
 // Impl deep equality
@@ -64,7 +72,7 @@ pub struct FRIProof<M: MerkleTree> {
 impl<M: MerkleTree> FRIProof<M> {
     pub fn new(qs: usize) -> Self {
         FRIProof {
-            queries: vec![Query::default(); qs],
+            queries: Vec::with_capacity(qs),
             last: Vec::new(),
         }
     }
@@ -194,7 +202,7 @@ impl FRI {
         ) -> Result<Vec<M::ExtendField>>,
     ) -> Result<bool> {
         let tree = M::new();
-        let mut standard_fft = FFT::new();
+        let mut standard_fft = FFT::<M::ExtendField>::new();
         assert_eq!(proof.queries.len(), self.steps.len()); // the last +1 is omitted
         let mut special_x: Vec<M::ExtendField> = vec![];
         for si in 0..self.steps.len() {
@@ -292,7 +300,7 @@ impl FRI {
         let last_pol_c = standard_fft.ifft(&last_pol_e);
 
         for i in (max_deg + 1)..last_pol_c.len() {
-            if !last_pol_c[i].is_zero() {
+            if last_pol_c[i]._eq(&M::ExtendField::ZERO) {
                 log::error!("check last pol c failed");
                 return Ok(false);
             }

@@ -22,6 +22,7 @@ use fields::field_gl::Fr as FGL;
 
 use anyhow::Result;
 use profiler_macro::time_profiler;
+use serde::{de::DeserializeOwned, Serialize};
 use std::fs::File;
 use std::io::Write;
 
@@ -90,11 +91,7 @@ pub fn stark_prove(
 
 // Adopt with different curve, eg: BN128, BLS12381, Goldilocks
 #[allow(clippy::too_many_arguments)]
-fn prove<
-    F: PrimeField + Default,
-    M: MerkleTree<MTNode = ElementDigest<4, F>> + Default,
-    T: Transcript,
->(
+fn prove<F: PrimeField + Default, M: MerkleTree, T: Transcript>(
     pil: &mut PIL,
     const_pol: PolsArray,
     cm_pol: PolsArray,

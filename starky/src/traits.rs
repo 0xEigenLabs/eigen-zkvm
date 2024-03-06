@@ -23,7 +23,7 @@ where
 #[allow(clippy::type_complexity)]
 pub trait MerkleTree
 where
-    Self: Sized + Default,
+    Self: Sized,
 {
     type MTNode: Copy
         + Display
