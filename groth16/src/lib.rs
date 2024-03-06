@@ -1,7 +1,7 @@
 pub mod api;
-mod constant;
 pub mod groth16;
 pub mod json_utils;
+mod template;
 
 pub use bellman_ce::pairing::ff;
 pub use ff::*;

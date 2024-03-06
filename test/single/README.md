@@ -7,7 +7,7 @@ Usage: eigen-zkit generate_verifier [OPTIONS]
 
 Options:
   -v <VK_FILE>       [default: vk.bin]
-  -p <PROTOCAL>      [default: groth16]
+  -p <PROTOCAL>      [default: plonk]
   -s <SOL>           [default: verifier.sol]
 ```
 

@@ -51,10 +51,15 @@ if [ $snark_type = "groth16" ]; then
 
         if [ $CURVE = "BN128" ]; then
            echo "5. generate verifier contract"
-           $ZKIT generate_verifier  $WORK_DIR/verification_key.json   ${CUR_DIR}/single/contracts/groth16_verifier.sol
+           $ZKIT generate_verifier -v $WORK_DIR/verification_key.json  -p groth16 -s ${CUR_DIR}/single/contracts/groth16_verifier.sol
 
-           echo "6. calculate verify gas cost"
-           cd single && npx hardhat test test/single.test.ts
+           echo "6. test verifier contract"
+           cp $WORK_DIR/public_input.json ${CUR_DIR}/single/input/groth16_public_input.json
+           cp $WORK_DIR/proof.json ${CUR_DIR}/single/input/groth16_proof.json
+           cd single
+           nohup npx hardhat node > /dev/null 2>&1 &
+           cd test
+           npx hardhat test single.test.ts
         fi
     fi
 
