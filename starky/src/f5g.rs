@@ -9,6 +9,7 @@ use std::{fmt, slice};
 use core::fmt::{Display, Formatter};
 use serde::de::{SeqAccess, Visitor};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::ser::SerializeSeq;
 
 /// Prime: 0xFFFFFFFF00000001
 /// Irreducible polynomial: x^5-3
@@ -765,7 +766,7 @@ impl<'de> Deserialize<'de> for F5G {
                 let mut entries = Vec::new();
                 while let Some(entry) = seq.next_element::<String>()? {
                     let entry: u64 = entry.parse().unwrap();
-                    entries.push(FGL::from(entry));
+                    entries.push(Fr::from(entry));
                 }
                 Ok(F5G::from_vec(entries))
             }

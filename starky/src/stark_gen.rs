@@ -20,7 +20,6 @@ use hashbrown::HashMap;
 use profiler_macro::time_profiler;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
 
 pub struct StarkContext<F: FieldExtension> {
     pub nbits: usize,
