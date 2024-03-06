@@ -4,9 +4,12 @@ use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAss
 use fields::field_gl::Fr;
 use fields::Field;
 use std::hash::{Hash, Hasher};
-use std::{slice, usize};
+use std::{fmt, slice, usize};
 
 use core::fmt::{Display, Formatter};
+use serde::de::{SeqAccess, Visitor};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+
 /// GF(2^3) implementation
 /// Prime: 0xFFFFFFFF00000001
 /// Irreducible polynomial: x^3 - x -1
@@ -626,6 +629,64 @@ impl Display for F3G {
     }
 }
 
+impl Serialize for F3G {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let elems = self.as_elements();
+        if self.dim == 1 {
+            serializer.serialize_str(&elems[0].as_int().to_string())
+        } else if self.dim == 3 {
+            let mut seq = serializer.serialize_seq(Some(elems.len()))?;
+            for v in elems.iter() {
+                seq.serialize_element(&v.as_int().to_string())?;
+            }
+            seq.end()
+        } else {
+            panic!("Invalid dim {}", self);
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for F3G {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct EntriesVisitor;
+
+        impl<'de> Visitor<'de> for EntriesVisitor {
+            type Value = F3G;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct F3G")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let mut entries = Vec::new();
+                while let Some(entry) = seq.next_element::<String>()? {
+                    let entry: u64 = entry.parse().unwrap();
+                    entries.push(FGL::from(entry));
+                }
+                Ok(F3G::from_vec(entries))
+            }
+
+            fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                let ien: u64 = s.parse().unwrap();
+                Ok(F3G::from(ien))
+            }
+        }
+        deserializer.deserialize_any(EntriesVisitor)
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use crate::f3g::F3G;
@@ -753,5 +814,26 @@ pub mod tests {
         let a = &F3G::from(Fr::ONE);
         let b = a.is_zero();
         assert!(!b);
+    }
+
+    #[test]
+    fn test_serialize_f3g() {
+        let input = F3G::from(123);
+        let ser_input = serde_json::to_string(&input).unwrap();
+        let de_input = serde_json::from_str(&ser_input).unwrap();
+        assert_eq!(input, de_input);
+
+        let mut rng = rand::thread_rng();
+        let input = F3G::from_vec(
+            [
+                FGL::rand(&mut rng),
+                FGL::rand(&mut rng),
+                FGL::rand(&mut rng),
+            ]
+            .to_vec(),
+        );
+        let ser_input = serde_json::to_string(&input).unwrap();
+        let de_input = serde_json::from_str(&ser_input).unwrap();
+        assert_eq!(input, de_input);
     }
 }

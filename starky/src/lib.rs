@@ -69,7 +69,6 @@ pub mod transcript_bn128;
 
 pub mod pil2circom;
 pub mod prove;
-pub mod serializer;
 pub mod zkin_join;
 
 pub mod dev;
