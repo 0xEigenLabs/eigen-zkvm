@@ -1,10 +1,15 @@
-use crate::{bellman_ce::{
-    groth16::{Parameters, Proof, VerifyingKey},
-    pairing::{
-        bls12_381::{Bls12, Fr as Fr_bls12381},
-        bn256::{Bn256, Fr},
+use crate::{
+    bellman_ce::{
+        groth16::{Parameters, Proof, VerifyingKey},
+        pairing::{
+            bls12_381::{Bls12, Fr as Fr_bls12381},
+            bn256::{Bn256, Fr},
+        },
     },
-}, constant, groth16::Groth16, json_utils::*};
+    constant,
+    groth16::Groth16,
+    json_utils::*,
+};
 use algebraic::{
     bellman_ce::Engine,
     circom_circuit::CircomCircuit,
@@ -13,10 +18,9 @@ use algebraic::{
     Field, PrimeField,
 };
 use anyhow::{anyhow, bail, Result};
+use constant::CONTRACT_TEMPLATE;
 use num_traits::Zero;
 use regex::Regex;
-use std::io::Write;
-use constant::CONTRACT_TEMPLATE;
 
 pub fn groth16_setup(
     curve_type: &str,
@@ -213,7 +217,7 @@ pub fn generate_verifier(vk_file_path: &str, sol_file_path: &str) -> Result<()> 
     } else {
         input_loop.replace(template_text.as_str(), "")
     }
-        .to_string();
+    .to_string();
 
     // take input values as argument only if there are any
     template_text = if gamma_abc_count > 1 {
@@ -224,7 +228,7 @@ pub fn generate_verifier(vk_file_path: &str, sol_file_path: &str) -> Result<()> 
     } else {
         input_argument.replace(template_text.as_str(), "")
     }
-        .to_string();
+    .to_string();
 
     let mut gamma_abc_repeat_text = String::new();
     for (i, g1) in vk_gamma_abc.iter().enumerate() {
@@ -234,7 +238,7 @@ pub fn generate_verifier(vk_file_path: &str, sol_file_path: &str) -> Result<()> 
                 i,
                 g1.to_string().as_str()
             )
-                .as_str(),
+            .as_str(),
         );
         if i < gamma_abc_count - 1 {
             gamma_abc_repeat_text.push_str("\n        ");
@@ -248,9 +252,12 @@ pub fn generate_verifier(vk_file_path: &str, sol_file_path: &str) -> Result<()> 
     let re = Regex::new(r"(?P<v>0[xX][0-9a-fA-F]{64})").unwrap();
     template_text = re.replace_all(&template_text, "uint256($v)").to_string();
 
-    match std::fs::write(sol_file_path, format!("{}{}", solidity_pairing_lib_sans_bn256g2, template_text)) {
+    match std::fs::write(
+        sol_file_path,
+        format!("{}{}", solidity_pairing_lib_sans_bn256g2, template_text),
+    ) {
         Ok(()) => println!("Generate solidity verifier successfully!"),
-        Err(e) =>{
+        Err(e) => {
             bail!("write sol file failed, {:?}", e)
         }
     }
@@ -469,6 +476,6 @@ library Pairing {
             pairing_lib_g2_addition,
             pairing_lib_ending,
         ]
-            .join("\n")
+        .join("\n")
     }
 }

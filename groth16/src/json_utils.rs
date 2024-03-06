@@ -34,8 +34,11 @@ impl fmt::Display for G1 {
 
 impl fmt::Display for G2 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[{}, {}], [{}, {}]",
-               self.x[0], self.x[1], self.y[0], self.y[1])
+        write!(
+            f,
+            "[{}, {}], [{}, {}]",
+            self.x[0], self.x[1], self.y[0], self.y[1]
+        )
     }
 }
 
