@@ -166,7 +166,7 @@ mod tests {
     use crate::digest::ElementDigest;
     use crate::field_bls12381::Fr as Fr_bls12381;
     use crate::field_bn128::Fr;
-    use crate::helper::{fr_bls12381_to_biguint, fr_to_biguint};
+    use crate::helper::fr_to_biguint;
     use crate::traits::MTNodeType;
     use ff::{Field, PrimeField};
     use fields::field_gl::Fr as FGL;
@@ -215,7 +215,7 @@ mod tests {
 
     // for debug only
     fn to_gl_bls12381(f: &Fr_bls12381) -> [FGL; 4] {
-        let mut f = fr_bls12381_to_biguint(f);
+        let mut f = fr_to_biguint(f);
         let mask = BigUint::from_str_radix("ffffffffffffffff", 16).unwrap();
         let mut result = [FGL::ZERO; 4];
         for res in &mut result {

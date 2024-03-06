@@ -37,15 +37,7 @@ pub fn pil2circom<F: ff::PrimeField + Default>(
             const_root,
             options,
         ),
-        "BN128" => crate::stark_verifier_circom_bn128::render(
-            starkinfo,
-            program,
-            pil,
-            stark_struct,
-            const_root,
-            options,
-        ),
-        "BLS12381" => crate::stark_verifier_circom_bls12381::render(
+        "BN128" | "BLS12381" => crate::stark_verifier_circom_onchain::render(
             starkinfo,
             program,
             pil,

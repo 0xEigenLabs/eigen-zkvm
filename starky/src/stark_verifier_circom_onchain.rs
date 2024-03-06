@@ -3,7 +3,6 @@
 use crate::constant::{MG, SHIFT};
 use crate::digest::ElementDigest;
 use crate::f3g::F3G;
-use crate::field_bn128::Fr;
 use crate::pil2circom::StarkOption;
 use crate::starkinfo::{Program, StarkInfo};
 use crate::starkinfo_codegen::Node;
@@ -852,7 +851,8 @@ template StarkVerifier() {{
 "#,
         );
     } else {
-        let c: Fr = Fr((*const_root).as_scalar::<Fr>());
+        let repr = (*const_root).as_scalar::<F>();
+        let c: F = F::from_raw_repr(repr).expect("Failed to create new Fr from_raw_repr");
         res.push_str(&format!(
             r#"
     signal rootC;
@@ -1864,6 +1864,7 @@ component main {} = Main();
     res
 }
 
+// Suport bn128 && bls12381
 pub fn render<F: ff::PrimeField + Default>(
     starkinfo: &StarkInfo,
     prorgam: &Program,
