@@ -1091,6 +1091,7 @@ pub fn calculate_exps_parallel<F: FieldExtension>(
 pub mod tests {
     use crate::field_bn128::Fr;
     use crate::merklehash::MerkleTreeGL;
+    use crate::merklehash_bls12381::MerkleTreeBLS12381;
     use crate::merklehash_bn128::MerkleTreeBN128;
     use crate::polsarray::{PolKind, PolsArray};
     use crate::stark_gen::StarkProof;
@@ -1098,14 +1099,13 @@ pub mod tests {
     use crate::stark_verify::stark_verify;
     use crate::traits::MTNodeType;
     use crate::transcript::TranscriptGL;
+    use crate::transcript_bls12381::TranscriptBLS128;
     use crate::transcript_bn128::TranscriptBN128;
     use crate::types::load_json;
     use crate::types::{StarkStruct, PIL};
     use ark_std::{end_timer, start_timer};
     use std::fs::File;
     use std::io::Write;
-    use crate::merklehash_bls12381::MerkleTreeBLS12381;
-    use crate::transcript_bls12381::TranscriptBLS128;
 
     #[test]
     fn test_stark_gen() {

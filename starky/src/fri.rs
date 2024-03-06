@@ -71,8 +71,12 @@ pub struct FRIProof<M: MerkleTree> {
 
 impl<M: MerkleTree> FRIProof<M> {
     pub fn new(qs: usize) -> Self {
+        let mut queries = vec![];
+        for _ in 0..qs {
+            queries.push(Query::default());
+        }
         FRIProof {
-            queries: Vec::with_capacity(qs),
+            queries,
             last: Vec::new(),
         }
     }

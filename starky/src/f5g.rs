@@ -8,8 +8,8 @@ use std::{fmt, slice};
 
 use core::fmt::{Display, Formatter};
 use serde::de::{SeqAccess, Visitor};
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde::ser::SerializeSeq;
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 /// Prime: 0xFFFFFFFF00000001
 /// Irreducible polynomial: x^5-3
@@ -790,8 +790,8 @@ pub mod tests {
     use crate::traits::FieldExtension;
     use fields::field_gl::Fr;
     use fields::Field;
-    use std::ops::{Add, Mul};
     use rand::Rand;
+    use std::ops::{Add, Mul};
 
     impl F5G {
         pub fn rand_gen() -> F5G {

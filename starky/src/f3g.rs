@@ -8,7 +8,7 @@ use std::{fmt, slice, usize};
 
 use core::fmt::{Display, Formatter};
 use serde::de::{SeqAccess, Visitor};
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer, ser::SerializeSeq};
+use serde::{de, ser::SerializeSeq, Deserialize, Deserializer, Serialize, Serializer};
 
 /// GF(2^3) implementation
 /// Prime: 0xFFFFFFFF00000001
@@ -694,8 +694,8 @@ pub mod tests {
     use crate::traits::FieldExtension;
     use fields::field_gl::Fr;
     use fields::Field;
-    use std::ops::{Add, Mul};
     use rand::Rand;
+    use std::ops::{Add, Mul};
 
     #[test]
     fn test_f3g_add() {
@@ -825,14 +825,8 @@ pub mod tests {
         assert_eq!(input, de_input);
 
         let mut rng = rand::thread_rng();
-        let input = F3G::from_vec(
-            [
-                Fr::rand(&mut rng),
-                Fr::rand(&mut rng),
-                Fr::rand(&mut rng),
-            ]
-            .to_vec(),
-        );
+        let input =
+            F3G::from_vec([Fr::rand(&mut rng), Fr::rand(&mut rng), Fr::rand(&mut rng)].to_vec());
         let ser_input = serde_json::to_string(&input).unwrap();
         let de_input = serde_json::from_str(&ser_input).unwrap();
         assert_eq!(input, de_input);

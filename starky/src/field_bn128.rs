@@ -17,8 +17,12 @@ impl Serialize for Fr {
     where
         S: Serializer,
     {
-        let elems = self.to_string();
-        serializer.serialize_str(&elems)
+        let elems = self.0 .0;
+        let mut seq = serializer.serialize_seq(Some(elems.len()))?;
+        for x in elems {
+            seq.serialize_element(&x.to_string())?;
+        }
+        seq.end()
     }
 }
 
@@ -33,14 +37,21 @@ impl<'de> Deserialize<'de> for Fr {
             type Value = Fr;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("struct F3G")
+                formatter.write_str("struct Bn128's Fr")
             }
 
-            fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
             where
-                E: de::Error,
+                A: SeqAccess<'de>,
             {
-                Ok(Fr::from_str(s).unwrap())
+                let mut entries = Vec::new();
+                while let Some(entry) = seq.next_element::<String>()? {
+                    let entry: u64 = entry.parse().unwrap();
+                    entries.push(entry);
+                }
+                let repr = FrRepr(<[u64; 4]>::try_from(entries).unwrap());
+
+                Ok(Fr::from_raw_repr(repr).unwrap())
             }
         }
         deserializer.deserialize_any(EntriesVisitor)
