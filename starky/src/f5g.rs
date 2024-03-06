@@ -791,6 +791,7 @@ pub mod tests {
     use fields::field_gl::Fr;
     use fields::Field;
     use std::ops::{Add, Mul};
+    use rand::Rand;
 
     impl F5G {
         pub fn rand_gen() -> F5G {
@@ -1066,11 +1067,11 @@ pub mod tests {
         let mut rng = rand::thread_rng();
         let input = F5G::from_vec(
             [
-                FGL::rand(&mut rng),
-                FGL::rand(&mut rng),
-                FGL::rand(&mut rng),
-                FGL::rand(&mut rng),
-                FGL::rand(&mut rng),
+                Fr::rand(&mut rng),
+                Fr::rand(&mut rng),
+                Fr::rand(&mut rng),
+                Fr::rand(&mut rng),
+                Fr::rand(&mut rng),
             ]
             .to_vec(),
         );

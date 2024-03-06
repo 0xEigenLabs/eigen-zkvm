@@ -695,6 +695,7 @@ pub mod tests {
     use fields::field_gl::Fr;
     use fields::Field;
     use std::ops::{Add, Mul};
+    use rand::Rand;
 
     #[test]
     fn test_f3g_add() {
@@ -826,9 +827,9 @@ pub mod tests {
         let mut rng = rand::thread_rng();
         let input = F3G::from_vec(
             [
-                FGL::rand(&mut rng),
-                FGL::rand(&mut rng),
-                FGL::rand(&mut rng),
+                Fr::rand(&mut rng),
+                Fr::rand(&mut rng),
+                Fr::rand(&mut rng),
             ]
             .to_vec(),
         );

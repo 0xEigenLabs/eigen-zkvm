@@ -1104,6 +1104,8 @@ pub mod tests {
     use ark_std::{end_timer, start_timer};
     use std::fs::File;
     use std::io::Write;
+    use crate::merklehash_bls12381::MerkleTreeBLS12381;
+    use crate::transcript_bls12381::TranscriptBLS128;
 
     #[test]
     fn test_stark_gen() {
