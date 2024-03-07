@@ -1101,6 +1101,7 @@ pub mod tests {
     use crate::types::load_json;
     use crate::types::{StarkStruct, PIL};
     use ark_std::{end_timer, start_timer};
+    use std::fs::File;
 
     #[test]
     fn test_stark_gen() {
@@ -1138,6 +1139,9 @@ pub mod tests {
         )
         .unwrap();
         log::trace!("verify the proof...");
+
+        let serialized = serde_json::to_string(&starkproof).unwrap();
+        let starkproof: StarkProof<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
 
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
             &starkproof,
