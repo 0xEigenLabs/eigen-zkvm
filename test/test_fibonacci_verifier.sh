@@ -20,10 +20,10 @@ cd $CUR_DIR
 
 echo "1. Compile the circuit"
 # BN128
-${ZKIT} compile -i ../starkjs/circuits/$CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
+${ZKIT} compile -i single/circuit/$CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
 
 echo "2. Generate witness"
-${ZKIT} calculate_witness -w ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm -i ../starkjs/circuits/${CIRCUIT}.zkin.json -o $WORKSPACE/witness.wtns
+${ZKIT} calculate_witness -w ${WORKSPACE}/${CIRCUIT}_js/$CIRCUIT.wasm -i single/input/${CIRCUIT}.json -o $WORKSPACE/witness.wtns
 
 echo "3. Export verification key"
 ${ZKIT} export_verification_key -s ${SRS}  -c $WORKSPACE/$CIRCUIT.r1cs --v $WORKSPACE/vk.bin
@@ -36,4 +36,4 @@ ${ZKIT} verify -p $WORKSPACE/proof.bin -v $WORKSPACE/vk.bin
 
 echo "6. Generate verifier"
 mkdir -p ${CIRCUIT}/contracts
-${ZKIT} generate_verifier -v $WORKSPACE/vk.bin --s ${CIRCUIT}/contracts/verifier.sol
+${ZKIT} generate_verifier -v $WORKSPACE/vk.bin -s ${CIRCUIT}/contracts/verifier.sol

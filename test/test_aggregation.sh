@@ -33,7 +33,7 @@ if [ ! -f $BIG_SRS ]; then
 fi
 
 echo "1. compile circuit"
-${ZKIT} compile -i ${CIRCUIT}.circom --O2=full -o $WORKSPACE
+${ZKIT} compile -i ${CUR_DIR}/single/circuit/${CIRCUIT}.circom --O2=full -o $WORKSPACE
 
 echo "2. export verification key"
 ${ZKIT} export_verification_key -s ${SRS} -c $WORKSPACE/${CIRCUIT}.r1cs --v $WORKSPACE/vk.bin

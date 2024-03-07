@@ -7,6 +7,6 @@
     "esModuleInterop": true,
     "outDir": "dist"
   },
-  "include": ["./scripts", "./test", "typechain/**/*.ts", "typechain/**/*.d.ts", "typechain/**/*.js", "lib"],
+  "include": ["./scripts", "./test", "typechain/**/*.ts", "typechain/**/*.d.ts", "typechain/**/*.js", "lib", "custom-types.d.ts"],
   "files": ["./hardhat.config.ts"]
 }

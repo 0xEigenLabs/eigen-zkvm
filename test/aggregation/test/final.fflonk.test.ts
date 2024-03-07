@@ -1,8 +1,8 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+import { expect } from "chai";
+import { ethers } from "hardhat";
 
-const proof = require("../fibonacci.final/proof.fflonk.json");
-const publics = require("../fibonacci.final/public.fflonk.json");
+const proof_fflonk = require("../fibonacci.final/proof.fflonk.json");
+const publics_fflonk = require("../fibonacci.final/public.fflonk.json");
 
 // https://github.com/0xPolygonHermez/zkevm-contracts/blob/main/test/contracts/real-prover/real-prover-test-inputs.test.js#L5
 function generateSolidityInputs(
@@ -43,6 +43,6 @@ describe("Plonk verifier test", function() {
     const verifier = await verifierFactory.deploy();
     await verifier.deployed();
 
-    expect(await verifier.verifyProof(generateSolidityInputs(proof), publics)).to.be.equal(true);
+    expect(await verifier.verifyProof(generateSolidityInputs(proof_fflonk), publics_fflonk)).to.be.equal(true);
   });
 });

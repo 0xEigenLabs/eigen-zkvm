@@ -40,9 +40,9 @@ if [ ! -f $BIG_SRS ]; then
 #   curl https://universal-setup.ams3.digitaloceanspaces.com/setup_2^${BIG_POWER}.key -o $BIG_SRS
     ${ZKIT} setup -p ${BIG_POWER} -s ${BIG_SRS}
 fi
-RECURSIVE_CIRCUIT=$CIRCUIT.recursive1
+RECURSIVE_CIRCUIT=$CIRCUIT.recursive2
 echo "1. compile circuit, use task 0 by default"
-${ZKIT} compile -i ../starkjs/circuits/0/$RECURSIVE_CIRCUIT.circom -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
+${ZKIT} compile -i $WORKSPACE/circuits/0/fibonacci.recursive2.circom -l "../starkjs/node_modules/pil-stark/circuits.bn128" -l "../starkjs/node_modules/circomlib/circuits" --O2=full -o $WORKSPACE
 
 echo "2. export verification key"
 ${ZKIT} export_verification_key -s ${SRS} -c $WORKSPACE/${RECURSIVE_CIRCUIT}.r1cs --v $WORKSPACE/vk.bin
@@ -50,7 +50,7 @@ ${ZKIT} export_verification_key -s ${SRS} -c $WORKSPACE/${RECURSIVE_CIRCUIT}.r1c
 echo "3. generate each proof"
 for (( i=0; i<$NUM_PROOF; i++ ))
 do
-    input=$CUR_DIR/aggregation/$i/${RECURSIVE_CIRCUIT} && mkdir -p $input
+    input=$WORKSPACE/aggregation/$i && mkdir -p $input
     ${ZKIT} calculate_witness -w ${WORKSPACE}/${RECURSIVE_CIRCUIT}_js/$RECURSIVE_CIRCUIT.wasm -i ${input}/input.json -o $input/witness.wtns
     ${ZKIT} prove -c $WORKSPACE/${RECURSIVE_CIRCUIT}.r1cs -w $input/witness.wtns --b $input/proof.bin -s ${SRS} -t rescue
 done
@@ -61,7 +61,7 @@ OLD_PROOF_LIST=$WORKSPACE/old_proof_list.txt
 
 for (( i=0; i<$NUM_PROOF; i++ ))
 do
-    input=${CUR_DIR}/aggregation/$i/${RECURSIVE_CIRCUIT}
+    input=${WORKSPACE}/aggregation/$i
     echo $input/proof.bin >> $OLD_PROOF_LIST
 done
 

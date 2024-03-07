@@ -1,7 +1,7 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+import { expect } from "chai";
+import { ethers } from "hardhat";
 
-const proof = require("/tmp/aggregation/aggregation_proof.json");
+const proof_agg = require("/tmp/aggregation/aggregation_proof.json");
 
 describe("Plonk verifier test", function() {
   it("Should return true when proof is correct", async function() {
@@ -11,11 +11,11 @@ describe("Plonk verifier test", function() {
     await verifier.deployed();
 
     expect(await verifier.verifyAggregatedProof(
-        proof[0],
-        proof[1],
-        proof[2],
-        proof[3],
-        proof[4],
+        proof_agg[0],
+        proof_agg[1],
+        proof_agg[2],
+        proof_agg[3],
+        proof_agg[4],
     )).to.equal(true);
   });
 });
