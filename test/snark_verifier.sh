@@ -59,7 +59,7 @@ if [ $snark_type = "groth16" ]; then
            cd single
            nohup npx hardhat node > /dev/null 2>&1 &
            cd test
-           npx hardhat test single.test.ts
+           npx hardhat test --grep "Test Groth16 verifier"
         fi
     fi
 

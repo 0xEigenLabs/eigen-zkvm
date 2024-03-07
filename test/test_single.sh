@@ -37,4 +37,4 @@ echo "6. Generate verifier"
 ${ZKIT} generate_verifier -v $WORKSPACE/vk.bin --s single/contracts/verifier.sol
 
 echo "7. run verifier test"
-cd $CUR_DIR/single && npm run test
+cd $CUR_DIR/single && npx hardhat test --grep "Test Plonk verifier"
