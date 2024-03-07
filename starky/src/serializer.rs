@@ -3,15 +3,11 @@
 
 use crate::f3g::F3G;
 use crate::f5g::F5G;
-use crate::field_bls12381::Fr as Fr_BLS12381;
-use crate::field_bn128::Fr;
 use crate::fri::FRIProof;
 use crate::fri::Query;
-use crate::helper;
 use crate::stark_gen::StarkProof;
 use crate::traits::FieldExtension;
 use crate::traits::{MTNodeType, MerkleTree};
-use ff::PrimeField;
 use fields::field_gl::Fr as FGL;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 use serde::{
@@ -138,7 +134,6 @@ impl<'de> Deserialize<'de> for F5G {
         deserializer.deserialize_any(EntriesVisitor)
     }
 }
-
 
 impl<M: MerkleTree> Serialize for StarkProof<M> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -432,7 +427,6 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::digest::ElementDigest;
     use crate::f3g::F3G;
     use crate::f5g::F5G;
     use crate::field_bls12381::Fr as Fr_BLS12381;
