@@ -62,7 +62,6 @@ impl<M: MerkleTree> PartialEq for Query<M> {
     }
 }
 
-// TODO inheritate M: MerkleTree instead of now ones.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct FRIProof<M: MerkleTree> {
     pub queries: Vec<Query<M>>,
@@ -304,7 +303,7 @@ impl FRI {
         let last_pol_c = standard_fft.ifft(&last_pol_e);
 
         for i in (max_deg + 1)..last_pol_c.len() {
-            if last_pol_c[i]._eq(&M::ExtendField::ZERO) {
+            if !last_pol_c[i]._eq(&M::ExtendField::ZERO) {
                 log::error!("check last pol c failed");
                 return Ok(false);
             }
