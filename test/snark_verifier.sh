@@ -49,14 +49,18 @@ if [ $snark_type = "groth16" ]; then
         echo "4. verify groth16 proof"
         $ZKIT  groth16_verify -c $CURVE -v $WORK_DIR/verification_key.json --public-input $WORK_DIR/public_input.json --proof $WORK_DIR/proof.json
 
-        # TODO: add g16 solidity verifier
-        #if [ $CURVE = "BN128" ]; then
-        #    echo "5. generate verifier contract"
-        #    $SNARKJS zkesv  $WORK_DIR/g16.zkey  ${CUR_DIR}/aggregation/contracts/final_verifier.sol
+        if [ $CURVE = "BN128" ]; then
+           echo "5. generate verifier contract"
+           $ZKIT generate_verifier -v $WORK_DIR/verification_key.json  -p groth16 -s ${CUR_DIR}/single/contracts/groth16_verifier.sol
 
-        #    echo "6. calculate verify gas cost"
-        #    cd aggregation && npx hardhat test test/final.test.ts
-        #fi
+           echo "6. test verifier contract"
+           cp $WORK_DIR/public_input.json ${CUR_DIR}/single/input/groth16_public_input.json
+           cp $WORK_DIR/proof.json ${CUR_DIR}/single/input/groth16_proof.json
+           cd single
+           nohup npx hardhat node > /dev/null 2>&1 &
+           cd test
+           npx hardhat test --grep "Test Groth16 verifier"
+        fi
     fi
 
 else 
