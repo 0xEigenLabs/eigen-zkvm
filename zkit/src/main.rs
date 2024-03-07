@@ -5,7 +5,7 @@ use groth16::api::*;
 use plonky::api::{
     aggregation_check, aggregation_prove, aggregation_verify, analyse, calculate_witness,
     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
-    generate_verifier, prove as plonky_prove, setup, verify,
+    prove as plonky_prove, setup, verify,
 };
 use starky::prove::stark_prove;
 use std::time::Instant;
@@ -108,7 +108,9 @@ struct VerifyOpt {
 struct GenerateVerifierOpt {
     #[arg(short, default_value = "vk.bin")]
     vk_file: String,
-    #[arg(long = "s", default_value = "verifier.sol")]
+    #[arg(short, default_value = "plonk")]
+    protocal: String,
+    #[arg(short, default_value = "verifier.sol")]
     sol: String,
 }
 
@@ -419,7 +421,13 @@ fn main() {
             &args.public_json,
         ),
         Command::Verify(args) => verify(&args.vk_file, &args.proof_bin, &args.transcript),
-        Command::GenerateVerifier(args) => generate_verifier(&args.vk_file, &args.sol),
+        Command::GenerateVerifier(args) => match args.protocal.as_str() {
+            "plonk" => plonky::api::generate_verifier(&args.vk_file, &args.sol),
+            "groth16" => groth16::api::generate_verifier(&args.vk_file, &args.sol),
+            _ => {
+                panic!("unknown protocol")
+            }
+        },
         Command::ExportVerificationKey(args) => {
             export_verification_key(&args.srs_monomial_form, &args.circuit_file, &args.output_vk)
         }
