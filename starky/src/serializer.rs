@@ -429,8 +429,6 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
 mod tests {
     use crate::f3g::F3G;
     use crate::f5g::F5G;
-    use crate::field_bls12381::Fr as Fr_BLS12381;
-    use crate::field_bn128::Fr;
     use crate::merklehash::MerkleTreeGL;
     use crate::merklehash_bls12381::MerkleTreeBLS12381;
     use crate::merklehash_bn128::MerkleTreeBN128;
@@ -439,7 +437,6 @@ mod tests {
     use crate::serializer::StarkProof;
     use crate::stark_setup::StarkSetup;
     use crate::traits::FieldExtension;
-    use crate::traits::MTNodeType;
     use crate::transcript::TranscriptGL;
     use crate::transcript_bls12381::TranscriptBLS128;
     use crate::transcript_bn128::TranscriptBN128;
