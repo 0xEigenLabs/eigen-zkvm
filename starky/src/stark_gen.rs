@@ -180,7 +180,7 @@ pub struct StarkProof<M: MerkleTree> {
     pub root2: M::MTNode,
     pub root3: M::MTNode,
     pub root4: M::MTNode,
-    pub fri_proof: FRIProof<M::ExtendField, M>,
+    pub fri_proof: FRIProof<M>,
     pub evals: Vec<M::ExtendField>,
     pub publics: Vec<M::ExtendField>,
     pub rootC: Option<M::MTNode>,
@@ -555,7 +555,7 @@ impl<'a, M: MerkleTree> StarkProof<M> {
             ]
         };
         let mut fri = FRI::new(stark_struct);
-        let friProof = fri.prove::<M::ExtendField, M, T>(&mut transcript, &fri_pol, query_pol)?;
+        let friProof = fri.prove::<M, T>(&mut transcript, &fri_pol, query_pol)?;
 
         Ok(StarkProof {
             rootC: Some(const_tree.root()),
