@@ -194,7 +194,6 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                 s0_siblings3.push(qe[2].1.clone());
             }
 
-            let qe = &self.fri_proof.queries[0].pol_queries[i];
             if !qe[3].0.is_empty() {
                 s0_vals4.push(qe[3].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
                 s0_siblings4.push(qe[3].1.clone());
@@ -539,6 +538,7 @@ mod tests {
         assert_eq!(actual.publics, starkproof.publics);
         assert_eq!(actual.evals, starkproof.evals);
         assert_eq!(actual.fri_proof, starkproof.fri_proof);
+        assert_eq!(actual.prover_addr, starkproof.prover_addr);
         assert_eq!(actual, starkproof);
     }
 
