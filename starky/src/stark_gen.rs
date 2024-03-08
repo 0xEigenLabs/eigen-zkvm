@@ -1088,6 +1088,7 @@ pub fn calculate_exps_parallel<F: FieldExtension>(
 
 #[cfg(test)]
 pub mod tests {
+    use std::fs::File;
     use crate::field_bn128::Fr;
     use crate::merklehash::MerkleTreeGL;
     use crate::merklehash_bn128::MerkleTreeBN128;
@@ -1103,7 +1104,7 @@ pub mod tests {
     use ark_std::{end_timer, start_timer};
 
     #[test]
-    fn test_stark_gen() {
+    fn test_stark_gen() -> anyhow::Result<()> {
         let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
 
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
@@ -1135,12 +1136,21 @@ pub mod tests {
             &pil,
             &stark_struct,
             "273030697313060285579891744179749754319274977764",
-        )
-        .unwrap();
+        )?;
         log::trace!("verify the proof...");
+        use std::io::Write;
 
         let serialized = serde_json::to_string(&starkproof).unwrap();
+        println!("raw:\n {:?}", serialized);
+        let mut file = File::create("/tmp/test_stark_128_proof_serialize.json").unwrap();
+        write!(file, "{}", serialized).unwrap();
+
+        println!("\n\n\n");
         let actual: StarkProof<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
+        let serialized = serde_json::to_string(&actual).unwrap();
+        println!("new:\n {:?}", serialized);
+        let mut file = File::create("/tmp/test_stark_128_proof_serialize.actual.json").unwrap();
+        write!(file, "{}", serialized).unwrap();
         assert_eq!(actual, starkproof); // could pass
 
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
@@ -1149,9 +1159,9 @@ pub mod tests {
             &setup.starkinfo,
             &stark_struct,
             &mut setup.program,
-        )
-        .unwrap();
+        )?;
         assert!(result);
+        Ok(())
     }
 
     #[test]
