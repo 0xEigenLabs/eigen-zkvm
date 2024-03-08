@@ -1103,7 +1103,7 @@ pub mod tests {
     use ark_std::{end_timer, start_timer};
 
     #[test]
-    fn test_stark_gen() {
+    fn test_stark_gen() -> anyhow::Result<()> {
         let mut pil = load_json::<PIL>("data/fib.pil.json").unwrap();
 
         let mut const_pol = PolsArray::new(&pil, PolKind::Constant);
@@ -1135,8 +1135,7 @@ pub mod tests {
             &pil,
             &stark_struct,
             "273030697313060285579891744179749754319274977764",
-        )
-        .unwrap();
+        )?;
         log::trace!("verify the proof...");
 
         let serialized = serde_json::to_string(&starkproof).unwrap();
@@ -1149,9 +1148,9 @@ pub mod tests {
             &setup.starkinfo,
             &stark_struct,
             &mut setup.program,
-        )
-        .unwrap();
+        )?;
         assert!(result);
+        Ok(())
     }
 
     #[test]
