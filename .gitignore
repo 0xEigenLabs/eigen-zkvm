@@ -29,6 +29,7 @@ keys/setup_*.key
 keys/setup_*.ptau
 **/circuits.*/
 starkjs/circuits/
+starkjs/poseidon/
 **/package-lock.json
 witness.wtns
 
