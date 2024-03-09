@@ -33,7 +33,7 @@ impl<'de> Deserialize<'de> for Fr {
             type Value = Fr;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("struct Bn128's Fr")
+                formatter.write_str("struct Bls12381's Fr")
             }
 
             fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
