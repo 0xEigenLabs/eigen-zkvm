@@ -1,8 +1,9 @@
 #![allow(unused_imports, clippy::too_many_arguments)]
 
 use crate::f3g::F3G;
+use crate::helper;
 use ff::*;
-use serde::de::{SeqAccess, Visitor};
+use serde::de::{Error, SeqAccess, Visitor};
 use serde::ser::SerializeSeq;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
@@ -17,12 +18,7 @@ impl Serialize for Fr {
     where
         S: Serializer,
     {
-        let elems = self.0 .0;
-        let mut seq = serializer.serialize_seq(Some(elems.len()))?;
-        for x in elems {
-            seq.serialize_element(&x.to_string())?;
-        }
-        seq.end()
+        serializer.serialize_str(&helper::fr_to_biguint(self).to_string())
     }
 }
 
@@ -40,18 +36,11 @@ impl<'de> Deserialize<'de> for Fr {
                 formatter.write_str("struct Bn128's Fr")
             }
 
-            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
             where
-                A: SeqAccess<'de>,
+                E: Error,
             {
-                let mut entries = Vec::new();
-                while let Some(entry) = seq.next_element::<String>()? {
-                    let entry: u64 = entry.parse().unwrap();
-                    entries.push(entry);
-                }
-                let repr = FrRepr(<[u64; 4]>::try_from(entries).unwrap());
-
-                Ok(Fr::from_raw_repr(repr).unwrap())
+                Ok(Self::Value::from_str(v).unwrap())
             }
         }
         deserializer.deserialize_any(EntriesVisitor)

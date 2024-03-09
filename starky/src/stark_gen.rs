@@ -1088,7 +1088,6 @@ pub fn calculate_exps_parallel<F: FieldExtension>(
 
 #[cfg(test)]
 pub mod tests {
-    use std::fs::File;
     use crate::field_bn128::Fr;
     use crate::merklehash::MerkleTreeGL;
     use crate::merklehash_bn128::MerkleTreeBN128;
@@ -1102,6 +1101,7 @@ pub mod tests {
     use crate::types::load_json;
     use crate::types::{StarkStruct, PIL};
     use ark_std::{end_timer, start_timer};
+    use std::fs::File;
 
     #[test]
     fn test_stark_gen() -> anyhow::Result<()> {
