@@ -21,6 +21,7 @@ vk.bin
 proof.bin
 verifier.sol
 plonk4verifier.sol
+plonkit.sol
 log_substitution.json
 ir_log
 node_modules

@@ -64,4 +64,7 @@ ${ZKIT} verify -p $WORKSPACE/proof.bin -v $WORKSPACE/vk.bin
 
 echo "6. Generate verifier"
 mkdir -p ${WORKSPACE}/contracts
-${ZKIT} generate_verifier -v $WORKSPACE/vk.bin -s ${WORKSPACE}/contracts/verifier.sol
+${ZKIT} generate_verifier -v $WORKSPACE/vk.bin -s single/contracts/verifier.sol
+
+echo "7. run verifier test"
+cd $CUR_DIR/single && npx hardhat test --grep "Test Plonk verifier"
