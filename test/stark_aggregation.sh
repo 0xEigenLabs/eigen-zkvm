@@ -66,7 +66,7 @@ cd ${CURRENT_DIR}/../starkjs && npm i && cd $CURRENT_DIR
 
 for (( i=0; i<$NUM_PROOF; i++ ))
 do
-    ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "stark" $WORKSPACE
+    ./recursive_proof_to_snark.sh $i $WORKSPACE $CIRCUIT $PILEXECJS "stark"
 done
 
 c12_end=$(date +%s)

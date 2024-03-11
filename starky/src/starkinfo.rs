@@ -346,7 +346,7 @@ impl StarkInfo {
         log::trace!("map");
         info.map(pil, stark_struct, &mut program)?;
 
-        info.publics = pil.publics.clone();
+        info.publics.clone_from(&pil.publics);
         Ok((info, program))
     }
 

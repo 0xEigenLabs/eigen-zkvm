@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "poseidon": "mkdir -p poseidon/build && mkdir -p poseidon/&& node poseidon/main_poseidon.js -w poseidon/build",
+    "poseidon": "mkdir -p poseidon/build && mkdir -p poseidon/&& node poseidon/main_poseidon.js -w poseidon/build --i 0 --pc poseidon/build/poseidon_test",
     "fib": "mkdir -p circuits && node fibonacci/fibonacci.js -w circuits --i 0 --pc /tmp/fib",
     "pe": "mkdir -p circuits && node permutation/permutation.js -w circuits",
     "simple_vm": "mkdir -p circuits && node simple_vm/simple_vm.js -w circuits",

@@ -29,11 +29,11 @@ zkit setup -p 13 -s setup_2^13.key
 ```
 For power in range 20 to 26, you can download directly from [universal-setup hub](https://universal-setup.ams3.digitaloceanspaces.com).
 
-* Single proof and zkML
+* Single proof
 
-> [test_single.sh](./test/test_single.sh)
+> [test_plonk_verifier.sh](./test/test_plonk_verifier.sh)
 
-> [test_single.sh mnist 15](./test/test_single.sh)
+> [test_plonk_verifier.sh poseidon](./test/test_plonk_verifier.sh)
 
 * Snark aggregation proof
 

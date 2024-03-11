@@ -1,5 +1,5 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+import { expect } from "chai";
+import { ethers } from "hardhat";
 
 let dir = "/tmp/aggregation_bn128_fibonacci/aggregation/fibonacci.final"
 const proof = require(dir + "/proof.json");

@@ -39,6 +39,7 @@ fi
 
 if [ $snark_type = "groth16" ]; then
     if [ $first_run = "true" ]; then
+        echo "1. groth16 setup"
         $ZKIT groth16_setup -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -p $WORK_DIR/g16.zkey -v $WORK_DIR/verification_key.json
     fi
 
@@ -46,14 +47,14 @@ if [ $snark_type = "groth16" ]; then
     $ZKIT groth16_prove -c $CURVE --r1cs $WORK_DIR/$CIRCUIT_NAME.r1cs -w $WORK_DIR/$CIRCUIT_NAME"_js"/$CIRCUIT_NAME.wasm -p $WORK_DIR/g16.zkey -i $SNARK_INPUT --public-input $WORK_DIR/public_input.json --proof $WORK_DIR/proof.json
 
     if [ $first_run = "true" ]; then
-        echo "4. verify groth16 proof"
+        echo "3. verify groth16 proof"
         $ZKIT  groth16_verify -c $CURVE -v $WORK_DIR/verification_key.json --public-input $WORK_DIR/public_input.json --proof $WORK_DIR/proof.json
 
         if [ $CURVE = "BN128" ]; then
-           echo "5. generate verifier contract"
+           echo "4. generate verifier contract"
            $ZKIT generate_verifier -v $WORK_DIR/verification_key.json  -p groth16 -s ${CUR_DIR}/single/contracts/groth16_verifier.sol
 
-           echo "6. test verifier contract"
+           echo "5. test verifier contract"
            cp $WORK_DIR/public_input.json ${CUR_DIR}/single/input/groth16_public_input.json
            cp $WORK_DIR/proof.json ${CUR_DIR}/single/input/groth16_proof.json
            cd single
@@ -81,7 +82,7 @@ else
     echo "1. fflonk setup "
     
      if [ ! -f "$WORK_DIR/fflonk.zkey" ]; then
-        echo "1. generate groth16 zkey"
+        echo "1. generate fflonk zkey"
         # nohup snarkjs ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey &
         $SNARKJS ffs $WORK_DIR/$CIRCUIT_NAME.r1cs  $BIG_SRS $WORK_DIR/fflonk.zkey
     else 

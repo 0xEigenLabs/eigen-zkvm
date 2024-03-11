@@ -8,7 +8,6 @@ RUNDIR="${CUR_DIR}/../starkjs"
 PILCACHE=$WORKSPACE/$TASK_NO/$CIRCUIT
 PILEXECJS=$4
 GENERATE_PROOF_TYPE=$5
-WORKSPACE=$6
 RUST_LOG=info
 #  CIRCUIT="fibonacci"
 #  PILEXECJS="fibonacci/fibonacci.js"
@@ -92,8 +91,20 @@ mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TAS
     --e $WORKSPACE/$RECURSIVE1_CIRCUIT.exec \
     --m $WORKSPACE/$RECURSIVE1_CIRCUIT.cm
 
-../target/release/eigen-zkit stark_prove -s ../starky/data/r1.starkStruct.json \
-    -p $WORKSPACE/$RECURSIVE1_CIRCUIT.pil.json \
-    --o $WORKSPACE/$RECURSIVE1_CIRCUIT.const \
-    --m $WORKSPACE/$RECURSIVE1_CIRCUIT.cm -c $WORKSPACE/circuits/$TASK_NO/$RECURSIVE2_CIRCUIT.circom \
-    --i $WORKSPACE/aggregation/$TASK_NO/$RECURSIVE1_CIRCUIT.zkin.json --norm_stage --agg_stage
+mkdir -p $WORKSPACE/aggregation/$TASK_NO
+
+if [ "$GENERATE_PROOF_TYPE" = "stark" ]; then 
+    echo "Generate stark proof"
+    ../target/release/eigen-zkit stark_prove -s ../starky/data/r1.starkStruct.json \
+        -p $WORKSPACE/$RECURSIVE1_CIRCUIT.pil.json \
+        --o $WORKSPACE/$RECURSIVE1_CIRCUIT.const \
+        --m $WORKSPACE/$RECURSIVE1_CIRCUIT.cm -c $WORKSPACE/circuits/$TASK_NO/$RECURSIVE2_CIRCUIT.circom \
+        --i $WORKSPACE/aggregation/$TASK_NO/$RECURSIVE1_CIRCUIT.zkin.json --norm_stage --agg_stage
+else 
+    echo "Generate snark proof"
+    ../target/release/eigen-zkit stark_prove -s ../starky/data/r1.starkStruct.bn128.json \
+        -p $WORKSPACE/$RECURSIVE1_CIRCUIT.pil.json \
+        --o $WORKSPACE/$RECURSIVE1_CIRCUIT.const \
+        --m $WORKSPACE/$RECURSIVE1_CIRCUIT.cm -c $WORKSPACE/circuits/$TASK_NO/$RECURSIVE2_CIRCUIT.circom \
+        --i $WORKSPACE/aggregation/$TASK_NO/input.json --norm_stage --agg_stage
+fi 
