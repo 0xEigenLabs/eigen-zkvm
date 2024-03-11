@@ -36,6 +36,7 @@ elif [ "$CIRCUIT" = "poseidon" ]; then
     cd "../starkjs"
     npm run poseidon
     echo "========== 0. generate stark proof and then generate the stark verifier circom ============"
+    mkdir ./poseidon/circuits
     ${ZKIT} stark_prove -s ../starky/data/starkStruct.json \
         -p ./poseidon/build/poseidon_test.pil.json \
         --o ./poseidon/build/poseidon_test.const \
