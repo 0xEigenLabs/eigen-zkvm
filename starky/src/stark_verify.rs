@@ -32,8 +32,8 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     ctx.N = 1 << stark_struct.nBits;
     ctx.nbits = stark_struct.nBits;
     ctx.nbits_ext = stark_struct.nBitsExt;
-    ctx.evals = proof.evals.clone();
-    ctx.publics = proof.publics.clone();
+    ctx.evals.clone_from(&proof.evals);
+    ctx.publics.clone_from(&proof.publics);
 
     for i in 0..proof.publics.len() {
         let b = ctx.publics[i]

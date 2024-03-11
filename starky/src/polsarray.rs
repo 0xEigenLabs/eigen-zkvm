@@ -57,9 +57,9 @@ impl PolsArray {
                     let mut ns: HashMap<String, Vec<usize>> = HashMap::new();
                     let mut arrayPols: Vec<usize> = vec![0usize; ref_.len.unwrap()];
                     if def.contains_key(&nameSpace) {
-                        ns = def.get(&nameSpace).unwrap().clone();
+                        ns.clone_from(def.get(&nameSpace).unwrap());
                         if ns.contains_key(&namePols) {
-                            arrayPols = ns.get(&namePols).unwrap().clone();
+                            arrayPols.clone_from(ns.get(&namePols).unwrap());
                         }
                     }
 

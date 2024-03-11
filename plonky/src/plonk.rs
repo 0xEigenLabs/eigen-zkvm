@@ -96,7 +96,7 @@ pub fn analyse<E: Engine>(circuit: CircomCircuit<E>) -> Result<AnalyseResult> {
         .expect("sythesize into traspilation must succeed");
     result.num_nontrivial_constraints = transpiler.constraint_stats.len();
     result.num_gates = transpiler.num_gates();
-    result.constraint_stats = transpiler.constraint_stats.clone();
+    result.constraint_stats.clone_from(&transpiler.constraint_stats);
     let hints = transpiler.into_hints();
     result.num_hints = hints.len();
     Ok(result)
