@@ -1,4 +1,4 @@
-#![feature(stdarch_x86_avx512)]
+#![cfg_attr(feature = "avx512", feature(stdarch_x86_avx512))]
 //#![cfg_attr(feature = "avx512", feature(stdsimd))]
 extern crate rand;
 
