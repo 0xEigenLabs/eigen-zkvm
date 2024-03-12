@@ -1121,7 +1121,7 @@ pub mod tests {
         let setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let serialized = serde_json::to_string(&setup).unwrap();
-        let mut setup: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
+        let setup: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
 
         let fr_root: Fr = Fr(setup.const_root.as_scalar::<Fr>());
         log::trace!("setup {}", fr_root);
@@ -1144,7 +1144,7 @@ pub mod tests {
             &setup.const_root,
             &setup.starkinfo,
             &stark_struct,
-            &mut setup.program,
+            &setup.program,
         )
         .unwrap();
         assert!(result);
@@ -1163,7 +1163,7 @@ pub mod tests {
         let setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let serialized = serde_json::to_string(&setup).unwrap();
-        let mut setup: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
+        let setup: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
 
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             cm_pol,
@@ -1184,7 +1184,7 @@ pub mod tests {
             &setup.const_root,
             &setup.starkinfo,
             &stark_struct,
-            &mut setup.program,
+            &setup.program,
         )
         .unwrap();
         assert!(result);
@@ -1201,7 +1201,7 @@ pub mod tests {
         let setup =
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
         let serialized = serde_json::to_string(&setup).unwrap();
-        let mut setup: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
+        let setup: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             cm_pol,
             const_pol,
@@ -1219,7 +1219,7 @@ pub mod tests {
             &setup.const_root,
             &setup.starkinfo,
             &stark_struct,
-            &mut setup.program,
+            &setup.program,
         )
         .unwrap();
         assert!(result);
@@ -1237,7 +1237,7 @@ pub mod tests {
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
 
         let serialized = serde_json::to_string(&setup_).unwrap();
-        let mut setup: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
+        let setup: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
 
         let starkproof = StarkProof::<MerkleTreeBN128>::stark_gen::<TranscriptBN128>(
             cm_pol,
@@ -1256,7 +1256,7 @@ pub mod tests {
             &setup.const_root,
             &setup.starkinfo,
             &stark_struct,
-            &mut setup.program,
+            &setup.program,
         )
         .unwrap();
         assert!(result);
@@ -1274,7 +1274,7 @@ pub mod tests {
             StarkSetup::<MerkleTreeGL>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
 
         let serialized = serde_json::to_string(&setup_).unwrap();
-        let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_str(&serialized).unwrap();
+        let setup: StarkSetup<MerkleTreeGL> = serde_json::from_str(&serialized).unwrap();
 
         let starkproof = StarkProof::<MerkleTreeGL>::stark_gen::<TranscriptGL>(
             cm_pol,
@@ -1293,7 +1293,7 @@ pub mod tests {
             &setup.const_root,
             &setup.starkinfo,
             &stark_struct,
-            &mut setup.program,
+            &setup.program,
         )
         .unwrap();
         assert!(result);

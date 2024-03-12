@@ -16,14 +16,13 @@ use fields::field_gl::Fr as FGL;
 use profiler_macro::time_profiler;
 use std::collections::HashMap;
 
-//FIXME it doesn't make sense to ask for a mutable program
 #[time_profiler("stark_verify")]
 pub fn stark_verify<M: MerkleTree, T: Transcript>(
     proof: &StarkProof<M>,
     const_root: &M::MTNode,
     starkinfo: &StarkInfo,
     stark_struct: &StarkStruct,
-    program: &mut Program,
+    program: &Program,
 ) -> Result<bool> {
     let mut transcript = T::new();
 
@@ -74,7 +73,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
         (ctx.challenge[7] * M::ExtendField::from(MG.0[ctx.nbits])).exp(ctx.N) - M::ExtendField::ONE;
 
     log::trace!("verifier_code {}", program.verifier_code);
-    let res = execute_code(&ctx, &mut program.verifier_code.first);
+    let res = execute_code(&ctx, &program.verifier_code.first);
     log::trace!("starkinfo: {}", starkinfo);
 
     let mut x_acc = M::ExtendField::ONE;
@@ -136,10 +135,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
             / (x - (ctx_query.challenge[7] * M::ExtendField::from(MG.0[ctx.nbits]))))
         .as_elements();
 
-        let vals = vec![execute_code(
-            &ctx_query,
-            &mut program.verifier_query_code.first,
-        )];
+        let vals = vec![execute_code(&ctx_query, &program.verifier_query_code.first)];
 
         Ok(vals)
     };
@@ -147,7 +143,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     fri.verify(&mut transcript, &proof.fri_proof, check_query)
 }
 
-fn execute_code<F: FieldExtension>(ctx: &StarkContext<F>, code: &mut Vec<Section>) -> F {
+fn execute_code<F: FieldExtension>(ctx: &StarkContext<F>, code: &Vec<Section>) -> F {
     let mut tmp: HashMap<usize, F> = HashMap::new();
 
     let extract_val = |arr: &Vec<FGL>, pos: usize, dim: usize| -> F {
@@ -199,7 +195,7 @@ fn execute_code<F: FieldExtension>(ctx: &StarkContext<F>, code: &mut Vec<Section
         t
     };
 
-    let set_ref = |r: &mut Node, val: F, tmp: &mut HashMap<usize, F>| match r.type_.as_str() {
+    let set_ref = |r: &Node, val: F, tmp: &mut HashMap<usize, F>| match r.type_.as_str() {
         "tmp" => {
             //log::trace!("verify set ref {} {}", r.id, val);
             tmp.insert(r.id, val);
@@ -223,7 +219,7 @@ fn execute_code<F: FieldExtension>(ctx: &StarkContext<F>, code: &mut Vec<Section
             "copy" => src[0],
             _ => panic!("Invalid op: {}", ci.op),
         };
-        set_ref(&mut ci.dest, res, &mut tmp);
+        set_ref(&ci.dest, res, &mut tmp);
     }
     get_ref(&dest, &tmp)
 }

@@ -124,7 +124,7 @@ fn prove<
         &setup.const_root,
         &setup.starkinfo,
         stark_struct,
-        &mut setup.program,
+        &setup.program,
     )?;
 
     assert!(result);
