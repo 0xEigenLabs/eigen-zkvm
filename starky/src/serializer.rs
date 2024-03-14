@@ -203,7 +203,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                     .collect::<Vec<Vec<M::MTNode>>>(),
             );
 
-            if !qe[1].0.is_empty() {
+            //if !qe[1].0.is_empty() {
                 s0_vals2.push(qe[1].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
                 s0_siblings2.push(
                     qe[1]
@@ -216,7 +216,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         })
                         .collect::<Vec<Vec<M::MTNode>>>(),
                 );
-            }
+            //}
 
             if !qe[2].0.is_empty() {
                 s0_vals3.push(qe[2].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
@@ -233,7 +233,6 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                 );
             }
 
-            let qe = &self.fri_proof.queries[0].pol_queries[i];
             if !qe[3].0.is_empty() {
                 s0_vals4.push(qe[3].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
                 s0_siblings4.push(
