@@ -203,65 +203,57 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                     .collect::<Vec<Vec<M::MTNode>>>(),
             );
 
-            //if !qe[1].0.is_empty() {
-                s0_vals2.push(qe[1].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
-                s0_siblings2.push(
-                    qe[1]
-                        .1
-                        .iter()
-                        .map(|e| {
-                            e.iter()
-                                .map(|ee| M::from_basefield(ee))
-                                .collect::<Vec<M::MTNode>>()
-                        })
-                        .collect::<Vec<Vec<M::MTNode>>>(),
-                );
-            //}
+            s0_vals2.push(qe[1].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
+            s0_siblings2.push(
+                qe[1]
+                    .1
+                    .iter()
+                    .map(|e| {
+                        e.iter()
+                            .map(|ee| M::from_basefield(ee))
+                            .collect::<Vec<M::MTNode>>()
+                    })
+                    .collect::<Vec<Vec<M::MTNode>>>(),
+            );
 
-            if !qe[2].0.is_empty() {
-                s0_vals3.push(qe[2].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
-                s0_siblings3.push(
-                    qe[2]
-                        .1
-                        .iter()
-                        .map(|e| {
-                            e.iter()
-                                .map(|ee| M::from_basefield(ee))
-                                .collect::<Vec<M::MTNode>>()
-                        })
-                        .collect::<Vec<Vec<M::MTNode>>>(),
-                );
-            }
+            s0_vals3.push(qe[2].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
+            s0_siblings3.push(
+                qe[2]
+                    .1
+                    .iter()
+                    .map(|e| {
+                        e.iter()
+                            .map(|ee| M::from_basefield(ee))
+                            .collect::<Vec<M::MTNode>>()
+                    })
+                    .collect::<Vec<Vec<M::MTNode>>>(),
+            );
 
-            if !qe[3].0.is_empty() {
-                s0_vals4.push(qe[3].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
-                s0_siblings4.push(
-                    qe[3]
-                        .1
-                        .iter()
-                        .map(|e| {
-                            e.iter()
-                                .map(|ee| M::from_basefield(ee))
-                                .collect::<Vec<M::MTNode>>()
-                        })
-                        .collect::<Vec<Vec<M::MTNode>>>(),
-                );
-            }
+            s0_vals4.push(qe[3].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
+            s0_siblings4.push(
+                qe[3]
+                    .1
+                    .iter()
+                    .map(|e| {
+                        e.iter()
+                            .map(|ee| M::from_basefield(ee))
+                            .collect::<Vec<M::MTNode>>()
+                    })
+                    .collect::<Vec<Vec<M::MTNode>>>(),
+            );
 
-            if !qe[4].0.is_empty() {
-                s0_valsC.push(qe[4].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
-                s0_siblingsC.push(
-                    qe[4]
-                        .1
-                        .iter()
-                        .map(|e| {
-                            e.iter()
-                                .map(|ee| M::from_basefield(ee))
-                                .collect::<Vec<M::MTNode>>()
-                        })
-                        .collect::<Vec<Vec<M::MTNode>>>(),
-                );
-            }
+            s0_valsC.push(qe[4].0.iter().map(|e| F3G::from(*e)).collect::<Vec<F3G>>());
+            s0_siblingsC.push(
+                qe[4]
+                    .1
+                    .iter()
+                    .map(|e| {
+                        e.iter()
+                            .map(|ee| M::from_basefield(ee))
+                            .collect::<Vec<M::MTNode>>()
+                    })
+                    .collect::<Vec<Vec<M::MTNode>>>(),
+            );
         }
 
         map.serialize_entry("s0_vals1", &s0_vals1)?;
