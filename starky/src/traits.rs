@@ -1,4 +1,3 @@
-use crate::serializer::NodeWrapper;
 use ::rand::Rand;
 use anyhow::Result;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -34,12 +33,12 @@ where
         + Debug
         + Serialize
         + DeserializeOwned;
-    // TODO: the BaseField is the container of flatten MTNode, merge BaseField and MTNode
-    type BaseField: Clone + Default + Debug + PartialEq + Into<NodeWrapper<Self::MTNode>>;
     type ExtendField: FieldExtension;
+    type BaseField: Clone + Default + Debug + PartialEq + Serialize + DeserializeOwned;
     fn new() -> Self;
     fn to_extend(&self, p_be: &mut Vec<Self::ExtendField>);
     fn to_basefield(node: &Self::MTNode) -> Vec<Self::BaseField>;
+    fn from_basefield(node: &Self::BaseField) -> Self::MTNode;
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()>;
     fn get_element(&self, idx: usize, sub_idx: usize) -> FGL;
     fn get_group_proof(&self, idx: usize) -> Result<(Vec<FGL>, Vec<Vec<Self::BaseField>>)>;

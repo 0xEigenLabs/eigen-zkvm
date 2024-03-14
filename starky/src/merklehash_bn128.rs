@@ -176,6 +176,10 @@ impl MerkleTree for MerkleTreeBN128 {
         vec![Fr(node.as_scalar::<Fr>())]
     }
 
+    fn from_basefield(node: &Fr) -> Self::MTNode {
+        Self::MTNode::from_scalar(node)
+    }
+
     fn merkelize(&mut self, buff: Vec<FGL>, width: usize, height: usize) -> Result<()> {
         let max_workers = get_max_workers();
 
@@ -367,12 +371,8 @@ mod tests {
     #[test]
     fn test_merkle_tree_bn128_serialize_and_deserialize() {
         let data = MerkleTreeBN128::new();
-
         let serialized = serde_json::to_string(&data).unwrap();
-        println!("Serialized: {}", serialized);
-
         let expect: MerkleTreeBN128 = serde_json::from_str(&serialized).unwrap();
-
         assert_eq!(data, expect);
     }
 }

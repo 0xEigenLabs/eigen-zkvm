@@ -1137,10 +1137,12 @@ pub mod tests {
             "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
+        let ser = serde_json::to_string(&starkproof).unwrap();
+        let de: StarkProof<MerkleTreeBN128> = serde_json::from_str(&ser).unwrap();
         log::trace!("verify the proof...");
 
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
-            &starkproof,
+            &de,
             &setup.const_root,
             &setup.starkinfo,
             &stark_struct,
@@ -1176,11 +1178,12 @@ pub mod tests {
             "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
-
+        let ser = serde_json::to_string(&starkproof).unwrap();
+        let de: StarkProof<MerkleTreeBN128> = serde_json::from_str(&ser).unwrap();
         log::trace!("verify the proof...");
 
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
-            &starkproof,
+            &de,
             &setup.const_root,
             &setup.starkinfo,
             &stark_struct,
@@ -1213,9 +1216,11 @@ pub mod tests {
             "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
+        let ser = serde_json::to_string(&starkproof).unwrap();
+        let de: StarkProof<MerkleTreeBN128> = serde_json::from_str(&ser).unwrap();
         log::trace!("verify the proof...");
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
-            &starkproof,
+            &de,
             &setup.const_root,
             &setup.starkinfo,
             &stark_struct,
@@ -1250,9 +1255,11 @@ pub mod tests {
             "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
+        let ser = serde_json::to_string(&starkproof).unwrap();
+        let de: StarkProof<MerkleTreeBN128> = serde_json::from_str(&ser).unwrap();
         log::trace!("verify the proof...");
         let result = stark_verify::<MerkleTreeBN128, TranscriptBN128>(
-            &starkproof,
+            &de,
             &setup.const_root,
             &setup.starkinfo,
             &stark_struct,
@@ -1287,9 +1294,21 @@ pub mod tests {
             "273030697313060285579891744179749754319274977764",
         )
         .unwrap();
+        let ser = serde_json::to_string(&starkproof).unwrap();
+        let de: StarkProof<MerkleTreeGL> = serde_json::from_str(&ser).unwrap();
         log::trace!("verify the proof...");
         let result = stark_verify::<MerkleTreeGL, TranscriptGL>(
             &starkproof,
+            &setup.const_root,
+            &setup.starkinfo,
+            &stark_struct,
+            &setup.program,
+        )
+        .unwrap();
+        assert!(result);
+
+        let result = stark_verify::<MerkleTreeGL, TranscriptGL>(
+            &de,
             &setup.const_root,
             &setup.starkinfo,
             &stark_struct,
