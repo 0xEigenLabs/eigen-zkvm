@@ -15,12 +15,12 @@ use std::fmt::Display;
 use std::marker::PhantomData;
 
 /// the trait F is used to keep track of source data type, so we can implement its deserializer
-// TODO: Remove the generic type: F. As it's never used.
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct ElementDigest<const N: usize, F: PrimeField + Default>(pub [FGL; N], PhantomData<F>);
 
 impl<const N: usize, F: PrimeField + Default> ElementDigest<N, F> {
+    // FIXME: this is a bit tricky that assuming the len is 4, replace it by N here.
     pub fn is_dim_1(&self) -> bool {
         let e = self.as_elements();
         e[1] == e[2] && e[1] == e[3] && e[1] == FGL::ZERO
@@ -107,7 +107,7 @@ impl<const N: usize, F: PrimeField + Default> Serialize for ElementDigest<N, F> 
                 return seq.end();
             }
         }
-        panic!("Invalid element for seralizing, {:?}", self.0)
+        panic!("Invalid element to serialize, {:?}", self.0)
     }
 }
 
