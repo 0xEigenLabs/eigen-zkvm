@@ -283,6 +283,10 @@ impl MerkleTree for MerkleTreeGL {
         vec![node.as_elements().to_vec()[0]]
     }
 
+    fn from_basefield(node: &FGL) -> Self::MTNode {
+        Self::MTNode::new(&[*node, FGL::ZERO, FGL::ZERO, FGL::ZERO])
+    }
+
     #[cfg(not(any(
         target_feature = "avx512bw",
         target_feature = "avx512cd",
@@ -582,12 +586,8 @@ mod tests {
     #[test]
     fn test_merkle_tree_gl_serialize_and_deserialize() {
         let data = MerkleTreeGL::new();
-
         let serialized = serde_json::to_string(&data).unwrap();
-        println!("Serialized: {}", serialized);
-
         let expect: MerkleTreeGL = serde_json::from_str(&serialized).unwrap();
-
         assert_eq!(data, expect);
     }
 }

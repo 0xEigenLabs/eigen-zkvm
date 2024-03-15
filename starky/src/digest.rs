@@ -2,21 +2,30 @@
 use crate::field_bls12381::Fr as Fr_bls12381;
 use crate::field_bls12381::FrRepr as FrRepr_bls12381;
 use crate::field_bn128::{Fr, FrRepr};
+use crate::helper;
 use crate::traits::MTNodeType;
 use ff::*;
 use fields::field_gl::Fr as FGL;
 use serde::de::{SeqAccess, Visitor};
 use serde::ser::SerializeSeq;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use std::any::TypeId;
 use std::fmt;
 use std::fmt::Display;
 use std::marker::PhantomData;
 
 /// the trait F is used to keep track of source data type, so we can implement its deserializer
-// TODO: Remove the generic type: F. As it's never used.
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct ElementDigest<const N: usize, F: PrimeField + Default>(pub [FGL; N], PhantomData<F>);
+
+impl<const N: usize, F: PrimeField + Default> ElementDigest<N, F> {
+    // FIXME: this is a bit tricky that assuming the len is 4, replace it by N here.
+    pub fn is_dim_1(&self) -> bool {
+        let e = self.as_elements();
+        e[1] == e[2] && e[1] == e[3] && e[1] == FGL::ZERO
+    }
+}
 
 impl<const N: usize, F: PrimeField + Default> MTNodeType for ElementDigest<N, F> {
     type BaseField = F;
@@ -77,13 +86,28 @@ impl<const N: usize, F: PrimeField + Default> Serialize for ElementDigest<N, F> 
     where
         S: Serializer,
     {
-        let elems = self.0.to_vec();
-
-        let mut seq = serializer.serialize_seq(Some(elems.len()))?;
-        for v in elems.iter() {
-            seq.serialize_element(&v.as_int().to_string())?;
+        let source = TypeId::of::<F>();
+        if source == TypeId::of::<Fr>() {
+            let r: Fr = Fr(self.as_scalar::<Fr>());
+            return serializer.serialize_str(&helper::fr_to_biguint(&r).to_string());
         }
-        seq.end()
+        if source == TypeId::of::<Fr_bls12381>() {
+            let r: Fr_bls12381 = Fr_bls12381(self.as_scalar::<Fr_bls12381>());
+            return serializer.serialize_str(&helper::fr_to_biguint(&r).to_string());
+        }
+        if source == TypeId::of::<FGL>() {
+            let e = self.as_elements();
+            if self.is_dim_1() {
+                return serializer.serialize_str(&e[0].as_int().to_string());
+            } else {
+                let mut seq = serializer.serialize_seq(Some(4))?;
+                for v in e.iter() {
+                    seq.serialize_element(&v.as_int().to_string())?;
+                }
+                return seq.end();
+            }
+        }
+        panic!("Invalid element to serialize, {:?}", self.0)
     }
 }
 
@@ -105,24 +129,34 @@ impl<'de, const N: usize, F: PrimeField + Default> Deserialize<'de> for ElementD
             where
                 A: SeqAccess<'de>,
             {
-                let mut entries = Vec::with_capacity(N);
+                let mut entries = Vec::new();
                 while let Some(entry) = seq.next_element::<String>()? {
                     let entry: u64 = entry.parse().unwrap();
-
-                    entries.push(FGL::from_repr(fields::field_gl::FrRepr::from(entry)).unwrap());
+                    entries.push(FGL::from(entry));
                 }
                 Ok(ElementDigest::<N, F>::new(&entries))
             }
 
+            // it could be one-dim GL, BN128, or BLS12381
             fn visit_str<E>(self, s: &str) -> std::result::Result<Self::Value, E>
             where
                 E: de::Error,
             {
-                let entry: u64 = s.parse().unwrap();
-
-                let data = vec![FGL::from_repr(fields::field_gl::FrRepr::from(entry)).unwrap(); N];
-
-                Ok(ElementDigest::<N, F>::new(&data))
+                let source = TypeId::of::<F>();
+                if source == TypeId::of::<FGL>() {
+                    // one-dim GL elements
+                    let value = FGL::from_str(s).unwrap();
+                    Ok(ElementDigest::<N, F>::new(&[
+                        value,
+                        FGL::ZERO,
+                        FGL::ZERO,
+                        FGL::ZERO,
+                    ]))
+                } else {
+                    // BN128 or BLS12381
+                    let t = F::from_str(s).unwrap();
+                    Ok(ElementDigest::<N, F>::from_scalar(&t))
+                }
             }
         }
         deserializer.deserialize_any(EntriesVisitor::<N, F>(Default::default()))
@@ -280,11 +314,10 @@ mod tests {
 
     #[test]
     fn test_element_digest_serialize_and_deserialize() {
-        const N: usize = 3;
+        const N: usize = 4;
         let fields = vec![FGL::one(); N];
         let data = ElementDigest::<N, FGL>::new(&fields);
         let serialized = serde_json::to_string(&data).unwrap();
-        println!("Serialized: {}", serialized);
 
         let expect: ElementDigest<N, FGL> = serde_json::from_str(&serialized).unwrap();
 
