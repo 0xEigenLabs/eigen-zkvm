@@ -1,10 +1,10 @@
 # eigen-zkvm
 
-eigen-zkvm is a zkVM on layered proof system, allowing the developers to write Zero-knowledge applications, proving with the layered proof system to achieve no trusted setup, constant on-chain proof size and low gas cost, and finally generating the solidity verifier.
+eigen-zkvm is a zkVM on a layered proof system, allowing the developers to write Zero-knowledge applications, proving with the layered proof system to achieve no trusted setup, constant on-chain proof size and low gas cost, and finally generating the solidity verifier.
 
-- [x] zkit: universal commandline for stark, plonk and groth16.
+- [x] zkit: universal command line for stark, plonk, and groth16.
 
-- [x] Circom 2.x on PlonK prove system;
+- [x] Circom 2.x support;
 
 - [x] Proof composition: proof aggregation and recursion on Stark;
 
@@ -12,13 +12,13 @@ eigen-zkvm is a zkVM on layered proof system, allowing the developers to write Z
 
 - [x] Solidity verifier generation;
 
-- [x] GPU acceleration for proving, not opensourced;
+- [x] GPU acceleration for proving, not open-sourced;
 
 - [x] WASM friendly for single proving and verifying, NodeJS/Javascript prover and verifier, [plonkjs](https://github.com/0xEigenLabs/plonkjs);
 
 - [x] Eigen zkVM: basing on RISCV ISA.
 
-## How layered proof system works
+## How the layered proof system works
 
 ![mixed-proof-system](./docs/mixed-proof-system.png)
 
@@ -27,7 +27,7 @@ eigen-zkvm is a zkVM on layered proof system, allowing the developers to write Z
 ```
 zkit setup -p 13 -s setup_2^13.key
 ```
-For power in range 20 to 26, you can download directly from [universal-setup hub](https://universal-setup.ams3.digitaloceanspaces.com).
+For the power from 20 to 26, you can download directly from [universal-setup hub](https://universal-setup.ams3.digitaloceanspaces.com).
 
 * Single proof
 
