@@ -9,3 +9,6 @@ members = [
   "dsl_compile"
 , "fields", "recursion"]
 resolver = "2"
+[patch."https://github.com/privacy-scaling-explorations/halo2"]
+
+halo2_proofs = { git = "https://github.com/georgwiese/halo2", branch = "make-emit-public-v0.3.0", features = ["circuit-params"] }

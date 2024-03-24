@@ -26,9 +26,11 @@ pub fn recover_address(private_key: &[u8]) -> Option<Address> {
     Some(Address::from_raw_public_key(&public_key.as_bytes()[1..]))
 }
 
+const TEST_CHANNEL: u32 = 1;
+
 #[no_mangle]
 fn main() {
-    let suite_json: String = get_data_serde(666);
+    let suite_json: String = get_data_serde(TEST_CHANNEL);
     print!("suite_json: {suite_json}\n");
     let suite = read_suite(&suite_json);
 
