@@ -1,9 +1,9 @@
 use anyhow::Result;
-use powdr_backend::BackendType;
-use powdr_number::FieldElement;
-use powdr_number::GoldilocksField;
-use powdr_pipeline::{Pipeline, Stage};
-use powdr_riscv::continuations::{
+use powdr::backend::BackendType;
+use powdr::number::FieldElement;
+use powdr::number::GoldilocksField;
+use powdr::pipeline::{Pipeline, Stage};
+use powdr::riscv::continuations::{
     bootloader::default_input, rust_continuations, rust_continuations_dry_run,
 };
 use powdr_riscv::{compile_rust, CoProcessors};
