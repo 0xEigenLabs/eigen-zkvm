@@ -42,7 +42,8 @@ fn generate_verifier<F: FieldElement, W: std::io::Write>(
 ) -> Result<()> {
     // TODO: don't write it to disk, we should discuss with powdr-labs to provide a function for
     //pipeline to return the vk directly.
-    let mut tf = tempfile::tempfile().unwrap();
+    let mut tf = tempfile::NamedTempFile::new().unwrap();
+    log::debug!("Export verification key {:?}", tf.path());
     pipeline = pipeline.with_backend(BackendType::EStark);
     pipeline.export_verification_key(&mut tf).unwrap();
     let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_reader(tf).unwrap();
