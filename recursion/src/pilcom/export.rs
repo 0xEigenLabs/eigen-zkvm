@@ -36,8 +36,8 @@ struct Exporter<'a, T> {
     number_q: u64,
 }
 
-pub fn export<T: FieldElement>(analyzed: &Analyzed<T>) -> PIL {
-    let mut exporter = Exporter::new(analyzed);
+pub fn export<T: FieldElement>(analyzed: std::rc::Rc<Analyzed<T>>) -> PIL {
+    let mut exporter = Exporter::new(&analyzed);
     let mut publics = Vec::new();
     let mut pol_identities = Vec::new();
     let mut plookup_identities = Vec::new();

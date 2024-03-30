@@ -11,11 +11,14 @@ itertools = "0.12.0"
 log = "0.4.0"
 
 powdr =         { git = "https://github.com/powdr-labs/powdr", rev = "450e3f1" }
+starky =         { path = "../starky" }
+recursion =  { path = "../recursion" }
 
 hex = "0.4.3"
 thiserror = "1.0"
 serde_json = "1.0.108"
 anyhow = "1.0.79"
+tempfile = "3"
 
 [dev-dependencies]
 env_logger = "0.10"

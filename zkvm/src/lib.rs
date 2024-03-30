@@ -1,11 +1,17 @@
 use anyhow::Result;
 use powdr::backend::BackendType;
-use powdr::number::{FieldElement, GoldilocksField};
-use powdr::riscv::continuations::{
-    bootloader::default_input, rust_continuations, rust_continuations_dry_run,
-};
+use powdr::number::{DegreeType, FieldElement, GoldilocksField};
+use powdr::riscv::continuations::{rust_continuations, rust_continuations_dry_run};
 use powdr::riscv::{compile_rust, CoProcessors};
 use powdr::Pipeline;
+use recursion::pilcom::export as pil_export;
+use starky::{
+    merklehash::MerkleTreeGL,
+    pil2circom,
+    stark_setup::StarkSetup,
+    types::{StarkStruct, Step},
+};
+use std::fs;
 use std::path::Path;
 use std::time::Instant;
 
@@ -25,9 +31,62 @@ fn generate_witness_and_prove<F: FieldElement>(
 
     pipeline = pipeline.with_backend(BackendType::EStark);
     pipeline.compute_proof().unwrap();
-
     let duration = start.elapsed();
     log::debug!("Proving took: {:?}", duration);
+    Ok(())
+}
+
+fn generate_verifier<F: FieldElement, W: std::io::Write>(
+    mut pipeline: Pipeline<F>,
+    mut writer: W,
+) -> Result<()> {
+    // TODO: don't write it to disk, we should discuss with powdr-labs to provide a function for
+    //pipeline to return the vk directly.
+    let mut tf = tempfile::tempfile().unwrap();
+    pipeline.export_verification_key(&mut tf).unwrap();
+    let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_reader(tf).unwrap();
+
+    let pil = pipeline.optimized_pil().unwrap();
+
+    let degree = pil.degree();
+    assert!(degree > 1);
+    let n_bits = (DegreeType::BITS - (degree - 1).leading_zeros()) as usize;
+    let n_bits_ext = n_bits + 1;
+
+    let steps = (2..=n_bits_ext)
+        .rev()
+        .step_by(4)
+        .map(|b| Step { nBits: b })
+        .collect();
+
+    let params = StarkStruct {
+        nBits: n_bits,
+        nBitsExt: n_bits_ext,
+        nQueries: 2,
+        verificationHashType: "GL".to_owned(),
+        steps,
+    };
+
+    // generate circom
+    let opt = pil2circom::StarkOption {
+        enable_input: false,
+        verkey_input: false,
+        skip_main: true,
+        agg_stage: false,
+    };
+    if !setup.starkinfo.qs.is_empty() {
+        let pil_json = pil_export::<F>(pil);
+        let str_ver = pil2circom::pil2circom(
+            &pil_json,
+            &setup.const_root,
+            &params,
+            &mut setup.starkinfo,
+            &mut setup.program,
+            &opt,
+        )
+        .unwrap();
+        writer.write_fmt(format_args!("{}", str_ver))?;
+    }
     Ok(())
 }
 
@@ -36,7 +95,7 @@ pub fn zkvm_evm_execute_and_prove(task: &str, suite_json: String, output_path: &
     let force_overwrite = true;
     let with_bootloader = true;
     let (asm_file_path, asm_contents) = compile_rust::<GoldilocksField>(
-        &format!("vm/{task}"),
+        &format!("program/{task}"),
         Path::new(output_path),
         force_overwrite,
         &CoProcessors::base().with_poseidon(),
@@ -59,6 +118,7 @@ pub fn zkvm_evm_execute_and_prove(task: &str, suite_json: String, output_path: &
     let duration = start.elapsed();
     log::debug!("Computing fixed columns took: {:?}", duration);
 
+    /*
     log::debug!("Running powdr-riscv executor in fast mode...");
     let start = Instant::now();
 
@@ -69,10 +129,10 @@ pub fn zkvm_evm_execute_and_prove(task: &str, suite_json: String, output_path: &
         &default_input(&[]),
         powdr::riscv_executor::ExecMode::Fast,
     );
-
     let duration = start.elapsed();
     log::debug!("Fast executor took: {:?}", duration);
     log::debug!("Trace length: {}", trace.len);
+    */
 
     log::debug!("Running powdr-riscv executor in trace mode for continuations...");
     let start = Instant::now();
@@ -119,6 +179,7 @@ pub fn zkvm_evm_generate_chunks(
 
     log::debug!("Running powdr-riscv executor in fast mode...");
 
+    /*
     let (trace, _mem) = powdr::riscv_executor::execute::<GoldilocksField>(
         &asm_contents,
         powdr::riscv_executor::MemoryState::new(),
@@ -128,7 +189,7 @@ pub fn zkvm_evm_generate_chunks(
     );
 
     log::debug!("Trace length: {}", trace.len);
-
+    */
     log::debug!("Running powdr-riscv executor in trace mode for continuations...");
     let start = Instant::now();
 
@@ -158,12 +219,25 @@ pub fn zkvm_evm_prove_only(
         .with_output(output_path.into(), true)
         .from_asm_file(asm_file_path.clone())
         .with_prover_inputs(Default::default())
+        .with_existing_proof_file(Some(Path::new(output_path).to_path_buf()))
         .add_data(TEST_CHANNEL, suite_json);
 
     log::debug!("Running witness generation and proof computation...");
     let start = Instant::now();
 
-    rust_continuation(pipeline, generate_witness_and_prove, bootloader_input, i).unwrap();
+    //TODO: if we clone it, we lost the information gained from this function
+    rust_continuation(
+        pipeline.clone(),
+        generate_witness_and_prove,
+        bootloader_input,
+        i,
+    )
+    .unwrap();
+
+    let verifer_file = Path::new(output_path).join(format!("{}_chunk_{}.circom", task, i));
+    let f = fs::File::open(verifer_file)?;
+    log::debug!("Running circom verifier generation...");
+    generate_verifier(pipeline, f).unwrap();
 
     let duration = start.elapsed();
     log::debug!(
@@ -204,10 +278,6 @@ mod tests {
     use num_traits::identities::Zero;
     use std::io::{Read, Write};
 
-    use std::fs;
-
-    //use revm::primitives::address;
-
     // RUST_MIN_STACK=2073741821 RUST_LOG=debug proxychains nohup cargo test --release test_zkvm_evm_prove -- --nocapture  &
     #[test]
     #[ignore]
@@ -241,7 +311,7 @@ mod tests {
 
         let output_path = "/tmp/test_lr";
         let task = "lr";
-        let workspace = format!("vm/{}", task);
+        let workspace = format!("program/{}", task);
         let bootloader_inputs =
             zkvm_evm_generate_chunks(workspace.as_str(), &suite_json, output_path).unwrap();
         // save the chunks

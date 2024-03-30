@@ -18,6 +18,7 @@ use alloc::string::String;
 use alloc::string::ToString;
 
 use k256::ecdsa::SigningKey;
+const TEST_CHANNEL: u32 = 1;
 
 /// Recover the address from a private key (SigningKey).
 pub fn recover_address(private_key: &[u8]) -> Option<Address> {
@@ -28,7 +29,7 @@ pub fn recover_address(private_key: &[u8]) -> Option<Address> {
 
 #[no_mangle]
 fn main() {
-    let suite_json: String = get_data_serde(666);
+    let suite_json: String = get_data_serde(TEST_CHANNEL);
     print!("suite_json: {suite_json}\n");
     let suite = read_suite(&suite_json);
 
