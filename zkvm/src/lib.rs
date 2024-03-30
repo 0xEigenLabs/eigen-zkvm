@@ -1,20 +1,41 @@
 use anyhow::Result;
 use powdr::backend::BackendType;
-use powdr::number::FieldElement;
-use powdr::number::GoldilocksField;
-use powdr::pipeline::{Pipeline, Stage};
+use powdr::number::{FieldElement, GoldilocksField};
 use powdr::riscv::continuations::{
     bootloader::default_input, rust_continuations, rust_continuations_dry_run,
 };
-use powdr_riscv::{compile_rust, CoProcessors};
+use powdr::riscv::{compile_rust, CoProcessors};
+use powdr::Pipeline;
 use std::path::Path;
 use std::time::Instant;
+
+const TEST_CHANNEL: u32 = 1;
+
+fn generate_witness_and_prove<F: FieldElement>(
+    mut pipeline: Pipeline<F>,
+) -> Result<(), Vec<String>> {
+    let start = Instant::now();
+    log::debug!("Generating witness...");
+    pipeline.compute_witness().unwrap();
+    let duration = start.elapsed();
+    log::debug!("Generating witness took: {:?}", duration);
+
+    let start = Instant::now();
+    log::debug!("Proving ...");
+
+    pipeline = pipeline.with_backend(BackendType::EStark);
+    pipeline.compute_proof().unwrap();
+
+    let duration = start.elapsed();
+    log::debug!("Proving took: {:?}", duration);
+    Ok(())
+}
 
 pub fn zkvm_evm_execute_and_prove(task: &str, suite_json: String, output_path: &str) -> Result<()> {
     log::debug!("Compiling Rust...");
     let force_overwrite = true;
     let with_bootloader = true;
-    let (asm_file_path, asm_contents) = compile_rust(
+    let (asm_file_path, asm_contents) = compile_rust::<GoldilocksField>(
         &format!("vm/{task}"),
         Path::new(output_path),
         force_overwrite,
@@ -24,78 +45,51 @@ pub fn zkvm_evm_execute_and_prove(task: &str, suite_json: String, output_path: &
     .ok_or_else(|| vec!["could not compile rust".to_string()])
     .unwrap();
 
-    let mk_pipeline = || {
-        Pipeline::<GoldilocksField>::default()
-            .with_output(output_path.into(), true)
-            .from_asm_string(asm_contents.clone(), Some(asm_file_path.clone()))
-            .with_prover_inputs(vec![])
-    };
+    let mut pipeline = Pipeline::<GoldilocksField>::default()
+        .with_output(output_path.into(), true)
+        .from_asm_string(asm_contents.clone(), Some(asm_file_path.clone()))
+        .with_prover_inputs(Default::default())
+        .add_data(TEST_CHANNEL, &suite_json);
 
-    log::debug!("Creating pipeline from powdr-asm...");
+    log::debug!("Computing fixed columns...");
     let start = Instant::now();
-    let pipeline = mk_pipeline();
+
+    pipeline.compute_fixed_cols().unwrap();
+
     let duration = start.elapsed();
-    log::debug!("Pipeline from powdr-asm took: {:?}", duration);
-
-    log::debug!("Advancing pipeline to fixed columns...");
-    let start = Instant::now();
-    let pil_with_evaluated_fixed_cols = pipeline.pil_with_evaluated_fixed_cols().unwrap();
-    let duration = start.elapsed();
-    log::debug!("Advancing pipeline took: {:?}", duration);
-
-    let mk_pipeline_with_data = || mk_pipeline().add_data(666, &suite_json);
-
-    let mk_pipeline_opt = || {
-        mk_pipeline_with_data()
-            .from_pil_with_evaluated_fixed_cols(pil_with_evaluated_fixed_cols.clone())
-    };
+    log::debug!("Computing fixed columns took: {:?}", duration);
 
     log::debug!("Running powdr-riscv executor in fast mode...");
     let start = Instant::now();
-    let (trace, _mem) = powdr_riscv_executor::execute::<GoldilocksField>(
+
+    let (trace, _mem) = powdr::riscv_executor::execute::<GoldilocksField>(
         &asm_contents,
-        mk_pipeline_with_data().data_callback().unwrap(),
+        powdr::riscv_executor::MemoryState::new(),
+        pipeline.data_callback().unwrap(),
         &default_input(&[]),
-        powdr_riscv_executor::ExecMode::Fast,
+        powdr::riscv_executor::ExecMode::Fast,
     );
+
     let duration = start.elapsed();
     log::debug!("Fast executor took: {:?}", duration);
     log::debug!("Trace length: {}", trace.len);
 
     log::debug!("Running powdr-riscv executor in trace mode for continuations...");
     let start = Instant::now();
-    let bootloader_inputs = rust_continuations_dry_run(mk_pipeline_with_data());
+
+    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline);
+
     let duration = start.elapsed();
     log::debug!("Trace executor took: {:?}", duration);
 
-    let prove_with = Some(BackendType::EStark);
-
-    let generate_witness_and_prove =
-        |mut pipeline: Pipeline<GoldilocksField>| -> Result<(), Vec<String>> {
-            let start = Instant::now();
-            log::debug!("Generating witness...");
-            pipeline.advance_to(Stage::GeneratedWitness)?;
-            let duration = start.elapsed();
-            log::debug!("Generating witness took: {:?}", duration);
-
-            let start = Instant::now();
-            log::debug!("Proving ...");
-            prove_with.map(|backend| pipeline.with_backend(backend).proof().unwrap());
-            let duration = start.elapsed();
-            log::debug!("Proving took: {:?}", duration);
-            Ok(())
-        };
-
     log::debug!("Running witness generation...");
     let start = Instant::now();
-    rust_continuations(
-        mk_pipeline_opt,
-        generate_witness_and_prove,
-        bootloader_inputs,
-    )
-    .unwrap();
+
+    rust_continuations(pipeline, generate_witness_and_prove, bootloader_inputs).unwrap();
+
     let duration = start.elapsed();
     log::debug!("Witness generation took: {:?}", duration);
+
     Ok(())
 }
 
@@ -103,11 +97,11 @@ pub fn zkvm_evm_generate_chunks(
     workspace: &str,
     suite_json: &String,
     output_path: &str,
-) -> Result<Vec<Vec<GoldilocksField>>> {
+) -> Result<Vec<(Vec<GoldilocksField>, u64)>> {
     log::debug!("Compiling Rust...");
     let force_overwrite = true;
     let with_bootloader = true;
-    let (asm_file_path, asm_contents) = compile_rust(
+    let (asm_file_path, asm_contents) = compile_rust::<GoldilocksField>(
         workspace,
         Path::new(output_path),
         force_overwrite,
@@ -117,34 +111,36 @@ pub fn zkvm_evm_generate_chunks(
     .ok_or_else(|| vec!["could not compile rust".to_string()])
     .unwrap();
 
-    let mk_pipeline = || {
-        Pipeline::<GoldilocksField>::default()
-            .with_output(output_path.into(), true)
-            .from_asm_string(asm_contents.clone(), Some(asm_file_path.clone()))
-            .with_prover_inputs(vec![])
-    };
-
-    let mk_pipeline_with_data = || mk_pipeline().add_data(666, suite_json);
+    let mut pipeline = Pipeline::<GoldilocksField>::default()
+        .with_output(output_path.into(), true)
+        .from_asm_string(asm_contents.clone(), Some(asm_file_path.clone()))
+        .with_prover_inputs(Default::default())
+        .add_data(TEST_CHANNEL, suite_json);
 
     log::debug!("Running powdr-riscv executor in fast mode...");
 
-    let (trace, _mem) = powdr_riscv_executor::execute::<GoldilocksField>(
+    let (trace, _mem) = powdr::riscv_executor::execute::<GoldilocksField>(
         &asm_contents,
-        mk_pipeline_with_data().data_callback().unwrap(),
+        powdr::riscv_executor::MemoryState::new(),
+        pipeline.data_callback().unwrap(),
         &default_input(&[]),
-        powdr_riscv_executor::ExecMode::Fast,
+        powdr::riscv_executor::ExecMode::Fast,
     );
+
     log::debug!("Trace length: {}", trace.len);
 
     log::debug!("Running powdr-riscv executor in trace mode for continuations...");
     let start = Instant::now();
-    let bootloader_inputs = rust_continuations_dry_run(mk_pipeline_with_data());
+
+    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline);
+
     let duration = start.elapsed();
     log::debug!(
         "Trace executor took: {:?}, input size: {:?}",
         duration,
-        bootloader_inputs[0].len()
+        bootloader_inputs.len()
     );
+
     Ok(bootloader_inputs)
 }
 
@@ -158,70 +154,40 @@ pub fn zkvm_evm_prove_only(
     log::debug!("Compiling Rust...");
     let asm_file_path = Path::new(output_path).join(format!("{}.asm", task));
 
-    let mk_pipeline = || {
-        Pipeline::<GoldilocksField>::default()
-            .with_output(output_path.into(), true)
-            .from_asm_file(asm_file_path.clone())
-            .with_prover_inputs(vec![])
-    };
-    let mk_pipeline_with_data = || mk_pipeline().add_data(666, suite_json);
+    let pipeline = Pipeline::<GoldilocksField>::default()
+        .with_output(output_path.into(), true)
+        .from_asm_file(asm_file_path.clone())
+        .with_prover_inputs(Default::default())
+        .add_data(TEST_CHANNEL, suite_json);
 
-    let prove_with = Some(BackendType::EStark);
-    let generate_witness_and_prove =
-        |mut pipeline: Pipeline<GoldilocksField>| -> Result<(), Vec<String>> {
-            let start = Instant::now();
-            log::debug!("Generating witness...");
-            pipeline.advance_to(Stage::GeneratedWitness)?;
-            let duration = start.elapsed();
-            log::debug!("Generating witness took: {:?}", duration);
-
-            let start = Instant::now();
-            log::debug!("Proving ...");
-            prove_with.map(|backend| pipeline.with_backend(backend).proof().unwrap());
-            let duration = start.elapsed();
-            log::debug!("Proving took: {:?}", duration);
-            Ok(())
-        };
-
-    log::debug!("Running witness generation...");
+    log::debug!("Running witness generation and proof computation...");
     let start = Instant::now();
-    rust_continuation(
-        mk_pipeline_with_data,
-        generate_witness_and_prove,
-        bootloader_input,
-        i,
-    )
-    .unwrap();
+
+    rust_continuation(pipeline, generate_witness_and_prove, bootloader_input, i).unwrap();
+
     let duration = start.elapsed();
-    log::debug!("Witness generation took: {:?}", duration);
+    log::debug!(
+        "Witness generation and proof computation took: {:?}",
+        duration
+    );
+
     Ok(())
 }
 
-pub fn rust_continuation<F: FieldElement, PipelineFactory, PipelineCallback, E>(
-    pipeline_factory: PipelineFactory,
+pub fn rust_continuation<F: FieldElement, PipelineCallback, E>(
+    mut pipeline: Pipeline<F>,
     pipeline_callback: PipelineCallback,
     bootloader_inputs: Vec<F>,
     i: usize,
 ) -> Result<(), E>
 where
-    PipelineFactory: Fn() -> Pipeline<F>,
     PipelineCallback: Fn(Pipeline<F>) -> Result<(), E>,
 {
-    let num_chunks = bootloader_inputs.len();
+    // Here the fixed columns most likely will have been computed already,
+    // in which case this will be a no-op.
+    pipeline.compute_fixed_cols().unwrap();
 
-    log::info!("Advancing pipeline to PilWithEvaluatedFixedCols stage...");
-    let pipeline = pipeline_factory();
-    let pil_with_evaluated_fixed_cols = pipeline.pil_with_evaluated_fixed_cols().unwrap();
-
-    // This returns the same pipeline as pipeline_factory() (with the same name, output dir, etc...)
-    // but starting from the PilWithEvaluatedFixedCols stage. This is more efficient, because we can advance
-    // to that stage once before we branch into different chunks.
-    let optimized_pipeline_factory = || {
-        pipeline_factory().from_pil_with_evaluated_fixed_cols(pil_with_evaluated_fixed_cols.clone())
-    };
-
-    log::info!("\nRunning chunk {} / {}...", i + 1, num_chunks);
-    let pipeline = optimized_pipeline_factory();
+    log::info!("\nRunning chunk {}...", i + 1);
     let name = format!("{}_chunk_{}", pipeline.name(), i);
     let pipeline = pipeline.with_name(name);
     let pipeline = pipeline.add_external_witness_values(vec![(
@@ -287,7 +253,7 @@ mod tests {
             .zip(&bi_files)
             .for_each(|(data, filename)| {
                 let mut f = fs::File::create(filename).unwrap();
-                for d in data {
+                for d in &data.0 {
                     f.write_all(&d.to_bytes_le()[0..8]).unwrap();
                 }
             });

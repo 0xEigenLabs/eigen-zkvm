@@ -34,6 +34,9 @@ plonky = { path = "../plonky", default-features = false }
 algebraic = { path = "../algebraic", default-features = false }
 
 powdr = { git = "https://github.com/powdr-labs/powdr.git", rev = "450e3f1" }
+powdr-ast          = { git = "https://github.com/powdr-labs/powdr.git", rev = "450e3f1" }
+powdr-pil-analyzer         = { git = "https://github.com/powdr-labs/powdr.git", rev = "450e3f1" }
+
 
 [dev-dependencies]
 env_logger = "0.10"
