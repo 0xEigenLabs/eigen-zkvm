@@ -43,6 +43,7 @@ fn generate_verifier<F: FieldElement, W: std::io::Write>(
     // TODO: don't write it to disk, we should discuss with powdr-labs to provide a function for
     //pipeline to return the vk directly.
     let mut tf = tempfile::tempfile().unwrap();
+    pipeline = pipeline.with_backend(BackendType::EStark);
     pipeline.export_verification_key(&mut tf).unwrap();
     let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_reader(tf).unwrap();
 
@@ -219,7 +220,6 @@ pub fn zkvm_evm_prove_only(
         .with_output(output_path.into(), true)
         .from_asm_file(asm_file_path.clone())
         .with_prover_inputs(Default::default())
-        .with_existing_proof_file(Some(Path::new(output_path).to_path_buf()))
         .add_data(TEST_CHANNEL, suite_json);
 
     log::debug!("Running witness generation and proof computation...");
@@ -234,9 +234,12 @@ pub fn zkvm_evm_prove_only(
     )
     .unwrap();
 
-    let verifer_file = Path::new(output_path).join(format!("{}_chunk_{}.circom", task, i));
-    let f = fs::File::open(verifer_file)?;
-    log::debug!("Running circom verifier generation...");
+    let verifier_file = Path::new(output_path).join(format!("{}_chunk_{}.circom", task, i));
+    log::debug!(
+        "Running circom verifier generation to {:?}...",
+        verifier_file
+    );
+    let f = fs::File::create(verifier_file)?;
     generate_verifier(pipeline, f).unwrap();
 
     let duration = start.elapsed();
