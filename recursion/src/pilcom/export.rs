@@ -1,5 +1,5 @@
 //! porting it from powdr
-use powdr_number::FieldElement;
+use powdr::number::FieldElement;
 use std::cmp;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -36,8 +36,8 @@ struct Exporter<'a, T> {
     number_q: u64,
 }
 
-pub fn export<T: FieldElement>(analyzed: &Analyzed<T>) -> PIL {
-    let mut exporter = Exporter::new(analyzed);
+pub fn export<T: FieldElement>(analyzed: std::rc::Rc<Analyzed<T>>) -> PIL {
+    let mut exporter = Exporter::new(&analyzed);
     let mut publics = Vec::new();
     let mut pol_identities = Vec::new();
     let mut plookup_identities = Vec::new();
@@ -48,11 +48,13 @@ pub fn export<T: FieldElement>(analyzed: &Analyzed<T>) -> PIL {
             StatementIdentifier::Definition(name) => {
                 if let Some((poly, value)) = analyzed.intermediate_columns.get(name) {
                     assert_eq!(poly.kind, SymbolKind::Poly(PolynomialType::Intermediate));
-                    let expression_id = exporter.extract_expression(value, 1);
-                    assert_eq!(
-                        expression_id,
-                        exporter.intermediate_poly_expression_ids[&poly.id] as usize
-                    );
+                    for ((_, id), value) in poly.array_elements().zip(value) {
+                        let expression_id = exporter.extract_expression(value, 1);
+                        assert_eq!(
+                            expression_id,
+                            exporter.intermediate_poly_expression_ids[&id.id] as usize
+                        );
+                    }
                 }
             }
             StatementIdentifier::PublicDeclaration(name) => {
@@ -281,6 +283,15 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
                     op: "public".to_string(),
                     deg: 0,
                     id: Some(self.analyzed.public_declarations[name].id as usize),
+                    ..DEFAULT_EXPR
+                },
+            ),
+            Expression::Challenge(challenge) => (
+                0,
+                StarkyExpr {
+                    op: "challenge".to_string(),
+                    deg: 0,
+                    id: Some(challenge.id as usize),
                     ..DEFAULT_EXPR
                 },
             ),

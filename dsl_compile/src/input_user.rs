@@ -2,6 +2,7 @@ use crate::errors::{bail, DslError, Result};
 use ansi_term::Colour;
 use std::path::{Path, PathBuf};
 
+#[allow(dead_code)]
 pub struct Input {
     pub input_program: PathBuf,
     pub out_r1cs: PathBuf,

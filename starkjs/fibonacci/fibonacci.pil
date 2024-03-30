@@ -3,9 +3,9 @@ namespace Fibonacci(%N);
     pol constant L1, LLAST;
     pol commit l1,l2;
 
-    pol l2c = l2;
+    //pol l2c = l2;
 
-    public in1 = l2c(0);
+    public in1 = l2(0);
     public in2 = l1(0);
     public out = l1(%N-1);
 
