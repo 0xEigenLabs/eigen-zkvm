@@ -47,6 +47,7 @@ fn generate_verifier<F: FieldElement, W: std::io::Write>(
     pipeline.export_verification_key(&mut vw).unwrap();
     log::debug!("Export verification key done");
     let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_slice(&vw.into_inner()?)?;
+    log::debug!("Load StarkSetup done");
 
     let pil = pipeline.optimized_pil().unwrap();
 
