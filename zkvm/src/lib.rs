@@ -12,6 +12,7 @@ use starky::{
     types::{StarkStruct, Step},
 };
 use std::fs;
+use std::io::BufWriter;
 use std::path::Path;
 use std::time::Instant;
 
@@ -40,13 +41,12 @@ fn generate_verifier<F: FieldElement, W: std::io::Write>(
     mut pipeline: Pipeline<F>,
     mut writer: W,
 ) -> Result<()> {
-    // TODO: don't write it to disk, we should discuss with powdr-labs to provide a function for
-    //pipeline to return the vk directly.
-    let mut tf = tempfile::NamedTempFile::new().unwrap();
-    log::debug!("Export verification key {:?}", tf.path());
+    let buf = Vec::new();
+    let mut vw = BufWriter::new(buf);
     pipeline = pipeline.with_backend(BackendType::EStark);
-    pipeline.export_verification_key(&mut tf).unwrap();
-    let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_reader(tf).unwrap();
+    pipeline.export_verification_key(&mut vw).unwrap();
+    log::debug!("Export verification key done");
+    let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_slice(&vw.into_inner()?)?;
 
     let pil = pipeline.optimized_pil().unwrap();
 
