@@ -93,7 +93,7 @@ fn generate_verifier<F: FieldElement, W: std::io::Write>(
     Ok(())
 }
 
-pub fn zkvm_evm_execute_and_prove(task: &str, suite_json: String, output_path: &str) -> Result<()> {
+pub fn zkvm_execute_and_prove(task: &str, suite_json: String, output_path: &str) -> Result<()> {
     log::debug!("Compiling Rust...");
     let force_overwrite = true;
     let with_bootloader = true;
@@ -156,7 +156,7 @@ pub fn zkvm_evm_execute_and_prove(task: &str, suite_json: String, output_path: &
     Ok(())
 }
 
-pub fn zkvm_evm_generate_chunks(
+pub fn zkvm_generate_chunks(
     workspace: &str,
     suite_json: &String,
     output_path: &str,
@@ -208,7 +208,7 @@ pub fn zkvm_evm_generate_chunks(
     Ok(bootloader_inputs)
 }
 
-pub fn zkvm_evm_prove_only(
+pub fn zkvm_prove_only(
     task: &str,
     suite_json: &String,
     bootloader_input: Vec<GoldilocksField>,
@@ -283,16 +283,16 @@ mod tests {
     use num_traits::identities::Zero;
     use std::io::{Read, Write};
 
-    // RUST_MIN_STACK=2073741821 RUST_LOG=debug proxychains nohup cargo test --release test_zkvm_evm_prove -- --nocapture  &
+    // RUST_MIN_STACK=2073741821 RUST_LOG=debug proxychains nohup cargo test --release test_zkvm_prove -- --nocapture  &
     #[test]
     #[ignore]
-    fn test_zkvm_evm_prove() {
+    fn test_zkvm_prove() {
         env_logger::try_init().unwrap_or_default();
         //let test_file = "test-vectors/blockInfo.json";
         let test_file = "test-vectors/solidityExample.json";
         let suite_json = fs::read_to_string(test_file).unwrap();
 
-        zkvm_evm_execute_and_prove("evm", suite_json, "/tmp/test_evm").unwrap();
+        zkvm_execute_and_prove("evm", suite_json, "/tmp/test_evm").unwrap();
     }
 
     #[test]
@@ -303,7 +303,7 @@ mod tests {
         let test_file = "test-vectors/solidityExample.json";
         let suite_json = fs::read_to_string(test_file).unwrap();
 
-        zkvm_evm_execute_and_prove("lr", suite_json, "/tmp/test_lr").unwrap();
+        zkvm_execute_and_prove("lr", suite_json, "/tmp/test_lr").unwrap();
     }
 
     #[test]
@@ -318,7 +318,7 @@ mod tests {
         let task = "lr";
         let workspace = format!("program/{}", task);
         let bootloader_inputs =
-            zkvm_evm_generate_chunks(workspace.as_str(), &suite_json, output_path).unwrap();
+            zkvm_generate_chunks(workspace.as_str(), &suite_json, output_path).unwrap();
         // save the chunks
         let bi_files: Vec<_> = (0..bootloader_inputs.len())
             .map(|i| Path::new(output_path).join(format!("{task}_chunks_{i}.data")))
@@ -346,7 +346,7 @@ mod tests {
                 *out = GoldilocksField::from_bytes_le(bin);
             });
 
-            zkvm_evm_prove_only(task, &suite_json, bi, i, output_path).unwrap();
+            zkvm_prove_only(task, &suite_json, bi, i, output_path).unwrap();
         });
     }
 }
