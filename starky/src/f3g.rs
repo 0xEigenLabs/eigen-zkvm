@@ -4,7 +4,7 @@ use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAss
 use fields::field_gl::Fr;
 use fields::Field;
 use std::hash::{Hash, Hasher};
-use std::{slice, usize};
+use std::slice;
 
 use core::fmt::{Display, Formatter};
 /// GF(2^3) implementation
