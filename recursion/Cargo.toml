@@ -59,3 +59,4 @@ wasm-bindgen-test = "0.3"
 default = ["franklin-crypto/multicore", "wasmer/default", "starky/default", "plonky/default"]
 wasm = ["wasmer/js-default"]
 avx512 = ["fields/avx512", "plonky/avx512", "starky/avx512", "powdr/starky-avx512"]
+
