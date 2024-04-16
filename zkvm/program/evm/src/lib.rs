@@ -8,7 +8,7 @@ use revm::{
     },
 };
 //use runtime::{print, get_prover_input, coprocessors::{get_data, get_data_len}};
-use powdr_riscv_runtime::{print, coprocessors::get_data_serde};
+use powdr_riscv_runtime::{print, input::get_data_serde};
 
 use models::*;
 

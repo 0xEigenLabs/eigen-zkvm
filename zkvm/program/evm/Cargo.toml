@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 revm = { git = "https://github.com/powdr-labs/revm", branch = "serde-no-std", default-features = false, features = [ "serde" ] }
-powdr-riscv-runtime = { git = "https://github.com/powdr-labs/powdr", rev = "450e3f1" }
+powdr-riscv-runtime = { git = "https://github.com/powdr-labs/powdr", branch = "avx" }
 models = { git = "https://github.com/eigmax/powdr-revme", branch = "continuations", package = "models" }
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive", "rc"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }

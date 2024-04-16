@@ -2,7 +2,7 @@ use anyhow::Result;
 use powdr::backend::BackendType;
 use powdr::number::{DegreeType, FieldElement, GoldilocksField};
 use powdr::riscv::continuations::{rust_continuations, rust_continuations_dry_run};
-use powdr::riscv::{compile_rust, CoProcessors};
+use powdr::riscv::{compile_rust, Runtime};
 use powdr::Pipeline;
 use recursion::pilcom::export as pil_export;
 use starky::{
@@ -101,7 +101,7 @@ pub fn zkvm_execute_and_prove(task: &str, suite_json: String, output_path: &str)
         &format!("program/{task}"),
         Path::new(output_path),
         force_overwrite,
-        &CoProcessors::base().with_poseidon(),
+        &Runtime::base().with_poseidon(),
         with_bootloader,
     )
     .ok_or_else(|| vec!["could not compile rust".to_string()])
@@ -168,7 +168,7 @@ pub fn zkvm_generate_chunks(
         workspace,
         Path::new(output_path),
         force_overwrite,
-        &CoProcessors::base().with_poseidon(),
+        &Runtime::base().with_poseidon(),
         with_bootloader,
     )
     .ok_or_else(|| vec!["could not compile rust".to_string()])
@@ -283,7 +283,7 @@ mod tests {
     use num_traits::identities::Zero;
     use std::io::{Read, Write};
 
-    // RUST_MIN_STACK=2073741821 RUST_LOG=debug proxychains nohup cargo test --release test_zkvm_prove -- --nocapture  &
+    // RUST_MIN_STACK=2073741821 RUST_LOG=debug nohup cargo test --release test_zkvm_prove -- --nocapture  &
     #[test]
     #[ignore]
     fn test_zkvm_prove() {
