@@ -6,6 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-powdr-riscv-runtime = { git = "https://github.com/powdr-labs/powdr", rev = "450e3f1" }
+powdr-riscv-runtime = { git = "https://github.com/powdr-labs/powdr", branch = "avx" }
 
 [workspace]

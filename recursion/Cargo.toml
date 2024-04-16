@@ -33,9 +33,10 @@ starky = { path = "../starky", default-features = false }
 plonky = { path = "../plonky", default-features = false }
 algebraic = { path = "../algebraic", default-features = false }
 
-powdr              = { git = "https://github.com/powdr-labs/powdr.git", rev = "450e3f1" }
-powdr-ast          = { git = "https://github.com/powdr-labs/powdr.git", rev = "450e3f1" }
-powdr-pil-analyzer = { git = "https://github.com/powdr-labs/powdr.git", rev = "450e3f1" }
+powdr              = { git = "https://github.com/powdr-labs/powdr.git", branch = "avx" }
+powdr-ast          = { git = "https://github.com/powdr-labs/powdr.git", branch = "avx" }
+powdr-pil-analyzer = { git = "https://github.com/powdr-labs/powdr.git", branch = "avx" }
+
 
 [dev-dependencies]
 env_logger = "0.10"
@@ -54,5 +55,5 @@ wasm-bindgen-test = "0.3"
 [features]
 default = ["franklin-crypto/multicore", "wasmer/default", "starky/default", "plonky/default"]
 wasm = ["wasmer/js-default"]
-#avx512 = ["fields/avx512", "starky/avx512", "plonky/avx512", "powdr/starky-avx512"]
-avx512 = ["fields/avx512", "starky/avx512", "plonky/avx512"]
+avx512 = ["fields/avx512", "plonky/avx512", "starky/avx512", "powdr/starky-avx512"]
+
