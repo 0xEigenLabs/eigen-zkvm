@@ -465,10 +465,6 @@ impl Poseidon {
 #[cfg(test)]
 mod tests {
     use crate::arch::x86_64::avx512_poseidon_gl::*;
-    use algebraic::arch::x86_64::avx512_field_gl::Avx512GoldilocksField;
-    use algebraic::packed::PackedField;
-    use fields::PrimeField;
-    use plonky::field_gl::Fr as FGL;
     use std::time::{Duration, Instant};
 
     #[test]

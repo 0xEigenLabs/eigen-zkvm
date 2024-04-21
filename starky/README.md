@@ -65,22 +65,6 @@ Merkelization calculates the Merkel proof of a polynomial, where the leaf nodes 
 |24|79| 66.01 |49.9154 |
 
 
-* Polynomial evaluation
-
-The evaluation is to calculate by:
-
-```
-let acc = 0n; // zero on GF(2^3)
-
-let v be the point to evaluate;
-let l be the coefficient vector of the polynomial;
-for (let k=0; k<2^nExtBits; k++) {
-    acc = F.add(acc, F.mul(v, l[k]));
-}
-```
-
-Because the nExtBits reaches up to 24 so this step would be very slow. Consider importing parallel fold from Rayon. 
-
 ## Optimization
 
 * reimpl pil-stark by Rust
@@ -93,17 +77,18 @@ Because the nExtBits reaches up to 24 so this step would be very slow. Consider 
 - [x] Codegen (arithmetization)
 - [x] Verification hash type
 > - [x] BN128
+> - [x] BLS12381
 > - [x] GL(F64)
 - [x] Parallel reduce for polynomial evaluation
 - [x] Recursive FRI
-- [x] Poseidon Hash on GPU/Multicore for BN128
+- [x] Poseidon Hash on GPU/Multicore for BN128/BLS12381
 
 ## Profiling
 
 ```
 cargo bench --bench merklehash -- --profile-time=5
 
-# or with AVX enabled like this 
+# or with AVX enabled like this
 
 RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' cargo bench --features avx512 -- merklehash
 RUSTFLAGS="-C target-feature=+avx2" cargo bench -- merklehash
