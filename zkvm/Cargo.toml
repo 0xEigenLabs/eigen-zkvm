@@ -10,7 +10,7 @@ itertools = "0.12.0"
 # serialization
 log = "0.4.0"
 
-powdr =         { git = "https://github.com/powdr-labs/powdr", branch = "avx" }
+powdr =         { git = "https://github.com/powdr-labs/powdr", branch = "avx", default-features = false }
 starky =         { path = "../starky" }
 recursion =  { path = "../recursion" }
 
@@ -22,3 +22,7 @@ anyhow = "1.0.79"
 [dev-dependencies]
 env_logger = "0.10"
 num-traits = "0.2.17"
+
+[features]
+default = []
+avx512 = ["starky/avx512", "recursion/avx512", "powdr/starky-avx512"]
