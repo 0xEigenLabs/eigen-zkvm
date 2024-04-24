@@ -212,6 +212,7 @@ pub fn zkvm_prove_only(
     task: &str,
     suite_json: &String,
     bootloader_input: Vec<GoldilocksField>,
+    start_of_shutdown_routine: u64,
     i: usize,
     output_path: &str,
 ) -> Result<()> {
@@ -232,6 +233,7 @@ pub fn zkvm_prove_only(
         pipeline.clone(),
         generate_witness_and_prove,
         bootloader_input,
+        start_of_shutdown_routine,
         i,
     )
     .unwrap();
@@ -257,6 +259,7 @@ pub fn rust_continuation<F: FieldElement, PipelineCallback, E>(
     mut pipeline: Pipeline<F>,
     pipeline_callback: PipelineCallback,
     bootloader_inputs: Vec<F>,
+    start_of_shutdown_routine: u64,
     i: usize,
 ) -> Result<(), E>
 where
@@ -266,13 +269,24 @@ where
     // in which case this will be a no-op.
     pipeline.compute_fixed_cols().unwrap();
 
+    // we can assume optimized_pil has been computed
+    let length = pipeline.compute_optimized_pil().unwrap().degree();
+
     log::info!("\nRunning chunk {}...", i + 1);
     let name = format!("{}_chunk_{}", pipeline.name(), i);
     let pipeline = pipeline.with_name(name);
-    let pipeline = pipeline.add_external_witness_values(vec![(
-        "main.bootloader_input_value".to_string(),
-        bootloader_inputs,
-    )]);
+
+    let jump_to_shutdown_routine = (0..length)
+        .map(|i| (i == start_of_shutdown_routine - 1).into())
+        .collect();
+
+    let pipeline = pipeline.add_external_witness_values(vec![
+        ("main.bootloader_input_value".to_string(), bootloader_inputs),
+        (
+            "main.jump_to_shutdown_routine".to_string(),
+            jump_to_shutdown_routine,
+        ),
+    ]);
     pipeline_callback(pipeline)?;
     Ok(())
 }
@@ -289,7 +303,7 @@ mod tests {
     fn test_zkvm_prove() {
         env_logger::try_init().unwrap_or_default();
         //let test_file = "test-vectors/blockInfo.json";
-        let test_file = "test-vectors/solidityExample.json";
+        let test_file = "test-vectors/reth.block.json";
         let suite_json = fs::read_to_string(test_file).unwrap();
 
         zkvm_execute_and_prove("evm", suite_json, "/tmp/test_evm").unwrap();
@@ -328,6 +342,8 @@ mod tests {
             .zip(&bi_files)
             .for_each(|(data, filename)| {
                 let mut f = fs::File::create(filename).unwrap();
+                // write the start_of_shutdown_routine
+                f.write_all(&data.1.to_le_bytes()).unwrap();
                 for d in &data.0 {
                     f.write_all(&d.to_bytes_le()[0..8]).unwrap();
                 }
@@ -339,6 +355,11 @@ mod tests {
             let metadata = fs::metadata(filename).unwrap();
             let file_size = metadata.len() as usize;
             assert!(file_size % 8 == 0);
+            // read the start_of_shutdown_routine
+            let mut buffer = [0u8; 8];
+            f.read_exact(&mut buffer).unwrap();
+            let start_of_shutdown_routine: u64 = u64::from_le_bytes(buffer);
+
             let mut buffer = vec![0; file_size];
             f.read_exact(&mut buffer).unwrap();
             let mut bi = vec![GoldilocksField::zero(); file_size / 8];
@@ -346,7 +367,15 @@ mod tests {
                 *out = GoldilocksField::from_bytes_le(bin);
             });
 
-            zkvm_prove_only(task, &suite_json, bi, i, output_path).unwrap();
+            zkvm_prove_only(
+                task,
+                &suite_json,
+                bi,
+                start_of_shutdown_routine,
+                i,
+                output_path,
+            )
+            .unwrap();
         });
     }
 }
