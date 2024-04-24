@@ -1,0 +1,97 @@
+{
+  "_info": null,
+  "chain_id": 12345,
+  "env": {
+    "currentCoinbase": "0x0000000000000000000000000000000000000000",
+    "currentDifficulty": "0x2",
+    "currentGasLimit": "0x1c9c380",
+    "currentNumber": "0x1",
+    "currentTimestamp": "0x6611201e",
+    "currentBaseFee": "0x342770c0",
+    "previousHash": "0x342c4358e0b7a7e5f040a3bdda3a51d21416c4a6cdff209379e1454d22b72faf",
+    "currentRandom": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "currentBeaconRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "currentWithdrawalsRoot": null,
+    "parentBlobGasUsed": "0x5208",
+    "parentExcessBlobGas": "0x5208"
+  },
+  "pre": {
+    "0x540ea708597d8e46cb33be43139452d8c9583686": {
+      "balance": "0x4a47e3c12448f4ad000000",
+      "code": "0x",
+      "nonce": "0x0",
+      "storage": {}
+    },
+    "0x6831fb06762332dca543c0f2b5795692d896e3d4": {
+      "balance": "0x4a47e3c12448f4ad000000",
+      "code": "0x",
+      "nonce": "0x0",
+      "storage": {}
+    },
+    "0x0000000000000000000000000000000000000000": {
+      "balance": "0x0",
+      "code": "0x",
+      "nonce": "0x0",
+      "storage": {}
+    }
+  },
+  "post": {
+    "Shanghai": [
+      {
+        "expectException": null,
+        "indexes": {
+          "data": 0,
+          "gas": 0,
+          "value": 0
+        },
+        "hash": "0xebd0f311f8f057157864244e8e7ec6e8d5b29b2c5e8f07a93d456535e49897cb",
+        "postState": {
+          "0x540ea708597d8e46cb33be43139452d8c9583686": {
+            "balance": "0x4a47e3bfc0b979b77e0a00",
+            "code": "0x",
+            "nonce": "0x1",
+            "storage": {}
+          },
+          "0x6831fb06762332dca543c0f2b5795692d896e3d4": {
+            "balance": "0x4a47e3c2878e6d0a8a0000",
+            "code": "0x",
+            "nonce": "0x0",
+            "storage": {}
+          },
+          "0x0000000000000000000000000000000000000000": {
+            "balance": "0x394c549ef000",
+            "code": "0x00",
+            "nonce": "0x0",
+            "storage": {}
+          }
+        },
+        "logs": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "txbytes": "0x7b2263616c6c6572223a22307835343065613730383539376438653436636233336265343331333934353264386339353833363836222c226761735f6c696d6974223a32313030302c226761735f7072696365223a2230786536663763656330222c227472616e736163745f746f223a7b2243616c6c223a22307836383331666230363736323333326463613534336330663262353739353639326438393665336434227d2c2276616c7565223a223078313633343537383564386130303030222c2264617461223a223078222c226e6f6e6365223a302c22636861696e5f6964223a31323334352c226163636573735f6c697374223a5b5d2c226761735f7072696f726974795f666565223a2230786232643035653030222c22626c6f625f686173686573223a5b5d2c226d61785f6665655f7065725f626c6f625f676173223a6e756c6c7d"
+      }
+    ]
+  },
+  "transaction": {
+    "data": [
+      "0x"
+    ],
+    "gasLimit": [
+      "0x1c9c380"
+    ],
+    "gasPrice": "0xe6f7cec0",
+    "nonce": "0x0",
+    "secretKey": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "sender": "0x540ea708597d8e46cb33be43139452d8c9583686",
+    "to": "0x6831fb06762332dca543c0f2b5795692d896e3d4",
+    "value": [
+      "0x16345785d8a0000"
+    ],
+    "maxFeePerGas": "0x12a05f200",
+    "maxPriorityFeePerGas": "0xb2d05e00",
+    "accessLists": [
+      []
+    ],
+    "blobVersionedHashes": [],
+    "maxFeePerBlobGas": null
+  },
+  "out": null
+}
