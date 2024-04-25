@@ -34,14 +34,6 @@ impl<M: MerkleTree> StarkSetup<M> {
         let nBitsExt = stark_struct.nBitsExt;
         assert_eq!(const_pol.nPols, pil.nConstants);
 
-        let mut p: Vec<Vec<FGL>> = vec![Vec::new(); const_pol.nPols];
-        for i in 0..const_pol.nPols {
-            p[i] = vec![FGL::ZERO; const_pol.n];
-            p[i].par_iter_mut().enumerate().for_each(|(j, out)| {
-                *out = const_pol.array[i][j];
-            });
-        }
-
         log::trace!("Write const pol buff and interpolate");
         let const_buff = const_pol.write_buff();
         //extend and merkelize
