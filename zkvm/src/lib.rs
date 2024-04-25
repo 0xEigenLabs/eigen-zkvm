@@ -359,7 +359,7 @@ mod tests {
             let mut buffer = [0u8; 8];
             f.read_exact(&mut buffer).unwrap();
             let start_of_shutdown_routine: u64 = u64::from_le_bytes(buffer);
-
+            let file_size = file_size - 8;
             let mut buffer = vec![0; file_size];
             f.read_exact(&mut buffer).unwrap();
             let mut bi = vec![GoldilocksField::zero(); file_size / 8];
