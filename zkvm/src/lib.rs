@@ -11,7 +11,7 @@ use starky::{
     stark_setup::StarkSetup,
     types::{StarkStruct, Step},
 };
-use std::fs::{self, create_dir_all/*, remove_dir_all*/};
+use std::fs::{self, create_dir_all /*, remove_dir_all*/};
 use std::io::BufWriter;
 use std::path::Path;
 use std::time::Instant;
@@ -287,13 +287,15 @@ where
     create_dir_all(&chunk_dir).unwrap();
     let pipeline = pipeline.with_output(chunk_dir, true);
 
-
     let jump_to_shutdown_routine = (0..length)
         .map(|i| (i == start_of_shutdown_routine - 1).into())
         .collect();
 
     let pipeline = pipeline.add_external_witness_values(vec![
-        ("main_bootloader_inputs.value".to_string(), bootloader_inputs),
+        (
+            "main_bootloader_inputs.value".to_string(),
+            bootloader_inputs,
+        ),
         (
             "main.jump_to_shutdown_routine".to_string(),
             jump_to_shutdown_routine,
