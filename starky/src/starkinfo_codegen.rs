@@ -416,6 +416,43 @@ fn find_muladd(exp: &Expression) -> Expression {
     exp.clone()
 }
 
+/// Iteratively traverse a tree in postorder, so that the process stack doesn't overflow.
+///
+/// Children are processed first, then the parents using the results from the children.
+///
+/// Stops on first error.
+fn iterative_postorder_traversal<'a, N: 'a + Clone, R, E, IterN: Iterator<Item = N>>(
+    root: N,
+    get_chidren: impl Fn(N) -> IterN,
+    mut process_node: impl FnMut(N, std::vec::Drain<R>) -> Result<R, E>,
+) -> Result<R, E> {
+    let mut first_seen_stack = vec![root];
+    let mut prefix_stack = vec![];
+
+    // Transforms the tree into prefixed format
+    while let Some(node) = first_seen_stack.pop() {
+        let children = get_chidren(node.clone());
+        let prev_len = first_seen_stack.len();
+        first_seen_stack.extend(children);
+        let final_len = first_seen_stack.len();
+        prefix_stack.push((node, final_len - prev_len));
+    }
+    drop(first_seen_stack);
+
+    // Evaluates the prefixed stack from the top.
+    // Elements in prefix_stack are in reverse order, so result_stack ends up in the correct order.
+    let mut result_stack = vec![];
+    while let Some((node, num_children)) = prefix_stack.pop() {
+        assert!(result_stack.len() >= num_children);
+        let children = result_stack.drain((result_stack.len() - num_children)..);
+        let new_result = process_node(node, children)?;
+        result_stack.push(new_result);
+    }
+    assert_eq!(result_stack.len(), 1);
+
+    Ok(result_stack.pop().unwrap())
+}
+
 pub fn eval_exp(
     code_ctx: &mut ContextC,
     pil: &mut PIL,
@@ -426,67 +463,69 @@ pub fn eval_exp(
     if ExpressionOps::is_nop(exp) {
         panic!("exp: {:?}", exp);
     }
-    let def: Vec<Expression> = vec![];
-    let values = match &exp.values {
-        Some(x) => x,
-        _ => &def,
-    };
+
+    let default = vec![];
+    iterative_postorder_traversal(
+        exp,
+        |exp| exp.values.as_ref().unwrap_or(&default).iter(),
+        |exp, values| eval_single_op(code_ctx, pil, exp, prime, values),
+    )
+}
+
+fn eval_single_op(
+    code_ctx: &mut ContextC,
+    pil: &mut PIL,
+    exp: &Expression,
+    prime: bool,
+    mut values: impl Iterator<Item = Node>,
+) -> Result<Node> {
     match exp.op.as_str() {
         "add" => {
-            let a = eval_exp(code_ctx, pil, &(values[0]), prime)?;
-            let b = eval_exp(code_ctx, pil, &(values[1]), prime)?;
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
             let c = Section {
                 op: "add".to_string(),
                 dest: r.clone(),
-                src: vec![a, b],
+                src: values.collect(),
             };
             code_ctx.code.push(c);
             Ok(r)
         }
         "sub" => {
-            let a = eval_exp(code_ctx, pil, &(values[0]), prime)?;
-            let b = eval_exp(code_ctx, pil, &(values[1]), prime)?;
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
             let c = Section {
                 op: "sub".to_string(),
                 dest: r.clone(),
-                src: vec![a, b],
+                src: values.collect(),
             };
             code_ctx.code.push(c);
             Ok(r)
         }
         "mul" => {
-            let a = eval_exp(code_ctx, pil, &values[0], prime)?;
-            let b = eval_exp(code_ctx, pil, &values[1], prime)?;
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
             let c = Section {
                 op: "mul".to_string(),
                 dest: r.clone(),
-                src: vec![a, b],
+                src: values.collect(),
             };
             code_ctx.code.push(c);
             Ok(r)
         }
         "muladd" => {
-            let a = eval_exp(code_ctx, pil, &values[0], prime)?;
-            let b = eval_exp(code_ctx, pil, &values[1], prime)?;
-            let c = eval_exp(code_ctx, pil, &values[2], prime)?;
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
             let c = Section {
                 op: "muladd".to_string(),
                 dest: r.clone(),
-                src: vec![a, b, c],
+                src: values.collect(),
             };
             code_ctx.code.push(c);
             Ok(r)
         }
         "addc" => {
-            let a = eval_exp(code_ctx, pil, &values[0], prime)?;
+            let a = values.next().unwrap();
             let b = Node::new(
                 "number".to_string(),
                 0,
@@ -506,7 +545,7 @@ pub fn eval_exp(
             Ok(r)
         }
         "mulc" => {
-            let a = eval_exp(code_ctx, pil, &values[0], prime)?;
+            let a = values.next().unwrap();
             let b = Node::new(
                 "number".to_string(),
                 0,
@@ -528,7 +567,7 @@ pub fn eval_exp(
         }
         "neg" => {
             let a = Node::new("number".to_string(), 0, Some("0".to_string()), 0, false, 0);
-            let b = eval_exp(code_ctx, pil, &values[0], prime)?;
+            let b = values.next().unwrap();
 
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
