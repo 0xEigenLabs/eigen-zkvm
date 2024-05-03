@@ -11,7 +11,7 @@ use starky::{
     stark_setup::StarkSetup,
     types::{StarkStruct, Step},
 };
-use std::fs;
+use std::fs::{self, create_dir_all/*, remove_dir_all*/};
 use std::io::BufWriter;
 use std::path::Path;
 use std::time::Instant;
@@ -30,7 +30,7 @@ fn generate_witness_and_prove<F: FieldElement>(
     let start = Instant::now();
     log::debug!("Proving ...");
 
-    pipeline = pipeline.with_backend(BackendType::EStark);
+    pipeline = pipeline.with_backend(BackendType::EStarkStarky);
     pipeline.compute_proof().unwrap();
     let duration = start.elapsed();
     log::debug!("Proving took: {:?}", duration);
@@ -43,7 +43,7 @@ fn generate_verifier<F: FieldElement, W: std::io::Write>(
 ) -> Result<()> {
     let buf = Vec::new();
     let mut vw = BufWriter::new(buf);
-    pipeline = pipeline.with_backend(BackendType::EStark);
+    pipeline = pipeline.with_backend(BackendType::EStarkStarky);
     pipeline.export_verification_key(&mut vw).unwrap();
     log::debug!("Export verification key done");
     let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_slice(&vw.into_inner()?)?;
@@ -230,6 +230,7 @@ pub fn zkvm_prove_only(
 
     //TODO: if we clone it, we lost the information gained from this function
     rust_continuation(
+        task,
         pipeline.clone(),
         generate_witness_and_prove,
         bootloader_input,
@@ -256,6 +257,7 @@ pub fn zkvm_prove_only(
 }
 
 pub fn rust_continuation<F: FieldElement, PipelineCallback, E>(
+    task: &str,
     mut pipeline: Pipeline<F>,
     pipeline_callback: PipelineCallback,
     bootloader_inputs: Vec<F>,
@@ -272,16 +274,26 @@ where
     // we can assume optimized_pil has been computed
     let length = pipeline.compute_optimized_pil().unwrap().degree();
 
-    log::info!("\nRunning chunk {}...", i + 1);
-    let name = format!("{}_chunk_{}", pipeline.name(), i);
-    let pipeline = pipeline.with_name(name);
+    let name = format!("{}_chunk_{}", task, i);
+    log::debug!("\nRunning chunk {} in {}...", i + 1, name);
+
+    // we used to do
+    //let pipeline = pipeline.with_name(name);
+
+    // now we should do
+    let parent_path = pipeline.output_dir().unwrap();
+    let chunk_dir = parent_path.join(name);
+    //remove_dir_all(&chunk_dir).unwrap();
+    create_dir_all(&chunk_dir).unwrap();
+    let pipeline = pipeline.with_output(chunk_dir, true);
+
 
     let jump_to_shutdown_routine = (0..length)
         .map(|i| (i == start_of_shutdown_routine - 1).into())
         .collect();
 
     let pipeline = pipeline.add_external_witness_values(vec![
-        ("main.bootloader_input_value".to_string(), bootloader_inputs),
+        ("main_bootloader_inputs.value".to_string(), bootloader_inputs),
         (
             "main.jump_to_shutdown_routine".to_string(),
             jump_to_shutdown_routine,
