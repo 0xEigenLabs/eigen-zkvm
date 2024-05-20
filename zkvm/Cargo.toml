@@ -10,7 +10,7 @@ itertools = "0.12.0"
 # serialization
 log = "0.4.0"
 
-powdr =         { git = "https://github.com/eigmax/powdr", branch = "feature-starky-avx512", default-features = false }
+powdr =         { git = "https://github.com/0xEigenLabs/powdr", branch = "binary-mux2", default-features = false }
 starky =         { path = "../starky" }
 recursion =  { path = "../recursion" }
 
