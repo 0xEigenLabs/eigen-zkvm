@@ -1,6 +1,8 @@
 [workspace]
 members = [
   "zkit",
+  "zkgevulot/prover",
+  "zkgevulot/verifier",
   "zkvm",
   "plonky",
   "starky",
