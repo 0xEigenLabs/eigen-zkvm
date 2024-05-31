@@ -49,3 +49,4 @@ env_logger = "0.10"
 default = ["bellman_vk_codegen/multicore", "franklin-crypto/multicore", "ethabi", "recursive_aggregation_circuit/multicore"]
 profiler = ["ark-std/print-trace"]
 avx512 = ["fields/avx512"]
+wasm = []
