@@ -1,5 +1,4 @@
 #![allow(clippy::unit_arg)]
-#![cfg_attr(feature = "avx512", feature(stdsimd))]
 
 #[macro_use]
 extern crate serde;
