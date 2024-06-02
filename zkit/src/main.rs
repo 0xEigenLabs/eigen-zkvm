@@ -10,6 +10,8 @@ use plonky::api::{
 use starky::prove::stark_prove;
 use std::time::Instant;
 
+mod utils;
+
 /// Trust setup for Plonk
 #[derive(Parser, Debug)]
 pub struct SetupOpt {
@@ -397,7 +399,10 @@ fn main() {
     env_logger::init();
     let start = Instant::now();
     let exec_result = match args.command {
-        Command::Setup(args) => setup(args.power, &args.srs_monomial_form),
+        Command::Setup(args) => {
+            let writer = utils::new_writer( &args.srs_monomial_form).expect("New writer fails");
+            setup(args.power, writer)
+        },
         Command::Compile(args) => circom_compiler(
             args.input,
             args.prime.to_lowercase(),

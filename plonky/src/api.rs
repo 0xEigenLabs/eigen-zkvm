@@ -10,21 +10,14 @@ use profiler_macro::time_profiler;
 #[cfg(not(feature = "wasm"))]
 use crate::{aggregation, verifier};
 
+use std::io::Write;
 use std::path::Path;
 
 // generate a monomial_form SRS, and save it to a file
 #[time_profiler("plonk_setup")]
-pub fn setup(power: u32, srs_monomial_form: &str) -> Result<()> {
+pub fn setup<W: Write>(power: u32, mut writer: W) -> Result<()> {
     let srs = plonk::gen_key_monomial_form(power)?;
-    let path = Path::new(srs_monomial_form);
-    assert!(
-        !path.exists(),
-        "duplicate srs_monomial_form file: {}",
-        path.display()
-    );
-    let writer = std::fs::File::create(srs_monomial_form)?;
     srs.write(writer)?;
-    log::trace!("srs_monomial_form saved to {}", srs_monomial_form);
     Result::Ok(())
 }
 
