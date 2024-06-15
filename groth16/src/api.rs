@@ -1,26 +1,19 @@
-use crate::{
-    bellman_ce::{
-        groth16::{Parameters, Proof, VerifyingKey},
-        pairing::{
-            bls12_381::{Bls12, Fr as Fr_bls12381},
-            bn256::{Bn256, Fr},
-        },
-    },
-    groth16::Groth16,
-    json_utils::*,
-    template,
-};
+use crate::groth16::Groth16;
+use crate::json_utils::*;
+use crate::template::CONTRACT_TEMPLATE;
 use algebraic::{
-    bellman_ce::Engine,
     circom_circuit::CircomCircuit,
     reader::load_r1cs,
     witness::{load_input_for_witness, WitnessCalculator},
-    Field, PrimeField,
 };
 use anyhow::{anyhow, bail, Result};
+use bellperson::{gpu, groth16::*};
+use blstrs::{Bls12, Scalar};
+use ff::{Field, PrimeField};
+use group::WnafGroup;
 use num_traits::Zero;
+use pairing::{Engine, MultiMillerLoop};
 use regex::Regex;
-use template::CONTRACT_TEMPLATE;
 
 pub fn groth16_setup(
     curve_type: &str,
@@ -31,14 +24,10 @@ pub fn groth16_setup(
 ) -> Result<()> {
     let mut rng = rand::thread_rng();
     match curve_type {
-        "BN128" => {
-            let circuit = create_circuit_from_file::<Bn256>(circuit_file, None);
-            let (pk, vk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
-            write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file, to_hex)?
-        }
         "BLS12381" => {
-            let circuit = create_circuit_from_file::<Bls12>(circuit_file, None);
-            let (pk, vk) = Groth16::circuit_specific_setup(circuit, &mut rng)?;
+            let circuit = create_circuit_from_file::<Scalar>(circuit_file, None);
+            let (pk, vk): (Parameters<Bls12>, VerifyingKey<Bls12>) =
+                Groth16::circuit_specific_setup(circuit, &mut rng)?;
             write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file, to_hex)?
         }
         _ => {
@@ -65,38 +54,20 @@ pub fn groth16_prove(
     let inputs = load_input_for_witness(input_file);
     let w = wtns.calculate_witness(inputs, false)?;
     match curve_type {
-        "BN128" => {
-            let pk: Parameters<Bn256> = read_pk_from_file(pk_file, false)?;
-            let w = w
-                .iter()
-                .map(|wi| {
-                    if wi.is_zero() {
-                        Fr::zero()
-                    } else {
-                        Fr::from_str(&wi.to_string()).unwrap()
-                    }
-                })
-                .collect::<Vec<_>>();
-            let circuit = create_circuit_from_file::<Bn256>(circuit_file, Some(w));
-            let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
-            let proof_json = serialize_proof(&proof, curve_type, to_hex)?;
-            std::fs::write(proof_file, proof_json)?;
-            let input_json = circuit.get_public_inputs_json();
-            std::fs::write(public_input_file, input_json)?;
-        }
         "BLS12381" => {
             let pk: Parameters<Bls12> = read_pk_from_file(pk_file, false)?;
             let w = w
                 .iter()
                 .map(|wi| {
                     if wi.is_zero() {
-                        Fr_bls12381::zero()
+                        Scalar::ZERO
                     } else {
-                        Fr_bls12381::from_str(&wi.to_string()).unwrap()
+                        Scalar::from_str_vartime(&wi.to_string()).unwrap()
                     }
                 })
                 .collect::<Vec<_>>();
-            let circuit = create_circuit_from_file::<Bls12>(circuit_file, Some(w));
+            let circuit: CircomCircuit<Scalar> =
+                create_circuit_from_file::<Scalar>(circuit_file, Some(w));
             let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
             let proof_json = serialize_proof(&proof, curve_type, to_hex)?;
             std::fs::write(proof_file, proof_json)?;
@@ -118,26 +89,12 @@ pub fn groth16_verify(
     proof_file: &str,
 ) -> Result<()> {
     match curve_type {
-        "BN128" => {
-            let vk = read_vk_from_file(vk_file)?;
-            let inputs = read_public_input_from_file::<Fr>(public_input_file)?;
-            let proof = read_proof_from_file(proof_file)?;
-
-            let verification_result =
-                Groth16::<_, CircomCircuit<Bn256>>::verify_with_processed_vk(&vk, &inputs, &proof);
-
-            if verification_result.is_err() || !verification_result.unwrap() {
-                bail!("verify failed");
-            }
-        }
-
         "BLS12381" => {
-            let vk = read_vk_from_file(vk_file)?;
-            let inputs = read_public_input_from_file::<Fr_bls12381>(public_input_file)?;
+            let vk: VerifyingKey<Bls12> = read_vk_from_file(vk_file)?;
+            let inputs: Vec<Scalar> = read_public_input_from_file(public_input_file)?;
             let proof = read_proof_from_file(proof_file)?;
-
             let verification_result =
-                Groth16::<_, CircomCircuit<Bls12>>::verify_with_processed_vk(&vk, &inputs, &proof);
+                Groth16::<_, CircomCircuit<Scalar>>::verify_with_processed_vk(&vk, &inputs, &proof);
 
             if verification_result.is_err() || !verification_result.unwrap() {
                 bail!("verify failed");
@@ -264,9 +221,9 @@ pub fn generate_verifier(vk_file_path: &str, sol_file_path: &str) -> Result<()> 
     Ok(())
 }
 
-fn create_circuit_from_file<E: Engine>(
+fn create_circuit_from_file<E: PrimeField>(
     circuit_file: &str,
-    witness: Option<Vec<E::Fr>>,
+    witness: Option<Vec<E>>,
 ) -> CircomCircuit<E> {
     CircomCircuit {
         r1cs: load_r1cs(circuit_file),
@@ -276,7 +233,13 @@ fn create_circuit_from_file<E: Engine>(
     }
 }
 
-fn read_pk_from_file<E: Engine>(file_path: &str, checked: bool) -> Result<Parameters<E>> {
+fn read_pk_from_file<E: Engine>(file_path: &str, checked: bool) -> Result<Parameters<E>>
+where
+    E: MultiMillerLoop,
+    E::G1: WnafGroup,
+    E::G2: WnafGroup,
+    E::Fr: gpu::GpuName,
+{
     let file =
         std::fs::File::open(file_path).map_err(|e| anyhow!("Open {}, {:?}", file_path, e))?;
     let mut reader = std::io::BufReader::new(file);
@@ -288,9 +251,9 @@ fn read_vk_from_file<P: Parser>(file_path: &str) -> Result<VerifyingKey<P>> {
     Ok(to_verification_key::<P>(&json_data))
 }
 
-fn read_public_input_from_file<T: PrimeField>(file_path: &str) -> Result<Vec<T>> {
+fn read_public_input_from_file(file_path: &str) -> Result<Vec<Scalar>> {
     let json_data = std::fs::read_to_string(file_path)?;
-    Ok(to_public_input::<T>(&json_data))
+    Ok(to_public_input(&json_data))
 }
 
 fn read_proof_from_file<P: Parser>(file_path: &str) -> Result<Proof<P>> {

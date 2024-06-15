@@ -5,7 +5,7 @@ use crate::poseidon_constants_opt as constants;
 use anyhow::bail;
 use anyhow::Result;
 use fields::field_gl::Fr as FGL;
-use fields::Field;
+use ff::Field;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]

@@ -3,7 +3,7 @@ use anyhow::Result;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use ff::PrimeField;
 use fields::field_gl::Fr as FGL;
-use fields::Field;
+use ff::Field;
 use serde::{de::DeserializeOwned, ser::Serialize};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;

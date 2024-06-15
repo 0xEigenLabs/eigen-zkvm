@@ -6,9 +6,12 @@ use super::{
 use crate::pilcom::compile_pil_from_str;
 use crate::r1cs2plonk::{r1cs2plonk, PlonkAdd, PlonkGate};
 use array_tool::vec::Shift;
-use plonky::circom_circuit::R1CS;
-use plonky::field_gl::Fr as FGL;
-use plonky::field_gl::GL;
+// use plonky::circom_circuit::R1CS;
+// use plonky::field_gl::Fr as FGL;
+// use plonky::field_gl::GL;
+use algebraic::circom_circuit::R1CS;
+use fields::field_gl::Fr as FGL;
+use fields::field_gl::GL;
 use starky::helper;
 use starky::polsarray::{PolKind, PolsArray};
 use starky::types::PIL;

@@ -2,7 +2,7 @@
 use crate::traits::FieldExtension;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use fields::field_gl::Fr;
-use fields::Field;
+use ff::Field;
 use std::hash::{Hash, Hasher};
 use std::slice;
 
@@ -234,7 +234,7 @@ impl ::rand::Rand for F5G {
     }
 }
 
-impl fields::Field for F5G {
+impl ff::Field for F5G {
     #[inline(always)]
     fn zero() -> Self {
         Self::ZEROS
@@ -328,7 +328,7 @@ impl fields::Field for F5G {
     }
 }
 
-// `F5G` must implement `std::fmt::Display` trait when implement `fields::Field` trait
+// `F5G` must implement `std::fmt::Display` trait when implement `ff::Field` trait
 impl Display for F5G {
     fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
         let elems = self.as_elements();
@@ -728,7 +728,7 @@ pub mod tests {
     use crate::polutils::batch_inverse;
     use crate::traits::FieldExtension;
     use fields::field_gl::Fr;
-    use fields::Field;
+    use ff::Field;
     use std::ops::{Add, Mul};
 
     impl F5G {

@@ -2,22 +2,22 @@ extern crate clap;
 use clap::{command, Parser};
 use dsl_compile::circom_compiler;
 use groth16::api::*;
-use plonky::api::{
-    aggregation_check, aggregation_prove, aggregation_verify, analyse, calculate_witness,
-    export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
-    prove as plonky_prove, setup, verify,
-};
+// use plonky::api::{
+//     aggregation_check, aggregation_prove, aggregation_verify, analyse, calculate_witness,
+//     export_aggregation_verification_key, export_verification_key, generate_aggregation_verifier,
+//     prove as plonky_prove, setup, verify,
+// };
 use starky::prove::stark_prove;
 use std::time::Instant;
 
 /// Trust setup for Plonk
-#[derive(Parser, Debug)]
-pub struct SetupOpt {
-    #[arg(short, required = true, default_value = "20")]
-    power: u32,
-    #[arg(short, required = true)]
-    srs_monomial_form: String,
-}
+// #[derive(Parser, Debug)]
+// pub struct SetupOpt {
+//     #[arg(short, required = true, default_value = "20")]
+//     power: u32,
+//     #[arg(short, required = true)]
+//     srs_monomial_form: String,
+// }
 
 #[derive(Debug, Parser)]
 pub struct CompilierOpt {
@@ -50,148 +50,147 @@ pub struct CompilierOpt {
 }
 
 /// Calculate witness and save to output file
-#[derive(Debug, Parser)]
-
-struct CalculateWitnessOpt {
-    /// wasm circuit
-    #[arg(short, required = true)]
-    wasm_file: String,
-    /// [input] input json
-    #[arg(short, required = true)]
-    input_json: String,
-    /// [output] witness filename
-    #[arg(short, default_value = "witness.wtns")]
-    output: String,
-}
+// #[derive(Debug, Parser)]
+// struct CalculateWitnessOpt {
+//     /// wasm circuit
+//     #[arg(short, required = true)]
+//     wasm_file: String,
+//     /// [input] input json
+//     #[arg(short, required = true)]
+//     input_json: String,
+//     /// [output] witness filename
+//     #[arg(short, default_value = "witness.wtns")]
+//     output: String,
+// }
 
 /// Prove by Plonk
-#[derive(Debug, Parser)]
-struct PlonkProveOpt {
-    #[arg(short, required = true)]
-    circuit_file: String,
-    #[arg(short)]
-    witness: String,
-    /// SRS monomial form
-    #[arg(short)]
-    srs_monomial_form: String,
+// #[derive(Debug, Parser)]
+// struct PlonkProveOpt {
+//     #[arg(short, required = true)]
+//     circuit_file: String,
+//     #[arg(short)]
+//     witness: String,
+//     /// SRS monomial form
+//     #[arg(short)]
+//     srs_monomial_form: String,
 
-    #[arg(long = "l")]
-    srs_lagrange_form: Option<String>,
+//     #[arg(long = "l")]
+//     srs_lagrange_form: Option<String>,
 
-    #[arg(short, default_value = "keccak")]
-    transcript: String,
+//     #[arg(short, default_value = "keccak")]
+//     transcript: String,
 
-    #[arg(long = "b", default_value = "proof.bin")]
-    proof_bin: String,
+//     #[arg(long = "b", default_value = "proof.bin")]
+//     proof_bin: String,
 
-    #[arg(long = "j", default_value = "proof.json")]
-    proof_json: String,
+//     #[arg(long = "j", default_value = "proof.json")]
+//     proof_json: String,
 
-    #[arg(long = "p", default_value = "public.json")]
-    public_json: String,
-}
+//     #[arg(long = "p", default_value = "public.json")]
+//     public_json: String,
+// }
 
 /// Verify the Plonk proof
-#[derive(Debug, Parser)]
-struct VerifyOpt {
-    #[arg(short, default_value = "vk.bin")]
-    vk_file: String,
-    #[arg(short)]
-    proof_bin: String,
-    /// Transcript can be keccak or rescue, keccak default
-    #[arg(short, default_value = "keccak")]
-    transcript: String,
-}
+// #[derive(Debug, Parser)]
+// struct VerifyOpt {
+//     #[arg(short, default_value = "vk.bin")]
+//     vk_file: String,
+//     #[arg(short)]
+//     proof_bin: String,
+//     /// Transcript can be keccak or rescue, keccak default
+//     #[arg(short, default_value = "keccak")]
+//     transcript: String,
+// }
 
 /// Generate solidity verifier
 #[derive(Debug, Parser)]
 struct GenerateVerifierOpt {
     #[arg(short, default_value = "vk.bin")]
     vk_file: String,
-    #[arg(short, default_value = "plonk")]
+    #[arg(short, default_value = "groth16")]
     protocal: String,
     #[arg(short, default_value = "verifier.sol")]
     sol: String,
 }
 
 /// Export proof's verification key
-#[derive(Debug, Parser)]
-struct ExportVerificationKeyOpt {
-    #[arg(short)]
-    srs_monomial_form: String,
-    #[arg(short)]
-    circuit_file: String,
-    #[arg(long = "v", default_value = "vk.bin")]
-    output_vk: String,
-}
+// #[derive(Debug, Parser)]
+// struct ExportVerificationKeyOpt {
+//     #[arg(short)]
+//     srs_monomial_form: String,
+//     #[arg(short)]
+//     circuit_file: String,
+//     #[arg(long = "v", default_value = "vk.bin")]
+//     output_vk: String,
+// }
 
 /// Analyse circuits
-#[derive(Parser, Debug)]
-struct AnalyseOpt {
-    #[arg(short)]
-    circuit_file: String,
-    #[arg(short, default_value = "analyse.json")]
-    output: String,
-}
+// #[derive(Parser, Debug)]
+// struct AnalyseOpt {
+//     #[arg(short)]
+//     circuit_file: String,
+//     #[arg(short, default_value = "analyse.json")]
+//     output: String,
+// }
 
 /// Export aggregation proof's verification key
-#[derive(Parser, Debug)]
-struct ExportAggregationVerificationKeyOpt {
-    #[arg(long = "c")]
-    num_proofs_to_check: usize,
-    #[arg(long = "i")]
-    num_inputs: usize,
-    #[arg(short)]
-    srs_monomial_form: String,
-    #[arg(long = "v", default_value = "aggregation_vk.bin")]
-    output_vk: String,
-}
+// #[derive(Parser, Debug)]
+// struct ExportAggregationVerificationKeyOpt {
+//     #[arg(long = "c")]
+//     num_proofs_to_check: usize,
+//     #[arg(long = "i")]
+//     num_inputs: usize,
+//     #[arg(short)]
+//     srs_monomial_form: String,
+//     #[arg(long = "v", default_value = "aggregation_vk.bin")]
+//     output_vk: String,
+// }
 
 /// Proof aggregation for plonk
-#[derive(Parser, Debug)]
-struct AggregationProveOpt {
-    /// SRS monomial form
-    #[arg(short)]
-    srs_monomial_form: String,
+// #[derive(Parser, Debug)]
+// struct AggregationProveOpt {
+//     /// SRS monomial form
+//     #[arg(short)]
+//     srs_monomial_form: String,
 
-    #[arg(long = "f")]
-    old_proof_list: String,
+//     #[arg(long = "f")]
+//     old_proof_list: String,
 
-    #[arg(long = "v", default_value = "vk.bin")]
-    old_vk: String,
+//     #[arg(long = "v", default_value = "vk.bin")]
+//     old_vk: String,
 
-    #[arg(long = "n", default_value = "aggregation_proof.bin")]
-    new_proof: String,
+//     #[arg(long = "n", default_value = "aggregation_proof.bin")]
+//     new_proof: String,
 
-    #[arg(long = "j", default_value = "proof.json")]
-    proof_json: String,
-}
+//     #[arg(long = "j", default_value = "proof.json")]
+//     proof_json: String,
+// }
 
 /// Verify aggregation proof
-#[derive(Parser, Debug)]
-struct AggregationVerifyOpt {
-    #[arg(long = "p", default_value = "aggregation_proof.bin")]
-    proof: String,
-    #[arg(long = "v", default_value = "aggregation_vk.bin")]
-    vk: String,
-}
+// #[derive(Parser, Debug)]
+// struct AggregationVerifyOpt {
+//     #[arg(long = "p", default_value = "aggregation_proof.bin")]
+//     proof: String,
+//     #[arg(long = "v", default_value = "aggregation_vk.bin")]
+//     vk: String,
+// }
 
 /// A subcommand for generating a Solidity aggregation verifier smart contract
-#[derive(Parser, Debug)]
-struct GenerateAggregationVerifierOpt {
-    /// Original individual verification key file
-    #[arg(short, long = "old_vk", default_value = "vk.bin")]
-    old_vk: String,
-    /// Aggregated verification key file
-    #[arg(long = "n", default_value = "aggregation_vk.bin")]
-    new_vk: String,
-    /// Num of inputs
-    #[arg(long = "i", long = "num_inputs")]
-    num_inputs: usize,
-    /// Output solidity file
-    #[arg(short, long = "sol", default_value = "verifier.sol")]
-    sol: String,
-}
+// #[derive(Parser, Debug)]
+// struct GenerateAggregationVerifierOpt {
+//     /// Original individual verification key file
+//     #[arg(short, long = "old_vk", default_value = "vk.bin")]
+//     old_vk: String,
+//     /// Aggregated verification key file
+//     #[arg(long = "n", default_value = "aggregation_vk.bin")]
+//     new_vk: String,
+//     /// Num of inputs
+//     #[arg(long = "i", long = "num_inputs")]
+//     num_inputs: usize,
+//     /// Output solidity file
+//     #[arg(short, long = "sol", default_value = "verifier.sol")]
+//     sol: String,
+// }
 
 /// Stark proving and verifying all in one
 #[derive(Parser, Debug)]
@@ -222,17 +221,17 @@ struct StarkProveOpt {
 }
 
 /// Check aggregation proof
-#[derive(Parser, Debug)]
-struct AggregationCheckOpt {
-    #[arg(long = "f")]
-    old_proof_list: String,
+// #[derive(Parser, Debug)]
+// struct AggregationCheckOpt {
+//     #[arg(long = "f")]
+//     old_proof_list: String,
 
-    #[arg(long = "v", default_value = "vk.bin")]
-    old_vk: String,
+//     #[arg(long = "v", default_value = "vk.bin")]
+//     old_vk: String,
 
-    #[arg(short, default_value = "aggregation_proof.bin")]
-    new_proof: String,
-}
+//     #[arg(short, default_value = "aggregation_proof.bin")]
+//     new_proof: String,
+// }
 
 /// Setup compressor12 for converting R1CS to PIL
 #[derive(Parser, Debug)]
@@ -338,37 +337,37 @@ pub struct Groth16VerifyOpt {
 
 #[derive(Parser, Debug)]
 enum Command {
-    #[command(name = "setup")]
-    Setup(SetupOpt),
-    #[command(name = "calculate_witness")]
-    CalculateWitness(CalculateWitnessOpt),
+    // #[command(name = "setup")]
+    // Setup(SetupOpt),
+    // #[command(name = "calculate_witness")]
+    // CalculateWitness(CalculateWitnessOpt),
     /// Compile circom circuits to r1cs, and generate witness
     #[command(name = "compile")]
     Compile(CompilierOpt),
-    #[command(name = "prove")]
-    PlonkProve(PlonkProveOpt),
-    #[command(name = "verify")]
-    Verify(VerifyOpt),
-    #[command(name = "export_verification_key")]
-    ExportVerificationKey(ExportVerificationKeyOpt),
+    // #[command(name = "prove")]
+    // PlonkProve(PlonkProveOpt),
+    // #[command(name = "verify")]
+    // Verify(VerifyOpt),
+    // #[command(name = "export_verification_key")]
+    // ExportVerificationKey(ExportVerificationKeyOpt),
     #[command(name = "generate_verifier")]
     GenerateVerifier(GenerateVerifierOpt),
-    #[command(name = "export_aggregation_verification_key")]
-    ExportAggregationVerificationKey(ExportAggregationVerificationKeyOpt),
-    #[command(name = "aggregation_prove")]
-    AggregationProve(AggregationProveOpt),
-    #[command(name = "aggregation_verify")]
-    AggregationVerify(AggregationVerifyOpt),
-    #[command(name = "generate_aggregation_verifier")]
-    GenerateAggregationVerifier(GenerateAggregationVerifierOpt),
-    #[command(name = "aggregation_check")]
-    AggregationCheck(AggregationCheckOpt),
+    // #[command(name = "export_aggregation_verification_key")]
+    // ExportAggregationVerificationKey(ExportAggregationVerificationKeyOpt),
+    // #[command(name = "aggregation_prove")]
+    // AggregationProve(AggregationProveOpt),
+    // #[command(name = "aggregation_verify")]
+    // AggregationVerify(AggregationVerifyOpt),
+    // #[command(name = "generate_aggregation_verifier")]
+    // GenerateAggregationVerifier(GenerateAggregationVerifierOpt),
+    // #[command(name = "aggregation_check")]
+    // AggregationCheck(AggregationCheckOpt),
 
     #[command(name = "stark_prove")]
     StarkProve(StarkProveOpt),
 
-    #[command(name = "analyse")]
-    Analyse(AnalyseOpt),
+    // #[command(name = "analyse")]
+    // Analyse(AnalyseOpt),
 
     #[command(name = "compressor12_setup")]
     Compressor12Setup(Compressor12SetupOpt),
@@ -397,7 +396,7 @@ fn main() {
     env_logger::init();
     let start = Instant::now();
     let exec_result = match args.command {
-        Command::Setup(args) => setup(args.power, &args.srs_monomial_form),
+        // Command::Setup(args) => setup(args.power, &args.srs_monomial_form),
         Command::Compile(args) => circom_compiler(
             args.input,
             args.prime.to_lowercase(),
@@ -407,51 +406,51 @@ fn main() {
             args.no_simplification,
             args.reduced_simplification,
         ),
-        Command::CalculateWitness(args) => {
-            calculate_witness(&args.wasm_file, &args.input_json, &args.output)
-        }
-        Command::PlonkProve(args) => plonky_prove(
-            &args.circuit_file,
-            &args.witness,
-            &args.srs_monomial_form,
-            args.srs_lagrange_form,
-            &args.transcript,
-            &args.proof_bin,
-            &args.proof_json,
-            &args.public_json,
-        ),
-        Command::Verify(args) => verify(&args.vk_file, &args.proof_bin, &args.transcript),
+        // Command::CalculateWitness(args) => {
+        //     calculate_witness(&args.wasm_file, &args.input_json, &args.output)
+        // }
+        // Command::PlonkProve(args) => plonky_prove(
+        //     &args.circuit_file,
+        //     &args.witness,
+        //     &args.srs_monomial_form,
+        //     args.srs_lagrange_form,
+        //     &args.transcript,
+        //     &args.proof_bin,
+        //     &args.proof_json,
+        //     &args.public_json,
+        // ),
+        // Command::Verify(args) => verify(&args.vk_file, &args.proof_bin, &args.transcript),
         Command::GenerateVerifier(args) => match args.protocal.as_str() {
-            "plonk" => plonky::api::generate_verifier(&args.vk_file, &args.sol),
+            // "plonk" => plonky::api::generate_verifier(&args.vk_file, &args.sol),
             "groth16" => groth16::api::generate_verifier(&args.vk_file, &args.sol),
             _ => {
                 panic!("unknown protocol")
             }
         },
-        Command::ExportVerificationKey(args) => {
-            export_verification_key(&args.srs_monomial_form, &args.circuit_file, &args.output_vk)
-        }
+        // Command::ExportVerificationKey(args) => {
+        //     export_verification_key(&args.srs_monomial_form, &args.circuit_file, &args.output_vk)
+        // }
 
-        Command::ExportAggregationVerificationKey(args) => export_aggregation_verification_key(
-            args.num_proofs_to_check,
-            args.num_inputs,
-            &args.srs_monomial_form,
-            &args.output_vk,
-        ),
-        Command::AggregationProve(args) => aggregation_prove(
-            &args.srs_monomial_form,
-            &args.old_proof_list,
-            &args.old_vk,
-            &args.new_proof,
-            &args.proof_json,
-        ),
-        Command::AggregationVerify(args) => aggregation_verify(&args.proof, &args.vk),
-        Command::GenerateAggregationVerifier(args) => {
-            generate_aggregation_verifier(&args.old_vk, &args.new_vk, args.num_inputs, &args.sol)
-        }
-        Command::AggregationCheck(args) => {
-            aggregation_check(&args.old_proof_list, &args.old_vk, &args.new_proof)
-        }
+        // Command::ExportAggregationVerificationKey(args) => export_aggregation_verification_key(
+        //     args.num_proofs_to_check,
+        //     args.num_inputs,
+        //     &args.srs_monomial_form,
+        //     &args.output_vk,
+        // ),
+        // Command::AggregationProve(args) => aggregation_prove(
+        //     &args.srs_monomial_form,
+        //     &args.old_proof_list,
+        //     &args.old_vk,
+        //     &args.new_proof,
+        //     &args.proof_json,
+        // ),
+        // Command::AggregationVerify(args) => aggregation_verify(&args.proof, &args.vk),
+        // Command::GenerateAggregationVerifier(args) => {
+        //     generate_aggregation_verifier(&args.old_vk, &args.new_vk, args.num_inputs, &args.sol)
+        // }
+        // Command::AggregationCheck(args) => {
+        //     aggregation_check(&args.old_proof_list, &args.old_vk, &args.new_proof)
+        // }
         Command::StarkProve(args) => stark_prove(
             &args.stark_struct,
             &args.piljson,
@@ -464,7 +463,7 @@ fn main() {
             &args.zkin,
             &args.prover_addr,
         ),
-        Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
+        // Command::Analyse(args) => analyse(&args.circuit_file, &args.output),
         Command::Compressor12Setup(args) => recursion::compressor12_setup::setup(
             &args.r1cs_file,
             &args.pil_file,
@@ -514,3 +513,4 @@ fn main() {
         _ => println!("time cost: {}", start.elapsed().as_secs_f64()),
     };
 }
+

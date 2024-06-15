@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use ff::*;
-use fields::field_gl::Fr as FGL;
+use fields::field_gl::Goldilocks as FGL;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
 use std::fmt::Write;
@@ -15,7 +15,7 @@ use std::ops::Mul;
 ///}
 pub fn get_ks(n: usize) -> Vec<FGL> {
     let mut ks: Vec<FGL> = vec![FGL::ZERO; n];
-    ks[0] = FGL::from(12275445934081160404u64);
+    ks[0] = FGL::DELTA;
     for i in 1..n {
         ks[i] = ks[i - 1].mul(ks[0])
     }
@@ -50,11 +50,9 @@ pub fn log2_any(val: usize) -> usize {
 
 #[inline(always)]
 pub fn fr_to_biguint<F: PrimeField>(f: &F) -> BigUint {
-    let repr = f.into_repr();
-    let required_length = repr.as_ref().len() * 8;
-    let mut buf: Vec<u8> = Vec::with_capacity(required_length);
-    repr.write_be(&mut buf).unwrap();
-    BigUint::from_bytes_be(&buf)
+    let binding = f.to_repr();
+    let repr = binding.as_ref();
+    BigUint::from_bytes_be(repr)
 }
 
 #[inline(always)]
@@ -66,7 +64,7 @@ pub fn biguint_to_be(f: &BigUint) -> FGL {
 
 #[inline(always)]
 pub fn biguint_to_fr<F: PrimeField>(f: &BigUint) -> F {
-    F::from_str(&f.to_string()).unwrap()
+    F::from_str_vartime(&f.to_string()).unwrap()
 }
 
 use std::fmt::{Debug, Display};

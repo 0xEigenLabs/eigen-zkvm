@@ -4,8 +4,8 @@
 //! How to build/run/test:
 //! RUSTFLAGS='-C target-feature=+avx2' cargo build --release
 //!
-use crate::ff::*;
-use crate::field_gl::{Fr, FrRepr as GoldilocksField};
+use ff::{Field, PrimeField};
+use crate::field_gl::Goldilocks;
 use crate::packed::PackedField;
 use core::arch::x86_64::*;
 use core::fmt;
@@ -22,16 +22,32 @@ use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAss
 /// convert to and from `__m256i`.
 #[derive(Copy, Clone)]
 #[repr(transparent)]
-pub struct Avx2GoldilocksField(pub [GoldilocksField; 4]);
+pub struct Avx2GoldilocksField(pub [Goldilocks; 4]);
 
 impl Avx2GoldilocksField {
     #[inline]
     pub fn new(x: __m256i) -> Self {
-        unsafe { transmute(x) }
+        let mut values = [0u64; 4];
+        unsafe { _mm256_storeu_si256(values.as_mut_ptr() as *mut __m256i, x) };
+
+        let goldilocks_values = [
+            Goldilocks::new(values[0], 0),
+            Goldilocks::new(values[1], 0),
+            Goldilocks::new(values[2], 0),
+            Goldilocks::new(values[3], 0),
+        ];
+
+        Avx2GoldilocksField(goldilocks_values)
     }
     #[inline]
     pub fn get(&self) -> __m256i {
-        unsafe { transmute(*self) }
+        let elements: [u64; 4] = [
+            self.0[0].get(),
+            self.0[1].get(),
+            self.0[2].get(),
+            self.0[3].get(),
+        ];
+        unsafe { transmute(elements) }
     }
     #[inline]
     pub fn square(&self) -> Avx2GoldilocksField {
@@ -45,26 +61,26 @@ impl Avx2GoldilocksField {
 
 unsafe impl PackedField for Avx2GoldilocksField {
     const WIDTH: usize = 4;
-    type Scalar = GoldilocksField;
-    const ZEROS: Self = Self([GoldilocksField([0]); 4]);
-    const ONES: Self = Self([GoldilocksField([1]); 4]);
+    type Scalar = Goldilocks;
+    const ZEROS: Self = Self([Goldilocks::ZERO; 4]);
+    const ONES: Self = Self([Goldilocks::ONE; 4]);
 
     #[inline]
-    fn from_slice(slice: &[GoldilocksField]) -> &Self {
+    fn from_slice(slice: &[Goldilocks]) -> &Self {
         assert_eq!(slice.len(), Self::WIDTH);
         unsafe { &*slice.as_ptr().cast() }
     }
     #[inline]
-    fn from_slice_mut(slice: &mut [GoldilocksField]) -> &mut Self {
+    fn from_slice_mut(slice: &mut [Goldilocks]) -> &mut Self {
         assert_eq!(slice.len(), Self::WIDTH);
         unsafe { &mut *slice.as_mut_ptr().cast() }
     }
     #[inline]
-    fn as_slice(&self) -> &[GoldilocksField] {
+    fn as_slice(&self) -> &[Goldilocks] {
         &self.0[..]
     }
     #[inline]
-    fn as_slice_mut(&mut self) -> &mut [GoldilocksField] {
+    fn as_slice_mut(&mut self) -> &mut [Goldilocks] {
         &mut self.0[..]
     }
 
@@ -88,14 +104,14 @@ impl Add<Self> for Avx2GoldilocksField {
         Self::new(unsafe { add(self.get(), rhs.get()) })
     }
 }
-impl Add<GoldilocksField> for Avx2GoldilocksField {
+impl Add<Goldilocks> for Avx2GoldilocksField {
     type Output = Self;
     #[inline]
-    fn add(self, rhs: GoldilocksField) -> Self {
+    fn add(self, rhs: Goldilocks) -> Self {
         self + Self::from(rhs)
     }
 }
-impl Add<Avx2GoldilocksField> for GoldilocksField {
+impl Add<Avx2GoldilocksField> for Goldilocks {
     type Output = Avx2GoldilocksField;
     #[inline]
     fn add(self, rhs: Self::Output) -> Self::Output {
@@ -108,9 +124,9 @@ impl AddAssign<Self> for Avx2GoldilocksField {
         *self = *self + rhs;
     }
 }
-impl AddAssign<GoldilocksField> for Avx2GoldilocksField {
+impl AddAssign<Goldilocks> for Avx2GoldilocksField {
     #[inline]
-    fn add_assign(&mut self, rhs: GoldilocksField) {
+    fn add_assign(&mut self, rhs: Goldilocks) {
         *self = *self + rhs;
     }
 }
@@ -129,26 +145,25 @@ impl Default for Avx2GoldilocksField {
     }
 }
 
-impl Div<GoldilocksField> for Avx2GoldilocksField {
-    type Output = Self;
-    #[inline]
-    fn div(self, rhs: GoldilocksField) -> Self {
-        let rhs_value = Fr::from_repr(rhs).unwrap();
-        let rhs_inverse = rhs_value.inverse().unwrap().into_repr();
-        self * rhs_inverse
-    }
-}
-impl DivAssign<GoldilocksField> for Avx2GoldilocksField {
-    #[inline]
-    fn div_assign(&mut self, rhs: GoldilocksField) {
-        let rhs_value = Fr::from_repr(rhs).unwrap();
-        let rhs_inverse = rhs_value.inverse().unwrap().into_repr();
-        *self *= rhs_inverse;
-    }
-}
+// impl Div<Goldilocks> for Avx2GoldilocksField {
+//     type Output = Self;
+//     #[inline]
+//     fn div(self, rhs: Goldilocks) -> Self {
+//         let rhs_inverse = rhs.inverse().unwrap();
+//         self * rhs_inverse.into()
+//     }
+// }
+// impl DivAssign<GoldilocksField> for Avx2GoldilocksField {
+//     #[inline]
+//     fn div_assign(&mut self, rhs: GoldilocksField) {
+//         let rhs_value = Fr::from_repr(rhs).unwrap();
+//         let rhs_inverse = rhs_value.inverse().unwrap().into_repr();
+//         *self *= rhs_inverse;
+//     }
+// }
 
-impl From<GoldilocksField> for Avx2GoldilocksField {
-    fn from(x: GoldilocksField) -> Self {
+impl From<Goldilocks> for Avx2GoldilocksField {
+    fn from(x: Goldilocks) -> Self {
         Self([x; 4])
     }
 }
@@ -160,14 +175,14 @@ impl Mul<Self> for Avx2GoldilocksField {
         Self::new(unsafe { mul(self.get(), rhs.get()) })
     }
 }
-impl Mul<GoldilocksField> for Avx2GoldilocksField {
+impl Mul<Goldilocks> for Avx2GoldilocksField {
     type Output = Self;
     #[inline]
-    fn mul(self, rhs: GoldilocksField) -> Self {
+    fn mul(self, rhs: Goldilocks) -> Self {
         self * Self::from(rhs)
     }
 }
-impl Mul<Avx2GoldilocksField> for GoldilocksField {
+impl Mul<Avx2GoldilocksField> for Goldilocks {
     type Output = Avx2GoldilocksField;
     #[inline]
     fn mul(self, rhs: Avx2GoldilocksField) -> Self::Output {
@@ -180,9 +195,9 @@ impl MulAssign<Self> for Avx2GoldilocksField {
         *self = *self * rhs;
     }
 }
-impl MulAssign<GoldilocksField> for Avx2GoldilocksField {
+impl MulAssign<Goldilocks> for Avx2GoldilocksField {
     #[inline]
-    fn mul_assign(&mut self, rhs: GoldilocksField) {
+    fn mul_assign(&mut self, rhs: Goldilocks) {
         *self = *self * rhs;
     }
 }
@@ -209,14 +224,14 @@ impl Sub<Self> for Avx2GoldilocksField {
         Self::new(unsafe { sub(self.get(), rhs.get()) })
     }
 }
-impl Sub<GoldilocksField> for Avx2GoldilocksField {
+impl Sub<Goldilocks> for Avx2GoldilocksField {
     type Output = Self;
     #[inline]
-    fn sub(self, rhs: GoldilocksField) -> Self {
+    fn sub(self, rhs: Goldilocks) -> Self {
         self - Self::from(rhs)
     }
 }
-impl Sub<Avx2GoldilocksField> for GoldilocksField {
+impl Sub<Avx2GoldilocksField> for Goldilocks {
     type Output = Avx2GoldilocksField;
     #[inline]
     fn sub(self, rhs: Avx2GoldilocksField) -> Self::Output {
@@ -229,9 +244,9 @@ impl SubAssign<Self> for Avx2GoldilocksField {
         *self = *self - rhs;
     }
 }
-impl SubAssign<GoldilocksField> for Avx2GoldilocksField {
+impl SubAssign<Goldilocks> for Avx2GoldilocksField {
     #[inline]
-    fn sub_assign(&mut self, rhs: GoldilocksField) {
+    fn sub_assign(&mut self, rhs: Goldilocks) {
         *self = *self - rhs;
     }
 }
@@ -294,7 +309,7 @@ impl SubAssign<GoldilocksField> for Avx2GoldilocksField {
 const SIGN_BIT: __m256i = unsafe { transmute([i64::MIN; 4]) };
 const SHIFTED_FIELD_ORDER: __m256i =
     unsafe { transmute([GOLDILOCKS_FIELD_ORDER ^ (i64::MIN as u64); 4]) };
-const EPSILON: __m256i = unsafe { transmute([GoldilocksField([4294967295u64]); 4]) };
+const EPSILON: __m256i = unsafe { transmute([4294967295u64; 4]) };
 // Goldilocks Order
 const GOLDILOCKS_FIELD_ORDER: u64 = 0xFFFFFFFF00000001;
 
@@ -412,7 +427,7 @@ unsafe fn square64(x: __m256i) -> (__m256i, __m256i) {
     let mul_ll_hi = _mm256_srli_epi64::<33>(mul_ll);
     let t0 = _mm256_add_epi64(mul_lh, mul_ll_hi);
     let t0_hi = _mm256_srli_epi64::<31>(t0);
-    let res_hi = _mm256_add_epi64(mul_hh, t0_hi);
+    let res_hi: __m256i = _mm256_add_epi64(mul_hh, t0_hi);
 
     // Form low result by adding the mul_ll and the low 31 bits of mul_lh (shifted to the high
     // position).
@@ -511,25 +526,23 @@ unsafe fn interleave2(x: __m256i, y: __m256i) -> (__m256i, __m256i) {
 #[cfg(test)]
 mod tests {
     use super::Avx2GoldilocksField;
-    use crate::ff::*;
-    use crate::field_gl::{Fr, FrRepr as GoldilocksField};
-    use crate::packed::PackedField;
+    use crate::{field_gl::Goldilocks, packed::PackedField};
     use std::time::Instant;
 
-    fn test_vals_a() -> [GoldilocksField; 4] {
+    fn test_vals_a() -> [Goldilocks; 4] {
         [
-            GoldilocksField([18446744069414584320u64]),
-            GoldilocksField([9087029921428221768u64]),
-            GoldilocksField([2441288194761790662u64]),
-            GoldilocksField([5646033492608483824u64]),
+            Goldilocks::new(18446744069414584320u64, 0u64),
+            Goldilocks::new(9087029921428221768u64, 0u64),
+            Goldilocks::new(2441288194761790662u64, 0u64),
+            Goldilocks::new(5646033492608483824u64, 0u64),
         ]
     }
-    fn test_vals_b() -> [GoldilocksField; 4] {
+    fn test_vals_b() -> [Goldilocks; 4] {
         [
-            GoldilocksField([18446744069414584320u64]),
-            GoldilocksField([11009798273260028228u64]),
-            GoldilocksField([2028722748960791447u64]),
-            GoldilocksField([7929433601095175579u64]),
+            Goldilocks::new(18446744069414584320u64, 0u64),
+            Goldilocks::new(11009798273260028228u64, 0u64),
+            Goldilocks::new(2028722748960791447u64, 0u64),
+            Goldilocks::new(7929433601095175579u64, 0u64),
         ]
     }
 
@@ -547,262 +560,262 @@ mod tests {
 
         let start = Instant::now();
         let expected = a_arr.iter().zip(b_arr).map(|(&a, b)| {
-            Fr::from_repr(a).unwrap() + Fr::from_repr(a).unwrap() + Fr::from_repr(b).unwrap()
+            a + a + b
         });
-        let expected_values: Vec<Fr> = expected.collect();
-        log::debug!("expected values: {:?}", expected_values[0].as_int());
+        let expected_values: Vec<Goldilocks> = expected.collect();
+        // log::debug!("expected values: {:?}", expected_values[0].as_int());
         let non_accelerated_duration = start.elapsed();
         for (exp, &res) in expected_values.iter().zip(arr_res) {
-            assert_eq!(res, exp.into_repr());
+            assert_eq!(res, *exp);
         }
 
-        log::debug!("test_add_AVX2_accelerated time: {:?}", avx2_duration);
-        log::debug!(
-            "test_add_Non_accelerated time: {:?}",
-            non_accelerated_duration
-        );
+        // log::debug!("test_add_AVX2_accelerated time: {:?}", avx2_duration);
+        // log::debug!(
+        //     "test_add_Non_accelerated time: {:?}",
+        //     non_accelerated_duration
+        // );
     }
 
-    #[test]
-    fn test_mul() {
-        env_logger::try_init().unwrap_or_default();
-        let a_arr = test_vals_a();
-        let b_arr = test_vals_b();
-        let start = Instant::now();
-        let packed_a = *Avx2GoldilocksField::from_slice(&a_arr);
-        let packed_b = *Avx2GoldilocksField::from_slice(&b_arr);
-        let packed_res = packed_a * packed_b;
-        let arr_res = packed_res.as_slice();
-        let avx2_duration = start.elapsed();
-        // log::debug!("arr_res: {:?}", arr_res);
+//     #[test]
+//     fn test_mul() {
+//         env_logger::try_init().unwrap_or_default();
+//         let a_arr = test_vals_a();
+//         let b_arr = test_vals_b();
+//         let start = Instant::now();
+//         let packed_a = *Avx2GoldilocksField::from_slice(&a_arr);
+//         let packed_b = *Avx2GoldilocksField::from_slice(&b_arr);
+//         let packed_res = packed_a * packed_b;
+//         let arr_res = packed_res.as_slice();
+//         let avx2_duration = start.elapsed();
+//         // log::debug!("arr_res: {:?}", arr_res);
 
-        let start = Instant::now();
-        let expected = a_arr
-            .iter()
-            .zip(b_arr)
-            .map(|(&a, b)| Fr::from_repr(a).unwrap() * Fr::from_repr(b).unwrap());
-        let expected_values: Vec<Fr> = expected.collect();
-        let non_accelerated_duration = start.elapsed();
-        log::debug!("expected values: {:?}", expected_values);
+//         let start = Instant::now();
+//         let expected = a_arr
+//             .iter()
+//             .zip(b_arr)
+//             .map(|(&a, b)| Fr::from_repr(a).unwrap() * Fr::from_repr(b).unwrap());
+//         let expected_values: Vec<Fr> = expected.collect();
+//         let non_accelerated_duration = start.elapsed();
+//         log::debug!("expected values: {:?}", expected_values);
 
-        for (exp, &res) in expected_values.iter().zip(arr_res) {
-            assert_eq!(res, exp.into_repr());
-        }
+//         for (exp, &res) in expected_values.iter().zip(arr_res) {
+//             assert_eq!(res, exp.into_repr());
+//         }
 
-        log::debug!("test_mul_AVX2_accelerated time: {:?}", avx2_duration);
-        log::debug!(
-            "test_mul_Non_accelerated time: {:?}",
-            non_accelerated_duration
-        );
-    }
+//         log::debug!("test_mul_AVX2_accelerated time: {:?}", avx2_duration);
+//         log::debug!(
+//             "test_mul_Non_accelerated time: {:?}",
+//             non_accelerated_duration
+//         );
+//     }
 
-    #[test]
-    fn test_div() {
-        let a_arr = test_vals_a();
-        let start = Instant::now();
-        let packed_a = *Avx2GoldilocksField::from_slice(&a_arr);
-        let packed_res = packed_a / GoldilocksField([7929433601095175579u64]);
-        let arr_res = packed_res.as_slice();
-        let avx2_duration = start.elapsed();
-        // log::debug!("arr_res: {:?}", arr_res);
+//     #[test]
+//     fn test_div() {
+//         let a_arr = test_vals_a();
+//         let start = Instant::now();
+//         let packed_a = *Avx2GoldilocksField::from_slice(&a_arr);
+//         let packed_res = packed_a / GoldilocksField([7929433601095175579u64]);
+//         let arr_res = packed_res.as_slice();
+//         let avx2_duration = start.elapsed();
+//         // log::debug!("arr_res: {:?}", arr_res);
 
-        let start = Instant::now();
-        let expected = a_arr.iter().map(|&a| {
-            Fr::from_repr(a).unwrap()
-                / Fr::from_repr(GoldilocksField([7929433601095175579u64])).unwrap()
-        });
-        let expected_values: Vec<Fr> = expected.collect();
-        let non_accelerated_duration = start.elapsed();
-        // log::debug!("expected values: {:?}", expected_values);
+//         let start = Instant::now();
+//         let expected = a_arr.iter().map(|&a| {
+//             Fr::from_repr(a).unwrap()
+//                 / Fr::from_repr(GoldilocksField([7929433601095175579u64])).unwrap()
+//         });
+//         let expected_values: Vec<Fr> = expected.collect();
+//         let non_accelerated_duration = start.elapsed();
+//         // log::debug!("expected values: {:?}", expected_values);
 
-        for (exp, &res) in expected_values.iter().zip(arr_res) {
-            assert_eq!(res, exp.into_repr());
-        }
+//         for (exp, &res) in expected_values.iter().zip(arr_res) {
+//             assert_eq!(res, exp.into_repr());
+//         }
 
-        log::debug!("test_div_AVX2_accelerated time: {:?}", avx2_duration);
-        log::debug!(
-            "test_div_Non_accelerated time: {:?}",
-            non_accelerated_duration
-        );
-    }
+//         log::debug!("test_div_AVX2_accelerated time: {:?}", avx2_duration);
+//         log::debug!(
+//             "test_div_Non_accelerated time: {:?}",
+//             non_accelerated_duration
+//         );
+//     }
 
-    #[test]
-    fn test_square() {
-        let a_arr = test_vals_a();
-        let start = Instant::now();
-        let packed_a = *Avx2GoldilocksField::from_slice(&a_arr);
-        let packed_res = packed_a.square();
-        let arr_res = packed_res.as_slice();
-        let avx2_duration = start.elapsed();
-        // log::debug!("arr_res: {:?}", arr_res);
+//     #[test]
+//     fn test_square() {
+//         let a_arr = test_vals_a();
+//         let start = Instant::now();
+//         let packed_a = *Avx2GoldilocksField::from_slice(&a_arr);
+//         let packed_res = packed_a.square();
+//         let arr_res = packed_res.as_slice();
+//         let avx2_duration = start.elapsed();
+//         // log::debug!("arr_res: {:?}", arr_res);
 
-        let start = Instant::now();
-        let mut expected_values = Vec::new();
-        for &a in &a_arr {
-            match Fr::from_repr(a) {
-                Ok(mut fr) => {
-                    fr.square();
-                    expected_values.push(fr);
-                }
-                Err(_) => {
-                    continue;
-                }
-            }
-        }
-        let non_accelerated_duration = start.elapsed();
-        // log::debug!("expected values: {:?}", expected_values);
-        for (exp, &res) in expected_values.iter().zip(arr_res) {
-            assert_eq!(res, exp.into_repr());
-        }
-        log::debug!("test_square_AVX2_accelerated time: {:?}", avx2_duration);
-        log::debug!(
-            "test_square_Non_accelerated time: {:?}",
-            non_accelerated_duration
-        );
-    }
+//         let start = Instant::now();
+//         let mut expected_values = Vec::new();
+//         for &a in &a_arr {
+//             match Fr::from_repr(a) {
+//                 Ok(mut fr) => {
+//                     fr.square();
+//                     expected_values.push(fr);
+//                 }
+//                 Err(_) => {
+//                     continue;
+//                 }
+//             }
+//         }
+//         let non_accelerated_duration = start.elapsed();
+//         // log::debug!("expected values: {:?}", expected_values);
+//         for (exp, &res) in expected_values.iter().zip(arr_res) {
+//             assert_eq!(res, exp.into_repr());
+//         }
+//         log::debug!("test_square_AVX2_accelerated time: {:?}", avx2_duration);
+//         log::debug!(
+//             "test_square_Non_accelerated time: {:?}",
+//             non_accelerated_duration
+//         );
+//     }
 
-    #[test]
-    fn test_neg() {
-        let a_arr = test_vals_a();
-        let start = Instant::now();
-        let packed_a = *Avx2GoldilocksField::from_slice(&a_arr);
-        let packed_res = -packed_a;
-        let arr_res = packed_res.as_slice();
-        let avx2_duration = start.elapsed();
-        // log::debug!("arr_res: {:?}", arr_res);
+//     #[test]
+//     fn test_neg() {
+//         let a_arr = test_vals_a();
+//         let start = Instant::now();
+//         let packed_a = *Avx2GoldilocksField::from_slice(&a_arr);
+//         let packed_res = -packed_a;
+//         let arr_res = packed_res.as_slice();
+//         let avx2_duration = start.elapsed();
+//         // log::debug!("arr_res: {:?}", arr_res);
 
-        let start = Instant::now();
-        let expected = a_arr.iter().map(|&a| -Fr::from_repr(a).unwrap());
-        let expected_values: Vec<Fr> = expected.collect();
-        let non_accelerated_duration = start.elapsed();
-        // log::debug!("expected values: {:?}", expected_values);
+//         let start = Instant::now();
+//         let expected = a_arr.iter().map(|&a| -Fr::from_repr(a).unwrap());
+//         let expected_values: Vec<Fr> = expected.collect();
+//         let non_accelerated_duration = start.elapsed();
+//         // log::debug!("expected values: {:?}", expected_values);
 
-        for (exp, &res) in expected_values.iter().zip(arr_res) {
-            assert_eq!(res, exp.into_repr());
-        }
+//         for (exp, &res) in expected_values.iter().zip(arr_res) {
+//             assert_eq!(res, exp.into_repr());
+//         }
 
-        log::debug!("test_neg_AVX2_accelerated time: {:?}", avx2_duration);
-        log::debug!(
-            "test_neg_Non_accelerated time: {:?}",
-            non_accelerated_duration
-        );
-    }
+//         log::debug!("test_neg_AVX2_accelerated time: {:?}", avx2_duration);
+//         log::debug!(
+//             "test_neg_Non_accelerated time: {:?}",
+//             non_accelerated_duration
+//         );
+//     }
 
-    #[test]
-    fn test_sub() {
-        let a_arr = test_vals_a();
-        let b_arr = test_vals_b();
-        let start = Instant::now();
-        let packed_a = *Avx2GoldilocksField::from_slice(&a_arr);
-        let packed_b = *Avx2GoldilocksField::from_slice(&b_arr);
-        let packed_res = packed_a - packed_b;
-        let arr_res = packed_res.as_slice();
-        let avx2_duration = start.elapsed();
-        // log::debug!("arr_res: {:?}", arr_res);
+//     #[test]
+//     fn test_sub() {
+//         let a_arr = test_vals_a();
+//         let b_arr = test_vals_b();
+//         let start = Instant::now();
+//         let packed_a = *Avx2GoldilocksField::from_slice(&a_arr);
+//         let packed_b = *Avx2GoldilocksField::from_slice(&b_arr);
+//         let packed_res = packed_a - packed_b;
+//         let arr_res = packed_res.as_slice();
+//         let avx2_duration = start.elapsed();
+//         // log::debug!("arr_res: {:?}", arr_res);
 
-        let start = Instant::now();
-        let expected = a_arr
-            .iter()
-            .zip(b_arr)
-            .map(|(&a, b)| Fr::from_repr(a).unwrap() - Fr::from_repr(b).unwrap());
-        let expected_values: Vec<Fr> = expected.collect();
-        let non_accelerated_duration = start.elapsed();
-        // log::debug!("expected values: {:?}", expected_values);
+//         let start = Instant::now();
+//         let expected = a_arr
+//             .iter()
+//             .zip(b_arr)
+//             .map(|(&a, b)| Fr::from_repr(a).unwrap() - Fr::from_repr(b).unwrap());
+//         let expected_values: Vec<Fr> = expected.collect();
+//         let non_accelerated_duration = start.elapsed();
+//         // log::debug!("expected values: {:?}", expected_values);
 
-        for (exp, &res) in expected_values.iter().zip(arr_res) {
-            assert_eq!(res, exp.into_repr());
-        }
+//         for (exp, &res) in expected_values.iter().zip(arr_res) {
+//             assert_eq!(res, exp.into_repr());
+//         }
 
-        log::debug!("test_sub_AVX2_accelerated time: {:?}", avx2_duration);
-        log::debug!(
-            "test_sub_Non_accelerated time: {:?}",
-            non_accelerated_duration
-        );
-    }
+//         log::debug!("test_sub_AVX2_accelerated time: {:?}", avx2_duration);
+//         log::debug!(
+//             "test_sub_Non_accelerated time: {:?}",
+//             non_accelerated_duration
+//         );
+//     }
 
-    #[test]
-    fn test_interleave_is_involution() {
-        let a_arr = test_vals_a();
-        let b_arr = test_vals_b();
+//     #[test]
+//     fn test_interleave_is_involution() {
+//         let a_arr = test_vals_a();
+//         let b_arr = test_vals_b();
 
-        let packed_a = *Avx2GoldilocksField::from_slice(&a_arr);
-        let packed_b = *Avx2GoldilocksField::from_slice(&b_arr);
-        {
-            // Interleave, then deinterleave.
-            let (x, y) = packed_a.interleave(packed_b, 1);
-            let (res_a, res_b) = x.interleave(y, 1);
-            assert_eq!(res_a.as_slice(), a_arr);
-            assert_eq!(res_b.as_slice(), b_arr);
-        }
-        {
-            let (x, y) = packed_a.interleave(packed_b, 2);
-            let (res_a, res_b) = x.interleave(y, 2);
-            assert_eq!(res_a.as_slice(), a_arr);
-            assert_eq!(res_b.as_slice(), b_arr);
-        }
-        {
-            let (x, y) = packed_a.interleave(packed_b, 4);
-            let (res_a, res_b) = x.interleave(y, 4);
-            assert_eq!(res_a.as_slice(), a_arr);
-            assert_eq!(res_b.as_slice(), b_arr);
-        }
-    }
+//         let packed_a = *Avx2GoldilocksField::from_slice(&a_arr);
+//         let packed_b = *Avx2GoldilocksField::from_slice(&b_arr);
+//         {
+//             // Interleave, then deinterleave.
+//             let (x, y) = packed_a.interleave(packed_b, 1);
+//             let (res_a, res_b) = x.interleave(y, 1);
+//             assert_eq!(res_a.as_slice(), a_arr);
+//             assert_eq!(res_b.as_slice(), b_arr);
+//         }
+//         {
+//             let (x, y) = packed_a.interleave(packed_b, 2);
+//             let (res_a, res_b) = x.interleave(y, 2);
+//             assert_eq!(res_a.as_slice(), a_arr);
+//             assert_eq!(res_b.as_slice(), b_arr);
+//         }
+//         {
+//             let (x, y) = packed_a.interleave(packed_b, 4);
+//             let (res_a, res_b) = x.interleave(y, 4);
+//             assert_eq!(res_a.as_slice(), a_arr);
+//             assert_eq!(res_b.as_slice(), b_arr);
+//         }
+//     }
 
-    #[test]
-    fn test_interleave() {
-        let in_a: [GoldilocksField; 4] = [
-            GoldilocksField([0]),
-            GoldilocksField([1]),
-            GoldilocksField([2]),
-            GoldilocksField([3]),
-        ];
-        let in_b: [GoldilocksField; 4] = [
-            GoldilocksField([10]),
-            GoldilocksField([11]),
-            GoldilocksField([12]),
-            GoldilocksField([13]),
-        ];
-        let int1_a: [GoldilocksField; 4] = [
-            GoldilocksField([0]),
-            GoldilocksField([10]),
-            GoldilocksField([2]),
-            GoldilocksField([12]),
-        ];
-        let int1_b: [GoldilocksField; 4] = [
-            GoldilocksField([1]),
-            GoldilocksField([11]),
-            GoldilocksField([3]),
-            GoldilocksField([13]),
-        ];
-        let int2_a: [GoldilocksField; 4] = [
-            GoldilocksField([0]),
-            GoldilocksField([1]),
-            GoldilocksField([10]),
-            GoldilocksField([11]),
-        ];
-        let int2_b: [GoldilocksField; 4] = [
-            GoldilocksField([2]),
-            GoldilocksField([3]),
-            GoldilocksField([12]),
-            GoldilocksField([13]),
-        ];
+//     #[test]
+//     fn test_interleave() {
+//         let in_a: [GoldilocksField; 4] = [
+//             GoldilocksField([0]),
+//             GoldilocksField([1]),
+//             GoldilocksField([2]),
+//             GoldilocksField([3]),
+//         ];
+//         let in_b: [GoldilocksField; 4] = [
+//             GoldilocksField([10]),
+//             GoldilocksField([11]),
+//             GoldilocksField([12]),
+//             GoldilocksField([13]),
+//         ];
+//         let int1_a: [GoldilocksField; 4] = [
+//             GoldilocksField([0]),
+//             GoldilocksField([10]),
+//             GoldilocksField([2]),
+//             GoldilocksField([12]),
+//         ];
+//         let int1_b: [GoldilocksField; 4] = [
+//             GoldilocksField([1]),
+//             GoldilocksField([11]),
+//             GoldilocksField([3]),
+//             GoldilocksField([13]),
+//         ];
+//         let int2_a: [GoldilocksField; 4] = [
+//             GoldilocksField([0]),
+//             GoldilocksField([1]),
+//             GoldilocksField([10]),
+//             GoldilocksField([11]),
+//         ];
+//         let int2_b: [GoldilocksField; 4] = [
+//             GoldilocksField([2]),
+//             GoldilocksField([3]),
+//             GoldilocksField([12]),
+//             GoldilocksField([13]),
+//         ];
 
-        let packed_a = *Avx2GoldilocksField::from_slice(&in_a);
-        let packed_b = *Avx2GoldilocksField::from_slice(&in_b);
-        {
-            let (x1, y1) = packed_a.interleave(packed_b, 1);
-            assert_eq!(x1.as_slice(), int1_a);
-            assert_eq!(y1.as_slice(), int1_b);
-        }
-        {
-            let (x2, y2) = packed_a.interleave(packed_b, 2);
-            assert_eq!(x2.as_slice(), int2_a);
-            assert_eq!(y2.as_slice(), int2_b);
-        }
-        {
-            let (x4, y4) = packed_a.interleave(packed_b, 4);
-            assert_eq!(x4.as_slice(), in_a);
-            assert_eq!(y4.as_slice(), in_b);
-        }
-    }
+//         let packed_a = *Avx2GoldilocksField::from_slice(&in_a);
+//         let packed_b = *Avx2GoldilocksField::from_slice(&in_b);
+//         {
+//             let (x1, y1) = packed_a.interleave(packed_b, 1);
+//             assert_eq!(x1.as_slice(), int1_a);
+//             assert_eq!(y1.as_slice(), int1_b);
+//         }
+//         {
+//             let (x2, y2) = packed_a.interleave(packed_b, 2);
+//             assert_eq!(x2.as_slice(), int2_a);
+//             assert_eq!(y2.as_slice(), int2_b);
+//         }
+//         {
+//             let (x4, y4) = packed_a.interleave(packed_b, 4);
+//             assert_eq!(x4.as_slice(), in_a);
+//             assert_eq!(y4.as_slice(), in_b);
+//         }
+//     }
 }

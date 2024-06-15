@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 use crate::traits::FieldExtension;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use fields::field_gl::Fr;
-use fields::Field;
+use fields::field_gl::Goldilocks;
+use ff::Field;
 use std::hash::{Hash, Hasher};
 use std::slice;
 
@@ -261,7 +261,7 @@ impl ::rand::Rand for F3G {
     }
 }
 
-impl fields::Field for F3G {
+impl ff::Field for F3G {
     #[inline(always)]
     fn zero() -> Self {
         Self::ZEROS
@@ -632,7 +632,7 @@ pub mod tests {
     use crate::polutils::batch_inverse;
     use crate::traits::FieldExtension;
     use fields::field_gl::Fr;
-    use fields::Field;
+    use ff::Field;
     use std::ops::{Add, Mul};
 
     #[test]

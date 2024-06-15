@@ -10,10 +10,10 @@ homepage = "https://eigen.cash"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-plonky = { package="plonky", path = "../plonky", version = "0.0.2" }
+# plonky = { package="plonky", path = "../plonky", version = "0.0.2" }
 starky = { package="starky", path = "../starky", version = "0.0.1" }
 groth16 = { package="groth16", path = "../groth16", version = "0.0.1" }
-algebraic = { path = "../algebraic", default-features=false }
+# algebraic = { path = "../algebraic", default-features=false }
 recursion = { path = "../recursion", default-features=false }
 dsl_compile = { package="dsl_compile", path = "../dsl_compile"}
 clap = { package = "clap", version = "4.3.4", features = ["derive"] }
@@ -27,5 +27,5 @@ anyhow = { version = "1.0", default-features = false }
 
 [features]
 default = []
-profiler = ["plonky/profiler", "starky/profiler", "groth16/profiler"]
+profiler = ["starky/profiler", "groth16/profiler"]
 avx512 = ["starky/avx512", "recursion/avx512"]

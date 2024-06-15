@@ -1,124 +1,125 @@
 #[cfg(test)]
 mod tests {
     use crate::ff::*;
-    use crate::field_gl::*;
-    use crate::rand::Rand;
+    use crate::field_gl::{Goldilocks, GoldilocksRepr};
     use num_bigint::BigUint;
     use proptest::prelude::*;
+    use rand::rngs::OsRng;
 
     #[test]
     #[allow(clippy::eq_op)]
     fn add() {
         // identity
-        let mut rng = rand::thread_rng();
-        let r = Fr::rand(&mut rng);
-        assert_eq!(r, r + Fr::zero());
+        let r = Goldilocks::random(OsRng);
+        assert_eq!(r, r + Goldilocks::ZERO);
 
         // test addition within bounds
         assert_eq!(
-            Fr::from_str("5").unwrap(),
-            Fr::from_str("2").unwrap() + Fr::from_str("3").unwrap()
+            Goldilocks::from_str_vartime("5").unwrap(),
+            Goldilocks::from_str_vartime("2").unwrap() + Goldilocks::from_str_vartime("3").unwrap()
         );
 
         // test overflow
-        let mut a: FrRepr = crate::field_gl::MODULUS;
-        a.sub_noborrow(&FrRepr::from(1));
-        let t = Fr::from_str(&a.0[0].to_string()).unwrap();
-        assert_eq!(Fr::zero(), t + Fr::one());
-        assert_eq!(Fr::one(), t + Fr::from_str("2").unwrap());
+        let b = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16)
+            .unwrap()
+            .to_string();
+        let t = Goldilocks::from_str_vartime(&b).unwrap();
+        assert_eq!(Goldilocks::ZERO, t - Goldilocks::ONE + Goldilocks::ONE);
     }
 
     #[test]
     fn sub() {
         // identity
-        let mut rng = rand::thread_rng();
-        let r = Fr::rand(&mut rng);
-        assert_eq!(r, r - Fr::zero());
+        let r = Goldilocks::random(OsRng);
+        assert_eq!(r, r - Goldilocks::ZERO);
 
         // test subtraction within bounds
         assert_eq!(
-            Fr::from_str("2").unwrap(),
-            Fr::from_str("5").unwrap() - Fr::from_str("3").unwrap()
+            Goldilocks::from_str_vartime("2").unwrap(),
+            Goldilocks::from_str_vartime("5").unwrap() - Goldilocks::from_str_vartime("3").unwrap()
         );
 
         // test underflow
-        let mut a = crate::field_gl::MODULUS;
-        a.sub_noborrow(&FrRepr::from(2));
-        let expected = Fr::from_str(&a.0[0].to_string()).unwrap();
+        let b = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16)
+            .unwrap()
+            .to_string();
+        let t = Goldilocks::from_str_vartime(&b).unwrap();
+        let expected = t - Goldilocks::from_str_vartime("2").unwrap();
         assert_eq!(
             expected,
-            Fr::from_str("3").unwrap() - Fr::from_str("5").unwrap()
+            Goldilocks::from_str_vartime("3").unwrap() - Goldilocks::from_str_vartime("5").unwrap()
         );
     }
 
     #[test]
     fn neg() {
-        assert_eq!(Fr::zero(), -Fr::zero());
-        let mut a = crate::field_gl::MODULUS;
-        a.sub_noborrow(&FrRepr::from(1));
-        let t = Fr::from_str(&a.0[0].to_string()).unwrap();
-        assert_eq!(t, -Fr::one());
+        assert_eq!(Goldilocks::ZERO, -Goldilocks::ZERO);
+        let b = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16)
+            .unwrap()
+            .to_string();
+        let t =
+            Goldilocks::from_str_vartime(&b).unwrap() - Goldilocks::from_str_vartime("1").unwrap();
+        assert_eq!(t, -Goldilocks::ONE);
 
-        let mut rng = rand::thread_rng();
-        let r = Fr::rand(&mut rng);
+        let r = Goldilocks::random(OsRng);
         assert_eq!(r, -(-r));
     }
 
     #[test]
     fn mul() {
         // identity
-        let mut rng = rand::thread_rng();
-        let r = Fr::rand(&mut rng);
-        assert_eq!(Fr::zero(), r * Fr::zero());
-        assert_eq!(r, r * Fr::one());
+        let r = Goldilocks::random(OsRng);
+        assert_eq!(Goldilocks::ZERO, r * Goldilocks::ZERO);
+        assert_eq!(r, r * Goldilocks::ONE);
 
         // test multiplication within bounds
         assert_eq!(
-            Fr::from_str("15").unwrap(),
-            Fr::from_str("5").unwrap() * Fr::from_str("3").unwrap()
+            Goldilocks::from_str_vartime("15").unwrap(),
+            Goldilocks::from_str_vartime("5").unwrap() * Goldilocks::from_str_vartime("3").unwrap()
         );
 
         // test overflow
-        let mut a = crate::field_gl::MODULUS;
-        a.sub_noborrow(&FrRepr::from(1));
-        let t1 = Fr::from_str(&a.0[0].to_string()).unwrap();
-        assert_eq!(Fr::one(), t1 * t1);
-        a.sub_noborrow(&FrRepr::from(1));
-        let t2 = Fr::from_str(&a.0[0].to_string()).unwrap();
-        assert_eq!(t2, t1 * Fr::from_str("2").unwrap());
-        a.sub_noborrow(&FrRepr::from(2));
-        let t3 = Fr::from_str(&a.0[0].to_string()).unwrap();
-        assert_eq!(t3, t1 * Fr::from_str("4").unwrap());
-
-        a = crate::field_gl::MODULUS;
-        a.add_nocarry(&FrRepr::from(1));
-        a.div2();
-        let t = Fr::from_str(&a.0[0].to_string()).unwrap();
-        assert_eq!(Fr::one(), t * Fr::from_str("2").unwrap());
+        let b = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16)
+            .unwrap()
+            .to_string();
+        let t1 = Goldilocks::from_str_vartime(&b).unwrap() - Goldilocks::ONE;
+        assert_eq!(Goldilocks::ONE, t1 * t1);
+        let t2 = t1 - Goldilocks::ONE;
+        assert_eq!(t2, t1 * Goldilocks::from_str_vartime("2").unwrap());
     }
 
     #[test]
     fn exp_test() {
-        let a = Fr::zero();
-        assert_eq!(a.exp(0), Fr::one());
-        assert_eq!(a.exp(1), Fr::zero());
+        let a = Goldilocks::ZERO;
+        assert_eq!(a.pow([0]), Goldilocks::ONE);
+        assert_eq!(a.pow([1]), Goldilocks::ZERO);
 
-        let a = Fr::one();
-        assert_eq!(a.exp(0), Fr::one());
-        assert_eq!(a.exp(1), Fr::one());
-        assert_eq!(a.exp(3), Fr::one());
-        assert_eq!(a.exp(7), Fr::one());
+        let a = Goldilocks::ONE;
+        assert_eq!(a.pow([0]), Goldilocks::ONE);
+        assert_eq!(a.pow([1]), Goldilocks::ONE);
+        assert_eq!(a.pow([3]), Goldilocks::ONE);
+        assert_eq!(a.pow([7]), Goldilocks::ONE);
 
-        let mut rng = rand::thread_rng();
-        let a = Fr::rand(&mut rng);
-        assert_eq!(a.exp(3), a * a * a);
+        let a = Goldilocks::random(OsRng);
+        assert_eq!(a.pow([3]), a * a * a);
     }
 
     #[test]
     fn inv() {
         // identity
-        assert_eq!(Fr::one(), Fr::one().inverse().unwrap());
-        assert_eq!(Fr::zero(), Fr::zero().inverse().unwrap());
+        assert_eq!(Goldilocks::ONE, Goldilocks::ONE.invert().unwrap());
+        // Caution: Do not call `invert()` on `Goldilocks::ZERO`
+        // assert_eq!(Goldilocks::ONE, Goldilocks::ZERO.invert().unwrap());
+    }
+
+    pub fn render_repr_to_str(repr: GoldilocksRepr) -> u64 {
+        let hex_str = repr
+            .as_ref()
+            .iter()
+            .rev()
+            .map(|byte| format!("{:02X}", byte))
+            .collect::<String>();
+        u64::from_str_radix(&hex_str, 16).unwrap()
     }
 
     #[test]
@@ -126,36 +127,63 @@ mod tests {
         let a = u32::MAX;
         let b = a as u64;
         let v = u64::MAX - b + 1;
-        let e = Fr::from_str(&v.to_string()).unwrap();
-        assert_eq!(v % crate::field_gl::MODULUS.0[0], e.as_int());
-
-        let e1 = Fr::zero();
-        let e2: Fr = Fr::from_str(&crate::field_gl::MODULUS.0[0].to_string()).unwrap();
-        assert_eq!(e1.as_int(), e2.as_int());
+        let e = Goldilocks::from_str_vartime(&v.to_string())
+            .unwrap()
+            .to_repr();
+        assert_eq!(
+            render_repr_to_str(Goldilocks::ZERO.into()),
+            render_repr_to_str(e)
+        );
     }
 
     #[test]
     fn equals() {
-        let a = Fr::one();
-        let mut m: FrRepr = crate::field_gl::MODULUS;
-        m.sub_noborrow(&FrRepr::from(1));
-        let t = Fr::from_str(&m.0[0].to_string()).unwrap();
-        let b = t * t;
+        let a = Goldilocks::ONE;
+        let b = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16)
+            .unwrap()
+            .to_string();
+        let t1 = Goldilocks::from_str_vartime(&b).unwrap() - Goldilocks::ONE;
+        let b = t1 * t1;
 
         // elements are equal
         assert_eq!(a, b);
-        assert_eq!(a.as_int(), b.as_int());
-        // assert_eq!(a.to_bytes(), b.to_bytes());
+        assert_eq!(
+            render_repr_to_str(a.to_repr()),
+            render_repr_to_str(b.to_repr())
+        );
     }
 
     // ROOTS OF UNITY
     // ------------------------------------------------------------------------------------------------
 
     #[test]
-    fn get_root_of_unity() {
-        let root = Fr::root_of_unity();
-        assert_eq!(Fr(crate::field_gl::ROOT_OF_UNITY), root);
-        assert_eq!(Fr::one(), root.exp(1u64 << 32));
+    fn get_fixed_value() {
+        let modulus = Goldilocks::MODULUS;
+        println!("MODULUS: {:?}", modulus);
+        let num_bits = Goldilocks::NUM_BITS;
+        println!("NUM_BITS: {:?}", num_bits);
+        let capacity = Goldilocks::CAPACITY;
+        println!("CAPACITY: {:?}", capacity);
+        let two_inv = Goldilocks::TWO_INV;
+        println!("TWO_INV: {:?}", render_repr_to_str(two_inv.to_repr()));
+        let multiplicative_generator = Goldilocks::MULTIPLICATIVE_GENERATOR;
+        println!(
+            "MULTIPLICATIVE_GENERATOR: {:?}",
+            render_repr_to_str(multiplicative_generator.to_repr())
+        );
+        let s = Goldilocks::S;
+        println!("s: {:?}", s);
+        let root = Goldilocks::ROOT_OF_UNITY;
+        println!("root: {:?}", render_repr_to_str(root.to_repr()));
+        let root_of_unity_inv = Goldilocks::ROOT_OF_UNITY_INV;
+        println!(
+            "root_of_unity_inv: {:?}",
+            render_repr_to_str(root_of_unity_inv.to_repr())
+        );
+        let delta = Goldilocks::DELTA;
+        println!("DELTA: {:?}", render_repr_to_str(delta.to_repr()));
+
+        assert_eq!(Goldilocks::ONE, root.pow([1u64 << 32]));
     }
 
     // RANDOMIZED TESTS
@@ -164,89 +192,88 @@ mod tests {
     proptest! {
         #[test]
         fn add_proptest(a in any::<u64>(), b in any::<u64>()) {
-            let v1 = Fr::from_str(&a.to_string()).unwrap();
-            let v2 = Fr::from_str(&b.to_string()).unwrap();
+            let v1 = Goldilocks::from_str_vartime(&a.to_string()).unwrap();
+            let v2 = Goldilocks::from_str_vartime(&b.to_string()).unwrap();
             let result = v1 + v2;
-            let m = crate::field_gl::MODULUS.0[0];
+            let m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
             let expected = (((a as u128) + (b as u128)) % (m as u128)) as u64;
-            prop_assert_eq!(expected, result.as_int());
+            prop_assert_eq!(expected, render_repr_to_str(result.to_repr()));
         }
 
         #[test]
         fn sub_proptest(a in any::<u64>(), b in any::<u64>()) {
-            let v1 = Fr::from_str(&a.to_string()).unwrap();
-            let v2 = Fr::from_str(&b.to_string()).unwrap();
+            let v1 = Goldilocks::from_str_vartime(&a.to_string()).unwrap();
+            let v2 = Goldilocks::from_str_vartime(&b.to_string()).unwrap();
             let result = v1 - v2;
-            let m = crate::field_gl::MODULUS.0[0];
+            let m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
             let a = a % m;
             let b = b % m;
             let expected = if a < b { m - b + a } else { a - b };
 
-            prop_assert_eq!(expected, result.as_int());
+            prop_assert_eq!(expected, render_repr_to_str(result.to_repr()));
         }
 
         #[test]
         fn neg_proptest(a in any::<u64>()) {
-            let v = Fr::from_str(&a.to_string()).unwrap();
-            let m = crate::field_gl::MODULUS.0[0];
+            let v = Goldilocks::from_str_vartime(&a.to_string()).unwrap();
+            let m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
             let expected = m - (a % m);
 
-            prop_assert_eq!(expected, (-v).as_int());
+            prop_assert_eq!(expected, render_repr_to_str((-v).to_repr()));
         }
 
         #[test]
         fn mul_proptest(a in any::<u64>(), b in any::<u64>()) {
-            let v1 = Fr::from_str(&a.to_string()).unwrap();
-            let v2 = Fr::from_str(&b.to_string()).unwrap();
+            let v1 = Goldilocks::from_str_vartime(&a.to_string()).unwrap();
+            let v2 = Goldilocks::from_str_vartime(&b.to_string()).unwrap();
             let result = v1 * v2;
-            let m = crate::field_gl::MODULUS.0[0];
+            let m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
 
             let expected = ((a as u128) * (b as u128) % (m as u128))as u64;
-            prop_assert_eq!(expected, result.as_int());
+            prop_assert_eq!(expected, render_repr_to_str(result.to_repr()));
         }
 
         #[test]
         fn double_proptest(x in any::<u64>()) {
-            let mut v = Fr::from_str(&x.to_string()).unwrap();
-            v.double();
-            let m = crate::field_gl::MODULUS.0[0];
+            let v = Goldilocks::from_str_vartime(&x.to_string()).unwrap().double();
+            let m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
 
             let expected = (((x as u128) * 2) % m as u128) as u64;
-            prop_assert_eq!(v.as_int(), expected);
+            prop_assert_eq!(render_repr_to_str(v.to_repr()), expected);
         }
 
         #[test]
         fn exp_proptest(a in any::<u64>(), b in any::<u64>()) {
-            let result = Fr::from_str(&a.to_string()).unwrap().exp( b);
+            let result = Goldilocks::from_str_vartime(&a.to_string()).unwrap().pow([b]);
 
             let b = BigUint::from(b);
-            let _m = crate::field_gl::MODULUS.0[0];
+            let _m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
             let m = BigUint::from(_m);
             let expected = BigUint::from(a).modpow(&b, &m).to_u64_digits()[0];
-            prop_assert_eq!(expected, result.as_int());
+            prop_assert_eq!(expected, render_repr_to_str(result.to_repr()));
         }
 
         #[test]
         fn inv_proptest(a in any::<u64>()) {
-            let a = Fr::from_str(&a.to_string()).unwrap();
-            let b = a.inverse().unwrap();
+            let a = Goldilocks::from_str_vartime(&a.to_string()).unwrap();
+            let b = a.invert().unwrap();
 
-            let expected = if a == Fr::zero() { Fr::zero() } else { Fr::one() };
+            let expected = if a == Goldilocks::ZERO { Goldilocks::ZERO } else { Goldilocks::ONE };
             prop_assert_eq!(expected, a * b);
         }
 
         #[test]
         fn element_as_int_proptest(a in any::<u64>()) {
-            let e = Fr::from_str(&a.to_string()).unwrap();
-            let m = crate::field_gl::MODULUS.0[0];
-            prop_assert_eq!(a % m, e.as_int());
+            let e = Goldilocks::from_str_vartime(&a.to_string()).unwrap();
+            let m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
+            prop_assert_eq!(a % m, render_repr_to_str(e.to_repr()));
         }
 
         #[test]
         fn from_u128_proptest(v in any::<u128>()) {
-            let e = Fr::from_str(&v.to_string()).unwrap();
-            let m = crate::field_gl::MODULUS.0[0];
-            assert_eq!((v % m as u128) as u64, e.as_int());
+            let e = Goldilocks::from_str_vartime(&v.to_string()).unwrap();
+            let m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
+            assert_eq!((v % m as u128) as u64, render_repr_to_str(e.to_repr()));
         }
     }
 }

@@ -1,11 +1,8 @@
 [workspace]
 members = [
-  "zkit",
-  "zkvm",
-  "plonky",
-  "starky",
   "algebraic",
+  "fields",
   "groth16",
-  "dsl_compile"
-, "fields", "recursion"]
+  "starky"
+]
 resolver = "2"

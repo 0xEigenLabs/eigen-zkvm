@@ -6,12 +6,21 @@ use itertools::Itertools;
 use std::collections::BTreeMap;
 use std::str;
 
-use crate::bellman_ce::{
-    pairing::Engine, Circuit, ConstraintSystem, Index, LinearCombination, PrimeField, ScalarEngine,
-    SynthesisError, Variable,
+use crate::bellperson::{
+    Circuit, ConstraintSystem, Index, LinearCombination, SynthesisError, Variable,
 };
+use ff::PrimeField;
+pub use num_bigint::BigUint;
+use num_traits::Num;
 
-use crate::utils::repr_to_big;
+pub fn repr_to_big<T: std::fmt::Debug>(r: T) -> String {
+    let hex_str = format!("{:?}", r);
+    let trim_quotes = hex_str.trim_matches('"');
+    let clean_hex = trim_quotes.trim_start_matches("0x");
+    BigUint::from_str_radix(clean_hex, 16)
+        .map(|bigint| bigint.to_str_radix(10))
+        .unwrap()
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct CircuitJson {
@@ -24,17 +33,13 @@ pub struct CircuitJson {
     pub num_variables: usize,
 }
 
-pub type Constraint<E> = (
-    Vec<(usize, <E as ScalarEngine>::Fr)>,
-    Vec<(usize, <E as ScalarEngine>::Fr)>,
-    Vec<(usize, <E as ScalarEngine>::Fr)>,
-);
+pub type Constraint<E: PrimeField> = (Vec<(usize, E)>, Vec<(usize, E)>, Vec<(usize, E)>);
 
 // R1CSfile's CustomGates
 #[derive(Debug, Default, Clone)]
-pub struct CustomGates<E: ScalarEngine> {
+pub struct CustomGates<E: PrimeField> {
     pub template_name: String,
-    pub parameters: Vec<E::Fr>,
+    pub parameters: Vec<E>,
 }
 
 // R1CSfile's CustomGatesUses
@@ -46,7 +51,7 @@ pub struct CustomGatesUses {
 
 /// R1CS spec: https://www.sikoba.com/docs/SKOR_GD_R1CS_Format.pdf
 #[derive(Clone, Debug)]
-pub struct R1CS<E: ScalarEngine> {
+pub struct R1CS<E: PrimeField> {
     pub num_inputs: usize,
     pub num_aux: usize,
     pub num_variables: usize,
@@ -57,16 +62,16 @@ pub struct R1CS<E: ScalarEngine> {
 }
 
 #[derive(Clone, Debug)]
-pub struct CircomCircuit<E: ScalarEngine> {
+pub struct CircomCircuit<E: PrimeField> {
     pub r1cs: R1CS<E>,
-    pub witness: Option<Vec<E::Fr>>,
+    pub witness: Option<Vec<E>>,
     pub wire_mapping: Option<Vec<usize>>,
     pub aux_offset: usize,
     // debug symbols
 }
 
-impl<E: ScalarEngine> CircomCircuit<E> {
-    pub fn get_public_inputs(&self) -> Option<Vec<E::Fr>> {
+impl<E: PrimeField> CircomCircuit<E> {
+    pub fn get_public_inputs(&self) -> Option<Vec<E>> {
         match &self.witness {
             None => None,
             Some(w) => match &self.wire_mapping {
@@ -85,7 +90,7 @@ impl<E: ScalarEngine> CircomCircuit<E> {
         let inputs = self.get_public_inputs();
         let inputs = match inputs {
             None => return String::from("[]"),
-            Some(inp) => inp.iter().map(|x| repr_to_big(x.into_repr())).collect_vec(),
+            Some(inp) => inp.iter().map(|x| repr_to_big(x)).collect_vec(),
         };
         serde_json::to_string_pretty(&inputs).unwrap()
     }
@@ -94,7 +99,7 @@ impl<E: ScalarEngine> CircomCircuit<E> {
 /// Our demo circuit implements this `Circuit` trait which
 /// is used during paramgen and proving in order to
 /// synthesize the constraint system.
-impl<E: Engine> Circuit<E> for CircomCircuit<E> {
+impl<E: PrimeField> Circuit<E> for CircomCircuit<E> {
     //noinspection RsBorrowChecker
     fn synthesize<CS: ConstraintSystem<E>>(self, cs: &mut CS) -> Result<(), SynthesisError> {
         let witness = &self.witness;
@@ -104,7 +109,7 @@ impl<E: Engine> Circuit<E> for CircomCircuit<E> {
                 || format!("variable {}", i),
                 || {
                     Ok(match witness {
-                        None => E::Fr::from_str(&format!("alloc input {} error", i)).unwrap(),
+                        None => E::from_str_vartime(&format!("alloc input {} error", i)).unwrap(),
                         Some(w) => match wire_mapping {
                             None => w[i],
                             Some(m) => w[m[i]],
@@ -119,7 +124,7 @@ impl<E: Engine> Circuit<E> for CircomCircuit<E> {
                 || {
                     Ok(match witness {
                         None => {
-                            E::Fr::from_str(&format!("alloc aux {} error", i + self.aux_offset))
+                            E::from_str_vartime(&format!("alloc aux {} error", i + self.aux_offset))
                                 .unwrap()
                         }
                         Some(w) => match wire_mapping {
@@ -138,7 +143,7 @@ impl<E: Engine> Circuit<E> for CircomCircuit<E> {
                 Index::Aux(index - self.r1cs.num_inputs + self.aux_offset)
             }
         };
-        let make_lc = |lc_data: Vec<(usize, E::Fr)>| {
+        let make_lc = |lc_data: Vec<(usize, E)>| {
             lc_data.iter().fold(
                 LinearCombination::<E>::zero(),
                 |lc: LinearCombination<E>, (index, coeff)| {
