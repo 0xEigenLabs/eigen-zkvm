@@ -2,7 +2,7 @@
 use crate::compressor12::plonk_setup::PlonkSetup;
 use crate::io_utils::write_vec_to_file;
 use crate::r1cs2plonk::PlonkAdd;
-use algebraic::reader::load_r1cs;
+use algebraic::reader::load_r1cs_from_bin;
 use anyhow::{anyhow, Result};
 use fields::field_gl::GL;
 use std::fs::File;
@@ -23,7 +23,8 @@ pub fn setup(
     force_n_bits: usize,
 ) -> Result<()> {
     // 0. readR1cs
-    let r1cs = load_r1cs::<GL>(r1cs_file);
+    let r1cs_reader = File::open(r1cs_file)?;
+    let (r1cs, _) = load_r1cs_from_bin::<_, GL>(r1cs_reader);
     let opts = Options {
         force_bits: force_n_bits,
     };
@@ -37,17 +38,20 @@ pub fn setup(
     write!(file, "{}", res.pil_str)?;
 
     // 3. write const pols file
-    res.const_pols.save(const_file)?;
+    let const_writer = std::fs::File::create(const_file)?;
+    res.const_pols.save(const_writer)?;
 
+    let file_writer =
+        File::create(exec_file).map_err(|e| anyhow!("Create {}, {:?}", exec_file, e))?;
     // 4. construct and save ExecFile: plonk additions + sMap -> BigUint64Array
-    write_exec_file(exec_file, &res.plonk_additions, &res.s_map)?;
+    write_exec_file(file_writer, &res.plonk_additions, &res.s_map)?;
 
     Ok(())
 }
 
 // construct and save ExecFile: plonk additions + sMap -> BigUint64Array
-pub(super) fn write_exec_file(
-    exec_file: &str,
+pub(super) fn write_exec_file<W: std::io::Write>(
+    exec_file_writer: W,
     adds: &[PlonkAdd],
     s_map: &[Vec<u64>],
 ) -> Result<()> {
@@ -77,5 +81,5 @@ pub(super) fn write_exec_file(
         }
     }
 
-    write_vec_to_file(exec_file, &buff)
+    write_vec_to_file(exec_file_writer, &buff)
 }

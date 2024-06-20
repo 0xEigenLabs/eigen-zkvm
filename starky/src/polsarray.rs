@@ -187,8 +187,7 @@ impl PolsArray {
         Ok(())
     }
 
-    pub fn save(&self, fileName: &str) -> Result<()> {
-        let mut writer = File::create(fileName)?;
+    pub fn save<W: Write>(&self, mut writer: W) -> Result<()> {
         let maxBufferSize = 1024 * 1024 * 32;
         let totalSize = self.nPols * self.n;
         let mut buff: Vec<u64> = vec![0u64; std::cmp::min(totalSize, maxBufferSize)];
@@ -246,10 +245,12 @@ pub mod tests {
         let pil = types::load_json::<PIL>("data/fib.pil.json").unwrap();
         let mut cp = PolsArray::new(&pil, PolKind::Constant);
         cp.load("data/fib.const").unwrap();
-        cp.save("data/fib.const.cp").unwrap();
+        let file = File::create("data/fib.const.cp").unwrap();
+        cp.save(file).unwrap();
 
         let mut cmp = PolsArray::new(&pil, PolKind::Commit);
         cmp.load("data/fib.exec").unwrap();
-        cmp.save("data/fib.exec.cp").unwrap();
+        let file = File::create("data/fib.exec.cp").unwrap();
+        cmp.save(file).unwrap();
     }
 }

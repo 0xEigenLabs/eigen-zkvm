@@ -14,8 +14,13 @@ use std::path::Path;
 
 // generate a monomial_form SRS, and save it to a file
 #[time_profiler("plonk_setup")]
-pub fn setup(power: u32, srs_monomial_form: &str) -> Result<()> {
+pub fn setup<W: std::io::Write>(
+    power: u32,
+    /*srs_monomial_form: &str, */ writer: W,
+) -> Result<()> {
     let srs = plonk::gen_key_monomial_form(power)?;
+    srs.write(writer)?;
+    /*
     let path = Path::new(srs_monomial_form);
     assert!(
         !path.exists(),
@@ -23,8 +28,8 @@ pub fn setup(power: u32, srs_monomial_form: &str) -> Result<()> {
         path.display()
     );
     let writer = std::fs::File::create(srs_monomial_form)?;
-    srs.write(writer)?;
     log::trace!("srs_monomial_form saved to {}", srs_monomial_form);
+    */
     Result::Ok(())
 }
 

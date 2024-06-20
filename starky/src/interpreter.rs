@@ -89,12 +89,6 @@ pub struct Block<T: FieldExtension> {
 }
 
 impl<T: FieldExtension> Block<T> {
-    fn codegen(&self, step: &str, codebuf: String) {
-        use std::io::Write;
-        let mut f = std::fs::File::create(format!("/tmp/{}_{}.rs", self.namespace, step)).unwrap();
-        write!(f, "{}", &codebuf).unwrap();
-    }
-
     /// parameters: ctx, i
     /// example:
     /// let block = compile_code();

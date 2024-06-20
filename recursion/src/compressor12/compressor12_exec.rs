@@ -3,13 +3,13 @@ use crate::compressor12_pil::CompressorPolName::a;
 use crate::io_utils::read_vec_from_file;
 use crate::pilcom::compile_pil_from_path;
 use algebraic::witness::{load_input_for_witness, WitnessCalculator};
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use fields::ff::PrimeField;
 use fields::field_gl::Fr as FGL;
 use num_traits::Zero;
 use starky::polsarray::{PolKind, PolsArray};
 use std::fs::File;
-use std::io::Write;
+use std::io::{BufReader, Read, Write};
 use std::path::Path;
 
 // exec phase:
@@ -23,7 +23,10 @@ pub fn exec(
     commit_file: &str,
 ) -> Result<()> {
     // 0. load exec_file,
-    let (adds_len, s_map_column_len, adds, s_map) = read_exec_file(exec_file)?;
+
+    let inputs_str = File::open(exec_file).map_err(|e| anyhow!("Read {}, {:?}", exec_file, e))?;
+    let reader = BufReader::new(inputs_str);
+    let (adds_len, s_map_column_len, adds, s_map) = read_exec_file(reader)?;
 
     // 1. Compiles a .pil file to its json form , and save it.
     // TODO: the pil_str has been compiled in plonk_setup#3
@@ -92,14 +95,15 @@ pub fn exec(
     }
 
     // 5. save cmPol to file.
-    cm_pols.save(commit_file)?;
+    let commit_writer = std::fs::File::create(commit_file)?;
+    cm_pols.save(commit_writer)?;
 
     log::trace!("files Generated Correctly");
     Result::Ok(())
 }
 
-fn read_exec_file(exec_file: &str) -> Result<(usize, usize, Vec<u64>, Vec<u64>)> {
-    let mut buff = read_vec_from_file(exec_file)?;
+fn read_exec_file<R: Read>(reader: R) -> Result<(usize, usize, Vec<u64>, Vec<u64>)> {
+    let mut buff = read_vec_from_file(reader)?;
 
     let mut new_buff = buff.split_off(2);
     let adds_len = buff[0] as usize;
@@ -118,6 +122,7 @@ fn read_exec_file(exec_file: &str) -> Result<(usize, usize, Vec<u64>, Vec<u64>)>
 mod test {
     use super::*;
     use crate::compressor12_setup::write_exec_file;
+    use std::io::BufWriter;
 
     #[test]
     fn test_write_and_read_exec_file() {
@@ -142,9 +147,12 @@ mod test {
             vec![3, 4, 5],
         ];
 
-        write_exec_file(&file_path, &target_adds, &target_s_map).unwrap();
+        let out = Vec::new();
+        let buf = BufWriter::new(out);
+        write_exec_file(buf, &target_adds, &target_s_map).unwrap();
 
-        let (adds_len, _s_map_column_len, _adds, _s_map) = read_exec_file(&file_path).unwrap();
+        let file = File::open(file_path).unwrap();
+        let (adds_len, _s_map_column_len, _adds, _s_map) = read_exec_file(file).unwrap();
 
         assert_eq!(adds_len, target_adds.len());
     }
