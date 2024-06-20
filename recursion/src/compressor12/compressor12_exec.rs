@@ -126,8 +126,6 @@ mod test {
 
     #[test]
     fn test_write_and_read_exec_file() {
-        let file_path = String::from("/tmp/test_write_and_read_exec_file.txt");
-
         let target_adds = vec![
             // PlonkAdd()
         ];
@@ -148,11 +146,12 @@ mod test {
         ];
 
         let out = Vec::new();
-        let buf = BufWriter::new(out);
-        write_exec_file(buf, &target_adds, &target_s_map).unwrap();
+        let mut buf = BufWriter::new(out);
+        write_exec_file(&mut buf, &target_adds, &target_s_map).unwrap();
+        let input = buf.buffer();
 
-        let file = File::open(file_path).unwrap();
-        let (adds_len, _s_map_column_len, _adds, _s_map) = read_exec_file(file).unwrap();
+        let reader = std::io::Cursor::new(input);
+        let (adds_len, _s_map_column_len, _adds, _s_map) = read_exec_file(reader).unwrap();
 
         assert_eq!(adds_len, target_adds.len());
     }

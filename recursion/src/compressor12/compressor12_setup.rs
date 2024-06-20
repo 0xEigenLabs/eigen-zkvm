@@ -41,17 +41,17 @@ pub fn setup(
     let const_writer = std::fs::File::create(const_file)?;
     res.const_pols.save(const_writer)?;
 
-    let file_writer =
+    let mut file_writer =
         File::create(exec_file).map_err(|e| anyhow!("Create {}, {:?}", exec_file, e))?;
     // 4. construct and save ExecFile: plonk additions + sMap -> BigUint64Array
-    write_exec_file(file_writer, &res.plonk_additions, &res.s_map)?;
+    write_exec_file(&mut file_writer, &res.plonk_additions, &res.s_map)?;
 
     Ok(())
 }
 
 // construct and save ExecFile: plonk additions + sMap -> BigUint64Array
 pub(super) fn write_exec_file<W: std::io::Write>(
-    exec_file_writer: W,
+    exec_file_writer: &mut W,
     adds: &[PlonkAdd],
     s_map: &[Vec<u64>],
 ) -> Result<()> {

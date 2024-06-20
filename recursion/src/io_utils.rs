@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-pub fn write_vec_to_file<W: std::io::Write>(mut writer: W, vec: &[u64]) -> Result<()> {
+pub fn write_vec_to_file<W: std::io::Write>(writer: &mut W, vec: &[u64]) -> Result<()> {
     let input = serde_json::to_string(&vec)?;
     write!(writer, "{}", input)?;
     Ok(())
@@ -20,8 +20,8 @@ mod test {
     fn test_read_write_vec_with_file() -> Result<()> {
         let target: Vec<u64> = vec![1, 2, 3, 4, 5, 1111112121, 2667022304383014929];
         let path = String::from("/tmp/vec_data.txt");
-        let file = std::fs::File::create(path.clone()).unwrap();
-        write_vec_to_file(file, &target)?;
+        let mut file = std::fs::File::create(path.clone()).unwrap();
+        write_vec_to_file(&mut file, &target)?;
 
         let file = std::fs::File::open(path).unwrap();
         let actual = read_vec_from_file(file)?;
