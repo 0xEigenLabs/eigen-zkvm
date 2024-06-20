@@ -397,7 +397,18 @@ fn main() {
     env_logger::init();
     let start = Instant::now();
     let exec_result = match args.command {
-        Command::Setup(args) => setup(args.power, &args.srs_monomial_form),
+        Command::Setup(args) => {
+            let path = std::path::Path::new(&args.srs_monomial_form);
+            assert!(
+                !path.exists(),
+                "duplicate srs_monomial_form file: {}",
+                path.display()
+            );
+            let writer =
+                std::fs::File::create(&args.srs_monomial_form).expect("can not create file");
+            log::debug!("srs_monomial_form saved to {}", &args.srs_monomial_form);
+            setup(args.power, writer)
+        }
         Command::Compile(args) => circom_compiler(
             args.input,
             args.prime.to_lowercase(),

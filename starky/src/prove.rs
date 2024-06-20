@@ -47,8 +47,10 @@ pub fn stark_prove(
     cm_pol.load(cm_pol_file)?;
 
     let stark_struct = load_json::<StarkStruct>(stark_struct)?;
+    let circom_file_writer = File::create(circom_file)?;
+    let zkin_writer = File::create(zkin)?;
     match stark_struct.verificationHashType.as_str() {
-        "BN128" => prove::<Fr_BN128, MerkleTreeBN128, TranscriptBN128>(
+        "BN128" => prove::<Fr_BN128, MerkleTreeBN128, TranscriptBN128, _>(
             &mut pil,
             const_pol,
             cm_pol,
@@ -56,11 +58,11 @@ pub fn stark_prove(
             false,
             norm_stage,
             skip_main,
-            circom_file,
-            zkin,
+            circom_file_writer,
+            zkin_writer,
             prover_addr,
         ),
-        "BLS12381" => prove::<Fr_BLS12381, MerkleTreeBLS12381, TranscriptBLS128>(
+        "BLS12381" => prove::<Fr_BLS12381, MerkleTreeBLS12381, TranscriptBLS128, _>(
             &mut pil,
             const_pol,
             cm_pol,
@@ -68,11 +70,11 @@ pub fn stark_prove(
             false,
             norm_stage,
             skip_main,
-            circom_file,
-            zkin,
+            circom_file_writer,
+            zkin_writer,
             prover_addr,
         ),
-        "GL" => prove::<FGL, MerkleTreeGL, TranscriptGL>(
+        "GL" => prove::<FGL, MerkleTreeGL, TranscriptGL, _>(
             &mut pil,
             const_pol,
             cm_pol,
@@ -80,8 +82,8 @@ pub fn stark_prove(
             agg_stage,
             norm_stage,
             skip_main,
-            circom_file,
-            zkin,
+            circom_file_writer,
+            zkin_writer,
             prover_addr,
         ),
         _ => panic!("Invalid hashtype {}", stark_struct.verificationHashType),
@@ -94,6 +96,7 @@ fn prove<
     F: PrimeField + Default,
     M: MerkleTree<MTNode = ElementDigest<4, F>> + Default,
     T: Transcript,
+    W: Write,
 >(
     pil: &mut PIL,
     const_pol: PolsArray,
@@ -102,8 +105,8 @@ fn prove<
     agg_stage: bool,
     norm_stage: bool,
     skip_main: bool,
-    circom_file: &str,
-    zkin: &str,
+    mut circom_file_writer: W,
+    mut zkin_writer: W,
     prover_addr: &str,
 ) -> Result<()> {
     let mut setup = StarkSetup::<M>::new(&const_pol, pil, stark_struct, None)?;
@@ -117,7 +120,6 @@ fn prove<
         stark_struct,
         prover_addr,
     )?;
-    log::debug!("generate the proof done");
 
     let result = stark_verify::<M, T>(
         &starkproof,
@@ -128,7 +130,6 @@ fn prove<
     )?;
 
     assert!(result);
-    log::debug!("verify the proof done");
 
     let opt = pil2circom::StarkOption {
         enable_input: false,
@@ -145,17 +146,15 @@ fn prove<
         &mut setup.program,
         &opt,
     )?;
-    let mut file = File::create(circom_file)?;
-    write!(file, "{}", str_ver)?;
-    log::debug!("generate circom done");
+    write!(circom_file_writer, "{}", str_ver)?;
 
     // if agg_stage {
     //     starkproof.rootC = None;
     // }
 
     let input = serde_json::to_string(&starkproof)?;
-    let mut file = File::create(zkin)?;
-    write!(file, "{}", input)?;
-    log::debug!("generate zkin done");
+    write!(zkin_writer, "{}", input)?;
+    drop(setup);
+    drop(starkproof);
     Ok(())
 }
