@@ -10,33 +10,33 @@ use core::slice;
 pub unsafe trait PackedField:
     'static
     + Add<Self, Output = Self>
-    // + Add<Self::Scalar, Output = Self>
-    // + AddAssign<Self>
-    // + AddAssign<Self::Scalar>
+    + Add<Self::Scalar, Output = Self>
+    + AddAssign<Self>
+    + AddAssign<Self::Scalar>
     + Copy
     + Debug
     + Default
-    // + From<Self::Scalar>
-    // // TODO: Implement packed / packed division
-    // + Div<Self::Scalar, Output = Self>
-    // + Mul<Self, Output = Self>
-    // + Mul<Self::Scalar, Output = Self>
-    // + MulAssign<Self>
-    // + MulAssign<Self::Scalar>
+    + From<Self::Scalar>
+    // TODO: Implement packed / packed division
+    + Div<Self::Scalar, Output = Self>
+    + Mul<Self, Output = Self>
+    + Mul<Self::Scalar, Output = Self>
+    + MulAssign<Self>
+    + MulAssign<Self::Scalar>
     // + Square
     + Neg<Output = Self>
     // + Product
     + Send
     + Sub<Self, Output = Self>
-    // + Sub<Self::Scalar, Output = Self>
+    + Sub<Self::Scalar, Output = Self>
     + SubAssign<Self>
-    // + SubAssign<Self::Scalar>
+    + SubAssign<Self::Scalar>
     // + Sum
     + Sync
-// where
-//     Self::Scalar: Add<Self, Output = Self>,
-//     Self::Scalar: Mul<Self, Output = Self>,
-//     Self::Scalar: Sub<Self, Output = Self>,
+where
+    Self::Scalar: Add<Self, Output = Self>,
+    Self::Scalar: Mul<Self, Output = Self>,
+    Self::Scalar: Sub<Self, Output = Self>,
 {
     type Scalar: PrimeField;
 

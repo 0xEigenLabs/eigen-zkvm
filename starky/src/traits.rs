@@ -1,9 +1,9 @@
-use ::rand::Rand;
+// use ::rand::Rand;
 use anyhow::Result;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use ff::PrimeField;
-use fields::field_gl::Fr as FGL;
 use ff::Field;
+use ff::PrimeField;
+use fields::field_gl::Goldilocks as FGL;
 use serde::{de::DeserializeOwned, ser::Serialize};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
@@ -76,14 +76,11 @@ pub trait FieldExtension:
     + Default
     + Add<Output = Self>
     + AddAssign
-    + Div<Output = Self>
-    + DivAssign
     + Mul<Output = Self>
     + MulAssign
     + Neg<Output = Self>
     + Sub<Output = Self>
     + SubAssign
-    + Rand
     + Display
     + Send
     + Sync
@@ -93,8 +90,8 @@ pub trait FieldExtension:
 {
     const ELEMENT_BYTES: usize;
     const IS_CANONICAL: bool = false;
-    const ZERO: Self;
-    const ONE: Self;
+    // const ZERO: Self;
+    // const ONE: Self;
 
     const ZEROS: Self;
     const ONES: Self;

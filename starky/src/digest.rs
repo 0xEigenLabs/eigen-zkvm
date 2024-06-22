@@ -5,7 +5,7 @@ use crate::field_bn128::{Fr, FrRepr};
 use crate::helper;
 use crate::traits::MTNodeType;
 use ff::*;
-use fields::field_gl::Fr as FGL;
+use fields::field_gl::Goldilocks as FGL;
 use serde::de::{SeqAccess, Visitor};
 use serde::ser::SerializeSeq;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
@@ -45,10 +45,10 @@ impl<const N: usize, F: PrimeField + Default> MTNodeType for ElementDigest<N, F>
     #[inline(always)]
     fn from_scalar<T: PrimeField>(e: &T) -> Self {
         let mut result = [FGL::ZERO; N];
-        let ee = e.into_raw_repr();
+        let ee = e.to_repr();
         let eee = ee.as_ref();
         for i in 0..N {
-            result[i] = FGL::from(eee[i]);
+            result[i] = FGL::from(eee[i] as u64);
         }
         ElementDigest::new(&result)
     }
@@ -68,7 +68,7 @@ impl<const N: usize, F: PrimeField + Default> MTNodeType for ElementDigest<N, F>
 impl<const N: usize, F: PrimeField + Default> Display for ElementDigest<N, F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for i in 0..N {
-            writeln!(f, "{}", self.0[i].as_int())?;
+            writeln!(f, "{:?}", self.0[i])?;
         }
         Ok(())
     }

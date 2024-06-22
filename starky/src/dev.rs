@@ -6,11 +6,11 @@ use rayon::prelude::*;
 // concurrency generate random goldfields. with specific k.
 pub fn gen_rand_goldfields<F: FieldExtension>(k: usize) -> Vec<F> {
     let n = 1 << k;
-    let mut parts = vec![F::zero(); n];
+    let mut parts = vec![F::ZEROS; n];
 
     parts.par_iter_mut().for_each(|p| {
         let mut rng = ::rand::thread_rng();
-        *p = <F as rand::Rand>::rand(&mut rng)
+        *p = F::random(&mut rng)
     });
     parts
 }
@@ -18,12 +18,12 @@ pub fn gen_rand_goldfields<F: FieldExtension>(k: usize) -> Vec<F> {
 // concurrency generate random fields. with specific k.
 pub fn gen_rand_fields<F: PrimeField>(k: usize) -> Vec<F> {
     let n = 1 << k;
-    let mut parts = vec![F::zero(); n];
+    let mut parts = vec![F::default(); n];
 
     parts.par_iter_mut().for_each(|p| {
         let mut rng = ::rand::thread_rng();
 
-        *p = <F as rand::Rand>::rand(&mut rng)
+        *p = F::random(&mut rng)
     });
     parts
 }

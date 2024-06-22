@@ -127,9 +127,7 @@ mod tests {
         let a = u32::MAX;
         let b = a as u64;
         let v = u64::MAX - b + 1;
-        let e = Goldilocks::from_str_vartime(&v.to_string())
-            .unwrap()
-            .to_repr();
+        let e = Goldilocks::from(v).to_repr();
         assert_eq!(
             render_repr_to_str(Goldilocks::ZERO.into()),
             render_repr_to_str(e)
@@ -192,8 +190,8 @@ mod tests {
     proptest! {
         #[test]
         fn add_proptest(a in any::<u64>(), b in any::<u64>()) {
-            let v1 = Goldilocks::from_str_vartime(&a.to_string()).unwrap();
-            let v2 = Goldilocks::from_str_vartime(&b.to_string()).unwrap();
+            let v1 = Goldilocks::from(a);
+            let v2 = Goldilocks::from(b);
             let result = v1 + v2;
             let m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
             let expected = (((a as u128) + (b as u128)) % (m as u128)) as u64;
@@ -202,8 +200,8 @@ mod tests {
 
         #[test]
         fn sub_proptest(a in any::<u64>(), b in any::<u64>()) {
-            let v1 = Goldilocks::from_str_vartime(&a.to_string()).unwrap();
-            let v2 = Goldilocks::from_str_vartime(&b.to_string()).unwrap();
+            let v1 = Goldilocks::from(a);
+            let v2 = Goldilocks::from(b);
             let result = v1 - v2;
             let m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
             let a = a % m;
@@ -215,7 +213,7 @@ mod tests {
 
         #[test]
         fn neg_proptest(a in any::<u64>()) {
-            let v = Goldilocks::from_str_vartime(&a.to_string()).unwrap();
+            let v = Goldilocks::from(a);
             let m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
             let expected = m - (a % m);
 
@@ -224,8 +222,8 @@ mod tests {
 
         #[test]
         fn mul_proptest(a in any::<u64>(), b in any::<u64>()) {
-            let v1 = Goldilocks::from_str_vartime(&a.to_string()).unwrap();
-            let v2 = Goldilocks::from_str_vartime(&b.to_string()).unwrap();
+            let v1 = Goldilocks::from(a);
+            let v2 = Goldilocks::from(b);
             let result = v1 * v2;
             let m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
 
@@ -235,7 +233,7 @@ mod tests {
 
         #[test]
         fn double_proptest(x in any::<u64>()) {
-            let v = Goldilocks::from_str_vartime(&x.to_string()).unwrap().double();
+            let v = Goldilocks::from(x).double();
             let m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
 
             let expected = (((x as u128) * 2) % m as u128) as u64;
@@ -244,7 +242,7 @@ mod tests {
 
         #[test]
         fn exp_proptest(a in any::<u64>(), b in any::<u64>()) {
-            let result = Goldilocks::from_str_vartime(&a.to_string()).unwrap().pow([b]);
+            let result = Goldilocks::from(a).pow([b]);
 
             let b = BigUint::from(b);
             let _m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
@@ -255,7 +253,7 @@ mod tests {
 
         #[test]
         fn inv_proptest(a in any::<u64>()) {
-            let a = Goldilocks::from_str_vartime(&a.to_string()).unwrap();
+            let a = Goldilocks::from(a);
             let b = a.invert().unwrap();
 
             let expected = if a == Goldilocks::ZERO { Goldilocks::ZERO } else { Goldilocks::ONE };
@@ -264,7 +262,7 @@ mod tests {
 
         #[test]
         fn element_as_int_proptest(a in any::<u64>()) {
-            let e = Goldilocks::from_str_vartime(&a.to_string()).unwrap();
+            let e = Goldilocks::from(a);
             let m = u64::from_str_radix(Goldilocks::MODULUS.trim_start_matches("0x"), 16).unwrap();
             prop_assert_eq!(a % m, render_repr_to_str(e.to_repr()));
         }

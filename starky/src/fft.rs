@@ -90,6 +90,8 @@ impl<F: FieldExtension> FFT<F> {
 
 #[cfg(test)]
 mod tests {
+    use ff::Field;
+
     use crate::f3g::F3G;
     use crate::fft::FFT;
     #[test]
@@ -112,7 +114,7 @@ mod tests {
         let mut a: Vec<F3G> = Vec::new();
         let mut rng = ::rand::thread_rng();
         for _i in 0..64 {
-            a.push(<F3G as rand::Rand>::rand(&mut rng));
+            a.push(F3G::random(&mut rng));
         }
         let aa = f.fft(&a);
         let ac = f.ifft(&aa);

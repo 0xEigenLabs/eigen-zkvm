@@ -1,7 +1,8 @@
 #![allow(non_snake_case)]
+use crate::ff::PrimeField;
 use crate::{traits::FieldExtension, types::PIL};
 use anyhow::Result;
-use fields::field_gl::Fr as FGL;
+use fields::field_gl::Goldilocks as FGL;
 use profiler_macro::time_profiler;
 use rayon::prelude::*;
 use std::collections::HashMap;
@@ -196,7 +197,7 @@ impl PolsArray {
         let mut p = 0usize;
         for i in 0..self.n {
             for j in 0..self.nPols {
-                buff[p] = self.array[j][i].as_int() % 0xFFFFFFFF00000001; //u128
+                buff[p] = FGL::render_repr_to_str(self.array[j][i].to_repr()) % 0xFFFFFFFF00000001; //u128
                 p += 1;
                 if p == buff.capacity() {
                     // copy to [u8]

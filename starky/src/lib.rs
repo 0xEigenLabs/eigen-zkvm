@@ -4,12 +4,12 @@
 // #![allow(clippy::too_many_arguments)]
 // #![cfg_attr(feature = "avx512", feature(stdarch_x86_avx512))]
 
-// pub mod polsarray;
-// pub mod polutils;
+pub mod polsarray;
+pub mod polutils;
 // pub mod stark_verifier_circom;
 // pub mod stark_verifier_circom_onchain;
-// pub mod traits;
-// pub mod types;
+pub mod traits;
+pub mod types;
 
 // pub mod arch;
 
@@ -27,7 +27,7 @@ pub mod field_bn128;
 // mod poseidon_constants_opt;
 // pub mod poseidon_opt;
 
-// mod field_bls12381;
+mod field_bls12381;
 // mod poseidon_bls12381;
 // mod poseidon_bls12381_constants;
 // mod poseidon_bls12381_constants_opt;
@@ -41,11 +41,11 @@ pub mod field_bn128;
 // mod digest;
 // pub use digest::ElementDigest;
 
-// pub mod constant;
+pub mod constant;
 // mod expressionops;
-// pub mod f3g;
+pub mod f3g;
 // pub mod f5g;
-// pub mod fft;
+pub mod fft;
 // pub mod fft_p;
 // mod fft_worker;
 // mod fri;
@@ -71,7 +71,7 @@ pub mod helper;
 // pub mod serializer;
 // pub mod zkin_join;
 
-// pub mod dev;
+pub mod dev;
 
 #[macro_use]
 extern crate serde_json;
