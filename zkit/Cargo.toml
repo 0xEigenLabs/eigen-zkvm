@@ -29,3 +29,5 @@ anyhow = { version = "1.0", default-features = false }
 default = []
 profiler = ["plonky/profiler", "starky/profiler", "groth16/profiler"]
 avx512 = ["starky/avx512", "recursion/avx512"]
+cuda = ["groth16/cuda"]
+opencl = ["groth16/opencl"]
