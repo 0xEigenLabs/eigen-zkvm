@@ -3,7 +3,7 @@ name = "algebraic"
 version = "0.0.1"
 edition = "2021"
 license = "Apache-2.0"
-description = "Eigen Algbraic based on R1CS"
+description = "Eigen Algebraic based on R1CS"
 documentation = "eigen.cash"
 homepage = "eigen.cash"
 
@@ -18,17 +18,24 @@ itertools = "0.8.1"
 log = "0.4.11"
 num-bigint = "0.3.3"
 num-traits = "0.2.8"
-serde = { version = "1.0", features = [ "derive" ] }
-serde_json = { version = "1.0", features = [ "arbitrary_precision" ] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["arbitrary_precision"] }
 hex = "*"
 wasmer = { version = "4.3.2", default-features = false }
-thiserror="1.0"
+thiserror = "1.0"
 anyhow = "1.0.79"
 fnv = { version = "1.0.3", default-features = false }
 num = { version = "0.4.0" }
 byteorder = "1"
-franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = [ "plonk" ], version = "0.0.5"}
-#franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
+
+# Add cuda and opencl dependencies directly
+ff = { version = "0.13.0", features = ["derive"], optional = true }
+pairing = { version = "0.23.0", optional = true }
+bellperson = { version = "0.25", default-features = true, optional = true }
+
+[target.'cfg(not(any(feature = "cuda", feature = "opencl")))'.dependencies]
+franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = ["plonk"], version = "0.0.5" }
+# franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
 
 [dev-dependencies]
 env_logger = "0.10"
@@ -37,9 +44,9 @@ env_logger = "0.10"
 rand = "0.4"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = { version = "0.2.51", features = ["serde-serialize"]  }
+wasm-bindgen = { version = "0.2.51", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4.1"
-rand = { version="0.6.5", features = ["wasm-bindgen"] }
+rand = { version = "0.6.5", features = ["wasm-bindgen"] }
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "0.3"
@@ -47,3 +54,5 @@ wasm-bindgen-test = "0.3"
 [features]
 default = ["franklin-crypto/multicore", "wasmer/singlepass"]
 wasm = ["wasmer/js-default"]
+cuda = ["ff", "pairing", "bellperson/cuda", "wasmer/singlepass"]
+opencl = ["ff", "pairing", "bellperson/opencl", "wasmer/singlepass"]

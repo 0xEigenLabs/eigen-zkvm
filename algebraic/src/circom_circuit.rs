@@ -2,14 +2,23 @@
 #![allow(clippy::needless_range_loop)]
 extern crate rand;
 
-use itertools::Itertools;
-use std::collections::BTreeMap;
-use std::str;
-
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 use crate::bellman_ce::{
     pairing::Engine, Circuit, ConstraintSystem, Index, LinearCombination, PrimeField, ScalarEngine,
     SynthesisError, Variable,
 };
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+use crate::bellperson::{
+    Circuit, ConstraintSystem, Index, LinearCombination, SynthesisError, Variable,
+};
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+use ff::PrimeField;
+use itertools::Itertools;
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+pub use num_bigint::BigUint;
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use std::str;
 
 use crate::utils::repr_to_big;
 
@@ -24,17 +33,28 @@ pub struct CircuitJson {
     pub num_variables: usize,
 }
 
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 pub type Constraint<E> = (
     Vec<(usize, <E as ScalarEngine>::Fr)>,
     Vec<(usize, <E as ScalarEngine>::Fr)>,
     Vec<(usize, <E as ScalarEngine>::Fr)>,
 );
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+pub type Constraint<E> = (Vec<(usize, E)>, Vec<(usize, E)>, Vec<(usize, E)>);
 
 // R1CSfile's CustomGates
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 #[derive(Debug, Default, Clone)]
 pub struct CustomGates<E: ScalarEngine> {
     pub template_name: String,
     pub parameters: Vec<E::Fr>,
+}
+
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+#[derive(Debug, Default, Clone)]
+pub struct CustomGates<E: PrimeField> {
+    pub template_name: String,
+    pub parameters: Vec<E>,
 }
 
 // R1CSfile's CustomGatesUses
@@ -45,6 +65,19 @@ pub struct CustomGatesUses {
 }
 
 /// R1CS spec: https://www.sikoba.com/docs/SKOR_GD_R1CS_Format.pdf
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+#[derive(Clone, Debug)]
+pub struct R1CS<E: PrimeField> {
+    pub num_inputs: usize,
+    pub num_aux: usize,
+    pub num_variables: usize,
+    pub num_outputs: usize,
+    pub constraints: Vec<Constraint<E>>,
+    pub custom_gates: Vec<CustomGates<E>>,
+    pub custom_gates_uses: Vec<CustomGatesUses>,
+}
+
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 #[derive(Clone, Debug)]
 pub struct R1CS<E: ScalarEngine> {
     pub num_inputs: usize,
@@ -56,6 +89,7 @@ pub struct R1CS<E: ScalarEngine> {
     pub custom_gates_uses: Vec<CustomGatesUses>,
 }
 
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 #[derive(Clone, Debug)]
 pub struct CircomCircuit<E: ScalarEngine> {
     pub r1cs: R1CS<E>,
@@ -64,7 +98,17 @@ pub struct CircomCircuit<E: ScalarEngine> {
     pub aux_offset: usize,
     // debug symbols
 }
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+#[derive(Clone, Debug)]
+pub struct CircomCircuit<E: PrimeField> {
+    pub r1cs: R1CS<E>,
+    pub witness: Option<Vec<E>>,
+    pub wire_mapping: Option<Vec<usize>>,
+    pub aux_offset: usize,
+    // debug symbols
+}
 
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 impl<E: ScalarEngine> CircomCircuit<E> {
     pub fn get_public_inputs(&self) -> Option<Vec<E::Fr>> {
         match &self.witness {
@@ -91,9 +135,37 @@ impl<E: ScalarEngine> CircomCircuit<E> {
     }
 }
 
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+impl<E: PrimeField> CircomCircuit<E> {
+    pub fn get_public_inputs(&self) -> Option<Vec<E>> {
+        match &self.witness {
+            None => None,
+            Some(w) => match &self.wire_mapping {
+                None => Some(w[1..self.r1cs.num_inputs].to_vec()),
+                Some(m) => Some(
+                    m[1..self.r1cs.num_inputs]
+                        .iter()
+                        .map(|i| w[*i])
+                        .collect_vec(),
+                ),
+            },
+        }
+    }
+
+    pub fn get_public_inputs_json(&self) -> String {
+        let inputs = self.get_public_inputs();
+        let inputs = match inputs {
+            None => return String::from("[]"),
+            Some(inp) => inp.iter().map(|x| repr_to_big(x)).collect_vec(),
+        };
+        serde_json::to_string_pretty(&inputs).unwrap()
+    }
+}
+
 /// Our demo circuit implements this `Circuit` trait which
 /// is used during paramgen and proving in order to
 /// synthesize the constraint system.
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 impl<E: Engine> Circuit<E> for CircomCircuit<E> {
     //noinspection RsBorrowChecker
     fn synthesize<CS: ConstraintSystem<E>>(self, cs: &mut CS) -> Result<(), SynthesisError> {
@@ -139,6 +211,74 @@ impl<E: Engine> Circuit<E> for CircomCircuit<E> {
             }
         };
         let make_lc = |lc_data: Vec<(usize, E::Fr)>| {
+            lc_data.iter().fold(
+                LinearCombination::<E>::zero(),
+                |lc: LinearCombination<E>, (index, coeff)| {
+                    lc + (*coeff, Variable::new_unchecked(make_index(*index)))
+                },
+            )
+        };
+        for (i, constraint) in self.r1cs.constraints.iter().enumerate() {
+            // 0 * LC = 0 must be ignored
+            if !((constraint.0.is_empty() || constraint.1.is_empty()) && constraint.2.is_empty()) {
+                cs.enforce(
+                    || format!("{}", i),
+                    |_| make_lc(constraint.0.clone()),
+                    |_| make_lc(constraint.1.clone()),
+                    |_| make_lc(constraint.2.clone()),
+                );
+            }
+        }
+        Ok(())
+    }
+}
+
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+impl<E: PrimeField> Circuit<E> for CircomCircuit<E> {
+    //noinspection RsBorrowChecker
+    fn synthesize<CS: ConstraintSystem<E>>(self, cs: &mut CS) -> Result<(), SynthesisError> {
+        let witness = &self.witness;
+        let wire_mapping = &self.wire_mapping;
+        for i in 1..self.r1cs.num_inputs {
+            cs.alloc_input(
+                || format!("variable {}", i),
+                || {
+                    Ok(match witness {
+                        None => E::from_str_vartime(&format!("alloc input {} error", i)).unwrap(),
+                        Some(w) => match wire_mapping {
+                            None => w[i],
+                            Some(m) => w[m[i]],
+                        },
+                    })
+                },
+            )?;
+        }
+        for i in 0..self.r1cs.num_aux {
+            cs.alloc(
+                || format!("aux {}", i + self.aux_offset),
+                || {
+                    Ok(match witness {
+                        None => {
+                            E::from_str_vartime(&format!("alloc aux {} error", i + self.aux_offset))
+                                .unwrap()
+                        }
+                        Some(w) => match wire_mapping {
+                            None => w[i + self.r1cs.num_inputs],
+                            Some(m) => w[m[i + self.r1cs.num_inputs]],
+                        },
+                    })
+                },
+            )?;
+        }
+
+        let make_index = |index| {
+            if index < self.r1cs.num_inputs {
+                Index::Input(index)
+            } else {
+                Index::Aux(index - self.r1cs.num_inputs + self.aux_offset)
+            }
+        };
+        let make_lc = |lc_data: Vec<(usize, E)>| {
             lc_data.iter().fold(
                 LinearCombination::<E>::zero(),
                 |lc: LinearCombination<E>, (index, coeff)| {

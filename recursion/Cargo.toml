@@ -52,6 +52,6 @@ rand = { version="0.6.5", features = ["wasm-bindgen"] }
 wasm-bindgen-test = "0.3"
 
 [features]
-default = ["franklin-crypto/multicore", "wasmer/singlepass", "starky/default", "plonky/default"]
+default = ["franklin-crypto/multicore", "wasmer/singlepass", "starky/default", "plonky/default", "algebraic/default"]
 wasm = ["wasmer/js-default"]
 avx512 = ["fields/avx512", "plonky/avx512", "starky/avx512", "powdr/starky-avx512"]

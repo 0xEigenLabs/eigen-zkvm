@@ -4,11 +4,18 @@
 extern crate serde;
 #[macro_use]
 extern crate hex_literal;
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+extern crate bellperson;
 extern crate byteorder;
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+extern crate ff;
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 extern crate franklin_crypto;
 extern crate itertools;
 extern crate num_bigint;
 extern crate num_traits;
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+extern crate pairing;
 extern crate rand;
 
 pub mod circom_circuit;
@@ -17,9 +24,17 @@ pub mod reader;
 pub mod utils;
 pub mod witness;
 
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 pub use crate::ff::*;
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 pub use bellman_ce::pairing::ff;
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 pub use franklin_crypto::bellman as bellman_ce;
+
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+pub use bellperson::groth16::*;
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+pub use ff::*;
 
 #[cfg(target_arch = "wasm32")]
 extern crate wasm_bindgen;

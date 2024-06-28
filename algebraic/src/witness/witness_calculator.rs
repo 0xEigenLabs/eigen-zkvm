@@ -1,7 +1,10 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/witness_calculator.rs
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 use crate::bellman_ce::ScalarEngine;
 use crate::witness::{circom::Wasm, fnv, memory::SafeMemory};
 use anyhow::{bail, Result};
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+use ff::PrimeField as ScalarEngine;
 use num::ToPrimitive;
 use num_bigint::BigInt;
 use num_bigint::Sign;

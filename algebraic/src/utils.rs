@@ -1,19 +1,35 @@
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 use crate::bellman_ce::pairing::{ff::PrimeField, Engine};
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 use franklin_crypto::plonk::circuit::bigint::field::RnsParameters;
 pub use num_bigint::BigUint;
 use num_traits::Num;
 use std::fmt::Display;
 
 //export some more funcs
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 pub use franklin_crypto::plonk::circuit::bigint::bigint::{biguint_to_fe, fe_to_biguint};
 
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 /// convert a hex integer representation ("0x...") to decimal representation
 pub fn repr_to_big<T: Display>(r: T) -> String {
     BigUint::from_str_radix(&format!("{}", r)[2..], 16)
         .unwrap()
         .to_str_radix(10)
 }
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+pub fn repr_to_big<T: std::fmt::Debug>(r: T) -> String {
+    let hex_str = format!("{:?}", r);
+    let trim_quotes = hex_str
+        .trim_start_matches("Scalar(0x")
+        .trim_end_matches(')');
+    let clean_hex = trim_quotes.trim_matches('"').trim_start_matches("0x");
+    BigUint::from_str_radix(clean_hex, 16)
+        .map(|bigint: BigUint| bigint.to_str_radix(10))
+        .unwrap()
+}
 
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 fn from_single_size_limb_witnesses<E: Engine, F: PrimeField>(
     witnesses: &[BigUint],
     params: &RnsParameters<E, F>,
@@ -48,6 +64,7 @@ fn from_single_size_limb_witnesses<E: Engine, F: PrimeField>(
     biguint_to_fe(this_value)
 }
 
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 fn from_double_size_limb_witnesses<E: Engine, F: PrimeField>(
     witnesses: &[BigUint],
     top_limb_may_overflow: bool,
@@ -122,6 +139,7 @@ fn from_double_size_limb_witnesses<E: Engine, F: PrimeField>(
 
 // refer to plonk/circuit/bigint/field, merge the limbs into prime field without allocting
 // inside a cs
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 pub fn witness_to_field<E: Engine, F: PrimeField>(
     limbs: &[BigUint],
     params: &RnsParameters<E, F>,
@@ -134,6 +152,7 @@ pub fn witness_to_field<E: Engine, F: PrimeField>(
 }
 
 #[cfg(test)]
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 mod tests {
     use super::*;
     use crate::bellman_ce::pairing::bn256::Bn256;
