@@ -248,9 +248,9 @@ mod tests {
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 mod tests {
     use super::*;
+    use algebraic::witness::{load_input_for_witness, WitnessCalculator};
     use algebraic_gpu::circom_circuit::CircomCircuit;
     use algebraic_gpu::reader;
-    use algebraic::witness::{load_input_for_witness, WitnessCalculator};
     use blstrs::{Bls12, Scalar};
     use ff::{Field, PrimeField};
     use num_traits::Zero;
