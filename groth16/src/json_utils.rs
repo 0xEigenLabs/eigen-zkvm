@@ -1,8 +1,11 @@
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
 use crate::bellman_ce::pairing::{bls12_381::Bls12, bn256::Bn256};
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
 use algebraic::utils::repr_to_big;
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
 use algebraic::PrimeField;
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+use algebraic_gpu::circom_circuit::repr_to_big;
 use anyhow::Result;
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 use bellperson::groth16::*;

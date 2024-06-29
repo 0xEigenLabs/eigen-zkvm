@@ -42,21 +42,21 @@ mkdir -p $WORKSPACE/aggregation/$FINAL_CIRCUIT_VERIFIER
 
 # Build zkit
 
-cd "$CURRENT_DIR/../zkit"
-if [ "x${USE_AVX2}" = "xyes" ]; then
-    # build with avx2 feature
-    RUSTFLAGS="-C target-feature=+avx2" \
-    cargo build --release --features profiler
-elif [ "x${USE_AVX512}" = "xyes" ]; then
-    # build with avx512 feature
-    RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' \
-    cargo build --release --features profiler --features avx512
-elif [ "x${USE_CUDA}" = "xyes" ]; then
-    # build with cuda feature
-    cargo build --release --features profiler --features cuda
-else
-    cargo build --release --features profiler
-fi
+# cd "$CURRENT_DIR/../zkit"
+# if [ "x${USE_AVX2}" = "xyes" ]; then
+#     # build with avx2 feature
+#     RUSTFLAGS="-C target-feature=+avx2" \
+#     cargo build --release --features profiler
+# elif [ "x${USE_AVX512}" = "xyes" ]; then
+#     # build with avx512 feature
+#     RUSTFLAGS='-C target-feature=+avx512f,+avx512bw,+avx512cd,+avx512dq,+avx512vl' \
+#     cargo build --release --features profiler --features avx512
+# elif [ "x${USE_CUDA}" = "xyes" ]; then
+#     # build with cuda feature
+    # cargo build --release --features profiler --features cuda
+# else
+#     cargo build --release --features profiler
+# fi
 cd "$CURRENT_DIR"
 
 # C12 stage

@@ -6,45 +6,42 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Read, Seek};
 use std::str;
 
-use crate::bellman_ce::{
-    kate_commitment::{Crs, CrsForLagrangeForm, CrsForMonomialForm},
-    pairing::Engine,
-    Field, PrimeField, PrimeFieldRepr, ScalarEngine,
-};
+use ff::PrimeField;
 
 use crate::circom_circuit::{CircuitJson, R1CS};
 
 /// get universal setup file by filename
+#[allow(dead_code)]
 fn get_universal_setup_file_buff_reader(setup_file_name: &str) -> Result<BufReader<File>> {
     let setup_file = File::open(setup_file_name)?;
     Ok(BufReader::with_capacity(1 << 29, setup_file))
 }
 
-/// load monomial form SRS by filename
-pub fn load_key_monomial_form<E: Engine>(filename: &str) -> Crs<E, CrsForMonomialForm> {
-    let mut buf_reader = get_universal_setup_file_buff_reader(filename)
-        .unwrap_or_else(|_| panic!("read key_monomial_form file err, {}", filename));
-    Crs::<E, CrsForMonomialForm>::read(&mut buf_reader).expect("read key_monomial_form err")
-}
+// /// load monomial form SRS by filename
+// pub fn load_key_monomial_form<E: Engine>(filename: &str) -> Crs<E, CrsForMonomialForm> {
+//     let mut buf_reader = get_universal_setup_file_buff_reader(filename)
+//         .unwrap_or_else(|_| panic!("read key_monomial_form file err, {}", filename));
+//     Crs::<E, CrsForMonomialForm>::read(&mut buf_reader).expect("read key_monomial_form err")
+// }
 
-/// load optional lagrange form SRS by filename
-pub fn maybe_load_key_lagrange_form<E: Engine>(
-    option_filename: Option<String>,
-) -> Option<Crs<E, CrsForLagrangeForm>> {
-    match option_filename {
-        None => None,
-        Some(filename) => {
-            let mut buf_reader = get_universal_setup_file_buff_reader(&filename)
-                .unwrap_or_else(|_| panic!("read key_lagrange_form file err, {}", filename));
-            let key_lagrange_form = Crs::<E, CrsForLagrangeForm>::read(&mut buf_reader)
-                .expect("read key_lagrange_form err");
-            Some(key_lagrange_form)
-        }
-    }
-}
+// /// load optional lagrange form SRS by filename
+// pub fn maybe_load_key_lagrange_form<E: Engine>(
+//     option_filename: Option<String>,
+// ) -> Option<Crs<E, CrsForLagrangeForm>> {
+//     match option_filename {
+//         None => None,
+//         Some(filename) => {
+//             let mut buf_reader = get_universal_setup_file_buff_reader(&filename)
+//                 .unwrap_or_else(|_| panic!("read key_lagrange_form file err, {}", filename));
+//             let key_lagrange_form = Crs::<E, CrsForLagrangeForm>::read(&mut buf_reader)
+//                 .expect("read key_lagrange_form err");
+//             Some(key_lagrange_form)
+//         }
+//     }
+// }
 
 /// load witness file by filename with autodetect encoding (bin or json).
-pub fn load_witness_from_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
+pub fn load_witness_from_file<E: PrimeField>(filename: &str) -> Vec<E> {
     if filename.ends_with("json") {
         load_witness_from_json_file::<E>(filename)
     } else {
@@ -53,7 +50,7 @@ pub fn load_witness_from_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
 }
 
 /// load witness from json file by filename
-pub fn load_witness_from_json_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
+pub fn load_witness_from_json_file<E: PrimeField>(filename: &str) -> Vec<E> {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
@@ -62,16 +59,16 @@ pub fn load_witness_from_json_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr
 }
 
 /// load witness from json by a reader
-fn load_witness_from_json<E: ScalarEngine, R: Read>(reader: R) -> Vec<E::Fr> {
+fn load_witness_from_json<E: PrimeField, R: Read>(reader: R) -> Vec<E> {
     let witness: Vec<String> = serde_json::from_reader(reader).expect("Unable to read.");
     witness
         .into_iter()
-        .map(|x| E::Fr::from_str(&x).unwrap())
-        .collect::<Vec<E::Fr>>()
+        .map(|x| E::from_str_vartime(&x).unwrap())
+        .collect::<Vec<E>>()
 }
 
 /// load witness from bin file by filename
-pub fn load_witness_from_bin_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr> {
+pub fn load_witness_from_bin_file<E: PrimeField>(filename: &str) -> Vec<E> {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
@@ -81,12 +78,12 @@ pub fn load_witness_from_bin_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr>
 }
 
 /// load witness from u8 array
-pub fn load_witness_from_array<E: ScalarEngine>(buffer: Vec<u8>) -> Result<Vec<E::Fr>> {
+pub fn load_witness_from_array<E: PrimeField>(buffer: Vec<u8>) -> Result<Vec<E>> {
     load_witness_from_bin_reader::<E, _>(buffer.as_slice())
 }
 
 /// load witness from u8 array by a reader
-pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> Result<Vec<E::Fr>> {
+pub fn load_witness_from_bin_reader<E: PrimeField, R: Read>(mut reader: R) -> Result<Vec<E>> {
     let mut wtns_header = [0u8; 4];
     reader.read_exact(&mut wtns_header)?;
     if wtns_header != [119, 116, 110, 115] {
@@ -132,15 +129,25 @@ pub fn load_witness_from_bin_reader<E: ScalarEngine, R: Read>(mut reader: R) -> 
     }
     let mut result = Vec::with_capacity(witness_len as usize);
     for _ in 0..witness_len {
-        let mut repr = E::Fr::zero().into_repr();
-        repr.read_le(&mut reader)?;
-        result.push(E::Fr::from_repr(repr)?);
+        let mut repr = E::default().to_repr();
+        let repr_slice = repr.as_mut();
+        if reader.read_exact(repr_slice).is_err() {
+            continue;
+        }
+        let maybe_field_elem = E::from_repr(repr);
+        if maybe_field_elem.is_some().unwrap_u8() == 1 {
+            result.push(maybe_field_elem.unwrap());
+        } else {
+            continue;
+        }
+        // repr.read_le(&mut reader)?;
+        // result.push(E::Fr::from_repr(repr)?);
     }
     Ok(result)
 }
 
 /// load r1cs file by filename with autodetect encoding (bin or json)
-pub fn load_r1cs<E: ScalarEngine>(filename: &str) -> R1CS<E> {
+pub fn load_r1cs<E: PrimeField>(filename: &str) -> R1CS<E> {
     if filename.ends_with("json") {
         load_r1cs_from_json_file(filename)
     } else {
@@ -150,7 +157,7 @@ pub fn load_r1cs<E: ScalarEngine>(filename: &str) -> R1CS<E> {
 }
 
 /// load r1cs from json file by filename
-fn load_r1cs_from_json_file<E: ScalarEngine>(filename: &str) -> R1CS<E> {
+fn load_r1cs_from_json_file<E: PrimeField>(filename: &str) -> R1CS<E> {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
@@ -159,7 +166,7 @@ fn load_r1cs_from_json_file<E: ScalarEngine>(filename: &str) -> R1CS<E> {
 }
 
 /// load r1cs from json by a reader
-fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
+fn load_r1cs_from_json<E: PrimeField, R: Read>(reader: R) -> R1CS<E> {
     let circuit_json: CircuitJson = serde_json::from_reader(reader).expect("Unable to read.");
 
     let num_inputs = circuit_json.num_inputs + circuit_json.num_outputs + 1;
@@ -167,7 +174,7 @@ fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
 
     let convert_constraint = |lc: &BTreeMap<String, String>| {
         lc.iter()
-            .map(|(index, coeff)| (index.parse().unwrap(), E::Fr::from_str(coeff).unwrap()))
+            .map(|(index, coeff)| (index.parse().unwrap(), E::from_str_vartime(coeff).unwrap()))
             .collect_vec()
     };
 
@@ -195,7 +202,7 @@ fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
 }
 
 /// load r1cs from bin file by filename
-fn load_r1cs_from_bin_file<E: ScalarEngine>(filename: &str) -> (R1CS<E>, Vec<usize>) {
+fn load_r1cs_from_bin_file<E: PrimeField>(filename: &str) -> (R1CS<E>, Vec<usize>) {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
@@ -204,7 +211,7 @@ fn load_r1cs_from_bin_file<E: ScalarEngine>(filename: &str) -> (R1CS<E>, Vec<usi
 }
 
 /// load r1cs from bin by a reader
-pub fn load_r1cs_from_bin<R: Read + Seek, E: ScalarEngine>(reader: R) -> (R1CS<E>, Vec<usize>) {
+pub fn load_r1cs_from_bin<R: Read + Seek, E: PrimeField>(reader: R) -> (R1CS<E>, Vec<usize>) {
     let file = crate::r1cs_file::from_reader::<R, E>(reader).expect("Unable to read.");
     let num_inputs = (1 + file.header.n_pub_in + file.header.n_pub_out) as usize;
     let num_variables = file.header.n_wires as usize;

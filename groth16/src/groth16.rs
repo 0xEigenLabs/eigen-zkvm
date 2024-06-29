@@ -3,6 +3,7 @@ use crate::bellman_ce::{groth16::*, Circuit};
 use anyhow::Result;
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
 use franklin_crypto::bellman::pairing::Engine;
+#[allow(unused_imports)]
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
 use rand_old::{self as rand, Rng};
 
@@ -247,8 +248,8 @@ mod tests {
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 mod tests {
     use super::*;
-    use algebraic::circom_circuit::CircomCircuit;
-    use algebraic::reader;
+    use algebraic_gpu::circom_circuit::CircomCircuit;
+    use algebraic_gpu::reader;
     use algebraic::witness::{load_input_for_witness, WitnessCalculator};
     use blstrs::{Bls12, Scalar};
     use ff::{Field, PrimeField};

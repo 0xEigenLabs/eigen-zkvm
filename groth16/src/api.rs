@@ -8,8 +8,15 @@ use crate::bellman_ce::{
 };
 use crate::{groth16::Groth16, json_utils::*, template::CONTRACT_TEMPLATE};
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
-use algebraic::bellman_ce::Engine;
 use algebraic::{
+    bellman_ce::Engine,
+    circom_circuit::CircomCircuit,
+    reader::load_r1cs,
+    witness::{load_input_for_witness, WitnessCalculator},
+    Field, PrimeField,
+};
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+use algebraic_gpu::{
     circom_circuit::CircomCircuit,
     reader::load_r1cs,
     witness::{load_input_for_witness, WitnessCalculator},
