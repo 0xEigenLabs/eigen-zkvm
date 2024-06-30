@@ -17,29 +17,6 @@ fn get_universal_setup_file_buff_reader(setup_file_name: &str) -> Result<BufRead
     Ok(BufReader::with_capacity(1 << 29, setup_file))
 }
 
-// /// load monomial form SRS by filename
-// pub fn load_key_monomial_form<E: Engine>(filename: &str) -> Crs<E, CrsForMonomialForm> {
-//     let mut buf_reader = get_universal_setup_file_buff_reader(filename)
-//         .unwrap_or_else(|_| panic!("read key_monomial_form file err, {}", filename));
-//     Crs::<E, CrsForMonomialForm>::read(&mut buf_reader).expect("read key_monomial_form err")
-// }
-
-// /// load optional lagrange form SRS by filename
-// pub fn maybe_load_key_lagrange_form<E: Engine>(
-//     option_filename: Option<String>,
-// ) -> Option<Crs<E, CrsForLagrangeForm>> {
-//     match option_filename {
-//         None => None,
-//         Some(filename) => {
-//             let mut buf_reader = get_universal_setup_file_buff_reader(&filename)
-//                 .unwrap_or_else(|_| panic!("read key_lagrange_form file err, {}", filename));
-//             let key_lagrange_form = Crs::<E, CrsForLagrangeForm>::read(&mut buf_reader)
-//                 .expect("read key_lagrange_form err");
-//             Some(key_lagrange_form)
-//         }
-//     }
-// }
-
 /// load witness file by filename with autodetect encoding (bin or json).
 pub fn load_witness_from_file<E: PrimeField>(filename: &str) -> Vec<E> {
     if filename.ends_with("json") {

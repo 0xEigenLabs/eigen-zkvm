@@ -21,8 +21,9 @@ regex = "0.2"
 profiler_macro = { git = "https://github.com/ChengYueJia/profiler-rs", rev = "6d6a77f8" }
 ark-std = { version = "0.4.0", optional = true }
 algebraic = { path = "../algebraic", default-features = false, optional = true }
-algebraic-gpu = { path = "../algebraic-gpu", default-features = false, optional = true }
 
+# GPU-specific dependencies (enabled only for cuda and opencl features)
+algebraic-gpu = { path = "../algebraic-gpu", default-features = false, optional = true }
 ff = { version = "0.13.0", features = ["derive"], optional = true }
 pairing = { version = "0.23.0", optional = true }
 group = { version = "0.13.0", optional = true }
@@ -31,7 +32,7 @@ bellperson = { version = "0.26", default-features = false, features = ["groth16"
 rand_new = { package = "rand", version = "0.8", features = ["getrandom"], optional = true }
 rand_core = { version = "0.6", optional = true }
 
-[target.'cfg(not(any(feature = "cuda", feature = "opencl")))'.dependencies]
+# CPU-only dependencies
 franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = ["plonk"], version = "0.0.5", optional = true }
 rand_old = { package = "rand", version = "0.4", optional = true }
 

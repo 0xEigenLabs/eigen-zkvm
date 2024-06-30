@@ -369,11 +369,12 @@ mod runtime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::{json, Value};
     use std::{collections::HashMap, path::PathBuf};
 
     struct TestCase<'a> {
         circuit_path: &'a str,
-        inputs_path: &'a str,
+        inputs: HashMap<String, serde_json::Value>,
         n64: u32,
         witness: &'a [&'a str],
     }
@@ -386,9 +387,11 @@ mod tests {
 
     #[test]
     fn multiplier_1() {
+        let inputs = HashMap::from([("a".to_string(), json!(3)), ("b".to_string(), json!(11))]);
+
         run_test(TestCase {
             circuit_path: root_path("test-vectors/mycircuit.wasm").as_str(),
-            inputs_path: root_path("test-vectors/mycircuit-input1.json").as_str(),
+            inputs,
             n64: 4,
             witness: &["1", "33", "3", "11"],
         });
@@ -396,9 +399,19 @@ mod tests {
 
     #[test]
     fn multiplier_2() {
+        let inputs = HashMap::from([
+            (
+                "a".to_string(),
+                json!(
+                    "21888242871839275222246405745257275088548364400416034343698204186575796149939"
+                ),
+            ),
+            ("b".to_string(), json!(11)),
+        ]);
+
         run_test(TestCase {
             circuit_path: root_path("test-vectors/mycircuit.wasm").as_str(),
-            inputs_path: root_path("test-vectors/mycircuit-input2.json").as_str(),
+            inputs,
             n64: 4,
             witness: &[
                 "1",
@@ -411,9 +424,19 @@ mod tests {
 
     #[test]
     fn multiplier_3() {
+        let inputs = HashMap::from([
+            (
+                "a".to_string(),
+                json!(
+                    "10944121435919637611123202872628637544274182200208017171849102093287904246808"
+                ),
+            ),
+            ("b".to_string(), json!(2)),
+        ]);
+
         run_test(TestCase {
             circuit_path: root_path("test-vectors/mycircuit.wasm").as_str(),
-            inputs_path: root_path("test-vectors/mycircuit-input3.json").as_str(),
+            inputs,
             n64: 4,
             witness: &[
                 "1",
@@ -434,11 +457,8 @@ mod tests {
         );
         assert_eq!({ wtns.n64 }, case.n64);
 
-        let inputs_str = std::fs::read_to_string(case.inputs_path).unwrap();
-        let inputs: std::collections::HashMap<String, serde_json::Value> =
-            serde_json::from_str(&inputs_str).unwrap();
-
-        let inputs = inputs
+        let inputs = case
+            .inputs
             .iter()
             .map(|(key, value)| {
                 let res = match value {

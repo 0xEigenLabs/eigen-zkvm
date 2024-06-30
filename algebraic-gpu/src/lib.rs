@@ -16,7 +16,6 @@ extern crate rand;
 pub mod circom_circuit;
 pub mod r1cs_file;
 pub mod reader;
-pub mod utils;
 pub mod witness;
 
 pub use bellperson::groth16::*;
