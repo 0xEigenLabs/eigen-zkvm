@@ -4,8 +4,8 @@ version = "0.0.1"
 edition = "2021"
 license = "Apache-2.0"
 description = "Eigen Algebraic based on R1CS"
-documentation = "eigen.cash"
-homepage = "eigen.cash"
+documentation = "eigen.market"
+homepage = "eigen.market"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
