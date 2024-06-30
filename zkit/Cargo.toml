@@ -4,8 +4,8 @@ version = "0.0.1"
 edition = "2021"
 license = "Apache-2.0"
 description = "Eigen ZKit command tools"
-documentation = "https://eigen.cash"
-homepage = "https://eigen.cash"
+documentation = "https://eigen.market"
+homepage = "https://eigen.market"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -29,3 +29,5 @@ anyhow = { version = "1.0", default-features = false }
 default = []
 profiler = ["plonky/profiler", "starky/profiler", "groth16/profiler"]
 avx512 = ["starky/avx512", "recursion/avx512"]
+cuda = ["groth16/cuda"]
+opencl = ["groth16/opencl"]

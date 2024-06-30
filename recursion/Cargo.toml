@@ -25,12 +25,9 @@ anyhow = "1.0.79"
 fnv = { version = "1.0.3", default-features = false }
 num = { version = "0.4.0" }
 byteorder = "1"
-franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = [ "plonk" ], version = "0.0.5"}
-#franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
 ff = {package="ff_ce" , version="0.12", features = ["derive"]}
 fields = { path = "../fields", default-features = false }
 starky = { path = "../starky", default-features = false }
-plonky = { path = "../plonky", default-features = false }
 algebraic = { path = "../algebraic", default-features = false }
 
 powdr =              { git = "https://github.com/0xEigenLabs/powdr", branch = "binary-mux2", default-features = false }
@@ -52,6 +49,6 @@ rand = { version="0.6.5", features = ["wasm-bindgen"] }
 wasm-bindgen-test = "0.3"
 
 [features]
-default = ["franklin-crypto/multicore", "wasmer/singlepass", "starky/default", "plonky/default"]
+default = ["wasmer/singlepass", "starky/default"]
 wasm = ["wasmer/js-default"]
-avx512 = ["fields/avx512", "plonky/avx512", "starky/avx512", "powdr/starky-avx512"]
+avx512 = ["fields/avx512", "starky/avx512", "powdr/starky-avx512"]

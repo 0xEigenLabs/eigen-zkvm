@@ -3,35 +3,44 @@ name = "groth16"
 version = "0.0.1"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 byteorder = "1"
-franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = [ "plonk" ], version = "0.0.5"}
-#franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
-
 hex-literal = "0.2.1"
 itertools = "0.8.1"
 log = "0.4.11"
 num-bigint = "0.3.3"
 num-traits = "0.2.8"
-serde = { version = "1.0", features = [ "derive" ] }
-serde_json = { version = "1.0", features = [ "arbitrary_precision" ] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["arbitrary_precision"] }
 hex = "*"
-thiserror="1.0"
+thiserror = "1.0"
 fnv = { version = "1.0.3", default-features = false }
 num = { version = "0.4.0" }
-algebraic = { path = "../algebraic", default-features=false }
-rand = "0.4"
 anyhow = "1.0.79"
 regex = "0.2"
-
-profiler_macro = {git = "https://github.com/ChengYueJia/profiler-rs", rev = "6d6a77f8"}
+profiler_macro = { git = "https://github.com/ChengYueJia/profiler-rs", rev = "6d6a77f8" }
 ark-std = { version = "0.4.0", optional = true }
+algebraic = { path = "../algebraic", default-features = false, optional = true }
+
+# GPU-specific dependencies (enabled only for cuda and opencl features)
+algebraic-gpu = { path = "../algebraic-gpu", default-features = false, optional = true }
+ff = { version = "0.13.0", features = ["derive"], optional = true }
+pairing = { version = "0.23.0", optional = true }
+group = { version = "0.13.0", optional = true }
+blstrs = { version = "0.7.0", features = ["__private_bench"], optional = true }
+bellperson = { version = "0.26", default-features = false, features = ["groth16"], optional = true }
+rand_new = { package = "rand", version = "0.8", features = ["getrandom"], optional = true }
+rand_core = { version = "0.6", optional = true }
+
+# CPU-only dependencies
+franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = ["plonk"], version = "0.0.5", optional = true }
+rand_old = { package = "rand", version = "0.4", optional = true }
 
 [dev-dependencies]
 env_logger = "0.10"
 
 [features]
-default = ["franklin-crypto/multicore", "algebraic/default"]
-profiler = ["ark-std/print-trace"]
+default = ["rand_old", "franklin-crypto/multicore", "algebraic/default"]
+profiler = ["rand_old", "ark-std/print-trace"]
+cuda = ["ff", "pairing", "group", "blstrs", "bellperson/cuda", "algebraic-gpu/cuda", "rand_new", "rand_core"]
+opencl = ["ff", "pairing", "group", "blstrs", "bellperson/opencl", "algebraic-gpu/opencl", "rand_new", "rand_core"]

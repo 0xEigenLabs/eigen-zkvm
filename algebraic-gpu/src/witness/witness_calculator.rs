@@ -1,7 +1,7 @@
 // copied and modified by https://github.com/arkworks-rs/circom-compat/blob/master/src/witness/witness_calculator.rs
-use crate::bellman_ce::ScalarEngine;
 use crate::witness::{circom::Wasm, fnv, memory::SafeMemory};
 use anyhow::{bail, Result};
+use ff::PrimeField;
 use num::ToPrimitive;
 use num_bigint::BigInt;
 use num_bigint::Sign;
@@ -186,7 +186,7 @@ impl WitnessCalculator {
     }
 
     #[cfg(not(feature = "wasm"))]
-    pub fn save_witness_to_bin_file<E: ScalarEngine>(
+    pub fn save_witness_to_bin_file<E: PrimeField>(
         &mut self,
         filename: &str,
         w: &Vec<u32>,
@@ -201,7 +201,7 @@ impl WitnessCalculator {
         self.save_witness_from_bin_writer::<E, _>(writer, w)
     }
 
-    pub fn save_witness_from_bin_writer<E: ScalarEngine, W: Write>(
+    pub fn save_witness_from_bin_writer<E: PrimeField, W: Write>(
         &mut self,
         mut writer: W,
         wtns: &Vec<u32>,
