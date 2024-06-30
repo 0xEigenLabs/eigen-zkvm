@@ -42,3 +42,5 @@ GPU Environment (Machine 2)
 	•	GPU Model: 4 x NVIDIA GeForce RTX 4090
 	•	Memory: 24 GB GDDR6X (24564 MiB)
 	•	Proving Time: 157 seconds
+
+The speedup achieved by using the GPU over the CPU for both machines is approximately 1.14.
