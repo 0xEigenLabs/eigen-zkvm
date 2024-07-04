@@ -20,13 +20,13 @@ CPU Environment (Machine 1)
 	•	Processor: 13th Gen Intel(R) Core(TM) i7-13700, 16 cores, base clock 2700 MHz
 	•	Memory: 32 GB DDR4
 	•	OS: Ubuntu 22.04.4 LTS (Jammy Jellyfish)
-	•	Proving Time: 138 seconds
+	•	Proving Time: 33.7 seconds
 
 GPU Environment (Machine 1)
 
 	•	GPU Model: NVIDIA GeForce RTX 4060
 	•	Memory: 8 GB GDDR6 (8188 MiB)
-	•	Proving Time: 121 seconds
+	•	Proving Time: 14.7 seconds
 
 Machine 2
 
@@ -35,12 +35,12 @@ CPU Environment (Machine 2)
 	•	Processor: AMD EPYC 9354 32-Core Processor, 64 cores, base clock 3249.998 MHz
 	•	Memory: 487 GB DDR4
 	•	OS: Ubuntu 22.04.4 LTS (Jammy Jellyfish)
-	•	Proving Time: 179 seconds
+	•	Proving Time: 37.4 seconds
 
 GPU Environment (Machine 2)
 
 	•	GPU Model: 4 x NVIDIA GeForce RTX 4090
 	•	Memory: 24 GB GDDR6X (24564 MiB)
-	•	Proving Time: 157 seconds
+	•	Proving Time: 11.2 seconds
 
 The speedup achieved by using the GPU over the CPU for both machines is approximately 1.14.
