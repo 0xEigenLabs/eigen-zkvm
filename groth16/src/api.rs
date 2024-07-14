@@ -65,6 +65,41 @@ pub fn groth16_setup(
     Ok(())
 }
 
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
+pub enum SetupResult {
+    BN128(CircomCircuit<Bn256>, Parameters<Bn256>, VerifyingKey<Bn256>),
+    BLS12381(CircomCircuit<Bls12>, Parameters<Bls12>, VerifyingKey<Bls12>),
+}
+
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
+pub fn groth16_setup_and_cache(
+    curve_type: &str,
+    circuit_file: &str,
+    pk_file: &str,
+    vk_file: &str,
+    to_hex: bool,
+) -> Result<SetupResult> {
+    let mut rng = rand::thread_rng();
+    let result = match curve_type {
+        "BN128" => {
+            let circuit = create_circuit_from_file::<Bn256>(circuit_file, None);
+            let (pk, vk) = Groth16::circuit_specific_setup(circuit.clone(), &mut rng)?;
+            write_pk_vk_to_files(curve_type, pk.clone(), vk.clone(), pk_file, vk_file, to_hex)?;
+            SetupResult::BN128(circuit, pk, vk)
+        }
+        "BLS12381" => {
+            let circuit = create_circuit_from_file::<Bls12>(circuit_file, None);
+            let (pk, vk) = Groth16::circuit_specific_setup(circuit.clone(), &mut rng)?;
+            write_pk_vk_to_files(curve_type, pk.clone(), vk.clone(), pk_file, vk_file, to_hex)?;
+            SetupResult::BLS12381(circuit, pk, vk)
+        }
+        _ => {
+            bail!(format!("Unknown curve type: {}", curve_type))
+        }
+    };
+    Ok(result)
+}
+
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 pub fn groth16_setup(
     curve_type: &str,
@@ -86,6 +121,35 @@ pub fn groth16_setup(
         }
     };
     Ok(())
+}
+
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+pub enum SetupResult {
+    BLS12381(CircomCircuit<Bls12>, Parameters<Bls12>, VerifyingKey<Bls12>),
+}
+
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+pub fn groth16_setup_and_cache(
+    curve_type: &str,
+    circuit_file: &str,
+    pk_file: &str,
+    vk_file: &str,
+    to_hex: bool,
+) -> Result<SetupResult> {
+    let mut rng = rand::thread_rng();
+    match curve_type {
+        "BLS12381" => {
+            let circuit = create_circuit_from_file::<Scalar>(circuit_file, None);
+            let (pk, vk): (Parameters<Bls12>, VerifyingKey<Bls12>) =
+                Groth16::circuit_specific_setup(circuit, &mut rng)?;
+            write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file, to_hex)?;
+            SetupResult::BLS12381(circuit, pk, vk)
+        }
+        _ => {
+            bail!(format!("Unknown curve type: {}", curve_type))
+        }
+    };
+    Ok(result)
 }
 
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
@@ -151,6 +215,57 @@ pub fn groth16_prove(
     Ok(())
 }
 
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
+#[allow(clippy::too_many_arguments)]
+pub fn groth16_prove_bn256_with_cache(
+    curve_type: &str,
+    circuit: CircomCircuit<Bn256>,
+    wtns_file: &str,
+    pk: Parameters<Bn256>,
+    input_file: &str,
+    public_input_file: &str,
+    proof_file: &str,
+    to_hex: bool,
+) -> Result<()> {
+    let mut rng = rand::thread_rng();
+    let mut wtns = WitnessCalculator::from_file(wtns_file)?;
+    let inputs = load_input_for_witness(input_file);
+    let w = wtns.calculate_witness(inputs, false)?;
+    let circuit1 = create_circuit_add_witness(circuit, w);
+    let proof = Groth16::prove(&pk, circuit1.clone(), &mut rng)?;
+    let proof_json = serialize_proof(&proof, curve_type, to_hex)?;
+    std::fs::write(proof_file, proof_json)?;
+    let input_json = circuit1.get_public_inputs_json();
+    std::fs::write(public_input_file, input_json)?;
+    Ok(())
+}
+
+
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
+#[allow(clippy::too_many_arguments)]
+pub fn groth16_prove_bls12_with_cache(
+    curve_type: &str,
+    circuit: CircomCircuit<Bls12>,
+    wtns_file: &str,
+    pk: Parameters<Bls12>,
+    input_file: &str,
+    public_input_file: &str,
+    proof_file: &str,
+    to_hex: bool,
+) -> Result<()> {
+    let mut rng = rand::thread_rng();
+    let mut wtns = WitnessCalculator::from_file(wtns_file)?;
+    let inputs = load_input_for_witness(input_file);
+    let w = wtns.calculate_witness(inputs, false)?;
+    let circuit1 = create_circuit_add_witness(circuit, w);
+    let proof = Groth16::prove(&pk, circuit1.clone(), &mut rng)?;
+    let proof_json = serialize_proof(&proof, curve_type, to_hex)?;
+    std::fs::write(proof_file, proof_json)?;
+    let input_json = circuit1.get_public_inputs_json();
+    std::fs::write(public_input_file, input_json)?;
+    Ok(())
+}
+
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 #[allow(clippy::too_many_arguments)]
 pub fn groth16_prove(
@@ -194,6 +309,31 @@ pub fn groth16_prove(
         }
     };
 
+    Ok(())
+}
+
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+#[allow(clippy::too_many_arguments)]
+pub fn groth16_prove_bls12_with_cache(
+    curve_type: &str,
+    circuit: CircomCircuit<Bls12>,
+    wtns_file: &str,
+    pk: Parameters<Bls12>,
+    input_file: &str,
+    public_input_file: &str,
+    proof_file: &str,
+    to_hex: bool,
+) -> Result<()> {
+    let mut rng = rand::thread_rng();
+    let mut wtns = WitnessCalculator::from_file(wtns_file)?;
+    let inputs = load_input_for_witness(input_file);
+    let w = wtns.calculate_witness(inputs, false)?;
+    let circuit1 = create_circuit_add_witness(circuit, w);
+    let proof = Groth16::prove(&pk, circuit1.clone(), &mut rng)?;
+    let proof_json = serialize_proof(&proof, curve_type, to_hex)?;
+    std::fs::write(proof_file, proof_json)?;
+    let input_json = circuit1.get_public_inputs_json();
+    std::fs::write(public_input_file, input_json)?;
     Ok(())
 }
 
@@ -392,6 +532,25 @@ fn create_circuit_from_file<E: Engine>(
     }
 }
 
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
+fn create_circuit_add_witness<E: Engine>(
+    mut circuit: CircomCircuit<E>,
+    witness: Vec<num_bigint::BigInt>,
+) -> CircomCircuit<E> {
+    let witness: Vec<E::Fr> = witness
+        .iter()
+        .map(|wi| {
+            if wi.is_zero() {
+                E::Fr::zero()
+            } else {
+                E::Fr::from_str(&wi.to_string()).unwrap()
+            }
+        })
+        .collect::<Vec<_>>();
+    circuit.witness = Some(witness);
+    circuit
+}
+
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 fn create_circuit_from_file<E: PrimeField>(
     circuit_file: &str,
@@ -403,6 +562,15 @@ fn create_circuit_from_file<E: PrimeField>(
         wire_mapping: None,
         aux_offset: 0,
     }
+}
+
+#[cfg(any(feature = "cuda", feature = "opencl"))]
+fn create_circuit_add_witness<E: PrimeField>(
+    mut circuit: CircomCircuit<E>,
+    witness: Option<Vec<E>>,
+) -> CircomCircuit<E> {
+    circuit.witness = witness;
+    circuit
 }
 
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
