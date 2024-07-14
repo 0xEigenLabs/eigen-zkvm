@@ -567,9 +567,19 @@ fn create_circuit_from_file<E: PrimeField>(
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 fn create_circuit_add_witness<E: PrimeField>(
     mut circuit: CircomCircuit<E>,
-    witness: Option<Vec<E>>,
+    witness: Vec<num_bigint::BigInt>,
 ) -> CircomCircuit<E> {
-    circuit.witness = witness;
+    let w = witness
+        .iter()
+        .map(|wi| {
+            if wi.is_zero() {
+                Scalar::ZERO
+            } else {
+                Scalar::from_str_vartime(&wi.to_string()).unwrap()
+            }
+        })
+        .collect::<Vec<_>>();
+    circuit.witness = w;
     circuit
 }
 
