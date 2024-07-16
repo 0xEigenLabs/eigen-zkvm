@@ -66,6 +66,7 @@ pub fn groth16_setup(
 }
 
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
+#[allow(clippy::large_enum_variant)]
 pub enum SetupResult {
     BN128(CircomCircuit<Bn256>, Parameters<Bn256>, VerifyingKey<Bn256>),
     BLS12381(CircomCircuit<Bls12>, Parameters<Bls12>, VerifyingKey<Bls12>),
@@ -124,8 +125,13 @@ pub fn groth16_setup(
 }
 
 #[cfg(any(feature = "cuda", feature = "opencl"))]
+#[allow(clippy::large_enum_variant)]
 pub enum SetupResult {
-    BLS12381(CircomCircuit<Bls12>, Parameters<Bls12>, VerifyingKey<Bls12>),
+    BLS12381(
+        CircomCircuit<Scalar>,
+        Parameters<Bls12>,
+        VerifyingKey<Bls12>,
+    ),
 }
 
 #[cfg(any(feature = "cuda", feature = "opencl"))]
@@ -137,12 +143,12 @@ pub fn groth16_setup_and_cache(
     to_hex: bool,
 ) -> Result<SetupResult> {
     let mut rng = rand::thread_rng();
-    match curve_type {
+    let result = match curve_type {
         "BLS12381" => {
             let circuit = create_circuit_from_file::<Scalar>(circuit_file, None);
             let (pk, vk): (Parameters<Bls12>, VerifyingKey<Bls12>) =
-                Groth16::circuit_specific_setup(circuit, &mut rng)?;
-            write_pk_vk_to_files(curve_type, pk, vk, pk_file, vk_file, to_hex)?;
+                Groth16::circuit_specific_setup(circuit.clone(), &mut rng)?;
+            write_pk_vk_to_files(curve_type, pk.clone(), vk.clone(), pk_file, vk_file, to_hex)?;
             SetupResult::BLS12381(circuit, pk, vk)
         }
         _ => {
@@ -217,37 +223,11 @@ pub fn groth16_prove(
 
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
 #[allow(clippy::too_many_arguments)]
-pub fn groth16_prove_bn256_with_cache(
+pub fn groth16_prove_with_cache<E: Engine + crate::json_utils::Parser>(
     curve_type: &str,
-    circuit: CircomCircuit<Bn256>,
+    circuit: CircomCircuit<E>,
     wtns_file: &str,
-    pk: Parameters<Bn256>,
-    input_file: &str,
-    public_input_file: &str,
-    proof_file: &str,
-    to_hex: bool,
-) -> Result<()> {
-    let mut rng = rand::thread_rng();
-    let mut wtns = WitnessCalculator::from_file(wtns_file)?;
-    let inputs = load_input_for_witness(input_file);
-    let w = wtns.calculate_witness(inputs, false)?;
-    let circuit1 = create_circuit_add_witness(circuit, w);
-    let proof = Groth16::prove(&pk, circuit1.clone(), &mut rng)?;
-    let proof_json = serialize_proof(&proof, curve_type, to_hex)?;
-    std::fs::write(proof_file, proof_json)?;
-    let input_json = circuit1.get_public_inputs_json();
-    std::fs::write(public_input_file, input_json)?;
-    Ok(())
-}
-
-
-#[cfg(not(any(feature = "cuda", feature = "opencl")))]
-#[allow(clippy::too_many_arguments)]
-pub fn groth16_prove_bls12_with_cache(
-    curve_type: &str,
-    circuit: CircomCircuit<Bls12>,
-    wtns_file: &str,
-    pk: Parameters<Bls12>,
+    pk: Parameters<E>,
     input_file: &str,
     public_input_file: &str,
     proof_file: &str,
@@ -314,9 +294,9 @@ pub fn groth16_prove(
 
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 #[allow(clippy::too_many_arguments)]
-pub fn groth16_prove_bls12_with_cache(
+pub fn groth16_prove_with_cache(
     curve_type: &str,
-    circuit: CircomCircuit<Bls12>,
+    circuit: CircomCircuit<Scalar>,
     wtns_file: &str,
     pk: Parameters<Bls12>,
     input_file: &str,
@@ -533,7 +513,7 @@ fn create_circuit_from_file<E: Engine>(
 }
 
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
-fn create_circuit_add_witness<E: Engine>(
+pub fn create_circuit_add_witness<E: Engine>(
     mut circuit: CircomCircuit<E>,
     witness: Vec<num_bigint::BigInt>,
 ) -> CircomCircuit<E> {
@@ -548,6 +528,8 @@ fn create_circuit_add_witness<E: Engine>(
         })
         .collect::<Vec<_>>();
     circuit.witness = Some(witness);
+    circuit.wire_mapping = None;
+    circuit.aux_offset = 0;
     circuit
 }
 
@@ -565,10 +547,10 @@ fn create_circuit_from_file<E: PrimeField>(
 }
 
 #[cfg(any(feature = "cuda", feature = "opencl"))]
-fn create_circuit_add_witness<E: PrimeField>(
-    mut circuit: CircomCircuit<E>,
+pub fn create_circuit_add_witness(
+    mut circuit: CircomCircuit<Scalar>,
     witness: Vec<num_bigint::BigInt>,
-) -> CircomCircuit<E> {
+) -> CircomCircuit<Scalar> {
     let w = witness
         .iter()
         .map(|wi| {
@@ -579,7 +561,9 @@ fn create_circuit_add_witness<E: PrimeField>(
             }
         })
         .collect::<Vec<_>>();
-    circuit.witness = w;
+    circuit.witness = Some(w);
+    circuit.wire_mapping = None;
+    circuit.aux_offset = 0;
     circuit
 }
 
