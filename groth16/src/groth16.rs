@@ -115,7 +115,7 @@ mod tests {
 
     use super::*;
     use crate::api::create_circuit_add_witness;
-    use crate::api::groth16_setup_and_cache;
+    use crate::api::groth16_setup_inplace;
     use crate::api::SetupResult;
     use crate::bellman_ce::bls12_381::Bls12;
     use crate::bellman_ce::bn256::{Bn256, Fr};
@@ -132,11 +132,6 @@ mod tests {
     const WASM_FILE_BLS12: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/test-vectors/mycircuit_bls12381.wasm"
-    );
-    const ZKEY: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/test-vectors/g16.zkey");
-    const VKEY: &str = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/test-vectors/verification_key.json"
     );
 
     #[test]
@@ -198,8 +193,7 @@ mod tests {
     fn groth16_proof_bls12381_with_cache() -> Result<()> {
         //1. SRS
         let t = std::time::Instant::now();
-        let setup_result =
-            groth16_setup_and_cache("BLS12381", CIRCUIT_FILE_BLS12, ZKEY, VKEY, true)?;
+        let setup_result = groth16_setup_inplace("BLS12381", CIRCUIT_FILE_BLS12)?;
         let (circuit, pk, vk) = match setup_result {
             SetupResult::BLS12381(circuit, pk, vk) => (circuit, pk, vk),
             _ => panic!("Expected BLS12381 setup result"),
@@ -236,7 +230,7 @@ mod tests {
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 mod tests {
     use super::*;
-    use crate::api::{create_circuit_add_witness, groth16_setup_and_cache, SetupResult};
+    use crate::api::{create_circuit_add_witness, groth16_setup_inplace, SetupResult};
     use algebraic::witness::{load_input_for_witness, WitnessCalculator};
     use algebraic_gpu::circom_circuit::CircomCircuit;
     use algebraic_gpu::reader;
@@ -254,19 +248,13 @@ mod tests {
         env!("CARGO_MANIFEST_DIR"),
         "/test-vectors/mycircuit_bls12381.wasm"
     );
-    const ZKEY: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/test-vectors/g16.zkey");
-    const VKEY: &str = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/test-vectors/verification_key.json"
-    );
 
     #[test]
     fn groth16_proof_bls12381_with_cache() -> Result<()> {
         let _ = env_logger::try_init();
         //1. SRS
         let t = std::time::Instant::now();
-        let setup_result =
-            groth16_setup_and_cache("BLS12381", CIRCUIT_FILE_BLS12, ZKEY, VKEY, true)?;
+        let setup_result = groth16_setup_inplace("BLS12381", CIRCUIT_FILE_BLS12)?;
         let (circuit, pk, vk) = match setup_result {
             SetupResult::BLS12381(circuit, pk, vk) => (circuit, pk, vk),
             _ => panic!("Expected BLS12381 setup result"),

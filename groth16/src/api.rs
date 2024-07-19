@@ -73,25 +73,17 @@ pub enum SetupResult {
 }
 
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
-pub fn groth16_setup_and_cache(
-    curve_type: &str,
-    circuit_file: &str,
-    pk_file: &str,
-    vk_file: &str,
-    to_hex: bool,
-) -> Result<SetupResult> {
+pub fn groth16_setup_inplace(curve_type: &str, circuit_file: &str) -> Result<SetupResult> {
     let mut rng = rand::thread_rng();
     let result = match curve_type {
         "BN128" => {
             let circuit = create_circuit_from_file::<Bn256>(circuit_file, None);
             let (pk, vk) = Groth16::circuit_specific_setup(circuit.clone(), &mut rng)?;
-            write_pk_vk_to_files(curve_type, pk.clone(), vk.clone(), pk_file, vk_file, to_hex)?;
             SetupResult::BN128(circuit, pk, vk)
         }
         "BLS12381" => {
             let circuit = create_circuit_from_file::<Bls12>(circuit_file, None);
             let (pk, vk) = Groth16::circuit_specific_setup(circuit.clone(), &mut rng)?;
-            write_pk_vk_to_files(curve_type, pk.clone(), vk.clone(), pk_file, vk_file, to_hex)?;
             SetupResult::BLS12381(circuit, pk, vk)
         }
         _ => {
@@ -135,20 +127,13 @@ pub enum SetupResult {
 }
 
 #[cfg(any(feature = "cuda", feature = "opencl"))]
-pub fn groth16_setup_and_cache(
-    curve_type: &str,
-    circuit_file: &str,
-    pk_file: &str,
-    vk_file: &str,
-    to_hex: bool,
-) -> Result<SetupResult> {
+pub fn groth16_setup_inplace(curve_type: &str, circuit_file: &str) -> Result<SetupResult> {
     let mut rng = rand::thread_rng();
     let result = match curve_type {
         "BLS12381" => {
             let circuit = create_circuit_from_file::<Scalar>(circuit_file, None);
             let (pk, vk): (Parameters<Bls12>, VerifyingKey<Bls12>) =
                 Groth16::circuit_specific_setup(circuit.clone(), &mut rng)?;
-            write_pk_vk_to_files(curve_type, pk.clone(), vk.clone(), pk_file, vk_file, to_hex)?;
             SetupResult::BLS12381(circuit, pk, vk)
         }
         _ => {
