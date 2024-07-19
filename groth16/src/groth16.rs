@@ -190,7 +190,7 @@ mod tests {
     }
 
     #[test]
-    fn groth16_proof_bls12381_with_cache() -> Result<()> {
+    fn groth16_proof_bls12381_inpace() -> Result<()> {
         //1. SRS
         let t = std::time::Instant::now();
         let setup_result = groth16_setup_inplace("BLS12381", CIRCUIT_FILE_BLS12)?;
@@ -250,7 +250,7 @@ mod tests {
     );
 
     #[test]
-    fn groth16_proof_bls12381_with_cache() -> Result<()> {
+    fn groth16_proof_bls12381_inplace() -> Result<()> {
         let _ = env_logger::try_init();
         //1. SRS
         let t = std::time::Instant::now();

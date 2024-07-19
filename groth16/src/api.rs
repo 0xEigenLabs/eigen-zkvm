@@ -208,7 +208,7 @@ pub fn groth16_prove(
 
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
 #[allow(clippy::too_many_arguments)]
-pub fn groth16_prove_with_cache<E: Engine + crate::json_utils::Parser>(
+pub fn groth16_prove_inplace<E: Engine + crate::json_utils::Parser>(
     curve_type: &str,
     circuit: CircomCircuit<E>,
     wtns_file: &str,
@@ -279,7 +279,7 @@ pub fn groth16_prove(
 
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 #[allow(clippy::too_many_arguments)]
-pub fn groth16_prove_with_cache(
+pub fn groth16_prove_inplace(
     curve_type: &str,
     circuit: CircomCircuit<Scalar>,
     wtns_file: &str,
