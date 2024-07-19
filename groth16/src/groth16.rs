@@ -114,8 +114,10 @@ mod tests {
     use num_traits::Zero;
 
     use super::*;
+    use crate::api::create_circuit_add_witness;
+    use crate::api::groth16_setup_inplace;
+    use crate::api::SetupResult;
     use crate::bellman_ce::bls12_381::Bls12;
-    use crate::bellman_ce::bls12_381::Fr as Fr_bls12381;
     use crate::bellman_ce::bn256::{Bn256, Fr};
     use algebraic::circom_circuit::CircomCircuit;
     use algebraic::reader;
@@ -188,53 +190,33 @@ mod tests {
     }
 
     #[test]
-    fn groth16_proof_bls12381() -> Result<()> {
+    fn groth16_proof_bls12381_inpace() -> Result<()> {
         //1. SRS
         let t = std::time::Instant::now();
-        let circuit: CircomCircuit<Bls12> = CircomCircuit {
-            r1cs: reader::load_r1cs(CIRCUIT_FILE_BLS12),
-            witness: None,
-            wire_mapping: None,
-            aux_offset: 0,
+        let setup_result = groth16_setup_inplace("BLS12381", CIRCUIT_FILE_BLS12)?;
+        let (circuit, pk, vk) = match setup_result {
+            SetupResult::BLS12381(circuit, pk, vk) => (circuit, pk, vk),
+            _ => panic!("Expected BLS12381 setup result"),
         };
-        let mut rng = rand::thread_rng();
-        let params = Groth16::circuit_specific_setup(circuit, &mut rng)?;
         let elapsed = t.elapsed().as_secs_f64();
         println!("1-groth16-bls12381 setup run time: {} secs", elapsed);
 
         //2. Prove
         let t1 = std::time::Instant::now();
-        // let mut wtns = WitnessCalculator::new(WASM_FILE_BLS12).unwrap();
+        let mut rng = rand::thread_rng();
         let mut wtns = WitnessCalculator::from_file(WASM_FILE_BLS12)?;
         let inputs = load_input_for_witness(INPUT_FILE);
         let w = wtns.calculate_witness(inputs, false).unwrap();
-        let w = w
-            .iter()
-            .map(|wi| {
-                if wi.is_zero() {
-                    Fr_bls12381::zero()
-                } else {
-                    // println!("wi: {}", wi);
-                    Fr_bls12381::from_str(&wi.to_string()).unwrap()
-                }
-            })
-            .collect::<Vec<_>>();
-        let circuit1: CircomCircuit<Bls12> = CircomCircuit {
-            r1cs: reader::load_r1cs(CIRCUIT_FILE_BLS12),
-            witness: Some(w),
-            wire_mapping: None,
-            aux_offset: 0,
-        };
-        let inputs = circuit1.get_public_inputs().unwrap();
-        let proof = Groth16::prove(&params.0, circuit1, &mut rng)?;
+        let circuit1: CircomCircuit<Bls12> = create_circuit_add_witness::<Bls12>(circuit, w);
+        let proof = Groth16::prove(&pk, circuit1.clone(), &mut rng)?;
         let elapsed1 = t1.elapsed().as_secs_f64();
         println!("2-groth16-bls12381 prove run time: {} secs", elapsed1);
 
         //3. Verify
         let t2 = std::time::Instant::now();
-        let verified = Groth16::<_, CircomCircuit<Bls12>>::verify_with_processed_vk(
-            &params.1, &inputs, &proof,
-        )?;
+        let inputs = circuit1.get_public_inputs().unwrap();
+        let verified =
+            Groth16::<_, CircomCircuit<Bls12>>::verify_with_processed_vk(&vk, &inputs, &proof)?;
         let elapsed2 = t2.elapsed().as_secs_f64();
         println!("3-groth16-bls12381 verify run time: {} secs", elapsed2);
 
@@ -248,11 +230,13 @@ mod tests {
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 mod tests {
     use super::*;
+    use crate::api::{create_circuit_add_witness, groth16_setup_inplace, SetupResult};
     use algebraic::witness::{load_input_for_witness, WitnessCalculator};
     use algebraic_gpu::circom_circuit::CircomCircuit;
     use algebraic_gpu::reader;
     use blstrs::{Bls12, Scalar};
     use ff::{Field, PrimeField};
+    use log::info;
     use num_traits::Zero;
     use rand_new::rngs::OsRng;
     const INPUT_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../test/multiplier.input.json");
@@ -266,54 +250,35 @@ mod tests {
     );
 
     #[test]
-    fn groth16_proof() -> Result<()> {
+    fn groth16_proof_bls12381_inplace() -> Result<()> {
+        let _ = env_logger::try_init();
         //1. SRS
         let t = std::time::Instant::now();
-        let circuit: CircomCircuit<Scalar> = CircomCircuit {
-            r1cs: reader::load_r1cs(CIRCUIT_FILE_BLS12),
-            witness: None,
-            wire_mapping: None,
-            aux_offset: 0,
+        let setup_result = groth16_setup_inplace("BLS12381", CIRCUIT_FILE_BLS12)?;
+        let (circuit, pk, vk) = match setup_result {
+            SetupResult::BLS12381(circuit, pk, vk) => (circuit, pk, vk),
+            _ => panic!("Expected BLS12381 setup result"),
         };
-        let params = Groth16::circuit_specific_setup(circuit, &mut OsRng)?;
         let elapsed = t.elapsed().as_secs_f64();
-        println!("1-groth16-bls12381 setup run time: {} secs", elapsed);
+        info!("1-groth16-bls12381 setup run time: {} secs", elapsed);
 
         //2. Prove
         let t1 = std::time::Instant::now();
         let mut wtns = WitnessCalculator::from_file(WASM_FILE_BLS12)?;
         let inputs = load_input_for_witness(INPUT_FILE);
         let w = wtns.calculate_witness(inputs, false).unwrap();
-        let w = w
-            .iter()
-            .map(|wi| {
-                if wi.is_zero() {
-                    <Bls12 as Engine>::Fr::ZERO
-                } else {
-                    // println!("wi: {}", wi);
-                    <Bls12 as Engine>::Fr::from_str_vartime(&wi.to_string()).unwrap()
-                }
-            })
-            .collect::<Vec<_>>();
-        let circuit1: CircomCircuit<Scalar> = CircomCircuit {
-            r1cs: reader::load_r1cs(CIRCUIT_FILE_BLS12),
-            witness: Some(w),
-            wire_mapping: None,
-            aux_offset: 0,
-        };
-        let inputs = circuit1.get_public_inputs().unwrap();
-        let proof: bellperson::groth16::Proof<Bls12> =
-            Groth16::prove(&params.0, circuit1, &mut OsRng)?;
+        let circuit1: CircomCircuit<Scalar> = create_circuit_add_witness(circuit, w);
+        let proof = Groth16::prove(&pk, circuit1.clone(), &mut OsRng)?;
         let elapsed1 = t1.elapsed().as_secs_f64();
-        println!("2-groth16-bls12381 prove run time: {} secs", elapsed1);
+        info!("2-groth16-bls12381 prove run time: {} secs", elapsed1);
 
         //3. Verify
         let t2 = std::time::Instant::now();
-        let verified = Groth16::<_, CircomCircuit<Scalar>>::verify_with_processed_vk(
-            &params.1, &inputs, &proof,
-        )?;
+        let inputs = circuit1.get_public_inputs().unwrap();
+        let verified =
+            Groth16::<_, CircomCircuit<Scalar>>::verify_with_processed_vk(&vk, &inputs, &proof)?;
         let elapsed2 = t2.elapsed().as_secs_f64();
-        println!("3-groth16-bls12381 verify run time: {} secs", elapsed2);
+        info!("3-groth16-bls12381 verify run time: {} secs", elapsed2);
 
         assert!(verified);
 
