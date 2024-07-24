@@ -553,7 +553,7 @@ pub fn create_circuit_add_witness(
 }
 
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
-fn read_pk_from_file<E: Engine>(file_path: &str, checked: bool) -> Result<Parameters<E>> {
+pub fn read_pk_from_file<E: Engine>(file_path: &str, checked: bool) -> Result<Parameters<E>> {
     let file =
         std::fs::File::open(file_path).map_err(|e| anyhow!("Open {}, {:?}", file_path, e))?;
     let mut reader = std::io::BufReader::new(file);
@@ -574,7 +574,7 @@ where
     Ok(Parameters::<E>::read(&mut reader, checked)?)
 }
 
-fn read_vk_from_file<P: Parser>(file_path: &str) -> Result<VerifyingKey<P>> {
+pub fn read_vk_from_file<P: Parser>(file_path: &str) -> Result<VerifyingKey<P>> {
     let json_data = std::fs::read_to_string(file_path)?;
     Ok(to_verification_key::<P>(&json_data))
 }
