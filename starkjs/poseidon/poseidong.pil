@@ -1,6 +1,6 @@
 // come from this version: https://github.com/0xPolygonHermez/zkevm-proverjs/blob/v0.6.0.0/pil/poseidong.pil
-constant %N = 2**10;
-namespace PoseidonG(%N);
+let N: int = 2**10;
+namespace PoseidonG(N);
 
     pol constant LAST;   // 0, 0, 0, ...0, 1,      0, ...., 0, 1, 0, ....
     pol constant LATCH;  // 1, 0, 0, 0, ..., 0,    1, 0, 0,
@@ -21,10 +21,10 @@ namespace PoseidonG(%N);
     public pin5 = in5(0);
     public pin6 = in6(0);
     public pin7 = in7(0);
-    public out0 = hash0(%N-1);
-    public out1 = hash1(%N-1);
-    public out2 = hash2(%N-1);
-    public out3 = hash3(%N-1);
+    public out0 = hash0(N-1);
+    public out1 = hash1(N-1);
+    public out2 = hash2(N-1);
+    public out3 = hash3(N-1);
     LINPUT * (in0 - :pin0) = 0;
     LINPUT * (in1 - :pin1) = 0;
     LINPUT * (in2 - :pin2) = 0;

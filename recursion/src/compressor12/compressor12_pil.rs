@@ -51,9 +51,9 @@ pub fn render(n_bits: usize, n_publics: usize) -> String {
     let mut res = String::from("");
     res.push_str(&format!(
         r#"
-constant %N = 2**{n_bits};
+let N: int = 2**{n_bits};
 
-namespace Global(%N);
+namespace Global(N);
     pol constant L1;
     "#
     ));
@@ -68,7 +68,7 @@ namespace Global(%N);
 
     res.push_str(
         r#"
-namespace Compressor(%N);
+namespace Compressor(N);
     pol constant S[12];
     pol constant C[12];
     pol constant PARTIAL;
@@ -356,8 +356,8 @@ namespace Compressor(%N);
     EVPOL4 * (a[8]' - acc4_2 ) = 0;
 
     // Connection equations
-    {a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11]} connect
-        {S[0], S[1], S[2], S[3], S[4], S[5], S[6], S[7], S[8], S[9], S[10], S[11]};
+    [a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11]] connect
+        [S[0], S[1], S[2], S[3], S[4], S[5], S[6], S[7], S[8], S[9], S[10], S[11]];
 
     "#,
     );

@@ -1,5 +1,5 @@
-constant %N = 2**10;
-namespace Fibonacci(%N);
+let N: int = 2**10;
+namespace Fibonacci(N);
     pol constant L1, LLAST;
     pol commit l1,l2;
 
@@ -7,7 +7,7 @@ namespace Fibonacci(%N);
 
     public in1 = l2(0);
     public in2 = l1(0);
-    public out = l1(%N-1);
+    public out = l1(N-1);
 
     (l2' - l1)*(1-LLAST) = 0;
 

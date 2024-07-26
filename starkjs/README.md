@@ -2,6 +2,8 @@
 
 PIL compiler and Circom transpiler. The stark prover is [starky](../starky).
 
+Note: since `powdr` syntax has been imcompatible with original `pil`, the scripts is no longer supported, the breaking changes happens at issue #271.
+
 ## Run Example
 ### Arithmetization: Constraint Polynomial
 

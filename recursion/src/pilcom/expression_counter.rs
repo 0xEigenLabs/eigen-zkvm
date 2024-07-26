@@ -1,12 +1,8 @@
-//! porting it from powdr
 use std::collections::HashMap;
 
-use powdr_ast::{
-    analyzed::{
-        Analyzed, Identity, PolynomialType, PublicDeclaration, StatementIdentifier, Symbol,
-        SymbolKind,
-    },
-    parsed::SelectedExpressions,
+use powdr_ast::analyzed::{
+    Analyzed, Identity, PolynomialType, PublicDeclaration, SelectedExpressions,
+    StatementIdentifier, Symbol, SymbolKind,
 };
 
 /// Computes expression IDs for each intermediate polynomial.
@@ -43,7 +39,7 @@ trait ExpressionCounter {
     fn expression_count(&self) -> usize;
 }
 
-impl<Expr> ExpressionCounter for Identity<Expr> {
+impl<Expr> ExpressionCounter for Identity<SelectedExpressions<Expr>> {
     fn expression_count(&self) -> usize {
         self.left.expression_count() + self.right.expression_count()
     }

@@ -1,9 +1,9 @@
-namespace Permutation(%N);
+namespace Permutation(N);
 
     pol commit a, b;
     pol commit c, d;
     pol commit selC, selD;
-    public out = d(%N-1);
+    public out = d(N-1);
 
     a is b;
     selC {c} is selD {d};
