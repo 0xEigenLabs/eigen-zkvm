@@ -1,6 +1,6 @@
 
 
-namespace SimpleVM(%N);
+namespace SimpleVM(N);
     pol constant ROM;
     pol commit inFree, sel_b, sel_c, sel_d, sel_ins, sel_A, sel_B, set_b, set_c, set_d, set_A, set_B, const, jmpz, inv_op, addr, free, position, PC;
     b'=set_b*(free-b) + b

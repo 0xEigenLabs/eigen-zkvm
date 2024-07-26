@@ -1,6 +1,6 @@
-constant %N = 2**10;
+let N: int = 2**10;
 
-namespace Global(%N);
+namespace Global(N);
     pol constant L1;
 
 include "connection.pil";
