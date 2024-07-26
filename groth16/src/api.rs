@@ -344,6 +344,24 @@ pub fn groth16_verify(
     Ok(())
 }
 
+#[cfg(not(any(feature = "cuda", feature = "opencl")))]
+pub fn groth16_verify_inplace<E: Engine + crate::json_utils::Parser>(
+    vk: VerifyingKey<E>,
+    public_input_file: &str,
+    proof_file: &str,
+) -> Result<()> {
+    let inputs: Vec<E::Fr> = read_public_input_from_file::<E::Fr>(public_input_file)?;
+    let proof = read_proof_from_file(proof_file)?;
+    let verification_result =
+        Groth16::<_, CircomCircuit<E>>::verify_with_processed_vk(&vk, &inputs[..], &proof);
+
+    if verification_result.is_err() || !verification_result.unwrap() {
+        bail!("verify failed");
+    }
+
+    Ok(())
+}
+
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 pub fn groth16_verify(
     curve_type: &str,
