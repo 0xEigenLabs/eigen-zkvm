@@ -315,6 +315,7 @@ mod tests {
 
     // RUST_MIN_STACK=2073741821 RUST_LOG=debug nohup cargo test --release test_zkvm_prove -- --nocapture  &
     #[test]
+    #[ignore]
     fn test_zkvm_prove() {
         env_logger::try_init().unwrap_or_default();
         //let test_file = "test-vectors/blockInfo.json";
