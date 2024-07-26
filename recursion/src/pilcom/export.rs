@@ -1,16 +1,16 @@
-//! porting it from powdr
 use powdr::number::FieldElement;
-use std::cmp;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::{cmp, path::PathBuf};
 
 use powdr_ast::analyzed::{
-    AlgebraicBinaryOperator, AlgebraicExpression as Expression, AlgebraicUnaryOperator, Analyzed,
-    IdentityKind, PolyID, PolynomialType, StatementIdentifier, SymbolKind,
+    AlgebraicBinaryOperation, AlgebraicBinaryOperator, AlgebraicExpression as Expression,
+    AlgebraicUnaryOperation, AlgebraicUnaryOperator, Analyzed, IdentityKind, PolyID,
+    PolynomialType, StatementIdentifier, SymbolKind,
 };
+use powdr_parser_util::SourceRef;
 use starky::types::{
     ConnectionIdentity, Expression as StarkyExpr, PermutationIdentity, PlookupIdentity,
-    PolIdentity, Public, Reference, PIL,
+    PolIdentity, Reference, PIL,
 };
 
 use super::expression_counter::compute_intermediate_expression_ids;
@@ -34,10 +34,14 @@ struct Exporter<'a, T> {
     /// polynomials.
     intermediate_poly_expression_ids: HashMap<u64, u64>,
     number_q: u64,
+    /// A cache to improve computing the line from a file offset.
+    /// Comparison is by raw pointer value because the data comes
+    /// from Arcs and we assume the actual data is not cloned.
+    line_starts: HashMap<*const u8, Vec<usize>>,
 }
 
-pub fn export<T: FieldElement>(analyzed: std::rc::Rc<Analyzed<T>>) -> PIL {
-    let mut exporter = Exporter::new(&analyzed);
+pub fn export<T: FieldElement>(analyzed: &Analyzed<T>) -> PIL {
+    let mut exporter = Exporter::new(analyzed);
     let mut publics = Vec::new();
     let mut pol_identities = Vec::new();
     let mut plookup_identities = Vec::new();
@@ -69,7 +73,7 @@ pub fn export<T: FieldElement>(analyzed: std::rc::Rc<Analyzed<T>>) -> PIL {
                     false,
                 );
                 let id = publics.len();
-                publics.push(Public {
+                publics.push(starky::types::Public {
                     polType: polynomial_reference_type_to_type(&expr.op).to_string(),
                     polId: expr.id.unwrap(),
                     idx: pub_def.index as usize,
@@ -79,9 +83,10 @@ pub fn export<T: FieldElement>(analyzed: std::rc::Rc<Analyzed<T>>) -> PIL {
             }
             StatementIdentifier::Identity(id) => {
                 let identity = &analyzed.identities[*id];
+                // PILCOM strips the path from filenames, we do the same here for compatibility
                 let file_name = identity
                     .source
-                    .file
+                    .file_name
                     .as_deref()
                     .and_then(|s| {
                         PathBuf::from(s)
@@ -90,7 +95,7 @@ pub fn export<T: FieldElement>(analyzed: std::rc::Rc<Analyzed<T>>) -> PIL {
                             .map(String::from)
                     })
                     .unwrap_or_default();
-                let line = identity.source.line;
+                let line = exporter.line_of_source_ref(&identity.source);
                 let selector_degree = if identity.kind == IdentityKind::Polynomial {
                     2
                 } else {
@@ -160,7 +165,6 @@ fn symbol_kind_to_json_string(k: SymbolKind) -> &'static str {
     match k {
         SymbolKind::Poly(poly_type) => polynomial_type_to_json_string(poly_type),
         SymbolKind::Other() => panic!("Cannot translate \"other\" symbol to json."),
-        SymbolKind::Constant() => unreachable!(),
     }
 }
 
@@ -185,6 +189,18 @@ fn polynomial_reference_type_to_type(t: &str) -> &'static str {
     }
 }
 
+/// Makes names compatible with estark, which sometimes require that
+/// there is exactly one `.` in the name.
+fn fixup_name(name: &str) -> String {
+    if name.contains('.') {
+        name.to_string()
+    } else if let Some(last) = name.rfind("::") {
+        format!("{}.{}", &name[..last], &name[last + 1..])
+    } else {
+        panic!("Witness or intermediate column is not inside a namespace: {name}");
+    }
+}
+
 impl<'a, T: FieldElement> Exporter<'a, T> {
     fn new(analyzed: &'a Analyzed<T>) -> Self {
         Self {
@@ -192,6 +208,7 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
             expressions: vec![],
             intermediate_poly_expression_ids: compute_intermediate_expression_ids(analyzed),
             number_q: 0,
+            line_starts: Default::default(),
         }
     }
 
@@ -205,7 +222,7 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
                         panic!("Should be in intermediates")
                     }
                     SymbolKind::Poly(_) => Some(symbol.id),
-                    SymbolKind::Other() | SymbolKind::Constant() => None,
+                    SymbolKind::Other() => None,
                 }?;
 
                 let out = Reference {
@@ -217,7 +234,7 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
                     elementType: None,
                     len: symbol.length.map(|l| l as usize),
                 };
-                Some((name.clone(), out))
+                Some((fixup_name(name), out))
             })
             .chain(
                 self.analyzed
@@ -236,7 +253,7 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
                             elementType: None,
                             len: symbol.length.map(|l| l as usize),
                         };
-                        (name.clone(), out)
+                        (fixup_name(name), out)
                     }),
             )
             .collect::<HashMap<String, Reference>>()
@@ -304,7 +321,7 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
                     ..DEFAULT_EXPR
                 },
             ),
-            Expression::BinaryOperation(left, op, right) => {
+            Expression::BinaryOperation(AlgebraicBinaryOperation { left, op, right }) => {
                 let (deg_left, left) = self.expression_to_json(left);
                 let (deg_right, right) = self.expression_to_json(right);
                 let (op, degree) = match op {
@@ -330,7 +347,7 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
                     },
                 )
             }
-            Expression::UnaryOperation(op, value) => {
+            Expression::UnaryOperation(AlgebraicUnaryOperation { op, expr: value }) => {
                 let (deg, value) = self.expression_to_json(value);
                 match op {
                     AlgebraicUnaryOperator::Minus => (
@@ -366,4 +383,31 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
         };
         (1, poly)
     }
+
+    fn line_of_source_ref(&mut self, source: &SourceRef) -> usize {
+        let Some(file_contents) = source.file_contents.as_ref() else {
+            return 0;
+        };
+        let line_starts = self
+            .line_starts
+            .entry(file_contents.as_ptr())
+            .or_insert_with(|| compute_line_starts(file_contents));
+        offset_to_line_col(source.start, line_starts).0
+    }
+}
+
+fn compute_line_starts(source: &str) -> Vec<usize> {
+    std::iter::once(0)
+        .chain(source.match_indices('\n').map(|(i, _)| i + 1))
+        .collect::<Vec<_>>()
+}
+
+/// Returns a tuple `(line, col)` given the file offset of line starts.
+/// `line` is 1 based and `col` is 0 based.
+fn offset_to_line_col(offset: usize, line_starts: &[usize]) -> (usize, usize) {
+    let line = match line_starts.binary_search(&offset) {
+        Ok(line) => line + 1,
+        Err(next_line) => next_line,
+    };
+    (line, offset - line_starts[line - 1])
 }

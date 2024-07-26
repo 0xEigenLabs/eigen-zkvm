@@ -78,7 +78,7 @@ fn generate_verifier<F: FieldElement, W: std::io::Write>(
         agg_stage: false,
     };
     if !setup.starkinfo.qs.is_empty() {
-        let pil_json = pil_export::<F>(pil);
+        let pil_json = pil_export::<F>(&pil);
         let str_ver = pil2circom::pil2circom(
             &pil_json,
             &setup.const_root,
@@ -102,6 +102,7 @@ pub fn zkvm_execute_and_prove(task: &str, suite_json: String, output_path: &str)
         Path::new(output_path),
         force_overwrite,
         &Runtime::base().with_poseidon(),
+	false,
         with_bootloader,
     )
     .ok_or_else(|| vec!["could not compile rust".to_string()])
@@ -140,7 +141,7 @@ pub fn zkvm_execute_and_prove(task: &str, suite_json: String, output_path: &str)
     log::debug!("Running powdr-riscv executor in trace mode for continuations...");
     let start = Instant::now();
 
-    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline);
+    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline, None);
 
     let duration = start.elapsed();
     log::debug!("Trace executor took: {:?}", duration);
@@ -169,6 +170,7 @@ pub fn zkvm_generate_chunks(
         Path::new(output_path),
         force_overwrite,
         &Runtime::base().with_poseidon(),
+	false,
         with_bootloader,
     )
     .ok_or_else(|| vec!["could not compile rust".to_string()])
@@ -196,7 +198,7 @@ pub fn zkvm_generate_chunks(
     log::debug!("Running powdr-riscv executor in trace mode for continuations...");
     let start = Instant::now();
 
-    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline);
+    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline, None);
 
     let duration = start.elapsed();
     log::debug!(
@@ -281,7 +283,7 @@ where
     //let pipeline = pipeline.with_name(name);
 
     // now we should do
-    let parent_path = pipeline.output_dir().unwrap();
+    let parent_path = pipeline.output_dir().as_ref().unwrap();
     let chunk_dir = parent_path.join(name);
     //remove_dir_all(&chunk_dir).unwrap();
     create_dir_all(&chunk_dir).unwrap();
@@ -313,7 +315,6 @@ mod tests {
 
     // RUST_MIN_STACK=2073741821 RUST_LOG=debug nohup cargo test --release test_zkvm_prove -- --nocapture  &
     #[test]
-    #[ignore]
     fn test_zkvm_prove() {
         env_logger::try_init().unwrap_or_default();
         //let test_file = "test-vectors/blockInfo.json";
