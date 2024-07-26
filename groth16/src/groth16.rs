@@ -110,13 +110,14 @@ impl<E: Engine, C: Circuit<E>> Groth16<E, C> {
 #[cfg(test)]
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
 mod tests {
+    use anyhow::Ok;
     use franklin_crypto::bellman::{Field, PrimeField};
     use num_traits::Zero;
 
     use super::*;
     use crate::api::create_circuit_add_witness;
-    use crate::api::groth16_setup_inplace;
     use crate::api::SetupResult;
+    use crate::api::{groth16_prove_inplace, groth16_setup_inplace, groth16_verify_inplace};
     use crate::bellman_ce::bls12_381::Bls12;
     use crate::bellman_ce::bn256::{Bn256, Fr};
     use algebraic::circom_circuit::CircomCircuit;
@@ -221,6 +222,45 @@ mod tests {
         println!("3-groth16-bls12381 verify run time: {} secs", elapsed2);
 
         assert!(verified);
+
+        Ok(())
+    }
+
+    #[test]
+    fn groth16_api_proof_inpace() -> Result<()> {
+        //1. SRS
+        let t = std::time::Instant::now();
+        let curve_type = "BLS12381";
+        let public_input_file = "/tmp/public_input.json";
+        let proof_file = "/tmp/proof.json";
+        let setup_result = groth16_setup_inplace(curve_type, CIRCUIT_FILE_BLS12)?;
+        let (circuit, pk, vk) = match setup_result {
+            SetupResult::BLS12381(circuit, pk, vk) => (circuit, pk, vk),
+            _ => panic!("Expected BLS12381 setup result"),
+        };
+        let elapsed = t.elapsed().as_secs_f64();
+        println!("1-groth16-bls12381 setup run time: {} secs", elapsed);
+
+        //2. Prove
+        let t1 = std::time::Instant::now();
+        let _ = groth16_prove_inplace(
+            curve_type,
+            circuit,
+            WASM_FILE_BLS12,
+            pk,
+            INPUT_FILE,
+            public_input_file,
+            proof_file,
+            false,
+        );
+        let elapsed1 = t1.elapsed().as_secs_f64();
+        println!("2-groth16-bls12381 prove run time: {} secs", elapsed1);
+
+        //3. Verify
+        let t2 = std::time::Instant::now();
+        let _ = groth16_verify_inplace(vk, public_input_file, proof_file);
+        let elapsed2 = t2.elapsed().as_secs_f64();
+        println!("3-groth16-bls12381 verify run time: {} secs", elapsed2);
 
         Ok(())
     }
