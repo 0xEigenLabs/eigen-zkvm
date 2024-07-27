@@ -23,7 +23,6 @@ lazy_static = "1.0"
 ## threading
 rayon = { version = "1.5"}
 num_cpus = "1.0"
-hashbrown = { version = "0.14.3", features = ["rayon"] }
 
 # error and log
 anyhow = "1.0.79"

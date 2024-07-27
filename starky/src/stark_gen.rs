@@ -16,7 +16,7 @@ use crate::traits::{FieldExtension, MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, PIL};
 use anyhow::Result;
 use fields::field_gl::Fr as FGL;
-use hashbrown::HashMap;
+use std::collections::HashMap;
 use profiler_macro::time_profiler;
 use rayon::prelude::*;
 
