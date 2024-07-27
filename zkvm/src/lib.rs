@@ -30,7 +30,7 @@ fn generate_witness_and_prove<F: FieldElement>(
     let start = Instant::now();
     log::debug!("Proving ...");
 
-    pipeline = pipeline.with_backend(BackendType::EStarkStarky, Some("stark_gl".to_string()));
+    pipeline = pipeline.with_backend(BackendType::EStarkStarkyComposite, Some("stark_gl".to_string()));
     pipeline.compute_proof().unwrap();
     let duration = start.elapsed();
     log::debug!("Proving took: {:?}", duration);
@@ -43,7 +43,7 @@ fn generate_verifier<F: FieldElement, W: std::io::Write>(
 ) -> Result<()> {
     let buf = Vec::new();
     let mut vw = BufWriter::new(buf);
-    pipeline = pipeline.with_backend(BackendType::EStarkStarky, Some("stark_gl".to_string()));
+    pipeline = pipeline.with_backend(BackendType::EStarkStarkyComposite, Some("stark_gl".to_string()));
     pipeline.export_verification_key(&mut vw).unwrap();
     log::debug!("Export verification key done");
     let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_slice(&vw.into_inner()?)?;
@@ -337,7 +337,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
+    #[ignore = "too slow"]
     fn test_zkvm_lr_execute_then_prove() {
         env_logger::try_init().unwrap_or_default();
         //let test_file = "test-vectors/blockInfo.json";

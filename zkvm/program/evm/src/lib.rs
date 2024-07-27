@@ -7,8 +7,8 @@ use revm::{
         calc_excess_blob_gas, keccak256, Env, AccountInfo, Bytecode, TransactTo, U256, SpecId
     },
 };
-//use runtime::{print, get_prover_input, coprocessors::{get_data, get_data_len}};
-use powdr_riscv_runtime::{print, input::get_data_serde};
+
+use powdr_riscv_runtime::{print, io};
 
 use models::*;
 
@@ -29,7 +29,7 @@ pub fn recover_address(private_key: &[u8]) -> Option<Address> {
 
 #[no_mangle]
 fn main() {
-    let suite_json: String = get_data_serde(TEST_CHANNEL);
+    let suite_json: String = io::read(TEST_CHANNEL);
     print!("suite_json: {suite_json}\n");
     let suite = read_suite(&suite_json);
 

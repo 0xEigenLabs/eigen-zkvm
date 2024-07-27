@@ -10,7 +10,8 @@ itertools = "0.12.0"
 # serialization
 log = "0.4.0"
 
-powdr =         { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
+#powdr =         { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
+powdr =              { path = "../../powdr/powdr", default-features = false }
 starky =         { path = "../starky" }
 recursion =  { path = "../recursion" }
 
