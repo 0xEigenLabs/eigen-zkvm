@@ -27,7 +27,7 @@ anyhow = "1.0.79"
 fnv = { version = "1.0.3", default-features = false }
 num = { version = "0.4.0" }
 byteorder = "1"
-franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = [ "plonk" ], version = "0.0.5"}
+franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", version = "0.0.5"}
 #franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
 
 [dev-dependencies]

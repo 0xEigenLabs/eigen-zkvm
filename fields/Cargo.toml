@@ -16,7 +16,7 @@ num-traits = "0.2.8"
 serde = { version = "1.0", features = [ "derive" ] }
 hex = "*"
 byteorder = "1"
-franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", features = [ "plonk" ], version = "0.0.5"}
+franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", version = "0.0.5"}
 #franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
 
 rand = "0.4"
