@@ -51,7 +51,11 @@ pub fn render(n_bits: usize, n_publics: usize) -> String {
     let mut res = String::from("");
     res.push_str(&format!(
         r#"
+<<<<<<< HEAD
 let N: int = 2**{n_bits};
+=======
+let N = 2**{n_bits};
+>>>>>>> f53937c (fix: fix table exhausted)
 
 namespace Global(N);
     pol constant L1;
