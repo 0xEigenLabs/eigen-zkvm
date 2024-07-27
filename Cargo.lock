@@ -97,14 +97,10 @@ dependencies = [
  "num",
  "num-bigint 0.3.3",
  "num-traits",
- "rand 0.4.6",
- "rand 0.6.5",
+ "rand 0.8.5",
  "serde",
  "serde_json",
  "thiserror",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "wasm-bindgen-test",
  "wasmer",
 ]
 

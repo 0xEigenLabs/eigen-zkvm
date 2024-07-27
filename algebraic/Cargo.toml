@@ -29,21 +29,11 @@ num = { version = "0.4.0" }
 byteorder = "1"
 franklin-crypto = { git = "https://github.com/matter-labs/franklin-crypto", branch = "beta", version = "0.0.5"}
 #franklin-crypto = { path = "../../franklin-crypto", features = [ "plonk" ], version = "0.0.5"}
+rand = "0.8.5"
 
 [dev-dependencies]
 env_logger = "0.10"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-rand = "0.4"
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = { version = "0.2.51", features = ["serde-serialize"]  }
-wasm-bindgen-futures = "0.4.1"
-rand = { version="0.6.5", features = ["wasm-bindgen"] }
-
-[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
-wasm-bindgen-test = "0.3"
 
 [features]
 default = ["franklin-crypto/multicore", "wasmer/singlepass"]
-wasm = ["wasmer/js-default"]
