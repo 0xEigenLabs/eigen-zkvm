@@ -141,7 +141,7 @@ pub fn zkvm_execute_and_prove(task: &str, suite_json: String, output_path: &str)
     log::debug!("Running powdr-riscv executor in trace mode for continuations...");
     let start = Instant::now();
 
-    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline, None);
+    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline, Default::default());
 
     let duration = start.elapsed();
     log::debug!("Trace executor took: {:?}", duration);
@@ -198,7 +198,7 @@ pub fn zkvm_generate_chunks(
     log::debug!("Running powdr-riscv executor in trace mode for continuations...");
     let start = Instant::now();
 
-    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline, None);
+    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline, Default::default());
 
     let duration = start.elapsed();
     log::debug!(
