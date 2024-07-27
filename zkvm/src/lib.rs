@@ -102,7 +102,7 @@ pub fn zkvm_execute_and_prove(task: &str, suite_json: String, output_path: &str)
         Path::new(output_path),
         force_overwrite,
         &Runtime::base().with_poseidon(),
-        true,
+        false,
         with_bootloader,
     )
     .ok_or_else(|| vec!["could not compile rust".to_string()])
@@ -170,7 +170,7 @@ pub fn zkvm_generate_chunks(
         Path::new(output_path),
         force_overwrite,
         &Runtime::base().with_poseidon(),
-        true,
+        false,
         with_bootloader,
     )
     .ok_or_else(|| vec!["could not compile rust".to_string()])
