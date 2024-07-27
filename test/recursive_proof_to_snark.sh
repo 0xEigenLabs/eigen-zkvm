@@ -28,7 +28,7 @@ RECURSIVE2_CIRCUIT=${CIRCUIT}.recursive2
 # compile .pil file into .pil.json by pilcom.
 # input files :  .pil file
 # output files :  .pil.json, .const, .cm
-mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TASK_NO --pc $PILCACHE
+mkdir -p $RUNDIR/circuits && node $RUNDIR/$PILEXECJS -w $RUNDIR/circuits -i $TASK_NO --pc $PILCACHE --p fibonacci_old.pil
 
 #### 1. Generate stark proof
 # generate .circom file.
