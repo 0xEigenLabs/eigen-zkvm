@@ -2,7 +2,6 @@
 members = [
   "zkit",
   "zkvm",
-  "plonky",
   "starky",
   "algebraic",
   "groth16",
