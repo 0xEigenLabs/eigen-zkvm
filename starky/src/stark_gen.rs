@@ -16,9 +16,9 @@ use crate::traits::{FieldExtension, MTNodeType, MerkleTree, Transcript};
 use crate::types::{StarkStruct, PIL};
 use anyhow::Result;
 use fields::field_gl::Fr as FGL;
-use std::collections::HashMap;
 use profiler_macro::time_profiler;
 use rayon::prelude::*;
+use std::collections::HashMap;
 
 pub struct StarkContext<F: FieldExtension> {
     pub nbits: usize,
