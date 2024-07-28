@@ -1,7 +1,10 @@
 use anyhow::Result;
-use powdr::backend::{BackendType, composite::{CompositeProof, CompositeVerificationKey, split}};
-use powdr::number::{DegreeType, FieldElement, GoldilocksField};
+use powdr::backend::{
+    composite::{split, CompositeProof, CompositeVerificationKey},
+    BackendType,
+};
 use powdr::executor::constant_evaluator::get_uniquely_sized;
+use powdr::number::{DegreeType, FieldElement, GoldilocksField};
 use powdr::riscv::continuations::{rust_continuations, rust_continuations_dry_run};
 use powdr::riscv::{compile_rust, Runtime};
 use powdr::Pipeline;
@@ -31,7 +34,10 @@ fn generate_witness_and_prove<F: FieldElement>(
     let start = Instant::now();
     log::debug!("Proving ...");
 
-    pipeline = pipeline.with_backend(BackendType::EStarkStarkyComposite, Some("stark_gl".to_string()));
+    pipeline = pipeline.with_backend(
+        BackendType::EStarkStarkyComposite,
+        Some("stark_gl".to_string()),
+    );
     pipeline.compute_proof().unwrap();
     let duration = start.elapsed();
     log::debug!("Proving took: {:?}", duration);
@@ -50,13 +56,15 @@ fn generate_witness_and_prove_raw<F: FieldElement>(
     let start = Instant::now();
     log::debug!("Proving ...");
 
-    pipeline = pipeline.with_backend(BackendType::EStarkStarkyComposite, Some("stark_gl".to_string()));
+    pipeline = pipeline.with_backend(
+        BackendType::EStarkStarkyComposite,
+        Some("stark_gl".to_string()),
+    );
     pipeline.compute_proof().unwrap();
     let duration = start.elapsed();
     log::debug!("Proving took: {:?}", duration);
     Ok(())
 }
-
 
 fn generate_verifier<F: FieldElement>(
     mut pipeline: Pipeline<F>,
@@ -66,46 +74,54 @@ fn generate_verifier<F: FieldElement>(
 ) -> Result<()> {
     let buf = Vec::new();
     let mut vw = BufWriter::new(buf);
-    pipeline = pipeline.with_backend(BackendType::EStarkStarkyComposite, Some("stark_gl".to_string()));
+    pipeline = pipeline.with_backend(
+        BackendType::EStarkStarkyComposite,
+        Some("stark_gl".to_string()),
+    );
     pipeline.export_verification_key(&mut vw).unwrap();
 
     log::debug!("Init CompositeVerificationKey");
-    let cvk: CompositeVerificationKey
-        = bincode::deserialize(&vw.into_inner()?)?; 
+    let cvk: CompositeVerificationKey = bincode::deserialize(&vw.into_inner()?)?;
 
     log::debug!("Init CompositeProof");
     let proof_data = pipeline.proof().unwrap();
-    let cf: CompositeProof = bincode::deserialize(&proof_data)?;
+    let cf: CompositeProof = bincode::deserialize(proof_data)?;
 
     // FIXME, we should use the sub machine pil
     let full_pil = pipeline.optimized_pil().unwrap();
     let pils = split::split_pil((*full_pil).clone());
 
     log::debug!("Generate verifier for each proof");
-    for (idx,(vk, machine_proof)) in
-        cvk.verification_keys.iter().zip(cf.proofs.into_iter()).enumerate()
+    for (idx, (vk, machine_proof)) in cvk
+        .verification_keys
+        .iter()
+        .zip(cf.proofs.into_iter())
+        .enumerate()
     {
         if vk.is_none() {
             continue;
         }
         let pil = pils.get(&machine_proof.machine).unwrap();
-        let proof_file = Path::new(output_path).join(format!("{}_chunk_{}_submachine_{}.json", task, chunk_idx, idx));
+        let proof_file = Path::new(output_path).join(format!(
+            "{}_chunk_{}_submachine_{}.json",
+            task, chunk_idx, idx
+        ));
 
-        log::debug!(
-            "Running proof generation to {:?}...",
-            proof_file
-        );
+        log::debug!("Running proof generation to {:?}...", proof_file);
         fs::write(proof_file, machine_proof.proof)?;
 
-        let verifier_file = Path::new(output_path).join(format!("{}_chunk_{}_submachine_{}.circom", task, chunk_idx, idx));
+        let verifier_file = Path::new(output_path).join(format!(
+            "{}_chunk_{}_submachine_{}.circom",
+            task, chunk_idx, idx
+        ));
         log::debug!(
             "Running circom verifier generation to {:?}...",
             verifier_file
         );
         let mut writer = fs::File::create(verifier_file)?;
-        
+
         let vk_data = vk.as_ref().unwrap().get(&machine_proof.size).unwrap();
-        let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_slice(&vk_data)?;
+        let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_slice(vk_data)?;
         log::debug!("Load StarkSetup, size={}", machine_proof.size);
 
         // FIXME: get the sub machine PIL
@@ -113,13 +129,13 @@ fn generate_verifier<F: FieldElement>(
         //let degree = pil.degree();
         let fixed_cols = pipeline.fixed_cols().unwrap();
         let degree = get_uniquely_sized(&fixed_cols)
-            .unwrap() 
+            .unwrap()
             .iter()
             .find(|(col, _)| col == "main.STEP")
             .unwrap()
             .1
             .len() as u64;
-        
+
         assert!(degree > 1);
         let n_bits = (DegreeType::BITS - (degree - 1).leading_zeros()) as usize;
         let n_bits_ext = n_bits + 1;
@@ -146,7 +162,7 @@ fn generate_verifier<F: FieldElement>(
             agg_stage: false,
         };
         if !setup.starkinfo.qs.is_empty() {
-            let pil_json = pil_export::<F>(&pil);
+            let pil_json = pil_export::<F>(pil);
             let str_ver = pil2circom::pil2circom(
                 &pil_json,
                 &setup.const_root,
@@ -333,9 +349,9 @@ where
     PipelineCallback: Fn(Pipeline<F>) -> Result<Pipeline<F>, E>,
 {
     let fixed_cols = pipeline.compute_fixed_cols().unwrap();
-    
+
     let length = get_uniquely_sized(&fixed_cols)
-        .unwrap() 
+        .unwrap()
         .iter()
         .find(|(col, _)| col == "main.STEP")
         .unwrap()
@@ -369,7 +385,7 @@ where
             jump_to_shutdown_routine,
         ),
     ]);
-    Ok(pipeline_callback(pipeline)?)
+    pipeline_callback(pipeline)
 }
 
 #[cfg(test)]
