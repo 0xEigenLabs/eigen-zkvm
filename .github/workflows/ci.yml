@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-      - run: rustup update nightly-2024-02-01 && rustup component add rust-src --toolchain nightly-2023-01-03-x86_64-unknown-linux-gnu
+      - run: rustup update nightly-2024-02-01 && rustup component add rust-src --toolchain nightly-2024-02-01-x86_64-unknown-linux-gnu
       - run: cargo test --release --verbose
   fmt:
     name: Rustfmt
