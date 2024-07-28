@@ -2068,7 +2068,7 @@ dependencies = [
 [[package]]
 name = "fields"
 version = "0.1.0"
-source = "git+https://github.com/0xEigenLabs/eigen-zkvm.git?branch=feat/no-plonby#578c824969997d8b47e613545c32861f42874b1a"
+source = "git+https://github.com/0xEigenLabs/eigen-zkvm.git?branch=feat/no-plonby#cde13a1ddc380dc57c8917279f9df2527fd966d7"
 dependencies = [
  "byteorder",
  "franklin-crypto",
@@ -3477,6 +3477,7 @@ dependencies = [
 [[package]]
 name = "powdr"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "powdr-ast",
  "powdr-backend",
@@ -3491,6 +3492,7 @@ dependencies = [
 [[package]]
 name = "powdr-airgen"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "itertools 0.13.0",
  "log",
@@ -3502,6 +3504,7 @@ dependencies = [
 [[package]]
 name = "powdr-analysis"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "itertools 0.13.0",
  "lazy_static",
@@ -3515,6 +3518,7 @@ dependencies = [
 [[package]]
 name = "powdr-asm-to-pil"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "lazy_static",
  "log",
@@ -3528,6 +3532,7 @@ dependencies = [
 [[package]]
 name = "powdr-asm-utils"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "itertools 0.13.0",
 ]
@@ -3535,6 +3540,7 @@ dependencies = [
 [[package]]
 name = "powdr-ast"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "auto_enums",
  "derive_more",
@@ -3550,6 +3556,7 @@ dependencies = [
 [[package]]
 name = "powdr-backend"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "bincode",
  "hex",
@@ -3575,6 +3582,7 @@ dependencies = [
 [[package]]
 name = "powdr-executor"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "bit-vec",
  "indicatif",
@@ -3593,6 +3601,7 @@ dependencies = [
 [[package]]
 name = "powdr-importer"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "powdr-ast",
  "powdr-number",
@@ -3604,6 +3613,7 @@ dependencies = [
 [[package]]
 name = "powdr-linker"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "itertools 0.13.0",
  "powdr-analysis",
@@ -3616,6 +3626,7 @@ dependencies = [
 [[package]]
 name = "powdr-number"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "ark-bn254",
  "ark-ff",
@@ -3634,6 +3645,7 @@ dependencies = [
 [[package]]
 name = "powdr-parser"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "derive_more",
  "lalrpop",
@@ -3648,6 +3660,7 @@ dependencies = [
 [[package]]
 name = "powdr-parser-util"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "codespan-reporting 0.11.1",
  "lalrpop-util",
@@ -3658,6 +3671,7 @@ dependencies = [
 [[package]]
 name = "powdr-pil-analyzer"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "itertools 0.13.0",
  "lazy_static",
@@ -3671,6 +3685,7 @@ dependencies = [
 [[package]]
 name = "powdr-pilopt"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "log",
  "powdr-ast",
@@ -3681,6 +3696,7 @@ dependencies = [
 [[package]]
 name = "powdr-pipeline"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "itertools 0.13.0",
  "log",
@@ -3709,6 +3725,7 @@ dependencies = [
 [[package]]
 name = "powdr-riscv"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "gimli 0.31.0",
  "goblin",
@@ -3737,6 +3754,7 @@ dependencies = [
 [[package]]
 name = "powdr-riscv-executor"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "inferno 0.11.20",
  "itertools 0.13.0",
@@ -3757,10 +3775,12 @@ dependencies = [
 [[package]]
 name = "powdr-riscv-syscalls"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 
 [[package]]
 name = "powdr-schemas"
 version = "0.1.0-alpha.2"
+source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen/v1#542833859b020406288f3b336b24a08abd8ab43c"
 dependencies = [
  "powdr-ast",
  "powdr-number",
@@ -4760,7 +4780,7 @@ dependencies = [
 [[package]]
 name = "starky"
 version = "0.0.1"
-source = "git+https://github.com/0xEigenLabs/eigen-zkvm.git?branch=feat/no-plonby#578c824969997d8b47e613545c32861f42874b1a"
+source = "git+https://github.com/0xEigenLabs/eigen-zkvm.git?branch=feat/no-plonby#cde13a1ddc380dc57c8917279f9df2527fd966d7"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -5962,6 +5982,7 @@ name = "zkvm"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bincode",
  "env_logger 0.10.2",
  "hex",
  "itertools 0.12.1",
