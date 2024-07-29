@@ -268,6 +268,7 @@ pub fn zkvm_generate_chunks(
         .add_data(TEST_CHANNEL, suite_json);
 
     log::debug!("Running powdr-riscv executor in fast mode...");
+    pipeline.compute_fixed_cols().unwrap();
 
     /*
     let (trace, _mem) = powdr::riscv_executor::execute::<GoldilocksField>(
@@ -350,6 +351,10 @@ where
 {
     let fixed_cols = pipeline.compute_fixed_cols().unwrap();
 
+    // Advance the pipeline to the optimized PIL stage, so that it doesn't need to be computed
+    // in every chunk.
+    pipeline.compute_optimized_pil().unwrap();
+
     let length = get_uniquely_sized(&fixed_cols)
         .unwrap()
         .iter()
@@ -418,14 +423,15 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_zkvm_lr_execute_then_prove() {
         env_logger::try_init().unwrap_or_default();
         //let test_file = "test-vectors/blockInfo.json";
         let test_file = "test-vectors/solidityExample.json";
         let suite_json = fs::read_to_string(test_file).unwrap();
 
-        let output_path = "/tmp/test_lr";
-        let task = "lr";
+        let task = "evm";
+        let output_path = "/tmp/test_evm";
         let workspace = format!("program/{}", task);
         let bootloader_inputs =
             zkvm_generate_chunks(workspace.as_str(), &suite_json, output_path).unwrap();

@@ -39,6 +39,7 @@ fn main() {
     assert!(execute_test(&suite).is_ok());
 }
 
+// FIXME: serde by runtime.
 fn read_suite(s: &String) -> TestUnit {
     let suite: TestUnit = serde_json::from_str(s).map_err(|e| e).unwrap();
     suite
