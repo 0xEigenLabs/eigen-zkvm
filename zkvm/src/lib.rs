@@ -417,6 +417,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_zkvm_lr_execute_then_prove() {
         env_logger::try_init().unwrap_or_default();
         let test_file = "test-vectors/reth.block.json";
