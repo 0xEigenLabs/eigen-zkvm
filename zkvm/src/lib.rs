@@ -404,7 +404,6 @@ mod tests {
     #[ignore]
     fn test_zkvm_prove() {
         env_logger::try_init().unwrap_or_default();
-        //let test_file = "test-vectors/blockInfo.json";
         let test_file = "test-vectors/reth.block.json";
         let suite_json = fs::read_to_string(test_file).unwrap();
 
@@ -412,22 +411,15 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_zkvm_lr_prove() {
         env_logger::try_init().unwrap_or_default();
-        //let test_file = "test-vectors/blockInfo.json";
-        let test_file = "test-vectors/solidityExample.json";
-        let suite_json = fs::read_to_string(test_file).unwrap();
-
-        zkvm_execute_and_prove("lr", suite_json, "/tmp/test_lr").unwrap();
+        zkvm_execute_and_prove("lr", "".to_string(), "/tmp/test_lr").unwrap();
     }
 
     #[test]
-    #[ignore]
     fn test_zkvm_lr_execute_then_prove() {
         env_logger::try_init().unwrap_or_default();
-        //let test_file = "test-vectors/blockInfo.json";
-        let test_file = "test-vectors/solidityExample.json";
+        let test_file = "test-vectors/reth.block.json";
         let suite_json = fs::read_to_string(test_file).unwrap();
 
         let task = "evm";
