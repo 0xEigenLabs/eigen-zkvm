@@ -71,7 +71,7 @@ fn generate_verifier<F: FieldElement>(
     output_path: &str,
     task: &str,
     chunk_idx: usize,
-) -> Result<()> {
+) -> Result<Vec<usize>> {
     let buf = Vec::new();
     let mut vw = BufWriter::new(buf);
     pipeline = pipeline.with_backend(
@@ -92,6 +92,7 @@ fn generate_verifier<F: FieldElement>(
     let pils = split::split_pil((*full_pil).clone());
 
     log::debug!("Generate verifier for each proof");
+    let mut ids = vec![];
     for (idx, (vk, machine_proof)) in cvk
         .verification_keys
         .iter()
@@ -174,8 +175,9 @@ fn generate_verifier<F: FieldElement>(
             .unwrap();
             writer.write_fmt(format_args!("{}", str_ver))?;
         }
+        ids.push(idx);
     }
-    Ok(())
+    Ok(ids)
 }
 
 pub fn zkvm_execute_and_prove(task: &str, suite_json: String, output_path: &str) -> Result<()> {
@@ -303,7 +305,7 @@ pub fn zkvm_prove_only(
     start_of_shutdown_routine: u64,
     i: usize,
     output_path: &str,
-) -> Result<()> {
+) -> Result<Vec<usize>> {
     log::debug!("Compiling Rust...");
     let asm_file_path = Path::new(output_path).join(format!("{}.asm", task));
 
@@ -327,7 +329,7 @@ pub fn zkvm_prove_only(
     )
     .unwrap();
 
-    generate_verifier(pipeline, output_path, task, i)?;
+    let ids = generate_verifier(pipeline, output_path, task, i)?;
 
     let duration = start.elapsed();
     log::debug!(
@@ -335,7 +337,7 @@ pub fn zkvm_prove_only(
         duration
     );
 
-    Ok(())
+    Ok(ids)
 }
 
 pub fn rust_continuation<F: FieldElement, PipelineCallback, E>(
