@@ -178,15 +178,12 @@ pub struct PlonkSetupRenderInfo {
 impl PlonkSetupRenderInfo {
     pub fn plonk_setup_render(r1cs: &R1CS<GL>, opts: &Options) -> Self {
         // 1. r1cs to plonk
-        log::debug!("r1cs2plonk");
         let (plonk_constrains, plonk_additions) = r1cs2plonk(r1cs);
 
-        log::debug!("get plonk info");
         // 2. get normal plonk info
         let plonk_info = NormalPlonkInfo::new(&plonk_constrains);
         // 3. get custom gate info
 
-        log::debug!("get custom gate");
         let custom_gates_info = CustomGateInfo::from_r1cs(r1cs);
 
         // 4. calculate columns,rows,constraints info.
