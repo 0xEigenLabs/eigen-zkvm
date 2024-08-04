@@ -25,16 +25,20 @@ pub struct PlonkSetup {
 impl PlonkSetup {
     pub fn new(r1cs: &R1CS<GL>, opts: &Options) -> Self {
         // 1. plonk_setup_render phase
+        log::debug!("setup");
         let plonk_setup_info = PlonkSetupRenderInfo::plonk_setup_render(r1cs, opts);
         // 2. render .pil file by template.
         // //      And save as a file.
+        log::debug!("render, plonk_setup_info");
         let pil_str = compressor12_pil::render(plonk_setup_info.n_bits, plonk_setup_info.n_publics);
         // let mut file = File::create(out_pil.clone()).unwrap();
         // write!(file, "{}", pil_str).unwrap();
 
+        log::debug!("compile pil");
         // 3. compile pil to pil_json
         let pil_json = compile_pil_from_str(&pil_str);
 
+        log::debug!("plonk setup compressor");
         //4. plonk_setup_fix_compressor phase
         let (const_pols, s_map) = plonk_setup_compressor(r1cs, &pil_json, &plonk_setup_info);
 
@@ -178,17 +182,26 @@ pub struct PlonkSetupRenderInfo {
 impl PlonkSetupRenderInfo {
     pub fn plonk_setup_render(r1cs: &R1CS<GL>, opts: &Options) -> Self {
         // 1. r1cs to plonk
+        log::debug!("r1cs2plonk");
         let (plonk_constrains, plonk_additions) = r1cs2plonk(r1cs);
 
+        log::debug!("get plonk info");
         // 2. get normal plonk info
         let plonk_info = NormalPlonkInfo::new(&plonk_constrains);
         // 3. get custom gate info
+
+        log::debug!("get custom gate");
         let custom_gates_info = CustomGateInfo::from_r1cs(r1cs);
 
         // 4. calculate columns,rows,constraints info.
         let n_publics = r1cs.num_inputs + r1cs.num_outputs - 1;
         let n_public_rows = (n_publics - 1) / 12 + 1;
 
+        log::debug!(
+            "{n_publics} {n_public_rows} {} {:?}",
+            plonk_info.N,
+            custom_gates_info
+        );
         let n_used = n_public_rows
             + plonk_info.N
             + (custom_gates_info.n_c_mul_add
@@ -218,12 +231,14 @@ pub fn plonk_setup_compressor(
     plonk_setup_info: &PlonkSetupRenderInfo,
 ) -> (PolsArray, Vec<Vec<u64>>) {
     // 1. construct init ConstantPolsArray
+    log::debug!("pil: new constant");
     let mut const_pols = PolsArray::new(pil, PolKind::Constant);
 
     let n_used = plonk_setup_info.n_used;
     let n_publics = plonk_setup_info.n_publics;
     let n_public_rows = (n_publics - 1) / 12 + 1;
 
+    log::debug!("n_used {n_used}, n_publics {n_publics}, rows: {n_public_rows}");
     // 2. init sMap and construct it.
     let mut s_map: Vec<Vec<u64>> = vec![vec![0u64; n_used]; 12];
 

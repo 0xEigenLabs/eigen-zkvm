@@ -38,6 +38,6 @@ rand = "0.8.5"
 env_logger = "0.10"
 
 [features]
-default = ["bellperson/default", "wasmer/default"]
+default = ["bellperson/default", "wasmer/singlepass"]
 cuda = ["bellperson/cuda", "wasmer/singlepass"]
 opencl = ["bellperson/opencl", "wasmer/singlepass"]

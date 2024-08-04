@@ -24,14 +24,17 @@ pub fn setup(
 ) -> Result<()> {
     // 0. readR1cs
     let r1cs_reader = File::open(r1cs_file)?;
+    log::debug!("setup load r1cs");
     let (r1cs, _) = load_r1cs_from_bin::<_, GL>(r1cs_reader);
     let opts = Options {
         force_bits: force_n_bits,
     };
 
+    log::debug!("plonk setup");
     // 1. plonk setup: generate plonk circuit, the pil file.
     let res = PlonkSetup::new(&r1cs, &opts);
 
+    log::debug!("save");
     // 2. And write it into pil_file.
     let mut file =
         File::create(pil_file).map_err(|_| anyhow!("Create file error, {}", pil_file))?;

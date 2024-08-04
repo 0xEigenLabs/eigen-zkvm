@@ -27,7 +27,7 @@ fn generate_witness_and_prove<F: FieldElement>(
 ) -> Result<Pipeline<F>, Vec<String>> {
     let start = Instant::now();
     log::debug!("Generating witness...");
-    pipeline.compute_witness().unwrap();
+    pipeline.compute_witness()?;
     let duration = start.elapsed();
     log::debug!("Generating witness took: {:?}", duration);
 
@@ -38,7 +38,7 @@ fn generate_witness_and_prove<F: FieldElement>(
         BackendType::EStarkStarkyComposite,
         Some("stark_gl".to_string()),
     );
-    pipeline.compute_proof().unwrap();
+    pipeline.compute_proof()?;
     let duration = start.elapsed();
     log::debug!("Proving took: {:?}", duration);
     Ok(pipeline)
@@ -49,7 +49,7 @@ fn generate_witness_and_prove_raw<F: FieldElement>(
 ) -> Result<(), Vec<String>> {
     let start = Instant::now();
     log::debug!("Generating witness...");
-    pipeline.compute_witness().unwrap();
+    pipeline.compute_witness()?;
     let duration = start.elapsed();
     log::debug!("Generating witness took: {:?}", duration);
 
@@ -60,7 +60,7 @@ fn generate_witness_and_prove_raw<F: FieldElement>(
         BackendType::EStarkStarkyComposite,
         Some("stark_gl".to_string()),
     );
-    pipeline.compute_proof().unwrap();
+    pipeline.compute_proof()?;
     let duration = start.elapsed();
     log::debug!("Proving took: {:?}", duration);
     Ok(())
@@ -87,7 +87,6 @@ fn generate_verifier<F: FieldElement>(
     let proof_data = pipeline.proof().unwrap();
     let cf: CompositeProof = bincode::deserialize(proof_data)?;
 
-    // FIXME, we should use the sub machine pil
     let full_pil = pipeline.optimized_pil().unwrap();
     let pils = split::split_pil((*full_pil).clone());
 

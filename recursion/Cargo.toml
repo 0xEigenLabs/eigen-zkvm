@@ -44,5 +44,5 @@ powdr-parser-util  = { git = "https://github.com/0xEigenLabs/powdr", branch = "e
 env_logger = "0.10"
 
 [features]
-default = ["wasmer/default", "starky/default"]
+default = ["wasmer/singlepass", "starky/default"]
 avx512 = ["fields/avx512", "starky/avx512", "powdr/starky-avx512"]
