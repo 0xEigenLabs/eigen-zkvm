@@ -34,7 +34,6 @@ pub fn setup(
     // 1. plonk setup: generate plonk circuit, the pil file.
     let res = PlonkSetup::new(&r1cs, &opts);
 
-    log::debug!("save");
     // 2. And write it into pil_file.
     let mut file =
         File::create(pil_file).map_err(|_| anyhow!("Create file error, {}", pil_file))?;

@@ -25,20 +25,16 @@ pub struct PlonkSetup {
 impl PlonkSetup {
     pub fn new(r1cs: &R1CS<GL>, opts: &Options) -> Self {
         // 1. plonk_setup_render phase
-        log::debug!("setup");
         let plonk_setup_info = PlonkSetupRenderInfo::plonk_setup_render(r1cs, opts);
         // 2. render .pil file by template.
         // //      And save as a file.
-        log::debug!("render, plonk_setup_info");
         let pil_str = compressor12_pil::render(plonk_setup_info.n_bits, plonk_setup_info.n_publics);
         // let mut file = File::create(out_pil.clone()).unwrap();
         // write!(file, "{}", pil_str).unwrap();
 
-        log::debug!("compile pil");
         // 3. compile pil to pil_json
         let pil_json = compile_pil_from_str(&pil_str);
 
-        log::debug!("plonk setup compressor");
         //4. plonk_setup_fix_compressor phase
         let (const_pols, s_map) = plonk_setup_compressor(r1cs, &pil_json, &plonk_setup_info);
 
