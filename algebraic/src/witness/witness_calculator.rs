@@ -10,9 +10,7 @@ use serde_json::Value;
 use std::str::FromStr;
 use wasmer::{imports, Function, Instance, Memory, MemoryType, Module, Store};
 
-#[cfg(not(feature = "wasm"))]
 use std::fs::OpenOptions;
-#[cfg(not(feature = "wasm"))]
 use std::io::{BufWriter, Write};
 
 use byteorder::{LittleEndian, WriteBytesExt};
@@ -185,7 +183,6 @@ impl WitnessCalculator {
         Ok(w)
     }
 
-    #[cfg(not(feature = "wasm"))]
     pub fn save_witness_to_bin_file<E: ScalarEngine>(
         &mut self,
         filename: &str,

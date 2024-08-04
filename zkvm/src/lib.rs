@@ -1,5 +1,9 @@
 use anyhow::Result;
-use powdr::backend::BackendType;
+use powdr::backend::{
+    composite::{split, CompositeProof, CompositeVerificationKey},
+    BackendType,
+};
+use powdr::executor::constant_evaluator::get_uniquely_sized;
 use powdr::number::{DegreeType, FieldElement, GoldilocksField};
 use powdr::riscv::continuations::{rust_continuations, rust_continuations_dry_run};
 use powdr::riscv::{compile_rust, Runtime};
@@ -12,7 +16,7 @@ use starky::{
     types::{StarkStruct, Step},
 };
 use std::fs::{self, create_dir_all /*, remove_dir_all*/};
-use std::io::BufWriter;
+use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::time::Instant;
 
@@ -20,77 +24,159 @@ const TEST_CHANNEL: u32 = 1;
 
 fn generate_witness_and_prove<F: FieldElement>(
     mut pipeline: Pipeline<F>,
-) -> Result<(), Vec<String>> {
+) -> Result<Pipeline<F>, Vec<String>> {
     let start = Instant::now();
     log::debug!("Generating witness...");
-    pipeline.compute_witness().unwrap();
+    pipeline.compute_witness()?;
     let duration = start.elapsed();
     log::debug!("Generating witness took: {:?}", duration);
 
     let start = Instant::now();
     log::debug!("Proving ...");
 
-    pipeline = pipeline.with_backend(BackendType::EStarkStarky, Some("stark_gl".to_string()));
-    pipeline.compute_proof().unwrap();
+    pipeline = pipeline.with_backend(
+        BackendType::EStarkStarkyComposite,
+        Some("stark_gl".to_string()),
+    );
+    pipeline.compute_proof()?;
+    let duration = start.elapsed();
+    log::debug!("Proving took: {:?}", duration);
+    Ok(pipeline)
+}
+
+fn generate_witness_and_prove_raw<F: FieldElement>(
+    mut pipeline: Pipeline<F>,
+) -> Result<(), Vec<String>> {
+    let start = Instant::now();
+    log::debug!("Generating witness...");
+    pipeline.compute_witness()?;
+    let duration = start.elapsed();
+    log::debug!("Generating witness took: {:?}", duration);
+
+    let start = Instant::now();
+    log::debug!("Proving ...");
+
+    pipeline = pipeline.with_backend(
+        BackendType::EStarkStarkyComposite,
+        Some("stark_gl".to_string()),
+    );
+    pipeline.compute_proof()?;
     let duration = start.elapsed();
     log::debug!("Proving took: {:?}", duration);
     Ok(())
 }
 
-fn generate_verifier<F: FieldElement, W: std::io::Write>(
+fn generate_verifier<F: FieldElement>(
     mut pipeline: Pipeline<F>,
-    mut writer: W,
-) -> Result<()> {
+    output_path: &str,
+    task: &str,
+    chunk_idx: usize,
+) -> Result<Vec<usize>> {
     let buf = Vec::new();
     let mut vw = BufWriter::new(buf);
-    pipeline = pipeline.with_backend(BackendType::EStarkStarky, Some("stark_gl".to_string()));
+    pipeline = pipeline.with_backend(
+        BackendType::EStarkStarkyComposite,
+        Some("stark_gl".to_string()),
+    );
     pipeline.export_verification_key(&mut vw).unwrap();
-    log::debug!("Export verification key done");
-    let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_slice(&vw.into_inner()?)?;
-    log::debug!("Load StarkSetup done");
 
-    let pil = pipeline.optimized_pil().unwrap();
+    log::debug!("Init CompositeVerificationKey");
+    let cvk: CompositeVerificationKey = bincode::deserialize(&vw.into_inner()?)?;
 
-    let degree = pil.degree();
-    assert!(degree > 1);
-    let n_bits = (DegreeType::BITS - (degree - 1).leading_zeros()) as usize;
-    let n_bits_ext = n_bits + 1;
+    log::debug!("Init CompositeProof");
+    let proof_data = pipeline.proof().unwrap();
+    let cf: CompositeProof = bincode::deserialize(proof_data)?;
 
-    let steps = (2..=n_bits_ext)
-        .rev()
-        .step_by(4)
-        .map(|b| Step { nBits: b })
-        .collect();
+    let full_pil = pipeline.optimized_pil().unwrap();
+    let pils = split::split_pil((*full_pil).clone());
 
-    let params = StarkStruct {
-        nBits: n_bits,
-        nBitsExt: n_bits_ext,
-        nQueries: 2,
-        verificationHashType: "GL".to_owned(),
-        steps,
-    };
+    log::debug!("Generate verifier for each proof");
+    let mut ids = vec![];
+    for (idx, (vk, machine_proof)) in cvk
+        .verification_keys
+        .iter()
+        .zip(cf.proofs.into_iter())
+        .enumerate()
+    {
+        if vk.is_none() {
+            continue;
+        }
+        let pil = pils.get(&machine_proof.machine).unwrap();
+        let proof_file = Path::new(output_path).join(format!(
+            "{}_chunk_{}_submachine_{}.json",
+            task, chunk_idx, idx
+        ));
 
-    // generate circom
-    let opt = pil2circom::StarkOption {
-        enable_input: false,
-        verkey_input: false,
-        skip_main: true,
-        agg_stage: false,
-    };
-    if !setup.starkinfo.qs.is_empty() {
-        let pil_json = pil_export::<F>(&pil);
-        let str_ver = pil2circom::pil2circom(
-            &pil_json,
-            &setup.const_root,
-            &params,
-            &mut setup.starkinfo,
-            &mut setup.program,
-            &opt,
-        )
-        .unwrap();
-        writer.write_fmt(format_args!("{}", str_ver))?;
+        log::debug!("Running proof generation to {:?}...", proof_file);
+        fs::write(proof_file, machine_proof.proof)?;
+
+        let verifier_file = Path::new(output_path).join(format!(
+            "{}_chunk_{}_submachine_{}.circom",
+            task, chunk_idx, idx
+        ));
+        log::debug!(
+            "Running circom verifier generation to {:?}...",
+            verifier_file
+        );
+        let mut writer = fs::File::create(verifier_file)?;
+
+        let vk_data = vk.as_ref().unwrap().get(&machine_proof.size).unwrap();
+        let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_slice(vk_data)?;
+        log::debug!("Load StarkSetup, size={}", machine_proof.size);
+
+        // FIXME: get the sub machine PIL
+        //let pil = pipeline.optimized_pil().unwrap();
+        //let degree = pil.degree();
+        let fixed_cols = pipeline.fixed_cols().unwrap();
+        let degree = get_uniquely_sized(&fixed_cols)
+            .unwrap()
+            .iter()
+            .find(|(col, _)| col == "main.STEP")
+            .unwrap()
+            .1
+            .len() as u64;
+
+        assert!(degree > 1);
+        let n_bits = (DegreeType::BITS - (degree - 1).leading_zeros()) as usize;
+        let n_bits_ext = n_bits + 1;
+
+        let steps = (2..=n_bits_ext)
+            .rev()
+            .step_by(4)
+            .map(|b| Step { nBits: b })
+            .collect();
+
+        let params = StarkStruct {
+            nBits: n_bits,
+            nBitsExt: n_bits_ext,
+            nQueries: 2,
+            verificationHashType: "GL".to_owned(),
+            steps,
+        };
+
+        // generate circom
+        let opt = pil2circom::StarkOption {
+            enable_input: false,
+            verkey_input: false,
+            skip_main: true,
+            agg_stage: false,
+        };
+        if !setup.starkinfo.qs.is_empty() {
+            let pil_json = pil_export::<F>(pil);
+            let str_ver = pil2circom::pil2circom(
+                &pil_json,
+                &setup.const_root,
+                &params,
+                &mut setup.starkinfo,
+                &mut setup.program,
+                &opt,
+            )
+            .unwrap();
+            writer.write_fmt(format_args!("{}", str_ver))?;
+        }
+        ids.push(idx);
     }
-    Ok(())
+    Ok(ids)
 }
 
 pub fn zkvm_execute_and_prove(task: &str, suite_json: String, output_path: &str) -> Result<()> {
@@ -141,7 +227,7 @@ pub fn zkvm_execute_and_prove(task: &str, suite_json: String, output_path: &str)
     log::debug!("Running powdr-riscv executor in trace mode for continuations...");
     let start = Instant::now();
 
-    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline, None);
+    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline, Default::default());
 
     let duration = start.elapsed();
     log::debug!("Trace executor took: {:?}", duration);
@@ -149,7 +235,7 @@ pub fn zkvm_execute_and_prove(task: &str, suite_json: String, output_path: &str)
     log::debug!("Running witness generation...");
     let start = Instant::now();
 
-    rust_continuations(pipeline, generate_witness_and_prove, bootloader_inputs).unwrap();
+    rust_continuations(pipeline, generate_witness_and_prove_raw, bootloader_inputs).unwrap();
 
     let duration = start.elapsed();
     log::debug!("Witness generation took: {:?}", duration);
@@ -183,6 +269,7 @@ pub fn zkvm_generate_chunks(
         .add_data(TEST_CHANNEL, suite_json);
 
     log::debug!("Running powdr-riscv executor in fast mode...");
+    pipeline.compute_fixed_cols().unwrap();
 
     /*
     let (trace, _mem) = powdr::riscv_executor::execute::<GoldilocksField>(
@@ -198,7 +285,7 @@ pub fn zkvm_generate_chunks(
     log::debug!("Running powdr-riscv executor in trace mode for continuations...");
     let start = Instant::now();
 
-    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline, None);
+    let bootloader_inputs = rust_continuations_dry_run(&mut pipeline, Default::default());
 
     let duration = start.elapsed();
     log::debug!(
@@ -217,7 +304,7 @@ pub fn zkvm_prove_only(
     start_of_shutdown_routine: u64,
     i: usize,
     output_path: &str,
-) -> Result<()> {
+) -> Result<Vec<usize>> {
     log::debug!("Compiling Rust...");
     let asm_file_path = Path::new(output_path).join(format!("{}.asm", task));
 
@@ -231,9 +318,9 @@ pub fn zkvm_prove_only(
     let start = Instant::now();
 
     //TODO: if we clone it, we lost the information gained from this function
-    rust_continuation(
+    let pipeline = rust_continuation(
         task,
-        pipeline.clone(),
+        pipeline,
         generate_witness_and_prove,
         bootloader_input,
         start_of_shutdown_routine,
@@ -241,13 +328,7 @@ pub fn zkvm_prove_only(
     )
     .unwrap();
 
-    let verifier_file = Path::new(output_path).join(format!("{}_chunk_{}.circom", task, i));
-    log::debug!(
-        "Running circom verifier generation to {:?}...",
-        verifier_file
-    );
-    let f = fs::File::create(verifier_file)?;
-    generate_verifier(pipeline, f).unwrap();
+    let ids = generate_verifier(pipeline, output_path, task, i)?;
 
     let duration = start.elapsed();
     log::debug!(
@@ -255,7 +336,7 @@ pub fn zkvm_prove_only(
         duration
     );
 
-    Ok(())
+    Ok(ids)
 }
 
 pub fn rust_continuation<F: FieldElement, PipelineCallback, E>(
@@ -265,16 +346,23 @@ pub fn rust_continuation<F: FieldElement, PipelineCallback, E>(
     bootloader_inputs: Vec<F>,
     start_of_shutdown_routine: u64,
     i: usize,
-) -> Result<(), E>
+) -> Result<Pipeline<F>, E>
 where
-    PipelineCallback: Fn(Pipeline<F>) -> Result<(), E>,
+    PipelineCallback: Fn(Pipeline<F>) -> Result<Pipeline<F>, E>,
 {
-    // Here the fixed columns most likely will have been computed already,
-    // in which case this will be a no-op.
-    pipeline.compute_fixed_cols().unwrap();
+    let fixed_cols = pipeline.compute_fixed_cols().unwrap();
 
-    // we can assume optimized_pil has been computed
-    let length = pipeline.compute_optimized_pil().unwrap().degree();
+    // Advance the pipeline to the optimized PIL stage, so that it doesn't need to be computed
+    // in every chunk.
+    pipeline.compute_optimized_pil().unwrap();
+
+    let length = get_uniquely_sized(&fixed_cols)
+        .unwrap()
+        .iter()
+        .find(|(col, _)| col == "main.STEP")
+        .unwrap()
+        .1
+        .len() as u64;
 
     let name = format!("{}_chunk_{}", task, i);
     log::debug!("\nRunning chunk {} in {}...", i + 1, name);
@@ -303,8 +391,7 @@ where
             jump_to_shutdown_routine,
         ),
     ]);
-    pipeline_callback(pipeline)?;
-    Ok(())
+    pipeline_callback(pipeline)
 }
 
 #[cfg(test)]
@@ -318,7 +405,6 @@ mod tests {
     #[ignore]
     fn test_zkvm_prove() {
         env_logger::try_init().unwrap_or_default();
-        //let test_file = "test-vectors/blockInfo.json";
         let test_file = "test-vectors/reth.block.json";
         let suite_json = fs::read_to_string(test_file).unwrap();
 
@@ -326,26 +412,20 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_zkvm_lr_prove() {
         env_logger::try_init().unwrap_or_default();
-        //let test_file = "test-vectors/blockInfo.json";
-        let test_file = "test-vectors/solidityExample.json";
-        let suite_json = fs::read_to_string(test_file).unwrap();
-
-        zkvm_execute_and_prove("lr", suite_json, "/tmp/test_lr").unwrap();
+        zkvm_execute_and_prove("lr", "".to_string(), "/tmp/test_lr").unwrap();
     }
 
     #[test]
     #[ignore]
     fn test_zkvm_lr_execute_then_prove() {
         env_logger::try_init().unwrap_or_default();
-        //let test_file = "test-vectors/blockInfo.json";
-        let test_file = "test-vectors/solidityExample.json";
+        let test_file = "test-vectors/reth.block.json";
         let suite_json = fs::read_to_string(test_file).unwrap();
 
-        let output_path = "/tmp/test_lr";
-        let task = "lr";
+        let task = "evm";
+        let output_path = "/tmp/test_evm";
         let workspace = format!("program/{}", task);
         let bootloader_inputs =
             zkvm_generate_chunks(workspace.as_str(), &suite_json, output_path).unwrap();

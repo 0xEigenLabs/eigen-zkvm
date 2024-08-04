@@ -19,7 +19,7 @@ num-traits = "0.2.8"
 serde = { version = "1.0", features = [ "derive" ] }
 serde_json = { version = "1.0", features = [ "arbitrary_precision" ] }
 hex = "*"
-wasmer = { version = "4.3.2", default-features = false }
+wasmer = { version = "4.3.5", default-features = false }
 thiserror="1.0"
 anyhow = "1.0.79"
 fnv = { version = "1.0.3", default-features = false }
@@ -33,23 +33,16 @@ algebraic = { path = "../algebraic", default-features = false }
 powdr =              { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
 powdr-ast =          { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
 powdr-pil-analyzer = { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
-powdr-parser-util = { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
+powdr-parser-util  = { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
+
+#powdr =              { path = "../../powdr/powdr", default-features = false }
+#powdr-ast =          { path = "../../powdr/ast", default-features = false }
+#powdr-pil-analyzer = { path = "../../powdr/pil-analyzer", default-features = false }
+#powdr-parser-util  = { path = "../../powdr/parser-util", default-features = false }
 
 [dev-dependencies]
 env_logger = "0.10"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-rand = "0.4"
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = { version = "0.2.51", features = ["serde-serialize"]  }
-wasm-bindgen-futures = "0.4.1"
-rand = { version="0.6.5", features = ["wasm-bindgen"] }
-
-[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
-wasm-bindgen-test = "0.3"
-
 [features]
 default = ["wasmer/singlepass", "starky/default"]
-wasm = ["wasmer/js-default"]
 avx512 = ["fields/avx512", "starky/avx512", "powdr/starky-avx512"]

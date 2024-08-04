@@ -21,7 +21,7 @@ num-traits = "0.2.8"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["arbitrary_precision"] }
 hex = "*"
-wasmer = { version = "4.3.2", default-features = false }
+wasmer = { version = "4.3.5", default-features = false }
 thiserror = "1.0"
 anyhow = "1.0.79"
 fnv = { version = "1.0.3", default-features = false }
@@ -32,22 +32,12 @@ ff = { version = "0.13.0", features = ["derive"] }
 pairing = "0.23.0"
 bellperson = { version = "0.26", default-features = false, features = ["groth16"] }
 
+rand = "0.8.5"
+
 [dev-dependencies]
 env_logger = "0.10"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-rand = "0.4"
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = { version = "0.2.51", features = ["serde-serialize"]  }
-wasm-bindgen-futures = "0.4.1"
-rand = { version="0.6.5", features = ["wasm-bindgen"] }
-
-[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
-wasm-bindgen-test = "0.3"
-
 [features]
 default = ["bellperson/default", "wasmer/singlepass"]
-wasm = ["wasmer/js-default"]
 cuda = ["bellperson/cuda", "wasmer/singlepass"]
 opencl = ["bellperson/opencl", "wasmer/singlepass"]

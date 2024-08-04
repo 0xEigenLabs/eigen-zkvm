@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "poseidon": "mkdir -p poseidon/build && mkdir -p poseidon/&& node poseidon/main_poseidon.js -w poseidon/build --i 0 --pc poseidon/build/poseidon_test",
-    "fib": "mkdir -p circuits && node fibonacci/fibonacci.js -w circuits --i 0 --pc /tmp/fib",
+    "fib": "mkdir -p circuits && node fibonacci/fibonacci.js -w circuits --i 0 --pc /tmp/fib --p fibonacci_old.pil",
     "pe": "mkdir -p circuits && node permutation/permutation.js -w circuits",
     "simple_vm": "mkdir -p circuits && node simple_vm/simple_vm.js -w circuits",
     "plookup": "mkdir -p circuits && node plookup/plookup.js -w circuits",

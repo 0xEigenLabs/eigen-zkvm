@@ -183,12 +183,18 @@ impl PlonkSetupRenderInfo {
         // 2. get normal plonk info
         let plonk_info = NormalPlonkInfo::new(&plonk_constrains);
         // 3. get custom gate info
+
         let custom_gates_info = CustomGateInfo::from_r1cs(r1cs);
 
         // 4. calculate columns,rows,constraints info.
         let n_publics = r1cs.num_inputs + r1cs.num_outputs - 1;
         let n_public_rows = (n_publics - 1) / 12 + 1;
 
+        log::debug!(
+            "{n_publics} {n_public_rows} {} {:?}",
+            plonk_info.N,
+            custom_gates_info
+        );
         let n_used = n_public_rows
             + plonk_info.N
             + (custom_gates_info.n_c_mul_add
@@ -218,12 +224,14 @@ pub fn plonk_setup_compressor(
     plonk_setup_info: &PlonkSetupRenderInfo,
 ) -> (PolsArray, Vec<Vec<u64>>) {
     // 1. construct init ConstantPolsArray
+    log::debug!("pil: new constant");
     let mut const_pols = PolsArray::new(pil, PolKind::Constant);
 
     let n_used = plonk_setup_info.n_used;
     let n_publics = plonk_setup_info.n_publics;
     let n_public_rows = (n_publics - 1) / 12 + 1;
 
+    log::debug!("n_used {n_used}, n_publics {n_publics}, rows: {n_public_rows}");
     // 2. init sMap and construct it.
     let mut s_map: Vec<Vec<u64>> = vec![vec![0u64; n_used]; 12];
 

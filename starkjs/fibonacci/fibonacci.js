@@ -33,6 +33,7 @@ const argv = require("yargs")
   .usage("node fibonacci.js -w /path/to/workspace --i 0 --pc /tmp/fib")
   .alias("w", "workspace") //workspace to stash temp and output files
   .alias("i", "input")
+  .alias("p", "pil")
   .alias("pc","pilCache")
   .demand('workspace')
   .demand("input")
@@ -53,7 +54,7 @@ const starkStruct = {
 }
 console.log("security level(bits)", utils.security_test(starkStruct, 1024))
 
-const pilFile = path.join(__dirname, "./fibonacci.pil");
+const pilFile = path.join(__dirname, argv.pil);
 const proverAddr = "0x2FD31EB1BB3f0Ac8C4feBaF1114F42431c1F29E4";
 var start = new Date().getTime()
 const pilConfig = {};
