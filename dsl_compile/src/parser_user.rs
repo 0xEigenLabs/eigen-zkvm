@@ -11,7 +11,7 @@ pub fn parse_project(input_info: &Input) -> Result<ProgramArchive> {
         initial_file,
         CIRCOM_VERSION,
         input_info.link_libraries.clone(),
-        &BigInt::default()
+        &BigInt::default(),
     );
     match result_program_archive {
         Err((file_library, report_collection)) => {
