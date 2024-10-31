@@ -1,3 +1,4 @@
+
 [package]
 name = "dsl_compile"
 version = "0.1.0"
@@ -16,10 +17,11 @@ anyhow = "1.0.79"
 log = "0.4.0"
 
 ## from circom
-parser = { git = "https://github.com/iden3/circom.git", version = "2.1.6" }
-program_structure = { git = "https://github.com/iden3/circom.git", version = "2.1.6" }
-type_analysis = { git = "https://github.com/iden3/circom.git", version = "2.1.5"}
-constraint_generation = { git = "https://github.com/iden3/circom.git", version = "2.1.6" }
-constraint_writers = { git = "https://github.com/iden3/circom.git", version = "2.1.5"}
-compiler = { git = "https://github.com/iden3/circom.git", version = "2.1.6"}
-dag = { git = "https://github.com/iden3/circom.git", version = "2.1.5"}
+parser = { git = "https://github.com/iden3/circom.git", rev = "9f3da3" }
+program_structure = { git = "https://github.com/iden3/circom.git", rev = "9f3da3" }
+type_analysis = { git = "https://github.com/iden3/circom.git", rev = "9f3da3" }
+constraint_generation = { git = "https://github.com/iden3/circom.git", rev = "9f3da3" }
+constraint_writers = { git = "https://github.com/iden3/circom.git", rev = "9f3da3" }
+compiler = { git = "https://github.com/iden3/circom.git", rev = "9f3da3" }
+dag = { git = "https://github.com/iden3/circom.git", rev = "9f3da3" }
+lalrpop-util = { version = "0.19.12", features = ["lexer"] }
