@@ -7,7 +7,7 @@ pub struct FlamegraphProfiler<'a> {
     active_profiler: Option<ProfilerGuard<'a>>,
 }
 
-impl FlamegraphProfiler<'_> {
+impl<'a> FlamegraphProfiler<'a> {
     #[allow(dead_code)]
     pub fn new(frequency: c_int) -> Self {
         FlamegraphProfiler {
@@ -17,7 +17,7 @@ impl FlamegraphProfiler<'_> {
     }
 }
 
-impl Profiler for FlamegraphProfiler<'_> {
+impl<'a> Profiler for FlamegraphProfiler<'a> {
     fn start_profiling(&mut self, _benchmark_id: &str, _benchmark_dir: &Path) {
         self.active_profiler = Some(ProfilerGuard::new(self.frequency).unwrap());
     }
