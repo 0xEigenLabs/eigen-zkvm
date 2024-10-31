@@ -187,14 +187,14 @@ pub struct StarkProof<M: MerkleTree> {
     pub prover_addr: String,
 }
 
-impl<M: MerkleTree> StarkProof<M> {
+impl<'a, M: MerkleTree> StarkProof<M> {
     #[allow(clippy::too_many_arguments, clippy::type_complexity)]
     #[time_profiler()]
     pub fn stark_gen<T: Transcript>(
         cm_pols: PolsArray,
         const_pols: PolsArray,
         const_tree: &M,
-        starkinfo: &StarkInfo,
+        starkinfo: &'a StarkInfo,
         program: &Program,
         _pil: &PIL,
         stark_struct: &StarkStruct,
