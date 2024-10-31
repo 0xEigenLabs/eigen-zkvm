@@ -1,7 +1,6 @@
 use crate::errors::{bail, DslError, Result};
 use crate::input_user::Input;
 use crate::CIRCOM_VERSION;
-use compiler::num_bigint::BigInt;
 use program_structure::error_definition::Report;
 use program_structure::program_archive::ProgramArchive;
 
@@ -11,7 +10,6 @@ pub fn parse_project(input_info: &Input) -> Result<ProgramArchive> {
         initial_file,
         CIRCOM_VERSION,
         input_info.link_libraries.clone(),
-        &BigInt::default(),
     );
     match result_program_archive {
         Err((file_library, report_collection)) => {
