@@ -91,7 +91,7 @@ impl LinearHash {
             return Ok(ElementDigest::<4, FGL>::new(&st));
         }
 
-        let hsz = (flatvals.len() + bs - 1) / bs;
+        let hsz = flatvals.len().div_ceil(bs);
         let mut hashes: Vec<FGL> = vec![FGL::ZERO; hsz * 4];
         // NOTE flatsvals.len <= hashes.len
         hashes
