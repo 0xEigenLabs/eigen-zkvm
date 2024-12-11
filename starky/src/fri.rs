@@ -1,3 +1,5 @@
+#![allow(clippy::map_all_any_identity)]
+
 use crate::constant::{MG, SHIFT, SHIFT_INV};
 use crate::fft::FFT;
 use crate::helper::log2_any;
