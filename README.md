@@ -14,8 +14,6 @@ eigen-zkvm is a zkVM on a layered proof system, allowing the developers to write
 
 - [x] GPU acceleration for proving, not open-sourced;
 
-- [x] WASM friendly for single proving and verifying, NodeJS/Javascript prover and verifier, [plonkjs](https://github.com/0xEigenLabs/plonkjs);
-
 - [x] Eigen zkVM: basing on RISCV ISA.
 
 ## How the layered proof system works
