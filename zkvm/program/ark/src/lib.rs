@@ -10,7 +10,7 @@
 )]
 #![no_std]
 
-use ark_crypto_primitives::snark::{CircuitSpecificSetupSNARK, SNARK};
+use ark_snark::{CircuitSpecificSetupSNARK, SNARK};
 // For randomness (during paramgen and proof generation)
 // use ark_std::rand::{Rng, RngCore, SeedableRng};
 use rand_chacha::ChaCha20Rng;
