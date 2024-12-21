@@ -10,7 +10,12 @@ itertools = "0.12.0"
 # serialization
 log = "0.4.0"
 
-powdr =         { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
+powdr-number = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "powdr-number", default-features = false }
+powdr-backend = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "powdr-backend", default-features = false, features = ["estark-starky"] }
+powdr-executor = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "powdr-executor", default-features = false }
+powdr-riscv = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "powdr-riscv", default-features = false }
+powdr-pipeline = { git = "https://github.com/powdr-labs/powdr.git", branch = "main", package = "powdr-pipeline", default-features = false, features = ["estark-starky"] }
+
 #powdr =              { path = "../../powdr/powdr", default-features = false }
 starky =         { path = "../starky" }
 recursion =  { path = "../recursion" }
@@ -27,4 +32,4 @@ num-traits = "0.2.17"
 
 [features]
 default = []
-avx512 = ["starky/avx512", "recursion/avx512", "powdr/starky-avx512"]
+avx512 = ["starky/avx512", "recursion/avx512", "powdr-pipeline/estark-starky-simd", "powdr-backend/estark-starky-simd"]
