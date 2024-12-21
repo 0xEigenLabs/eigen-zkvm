@@ -1,13 +1,3 @@
-#![warn(unused)]
-#![deny(
-    trivial_casts,
-    trivial_numeric_casts,
-    variant_size_differences,
-    stable_features,
-    non_shorthand_field_patterns,
-    renamed_and_removed_lints,
-    unsafe_code
-)]
 #![no_std]
 
 use ark_snark::{CircuitSpecificSetupSNARK, SNARK};
@@ -20,7 +10,8 @@ use ark_ff::vec::Vec;
 
 // Bring in some tools for using pairing-friendly curves
 // We're going to use the BLS12-377 pairing-friendly elliptic curve.
-use ark_bls12_377::{Bls12_377, Fr};
+// use ark_bls12_377::{Bls12_377, Fr};
+use ark_bn254::{Bn254, Fr};
 use ark_ff::Field;
 use ark_std::test_rng;
 
@@ -144,6 +135,7 @@ impl<'a, F: Field> ConstraintSynthesizer<F> for MiMCDemo<'a, F> {
     }
 }
 
+#[no_mangle]
 fn main() {
     use ark_groth16::Groth16;
     use rand_chacha::ChaCha20Rng;
@@ -167,11 +159,11 @@ fn main() {
             constants: &constants,
         };
 
-        Groth16::<Bls12_377>::setup(c, &mut rng).unwrap()
+        Groth16::<Bn254>::setup(c, &mut rng).unwrap()
     };
 
     // Prepare the verification key (for proof verification)
-    let pvk = Groth16::<Bls12_377>::process_vk(&vk).unwrap();
+    let pvk = Groth16::<Bn254>::process_vk(&vk).unwrap();
 
     // Benchmark constants
     const SAMPLES: u32 = 50;
@@ -194,9 +186,9 @@ fn main() {
             };
 
             // Create a Groth16 proof with our parameters
-            let proof = Groth16::<Bls12_377>::prove(&pk, c, &mut rng).unwrap();
+            let proof = Groth16::<Bn254>::prove(&pk, c, &mut rng).unwrap();
             assert!(
-                Groth16::<Bls12_377>::verify_with_processed_vk(&pvk, &[image], &proof).unwrap()
+                Groth16::<Bn254>::verify_with_processed_vk(&pvk, &[image], &proof).unwrap()
             );
         }
     }
