@@ -413,6 +413,13 @@ mod tests {
         zkvm_execute_and_prove("keccak", "".to_string(), "/tmp/test_keccak").unwrap();
     }
 
+    #[test]
+    #[ignore]
+    fn test_zkvm_ark_prove() {
+        env_logger::try_init().unwrap_or_default();
+        zkvm_execute_and_prove("ark", "".to_string(), "/tmp/test_ark").unwrap();
+    }
+
     // #[test]
     // #[ignore]
     // fn test_zkvm_lr_execute_then_prove() {
