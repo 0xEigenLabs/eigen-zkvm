@@ -1,4 +1,4 @@
-#![allow(clippy::map_all_any_identity)]
+#![allow(clippy::map_identity)]
 
 use crate::constant::{MG, SHIFT, SHIFT_INV};
 use crate::fft::FFT;

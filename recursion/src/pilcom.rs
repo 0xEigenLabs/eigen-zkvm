@@ -1,21 +1,24 @@
 //! Poring from https://github.com/powdr-labs/powdr.git.
-use std::rc::Rc;
+// use std::rc::Rc;
 mod export;
 mod expression_counter;
 
 pub use export::export;
 
-use powdr::number::GoldilocksField;
+use powdr_number::GoldilocksField;
 use starky::types::PIL;
 use std::path::Path;
 
 pub fn compile_pil_from_str(pil_str: &str) -> PIL {
-    let analyze = powdr_pil_analyzer::analyze_string::<GoldilocksField>(pil_str);
-    export(&Rc::new(analyze))
+    let analyzed_pil = powdr_pil_analyzer::analyze_string::<GoldilocksField>(pil_str).unwrap();
+    let analyze = powdr_pilopt::optimize(analyzed_pil);
+    export(&analyze)
 }
 pub fn compile_pil_from_path(pil_path: &str) -> PIL {
-    let analyze = powdr_pil_analyzer::analyze_file::<GoldilocksField>(Path::new(pil_path));
-    export(&Rc::new(analyze))
+    let analyzed_pil =
+        powdr_pil_analyzer::analyze_file::<GoldilocksField>(Path::new(pil_path)).unwrap();
+    let analyze = powdr_pilopt::optimize(analyzed_pil);
+    export(&analyze)
 }
 
 #[cfg(test)]
