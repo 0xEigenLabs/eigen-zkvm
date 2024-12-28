@@ -4340,6 +4340,7 @@ dependencies = [
  "powdr-number",
  "powdr-parser-util",
  "powdr-pil-analyzer",
+ "powdr-pilopt",
  "proptest",
  "serde",
  "serde_json",
