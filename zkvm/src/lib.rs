@@ -162,7 +162,11 @@ fn generate_verifier<F: FieldElement>(
             agg_stage: false,
         };
         if !setup.starkinfo.qs.is_empty() {
-            let pil_json = pil_export::<F>(pil);
+             // FIXME: this is ugly.
+            let old = serde_json::to_value(pil).unwrap();
+            let new: powdr_pilcom::ast::analyzed::Analyzed<powdr_pilcom::number::GoldilocksField> =
+                serde_json::from_value(old).unwrap();
+            let pil_json = pil_export::<powdr_pilcom::number::GoldilocksField>(&new);
             let str_ver = pil2circom::pil2circom(
                 &pil_json,
                 &setup.const_root,

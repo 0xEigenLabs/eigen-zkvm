@@ -3433,6 +3433,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "powdr-pilcom"
+version = "0.1.0"
+source = "git+https://github.com/0xEigenLabs/powdr-pilcom#465c397873c0b5a352cf721cc71d856b884d47b7"
+dependencies = [
+ "ark-bn254",
+ "ark-ff",
+ "ark-serialize",
+ "auto_enums",
+ "codespan-reporting 0.11.1",
+ "csv",
+ "derive_more",
+ "ibig",
+ "itertools 0.13.0",
+ "lalrpop",
+ "lalrpop-util",
+ "lazy_static",
+ "num-bigint 0.4.6",
+ "num-traits",
+ "schemars",
+ "serde",
+ "serde_cbor",
+ "serde_json",
+ "serde_with",
+ "similar",
+ "walkdir",
+]
+
+[[package]]
 name = "powdr-pilopt"
 version = "0.1.0-alpha.2"
 source = "git+https://github.com/0xEigenLabs/powdr?branch=eigen%2Fv1#d8d0c95a47af99ff0caa112f051d05a1be69f498"
@@ -3893,10 +3921,7 @@ dependencies = [
  "num",
  "num-bigint 0.3.3",
  "num-traits",
- "powdr",
- "powdr-ast",
- "powdr-parser-util",
- "powdr-pil-analyzer",
+ "powdr-pilcom",
  "proptest",
  "serde",
  "serde_json",
@@ -4406,6 +4431,12 @@ name = "simdutf8"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
+
+[[package]]
+name = "similar"
+version = "2.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1de1d4f81173b03af4c0cbed3c898f6bff5b870e4a7f5d6f4057d62a7a4b686e"
 
 [[package]]
 name = "siphasher"
@@ -5467,6 +5498,7 @@ dependencies = [
  "log",
  "num-traits",
  "powdr",
+ "powdr-pilcom",
  "recursion",
  "serde_json",
  "starky 0.0.1",
