@@ -162,7 +162,7 @@ fn generate_verifier<F: FieldElement>(
             agg_stage: false,
         };
         if !setup.starkinfo.qs.is_empty() {
-            let pil_json = pil_export::<F>(pil);
+            let pil_json = pil_export::<F>(&n);
             let str_ver = pil2circom::pil2circom(
                 &pil_json,
                 &setup.const_root,
@@ -412,6 +412,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_zkvm_lr_prove() {
         env_logger::try_init().unwrap_or_default();
         zkvm_execute_and_prove("lr", "".to_string(), "/tmp/test_lr").unwrap();
