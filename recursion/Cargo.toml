@@ -40,4 +40,4 @@ env_logger = "0.10"
 
 [features]
 default = ["wasmer/singlepass", "starky/default"]
-avx512 = ["fields/avx512", "starky/avx512"]
+avx512 = ["fields/avx512", "starky/avx512", "powdr/starky-avx512"]
