@@ -5,8 +5,8 @@ mod expression_counter;
 
 pub use export::export;
 
-use powdr_pilcom::number::GoldilocksField;
-use powdr_pilcom::pil_analyzer::{analyze_file, analyze_string};
+use powdr::number::GoldilocksField;
+use powdr::pil_analyzer::{analyze_file, analyze_string};
 use starky::types::PIL;
 use std::path::Path;
 

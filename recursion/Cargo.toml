@@ -30,8 +30,10 @@ fields = { path = "../fields", default-features = false }
 starky = { path = "../starky", default-features = false }
 algebraic = { path = "../algebraic", default-features = false }
 
-powdr-pilcom = { git = "https://github.com/0xEigenLabs/powdr-pilcom", default-features = false }
-#powdr-pilcom = { path = "../../powdr-pilcom" }
+#powdr = { path = "../../powdr/powdr" }
+#powdr-parser-util = { path = "../../powdr/parser-util" }
+powdr =         { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
+powdr-parser-util =         { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
 
 [dev-dependencies]
 env_logger = "0.10"

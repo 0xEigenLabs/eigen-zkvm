@@ -1,13 +1,13 @@
-use powdr_pilcom::number::FieldElement;
+use powdr::number::FieldElement;
 use std::collections::HashMap;
 use std::{cmp, path::PathBuf};
 
-use powdr_pilcom::ast::analyzed::{
+use powdr::ast::analyzed::{
     AlgebraicBinaryOperation, AlgebraicBinaryOperator, AlgebraicExpression as Expression,
     AlgebraicUnaryOperation, AlgebraicUnaryOperator, Analyzed, IdentityKind, PolyID,
     PolynomialType, StatementIdentifier, SymbolKind,
 };
-use powdr_pilcom::parser_util::SourceRef;
+use powdr_parser_util::SourceRef;
 use starky::types::{
     ConnectionIdentity, Expression as StarkyExpr, PermutationIdentity, PlookupIdentity,
     PolIdentity, Reference, PIL,

@@ -162,11 +162,7 @@ fn generate_verifier<F: FieldElement>(
             agg_stage: false,
         };
         if !setup.starkinfo.qs.is_empty() {
-             // FIXME: this is ugly.
-            let old = serde_json::to_value(pil).unwrap();
-            let new: powdr_pilcom::ast::analyzed::Analyzed<powdr_pilcom::number::GoldilocksField> =
-                serde_json::from_value(old).unwrap();
-            let pil_json = pil_export::<powdr_pilcom::number::GoldilocksField>(&new);
+            let pil_json = pil_export::<F>(pil);
             let str_ver = pil2circom::pil2circom(
                 &pil_json,
                 &setup.const_root,
@@ -422,7 +418,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_zkvm_lr_execute_then_prove() {
         env_logger::try_init().unwrap_or_default();
         let test_file = "test-vectors/reth.block.json";
