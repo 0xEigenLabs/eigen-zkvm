@@ -91,7 +91,7 @@ fn generate_verifier<F: FieldElement>(
     let pils = split::split_pil((*full_pil).clone());
 
     log::debug!("Generate verifier for each proof");
-    let mut ids = vec![];
+    let mut ids: Vec<usize> = vec![];
     for (idx, (vk, machine_proof)) in cvk
         .verification_keys
         .iter()
@@ -122,7 +122,11 @@ fn generate_verifier<F: FieldElement>(
 
         let vk_data = vk.as_ref().unwrap().get(&machine_proof.size).unwrap();
         let mut setup: StarkSetup<MerkleTreeGL> = serde_json::from_slice(vk_data)?;
-        log::debug!("Load StarkSetup, size={}", machine_proof.size);
+        log::debug!(
+            "Load StarkSetup, machien={}, size={}",
+            machine_proof.machine,
+            machine_proof.size
+        );
 
         // FIXME: get the sub machine PIL
         //let pil = pipeline.optimized_pil().unwrap();
@@ -173,8 +177,10 @@ fn generate_verifier<F: FieldElement>(
             )
             .unwrap();
             writer.write_fmt(format_args!("{}", str_ver))?;
+            ids.push(idx);
+        } else {
+            log::info!("No public vars in {}", machine_proof.machine);
         }
-        ids.push(idx);
     }
     Ok(ids)
 }
@@ -191,11 +197,10 @@ pub fn zkvm_execute_and_prove(task: &str, suite_json: String, output_path: &str)
         false,
         with_bootloader,
     )
-    .ok_or_else(|| vec!["could not compile rust".to_string()])
     .unwrap();
 
     let mut pipeline = Pipeline::<GoldilocksField>::default()
-        .with_output(output_path.into(), true)
+        .with_output(output_path.into(), force_overwrite)
         .from_asm_string(asm_contents.clone(), Some(asm_file_path.clone()))
         .with_prover_inputs(Default::default())
         .add_data(TEST_CHANNEL, &suite_json);
@@ -259,11 +264,10 @@ pub fn zkvm_generate_chunks(
         false,
         with_bootloader,
     )
-    .ok_or_else(|| vec!["could not compile rust".to_string()])
     .unwrap();
 
     let mut pipeline = Pipeline::<GoldilocksField>::default()
-        .with_output(output_path.into(), true)
+        .with_output(output_path.into(), force_overwrite)
         .from_asm_string(asm_contents.clone(), Some(asm_file_path.clone()))
         .with_prover_inputs(Default::default())
         .add_data(TEST_CHANNEL, suite_json);
@@ -470,7 +474,7 @@ mod tests {
                 *out = GoldilocksField::from_bytes_le(bin);
             });
 
-            zkvm_prove_only(
+            let submachine_ids = zkvm_prove_only(
                 task,
                 &suite_json,
                 bi,
@@ -479,6 +483,7 @@ mod tests {
                 output_path,
             )
             .unwrap();
+            log::info!("submachine ids: {:?}", submachine_ids);
         });
     }
 }

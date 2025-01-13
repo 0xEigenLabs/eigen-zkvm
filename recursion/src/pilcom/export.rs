@@ -2,7 +2,7 @@ use powdr::number::FieldElement;
 use std::collections::HashMap;
 use std::{cmp, path::PathBuf};
 
-use powdr_ast::analyzed::{
+use powdr::ast::analyzed::{
     AlgebraicBinaryOperation, AlgebraicBinaryOperator, AlgebraicExpression as Expression,
     AlgebraicUnaryOperation, AlgebraicUnaryOperator, Analyzed, IdentityKind, PolyID,
     PolynomialType, StatementIdentifier, SymbolKind,

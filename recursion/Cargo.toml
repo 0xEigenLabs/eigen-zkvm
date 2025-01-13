@@ -30,15 +30,10 @@ fields = { path = "../fields", default-features = false }
 starky = { path = "../starky", default-features = false }
 algebraic = { path = "../algebraic", default-features = false }
 
-powdr =              { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
-powdr-ast =          { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
-powdr-pil-analyzer = { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
-powdr-parser-util  = { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
-
-#powdr =              { path = "../../powdr/powdr", default-features = false }
-#powdr-ast =          { path = "../../powdr/ast", default-features = false }
-#powdr-pil-analyzer = { path = "../../powdr/pil-analyzer", default-features = false }
-#powdr-parser-util  = { path = "../../powdr/parser-util", default-features = false }
+#powdr = { path = "../../powdr/powdr" }
+#powdr-parser-util = { path = "../../powdr/parser-util" }
+powdr =         { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
+powdr-parser-util =         { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1", default-features = false }
 
 [dev-dependencies]
 env_logger = "0.10"
