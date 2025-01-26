@@ -7,5 +7,7 @@ edition = "2021"
 
 [dependencies]
 powdr-riscv-runtime = { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1" }
+# powdr-riscv-runtime = { path = "../../../powdr/powdr"}
+
 
 [workspace]

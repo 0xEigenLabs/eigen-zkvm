@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 powdr-riscv-runtime = { git = "https://github.com/0xEigenLabs/powdr", branch = "eigen/v1" }
+# powdr-riscv-runtime = { path = "../../../powdr/powdr"}
 
 bn = { version = "0.6.0", package = "substrate-bn-succinct" }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
@@ -16,13 +17,14 @@ rand_chacha = { version = "0.3", default-features = false }
 
 # arkworks
 ark-bn254 = { version = "0.4.0", default-features = false, features = ["curve"] }
-ark-serialize = { version = "0.4.2" }
-ark-ff = { version = "0.4.2" }
+ark-serialize = { version = "0.4.0", default-features = false, features = [ "derive" ] }
+ark-ff = { version = "0.4.0", default-features = false }
 ark-groth16 = { version = "0.4.0", default-features = false, features = ["r1cs"] }
-ark-ec = { version = "0.4.0" }
+ark-ec = { version = "0.4.0", default-features = false }
 ark-bls12-377 = { version = "0.4.0", default-features = false, features = ["curve"] }
 ark-relations = { version = "0.4.0", default-features = false }
 ark-std = { version = "0.4.0", default-features = false }
-ark-snark = { version = "0.4.0" }
+ark-snark = { version = "0.4.0", default-features = false }
+ark-crypto-primitives = { version = "0.4.0", default-features = false, features = ["snark"] }
 
 [workspace]
