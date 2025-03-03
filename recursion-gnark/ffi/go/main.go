@@ -15,7 +15,7 @@ import (
 //	"github.com/consensys/gnark/frontend/cs/r1cs"
 //	"github.com/consensys/gnark/frontend/cs/scs"
 //	"github.com/consensys/gnark/test/unsafekzg"
-	"github.com/succinctlabs/sp1-recursion-gnark/rec"
+	"github.com/0xEigenLabs/eigen-recursion-gnark/rec"
 )
 
 func main() {}

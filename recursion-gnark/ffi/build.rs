@@ -15,7 +15,7 @@ fn main() {
             let out_dir = env::var("OUT_DIR").unwrap();
             println!("OUT_DIR is: {}", out_dir);
             let dest_path = PathBuf::from(&out_dir);
-            let lib_name = "sp1gnark";
+            let lib_name = "eigengnark";
             let dest = dest_path.join(format!("lib{}.a", lib_name));
 
             println!("Building Go library at {}", dest.display());

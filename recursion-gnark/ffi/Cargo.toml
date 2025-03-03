@@ -5,12 +5,6 @@ edition = "2021"
 rust-version = "1.79"
 
 [dependencies]
-p3-field =  "=0.2.0-succinct"
-p3-symmetric =  "=0.2.0-succinct"
-p3-baby-bear = { version =  "=0.2.0-succinct", features = ["nightly-features"] }
-sp1-recursion-compiler = { git = "https://github.com/succinctlabs/sp1.git", version = "4.1.0", rev = "87d435a52d795ea2c9acb0a347b410a60d27776f" }
-sp1-core-machine = { git = "https://github.com/succinctlabs/sp1.git", version = "4.1.0", rev = "87d435a52d795ea2c9acb0a347b410a60d27776f" }
-sp1-stark = { git = "https://github.com/succinctlabs/sp1.git", version = "4.1.0", rev = "87d435a52d795ea2c9acb0a347b410a60d27776f" }
 serde = "1.0.204"
 serde_json = "1.0.132"
 tempfile = "3.10.1"
