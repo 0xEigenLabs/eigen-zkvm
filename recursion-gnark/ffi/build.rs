@@ -9,7 +9,7 @@ use bindgen::CargoCallbacks;
 /// Build the go library, generate Rust bindings for the exposed functions, and link the library.
 fn main() {
     cfg_if! {
-        if #[cfg(feature = "native")] {
+        if #[cfg(not(feature = "native"))] {
             println!("cargo:rerun-if-changed=go");
             // Define the output directory
             let out_dir = env::var("OUT_DIR").unwrap();
@@ -37,11 +37,6 @@ fn main() {
             if !status.success() {
                 panic!("Go build failed");
             }
-
-            // Copy go/babybear.h to OUT_DIR/babybear.h
-            let header_src = PathBuf::from("go/babybear.h");
-            let header_dest = dest_path.join("babybear.h");
-            std::fs::copy(header_src, header_dest).unwrap();
 
             // Generate bindings using bindgen
             let header_path = dest_path.join(format!("lib{}.h", lib_name));
