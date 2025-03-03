@@ -33,6 +33,7 @@ import (
 	"github.com/consensys/gnark/test/unsafekzg"
 	"github.com/succinctlabs/sp1-recursion-gnark/sp1"
 	"github.com/succinctlabs/sp1-recursion-gnark/sp1/babybear"
+	"github.com/succinctlabs/sp1-recursion-gnark/rec"
 	"github.com/succinctlabs/sp1-recursion-gnark/sp1/poseidon2"
 )
 
@@ -142,6 +143,11 @@ func BuildGroth16Bn254(dataDir *C.char) {
 	dataDirString := C.GoString(dataDir)
 
 	sp1.BuildGroth16(dataDirString)
+}
+
+//export VerifyBN254InBLS12381
+func VerifyBN254InBLS12381() {
+	rec.VerifyBN254InBLS12381()
 }
 
 //export VerifyGroth16Bn254

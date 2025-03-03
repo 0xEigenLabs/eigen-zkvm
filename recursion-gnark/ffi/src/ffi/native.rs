@@ -185,6 +185,12 @@ pub fn verify_groth16_bn254(
     verify(ProofSystem::Groth16, data_dir, proof, vkey_hash, committed_values_digest)
 }
 
+pub fn verify_bn254_in_bls12381() {
+    unsafe {
+        VerifyBN254InBLS12381()
+    }
+}
+
 pub fn test_groth16_bn254(witness_json: &str, constraints_json: &str) {
     test(ProofSystem::Groth16, witness_json, constraints_json)
 }
@@ -267,5 +273,10 @@ mod tests {
         let result = perm.permute(zeros);
         println!("{:?}", result);
         super::test_babybear_poseidon2();
+    }
+
+    #[test]
+    pub fn test_verify_bn254_in_bls12381() {
+        super::verify_bn254_in_bls12381();
     }
 }
