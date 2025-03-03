@@ -6,5 +6,5 @@ members = [
   "algebraic",
   "groth16",
   "dsl_compile"
-, "fields", "recursion", "recursion-gnark"]
+, "fields", "recursion", "recursion-gnark/cli", "recursion-gnark/ffi"]
 resolver = "2"

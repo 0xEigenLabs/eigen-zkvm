@@ -80,7 +80,7 @@ impl LinearHash {
     pub fn hash(&self, flatvals: &[FGL], batch_size: usize) -> Result<ElementDigest<4, FGL>> {
         let mut bs = batch_size;
         if bs == 0 {
-            bs = core::cmp::max(8, (flatvals.len() + 3) / 4);
+            bs = core::cmp::max(8, flatvals.len().div_ceil(4));
         }
 
         let mut st = [FGL::ZERO; 4];

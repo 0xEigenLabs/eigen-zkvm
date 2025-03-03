@@ -249,7 +249,7 @@ pub fn from_reader<R: Read + Seek, E: PrimeField>(mut reader: R) -> Result<R1CSF
             "This parser only supports 32-bytes or 8-bytes fields",
         ));
     }
-    if header.field_size != (E::NUM_BITS + 7) / 8 {
+    if header.field_size != E::NUM_BITS.div_ceil(8) {
         return Err(Error::new(ErrorKind::InvalidData, "Different prime"));
     }
     if !(header.prime_size
