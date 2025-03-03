@@ -186,9 +186,7 @@ pub fn verify_groth16_bn254(
 }
 
 pub fn verify_bn254_in_bls12381() {
-    unsafe {
-        VerifyBN254InBLS12381()
-    }
+    unsafe { VerifyBN254InBLS12381() }
 }
 
 pub fn test_groth16_bn254(witness_json: &str, constraints_json: &str) {
