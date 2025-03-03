@@ -71,12 +71,7 @@ impl<E: ScalarEngine> CircomCircuit<E> {
             None => None,
             Some(w) => match &self.wire_mapping {
                 None => Some(w[1..self.r1cs.num_inputs].to_vec()),
-                Some(m) => Some(
-                    m[1..self.r1cs.num_inputs]
-                        .iter()
-                        .map(|i| w[*i])
-                        .collect_vec(),
-                ),
+                Some(m) => Some(m[1..self.r1cs.num_inputs].iter().map(|i| w[*i]).collect_vec()),
             },
         }
     }

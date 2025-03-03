@@ -83,11 +83,7 @@ pub fn compile(config: CompilerConfig) -> Result<()> {
 
                 _ => log::error!("compiler_interface::run_compiler"),
             };
-            log::trace!(
-                "{} {}",
-                Colour::Green.paint("Written successfully:"),
-                config.wat_file
-            );
+            log::trace!("{} {}", Colour::Green.paint("Written successfully:"), config.wat_file);
             return wat_to_wasm(&config.wat_file, &config.wasm_file);
         }
         (false, true) => {
@@ -115,11 +111,7 @@ pub fn compile(config: CompilerConfig) -> Result<()> {
                 Ok(()) => (),
                 _ => log::error!("compiler_interface::write_wasm error"),
             };
-            log::trace!(
-                "{} {}",
-                Colour::Green.paint("Written successfully:"),
-                config.wat_file
-            );
+            log::trace!("{} {}", Colour::Green.paint("Written successfully:"), config.wat_file);
         }
         (false, false) => {}
     }

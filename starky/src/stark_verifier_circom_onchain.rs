@@ -105,10 +105,7 @@ impl Transcript {
         while self.pending.len() < 16 {
             self.pending.push("0".to_string());
         }
-        self.code.push(format!(
-            "component tcHahs_{} = PoseidonEx(16,17);",
-            self.h_cnt
-        ));
+        self.code.push(format!("component tcHahs_{} = PoseidonEx(16,17);", self.h_cnt));
         self.h_cnt += 1;
 
         for i in 0..16 {
@@ -122,15 +119,10 @@ impl Transcript {
 
         self.out = vec![];
         for i in 0..17 {
-            self.out
-                .push(format!("tcHahs_{}.out[{}]", self.h_cnt - 1, i));
+            self.out.push(format!("tcHahs_{}.out[{}]", self.h_cnt - 1, i));
         }
         self.out3 = vec![];
-        self.code.push(format!(
-            "tcHahs_{}.initialState <== {};",
-            self.h_cnt - 1,
-            self.state
-        ));
+        self.code.push(format!("tcHahs_{}.initialState <== {};", self.h_cnt - 1, self.state));
         self.state = format!("tcHahs_{}.out[0]", self.h_cnt - 1);
         self.pending = vec![];
     }
@@ -174,10 +166,8 @@ impl Transcript {
         let mut curBit = 0;
         for i in 0..n {
             for j in 0..nBits {
-                self.code.push(format!(
-                    "{}[{}][{}] <== {}.out[{}];",
-                    v, i, j, n2b[curField], curBit
-                ));
+                self.code
+                    .push(format!("{}[{}][{}] <== {}.out[{}];", v, i, j, n2b[curField], curBit));
                 curBit += 1;
                 if curBit == 253 {
                     curBit = 0;
@@ -209,10 +199,7 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
             "tmp" => format!("tmp_{}", r.id),
             "tree1" => format!("mapValues.tree1_{}", r.id),
             "tree2" => format!("mapValues.tree2_{}", r.id - starkinfo.n_cm1),
-            "tree3" => format!(
-                "mapValues.tree3_{}",
-                r.id - starkinfo.n_cm1 - starkinfo.n_cm2
-            ),
+            "tree3" => format!("mapValues.tree3_{}", r.id - starkinfo.n_cm1 - starkinfo.n_cm2),
             "tree4" => format!(
                 "mapValues.tree4_{}",
                 r.id - starkinfo.n_cm1 - starkinfo.n_cm2 - starkinfo.n_cm3
@@ -1147,11 +1134,7 @@ template StarkVerifier() {{
         starkinfo.n_constants,
         1 << stark_struct.steps[0].nBits,
         stark_struct.steps[0].nBits
-            - (if 0 < stark_struct.steps.len() - 1 {
-                stark_struct.steps[1].nBits
-            } else {
-                0
-            })
+            - (if 0 < stark_struct.steps.len() - 1 { stark_struct.steps[1].nBits } else { 0 })
     ));
 
     res.push_str(&format!(
@@ -1337,11 +1320,8 @@ template StarkVerifier() {{
             stark_struct.nQueries
         ));
 
-        let nbits = if s < stark_struct.steps.len() - 1 {
-            stark_struct.steps[s + 1].nBits
-        } else {
-            0
-        };
+        let nbits =
+            if s < stark_struct.steps.len() - 1 { stark_struct.steps[s + 1].nBits } else { 0 };
         let selector = stark_struct.steps[s].nBits - nbits;
 
         res.push_str(&format!(
@@ -1627,11 +1607,7 @@ template Main() {{
     signal input s0_vals1[{}][{}];
 "#,
             pil.publics.len(),
-            if options.verkey_input {
-                "signal input rootC; "
-            } else {
-                ""
-            },
+            if options.verkey_input { "signal input rootC; " } else { "" },
             starkinfo.ev_map.len(),
             stark_struct.nQueries,
             starkinfo.map_sectionsN.cm1_2ns
@@ -1737,11 +1713,7 @@ template Main() {{
     sv.s0_vals1 <== s0_vals1;
 "#,
             (1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits),
-            if options.verkey_input {
-                "sv.rootC <== rootC; "
-            } else {
-                ""
-            }
+            if options.verkey_input { "sv.rootC <== rootC; " } else { "" }
         ));
 
         if starkinfo.map_sectionsN.cm2_2ns > 0 {
@@ -1854,11 +1826,7 @@ component main {} = Main();
             pil.publics.len(),
             pil.publics.len(),
             pil.publics.len(),
-            if options.verkey_input {
-                "{public [rootC]}"
-            } else {
-                ""
-            }
+            if options.verkey_input { "{public [rootC]}" } else { "" }
         ));
     }
     res
@@ -1877,12 +1845,6 @@ pub fn render<F: ff::PrimeField + Default>(
     res.push_str(&verify_evaluations(starkinfo, prorgam, pil, stark_struct));
     res.push_str(&verify_query(starkinfo, prorgam, stark_struct));
     res.push_str(&map_values(starkinfo));
-    res.push_str(&stark_verifier(
-        starkinfo,
-        pil,
-        stark_struct,
-        const_root,
-        options,
-    ));
+    res.push_str(&stark_verifier(starkinfo, pil, stark_struct, const_root, options));
     res
 }

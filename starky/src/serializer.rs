@@ -165,9 +165,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .1
                         .iter()
                         .map(|e| {
-                            e.iter()
-                                .map(|ee| M::from_basefield(ee))
-                                .collect::<Vec<M::MTNode>>()
+                            e.iter().map(|ee| M::from_basefield(ee)).collect::<Vec<M::MTNode>>()
                         })
                         .collect::<Vec<Vec<M::MTNode>>>(),
                 );
@@ -195,11 +193,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                 qe[0]
                     .1
                     .iter()
-                    .map(|e| {
-                        e.iter()
-                            .map(|ee| M::from_basefield(ee))
-                            .collect::<Vec<M::MTNode>>()
-                    })
+                    .map(|e| e.iter().map(|ee| M::from_basefield(ee)).collect::<Vec<M::MTNode>>())
                     .collect::<Vec<Vec<M::MTNode>>>(),
             );
 
@@ -208,11 +202,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                 qe[1]
                     .1
                     .iter()
-                    .map(|e| {
-                        e.iter()
-                            .map(|ee| M::from_basefield(ee))
-                            .collect::<Vec<M::MTNode>>()
-                    })
+                    .map(|e| e.iter().map(|ee| M::from_basefield(ee)).collect::<Vec<M::MTNode>>())
                     .collect::<Vec<Vec<M::MTNode>>>(),
             );
 
@@ -221,11 +211,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                 qe[2]
                     .1
                     .iter()
-                    .map(|e| {
-                        e.iter()
-                            .map(|ee| M::from_basefield(ee))
-                            .collect::<Vec<M::MTNode>>()
-                    })
+                    .map(|e| e.iter().map(|ee| M::from_basefield(ee)).collect::<Vec<M::MTNode>>())
                     .collect::<Vec<Vec<M::MTNode>>>(),
             );
 
@@ -234,11 +220,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                 qe[3]
                     .1
                     .iter()
-                    .map(|e| {
-                        e.iter()
-                            .map(|ee| M::from_basefield(ee))
-                            .collect::<Vec<M::MTNode>>()
-                    })
+                    .map(|e| e.iter().map(|ee| M::from_basefield(ee)).collect::<Vec<M::MTNode>>())
                     .collect::<Vec<Vec<M::MTNode>>>(),
             );
 
@@ -247,11 +229,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                 qe[4]
                     .1
                     .iter()
-                    .map(|e| {
-                        e.iter()
-                            .map(|ee| M::from_basefield(ee))
-                            .collect::<Vec<M::MTNode>>()
-                    })
+                    .map(|e| e.iter().map(|ee| M::from_basefield(ee)).collect::<Vec<M::MTNode>>())
                     .collect::<Vec<Vec<M::MTNode>>>(),
             );
         }
@@ -506,14 +484,8 @@ mod tests {
         assert_eq!(input, de_input);
 
         let mut rng = rand::thread_rng();
-        let input = F3G::from_vec(
-            [
-                FGL::rand(&mut rng),
-                FGL::rand(&mut rng),
-                FGL::rand(&mut rng),
-            ]
-            .to_vec(),
-        );
+        let input =
+            F3G::from_vec([FGL::rand(&mut rng), FGL::rand(&mut rng), FGL::rand(&mut rng)].to_vec());
         let ser_input = serde_json::to_string(&input).unwrap();
         let de_input = serde_json::from_str(&ser_input).unwrap();
         assert_eq!(input, de_input);

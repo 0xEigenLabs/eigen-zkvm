@@ -41,14 +41,7 @@ pub fn load_constants_avx512() -> ConstantsAvx512 {
         s.push(FrRepr([v1]));
     }
 
-    ConstantsAvx512 {
-        c,
-        m,
-        p,
-        s,
-        n_rounds_f: 8,
-        n_rounds_p: 22,
-    }
+    ConstantsAvx512 { c, m, p, s, n_rounds_f: 8, n_rounds_p: 22 }
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -353,12 +346,7 @@ impl Poseidon {
 
         for r in 0..(n_rounds_f / 2 - 1) {
             Self::pow7_triple(&mut st0, &mut st1, &mut st2);
-            Self::add_avx512(
-                &mut st0,
-                &mut st1,
-                &mut st2,
-                &C[(r + 1) * t..((r + 1) * t + t)],
-            );
+            Self::add_avx512(&mut st0, &mut st1, &mut st2, &C[(r + 1) * t..((r + 1) * t + t)]);
             Self::mmult_avx512_8(&mut st0, &mut st1, &mut st2, &M[0..288]);
         }
 

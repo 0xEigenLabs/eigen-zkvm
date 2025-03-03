@@ -38,12 +38,7 @@ impl PlonkSetup {
         //4. plonk_setup_fix_compressor phase
         let (const_pols, s_map) = plonk_setup_compressor(r1cs, &pil_json, &plonk_setup_info);
 
-        Self {
-            pil_str,
-            const_pols,
-            s_map,
-            plonk_additions: plonk_setup_info.pa,
-        }
+        Self { pil_str, const_pols, s_map, plonk_additions: plonk_setup_info.pa }
     }
 }
 
@@ -66,9 +61,7 @@ impl NormalPlonkInfo {
             }
             let k = c.str_key();
 
-            uses.entry(k.clone())
-                .and_modify(|e| *e += 1)
-                .or_insert_with(|| 1);
+            uses.entry(k.clone()).and_modify(|e| *e += 1).or_insert_with(|| 1);
         }
         let mut result = uses.values().collect::<Vec<_>>();
         result.sort(); // sort by asc
@@ -190,11 +183,7 @@ impl PlonkSetupRenderInfo {
         let n_publics = r1cs.num_inputs + r1cs.num_outputs - 1;
         let n_public_rows = (n_publics - 1) / 12 + 1;
 
-        log::debug!(
-            "{n_publics} {n_public_rows} {} {:?}",
-            plonk_info.N,
-            custom_gates_info
-        );
+        log::debug!("{n_publics} {n_public_rows} {} {:?}", plonk_info.N, custom_gates_info);
         let n_used = n_public_rows
             + plonk_info.N
             + (custom_gates_info.n_c_mul_add
@@ -299,9 +288,8 @@ pub fn plonk_setup_compressor(
         } else if !half_rows.is_empty() {
             let mut pr = half_rows.shift().unwrap();
             let index = pr.row;
-            for (i, value) in [9_usize, 6, 7, 8, 10, 11]
-                .iter()
-                .zip([c.3, c.4, c.5, c.6, c.7, FGL::ZERO].iter())
+            for (i, value) in
+                [9_usize, 6, 7, 8, 10, 11].iter().zip([c.3, c.4, c.5, c.6, c.7, FGL::ZERO].iter())
             {
                 const_pols.set_matrix(
                     pil,
@@ -320,9 +308,8 @@ pub fn plonk_setup_compressor(
             partial_rows.insert(k, pr);
         } else {
             let index = r;
-            for (i, value) in [3_usize, 0, 1, 2, 4, 5]
-                .iter()
-                .zip([c.3, c.4, c.5, c.6, c.7, FGL::ZERO].iter())
+            for (i, value) in
+                [3_usize, 0, 1, 2, 4, 5].iter().zip([c.3, c.4, c.5, c.6, c.7, FGL::ZERO].iter())
             {
                 const_pols.set_matrix(
                     pil,
@@ -335,14 +322,7 @@ pub fn plonk_setup_compressor(
             }
             for (pol_name, value) in [GATE, POSEIDON12, PARTIAL, CMULADD, EVPOL4, FFT4]
                 .iter()
-                .zip(vec![
-                    FGL::ONE,
-                    FGL::ZERO,
-                    FGL::ZERO,
-                    FGL::ZERO,
-                    FGL::ZERO,
-                    FGL::ZERO,
-                ])
+                .zip(vec![FGL::ONE, FGL::ZERO, FGL::ZERO, FGL::ZERO, FGL::ZERO, FGL::ZERO])
             {
                 const_pols.set_matrix(
                     pil,
@@ -402,11 +382,7 @@ pub fn plonk_setup_compressor(
     let custom_gates_info = &plonk_setup_info.custom_gates_info;
     for (i, cgu) in r1cs.custom_gates_uses.iter().enumerate() {
         if (i % 10000) == 0 {
-            log::trace!(
-                "Processing custom gates... {}/{}",
-                i,
-                r1cs.custom_gates_uses.len()
-            );
+            log::trace!("Processing custom gates... {}/{}", i, r1cs.custom_gates_uses.len());
         }
         if cgu.id == custom_gates_info.poseidon_id {
             assert_eq!(cgu.signals.len(), 31 * 12);
@@ -441,11 +417,7 @@ pub fn plonk_setup_compressor(
                     index,
                     if j < 30 { FGL::ONE } else { FGL::ZERO },
                 );
-                let tt = if !(4..26).contains(&j) {
-                    FGL::ZERO
-                } else {
-                    FGL::ONE
-                };
+                let tt = if !(4..26).contains(&j) { FGL::ZERO } else { FGL::ONE };
                 let tt = if j < 30 { tt } else { FGL::ZERO };
                 const_pols.set_matrix(
                     pil,
@@ -489,11 +461,7 @@ pub fn plonk_setup_compressor(
                     &C.to_string(),
                     i,
                     index,
-                    if i == 9 || i == 10 {
-                        FGL::ONE
-                    } else {
-                        FGL::ZERO
-                    },
+                    if i == 9 || i == 10 { FGL::ONE } else { FGL::ZERO },
                 );
             }
 
@@ -583,9 +551,8 @@ pub fn plonk_setup_compressor(
                         FGL::ZERO,
                     );
                 }
-                for (i, value) in [6, 7, 8]
-                    .iter()
-                    .zip([scale, scale * firstW, scale * firstW * incW].iter())
+                for (i, value) in
+                    [6, 7, 8].iter().zip([scale, scale * firstW, scale * firstW * incW].iter())
                 {
                     const_pols.set_matrix(
                         pil,

@@ -165,8 +165,7 @@ impl WitnessCalculator {
                         f_arr[(n32 as usize) - 1 - (j as usize)],
                     )?;
                 }
-                self.instance
-                    .set_input_signal(&mut self.store, msb, lsb, i as u32)?;
+                self.instance.set_input_signal(&mut self.store, msb, lsb, i as u32)?;
             }
         }
 
@@ -188,11 +187,7 @@ impl WitnessCalculator {
         filename: &str,
         w: &Vec<u32>,
     ) -> Result<()> {
-        let writer = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(filename)?;
+        let writer = OpenOptions::new().write(true).create(true).truncate(true).open(filename)?;
 
         let writer = BufWriter::new(writer);
         self.save_witness_from_bin_writer::<E, _>(writer, w)
@@ -225,10 +220,7 @@ impl WitnessCalculator {
         // write prime
         let (sign, prime_buf) = self.memory.prime.to_bytes_le();
         if sign != Sign::Plus {
-            bail!(format!(
-                "Invalid prime: {}, must be positive",
-                self.memory.prime
-            ));
+            bail!(format!("Invalid prime: {}, must be positive", self.memory.prime));
         }
         if prime_buf.len() as u32 != field_size {
             bail!(format!(
@@ -258,11 +250,9 @@ impl WitnessCalculator {
 pub fn value_to_bigint(v: Value) -> BigInt {
     match v {
         Value::String(inner) => BigInt::from_str(&inner).unwrap(),
-        Value::Number(inner) => BigInt::from(
-            inner
-                .as_u64()
-                .unwrap_or_else(|| panic!("{} not a u32", inner)),
-        ),
+        Value::Number(inner) => {
+            BigInt::from(inner.as_u64().unwrap_or_else(|| panic!("{} not a u32", inner)))
+        }
         _ => panic!("unsupported type {:?}", v),
     }
 }

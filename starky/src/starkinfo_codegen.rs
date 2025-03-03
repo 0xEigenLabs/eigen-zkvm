@@ -67,16 +67,7 @@ impl Node {
         tree_pos: usize,
     ) -> Self {
         assert!(!type_.is_empty());
-        Node {
-            type_,
-            id,
-            value,
-            dim,
-            prime,
-            tree_pos,
-            p: 0,
-            exp_id: 0,
-        }
+        Node { type_, id, value, dim, prime, tree_pos, p: 0, exp_id: 0 }
     }
 }
 
@@ -277,10 +268,7 @@ where
 
 impl EVIdx {
     pub fn new() -> Self {
-        EVIdx {
-            cm: HashMap::new(),
-            const_: HashMap::new(),
-        }
+        EVIdx { cm: HashMap::new(), const_: HashMap::new() }
     }
 
     pub fn get(&self, type_: &str, p: usize, id: usize) -> Option<&usize> {
@@ -317,11 +305,8 @@ pub fn pil_code_gen(
     let prime_idx = if prime { "expsPrime" } else { "exps" };
     if ctx.calculated.contains_key(&(prime_idx, exp_id)) {
         if !res_type.is_empty() {
-            let idx = ctx
-                .code
-                .iter()
-                .position(|x| (x.exp_id == exp_id) && (x.prime == prime))
-                .unwrap();
+            let idx =
+                ctx.code.iter().position(|x| (x.exp_id == exp_id) && (x.prime == prime)).unwrap();
             let c = &mut ctx.code[idx];
             let dest = Node::new(res_type.to_string(), res_id, None, 0, prime, 0);
             c.code.push(Section {
@@ -336,11 +321,7 @@ pub fn pil_code_gen(
     let exp = pil.expressions[exp_id].clone();
     calculate_deps(ctx, pil, &exp, prime, exp_id, false)?;
 
-    let mut code_ctx = ContextC {
-        exp_id,
-        tmp_used: ctx.tmp_used,
-        code: Vec::new(),
-    };
+    let mut code_ctx = ContextC { exp_id, tmp_used: ctx.tmp_used, code: Vec::new() };
     let _exp = pil.expressions[exp_id].clone();
     let exp = match muladd {
         true => find_muladd(&_exp),
@@ -353,11 +334,7 @@ pub fn pil_code_gen(
         code_ctx.tmp_used -= 1;
     } else {
         let exp_node = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
-        code_ctx.code.push(Section {
-            op: "copy".to_string(),
-            dest: exp_node,
-            src: vec![ret_ref],
-        });
+        code_ctx.code.push(Section { op: "copy".to_string(), dest: exp_node, src: vec![ret_ref] });
     }
     if !res_type.is_empty() {
         if prime {
@@ -366,20 +343,10 @@ pub fn pil_code_gen(
 
         let dest = Node::new(res_type.to_string(), res_id, None, 0, prime, 0);
         let src = Node::new("exp".to_string(), exp_id, None, 0, prime, 0);
-        code_ctx.code.push(Section {
-            op: "copy".to_string(),
-            dest,
-            src: vec![src],
-        });
+        code_ctx.code.push(Section { op: "copy".to_string(), dest, src: vec![src] });
     }
 
-    ctx.code.push(Code {
-        exp_id,
-        prime,
-        code: code_ctx.code,
-        tmp_used: 0,
-        idQ: None,
-    });
+    ctx.code.push(Code { exp_id, prime, code: code_ctx.code, tmp_used: 0, idQ: None });
 
     ctx.calculated.insert((prime_idx, exp_id), true);
     if code_ctx.tmp_used > ctx.tmp_used {
@@ -483,44 +450,28 @@ fn eval_single_op(
         "add" => {
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
-            let c = Section {
-                op: "add".to_string(),
-                dest: r.clone(),
-                src: values.collect(),
-            };
+            let c = Section { op: "add".to_string(), dest: r.clone(), src: values.collect() };
             code_ctx.code.push(c);
             Ok(r)
         }
         "sub" => {
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
-            let c = Section {
-                op: "sub".to_string(),
-                dest: r.clone(),
-                src: values.collect(),
-            };
+            let c = Section { op: "sub".to_string(), dest: r.clone(), src: values.collect() };
             code_ctx.code.push(c);
             Ok(r)
         }
         "mul" => {
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
-            let c = Section {
-                op: "mul".to_string(),
-                dest: r.clone(),
-                src: values.collect(),
-            };
+            let c = Section { op: "mul".to_string(), dest: r.clone(), src: values.collect() };
             code_ctx.code.push(c);
             Ok(r)
         }
         "muladd" => {
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
-            let c = Section {
-                op: "muladd".to_string(),
-                dest: r.clone(),
-                src: values.collect(),
-            };
+            let c = Section { op: "muladd".to_string(), dest: r.clone(), src: values.collect() };
             code_ctx.code.push(c);
             Ok(r)
         }
@@ -536,11 +487,7 @@ fn eval_single_op(
             );
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
-            let c = Section {
-                op: "add".to_string(),
-                dest: r.clone(),
-                src: vec![a, b],
-            };
+            let c = Section { op: "add".to_string(), dest: r.clone(), src: vec![a, b] };
             code_ctx.code.push(c);
             Ok(r)
         }
@@ -557,11 +504,7 @@ fn eval_single_op(
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
 
-            let c = Section {
-                op: "mul".to_string(),
-                dest: r.clone(),
-                src: vec![a, b],
-            };
+            let c = Section { op: "mul".to_string(), dest: r.clone(), src: vec![a, b] };
             code_ctx.code.push(c);
             Ok(r)
         }
@@ -572,11 +515,7 @@ fn eval_single_op(
             let r = Node::new("tmp".to_string(), code_ctx.tmp_used, None, 0, false, 0);
             code_ctx.tmp_used += 1;
 
-            let c = Section {
-                op: "sub".to_string(),
-                dest: r.clone(),
-                src: vec![a, b],
-            };
+            let c = Section { op: "sub".to_string(), dest: r.clone(), src: vec![a, b] };
             code_ctx.code.push(c);
             Ok(r)
         }
@@ -584,86 +523,30 @@ fn eval_single_op(
             if exp.next() && prime {
                 expression_error(pil, "Double Prime".to_string(), code_ctx.exp_id, 0)?;
             }
-            Ok(Node::new(
-                "cm".to_string(),
-                exp.id.unwrap(),
-                None,
-                0,
-                exp.next() || prime,
-                0,
-            ))
+            Ok(Node::new("cm".to_string(), exp.id.unwrap(), None, 0, exp.next() || prime, 0))
         }
         "const" => {
             if exp.next() && prime {
                 expression_error(pil, "Double Prime".to_string(), code_ctx.exp_id, 0)?;
             }
-            Ok(Node::new(
-                "const".to_string(),
-                exp.id.unwrap(),
-                None,
-                0,
-                exp.next() || prime,
-                0,
-            ))
+            Ok(Node::new("const".to_string(), exp.id.unwrap(), None, 0, exp.next() || prime, 0))
         }
         "exp" => {
             if exp.next() && prime {
                 expression_error(pil, "Double Prime".to_string(), code_ctx.exp_id, 0)?;
             }
-            Ok(Node::new(
-                "exp".to_string(),
-                exp.id.unwrap(),
-                None,
-                0,
-                exp.next() || prime,
-                0,
-            ))
+            Ok(Node::new("exp".to_string(), exp.id.unwrap(), None, 0, exp.next() || prime, 0))
         }
         "q" => {
             if exp.next() && prime {
                 expression_error(pil, "double Prime".to_string(), code_ctx.exp_id, 0)?;
             }
-            Ok(Node::new(
-                "q".to_string(),
-                exp.id.unwrap(),
-                None,
-                0,
-                exp.next() || prime,
-                0,
-            ))
+            Ok(Node::new("q".to_string(), exp.id.unwrap(), None, 0, exp.next() || prime, 0))
         }
-        "number" => Ok(Node::new(
-            "number".to_string(),
-            0,
-            exp.value.clone(),
-            0,
-            false,
-            0,
-        )),
-        "public" => Ok(Node::new(
-            "public".to_string(),
-            exp.id.unwrap(),
-            None,
-            0,
-            false,
-            0,
-        )),
-        "challenge" => Ok(Node::new(
-            "challenge".to_string(),
-            exp.id.unwrap(),
-            None,
-            0,
-            false,
-            0,
-        )),
-        "eval" => Ok(Node::new(
-            "eval".to_string(),
-            exp.id.unwrap(),
-            None,
-            0,
-            false,
-            0,
-        )),
+        "number" => Ok(Node::new("number".to_string(), 0, exp.value.clone(), 0, false, 0)),
+        "public" => Ok(Node::new("public".to_string(), exp.id.unwrap(), None, 0, false, 0)),
+        "challenge" => Ok(Node::new("challenge".to_string(), exp.id.unwrap(), None, 0, false, 0)),
+        "eval" => Ok(Node::new("eval".to_string(), exp.id.unwrap(), None, 0, false, 0)),
         "xDivXSubXi" => Ok(Node::new("xDivXSubXi".to_string(), 0, None, 0, false, 0)),
         "xDivXSubWXi" => Ok(Node::new("xDivXSubWXi".to_string(), 0, None, 0, false, 0)),
         "x" => Ok(Node::new("x".to_string(), 0, None, 0, false, 0)),

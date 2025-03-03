@@ -57,8 +57,7 @@ impl StarkInfo {
 
         self.im_exp2cm = HashMap::new();
         for i in 0..self.im_exps_list.len() {
-            self.im_exp2cm
-                .insert(self.im_exps_list[i], pil.nCommitments);
+            self.im_exp2cm.insert(self.im_exps_list[i], pil.nCommitments);
             pil.nCommitments += 1;
 
             let lhs = pil.expressions[self.im_exps_list[i]].clone();
@@ -107,10 +106,7 @@ impl StarkInfo {
         code.push(Section {
             op: "mul".to_string(),
             dest: Node::new("q".to_string(), 0, None, 0, false, 0),
-            src: vec![
-                code[sz].dest.clone(),
-                Node::new("Zi".to_string(), 0, None, 0, false, 0),
-            ],
+            src: vec![code[sz].dest.clone(), Node::new("Zi".to_string(), 0, None, 0, false, 0)],
         });
 
         program.step42ns = build_code(ctx2ns, pil);
@@ -219,11 +215,7 @@ fn _calculate_im_pols(
         }
 
         if im_expressions.is_some()
-            && im_expressions
-                .as_ref()
-                .unwrap()
-                .get(&exp.id.unwrap())
-                .is_some()
+            && im_expressions.as_ref().unwrap().get(&exp.id.unwrap()).is_some()
         {
             return (im_expressions.clone(), 1);
         }
@@ -249,11 +241,8 @@ fn _calculate_im_pols(
 }
 
 pub fn get_exp_dim(pil: &PIL, exp: &Expression) -> i32 {
-    let values: Vec<Expression> = if exp.values.is_none() {
-        Vec::new()
-    } else {
-        exp.values.clone().unwrap()
-    };
+    let values: Vec<Expression> =
+        if exp.values.is_none() { Vec::new() } else { exp.values.clone().unwrap() };
     match exp.op.as_str() {
         "add" | "sub" | "addc" | "mulc" | "neg" => {
             let mut md = 1;
@@ -286,14 +275,8 @@ pub fn calculate_im_pols(
 
     let mut abs_max_d = 0;
     let im_expressions: HashMap<usize, bool> = HashMap::new();
-    let (re, rd) = _calculate_im_pols(
-        pil,
-        exp,
-        &Some(im_expressions),
-        max_deg,
-        max_deg,
-        &mut abs_max_d,
-    );
+    let (re, rd) =
+        _calculate_im_pols(pil, exp, &Some(im_expressions), max_deg, max_deg, &mut abs_max_d);
 
     //log::trace!(
     //    "maxDeg: {}, nIm: {}, d: {}",

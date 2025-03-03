@@ -6,14 +6,11 @@ use recursion_gnark_ffi::{
         build_groth16_bn254, build_plonk_bn254, test_groth16_bn254, test_plonk_bn254,
         verify_groth16_bn254, verify_plonk_bn254,
     },
-    ProofBn254
+    ProofBn254,
 };
 
 use clap::{Args, Parser, Subcommand};
-use std::{
-    fs::File,
-    io::Write,
-};
+use std::{fs::File, io::Write};
 
 #[derive(Debug, Parser)]
 struct Cli {
@@ -92,7 +89,8 @@ fn prove_groth16_bn254(data_dir: &str, witness_path: &str) -> ProofBn254 {
 
 fn run_verify(args: VerifyArgs) {
     let mut file = File::open(&args.proof_path).unwrap();
-    let proof: ProofBn254 = bincode::deserialize_from(&mut file).expect("Failed to deserialize proof");
+    let proof: ProofBn254 =
+        bincode::deserialize_from(&mut file).expect("Failed to deserialize proof");
 
     let result = match (args.system.as_str(), proof) {
         ("plonk", ProofBn254::Plonk(proof)) => verify_plonk_bn254(

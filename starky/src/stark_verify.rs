@@ -35,11 +35,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     ctx.publics.clone_from(&proof.publics);
 
     for i in 0..proof.publics.len() {
-        let b = ctx.publics[i]
-            .as_elements()
-            .iter()
-            .map(|e| vec![*e])
-            .collect::<Vec<Vec<FGL>>>();
+        let b = ctx.publics[i].as_elements().iter().map(|e| vec![*e]).collect::<Vec<Vec<FGL>>>();
         transcript.put(&b[..])?;
     }
 
@@ -56,11 +52,7 @@ pub fn stark_verify<M: MerkleTree, T: Transcript>(
     transcript.put(&[proof.root4.as_elements().to_vec()])?;
     ctx.challenge[7] = transcript.get_field(); // xi
     for i in 0..ctx.evals.len() {
-        let b = ctx.evals[i]
-            .as_elements()
-            .iter()
-            .map(|e| vec![*e])
-            .collect::<Vec<Vec<FGL>>>();
+        let b = ctx.evals[i].as_elements().iter().map(|e| vec![*e]).collect::<Vec<Vec<FGL>>>();
         transcript.put(&b[..])?;
     }
 
@@ -171,16 +163,12 @@ fn execute_code<F: FieldExtension>(ctx: &StarkContext<F>, code: &Vec<Section>) -
             "public" => ctx.publics[r.id],
             "challenge" => ctx.challenge[r.id],
             // TODO: Support F5G
-            "xDivXSubXi" => F::from_vec(vec![
-                ctx.xDivXSubXi[0],
-                ctx.xDivXSubXi[1],
-                ctx.xDivXSubXi[2],
-            ]),
-            "xDivXSubWXi" => F::from_vec(vec![
-                ctx.xDivXSubWXi[0],
-                ctx.xDivXSubWXi[1],
-                ctx.xDivXSubWXi[2],
-            ]),
+            "xDivXSubXi" => {
+                F::from_vec(vec![ctx.xDivXSubXi[0], ctx.xDivXSubXi[1], ctx.xDivXSubXi[2]])
+            }
+            "xDivXSubWXi" => {
+                F::from_vec(vec![ctx.xDivXSubWXi[0], ctx.xDivXSubWXi[1], ctx.xDivXSubWXi[2]])
+            }
             "x" => ctx.challenge[7],
             "Z" => {
                 if r.prime {

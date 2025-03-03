@@ -7,16 +7,7 @@ use std::collections::BTreeMap;
 use std::ops::Neg;
 
 #[derive(Debug)]
-pub struct PlonkGate(
-    pub usize,
-    pub usize,
-    pub usize,
-    pub FGL,
-    pub FGL,
-    pub FGL,
-    pub FGL,
-    pub FGL,
-);
+pub struct PlonkGate(pub usize, pub usize, pub usize, pub FGL, pub FGL, pub FGL, pub FGL, pub FGL);
 
 impl std::fmt::Display for PlonkGate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -52,14 +43,7 @@ impl PlonkGate {
 pub struct PlonkAdd(pub usize, pub usize, pub FGL, pub FGL);
 impl std::fmt::Display for PlonkAdd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "({}, {}, {}, {})",
-            self.0,
-            self.1,
-            self.2.as_int(),
-            self.3.as_int()
-        )
+        write!(f, "({}, {}, {}, {})", self.0, self.1, self.2.as_int(), self.3.as_int())
     }
 }
 
@@ -237,12 +221,7 @@ pub fn r1cs2plonk(r1cs: &R1CS<GL>) -> (Vec<PlonkGate>, Vec<PlonkAdd>) {
         if i % 100000 == 0 {
             log::trace!("processing constraints: {}/{}", i, r1cs.constraints.len());
         }
-        process(
-            c,
-            &mut plonk_constraints,
-            &mut plonk_additions,
-            &mut plonk_n_var,
-        );
+        process(c, &mut plonk_constraints, &mut plonk_additions, &mut plonk_n_var);
     }
     (plonk_constraints, plonk_additions)
 }
@@ -276,18 +255,12 @@ mod test {
 
         // test the r1cs2plonk data by dump its data.
         let mut file = File::create(Path::new("plonk_constrains_rs.json")).unwrap();
-        let input = plonk_constrains
-            .iter()
-            .map(|pa| pa.to_string())
-            .collect::<Vec<String>>();
+        let input = plonk_constrains.iter().map(|pa| pa.to_string()).collect::<Vec<String>>();
         let input = serde_json::to_string(&input).unwrap();
         write!(file, "{}", input).unwrap();
 
         let mut file = File::create(Path::new("/tmp/plonk_additions_rs.json")).unwrap();
-        let input = plonk_additions
-            .iter()
-            .map(|pa| pa.to_string())
-            .collect::<Vec<String>>();
+        let input = plonk_additions.iter().map(|pa| pa.to_string()).collect::<Vec<String>>();
         let input = serde_json::to_string(&input).unwrap();
         write!(file, "{}", input).unwrap();
     }

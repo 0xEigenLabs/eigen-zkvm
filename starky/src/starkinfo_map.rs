@@ -50,18 +50,10 @@ impl StarkInfo {
                 Self::get_exp_dim(pil, &pil.expressions[pu.t_exp_id]),
             );
 
-            let pph1_n = add_pol(PolType {
-                section: "cm2_n".to_string(),
-                dim,
-                exp_id: 0,
-                section_pos: 0,
-            });
-            let pph1_2ns = add_pol(PolType {
-                section: "cm2_2ns".to_string(),
-                dim,
-                exp_id: 0,
-                section_pos: 0,
-            });
+            let pph1_n =
+                add_pol(PolType { section: "cm2_n".to_string(), dim, exp_id: 0, section_pos: 0 });
+            let pph1_2ns =
+                add_pol(PolType { section: "cm2_2ns".to_string(), dim, exp_id: 0, section_pos: 0 });
 
             self.cm_n.push(pph1_n);
             self.cm_2ns.push(pph1_2ns);
@@ -69,18 +61,10 @@ impl StarkInfo {
             self.map_sections.cm2_2ns.push(pph1_2ns);
             pil.cm_dims[self.n_cm1 + i * 2] = dim;
 
-            let pph2_n = add_pol(PolType {
-                section: "cm2_n".to_string(),
-                dim,
-                exp_id: 0,
-                section_pos: 0,
-            });
-            let pph2_2ns = add_pol(PolType {
-                section: "cm2_2ns".to_string(),
-                dim,
-                exp_id: 0,
-                section_pos: 0,
-            });
+            let pph2_n =
+                add_pol(PolType { section: "cm2_n".to_string(), dim, exp_id: 0, section_pos: 0 });
+            let pph2_2ns =
+                add_pol(PolType { section: "cm2_2ns".to_string(), dim, exp_id: 0, section_pos: 0 });
 
             self.cm_n.push(pph2_n);
             self.cm_2ns.push(pph2_2ns);
@@ -175,19 +159,11 @@ impl StarkInfo {
         for i in 0..self.im_exps_list.len() {
             let dim = Self::get_exp_dim(pil, &pil.expressions[self.im_exps_list[i]]);
 
-            let ppz_n = add_pol(PolType {
-                section: "cm3_n".to_string(),
-                dim,
-                exp_id: 0,
-                section_pos: 0,
-            });
+            let ppz_n =
+                add_pol(PolType { section: "cm3_n".to_string(), dim, exp_id: 0, section_pos: 0 });
 
-            let ppz_2ns = add_pol(PolType {
-                section: "cm3_2ns".to_string(),
-                dim,
-                exp_id: 0,
-                section_pos: 0,
-            });
+            let ppz_2ns =
+                add_pol(PolType { section: "cm3_2ns".to_string(), dim, exp_id: 0, section_pos: 0 });
 
             self.cm_n.push(ppz_n);
             self.cm_2ns.push(ppz_2ns);
@@ -229,12 +205,8 @@ impl StarkInfo {
         });
         self.q_2ns.push(ppq_2ns);
 
-        let ppf_2ns = add_pol(PolType {
-            section: "f_2ns".to_string(),
-            dim: 3,
-            exp_id: 0,
-            section_pos: 0,
-        });
+        let ppf_2ns =
+            add_pol(PolType { section: "f_2ns".to_string(), dim: 3, exp_id: 0, section_pos: 0 });
         self.f_2ns.push(ppf_2ns);
 
         //log::trace!("cm_dims: {:?}", pil.cm_dims);

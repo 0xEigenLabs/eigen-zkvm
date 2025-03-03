@@ -48,16 +48,11 @@ pub fn load_constants() -> Constants {
         p: Vec::new(),
         s: Vec::new(),
         n_rounds_f: 8,
-        n_rounds_p: vec![
-            56, 57, 56, 60, 60, 63, 64, 63, 60, 66, 60, 65, 70, 60, 64, 68,
-        ],
+        n_rounds_p: vec![56, 57, 56, 60, 60, 63, 64, 63, 60, 66, 60, 65, 70, 60, 64, 68],
     }
 }
 
-#[deprecated(
-    since = "0.1.0",
-    note = "please use `poseidon_bls12381_opt::Poseidon` instead"
-)]
+#[deprecated(since = "0.1.0", note = "please use `poseidon_bls12381_opt::Poseidon` instead")]
 #[derive(Debug, PartialEq)]
 pub struct Poseidon;
 
@@ -228,10 +223,7 @@ mod tests {
         let poseidon = Poseidon::new();
 
         let inputs: Vec<_> = (0..16).collect::<Vec<u64>>();
-        let inp: Vec<Fr> = inputs
-            .iter()
-            .map(|e| Fr::from_str(&e.to_string()).unwrap())
-            .collect();
+        let inp: Vec<Fr> = inputs.iter().map(|e| Fr::from_str(&e.to_string()).unwrap()).collect();
 
         let is = Fr::zero();
         let h = poseidon.hash(&inp, &is).unwrap();

@@ -52,9 +52,7 @@ pub fn execute_project(program_archive: ProgramArchive, config: ExecutionConfig)
             }
             Result::Ok(vcp)
         }
-        Err(..) => bail!(DslError::CircomCompileError(
-            "execute_project error".to_string(),
-        )),
+        Err(..) => bail!(DslError::CircomCompileError("execute_project error".to_string(),)),
     }
 }
 
@@ -63,13 +61,8 @@ fn generate_output_r1cs(file: &str, exporter: &dyn ConstraintExporter) -> Result
         log::trace!("{} {}", Colour::Green.paint("Written successfully:"), file);
         Result::Ok(())
     } else {
-        log::trace!(
-            "{}",
-            Colour::Red.paint("Could not write the output in the given path")
-        );
-        bail!(DslError::CircomCompileError(
-            "generate_output_r1cs error".to_string(),
-        ))
+        log::trace!("{}", Colour::Red.paint("Could not write the output in the given path"));
+        bail!(DslError::CircomCompileError("generate_output_r1cs error".to_string(),))
     }
 }
 
@@ -78,13 +71,8 @@ fn generate_output_sym(file: &str, exporter: &dyn ConstraintExporter) -> Result<
         log::trace!("{} {}", Colour::Green.paint("Written successfully:"), file);
         Result::Ok(())
     } else {
-        log::error!(
-            "{}",
-            Colour::Red.paint("Could not write the output in the given path")
-        );
-        bail!(DslError::CircomCompileError(
-            "generate_output_sym error".to_string(),
-        ))
+        log::error!("{}", Colour::Red.paint("Could not write the output in the given path"));
+        bail!(DslError::CircomCompileError("generate_output_sym error".to_string(),))
     }
 }
 
@@ -97,12 +85,7 @@ fn generate_json_constraints(debug: &DebugWriter, exporter: &dyn ConstraintExpor
         );
         Result::Ok(())
     } else {
-        log::error!(
-            "{}",
-            Colour::Red.paint("Could not write the output in the given path")
-        );
-        bail!(DslError::CircomCompileError(
-            "generate_json_constraints error".to_string(),
-        ))
+        log::error!("{}", Colour::Red.paint("Could not write the output in the given path"));
+        bail!(DslError::CircomCompileError("generate_json_constraints error".to_string(),))
     }
 }

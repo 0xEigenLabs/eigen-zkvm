@@ -14,9 +14,7 @@ pub struct FFT<F: FieldExtension> {
 impl<F: FieldExtension> FFT<F> {
     pub fn new() -> Self {
         let s = 32;
-        let mut self_ = FFT {
-            roots: vec![Vec::new(); s],
-        };
+        let mut self_ = FFT { roots: vec![Vec::new(); s] };
         self_.set_roots(core::cmp::min(s, 15));
         self_
     }
@@ -80,10 +78,7 @@ impl<F: FieldExtension> FFT<F> {
         let mut res = vec![F::ZERO; q.len()];
 
         res[0] = q[0] * n2inv;
-        res[1..]
-            .par_iter_mut()
-            .enumerate()
-            .for_each(|(i, out)| *out = q[n - i - 1] * n2inv);
+        res[1..].par_iter_mut().enumerate().for_each(|(i, out)| *out = q[n - i - 1] * n2inv);
         res
     }
 }
@@ -95,10 +90,7 @@ mod tests {
     #[test]
     fn test_single_fft() {
         let mut f = FFT::new();
-        let a: Vec<F3G> = [1u32, 2u32, 3u32, 5u32]
-            .iter()
-            .map(|e| F3G::from(*e))
-            .collect();
+        let a: Vec<F3G> = [1u32, 2u32, 3u32, 5u32].iter().map(|e| F3G::from(*e)).collect();
         let aa = f.fft(&a);
         let ac = f.ifft(&aa);
         for i in 0..a.len() {

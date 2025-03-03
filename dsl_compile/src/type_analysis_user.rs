@@ -8,9 +8,7 @@ pub fn analyse_project(program_archive: &mut ProgramArchive) -> Result<()> {
     match analysis_result {
         Err(errs) => {
             Report::print_reports(&errs, program_archive.get_file_library());
-            bail!(DslError::CircomCompileError(String::from(
-                "analyse_project error",
-            )))
+            bail!(DslError::CircomCompileError(String::from("analyse_project error",)))
         }
         Ok(warns) => {
             Report::print_reports(&warns, program_archive.get_file_library());

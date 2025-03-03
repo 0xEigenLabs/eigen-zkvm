@@ -557,10 +557,7 @@ mod tests {
         }
 
         log::debug!("test_add_AVX2_accelerated time: {:?}", avx2_duration);
-        log::debug!(
-            "test_add_Non_accelerated time: {:?}",
-            non_accelerated_duration
-        );
+        log::debug!("test_add_Non_accelerated time: {:?}", non_accelerated_duration);
     }
 
     #[test]
@@ -590,10 +587,7 @@ mod tests {
         }
 
         log::debug!("test_mul_AVX2_accelerated time: {:?}", avx2_duration);
-        log::debug!(
-            "test_mul_Non_accelerated time: {:?}",
-            non_accelerated_duration
-        );
+        log::debug!("test_mul_Non_accelerated time: {:?}", non_accelerated_duration);
     }
 
     #[test]
@@ -620,10 +614,7 @@ mod tests {
         }
 
         log::debug!("test_div_AVX2_accelerated time: {:?}", avx2_duration);
-        log::debug!(
-            "test_div_Non_accelerated time: {:?}",
-            non_accelerated_duration
-        );
+        log::debug!("test_div_Non_accelerated time: {:?}", non_accelerated_duration);
     }
 
     #[test]
@@ -655,10 +646,7 @@ mod tests {
             assert_eq!(res, exp.into_repr());
         }
         log::debug!("test_square_AVX2_accelerated time: {:?}", avx2_duration);
-        log::debug!(
-            "test_square_Non_accelerated time: {:?}",
-            non_accelerated_duration
-        );
+        log::debug!("test_square_Non_accelerated time: {:?}", non_accelerated_duration);
     }
 
     #[test]
@@ -682,10 +670,7 @@ mod tests {
         }
 
         log::debug!("test_neg_AVX2_accelerated time: {:?}", avx2_duration);
-        log::debug!(
-            "test_neg_Non_accelerated time: {:?}",
-            non_accelerated_duration
-        );
+        log::debug!("test_neg_Non_accelerated time: {:?}", non_accelerated_duration);
     }
 
     #[test]
@@ -714,10 +699,7 @@ mod tests {
         }
 
         log::debug!("test_sub_AVX2_accelerated time: {:?}", avx2_duration);
-        log::debug!(
-            "test_sub_Non_accelerated time: {:?}",
-            non_accelerated_duration
-        );
+        log::debug!("test_sub_Non_accelerated time: {:?}", non_accelerated_duration);
     }
 
     #[test]

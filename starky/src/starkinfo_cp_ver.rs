@@ -37,12 +37,7 @@ impl StarkInfo {
                         r.id = ctx.starkinfo.im_exp2cm[&ctx.starkinfo.im_exps_list[idx]];
 
                         // go to cm branch, TODO
-                        if ctx
-                            .starkinfo
-                            .ev_idx
-                            .get(r.type_.as_str(), p, r.id)
-                            .is_none()
-                        {
+                        if ctx.starkinfo.ev_idx.get(r.type_.as_str(), p, r.id).is_none() {
                             ctx.starkinfo.ev_idx.set(
                                 r.type_.as_str(),
                                 p,
@@ -76,12 +71,7 @@ impl StarkInfo {
                     }
                 }
                 "cm" | "const" => {
-                    if ctx
-                        .starkinfo
-                        .ev_idx
-                        .get(r.type_.as_str(), p, r.id)
-                        .is_none()
-                    {
+                    if ctx.starkinfo.ev_idx.get(r.type_.as_str(), p, r.id).is_none() {
                         ctx.starkinfo.ev_idx.set(
                             r.type_.as_str(),
                             p,

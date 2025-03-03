@@ -49,12 +49,7 @@ struct Transcript {
 impl Transcript {
     pub fn new() -> Self {
         Self {
-            state: [
-                String::from("0"),
-                String::from("0"),
-                String::from("0"),
-                String::from("0"),
-            ],
+            state: [String::from("0"), String::from("0"), String::from("0"), String::from("0")],
             pending: vec![],
             out: vec![],
             h_cnt: 0,
@@ -137,18 +132,15 @@ impl Transcript {
             let f = self.getFields1();
             n2b.push(format!("tcN2b_{}", self.n2b_cnt));
             self.n2b_cnt += 1;
-            self.code
-                .push(format!("component {} = Num2Bits_strict();", n2b[i]));
+            self.code.push(format!("component {} = Num2Bits_strict();", n2b[i]));
             self.code.push(format!("{}.in <== {};", n2b[i], f));
         }
         let mut curField = 0;
         let mut curBit = 0;
         for i in 0..n {
             for j in 0..nBits {
-                self.code.push(format!(
-                    "{}[{}][{}] <== {}.out[{}];",
-                    v, i, j, n2b[curField], curBit
-                ));
+                self.code
+                    .push(format!("{}[{}][{}] <== {}.out[{}];", v, i, j, n2b[curField], curBit));
                 curBit += 1;
                 if curBit == 63 {
                     curBit = 0;
@@ -180,10 +172,7 @@ fn unrollCode(code: &Vec<Section>, starkinfo: &StarkInfo) -> (String, String) {
             "tmp" => format!("tmp_{}", r.id),
             "tree1" => format!("mapValues.tree1_{}", r.id),
             "tree2" => format!("mapValues.tree2_{}", r.id - starkinfo.n_cm1),
-            "tree3" => format!(
-                "mapValues.tree3_{}",
-                r.id - starkinfo.n_cm1 - starkinfo.n_cm2
-            ),
+            "tree3" => format!("mapValues.tree3_{}", r.id - starkinfo.n_cm1 - starkinfo.n_cm2),
             "tree4" => format!(
                 "mapValues.tree4_{}",
                 r.id - starkinfo.n_cm1 - starkinfo.n_cm2 - starkinfo.n_cm3
@@ -1140,11 +1129,7 @@ template StarkVerifier() {{
         starkinfo.n_constants,
         1 << stark_struct.steps[0].nBits,
         stark_struct.steps[0].nBits
-            - (if 0 < stark_struct.steps.len() - 1 {
-                stark_struct.steps[1].nBits
-            } else {
-                0
-            })
+            - (if 0 < stark_struct.steps.len() - 1 { stark_struct.steps[1].nBits } else { 0 })
     ));
 
     res.push_str(&format!(
@@ -1323,11 +1308,8 @@ template StarkVerifier() {{
             stark_struct.steps[s].nBits,
         ));
 
-        let nbits = if s < stark_struct.steps.len() - 1 {
-            stark_struct.steps[s + 1].nBits
-        } else {
-            0
-        };
+        let nbits =
+            if s < stark_struct.steps.len() - 1 { stark_struct.steps[s + 1].nBits } else { 0 };
         let selector = stark_struct.steps[s].nBits - nbits;
 
         res.push_str(&format!(
@@ -2159,12 +2141,6 @@ pub fn render<F: ff::PrimeField + Default>(
     res.push_str(&verify_evaluations(starkinfo, prorgam, pil, stark_struct));
     res.push_str(&verify_query(starkinfo, prorgam, stark_struct));
     res.push_str(&map_values(starkinfo));
-    res.push_str(&stark_verifier(
-        starkinfo,
-        pil,
-        stark_struct,
-        const_root,
-        options,
-    ));
+    res.push_str(&stark_verifier(starkinfo, pil, stark_struct, const_root, options));
     res
 }

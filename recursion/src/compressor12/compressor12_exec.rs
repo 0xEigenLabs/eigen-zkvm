@@ -83,14 +83,7 @@ pub fn exec(
     }
     for i in s_map_column_len..N {
         for c in 0..12 {
-            cm_pols.set_matrix(
-                &pil_json,
-                &Compressor.to_string(),
-                &a.to_string(),
-                c,
-                i,
-                FGL::ZERO,
-            );
+            cm_pols.set_matrix(&pil_json, &Compressor.to_string(), &a.to_string(), c, i, FGL::ZERO);
         }
     }
 

@@ -29,10 +29,8 @@ pub fn join_zkin(
             if let Value::Array(ref arr) = v {
                 if arr.len() >= 4 {
                     let exclude_last_four = &arr[..(arr.len() - 4)];
-                    zkout_map.insert(
-                        "publics".to_string(),
-                        Value::Array(exclude_last_four.to_vec()),
-                    );
+                    zkout_map
+                        .insert("publics".to_string(), Value::Array(exclude_last_four.to_vec()));
                 } else {
                     zkout_map.insert("publics".to_string(), v.clone());
                 }

@@ -6,33 +6,15 @@ pub struct ExpressionOps;
 
 impl ExpressionOps {
     pub fn add(a: &Expression, b: &Expression) -> Expression {
-        Expression::new(
-            "add".to_string(),
-            0,
-            None,
-            None,
-            Some(vec![a.clone(), b.clone()]),
-        )
+        Expression::new("add".to_string(), 0, None, None, Some(vec![a.clone(), b.clone()]))
     }
 
     pub fn sub(a: &Expression, b: &Expression) -> Expression {
-        Expression::new(
-            "sub".to_string(),
-            0,
-            None,
-            None,
-            Some(vec![a.clone(), b.clone()]),
-        )
+        Expression::new("sub".to_string(), 0, None, None, Some(vec![a.clone(), b.clone()]))
     }
 
     pub fn mul(a: &Expression, b: &Expression) -> Expression {
-        Expression::new(
-            "mul".to_string(),
-            0,
-            None,
-            None,
-            Some(vec![a.clone(), b.clone()]),
-        )
+        Expression::new("mul".to_string(), 0, None, None, Some(vec![a.clone(), b.clone()]))
     }
 
     pub fn neg(a: &Expression) -> Expression {

@@ -9,19 +9,14 @@ pub use franklin_crypto::plonk::circuit::bigint::bigint::{biguint_to_fe, fe_to_b
 
 /// convert a hex integer representation ("0x...") to decimal representation
 pub fn repr_to_big<T: Display>(r: T) -> String {
-    BigUint::from_str_radix(&format!("{}", r)[2..], 16)
-        .unwrap()
-        .to_str_radix(10)
+    BigUint::from_str_radix(&format!("{}", r)[2..], 16).unwrap().to_str_radix(10)
 }
 
 fn from_single_size_limb_witnesses<E: Engine, F: PrimeField>(
     witnesses: &[BigUint],
     params: &RnsParameters<E, F>,
 ) -> F {
-    assert_eq!(
-        params.num_limbs_for_in_field_representation,
-        witnesses.len()
-    );
+    assert_eq!(params.num_limbs_for_in_field_representation, witnesses.len());
     assert!(
         params.binary_limbs_params.limb_size_bits % params.range_check_info.minimal_multiple == 0,
         "limb size must be divisible by range constraint strategy granularity"
@@ -109,10 +104,7 @@ fn from_double_size_limb_witnesses<E: Engine, F: PrimeField>(
             assert_eq!(expected_low_width, expected_high_width);
         }
 
-        assert_eq!(
-            params.binary_limbs_params.limb_max_value.clone(),
-            expected_low_max_value
-        );
+        assert_eq!(params.binary_limbs_params.limb_max_value.clone(), expected_low_max_value);
 
         assert!(expected_high_width & 1 == 0);
     }
@@ -162,18 +154,14 @@ mod tests {
             .unwrap(),
         );
 
-        let wts: Vec<BigUint> = field_to_witness(&fq, &rns_params)
-            .iter()
-            .map(fe_to_biguint)
-            .collect();
+        let wts: Vec<BigUint> =
+            field_to_witness(&fq, &rns_params).iter().map(fe_to_biguint).collect();
         let fq_restored = witness_to_field(&wts[..], &rns_params);
         assert_eq!(fq, fq_restored);
 
         rns_params.set_prefer_single_limb_allocation(false);
-        let wts: Vec<BigUint> = field_to_witness(&fq, &rns_params)
-            .iter()
-            .map(fe_to_biguint)
-            .collect();
+        let wts: Vec<BigUint> =
+            field_to_witness(&fq, &rns_params).iter().map(fe_to_biguint).collect();
         let fq_restored = witness_to_field(&wts[..], &rns_params);
         assert_eq!(fq, fq_restored);
     }

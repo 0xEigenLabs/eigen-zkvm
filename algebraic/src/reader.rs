@@ -64,10 +64,7 @@ pub fn load_witness_from_json_file<E: ScalarEngine>(filename: &str) -> Vec<E::Fr
 /// load witness from json by a reader
 fn load_witness_from_json<E: ScalarEngine, R: Read>(reader: R) -> Vec<E::Fr> {
     let witness: Vec<String> = serde_json::from_reader(reader).expect("Unable to read.");
-    witness
-        .into_iter()
-        .map(|x| E::Fr::from_str(&x).unwrap())
-        .collect::<Vec<E::Fr>>()
+    witness.into_iter().map(|x| E::Fr::from_str(&x).unwrap()).collect::<Vec<E::Fr>>()
 }
 
 /// load witness from bin file by filename
@@ -174,13 +171,7 @@ fn load_r1cs_from_json<E: ScalarEngine, R: Read>(reader: R) -> R1CS<E> {
     let constraints = circuit_json
         .constraints
         .iter()
-        .map(|c| {
-            (
-                convert_constraint(&c[0]),
-                convert_constraint(&c[1]),
-                convert_constraint(&c[2]),
-            )
-        })
+        .map(|c| (convert_constraint(&c[0]), convert_constraint(&c[1]), convert_constraint(&c[2])))
         .collect_vec();
 
     R1CS {

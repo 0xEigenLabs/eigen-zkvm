@@ -121,10 +121,7 @@ impl Wasm {
     }
 
     pub(crate) fn func(&self, name: &str) -> &Function {
-        self.0
-            .exports
-            .get_function(name)
-            .unwrap_or_else(|_| panic!("function {} not found", name))
+        self.0.exports.get_function(name).unwrap_or_else(|_| panic!("function {} not found", name))
     }
 
     pub fn new(instance: Instance) -> Self {

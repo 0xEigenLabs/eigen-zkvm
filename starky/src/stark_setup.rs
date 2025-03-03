@@ -40,20 +40,13 @@ impl<M: MerkleTree> StarkSetup<M> {
         let mut const_pols_array_e = vec![M::ExtendField::ZERO; (1 << nBitsExt) * pil.nConstants];
         let mut const_pols_array_e_be = vec![FGL::ZERO; (1 << nBitsExt) * pil.nConstants];
 
-        interpolate(
-            &const_buff,
-            pil.nConstants,
-            nBits,
-            &mut const_pols_array_e,
-            nBitsExt,
-        );
+        interpolate(&const_buff, pil.nConstants, nBits, &mut const_pols_array_e, nBitsExt);
 
-        const_pols_array_e_be
-            .par_iter_mut()
-            .zip(const_pols_array_e)
-            .for_each(|(be_out, f3g_in)| {
+        const_pols_array_e_be.par_iter_mut().zip(const_pols_array_e).for_each(
+            |(be_out, f3g_in)| {
                 *be_out = f3g_in.to_be();
-            });
+            },
+        );
 
         let mut const_tree = M::new();
         log::trace!("Merkelize const tree");

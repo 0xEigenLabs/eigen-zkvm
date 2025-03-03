@@ -45,10 +45,7 @@ mod tests {
         let mut a = crate::field_gl::MODULUS;
         a.sub_noborrow(&FrRepr::from(2));
         let expected = Fr::from_str(&a.0[0].to_string()).unwrap();
-        assert_eq!(
-            expected,
-            Fr::from_str("3").unwrap() - Fr::from_str("5").unwrap()
-        );
+        assert_eq!(expected, Fr::from_str("3").unwrap() - Fr::from_str("5").unwrap());
     }
 
     #[test]

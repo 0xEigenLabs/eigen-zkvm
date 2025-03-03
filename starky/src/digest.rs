@@ -146,12 +146,7 @@ impl<'de, const N: usize, F: PrimeField + Default> Deserialize<'de> for ElementD
                 if source == TypeId::of::<FGL>() {
                     // one-dim GL elements
                     let value = FGL::from_str(s).unwrap();
-                    Ok(ElementDigest::<N, F>::new(&[
-                        value,
-                        FGL::ZERO,
-                        FGL::ZERO,
-                        FGL::ZERO,
-                    ]))
+                    Ok(ElementDigest::<N, F>::new(&[value, FGL::ZERO, FGL::ZERO, FGL::ZERO]))
                 } else {
                     // BN128 or BLS12381
                     let t = F::from_str(s).unwrap();
@@ -262,10 +257,7 @@ mod tests {
 
     #[test]
     fn test_fr_to_mont_to_element_digest_and_versus() {
-        let b4: Vec<FGL> = [3u64, 1003, 2003, 0]
-            .iter()
-            .map(|e| FGL::from(*e))
-            .collect();
+        let b4: Vec<FGL> = [3u64, 1003, 2003, 0].iter().map(|e| FGL::from(*e)).collect();
         let f1: Fr = to_bn128(&b4[..].try_into().unwrap());
 
         // to Montgomery
@@ -288,10 +280,7 @@ mod tests {
 
     #[test]
     fn test_fr_bls12381_to_mont_to_element_digest_and_versus() {
-        let b4: Vec<FGL> = [3u64, 1003, 2003, 0]
-            .iter()
-            .map(|e| FGL::from(*e))
-            .collect();
+        let b4: Vec<FGL> = [3u64, 1003, 2003, 0].iter().map(|e| FGL::from(*e)).collect();
         let f1: Fr_bls12381 = to_bls12381(&b4[..].try_into().unwrap());
 
         // to Montgomery

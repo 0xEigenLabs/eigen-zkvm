@@ -89,18 +89,11 @@ pub fn export<T: FieldElement>(analyzed: &Analyzed<T>) -> PIL {
                     .file_name
                     .as_deref()
                     .and_then(|s| {
-                        PathBuf::from(s)
-                            .file_name()
-                            .and_then(|n| n.to_str())
-                            .map(String::from)
+                        PathBuf::from(s).file_name().and_then(|n| n.to_str()).map(String::from)
                     })
                     .unwrap_or_default();
                 let line = exporter.line_of_source_ref(&identity.source);
-                let selector_degree = if identity.kind == IdentityKind::Polynomial {
-                    2
-                } else {
-                    1
-                };
+                let selector_degree = if identity.kind == IdentityKind::Polynomial { 2 } else { 1 };
                 let left = exporter.extract_expression_vec(&identity.left.expressions, 1);
                 let sel_left =
                     exporter.extract_expression_opt(&identity.left.selector, selector_degree);
@@ -236,26 +229,21 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
                 };
                 Some((fixup_name(name), out))
             })
-            .chain(
-                self.analyzed
-                    .intermediate_columns
-                    .iter()
-                    .map(|(name, (symbol, _))| {
-                        assert_eq!(symbol.kind, SymbolKind::Poly(PolynomialType::Intermediate));
-                        let id = self.intermediate_poly_expression_ids[&symbol.id];
+            .chain(self.analyzed.intermediate_columns.iter().map(|(name, (symbol, _))| {
+                assert_eq!(symbol.kind, SymbolKind::Poly(PolynomialType::Intermediate));
+                let id = self.intermediate_poly_expression_ids[&symbol.id];
 
-                        let out = Reference {
-                            polType: None,
-                            type_: symbol_kind_to_json_string(symbol.kind).to_string(),
-                            id: id as usize,
-                            polDeg: self.analyzed.degree() as usize,
-                            isArray: symbol.is_array(),
-                            elementType: None,
-                            len: symbol.length.map(|l| l as usize),
-                        };
-                        (fixup_name(name), out)
-                    }),
-            )
+                let out = Reference {
+                    polType: None,
+                    type_: symbol_kind_to_json_string(symbol.kind).to_string(),
+                    id: id as usize,
+                    polDeg: self.analyzed.degree() as usize,
+                    isArray: symbol.is_array(),
+                    elementType: None,
+                    len: symbol.length.map(|l| l as usize),
+                };
+                (fixup_name(name), out)
+            }))
             .collect::<HashMap<String, Reference>>()
     }
 
@@ -278,14 +266,11 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
         expr: &Option<Expression<T>>,
         max_degree: u32,
     ) -> Option<usize> {
-        expr.as_ref()
-            .map(|e| self.extract_expression(e, max_degree))
+        expr.as_ref().map(|e| self.extract_expression(e, max_degree))
     }
 
     fn extract_expression_vec(&mut self, expr: &[Expression<T>], max_degree: u32) -> Vec<usize> {
-        expr.iter()
-            .map(|e| self.extract_expression(e, max_degree))
-            .collect()
+        expr.iter().map(|e| self.extract_expression(e, max_degree)).collect()
     }
 
     /// returns the degree and the JSON value (intermediate polynomial IDs)
@@ -397,9 +382,7 @@ impl<'a, T: FieldElement> Exporter<'a, T> {
 }
 
 fn compute_line_starts(source: &str) -> Vec<usize> {
-    std::iter::once(0)
-        .chain(source.match_indices('\n').map(|(i, _)| i + 1))
-        .collect::<Vec<_>>()
+    std::iter::once(0).chain(source.match_indices('\n').map(|(i, _)| i + 1)).collect::<Vec<_>>()
 }
 
 /// Returns a tuple `(line, col)` given the file offset of line starts.

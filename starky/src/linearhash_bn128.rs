@@ -87,10 +87,7 @@ impl LinearHashBN128 {
                 r
             }
         };
-        ElementDigest::<4, Fr>::from_scalar(&bn_mont)
-            .as_elements()
-            .try_into()
-            .unwrap()
+        ElementDigest::<4, Fr>::from_scalar(&bn_mont).as_elements().try_into().unwrap()
     }
 
     #[inline(always)]
@@ -100,10 +97,7 @@ impl LinearHashBN128 {
         init_state: &Fr,
     ) -> Result<ElementDigest<4, Fr>> {
         assert_eq!(elems.len(), 16);
-        let elems = elems
-            .iter()
-            .map(|e| Fr((*e).as_scalar::<Fr>()))
-            .collect::<Vec<Fr>>();
+        let elems = elems.iter().map(|e| Fr((*e).as_scalar::<Fr>())).collect::<Vec<Fr>>();
         let digest = self.h.hash(&elems, init_state)?;
         Ok(ElementDigest::<4, Fr>::from_scalar(&digest))
     }
@@ -121,14 +115,12 @@ impl LinearHashBN128 {
 
         // group into 3 * 4
         let mut tmp_buf = vec![Fr::zero(); (vals.len() - 1) / 3 + 1];
-        vals.chunks(3)
-            .zip(tmp_buf.iter_mut())
-            .for_each(|(ein, eout)| {
-                // padding zero to 4
-                let mut ein_4 = [FGL::ZERO; 4];
-                ein_4[..ein.len()].copy_from_slice(ein);
-                *eout = crate::digest::to_bn128(&ein_4);
-            });
+        vals.chunks(3).zip(tmp_buf.iter_mut()).for_each(|(ein, eout)| {
+            // padding zero to 4
+            let mut ein_4 = [FGL::ZERO; 4];
+            ein_4[..ein.len()].copy_from_slice(ein);
+            *eout = crate::digest::to_bn128(&ein_4);
+        });
 
         // hash on each 16
         for i in (0..tmp_buf.len()).step_by(16) {
@@ -162,10 +154,7 @@ mod tests {
 
     #[test]
     fn test_linearhash_corner_case() {
-        let input = vec![
-            FGL::from(6188675464075253840u64),
-            FGL::from(2608530331018891925u64),
-        ];
+        let input = vec![FGL::from(6188675464075253840u64), FGL::from(2608530331018891925u64)];
 
         let lh = LinearHashBN128::new();
         let result = lh.hash_element_array(&input).unwrap();
@@ -175,10 +164,7 @@ mod tests {
         assert_eq!(result.0[2], FGL::from(11411897157942048316u64));
         assert_eq!(result.0[3], FGL::from(1802287360671936077u64));
 
-        let input = vec![
-            FGL::from(18440682777423237490u64),
-            FGL::from(1156220815552880681u64),
-        ];
+        let input = vec![FGL::from(18440682777423237490u64), FGL::from(1156220815552880681u64)];
 
         let result = lh.hash_element_array(&input).unwrap();
         log::trace!("out {}", result);
