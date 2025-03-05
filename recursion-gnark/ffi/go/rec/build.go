@@ -20,8 +20,7 @@ var globalR1csInitialized = false
 var globalPk groth16.ProvingKey = groth16.NewProvingKey(ecc.BN254)
 var globalPkInitialized = false
 
-func BuildGroth16(dataDir string, verifyCmdProof string) GnarkProof {
-	// runtest := false
+func BuildGroth16(dataDir string, verifyCmdProof string) {
 	// Load proof
 	proofDecodedBytes, err := hex.DecodeString(verifyCmdProof)
 	if err != nil {
@@ -67,8 +66,30 @@ func BuildGroth16(dataDir string, verifyCmdProof string) GnarkProof {
 	if err != nil {
 		panic(err)
 	}
-	outerProof, verifyingKey, publicWitness, _ := circom2gnarkRecursiveBls12381(proof.(*groth16_bn254.Proof), vk.(*groth16_bn254.VerifyingKey), len(publicSignals), publicInputs, true)
+	outerProof, verifyingKey, publicWitness, _ := VerifyBN254InBLS12381(proof.(*groth16_bn254.Proof), vk.(*groth16_bn254.VerifyingKey), len(publicSignals), publicInputs, true)
 
-	return NewSP1Groth16Proof(&outerProof, &verifyingKey, publicWitness)
-	// return GnarkProof{}
+	// Write the verifier key.
+	vkBlsFile, err := os.Create(dataDir + "/groth16_vk_bls12381.bin")
+	if err != nil {
+		panic(err)
+	}
+	defer vkBlsFile.Close()
+	_, err = vk.WriteTo(vkBlsFile)
+	if err != nil {
+		panic(err)
+	}
+	// Write the public inputs.
+	data, err := ConvertWitness(publicWitness)
+	if err != nil {
+		panic(err)
+	}
+	var buffer bytes.Buffer
+	for _, line := range data {
+		buffer.WriteString(line + "\n")
+	}
+	os.WriteFile(dataDir+"/public_inputs_bls12381.json", buffer.Bytes(), 0644)
+
+	// Write the proof.
+	proofBls := NewSP1Groth16Proof(outerProof, verifyingKey, publicWitness)
+	proofBls.SaveToFile(dataDir + "/proof_bls12381.bin")
 }

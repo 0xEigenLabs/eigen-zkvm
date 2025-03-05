@@ -35,10 +35,6 @@ fn run_test(args: TestArgs) {
         "groth16" => test(&args.data_dir, &proof.raw_proof),
         _ => panic!("Unsupported system: {} or mismatched proof type", args.system),
     };
-    // let output = match result {
-    //     Ok(_) => "OK".to_string(),
-    //     Err(e) => e,
-    // };
 }
 
 fn main() {
