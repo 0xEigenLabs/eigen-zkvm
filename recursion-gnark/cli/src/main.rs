@@ -1,10 +1,10 @@
 //! A simple CLI that wraps the gnark-ffi crate. This is called using Docker in gnark-ffi when the
 //! native feature is disabled.
 
-use recursion_gnark_ffi::{ffi::test, ProofBn254};
+use recursion_gnark_ffi::ffi::test;
 
 use clap::{Args, Parser, Subcommand};
-use std::{fs::File, io::Write};
+use std::fs::File;
 
 #[derive(Debug, Parser)]
 struct Cli {
@@ -30,7 +30,7 @@ fn run_test(args: TestArgs) {
     let proof: recursion_gnark_ffi::Groth16Bn254Proof =
         bincode::deserialize_from(&mut file).expect("Failed to deserialize proof");
 
-    let result = match (args.system.as_str()) {
+    match args.system.as_str() {
         "plonk" => panic!("Unsupported system: {} or mismatched proof type", args.system),
         "groth16" => test(&args.data_dir, &proof.raw_proof),
         _ => panic!("Unsupported system: {} or mismatched proof type", args.system),
