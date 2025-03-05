@@ -119,7 +119,7 @@ func VerifyBN254InBLS12381() {
 	}
 
 	// create prover witness from the assignment
-	secretWitness, err := frontend.NewWitness(outerAssignment, ecc.BW6_761.ScalarField())
+	secretWitness, err := frontend.NewWitness(outerAssignment, ecc.BLS12_381.ScalarField())
 	if err != nil {
 		panic("secret witness failed: " + err.Error())
 	}
@@ -142,8 +142,8 @@ func VerifyBN254InBLS12381() {
 		panic("circuit verification failed: " + err.Error())
 	}
 
-	f, err := os.Open("/tmp/recursion_proof")
-    NoError(err)
+	f, err := os.Create("/tmp/recursion_proof.txt")
+    	NoError(err)
 	_, err = outerProof.WriteTo(f)
-    NoError(err)
+    	NoError(err)
 }
