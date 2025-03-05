@@ -23,16 +23,16 @@ jobs:
           - nightly
     steps:
       - uses: actions/checkout@v2
-      - name: Install Latest Rust Nightly
-        run: |
-          rustup update nightly
-          rustup default nightly
-          rustup component add rust-src --toolchain nightly
-          rustup show
-      - name: Install RISC-V toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-riscv64-unknown-elf
+      - name: Install Rust toolchain 1.81
+        run: rustup toolchain install 1.81-x86_64-unknown-linux-gnu
+      - name: Install nightly
+        run: rustup toolchain install nightly-2024-08-01-x86_64-unknown-linux-gnu
+      - name: Install std source
+        run: rustup component add rust-src --toolchain nightly-2024-08-01-x86_64-unknown-linux-gnu
+      - name: Install riscv target
+        run: rustup target add riscv32imac-unknown-none-elf --toolchain nightly-2024-08-01-x86_64-unknown-linux-gnu
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y binutils-riscv64-unknown-elf lld
       - name: Run tests
         run: cargo +nightly test --release --verbose
   fmt:

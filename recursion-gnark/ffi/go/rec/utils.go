@@ -1,4 +1,4 @@
-package sp1
+package rec
 
 import (
 	"encoding/json"
@@ -6,31 +6,21 @@ import (
 	"math/big"
 
 	bn254fr "github.com/consensys/gnark-crypto/ecc/bn254/fr"
+	"github.com/consensys/gnark/backend/groth16"
+	"github.com/consensys/gnark/backend/witness"
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/std/algebra/emulated/sw_bn254"
 	stdgroth16 "github.com/consensys/gnark/std/recursion/groth16"
 )
 
-// func NewSP1Groth16Proof(proof *groth16.Proof, witnessInput WitnessInput) Proof {
-// 	var buf bytes.Buffer
-// 	(*proof).WriteRawTo(&buf)
-// 	proofBytes := buf.Bytes()
+func NewSP1Groth16Proof(proof *groth16.Proof, vk *groth16.VerifyingKey, publicWitness witness.Witness) GnarkProof {
+	// vec, ok := publicWitness.Vector().(bls12381fr.Element)
+	// if !ok {
+	// 	panic("unexpected public witness type")
+	// }
 
-// 	var publicInputs [2]string
-// 	publicInputs[0] = witnessInput.VkeyHash
-// 	publicInputs[1] = witnessInput.CommittedValuesDigest
-
-// 	// Cast groth16 proof into groth16_bn254 proof so we can call MarshalSolidity.
-// 	p := (*proof).(*groth16_bn254.Proof)
-
-// 	encodedProof := p.MarshalSolidity()
-
-// 	return Proof{
-// 		PublicInputs: publicInputs,
-// 		EncodedProof: hex.EncodeToString(encodedProof),
-// 		RawProof:     hex.EncodeToString(proofBytes),
-// 	}
-// }
+	return GnarkProof{}
+}
 
 func (c *VerifyCircomProofCircuit) Define(api frontend.API) error {
 	verifier, err := stdgroth16.NewVerifier[sw_bn254.ScalarField, sw_bn254.G1Affine, sw_bn254.G2Affine, sw_bn254.GTEl](api)

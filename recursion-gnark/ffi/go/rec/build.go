@@ -1,4 +1,4 @@
-package sp1
+package rec
 
 import (
 	"bytes"
@@ -20,7 +20,8 @@ var globalR1csInitialized = false
 var globalPk groth16.ProvingKey = groth16.NewProvingKey(ecc.BN254)
 var globalPkInitialized = false
 
-func BuildGroth16(dataDir string, verifyCmdProof string) Proof {
+func BuildGroth16(dataDir string, verifyCmdProof string) GnarkProof {
+	// runtest := false
 	// Load proof
 	proofDecodedBytes, err := hex.DecodeString(verifyCmdProof)
 	if err != nil {
@@ -66,7 +67,8 @@ func BuildGroth16(dataDir string, verifyCmdProof string) Proof {
 	if err != nil {
 		panic(err)
 	}
+	outerProof, verifyingKey, publicWitness, _ := circom2gnarkRecursiveBls12381(proof.(*groth16_bn254.Proof), vk.(*groth16_bn254.VerifyingKey), len(publicSignals), publicInputs, true)
 
-	return Proof{}
-	// return NewSP1Groth16Proof(&proof, witnessInput)
+	return NewSP1Groth16Proof(&outerProof, &verifyingKey, publicWitness)
+	// return GnarkProof{}
 }
