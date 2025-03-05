@@ -109,7 +109,7 @@ name = "algebraic-gpu"
 version = "0.0.1"
 dependencies = [
  "anyhow",
- "bellperson",
+ "bellperson 0.26.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder",
  "env_logger 0.10.2",
  "ff",
@@ -484,6 +484,36 @@ dependencies = [
  "byteorder",
  "ff",
  "serde",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "bellperson"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c41bd83b8437856d267eb311de13dcd9bff9077cc5ba35c7ec886070dea8a45"
+dependencies = [
+ "bellpepper-core",
+ "bincode",
+ "blake2s_simd 1.0.2",
+ "blstrs",
+ "byteorder",
+ "crossbeam-channel 0.5.14",
+ "digest 0.10.7",
+ "ec-gpu",
+ "ec-gpu-gen",
+ "ff",
+ "fs2",
+ "group",
+ "log",
+ "memmap2 0.5.10",
+ "pairing",
+ "rand 0.8.5",
+ "rand_core 0.6.4",
+ "rayon",
+ "rustversion",
+ "serde",
+ "sha2 0.10.8",
  "thiserror 1.0.69",
 ]
 
@@ -1801,7 +1831,7 @@ checksum = "3a82608ee96ce76aeab659e9b8d3c2b787bffd223199af88c674923d861ada10"
 dependencies = [
  "execute-command-macro",
  "execute-command-tokens",
- "generic-array 1.1.0",
+ "generic-array 1.1.1",
 ]
 
 [[package]]
@@ -2123,9 +2153,9 @@ dependencies = [
 
 [[package]]
 name = "generic-array"
-version = "1.1.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96512db27971c2c3eece70a1e106fbe6c87760234e31e8f7e5634912fe52794a"
+checksum = "2cb8bc4c28d15ade99c7e90b219f30da4be5c88e586277e8cbe886beeb868ab2"
 dependencies = [
  "typenum",
 ]
@@ -2201,7 +2231,7 @@ dependencies = [
  "algebraic-gpu",
  "anyhow",
  "ark-std",
- "bellperson",
+ "bellperson 0.26.0 (git+https://github.com/0xEigenLabs/bellperson.git)",
  "blstrs",
  "byteorder",
  "env_logger 0.10.2",
