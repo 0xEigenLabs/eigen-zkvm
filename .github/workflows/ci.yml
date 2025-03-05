@@ -23,9 +23,16 @@ jobs:
           - nightly
     steps:
       - uses: actions/checkout@v2
-      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-      - run: rustup update nightly-2024-02-01 && rustup component add rust-src --toolchain nightly-2024-02-01-x86_64-unknown-linux-gnu
-      - run: cargo test --release --verbose
+      - name: Install Rust toolchain
+        run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - name: Install Rust Nightly 2024-02-01
+        run: |
+          rustup install nightly-2024-02-01
+          rustup default nightly-2024-02-01
+          rustup component add rust-src --toolchain nightly-2024-02-01-x86_64-unknown-linux-gnu
+          rustup show
+      - name: Run tests
+        run: cargo +nightly-2024-02-01 test --release --verbose
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
