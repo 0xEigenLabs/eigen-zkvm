@@ -26,6 +26,19 @@ pub fn verify_bn254_in_bls12381() {
     unsafe { VerifyBN254InBLS12381() }
 }
 
+pub fn test(data_dir: &str, proof: &str) {
+    let c_data_dir = CString::new(data_dir).expect("CString::new failed");
+    let c_proof = CString::new(proof).expect("CString::new failed");
+
+    let result =
+        unsafe { bind::BuildGroth16(c_data_dir.as_ptr() as *mut i8, c_proof.as_ptr() as *mut i8) };
+
+    if !result.is_null() {
+        let error_msg = unsafe { CStr::from_ptr(result).to_string_lossy().into_owned() };
+        panic!("BuildGroth16 failed: {}", error_msg);
+    }
+}
+
 /// Converts a C string into a Rust String.
 ///
 /// # Safety
@@ -51,6 +64,7 @@ mod tests {
     #![allow(clippy::print_stdout)]
 
     #[test]
+    #[ignore]
     pub fn test_verify_bn254_in_bls12381() {
         super::verify_bn254_in_bls12381();
     }

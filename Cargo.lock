@@ -4025,6 +4025,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "recursion-gnark-cli"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "clap 4.5.26",
+ "hex",
+ "recursion-gnark-ffi",
+]
+
+[[package]]
 name = "recursion-gnark-ffi"
 version = "0.1.0"
 dependencies = [
