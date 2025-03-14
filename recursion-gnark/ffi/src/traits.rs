@@ -31,7 +31,7 @@ mod $mod_name {
     use serde::ser::SerializeSeq;
 
     use super::*;
-        impl CircomArkworksPrimeFieldBridge for Fr {
+        impl ArkworksPrimeFieldBridge for Fr {
             const SERIALIZED_BYTE_SIZE: usize = $scalar_field_size;
             #[inline]
             fn from_reader(mut reader: impl Read) -> IoResult<Self> {
@@ -54,7 +54,7 @@ mod $mod_name {
             }
 
         }
-        impl CircomArkworksPrimeFieldBridge for Fq {
+        impl ArkworksPrimeFieldBridge for Fq {
             const SERIALIZED_BYTE_SIZE: usize = $field_size;
             #[inline]
             fn from_reader(mut reader: impl Read) -> IoResult<Self> {
@@ -77,7 +77,7 @@ mod $mod_name {
             }
         }
 
-        impl CircomArkworksPairingBridge for $config {
+        impl ArkworksPairingBridge for $config {
             const G1_SERIALIZED_BYTE_SIZE_COMPRESSED: usize = $field_size;
             const G1_SERIALIZED_BYTE_SIZE_UNCOMPRESSED: usize = $field_size * 2;
             const G2_SERIALIZED_BYTE_SIZE_COMPRESSED: usize = $field_size * 2;
@@ -85,7 +85,7 @@ mod $mod_name {
             const GT_SERIALIZED_BYTE_SIZE_COMPRESSED: usize = 0;
             const GT_SERIALIZED_BYTE_SIZE_UNCOMPRESSED: usize = 0;
 
-            fn get_circom_name() -> String {
+            fn get_arkworks_name() -> String {
                 $circom_name.to_owned()
             }
 
@@ -335,28 +335,28 @@ mod $mod_name {
 }
     };
 }
-struct FrVisitor<P: Pairing + CircomArkworksPairingBridge>
+struct FrVisitor<P: Pairing + ArkworksPairingBridge>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     phantom_data: PhantomData<P>,
 }
 
-impl<P: Pairing + CircomArkworksPairingBridge> FrVisitor<P>
+impl<P: Pairing + ArkworksPairingBridge> FrVisitor<P>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     fn new() -> Self {
         Self { phantom_data: PhantomData }
     }
 }
 
-impl<P: Pairing + CircomArkworksPairingBridge> de::Visitor<'_> for FrVisitor<P>
+impl<P: Pairing + ArkworksPairingBridge> de::Visitor<'_> for FrVisitor<P>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     type Value = P::ScalarField;
 
@@ -370,29 +370,29 @@ where
         P::ScalarField::from_str(s).map_err(|_| de::Error::custom("invalid field element"))
     }
 }
-struct G1Visitor<P: Pairing + CircomArkworksPairingBridge>
+struct G1Visitor<P: Pairing + ArkworksPairingBridge>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     check: CheckElement,
     phantom_data: PhantomData<P>,
 }
 
-impl<P: Pairing + CircomArkworksPairingBridge> G1Visitor<P>
+impl<P: Pairing + ArkworksPairingBridge> G1Visitor<P>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     fn new(check: CheckElement) -> Self {
         Self { check, phantom_data: PhantomData }
     }
 }
 
-impl<'de, P: Pairing + CircomArkworksPairingBridge> de::Visitor<'de> for G1Visitor<P>
+impl<'de, P: Pairing + ArkworksPairingBridge> de::Visitor<'de> for G1Visitor<P>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     type Value = P::G1Affine;
 
@@ -423,29 +423,29 @@ where
     }
 }
 
-struct G2Visitor<P: Pairing + CircomArkworksPairingBridge>
+struct G2Visitor<P: Pairing + ArkworksPairingBridge>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     check: CheckElement,
     phantom_data: PhantomData<P>,
 }
 
-impl<P: Pairing + CircomArkworksPairingBridge> G2Visitor<P>
+impl<P: Pairing + ArkworksPairingBridge> G2Visitor<P>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     fn new(check: CheckElement) -> Self {
         Self { check, phantom_data: PhantomData }
     }
 }
 
-impl<'de, P: Pairing + CircomArkworksPairingBridge> de::Visitor<'de> for G2Visitor<P>
+impl<'de, P: Pairing + ArkworksPairingBridge> de::Visitor<'de> for G2Visitor<P>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     type Value = P::G2Affine;
 
@@ -492,18 +492,18 @@ where
     }
 }
 
-struct TargetGroupVisitor<P: Pairing + CircomArkworksPairingBridge>
+struct TargetGroupVisitor<P: Pairing + ArkworksPairingBridge>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     phantom_data: PhantomData<P>,
 }
 
-impl<P: Pairing + CircomArkworksPairingBridge> TargetGroupVisitor<P>
+impl<P: Pairing + ArkworksPairingBridge> TargetGroupVisitor<P>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     fn new() -> Self {
         Self { phantom_data: PhantomData }
@@ -511,10 +511,10 @@ where
 }
 
 /// Bridge trait to serialize and deserialize pairings contained in circom files into and from [`ark_ec::pairing::Pairing`] representation
-pub trait CircomArkworksPairingBridge: Pairing
+pub trait ArkworksPairingBridge: Pairing
 where
-    Self::BaseField: CircomArkworksPrimeFieldBridge,
-    Self::ScalarField: CircomArkworksPrimeFieldBridge,
+    Self::BaseField: ArkworksPrimeFieldBridge,
+    Self::ScalarField: ArkworksPrimeFieldBridge,
 {
     /// Size of compressed element of G1 in bytes
     const G1_SERIALIZED_BYTE_SIZE_COMPRESSED: usize;
@@ -528,8 +528,8 @@ where
     const GT_SERIALIZED_BYTE_SIZE_COMPRESSED: usize;
     /// Size of uncompressed element of Gt in bytes
     const GT_SERIALIZED_BYTE_SIZE_UNCOMPRESSED: usize;
-    /// Returns the name of the curve as defined in circom
-    fn get_circom_name() -> String;
+    /// Returns the name of the curve as defined in arkworks
+    fn get_arkworks_name() -> String;
     /// Deserializes element of G1 from bytes where the element is already in montgomery form (no montgomery reduction performed)
     /// Used in default multithreaded impl of g1_vec_from_reader, because `Read` cannot be shared across threads
     fn g1_from_bytes(bytes: &[u8], check: CheckElement) -> IoResult<Self::G1Affine>;
@@ -631,8 +631,8 @@ where
     fn serialize_fr<S: Serializer>(p: &Self::ScalarField, ser: S) -> Result<S::Ok, S::Error>;
 }
 
-/// Bridge trait to deserialize field elements contained in circom files into [`ark_ff::PrimeField`] representation
-pub trait CircomArkworksPrimeFieldBridge: PrimeField {
+/// Bridge trait to deserialize field elements contained in arkworks files into [`ark_ff::PrimeField`] representation
+pub trait ArkworksPrimeFieldBridge: PrimeField {
     /// Size of serialized field element in bytes
     const SERIALIZED_BYTE_SIZE: usize;
     /// Deserializes field elements and performs montgomery reduction

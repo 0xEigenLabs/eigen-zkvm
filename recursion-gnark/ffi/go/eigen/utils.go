@@ -1,4 +1,4 @@
-package rec
+package eigen
 
 import (
 	"encoding/gob"
@@ -18,7 +18,7 @@ import (
 	stdgroth16 "github.com/consensys/gnark/std/recursion/groth16"
 )
 
-func Convert(proof groth16.Proof, vk groth16.VerifyingKey, publicWitness witness.Witness) (*CircomProof, *VerificationKey, []string, error) {
+func Convert(proof groth16.Proof, vk groth16.VerifyingKey, publicWitness witness.Witness) (*ArkGroth16Proof, *VerificationKey, []string, error) {
 	// Extract the underlying vector from the public witness.
 	vec, ok := publicWitness.Vector().(bls12381fr.Vector)
 	if !ok {
@@ -32,20 +32,20 @@ func Convert(proof groth16.Proof, vk groth16.VerifyingKey, publicWitness witness
 	}
 
 	// Convert the proof.
-	piA, err := g1ToCircomString(&gnarkProof.Proof.Ar)
+	piA, err := g1ToString(&gnarkProof.Proof.Ar)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to convert proof.Ar: %w", err)
 	}
-	piC, err := g1ToCircomString(&gnarkProof.Proof.Krs)
+	piC, err := g1ToString(&gnarkProof.Proof.Krs)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to convert proof.Krs: %w", err)
 	}
-	piB, err := g2ToCircomString(&gnarkProof.Proof.Bs)
+	piB, err := g2ToString(&gnarkProof.Proof.Bs)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to convert proof.Bs: %w", err)
 	}
 
-	circomProof := &CircomProof{
+	arkProof := &ArkGroth16Proof{
 		PiA:      piA,
 		PiB:      piB,
 		PiC:      piC,
@@ -58,19 +58,19 @@ func Convert(proof groth16.Proof, vk groth16.VerifyingKey, publicWitness witness
 		return nil, nil, nil, fmt.Errorf("VerifyingKey is nil in gnarkProof")
 	}
 
-	vkAlpha1, err := g1ToCircomString(&vkey.G1.Alpha)
+	vkAlpha1, err := g1ToString(&vkey.G1.Alpha)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to convert vk.G1.Alpha: %w", err)
 	}
-	vkBeta2, err := g2ToCircomString(&vkey.G2.Beta)
+	vkBeta2, err := g2ToString(&vkey.G2.Beta)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to convert vk.G2.Beta: %w", err)
 	}
-	vkGamma2, err := g2ToCircomString(&vkey.G2.Gamma)
+	vkGamma2, err := g2ToString(&vkey.G2.Gamma)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to convert vk.G2.Gamma: %w", err)
 	}
-	vkDelta2, err := g2ToCircomString(&vkey.G2.Delta)
+	vkDelta2, err := g2ToString(&vkey.G2.Delta)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to convert vk.G2.Delta: %w", err)
 	}
@@ -78,7 +78,7 @@ func Convert(proof groth16.Proof, vk groth16.VerifyingKey, publicWitness witness
 	// Convert the IC array (G1 points for public inputs).
 	ic := make([][]string, len(vkey.G1.K))
 	for i, pt := range vkey.G1.K {
-		ptStr, err := g1ToCircomString(&pt)
+		ptStr, err := g1ToString(&pt)
 		if err != nil {
 			return nil, nil, nil, fmt.Errorf("failed to convert IC[%d]: %w", i, err)
 		}
@@ -93,13 +93,13 @@ func Convert(proof groth16.Proof, vk groth16.VerifyingKey, publicWitness witness
 		ic = ic[:1]
 	}
 
-	// Compute vk_alphabeta_12 = e(vk_alpha_1, vk_beta_2) in the Circom format.
+	// Compute vk_alphabeta_12 = e(vk_alpha_1, vk_beta_2) in the ArkProof format.
 	alphabeta, err := ComputeAlphabeta12(vkey.G1.Alpha, vkey.G2.Beta)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to compute vk_alphabeta_12: %w", err)
 	}
 
-	circomVk := &VerificationKey{
+	arkVk := &VerificationKey{
 		Protocol:      "groth16",
 		Curve:         "bls12381",
 		NPublic:       nPublic,
@@ -116,10 +116,10 @@ func Convert(proof groth16.Proof, vk groth16.VerifyingKey, publicWitness witness
 		publicSignals[i] = elementToString(input)
 	}
 
-	return circomProof, circomVk, publicSignals, nil
+	return arkProof, arkVk, publicSignals, nil
 }
 
-func g1ToCircomString(p *bls12381curve.G1Affine) ([]string, error) {
+func g1ToString(p *bls12381curve.G1Affine) ([]string, error) {
 	if p == nil {
 		return nil, fmt.Errorf("nil G1 point")
 	}
@@ -132,7 +132,7 @@ func g1ToCircomString(p *bls12381curve.G1Affine) ([]string, error) {
 	}, nil
 }
 
-func g2ToCircomString(p *bls12381curve.G2Affine) ([][]string, error) {
+func g2ToString(p *bls12381curve.G2Affine) ([][]string, error) {
 	if p == nil {
 		return nil, fmt.Errorf("nil G2 point")
 	}
@@ -199,7 +199,7 @@ func ComputeAlphabeta12(alpha bls12381curve.G1Affine, beta bls12381curve.G2Affin
 	return out, nil
 }
 
-func (c *VerifyCircomProofCircuit) Define(api frontend.API) error {
+func (c *VerifierBN254ProofCircuit) Define(api frontend.API) error {
 	verifier, err := stdgroth16.NewVerifier[sw_bn254.ScalarField, sw_bn254.G1Affine, sw_bn254.G2Affine, sw_bn254.GTEl](api)
 	if err != nil {
 		return fmt.Errorf("new verifier: %w", err)
@@ -207,8 +207,8 @@ func (c *VerifyCircomProofCircuit) Define(api frontend.API) error {
 	return verifier.AssertProof(c.verifyingKey, c.Proof, c.PublicInputs, stdgroth16.WithCompleteArithmetic())
 }
 
-// UnmarshalCircomPublicSignalsJSON parses the JSON-encoded public signals data into a slice of strings.
-func UnmarshalCircomPublicSignalsJSON(data []byte) ([]string, error) {
+// UnmarshalPublicSignalsJSON parses the JSON-encoded public signals data into a slice of strings.
+func UnmarshalPublicSignalsJSON(data []byte) ([]string, error) {
 	// Parse public signals
 	var publicSignals []string
 	if err := json.Unmarshal(data, &publicSignals); err != nil {

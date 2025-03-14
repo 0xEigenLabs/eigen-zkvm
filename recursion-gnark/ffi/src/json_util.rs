@@ -1,5 +1,5 @@
 // copy from https://github.com/TaceoLabs/co-snarks/tree/main/co-circom/circom-types/src/groth16 partially
-use crate::traits::{CheckElement, CircomArkworksPairingBridge, CircomArkworksPrimeFieldBridge};
+use crate::traits::{ArkworksPairingBridge, ArkworksPrimeFieldBridge, CheckElement};
 use ark_ec::pairing::Pairing;
 use ark_ff::PrimeField;
 use serde::{
@@ -8,7 +8,7 @@ use serde::{
     Deserialize, Serialize, Serializer,
 };
 use std::{io::Read, marker::PhantomData, str::FromStr};
-/// Represents a public input for a Groth16 proof. Implements [`serde::Deserialize`] and [`serde::Serialize`] for loading/storing public inputs from/to JSON formats defined by circom.
+/// Represents a public input for a Groth16 proof. Implements [`serde::Deserialize`] and [`serde::Serialize`] for loading/storing public inputs from/to JSON formats defined by arkworks.
 #[derive(Debug, PartialEq, Eq)]
 pub struct JsonPublicInput<F: PrimeField + FromStr> {
     /// The values of the public input.
@@ -67,10 +67,10 @@ impl<F: PrimeField + FromStr> Serialize for JsonPublicInput<F> {
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct JsonVerificationKey<P: Pairing + CircomArkworksPairingBridge>
+pub struct JsonVerificationKey<P: Pairing + ArkworksPairingBridge>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     /// The protocol used to generate the proof (always `"groth16"`)
     pub protocol: String,
@@ -109,10 +109,10 @@ where
     pub ic: Vec<P::G1Affine>,
 }
 
-impl<P: Pairing + CircomArkworksPairingBridge> JsonVerificationKey<P>
+impl<P: Pairing + ArkworksPairingBridge> JsonVerificationKey<P>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     /// Deserializes a [`JsonVerificationKey`] from a reader.
     pub fn from_reader<R: Read>(rdr: R) -> Result<Self, serde_json::Error> {
@@ -120,13 +120,13 @@ where
     }
 }
 
-fn serialize_g1_sequence<S: Serializer, P: Pairing + CircomArkworksPairingBridge>(
+fn serialize_g1_sequence<S: Serializer, P: Pairing + ArkworksPairingBridge>(
     p: &[P::G1Affine],
     ser: S,
 ) -> Result<S::Ok, S::Error>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     let mut seq = ser.serialize_seq(Some(p.len())).unwrap();
     let maybe_error = p
@@ -140,38 +140,38 @@ where
         seq.end()
     }
 }
-fn deserialize_g1_sequence<'de, D, P: Pairing + CircomArkworksPairingBridge>(
+fn deserialize_g1_sequence<'de, D, P: Pairing + ArkworksPairingBridge>(
     deserializer: D,
 ) -> Result<Vec<P::G1Affine>, D::Error>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
     D: de::Deserializer<'de>,
 {
     deserializer.deserialize_seq(G1SeqVisitor::<P>::new(CheckElement::Yes))
 }
-struct G1SeqVisitor<P: Pairing + CircomArkworksPairingBridge>
+struct G1SeqVisitor<P: Pairing + ArkworksPairingBridge>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     check: CheckElement,
     phantom_data: PhantomData<P>,
 }
 
-impl<P: Pairing + CircomArkworksPairingBridge> G1SeqVisitor<P>
+impl<P: Pairing + ArkworksPairingBridge> G1SeqVisitor<P>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     fn new(check: CheckElement) -> Self {
         Self { check, phantom_data: PhantomData }
     }
 }
-impl<'de, P: Pairing + CircomArkworksPairingBridge> de::Visitor<'de> for G1SeqVisitor<P>
+impl<'de, P: Pairing + ArkworksPairingBridge> de::Visitor<'de> for G1SeqVisitor<P>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     type Value = Vec<P::G1Affine>;
 
@@ -205,12 +205,12 @@ where
     }
 }
 
-/// Represents a Groth16 proof in JSON format that was created by circom. Supports de/serialization using [`serde`].
+/// Represents a Groth16 proof in JSON format that was created by Gnark. Supports de/serialization using [`serde`].
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Groth16Proof<P: Pairing + CircomArkworksPairingBridge>
+pub struct Groth16Proof<P: Pairing + ArkworksPairingBridge>
 where
-    P::BaseField: CircomArkworksPrimeFieldBridge,
-    P::ScalarField: CircomArkworksPrimeFieldBridge,
+    P::BaseField: ArkworksPrimeFieldBridge,
+    P::ScalarField: ArkworksPrimeFieldBridge,
 {
     /// Proof element A (or 1) in G1
     #[serde(serialize_with = "P::serialize_g1::<_>")]

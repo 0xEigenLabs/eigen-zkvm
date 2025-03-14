@@ -1,4 +1,4 @@
-package rec
+package eigen
 
 import (
 	bls12381fr "github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
@@ -8,7 +8,7 @@ import (
 	stdgroth16 "github.com/consensys/gnark/std/recursion/groth16"
 )
 
-type VerifyCircomProofCircuit struct {
+type VerifierBN254ProofCircuit struct {
 	Proof        stdgroth16.Proof[sw_bn254.G1Affine, sw_bn254.G2Affine]
 	verifyingKey stdgroth16.VerifyingKey[sw_bn254.G1Affine, sw_bn254.G2Affine, sw_bn254.GTEl] `gnark:"-"`
 	PublicInputs stdgroth16.Witness[sw_bn254.ScalarField]                                     `gnark:",public"`
@@ -35,7 +35,7 @@ type GnarkProof struct {
 	PublicInputs []bls12381fr.Element
 }
 
-type CircomProof struct {
+type ArkGroth16Proof struct {
 	PiA      []string   `json:"pi_a"`
 	PiB      [][]string `json:"pi_b"`
 	PiC      []string   `json:"pi_c"`

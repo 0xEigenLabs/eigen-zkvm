@@ -1,4 +1,4 @@
-package rec
+package eigen
 
 import (
 	"bytes"
@@ -53,7 +53,7 @@ func BuildGroth16(dataDir string, verifyCmdProof string) {
 	if err != nil {
 		log.Fatalf("failed to read public signals: %v", err)
 	}
-	publicSignals, err := UnmarshalCircomPublicSignalsJSON(publicSignalsData)
+	publicSignals, err := UnmarshalPublicSignalsJSON(publicSignalsData)
 	if err != nil {
 		log.Fatalf("failed to unmarshal public signals: %v", err)
 	}
@@ -97,5 +97,4 @@ func BuildGroth16(dataDir string, verifyCmdProof string) {
 	if err := os.WriteFile(dataDir+"/public_inputs_bls12381.json", data, 0644); err != nil {
 		log.Fatalf("failed to write public value: %v", err)
 	}
-
 }

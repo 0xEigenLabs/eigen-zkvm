@@ -8,7 +8,7 @@ import "C"
 import (
 	"unsafe"
 
-	"github.com/0xEigenLabs/eigen-recursion-gnark/rec"
+	"github.com/0xEigenLabs/eigen-recursion-gnark/eigen"
 )
 
 func main() {}
@@ -17,7 +17,7 @@ func main() {}
 func BuildGroth16(dataDir *C.char, proof *C.char) {
 	dataDirString := C.GoString(dataDir)
 	proofString := C.GoString(proof)
-	rec.BuildGroth16(dataDirString, proofString)
+	eigen.BuildGroth16(dataDirString, proofString)
 }
 
 //export FreeString

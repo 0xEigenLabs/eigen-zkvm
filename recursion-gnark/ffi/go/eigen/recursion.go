@@ -1,4 +1,4 @@
-package rec
+package eigen
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ func NoError(err error) {
 // PlaceholdersForRecursion creates placeholders for the recursion proof and
 // verification key. If fixedVk is true, the verification key is fixed and must
 // be defined as 'gnark:"-"' in the Circuit. It only needs the number of public
-// inputs and the circom verification key.
+// inputs and the arkworks verification key.
 func PlaceholdersForRecursion(vk *groth16_bn254.VerifyingKey, nPublicInputs int,
 	fixedVk bool) (*GnarkRecursionPlaceholders, error) {
 	// create the placeholder for the recursion circuit
@@ -80,10 +80,10 @@ func createPlaceholdersForRecursion(vk *groth16_bn254.VerifyingKey,
 	return placeholders, nil
 }
 
-// ConvertCircomToGnarkRecursion converts a Circom proof, verification key, and
+// ConvertToGnarkRecursion converts a proof(Gnark Groth16 proof on BN254), verification key, and
 // public signals to the Gnark recursion proof format. If fixedVk is true, the
 // verification key is fixed and must be defined as 'gnark:"-"' in the Circuit.
-func ConvertCircomToGnarkRecursion(vk *groth16_bn254.VerifyingKey,
+func ConvertToGnarkRecursion(vk *groth16_bn254.VerifyingKey,
 	proof *groth16_bn254.Proof, publicInputs []bn254fr.Element, fixedVk bool,
 ) (*GnarkRecursionProof, error) {
 	// Convert the proof and verification key to recursion types
@@ -117,25 +117,25 @@ func ConvertCircomToGnarkRecursion(vk *groth16_bn254.VerifyingKey,
 }
 
 func VerifyBN254InBLS12381(proofData *groth16_bn254.Proof, vkData *groth16_bn254.VerifyingKey, len int, publicInputs []bn254fr.Element, runtest bool) (groth16.Proof, groth16.VerifyingKey, witness.Witness, constraint.ConstraintSystem) {
-	// Build a new circuit to verify the Circom proof recursively
+	// Build a new circuit to verify the Gnark proof recursively
 	// Get the recursion proof and placeholders
 	recursionPlaceholders, err := PlaceholdersForRecursion(vkData, len, true)
 	if err != nil {
 		log.Fatalf("failed to create placeholders for recursion: %v", err)
 	}
-	recursionData, err := ConvertCircomToGnarkRecursion(vkData, proofData, publicInputs, true)
+	recursionData, err := ConvertToGnarkRecursion(vkData, proofData, publicInputs, true)
 	if err != nil {
-		log.Fatalf("failed to convert Circom proof to Gnark recursion proof: %v", err)
+		log.Fatalf("failed to convert Gnark proof to Gnark recursion proof: %v", err)
 	}
 
 	// Create placeholder circuit
-	placeholderCircuit := &VerifyCircomProofCircuit{
+	placeholderCircuit := &VerifierBN254ProofCircuit{
 		recursionPlaceholders.Proof,
 		recursionPlaceholders.Vk,
 		recursionPlaceholders.Witness,
 	}
 	// Create the circuit assignment with actual values
-	circuitAssignment := &VerifyCircomProofCircuit{
+	circuitAssignment := &VerifierBN254ProofCircuit{
 		Proof:        recursionData.Proof,
 		PublicInputs: recursionData.PublicInputs,
 	}
