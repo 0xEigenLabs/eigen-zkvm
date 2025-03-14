@@ -3,6 +3,7 @@ package rec
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -68,28 +69,33 @@ func BuildGroth16(dataDir string, verifyCmdProof string) {
 	}
 	outerProof, verifyingKey, publicWitness, _ := VerifyBN254InBLS12381(proof.(*groth16_bn254.Proof), vk.(*groth16_bn254.VerifyingKey), len(publicSignals), publicInputs, true)
 
-	// Write the verifier key.
-	vkBlsFile, err := os.Create(dataDir + "/groth16_vk_bls12381.bin")
+	blsProof, blsVk, blsPub, err := Convert(outerProof, verifyingKey, publicWitness)
 	if err != nil {
 		panic(err)
 	}
-	defer vkBlsFile.Close()
-	_, err = vk.WriteTo(vkBlsFile)
+	// Write the proof.
+	data, err := json.MarshalIndent(blsProof, "", "  ")
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to marshal proof: %v", err)
+	}
+	if err := os.WriteFile(dataDir+"/proof_bls12381.json", data, 0644); err != nil {
+		log.Fatalf("failed to write proof: %v", err)
+	}
+	// Write the verifier key.
+	data, err = json.MarshalIndent(blsVk, "", "  ")
+	if err != nil {
+		log.Fatalf("failed to marshal verification key: %v", err)
+	}
+	if err := os.WriteFile(dataDir+"/groth16_vk_bls12381.json", data, 0644); err != nil {
+		log.Fatalf("failed to write verification key: %v", err)
 	}
 	// Write the public inputs.
-	data, err := ConvertWitness(publicWitness)
+	data, err = json.MarshalIndent(blsPub, "", "  ")
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to marshal public value: %v", err)
 	}
-	var buffer bytes.Buffer
-	for _, line := range data {
-		buffer.WriteString(line + "\n")
+	if err := os.WriteFile(dataDir+"/public_inputs_bls12381.json", data, 0644); err != nil {
+		log.Fatalf("failed to write public value: %v", err)
 	}
-	os.WriteFile(dataDir+"/public_inputs_bls12381.json", buffer.Bytes(), 0644)
 
-	// Write the proof.
-	proofBls := NewSP1Groth16Proof(outerProof, verifyingKey, publicWitness)
-	proofBls.SaveToFile(dataDir + "/proof_bls12381.bin")
 }
