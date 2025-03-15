@@ -119,11 +119,7 @@ pub fn groth16_setup(
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 #[allow(clippy::large_enum_variant)]
 pub enum SetupResult {
-    BLS12381(
-        CircomCircuit<Scalar>,
-        Parameters<Bls12>,
-        VerifyingKey<Bls12>,
-    ),
+    BLS12381(CircomCircuit<Scalar>, Parameters<Bls12>, VerifyingKey<Bls12>),
 }
 
 #[cfg(any(feature = "cuda", feature = "opencl"))]
@@ -163,16 +159,16 @@ pub fn groth16_prove(
     match curve_type {
         "BN128" => {
             let pk: Parameters<Bn256> = read_pk_from_file(pk_file, false)?;
-            let w = w
-                .iter()
-                .map(|wi| {
-                    if wi.is_zero() {
-                        Fr::zero()
-                    } else {
-                        Fr::from_str(&wi.to_string()).unwrap()
-                    }
-                })
-                .collect::<Vec<_>>();
+            let w =
+                w.iter()
+                    .map(|wi| {
+                        if wi.is_zero() {
+                            Fr::zero()
+                        } else {
+                            Fr::from_str(&wi.to_string()).unwrap()
+                        }
+                    })
+                    .collect::<Vec<_>>();
             let circuit = create_circuit_from_file::<Bn256>(circuit_file, Some(w));
             let proof = Groth16::prove(&pk, circuit.clone(), &mut rng)?;
             let proof_json = serialize_proof(&proof, curve_type, to_hex)?;
@@ -412,35 +408,24 @@ pub fn generate_verifier(vk_file_path: &str, sol_file_path: &str) -> Result<()> 
     let input_loop = Regex::new(r#"(<%input_loop%>)"#).unwrap();
     let input_argument = Regex::new(r#"(<%input_argument%>)"#).unwrap();
 
-    template_text = vk_regex
-        .replace(template_text.as_str(), vk_alpha.as_str())
-        .into_owned();
+    template_text = vk_regex.replace(template_text.as_str(), vk_alpha.as_str()).into_owned();
 
-    template_text = vk_regex
-        .replace(template_text.as_str(), vk_beta.to_string().as_str())
-        .into_owned();
+    template_text =
+        vk_regex.replace(template_text.as_str(), vk_beta.to_string().as_str()).into_owned();
 
-    template_text = vk_regex
-        .replace(template_text.as_str(), vk_gamma.to_string().as_str())
-        .into_owned();
+    template_text =
+        vk_regex.replace(template_text.as_str(), vk_gamma.to_string().as_str()).into_owned();
 
-    template_text = vk_regex
-        .replace(template_text.as_str(), vk_delta.to_string().as_str())
-        .into_owned();
+    template_text =
+        vk_regex.replace(template_text.as_str(), vk_delta.to_string().as_str()).into_owned();
 
     let gamma_abc_count: usize = vk_gamma_abc.len();
     template_text = vk_gamma_abc_len_regex
-        .replace(
-            template_text.as_str(),
-            format!("{}", gamma_abc_count).as_str(),
-        )
+        .replace(template_text.as_str(), format!("{}", gamma_abc_count).as_str())
         .into_owned();
 
     template_text = vk_input_len_regex
-        .replace(
-            template_text.as_str(),
-            format!("{}", gamma_abc_count - 1).as_str(),
-        )
+        .replace(template_text.as_str(), format!("{}", gamma_abc_count - 1).as_str())
         .into_owned();
 
     // feed input values only if there are any
@@ -471,12 +456,7 @@ pub fn generate_verifier(vk_file_path: &str, sol_file_path: &str) -> Result<()> 
     let mut gamma_abc_repeat_text = String::new();
     for (i, g1) in vk_gamma_abc.iter().enumerate() {
         gamma_abc_repeat_text.push_str(
-            format!(
-                "vk.gamma_abc[{}] = Pairing.G1Point({});",
-                i,
-                g1.to_string().as_str()
-            )
-            .as_str(),
+            format!("vk.gamma_abc[{}] = Pairing.G1Point({});", i, g1.to_string().as_str()).as_str(),
         );
         if i < gamma_abc_count - 1 {
             gamma_abc_repeat_text.push_str("\n        ");
@@ -507,12 +487,7 @@ fn create_circuit_from_file<E: Engine>(
     circuit_file: &str,
     witness: Option<Vec<E::Fr>>,
 ) -> CircomCircuit<E> {
-    CircomCircuit {
-        r1cs: load_r1cs(circuit_file),
-        witness,
-        wire_mapping: None,
-        aux_offset: 0,
-    }
+    CircomCircuit { r1cs: load_r1cs(circuit_file), witness, wire_mapping: None, aux_offset: 0 }
 }
 
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
@@ -520,16 +495,17 @@ pub fn create_circuit_add_witness<E: Engine>(
     mut circuit: CircomCircuit<E>,
     witness: Vec<num_bigint::BigInt>,
 ) -> CircomCircuit<E> {
-    let witness: Vec<E::Fr> = witness
-        .iter()
-        .map(|wi| {
-            if wi.is_zero() {
-                E::Fr::zero()
-            } else {
-                E::Fr::from_str(&wi.to_string()).unwrap()
-            }
-        })
-        .collect::<Vec<_>>();
+    let witness: Vec<E::Fr> =
+        witness
+            .iter()
+            .map(|wi| {
+                if wi.is_zero() {
+                    E::Fr::zero()
+                } else {
+                    E::Fr::from_str(&wi.to_string()).unwrap()
+                }
+            })
+            .collect::<Vec<_>>();
     circuit.witness = Some(witness);
     circuit.wire_mapping = None;
     circuit.aux_offset = 0;
@@ -541,12 +517,7 @@ fn create_circuit_from_file<E: PrimeField>(
     circuit_file: &str,
     witness: Option<Vec<E>>,
 ) -> CircomCircuit<E> {
-    CircomCircuit {
-        r1cs: load_r1cs(circuit_file),
-        witness,
-        wire_mapping: None,
-        aux_offset: 0,
-    }
+    CircomCircuit { r1cs: load_r1cs(circuit_file), witness, wire_mapping: None, aux_offset: 0 }
 }
 
 #[cfg(any(feature = "cuda", feature = "opencl"))]
@@ -786,11 +757,6 @@ library Pairing {
     if !with_g2_addition {
         [pairing_lib_beginning, pairing_lib_ending].join("\n")
     } else {
-        [
-            pairing_lib_beginning,
-            pairing_lib_g2_addition,
-            pairing_lib_ending,
-        ]
-        .join("\n")
+        [pairing_lib_beginning, pairing_lib_g2_addition, pairing_lib_ending].join("\n")
     }
 }

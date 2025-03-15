@@ -40,14 +40,7 @@ pub fn load_constants_avx2() -> ConstantsAvx2 {
         s.push(FrRepr([v1]));
     }
 
-    ConstantsAvx2 {
-        c,
-        m,
-        p,
-        s,
-        n_rounds_f: 8,
-        n_rounds_p: 22,
-    }
+    ConstantsAvx2 { c, m, p, s, n_rounds_f: 8, n_rounds_p: 22 }
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -357,12 +350,7 @@ impl Poseidon {
         Self::add_avx(&mut st0, &mut st1, &mut st2, &C[0..12]);
         for r in 0..(n_rounds_f / 2 - 1) {
             Self::pow7_triple(&mut st0, &mut st1, &mut st2);
-            Self::add_avx(
-                &mut st0,
-                &mut st1,
-                &mut st2,
-                &C[(r + 1) * 12..((r + 1) * 12 + 12)],
-            );
+            Self::add_avx(&mut st0, &mut st1, &mut st2, &C[(r + 1) * 12..((r + 1) * 12 + 12)]);
             Self::mmult_avx_8(&mut st0, &mut st1, &mut st2, &M[0..144]);
         }
         Self::pow7_triple(&mut st0, &mut st1, &mut st2);

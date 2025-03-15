@@ -15,13 +15,9 @@ use num_traits::Num;
 
 pub fn repr_to_big<T: std::fmt::Debug>(r: T) -> String {
     let hex_str = format!("{:?}", r);
-    let trim_quotes = hex_str
-        .trim_start_matches("Scalar(0x")
-        .trim_end_matches(')');
+    let trim_quotes = hex_str.trim_start_matches("Scalar(0x").trim_end_matches(')');
     let clean_hex = trim_quotes.trim_matches('"').trim_start_matches("0x");
-    BigUint::from_str_radix(clean_hex, 16)
-        .map(|bigint: BigUint| bigint.to_str_radix(10))
-        .unwrap()
+    BigUint::from_str_radix(clean_hex, 16).map(|bigint: BigUint| bigint.to_str_radix(10)).unwrap()
 }
 
 #[derive(Serialize, Deserialize)]
@@ -78,12 +74,7 @@ impl<E: PrimeField> CircomCircuit<E> {
             None => None,
             Some(w) => match &self.wire_mapping {
                 None => Some(w[1..self.r1cs.num_inputs].to_vec()),
-                Some(m) => Some(
-                    m[1..self.r1cs.num_inputs]
-                        .iter()
-                        .map(|i| w[*i])
-                        .collect_vec(),
-                ),
+                Some(m) => Some(m[1..self.r1cs.num_inputs].iter().map(|i| w[*i]).collect_vec()),
             },
         }
     }

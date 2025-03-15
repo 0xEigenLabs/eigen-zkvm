@@ -302,19 +302,14 @@ impl StarkInfo {
                 _ => panic!("ci.connections is empty"),
             };
 
-            let mut ci_ctx = PCCTX {
-                z_id: pil.nCommitments,
-                ..Default::default()
-            };
+            let mut ci_ctx = PCCTX { z_id: pil.nCommitments, ..Default::default() };
             pil.nCommitments += 1;
 
             let gamma = E::challenge("gamma".to_string());
             let beta = E::challenge("beta".to_string());
 
-            let mut num_exp = E::add(
-                &E::add(&E::exp(ci_pols[0], None), &E::mul(&beta, &E::x())),
-                &gamma,
-            );
+            let mut num_exp =
+                E::add(&E::add(&E::exp(ci_pols[0], None), &E::mul(&beta, &E::x())), &gamma);
 
             let mut den_exp = E::add(
                 &E::add(

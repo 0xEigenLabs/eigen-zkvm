@@ -42,10 +42,7 @@ fn read_field<R: Read, E: PrimeField>(mut reader: R) -> Result<E> {
     if maybe_field.is_some().unwrap_u8() == 1 {
         Ok(maybe_field.unwrap())
     } else {
-        Err(Error::new(
-            ErrorKind::InvalidData,
-            "Invalid field representation",
-        ))
+        Err(Error::new(ErrorKind::InvalidData, "Invalid field representation"))
     }
 }
 
@@ -60,10 +57,7 @@ fn read_header<R: Read>(mut reader: R, size: u64) -> Result<Header> {
     let mut prime_size = vec![0u8; field_size as usize];
     reader.read_exact(&mut prime_size)?;
     if size != 32 + field_size as u64 {
-        return Err(Error::new(
-            ErrorKind::InvalidData,
-            "Invalid header section size",
-        ));
+        return Err(Error::new(ErrorKind::InvalidData, "Invalid header section size"));
     }
 
     Ok(Header {
@@ -115,20 +109,14 @@ fn read_constraints<R: Read, E: PrimeField>(
 
 fn read_map<R: Read>(mut reader: R, size: u64, header: &Header) -> Result<Vec<u64>> {
     if size != header.n_wires as u64 * 8 {
-        return Err(Error::new(
-            ErrorKind::InvalidData,
-            "Invalid map section size",
-        ));
+        return Err(Error::new(ErrorKind::InvalidData, "Invalid map section size"));
     }
     let mut vec = Vec::with_capacity(header.n_wires as usize);
     for _ in 0..header.n_wires {
         vec.push(reader.read_u64::<LittleEndian>()?);
     }
     if vec[0] != 0 {
-        return Err(Error::new(
-            ErrorKind::InvalidData,
-            "Wire 0 should always be mapped to 0",
-        ));
+        return Err(Error::new(ErrorKind::InvalidData, "Wire 0 should always be mapped to 0"));
     }
     Ok(vec)
 }
@@ -156,15 +144,11 @@ fn read_custom_gates_list<R: Read, E: PrimeField>(
     let num = reader.read_u32::<LittleEndian>()?;
     let mut custom_gates: Vec<CustomGates<E>> = vec![];
     for i in 0..num {
-        let mut custom_gate = CustomGates::<E> {
-            template_name: read_to_string(&mut reader),
-            parameters: vec![],
-        };
+        let mut custom_gate =
+            CustomGates::<E> { template_name: read_to_string(&mut reader), parameters: vec![] };
         let num_parameters = reader.read_u32::<LittleEndian>()?;
         for _i in 0..num_parameters {
-            custom_gate
-                .parameters
-                .push(read_field::<&mut R, E>(&mut reader)?);
+            custom_gate.parameters.push(read_field::<&mut R, E>(&mut reader)?);
         }
         custom_gates.push(custom_gate);
     }
@@ -187,10 +171,7 @@ fn read_custom_gates_uses_list<R: Read>(
     let n_custom_gate_uses = b_r1cs32[0];
     let mut b_r1cs_pos = 1;
     for i in 0..n_custom_gate_uses {
-        let mut c = CustomGatesUses {
-            id: b_r1cs32[b_r1cs_pos] as u64,
-            ..Default::default()
-        };
+        let mut c = CustomGatesUses { id: b_r1cs32[b_r1cs_pos] as u64, ..Default::default() };
         b_r1cs_pos += 1;
         let num_signals = b_r1cs32[b_r1cs_pos];
         b_r1cs_pos += 1;
@@ -249,7 +230,7 @@ pub fn from_reader<R: Read + Seek, E: PrimeField>(mut reader: R) -> Result<R1CSF
             "This parser only supports 32-bytes or 8-bytes fields",
         ));
     }
-    if header.field_size != (E::NUM_BITS + 7) / 8 {
+    if header.field_size != E::NUM_BITS.div_ceil(8) {
         return Err(Error::new(ErrorKind::InvalidData, "Different prime"));
     }
     if !(header.prime_size
@@ -258,33 +239,21 @@ pub fn from_reader<R: Read + Seek, E: PrimeField>(mut reader: R) -> Result<R1CSF
             == hex!("01000000fffffffffe5bfeff02a4bd5305d8a10908d83933487d9d2953a7ed73")
         || header.prime_size == hex!("01000000ffffffff"))
     {
-        return Err(Error::new(
-            ErrorKind::InvalidData,
-            "This parser only supports bn256 or GL",
-        ));
+        return Err(Error::new(ErrorKind::InvalidData, "This parser only supports bn256 or GL"));
     }
-    reader.seek(SeekFrom::Start(
-        *section_offsets.get(&CONSTRAINT_TYPE).unwrap(),
-    ))?;
+    reader.seek(SeekFrom::Start(*section_offsets.get(&CONSTRAINT_TYPE).unwrap()))?;
     let constraints = read_constraints::<&mut R, E>(
         &mut reader,
         *section_sizes.get(&CONSTRAINT_TYPE).unwrap(),
         &header,
     )?;
 
-    reader.seek(SeekFrom::Start(
-        *section_offsets.get(&WIRE2LABEL_TYPE).unwrap(),
-    ))?;
-    let wire_mapping = read_map(
-        &mut reader,
-        *section_sizes.get(&WIRE2LABEL_TYPE).unwrap(),
-        &header,
-    )?;
+    reader.seek(SeekFrom::Start(*section_offsets.get(&WIRE2LABEL_TYPE).unwrap()))?;
+    let wire_mapping =
+        read_map(&mut reader, *section_sizes.get(&WIRE2LABEL_TYPE).unwrap(), &header)?;
     let mut custom_gates: Vec<CustomGates<E>> = vec![];
     if section_offsets.contains_key(&CUSTOM_GATES_LIST) {
-        reader.seek(SeekFrom::Start(
-            *section_offsets.get(&CUSTOM_GATES_LIST).unwrap(),
-        ))?;
+        reader.seek(SeekFrom::Start(*section_offsets.get(&CUSTOM_GATES_LIST).unwrap()))?;
         custom_gates = read_custom_gates_list(
             &mut reader,
             *section_sizes.get(&CUSTOM_GATES_LIST).unwrap(),
@@ -294,9 +263,7 @@ pub fn from_reader<R: Read + Seek, E: PrimeField>(mut reader: R) -> Result<R1CSF
 
     let mut custom_gates_uses: Vec<CustomGatesUses> = vec![];
     if section_offsets.contains_key(&CUSTOM_GATES_USE) {
-        reader.seek(SeekFrom::Start(
-            *section_offsets.get(&CUSTOM_GATES_USE).unwrap(),
-        ))?;
+        reader.seek(SeekFrom::Start(*section_offsets.get(&CUSTOM_GATES_USE).unwrap()))?;
         custom_gates_uses = read_custom_gates_uses_list(
             &mut reader,
             *section_sizes.get(&CUSTOM_GATES_USE).unwrap(),
@@ -304,12 +271,5 @@ pub fn from_reader<R: Read + Seek, E: PrimeField>(mut reader: R) -> Result<R1CSF
         )?;
     }
 
-    Ok(R1CSFile {
-        version,
-        header,
-        constraints,
-        wire_mapping,
-        custom_gates,
-        custom_gates_uses,
-    })
+    Ok(R1CSFile { version, header, constraints, wire_mapping, custom_gates, custom_gates_uses })
 }

@@ -47,14 +47,7 @@ pub fn load_constants() -> Constants {
         s.push(FGL::from(v1));
     }
 
-    Constants {
-        c,
-        m,
-        p,
-        s,
-        n_rounds_f: 8,
-        n_rounds_p: 22,
-    }
+    Constants { c, m, p, s, n_rounds_f: 8, n_rounds_p: 22 }
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -105,10 +98,7 @@ impl Poseidon {
         state[0..8].clone_from_slice(inp);
         state[8..].clone_from_slice(init_state);
 
-        state
-            .iter_mut()
-            .enumerate()
-            .for_each(|(i, a)| a.add_assign(&C[i]));
+        state.iter_mut().enumerate().for_each(|(i, a)| a.add_assign(&C[i]));
 
         let mut tmp_state = vec![FGL::ZERO; t];
         for r in 0..(n_rounds_f / 2 - 1) {
@@ -127,12 +117,9 @@ impl Poseidon {
                 }
                 *out = acc;
             });
-            state
-                .iter_mut()
-                .zip(tmp_state.iter())
-                .for_each(|(out, inp)| {
-                    *out = *inp;
-                });
+            state.iter_mut().zip(tmp_state.iter()).for_each(|(out, inp)| {
+                *out = *inp;
+            });
         }
 
         state.iter_mut().for_each(Self::pow7);
@@ -150,12 +137,9 @@ impl Poseidon {
             }
             *out = acc;
         });
-        state
-            .iter_mut()
-            .zip(tmp_state.iter())
-            .for_each(|(out, inp)| {
-                *out = *inp;
-            });
+        state.iter_mut().zip(tmp_state.iter()).for_each(|(out, inp)| {
+            *out = *inp;
+        });
 
         for r in 0..n_rounds_p {
             Self::pow7(&mut state[0]);
@@ -194,12 +178,9 @@ impl Poseidon {
                 }
                 *out = acc;
             });
-            state
-                .iter_mut()
-                .zip(tmp_state.iter())
-                .for_each(|(out, inp)| {
-                    *out = *inp;
-                });
+            state.iter_mut().zip(tmp_state.iter()).for_each(|(out, inp)| {
+                *out = *inp;
+            });
         }
 
         state.iter_mut().for_each(Self::pow7);

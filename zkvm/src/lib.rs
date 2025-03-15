@@ -34,10 +34,8 @@ fn generate_witness_and_prove<F: FieldElement>(
     let start = Instant::now();
     log::debug!("Proving ...");
 
-    pipeline = pipeline.with_backend(
-        BackendType::EStarkStarkyComposite,
-        Some("stark_gl".to_string()),
-    );
+    pipeline =
+        pipeline.with_backend(BackendType::EStarkStarkyComposite, Some("stark_gl".to_string()));
     pipeline.compute_proof()?;
     let duration = start.elapsed();
     log::debug!("Proving took: {:?}", duration);
@@ -56,10 +54,8 @@ fn generate_witness_and_prove_raw<F: FieldElement>(
     let start = Instant::now();
     log::debug!("Proving ...");
 
-    pipeline = pipeline.with_backend(
-        BackendType::EStarkStarkyComposite,
-        Some("stark_gl".to_string()),
-    );
+    pipeline =
+        pipeline.with_backend(BackendType::EStarkStarkyComposite, Some("stark_gl".to_string()));
     pipeline.compute_proof()?;
     let duration = start.elapsed();
     log::debug!("Proving took: {:?}", duration);
@@ -74,10 +70,8 @@ fn generate_verifier<F: FieldElement>(
 ) -> Result<Vec<usize>> {
     let buf = Vec::new();
     let mut vw = BufWriter::new(buf);
-    pipeline = pipeline.with_backend(
-        BackendType::EStarkStarkyComposite,
-        Some("stark_gl".to_string()),
-    );
+    pipeline =
+        pipeline.with_backend(BackendType::EStarkStarkyComposite, Some("stark_gl".to_string()));
     pipeline.export_verification_key(&mut vw).unwrap();
 
     log::debug!("Init CompositeVerificationKey");
@@ -92,32 +86,22 @@ fn generate_verifier<F: FieldElement>(
 
     log::debug!("Generate verifier for each proof");
     let mut ids: Vec<usize> = vec![];
-    for (idx, (vk, machine_proof)) in cvk
-        .verification_keys
-        .iter()
-        .zip(cf.proofs.into_iter())
-        .enumerate()
+    for (idx, (vk, machine_proof)) in
+        cvk.verification_keys.iter().zip(cf.proofs.into_iter()).enumerate()
     {
         if vk.is_none() {
             continue;
         }
         let pil = pils.get(&machine_proof.machine).unwrap();
-        let proof_file = Path::new(output_path).join(format!(
-            "{}_chunk_{}_submachine_{}.json",
-            task, chunk_idx, idx
-        ));
+        let proof_file = Path::new(output_path)
+            .join(format!("{}_chunk_{}_submachine_{}.json", task, chunk_idx, idx));
 
         log::debug!("Running proof generation to {:?}...", proof_file);
         fs::write(proof_file, machine_proof.proof)?;
 
-        let verifier_file = Path::new(output_path).join(format!(
-            "{}_chunk_{}_submachine_{}.circom",
-            task, chunk_idx, idx
-        ));
-        log::debug!(
-            "Running circom verifier generation to {:?}...",
-            verifier_file
-        );
+        let verifier_file = Path::new(output_path)
+            .join(format!("{}_chunk_{}_submachine_{}.circom", task, chunk_idx, idx));
+        log::debug!("Running circom verifier generation to {:?}...", verifier_file);
         let mut writer = fs::File::create(verifier_file)?;
 
         let vk_data = vk.as_ref().unwrap().get(&machine_proof.size).unwrap();
@@ -144,11 +128,7 @@ fn generate_verifier<F: FieldElement>(
         let n_bits = (DegreeType::BITS - (degree - 1).leading_zeros()) as usize;
         let n_bits_ext = n_bits + 1;
 
-        let steps = (2..=n_bits_ext)
-            .rev()
-            .step_by(4)
-            .map(|b| Step { nBits: b })
-            .collect();
+        let steps = (2..=n_bits_ext).rev().step_by(4).map(|b| Step { nBits: b }).collect();
 
         let params = StarkStruct {
             nBits: n_bits,
@@ -292,11 +272,7 @@ pub fn zkvm_generate_chunks(
     let bootloader_inputs = rust_continuations_dry_run(&mut pipeline, Default::default());
 
     let duration = start.elapsed();
-    log::debug!(
-        "Trace executor took: {:?}, input size: {:?}",
-        duration,
-        bootloader_inputs.len()
-    );
+    log::debug!("Trace executor took: {:?}, input size: {:?}", duration, bootloader_inputs.len());
 
     Ok(bootloader_inputs)
 }
@@ -335,10 +311,7 @@ pub fn zkvm_prove_only(
     let ids = generate_verifier(pipeline, output_path, task, i)?;
 
     let duration = start.elapsed();
-    log::debug!(
-        "Witness generation and proof computation took: {:?}",
-        duration
-    );
+    log::debug!("Witness generation and proof computation took: {:?}", duration);
 
     Ok(ids)
 }
@@ -381,19 +354,12 @@ where
     create_dir_all(&chunk_dir).unwrap();
     let pipeline = pipeline.with_output(chunk_dir, true);
 
-    let jump_to_shutdown_routine = (0..length)
-        .map(|i| (i == start_of_shutdown_routine - 1).into())
-        .collect();
+    let jump_to_shutdown_routine =
+        (0..length).map(|i| (i == start_of_shutdown_routine - 1).into()).collect();
 
     let pipeline = pipeline.add_external_witness_values(vec![
-        (
-            "main_bootloader_inputs.value".to_string(),
-            bootloader_inputs,
-        ),
-        (
-            "main.jump_to_shutdown_routine".to_string(),
-            jump_to_shutdown_routine,
-        ),
+        ("main_bootloader_inputs.value".to_string(), bootloader_inputs),
+        ("main.jump_to_shutdown_routine".to_string(), jump_to_shutdown_routine),
     ]);
     pipeline_callback(pipeline)
 }
@@ -437,17 +403,14 @@ mod tests {
         let bi_files: Vec<_> = (0..bootloader_inputs.len())
             .map(|i| Path::new(output_path).join(format!("{task}_chunks_{i}.data")))
             .collect();
-        bootloader_inputs
-            .iter()
-            .zip(&bi_files)
-            .for_each(|(data, filename)| {
-                let mut f = fs::File::create(filename).unwrap();
-                // write the start_of_shutdown_routine
-                f.write_all(&data.1.to_le_bytes()).unwrap();
-                for d in &data.0 {
-                    f.write_all(&d.to_bytes_le()[0..8]).unwrap();
-                }
-            });
+        bootloader_inputs.iter().zip(&bi_files).for_each(|(data, filename)| {
+            let mut f = fs::File::create(filename).unwrap();
+            // write the start_of_shutdown_routine
+            f.write_all(&data.1.to_le_bytes()).unwrap();
+            for d in &data.0 {
+                f.write_all(&d.to_bytes_le()[0..8]).unwrap();
+            }
+        });
 
         // load each chunk, generate witness and prove
         bi_files.iter().enumerate().for_each(|(i, filename)| {
@@ -467,15 +430,9 @@ mod tests {
                 *out = GoldilocksField::from_bytes_le(bin);
             });
 
-            let submachine_ids = zkvm_prove_only(
-                task,
-                &suite_json,
-                bi,
-                start_of_shutdown_routine,
-                i,
-                output_path,
-            )
-            .unwrap();
+            let submachine_ids =
+                zkvm_prove_only(task, &suite_json, bi, start_of_shutdown_routine, i, output_path)
+                    .unwrap();
             log::info!("submachine ids: {:?}", submachine_ids);
         });
     }

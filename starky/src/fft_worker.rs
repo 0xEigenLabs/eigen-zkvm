@@ -38,49 +38,13 @@ fn _fft_block<F: FieldExtension>(
     let md2 = m >> 1;
 
     if layers < blockbits {
-        _fft_block(
-            buff,
-            rel_pos,
-            start_pos,
-            n_pols,
-            nbits,
-            s,
-            blockbits - 1,
-            layers,
-        );
-        _fft_block(
-            buff,
-            rel_pos,
-            start_pos + md2,
-            n_pols,
-            nbits,
-            s,
-            blockbits - 1,
-            layers,
-        );
+        _fft_block(buff, rel_pos, start_pos, n_pols, nbits, s, blockbits - 1, layers);
+        _fft_block(buff, rel_pos, start_pos + md2, n_pols, nbits, s, blockbits - 1, layers);
         return;
     }
     if layers > 1 {
-        _fft_block(
-            buff,
-            rel_pos,
-            start_pos,
-            n_pols,
-            nbits,
-            s - 1,
-            blockbits - 1,
-            layers - 1,
-        );
-        _fft_block(
-            buff,
-            rel_pos,
-            start_pos + md2,
-            n_pols,
-            nbits,
-            s - 1,
-            blockbits - 1,
-            layers - 1,
-        );
+        _fft_block(buff, rel_pos, start_pos, n_pols, nbits, s - 1, blockbits - 1, layers - 1);
+        _fft_block(buff, rel_pos, start_pos + md2, n_pols, nbits, s - 1, blockbits - 1, layers - 1);
     }
 
     #[allow(unused_assignments)]
@@ -117,8 +81,6 @@ pub fn fft_block<F: FieldExtension>(
     layers: usize,
 ) {
     log::trace!("start block {} {}", s, start_pos);
-    _fft_block(
-        buff, start_pos, start_pos, n_pols, nbits, s, blockbits, layers,
-    );
+    _fft_block(buff, start_pos, start_pos, n_pols, nbits, s, blockbits, layers);
     log::trace!("end block {} {}", s, start_pos);
 }

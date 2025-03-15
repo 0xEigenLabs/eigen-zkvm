@@ -67,12 +67,7 @@ impl<T: FieldExtension> fmt::Display for Expr<T> {
 
 impl<T: FieldExtension> Expr<T> {
     pub fn new(op: Ops<T>, syms: Vec<String>, defs: Vec<Expr<T>>, addr: Vec<usize>) -> Self {
-        Self {
-            op,
-            syms,
-            defs,
-            addr,
-        }
+        Self { op, syms, defs, addr }
     }
 }
 
@@ -196,23 +191,12 @@ pub fn compile_code<T: FieldExtension>(
     dom: &str,
     ret: bool,
 ) -> Block<T> {
-    let next = if dom == "n" {
-        1
-    } else {
-        1 << (ctx.nbits_ext - ctx.nbits)
-    };
+    let next = if dom == "n" { 1 } else { 1 << (ctx.nbits_ext - ctx.nbits) };
 
-    let N = if dom == "n" {
-        1 << ctx.nbits
-    } else {
-        1 << ctx.nbits_ext
-    };
+    let N = if dom == "n" { 1 << ctx.nbits } else { 1 << ctx.nbits_ext };
     let modulas = N;
 
-    let mut body: Block<T> = Block {
-        namespace: "ctx".to_string(),
-        exprs: Vec::new(),
-    };
+    let mut body: Block<T> = Block { namespace: "ctx".to_string(), exprs: Vec::new() };
 
     for cj in code.iter() {
         let mut src: Vec<Expr<T>> = Vec::new();
@@ -234,8 +218,7 @@ pub fn compile_code<T: FieldExtension>(
     }
     if ret {
         let sz = code.len() - 1;
-        body.exprs
-            .push(get_ref(ctx, starkinfo, &code[sz].dest, dom, next, modulas));
+        body.exprs.push(get_ref(ctx, starkinfo, &code[sz].dest, dom, next, modulas));
         body.exprs.push(Expr::new(Ops::Ret, vec![], vec![], vec![]));
     }
     body
@@ -285,20 +268,12 @@ fn get_value<T: FieldExtension>(ctx: &mut StarkContext<T>, expr: &Expr<T>, arg_i
         "xDivXSubXi" => {
             let id = get_i(expr, arg_i);
             // TODO: We need to Support F5G , FG
-            T::from_vec(vec![
-                ctx.xDivXSubXi[id],
-                ctx.xDivXSubXi[id + 1],
-                ctx.xDivXSubXi[id + 2],
-            ])
+            T::from_vec(vec![ctx.xDivXSubXi[id], ctx.xDivXSubXi[id + 1], ctx.xDivXSubXi[id + 2]])
         }
         "xDivXSubWXi" => {
             let id = get_i(expr, arg_i);
             // TODO: We need to Support F5G , FG
-            T::from_vec(vec![
-                ctx.xDivXSubWXi[id],
-                ctx.xDivXSubWXi[id + 1],
-                ctx.xDivXSubWXi[id + 2],
-            ])
+            T::from_vec(vec![ctx.xDivXSubWXi[id], ctx.xDivXSubWXi[id + 1], ctx.xDivXSubWXi[id + 2]])
         }
         "Zi" => (ctx.Zi)(arg_i),
         _ => {
@@ -320,12 +295,7 @@ fn set_ref<T: FieldExtension>(
 ) {
     //log::trace!("set_ref: r {:?}  dom {} val {}", r, dom, val);
     let e_dst = match r.type_.as_str() {
-        "tmp" => Expr::new(
-            Ops::Refer,
-            vec!["tmp".to_string()],
-            vec![],
-            vec![r.id, 0, modulas, 0],
-        ),
+        "tmp" => Expr::new(Ops::Refer, vec!["tmp".to_string()], vec![], vec![r.id, 0, modulas, 0]),
         "q" => {
             if dom == "n" {
                 panic!("Accesssing q in domain n");
@@ -389,8 +359,7 @@ fn set_ref<T: FieldExtension>(
         }
     };
     body.exprs.push(val);
-    body.exprs
-        .push(Expr::new(Ops::Write, vec![], vec![e_dst], vec![]));
+    body.exprs.push(Expr::new(Ops::Write, vec![], vec![e_dst], vec![]));
 }
 
 fn get_ref<F: FieldExtension>(
@@ -403,12 +372,7 @@ fn get_ref<F: FieldExtension>(
 ) -> Expr<F> {
     //log::trace!("get_ref: r {:?}  dom {} ", r, dom);
     match r.type_.as_str() {
-        "tmp" => Expr::new(
-            Ops::Refer,
-            vec!["tmp".to_string()],
-            vec![],
-            vec![r.id, 0, modulas, 0],
-        ),
+        "tmp" => Expr::new(Ops::Refer, vec!["tmp".to_string()], vec![], vec![r.id, 0, modulas, 0]),
         "const" => {
             if dom == "n" {
                 if r.prime {
@@ -469,24 +433,15 @@ fn get_ref<F: FieldExtension>(
             let n_val = parse_pil_number(r.value.as_ref().unwrap());
             Expr::new(Ops::Vari(F::from(n_val)), vec![], vec![], vec![])
         }
-        "public" => Expr::new(
-            Ops::Refer,
-            vec!["publics".to_string()],
-            vec![],
-            vec![r.id, 0, modulas, 0],
-        ),
-        "challenge" => Expr::new(
-            Ops::Refer,
-            vec!["challenge".to_string()],
-            vec![],
-            vec![r.id, 0, modulas, 0],
-        ),
-        "eval" => Expr::new(
-            Ops::Refer,
-            vec!["evals".to_string()],
-            vec![],
-            vec![r.id, 0, modulas, 0],
-        ),
+        "public" => {
+            Expr::new(Ops::Refer, vec!["publics".to_string()], vec![], vec![r.id, 0, modulas, 0])
+        }
+        "challenge" => {
+            Expr::new(Ops::Refer, vec!["challenge".to_string()], vec![], vec![r.id, 0, modulas, 0])
+        }
+        "eval" => {
+            Expr::new(Ops::Refer, vec!["evals".to_string()], vec![], vec![r.id, 0, modulas, 0])
+        }
         "xDivXSubXi" => Expr::new(
             Ops::Refer,
             vec!["xDivXSubXi".to_string(), "3".to_string()],
@@ -501,12 +456,7 @@ fn get_ref<F: FieldExtension>(
         ),
         "x" => {
             if dom == "n" {
-                Expr::new(
-                    Ops::Refer,
-                    vec!["x_n".to_string()],
-                    vec![],
-                    vec![0, 0, modulas, 1],
-                )
+                Expr::new(Ops::Refer, vec!["x_n".to_string()], vec![], vec![0, 0, modulas, 1])
             } else if dom == "2ns" {
                 Expr::new(
                     Ops::Refer,
@@ -518,12 +468,7 @@ fn get_ref<F: FieldExtension>(
                 panic!("Invalid dom");
             }
         }
-        "Zi" => Expr::new(
-            Ops::Refer,
-            vec!["Zi".to_string()],
-            vec![],
-            vec![0, 0, modulas, 1],
-        ),
+        "Zi" => Expr::new(Ops::Refer, vec!["Zi".to_string()], vec![], vec![0, 0, modulas, 1]),
         _ => panic!("Invalid reference type get, {}", r.type_),
     }
 }

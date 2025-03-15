@@ -39,11 +39,7 @@ pub struct Program {
 impl fmt::Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let obj = json!(self);
-        writeln!(
-            f,
-            "publics: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )
+        writeln!(f, "publics: {}", serde_json::to_string_pretty(&obj).unwrap())
     }
 }
 
@@ -98,11 +94,7 @@ pub struct StarkInfo {
 impl fmt::Display for StarkInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let obj = json!(self.var_pol_map);
-        writeln!(
-            f,
-            "var_pol_map: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "var_pol_map: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         writeln!(
             f,
             "n_cm 1-4: {} {} {} {}, n_q: {}",
@@ -121,97 +113,45 @@ impl fmt::Display for StarkInfo {
         )?;
         writeln!(f, "q_deg: {}, q_dim: {}", self.q_deg, self.q_dim)?;
         let obj = json!(self.im_exps);
-        writeln!(
-            f,
-            "im_exps: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "im_exps: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.im_exp2cm);
-        writeln!(
-            f,
-            "im_exp2cm: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "im_exp2cm: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.qs);
         writeln!(f, "qs: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.exps_2ns);
-        writeln!(
-            f,
-            "exps_2ns: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "exps_2ns: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.exps_n);
         writeln!(f, "exps_n: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.ev_map);
         writeln!(f, "ev_map: {}", serde_json::to_string_pretty(&obj).unwrap())?;
-        writeln!(
-            f,
-            "fri_exp_id: {}, n_exps: {}",
-            self.fri_exp_id, self.n_exps
-        )?;
+        writeln!(f, "fri_exp_id: {}, n_exps: {}", self.fri_exp_id, self.n_exps)?;
         let obj = json!(self.cm_n);
         writeln!(f, "cm_n: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.cm_2ns);
         writeln!(f, "cm_2ns: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.tmpexp_n);
-        writeln!(
-            f,
-            "tmpexp_n: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "tmpexp_n: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.f_2ns);
         writeln!(f, "f_2ns: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.q_2ns);
         writeln!(f, "q_2ns: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.map_sections);
-        writeln!(
-            f,
-            "map_sections: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "map_sections: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.map_sectionsN1);
-        writeln!(
-            f,
-            "map_sectionsN1: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "map_sectionsN1: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.map_sectionsN3);
-        writeln!(
-            f,
-            "map_sectionsN3: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "map_sectionsN3: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.map_sectionsN);
-        writeln!(
-            f,
-            "map_sectionsN: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "map_sectionsN: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.map_offsets);
-        writeln!(
-            f,
-            "map_offsets: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "map_offsets: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.map_deg);
-        writeln!(
-            f,
-            "map_deg: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "map_deg: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         writeln!(f, "map_total_n: {}", self.map_total_n)?;
         let obj = json!(self.exp2pol);
-        writeln!(
-            f,
-            "exp2pol: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "exp2pol: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         let obj = json!(self.publics);
-        writeln!(
-            f,
-            "publics: {}",
-            serde_json::to_string_pretty(&obj).unwrap()
-        )?;
+        writeln!(f, "publics: {}", serde_json::to_string_pretty(&obj).unwrap())?;
         writeln!(f, "ev_idx: {:?}", self.ev_idx)
     }
 }
@@ -289,19 +229,10 @@ impl StarkInfo {
         info.generate_public_calculators(pil, &mut program)?;
         info.n_cm1 = pil.nCommitments;
 
-        let mut ctx = Context {
-            tmp_used: 0,
-            code: vec![],
-            calculated: HashMap::new(),
-            exp_id: 0,
-        };
+        let mut ctx = Context { tmp_used: 0, code: vec![], calculated: HashMap::new(), exp_id: 0 };
 
-        let mut ctx2ns = Context {
-            tmp_used: 0,
-            code: vec![],
-            calculated: HashMap::new(),
-            exp_id: 0,
-        };
+        let mut ctx2ns =
+            Context { tmp_used: 0, code: vec![], calculated: HashMap::new(), exp_id: 0 };
 
         log::trace!("generate_step2");
         info.generate_step2(&mut ctx, pil, &mut program)?; // H1, H2
@@ -318,12 +249,7 @@ impl StarkInfo {
             &mut program,
         )?;
 
-        let mut ctx = Context {
-            tmp_used: 0,
-            code: vec![],
-            calculated: HashMap::new(),
-            exp_id: 0,
-        };
+        let mut ctx = Context { tmp_used: 0, code: vec![], calculated: HashMap::new(), exp_id: 0 };
         for (k, v) in info.im_exps.iter() {
             ctx.calculated.insert(("exps", *k), *v);
             ctx.calculated.insert(("expsPrime", *k), *v);
@@ -334,12 +260,7 @@ impl StarkInfo {
         log::trace!("generate_fri_polynomial");
         info.generate_fri_polynomial(&mut ctx2ns, pil, &mut program)?;
 
-        let mut ctx = Context {
-            tmp_used: 0,
-            code: vec![],
-            calculated: HashMap::new(),
-            exp_id: 0,
-        };
+        let mut ctx = Context { tmp_used: 0, code: vec![], calculated: HashMap::new(), exp_id: 0 };
         log::trace!("generate_fri_verifier");
         info.generate_fri_verifier(&mut ctx, pil, &mut program)?;
 
@@ -356,18 +277,11 @@ impl StarkInfo {
         program: &mut Program,
     ) -> Result<()> {
         let publics = pil.publics.clone();
-        log::trace!(
-            "generate_public_calculators: publics as input: {:?}",
-            publics
-        );
+        log::trace!("generate_public_calculators: publics as input: {:?}", publics);
         for p in publics.iter() {
             if p.polType.as_str() == "imP" {
-                let mut ctx = Context {
-                    tmp_used: 0,
-                    code: vec![],
-                    calculated: HashMap::new(),
-                    exp_id: 0,
-                };
+                let mut ctx =
+                    Context { tmp_used: 0, code: vec![], calculated: HashMap::new(), exp_id: 0 };
                 pil_code_gen(&mut ctx, pil, p.polId, false, "", 0, false)?;
                 let mut segment = build_code(&mut ctx, pil);
 

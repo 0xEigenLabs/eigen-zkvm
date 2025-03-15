@@ -60,12 +60,11 @@ impl LinearHash {
     ) -> Result<ElementDigest<4, FGL>> {
         let mut flatvals = vec![FGL::default(); vals.len() * vals[0].len()];
 
-        flatvals
-            .par_chunks_mut(vals[0].len())
-            .zip(vals.par_iter())
-            .for_each(|(flat_chunk, col)| {
+        flatvals.par_chunks_mut(vals[0].len()).zip(vals.par_iter()).for_each(
+            |(flat_chunk, col)| {
                 flat_chunk.copy_from_slice(col);
-            });
+            },
+        );
 
         self.hash(&flatvals, batch_size)
     }
@@ -80,7 +79,7 @@ impl LinearHash {
     pub fn hash(&self, flatvals: &[FGL], batch_size: usize) -> Result<ElementDigest<4, FGL>> {
         let mut bs = batch_size;
         if bs == 0 {
-            bs = core::cmp::max(8, (flatvals.len() + 3) / 4);
+            bs = core::cmp::max(8, flatvals.len().div_ceil(4));
         }
 
         let mut st = [FGL::ZERO; 4];
@@ -94,14 +93,11 @@ impl LinearHash {
         let hsz = flatvals.len().div_ceil(bs);
         let mut hashes: Vec<FGL> = vec![FGL::ZERO; hsz * 4];
         // NOTE flatsvals.len <= hashes.len
-        hashes
-            .chunks_mut(4)
-            .zip(flatvals.chunks(bs))
-            .for_each(|(outs, inps)| {
-                let hv = self._hash(inps).unwrap();
-                let hv: &[FGL] = hv.as_elements();
-                outs[0..hv.len()].copy_from_slice(hv);
-            });
+        hashes.chunks_mut(4).zip(flatvals.chunks(bs)).for_each(|(outs, inps)| {
+            let hv = self._hash(inps).unwrap();
+            let hv: &[FGL] = hv.as_elements();
+            outs[0..hv.len()].copy_from_slice(hv);
+        });
 
         if hashes.len() <= 4 {
             for (i, v) in hashes.iter().enumerate() {
@@ -162,12 +158,11 @@ impl LinearHash {
     ) -> Result<ElementDigest<4, FGL>> {
         let mut flatvals = vec![FGL::default(); vals.len() * vals[0].len()];
 
-        flatvals
-            .par_chunks_mut(vals[0].len())
-            .zip(vals.par_iter())
-            .for_each(|(flat_chunk, col)| {
+        flatvals.par_chunks_mut(vals[0].len()).zip(vals.par_iter()).for_each(
+            |(flat_chunk, col)| {
                 flat_chunk.copy_from_slice(col);
-            });
+            },
+        );
 
         let flatvals_1: Vec<FGL> = [flatvals.clone(), flatvals.clone()].concat();
 
@@ -201,26 +196,21 @@ impl LinearHash {
             for (i, v) in flatvals1.iter().enumerate() {
                 st1[i] = *v;
             }
-            return Ok([
-                ElementDigest::<4, FGL>::new(&st0),
-                ElementDigest::<4, FGL>::new(&st1),
-            ]);
+            return Ok([ElementDigest::<4, FGL>::new(&st0), ElementDigest::<4, FGL>::new(&st1)]);
         }
 
         let hsz = (mid + bs - 1) / bs;
         let mut hashes: Vec<FGL> = vec![FGL::ZERO; hsz * 4 * 2];
         // NOTE flatsvals.len <= hashes.len
-        hashes
-            .chunks_mut(8)
-            .zip(flatvals0.chunks(bs))
-            .zip(flatvals1.chunks(bs))
-            .for_each(|((outs, chunk0), chunk1)| {
+        hashes.chunks_mut(8).zip(flatvals0.chunks(bs)).zip(flatvals1.chunks(bs)).for_each(
+            |((outs, chunk0), chunk1)| {
                 let mut inps = Vec::new();
                 inps.extend_from_slice(chunk0);
                 inps.extend_from_slice(chunk1);
                 let hash_result = self._hash(inps.as_slice()).unwrap();
                 outs.copy_from_slice(&hash_result);
-            });
+            },
+        );
 
         if hashes.len() <= 8 {
             let mid = hashes.len() / 2;
@@ -230,10 +220,7 @@ impl LinearHash {
             for (i, &v) in hashes.iter().skip(mid).enumerate() {
                 st1[i % 4] = v;
             }
-            return Ok([
-                ElementDigest::<4, FGL>::new(&st0),
-                ElementDigest::<4, FGL>::new(&st1),
-            ]);
+            return Ok([ElementDigest::<4, FGL>::new(&st0), ElementDigest::<4, FGL>::new(&st1)]);
         } else {
             let mut hash: Vec<FGL> = Vec::with_capacity(hashes.len());
             for chunk in hashes.chunks(8) {
@@ -272,9 +259,7 @@ impl LinearHash {
             for (i, v) in flatvals1.iter().enumerate() {
                 st1[i] = *v;
             }
-            let result = [
-                st0[0], st0[1], st0[2], st0[3], st1[0], st1[1], st1[2], st1[3],
-            ];
+            let result = [st0[0], st0[1], st0[2], st0[3], st1[0], st1[1], st1[2], st1[3]];
             return Ok(result);
         }
         let mut count = 0;

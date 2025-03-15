@@ -26,10 +26,7 @@ impl Hash for F5G {
 
 impl F5G {
     pub fn new(a: Fr, b: Fr, c: Fr, d: Fr, e: Fr) -> Self {
-        F5G {
-            cube: [a, b, c, d, e],
-            dim: 5,
-        }
+        F5G { cube: [a, b, c, d, e], dim: 5 }
     }
 }
 
@@ -40,22 +37,10 @@ impl FieldExtension for F5G {
     const ELEMENT_BYTES: usize = ELEMENT_BYTES;
     const IS_CANONICAL: bool = false;
 
-    const ZERO: Self = Self {
-        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
-        dim: 1,
-    };
-    const ONE: Self = Self {
-        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
-        dim: 1,
-    };
-    const ZEROS: Self = F5G {
-        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
-        dim: 5,
-    };
-    const ONES: Self = F5G {
-        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
-        dim: 5,
-    };
+    const ZERO: Self = Self { cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO], dim: 1 };
+    const ONE: Self = Self { cube: [Fr::ONE, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO], dim: 1 };
+    const ZEROS: Self = F5G { cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO], dim: 5 };
+    const ONES: Self = F5G { cube: [Fr::ONE, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO], dim: 5 };
     #[inline(always)]
     fn dim(&self) -> usize {
         self.dim
@@ -64,10 +49,7 @@ impl FieldExtension for F5G {
     #[inline(always)]
     fn from_vec(values: Vec<Fr>) -> Self {
         assert_eq!(values.len(), 5);
-        Self {
-            cube: [values[0], values[1], values[2], values[3], values[4]],
-            dim: 5,
-        }
+        Self { cube: [values[0], values[1], values[2], values[3], values[4]], dim: 5 }
     }
 
     #[inline(always)]
@@ -92,13 +74,7 @@ impl FieldExtension for F5G {
         if self.dim == 1 {
             Self::from(elems[0] * b)
         } else {
-            Self::new(
-                elems[0] * b,
-                elems[1] * b,
-                elems[2] * b,
-                elems[3] * b,
-                elems[4] * b,
-            )
+            Self::new(elems[0] * b, elems[1] * b, elems[2] * b, elems[3] * b, elems[4] * b)
         }
     }
 
@@ -273,18 +249,12 @@ impl fields::Field for F5G {
                     + a[3] * a[0]
                     + Fr::from(3) * (a[4] * a[4]);
                 let d4 = a[0] * a[4] + a[1] * a[3] + a[2] * a[2] + a[3] * a[1] + a[4] * a[0];
-                *self = F5G {
-                    cube: [d0, d1, d2, d3, d4],
-                    dim: 5,
-                }
+                *self = F5G { cube: [d0, d1, d2, d3, d4], dim: 5 }
             }
             1 => {
                 let mut tmp = self.to_be();
                 tmp.square();
-                *self = F5G {
-                    cube: [tmp, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
-                    dim: 1,
-                }
+                *self = F5G { cube: [tmp, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO], dim: 1 }
             }
             _ => {
                 panic!("Invalid dim");
@@ -467,10 +437,7 @@ impl Mul for F5G {
                         + Fr::from(3) * (a[4] * b[4]);
                     let d4 = a[0] * b[4] + a[1] * b[3] + a[2] * b[2] + a[3] * b[1] + a[4] * b[0];
 
-                    Self {
-                        cube: [d0, d1, d2, d3, d4],
-                        dim: 5,
-                    }
+                    Self { cube: [d0, d1, d2, d3, d4], dim: 5 }
                 } else {
                     panic!("Invalid F5G Dim: {:?}", rhs.dim)
                 }
@@ -522,13 +489,7 @@ impl Neg for F5G {
     fn neg(self) -> Self::Output {
         match self.dim {
             3 => Self {
-                cube: [
-                    -self.cube[0],
-                    -self.cube[1],
-                    -self.cube[2],
-                    -self.cube[3],
-                    -self.cube[4],
-                ],
+                cube: [-self.cube[0], -self.cube[1], -self.cube[2], -self.cube[3], -self.cube[4]],
                 dim: 3,
             },
             1 => Self::from(-self.to_be()),
@@ -542,10 +503,7 @@ impl Neg for F5G {
 impl From<Fr> for F5G {
     #[inline]
     fn from(value: Fr) -> Self {
-        F5G {
-            cube: [value, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO],
-            dim: 1,
-        }
+        F5G { cube: [value, Fr::ZERO, Fr::ZERO, Fr::ZERO, Fr::ZERO], dim: 1 }
     }
 }
 
@@ -633,10 +591,7 @@ impl F5G {
         let c2 = self.cube[2] * Fr::from(15820824984080659046u64); // 3^(2*floor(p/5))
         let c3 = self.cube[3] * Fr::from(211587555138949697u64); // 3^(3*floor(p/5))
         let c4 = self.cube[4] * Fr::from(1373043270956696022u64); // 3^(4*floor(p/5））
-        Self {
-            cube: [c0, c1, c2, c3, c4],
-            dim: 5,
-        }
+        Self { cube: [c0, c1, c2, c3, c4], dim: 5 }
     }
 
     // Frobenius operator, twice (raise this value to the power p^2).
@@ -648,10 +603,7 @@ impl F5G {
         let c2 = self.cube[2] * Fr::from(1373043270956696022u64); // 9^(2*floor(p/5))
         let c3 = self.cube[3] * Fr::from(1041288259238279555u64); // 9^(3*floor(p/5))
         let c4 = self.cube[4] * Fr::from(211587555138949697u64); // 9^(4*floor(p/5））
-        Self {
-            cube: [c0, c1, c2, c3, c4],
-            dim: 5,
-        }
+        Self { cube: [c0, c1, c2, c3, c4], dim: 5 }
     }
 
     // Invert this element. If this value is zero, then zero is returned.
@@ -745,25 +697,14 @@ pub mod tests {
 
     #[test]
     fn test_f5g_add() {
-        let mut f1 = F5G::new(
-            Fr::ONE,
-            Fr::from(2u64),
-            Fr::from(3u64),
-            Fr::from(4u64),
-            Fr::from(5u64),
-        );
+        let mut f1 =
+            F5G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64), Fr::from(4u64), Fr::from(5u64));
         let f2 = f1.add(f1);
 
         f1.double();
         assert_eq!(f2, f1);
 
-        let f1 = F5G::new(
-            Fr::ONE,
-            Fr::from(2u64),
-            Fr::from(3u64),
-            Fr::from(0u64),
-            Fr::from(2u64),
-        );
+        let f1 = F5G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64), Fr::from(0u64), Fr::from(2u64));
         let f2 = F5G::new(
             Fr::from(4u64),
             Fr::from(5u64),
@@ -780,13 +721,7 @@ pub mod tests {
         );
         assert_eq!(f1 + f2, f3);
 
-        let f1 = F5G::new(
-            Fr::ONE,
-            Fr::from(2u64),
-            Fr::from(3u64),
-            Fr::from(3u64),
-            Fr::from(3u64),
-        );
+        let f1 = F5G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64), Fr::from(3u64), Fr::from(3u64));
         let f2 = F5G::new(
             Fr::from(4u64),
             Fr::from(5u64),
@@ -806,13 +741,7 @@ pub mod tests {
 
     #[test]
     fn test_f5g_sub() {
-        let f1 = F5G::new(
-            Fr::ONE,
-            Fr::from(2u64),
-            Fr::from(3u64),
-            Fr::from(4u64),
-            Fr::from(5u64),
-        );
+        let f1 = F5G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64), Fr::from(4u64), Fr::from(5u64));
         let f2 = F5G::new(
             Fr::from(4u64),
             Fr::from(5u64),
@@ -820,22 +749,10 @@ pub mod tests {
             Fr::from(4u64),
             Fr::from(5u64),
         );
-        let f3 = F5G::new(
-            -Fr::from(3u64),
-            -Fr::from(3u64),
-            Fr::from(4u64),
-            Fr::ZERO,
-            Fr::ZERO,
-        );
+        let f3 = F5G::new(-Fr::from(3u64), -Fr::from(3u64), Fr::from(4u64), Fr::ZERO, Fr::ZERO);
         assert_eq!(f1 - f2, f3);
 
-        let f1 = F5G::new(
-            Fr::ONE,
-            Fr::from(2u64),
-            Fr::from(3u64),
-            Fr::from(3u64),
-            Fr::from(3u64),
-        );
+        let f1 = F5G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64), Fr::from(3u64), Fr::from(3u64));
         let f2 = F5G::new(
             Fr::from(4u64),
             Fr::from(5u64),
@@ -883,24 +800,12 @@ pub mod tests {
 
     #[test]
     fn test_f5g_comparison() {
-        let e1 = F5G::new(
-            Fr::ONE,
-            Fr::from(2u64),
-            Fr::from(3u64),
-            Fr::from(4u64),
-            Fr::from(5u64),
-        );
+        let e1 = F5G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64), Fr::from(4u64), Fr::from(5u64));
 
         let elems = e1.as_elements();
         assert_eq!(elems[0], Fr::ONE);
 
-        let e11 = F5G::new(
-            Fr::ONE,
-            Fr::from(2u64),
-            Fr::from(3u64),
-            Fr::from(4u64),
-            Fr::from(5u64),
-        );
+        let e11 = F5G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64), Fr::from(4u64), Fr::from(5u64));
 
         let e12 = F5G::new(
             Fr::from(2u64),

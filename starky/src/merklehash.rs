@@ -96,9 +96,7 @@ impl MerkleTreeGL {
             );
 
         let out = &mut self.nodes[p_out..(p_out + n_ops)];
-        out.iter_mut()
-            .zip(nodes)
-            .for_each(|(nout, nin)| *nout = nin);
+        out.iter_mut().zip(nodes).for_each(|(nout, nin)| *nout = nin);
         Ok(())
     }
 
@@ -271,11 +269,9 @@ impl MerkleTree for MerkleTreeGL {
 
     fn to_extend(&self, p_be: &mut Vec<F3G>) {
         assert_eq!(p_be.len(), self.elements.len());
-        p_be.par_iter_mut()
-            .zip(&self.elements)
-            .for_each(|(be_out, f3g_in)| {
-                *be_out = F3G::from(*f3g_in);
-            });
+        p_be.par_iter_mut().zip(&self.elements).for_each(|(be_out, f3g_in)| {
+            *be_out = F3G::from(*f3g_in);
+        });
     }
 
     // For any MTNode in GL MerkleTree, it's a format of [val, 0, 0, 0]
@@ -339,11 +335,7 @@ impl MerkleTree for MerkleTreeGL {
         while n64 > 1 {
             let now = Instant::now();
             self.merklize_level(p_in, next_n64, p_out)?;
-            log::trace!(
-                "merklize_level {} time cost: {}",
-                next_n64,
-                now.elapsed().as_secs_f64()
-            );
+            log::trace!("merklize_level {} time cost: {}", next_n64, now.elapsed().as_secs_f64());
             n64 = next_n64;
             next_n64 = (n64 - 1) / 2 + 1;
             p_in = p_out;
@@ -420,11 +412,7 @@ impl MerkleTree for MerkleTreeGL {
         while n64 > 1 {
             let now = Instant::now();
             self.merklize_level(p_in, next_n64, p_out)?;
-            log::trace!(
-                "merklize_level {} time cost: {}",
-                next_n64,
-                now.elapsed().as_secs_f64()
-            );
+            log::trace!("merklize_level {} time cost: {}", next_n64, now.elapsed().as_secs_f64());
             n64 = next_n64;
             next_n64 = (n64 - 1) / 2 + 1;
             p_in = p_out;
@@ -444,9 +432,7 @@ impl MerkleTree for MerkleTreeGL {
             bail!("MerkleTreeError: access invalid node");
         }
 
-        let v = (0..self.width)
-            .map(|i| self.get_element(idx, i))
-            .collect::<Vec<_>>();
+        let v = (0..self.width).map(|i| self.get_element(idx, i)).collect::<Vec<_>>();
         let mp = self.merkle_gen_merkle_proof(idx, 0, self.height);
         Ok((v, mp))
     }
@@ -526,9 +512,7 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert!(tree
-            .verify_group_proof(&root, &mp, idx, &group_elements)
-            .unwrap());
+        assert!(tree.verify_group_proof(&root, &mp, idx, &group_elements).unwrap());
     }
 
     #[test]
@@ -557,9 +541,7 @@ mod tests {
         ];
         assert_eq!(expected, re);
 
-        assert!(tree
-            .verify_group_proof(&root, &mp, idx, &group_elements)
-            .unwrap());
+        assert!(tree.verify_group_proof(&root, &mp, idx, &group_elements).unwrap());
     }
 
     #[test]
@@ -578,9 +560,7 @@ mod tests {
         tree.merkelize(pols, n_pols, n).unwrap();
         let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
-        assert!(tree
-            .verify_group_proof(&root, &mp, idx, &group_elements)
-            .unwrap());
+        assert!(tree.verify_group_proof(&root, &mp, idx, &group_elements).unwrap());
     }
 
     #[test]

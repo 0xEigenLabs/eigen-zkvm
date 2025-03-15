@@ -58,11 +58,8 @@ pub fn get_simplification_style(
     o_2: bool,
     o_2_argument: &str,
 ) -> Result<SimplificationStyle> {
-    let no_rounds = if o_2_argument == "full" {
-        Ok(usize::MAX)
-    } else {
-        o_2_argument.parse::<usize>()
-    };
+    let no_rounds =
+        if o_2_argument == "full" { Ok(usize::MAX) } else { o_2_argument.parse::<usize>() };
     match (o_0, o_1, o_2, no_rounds) {
         (true, _, _, _) => Ok(SimplificationStyle::O0),
         (_, true, _, _) => Ok(SimplificationStyle::O1),
@@ -70,9 +67,7 @@ pub fn get_simplification_style(
         (false, false, false, _) => Ok(SimplificationStyle::O1),
         _ => {
             log::trace!("{}", Colour::Red.paint("invalid number of rounds"));
-            bail!(DslError::CircomCompileError(
-                "invalid number of rounds".to_string(),
-            ))
+            bail!(DslError::CircomCompileError("invalid number of rounds".to_string(),))
         }
     }
 }
@@ -122,11 +117,7 @@ impl Input {
             json_constraint_flag: false,
             json_substitution_flag: false,
             print_ir_flag: false,
-            no_rounds: if let SimplificationStyle::O2(r) = o_style {
-                r
-            } else {
-                0
-            },
+            no_rounds: if let SimplificationStyle::O2(r) = o_style { r } else { 0 },
             fast_flag: o_style == SimplificationStyle::O0,
             reduced_simplification_flag: o_style == SimplificationStyle::O1,
             parallel_simplification_flag: false, // TODO

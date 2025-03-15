@@ -18,7 +18,6 @@ target
 proof.json
 public.json
 vk.bin
-proof.bin
 verifier.sol
 plonk4verifier.sol
 plonkit.sol

@@ -17,9 +17,7 @@ fn run_merklehash(pols: Vec<FGL>) {
     log::trace!("time cost: {}", now.elapsed().as_secs());
     let (group_elements, mp) = tree.get_group_proof(idx).unwrap();
     let root = tree.root();
-    assert!(tree
-        .verify_group_proof(&root, &mp, idx, &group_elements)
-        .unwrap());
+    assert!(tree.verify_group_proof(&root, &mp, idx, &group_elements).unwrap());
 }
 
 fn merklehash_group_bench(c: &mut Criterion) {

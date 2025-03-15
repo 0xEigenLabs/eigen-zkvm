@@ -63,9 +63,7 @@ pub fn load_constants() -> Constants {
         p,
         s,
         n_rounds_f: 8,
-        n_rounds_p: vec![
-            56, 57, 56, 60, 60, 63, 64, 63, 60, 66, 60, 65, 70, 60, 64, 68,
-        ],
+        n_rounds_p: vec![56, 57, 56, 60, 60, 63, 64, 63, 60, 66, 60, 65, 70, 60, 64, 68],
     }
 }
 
@@ -122,10 +120,7 @@ impl Poseidon {
 
         let mut state = vec![*init_state; t];
         state[1..].clone_from_slice(inp);
-        state
-            .iter_mut()
-            .enumerate()
-            .for_each(|(i, a)| a.add_assign(&C[i]));
+        state.iter_mut().enumerate().for_each(|(i, a)| a.add_assign(&C[i]));
 
         for r in 0..(n_rounds_f / 2 - 1) {
             state.iter_mut().for_each(Self::pow5);
@@ -146,12 +141,9 @@ impl Poseidon {
                 }
                 *out = acc;
             });
-            state
-                .iter_mut()
-                .zip(tmp_state.iter())
-                .for_each(|(out, inp)| {
-                    *out = *inp;
-                });
+            state.iter_mut().zip(tmp_state.iter()).for_each(|(out, inp)| {
+                *out = *inp;
+            });
         }
 
         state.iter_mut().for_each(Self::pow5);
@@ -169,12 +161,9 @@ impl Poseidon {
             }
             *out = acc;
         });
-        state
-            .iter_mut()
-            .zip(tmp_state.iter())
-            .for_each(|(out, inp)| {
-                *out = *inp;
-            });
+        state.iter_mut().zip(tmp_state.iter()).for_each(|(out, inp)| {
+            *out = *inp;
+        });
 
         for r in 0..n_rounds_p {
             Self::pow5(&mut state[0]);
@@ -213,12 +202,9 @@ impl Poseidon {
                 }
                 *out = acc;
             });
-            state
-                .iter_mut()
-                .zip(tmp_state.iter())
-                .for_each(|(out, inp)| {
-                    *out = *inp;
-                });
+            state.iter_mut().zip(tmp_state.iter()).for_each(|(out, inp)| {
+                *out = *inp;
+            });
         }
 
         state.iter_mut().for_each(Self::pow5);
@@ -303,10 +289,7 @@ mod tests {
         let poseidon = Poseidon::new();
 
         let inputs: Vec<_> = (0..16).collect::<Vec<u64>>();
-        let inp: Vec<Fr> = inputs
-            .iter()
-            .map(|e| Fr::from_str(&e.to_string()).unwrap())
-            .collect();
+        let inp: Vec<Fr> = inputs.iter().map(|e| Fr::from_str(&e.to_string()).unwrap()).collect();
 
         let is = Fr::zero();
         let h = poseidon.hash(&inp, &is).unwrap();

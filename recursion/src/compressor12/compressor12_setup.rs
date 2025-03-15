@@ -25,9 +25,7 @@ pub fn setup(
     // 0. readR1cs
     let r1cs_reader = File::open(r1cs_file)?;
     let (r1cs, _) = load_r1cs_from_bin::<_, GL>(r1cs_reader);
-    let opts = Options {
-        force_bits: force_n_bits,
-    };
+    let opts = Options { force_bits: force_n_bits };
 
     // 1. plonk setup: generate plonk circuit, the pil file.
     let res = PlonkSetup::new(&r1cs, &opts);

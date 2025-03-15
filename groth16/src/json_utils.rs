@@ -47,11 +47,7 @@ impl fmt::Display for G1 {
 
 impl fmt::Display for G2 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "[{}, {}], [{}, {}]",
-            self.x[0], self.x[1], self.y[0], self.y[1]
-        )
+        write!(f, "[{}, {}], [{}, {}]", self.x[0], self.x[1], self.y[0], self.y[1])
     }
 }
 
@@ -97,17 +93,11 @@ pub trait Parser: franklin_crypto::bellman::pairing::Engine {
     fn parse_g2(e: &Self::G2Affine, to_hex: bool) -> (String, String, String, String);
     fn parse_g1_json(e: &Self::G1Affine, to_hex: bool) -> G1 {
         let parsed = Self::parse_g1(e, to_hex);
-        G1 {
-            x: parsed.0,
-            y: parsed.1,
-        }
+        G1 { x: parsed.0, y: parsed.1 }
     }
     fn parse_g2_json(e: &Self::G2Affine, to_hex: bool) -> G2 {
         let parsed = Self::parse_g2(e, to_hex);
-        G2 {
-            x: (parsed.0, parsed.1).into(),
-            y: (parsed.2, parsed.3).into(),
-        }
+        G2 { x: (parsed.0, parsed.1).into(), y: (parsed.2, parsed.3).into() }
     }
     fn to_g1(x: &str, y: &str) -> Self::G1Affine;
     fn to_g2(x0: &str, x1: &str, y0: &str, y1: &str) -> Self::G2Affine;
@@ -119,17 +109,11 @@ pub trait Parser: MultiMillerLoop {
     fn parse_g2(e: &Self::G2Affine, to_hex: bool) -> (String, String, String, String);
     fn parse_g1_json(e: &Self::G1Affine, to_hex: bool) -> G1 {
         let parsed = Self::parse_g1(e, to_hex);
-        G1 {
-            x: parsed.0,
-            y: parsed.1,
-        }
+        G1 { x: parsed.0, y: parsed.1 }
     }
     fn parse_g2_json(e: &Self::G2Affine, to_hex: bool) -> G2 {
         let parsed = Self::parse_g2(e, to_hex);
-        G2 {
-            x: (parsed.0, parsed.1).into(),
-            y: (parsed.2, parsed.3).into(),
-        }
+        G2 { x: (parsed.0, parsed.1).into(), y: (parsed.2, parsed.3).into() }
     }
     fn to_g1(x: &str, y: &str) -> Self::G1Affine;
     fn to_g2(x0: &str, x1: &str, y0: &str, y1: &str) -> Self::G2Affine;
@@ -148,9 +132,7 @@ pub fn render_scalar_to_str<F: PrimeField>(el: &F, to_hex: bool) -> String {
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
 pub fn render_str_to_scalar<F: PrimeField>(value: &str) -> F {
     let value = match value.starts_with("0x") {
-        true => BigUint::from_str_radix(&value[2..], 16)
-            .unwrap()
-            .to_str_radix(10),
+        true => BigUint::from_str_radix(&value[2..], 16).unwrap().to_str_radix(10),
         _ => value.to_string(),
     };
     F::from_str(&value).unwrap()
@@ -159,19 +141,13 @@ pub fn render_str_to_scalar<F: PrimeField>(value: &str) -> F {
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
 pub fn to_public_input<T: PrimeField>(s: &str) -> Vec<T> {
     let input: Vec<String> = serde_json::from_str(s).unwrap();
-    input
-        .iter()
-        .map(|hex_str| render_str_to_scalar::<T>(hex_str))
-        .collect()
+    input.iter().map(|hex_str| render_str_to_scalar::<T>(hex_str)).collect()
 }
 #[cfg(not(any(feature = "cuda", feature = "opencl")))]
 impl Parser for Bn256 {
     fn parse_g1(e: &Self::G1Affine, to_hex: bool) -> (String, String) {
         let (x, y) = e.into_xy_unchecked();
-        (
-            render_scalar_to_str(&x, to_hex),
-            render_scalar_to_str(&y, to_hex),
-        )
+        (render_scalar_to_str(&x, to_hex), render_scalar_to_str(&y, to_hex))
     }
 
     fn parse_g2(e: &Self::G2Affine, to_hex: bool) -> (String, String, String, String) {
@@ -189,14 +165,8 @@ impl Parser for Bn256 {
     }
 
     fn to_g2(x0: &str, x1: &str, y0: &str, y1: &str) -> Self::G2Affine {
-        let x = Fq2 {
-            c0: render_str_to_scalar(x0),
-            c1: render_str_to_scalar(x1),
-        };
-        let y = Fq2 {
-            c0: render_str_to_scalar(y0),
-            c1: render_str_to_scalar(y1),
-        };
+        let x = Fq2 { c0: render_str_to_scalar(x0), c1: render_str_to_scalar(x1) };
+        let y = Fq2 { c0: render_str_to_scalar(y0), c1: render_str_to_scalar(y1) };
         G2Affine::from_xy_unchecked(x, y)
     }
 }
@@ -205,10 +175,7 @@ impl Parser for Bn256 {
 impl Parser for Bls12 {
     fn parse_g1(e: &Self::G1Affine, to_hex: bool) -> (String, String) {
         let (x, y) = e.into_xy_unchecked();
-        (
-            render_scalar_to_str(&x, to_hex),
-            render_scalar_to_str(&y, to_hex),
-        )
+        (render_scalar_to_str(&x, to_hex), render_scalar_to_str(&y, to_hex))
     }
 
     fn parse_g2(e: &Self::G2Affine, to_hex: bool) -> (String, String, String, String) {
@@ -226,14 +193,8 @@ impl Parser for Bls12 {
     }
 
     fn to_g2(x0: &str, x1: &str, y0: &str, y1: &str) -> Self::G2Affine {
-        let x = Fq2_bls12381 {
-            c0: render_str_to_scalar(x0),
-            c1: render_str_to_scalar(x1),
-        };
-        let y = Fq2_bls12381 {
-            c0: render_str_to_scalar(y0),
-            c1: render_str_to_scalar(y1),
-        };
+        let x = Fq2_bls12381 { c0: render_str_to_scalar(x0), c1: render_str_to_scalar(x1) };
+        let y = Fq2_bls12381 { c0: render_str_to_scalar(y0), c1: render_str_to_scalar(y1) };
         G2Affine_bls12381::from_xy_unchecked(x, y)
     }
 }
@@ -263,11 +224,7 @@ pub fn render_str_to_fp(value: &str) -> Fp {
         let big_uint = BigUint::from_str_radix(value, 10).unwrap();
         hex_str = big_uint.to_str_radix(16);
     }
-    let final_hex_str = if hex_str.len() % 2 != 0 {
-        format!("0{}", hex_str)
-    } else {
-        hex_str
-    };
+    let final_hex_str = if hex_str.len() % 2 != 0 { format!("0{}", hex_str) } else { hex_str };
     let bytes = hex::decode(final_hex_str).expect("Invalid hex string");
     let start = 48 - bytes.len();
     be_bytes[start..].copy_from_slice(&bytes);
@@ -284,11 +241,7 @@ pub fn render_str_to_scalar(value: &str) -> Scalar {
         let big_uint = BigUint::from_str_radix(value, 10).unwrap();
         hex_str = big_uint.to_str_radix(16);
     }
-    let final_hex_str = if hex_str.len() % 2 != 0 {
-        format!("0{}", hex_str)
-    } else {
-        hex_str
-    };
+    let final_hex_str = if hex_str.len() % 2 != 0 { format!("0{}", hex_str) } else { hex_str };
     let bytes = hex::decode(final_hex_str).expect("Invalid hex string");
     let start = 32 - bytes.len();
     be_bytes[start..].copy_from_slice(&bytes);
@@ -298,10 +251,7 @@ pub fn render_str_to_scalar(value: &str) -> Scalar {
 #[cfg(any(feature = "cuda", feature = "opencl"))]
 pub fn to_public_input(s: &str) -> Vec<Scalar> {
     let input: Vec<String> = serde_json::from_str(s).unwrap();
-    input
-        .iter()
-        .map(|hex_str| render_str_to_scalar(hex_str))
-        .collect()
+    input.iter().map(|hex_str| render_str_to_scalar(hex_str)).collect()
 }
 
 #[cfg(any(feature = "cuda", feature = "opencl"))]
@@ -346,11 +296,7 @@ pub fn serialize_vk<P: Parser>(
         gamma_g2: P::parse_g2_json(&vk.gamma_g2, to_hex),
         delta_g1: P::parse_g1_json(&vk.delta_g1, to_hex),
         delta_g2: P::parse_g2_json(&vk.delta_g2, to_hex),
-        ic: vk
-            .ic
-            .iter()
-            .map(|e| P::parse_g1_json(e, to_hex))
-            .collect::<Vec<_>>(),
+        ic: vk.ic.iter().map(|e| P::parse_g1_json(e, to_hex)).collect::<Vec<_>>(),
     };
 
     Ok(to_string(&verifying_key_file)?)
@@ -393,11 +339,7 @@ pub fn to_proof<P: Parser>(s: &str) -> Proof<P> {
     let convert_g1 = |point: &G1| P::to_g1(&point.x, &point.y);
     let convert_g2 = |point: &G2| P::to_g2(&point.x[0], &point.x[1], &point.y[0], &point.y[1]);
 
-    Proof {
-        a: convert_g1(&proof.a),
-        b: convert_g2(&proof.b),
-        c: convert_g1(&proof.c),
-    }
+    Proof { a: convert_g1(&proof.a), b: convert_g2(&proof.b), c: convert_g1(&proof.c) }
 }
 
 #[cfg(test)]

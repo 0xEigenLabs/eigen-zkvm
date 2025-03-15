@@ -208,11 +208,7 @@ pub struct Groth16ProveOpt {
     pk_file: String,
     #[arg(short, required = true)]
     input_file: String,
-    #[arg(
-        long = "public-input",
-        required = true,
-        default_value = "public_input.json"
-    )]
+    #[arg(long = "public-input", required = true, default_value = "public_input.json")]
     public_input_file: String,
     #[arg(long = "proof", required = true, default_value = "proof.json")]
     proof_file: String,
@@ -227,11 +223,7 @@ pub struct Groth16VerifyOpt {
     curve_type: String,
     #[arg(short, required = true, default_value = "verification_key.json")]
     vk_file: String,
-    #[arg(
-        long = "public-input",
-        required = true,
-        default_value = "public_input.json"
-    )]
+    #[arg(long = "public-input", required = true, default_value = "public_input.json")]
     public_input_file: String,
     #[arg(long = "proof", required = true, default_value = "proof.json")]
     proof_file: String,

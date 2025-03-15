@@ -29,10 +29,7 @@ impl Hash for F3G {
 
 impl F3G {
     pub fn new(a: Fr, b: Fr, c: Fr) -> Self {
-        F3G {
-            cube: [a, b, c],
-            dim: 3,
-        }
+        F3G { cube: [a, b, c], dim: 3 }
     }
 }
 
@@ -52,23 +49,11 @@ impl FieldExtension for F3G {
     const ELEMENT_BYTES: usize = ELEMENT_BYTES;
     const IS_CANONICAL: bool = false;
 
-    const ZERO: Self = Self {
-        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
-        dim: 1,
-    };
-    const ONE: Self = Self {
-        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
-        dim: 1,
-    };
+    const ZERO: Self = Self { cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO], dim: 1 };
+    const ONE: Self = Self { cube: [Fr::ONE, Fr::ZERO, Fr::ZERO], dim: 1 };
 
-    const ZEROS: Self = F3G {
-        cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO],
-        dim: 3,
-    };
-    const ONES: Self = F3G {
-        cube: [Fr::ONE, Fr::ZERO, Fr::ZERO],
-        dim: 3,
-    };
+    const ZEROS: Self = F3G { cube: [Fr::ZERO, Fr::ZERO, Fr::ZERO], dim: 3 };
+    const ONES: Self = F3G { cube: [Fr::ONE, Fr::ZERO, Fr::ZERO], dim: 3 };
     #[inline(always)]
     fn dim(&self) -> usize {
         self.dim
@@ -77,10 +62,7 @@ impl FieldExtension for F3G {
     #[inline(always)]
     fn from_vec(values: Vec<Fr>) -> Self {
         assert_eq!(values.len(), 3);
-        Self {
-            cube: [values[0], values[1], values[2]],
-            dim: 3,
-        }
+        Self { cube: [values[0], values[1], values[2]], dim: 3 }
     }
 
     #[inline(always)]
@@ -248,10 +230,7 @@ impl F3G {
         let i2 = (ba - cc) * tinv;
         let i3 = (-bb + ac + cc) * tinv;
 
-        Self {
-            cube: [i1, i2, i3],
-            dim: 3,
-        }
+        Self { cube: [i1, i2, i3], dim: 3 }
     }
 }
 
@@ -292,18 +271,12 @@ impl fields::Field for F3G {
                 let ee = a[1] * a[1];
                 let ff = a[2] * a[2];
                 let gg = dd - ee;
-                *self = F3G {
-                    cube: [cc + gg - ff, aa + cc - ee - ee - dd, bb - gg],
-                    dim: 3,
-                }
+                *self = F3G { cube: [cc + gg - ff, aa + cc - ee - ee - dd, bb - gg], dim: 3 }
             }
             1 => {
                 let mut tmp = self.to_be();
                 tmp.square();
-                *self = F3G {
-                    cube: [tmp, Fr::ZERO, Fr::ZERO],
-                    dim: 1,
-                }
+                *self = F3G { cube: [tmp, Fr::ZERO, Fr::ZERO], dim: 1 }
             }
             _ => {
                 panic!("Invalid dim");
@@ -454,10 +427,7 @@ impl Mul for F3G {
                         let ff = a[2] * b[2];
                         let gg = dd - ee;
 
-                        Self {
-                            cube: [(cc + gg - ff), (aa + cc - ee - ee - dd), (bb - gg)],
-                            dim: 3,
-                        }
+                        Self { cube: [(cc + gg - ff), (aa + cc - ee - ee - dd), (bb - gg)], dim: 3 }
                     }
                 }
             }
@@ -506,10 +476,7 @@ impl Neg for F3G {
     #[inline]
     fn neg(self) -> Self::Output {
         match self.dim {
-            3 => Self {
-                cube: [-self.cube[0], -self.cube[1], -self.cube[2]],
-                dim: 3,
-            },
+            3 => Self { cube: [-self.cube[0], -self.cube[1], -self.cube[2]], dim: 3 },
             1 => Self::from(-self.to_be()),
             _ => {
                 panic!("Invalid dim");
@@ -521,10 +488,7 @@ impl Neg for F3G {
 impl From<Fr> for F3G {
     #[inline]
     fn from(value: Fr) -> Self {
-        F3G {
-            cube: [value, Fr::ZERO, Fr::ZERO],
-            dim: 1,
-        }
+        F3G { cube: [value, Fr::ZERO, Fr::ZERO], dim: 1 }
     }
 }
 
@@ -615,13 +579,7 @@ impl Display for F3G {
         if self.dim == 1 {
             write!(f, "{}", elems[0].as_int())
         } else {
-            write!(
-                f,
-                "[{},{},{}]",
-                elems[0].as_int(),
-                elems[1].as_int(),
-                elems[2].as_int()
-            )
+            write!(f, "[{},{},{}]", elems[0].as_int(), elems[1].as_int(), elems[2].as_int())
         }
     }
 }
@@ -644,11 +602,7 @@ pub mod tests {
         assert_eq!(f2, f1);
 
         let f1 = F3G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64));
-        let f2 = F3G::new(
-            Fr::from(4u64),
-            Fr::from(5u64),
-            Fr::from(0xFFFFFFFF00000000u64),
-        );
+        let f2 = F3G::new(Fr::from(4u64), Fr::from(5u64), Fr::from(0xFFFFFFFF00000000u64));
         let f3 = F3G::new(Fr::from(5u64), Fr::from(7u64), Fr::from(2u64));
         assert_eq!(f1 + f2, f3);
     }
@@ -656,11 +610,7 @@ pub mod tests {
     #[test]
     fn test_f3g_sub() {
         let f1 = F3G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64));
-        let f2 = F3G::new(
-            Fr::from(4u64),
-            Fr::from(5u64),
-            Fr::from(0xFFFFFFFF00000000u64),
-        );
+        let f2 = F3G::new(Fr::from(4u64), Fr::from(5u64), Fr::from(0xFFFFFFFF00000000u64));
         let f3 = F3G::new(-Fr::from(3u64), -Fr::from(3u64), Fr::from(4u64));
         assert_eq!(f1 - f2, f3);
     }
@@ -668,11 +618,7 @@ pub mod tests {
     #[test]
     fn test_f3g_mul() {
         let f1 = F3G::new(Fr::ONE, Fr::from(2u64), Fr::from(3u64));
-        let f2 = F3G::new(
-            Fr::from(4u64),
-            Fr::from(5u64),
-            Fr::from(0xFFFFFFFF00000000u64),
-        );
+        let f2 = F3G::new(Fr::from(4u64), Fr::from(5u64), Fr::from(0xFFFFFFFF00000000u64));
         let f3 = F3G::new(Fr::from(17u64), Fr::from(23u64), Fr::from(18u64));
         assert_eq!(f1 * f2, f3);
     }

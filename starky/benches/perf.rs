@@ -10,10 +10,7 @@ pub struct FlamegraphProfiler<'a> {
 impl FlamegraphProfiler<'_> {
     #[allow(dead_code)]
     pub fn new(frequency: c_int) -> Self {
-        FlamegraphProfiler {
-            frequency,
-            active_profiler: None,
-        }
+        FlamegraphProfiler { frequency, active_profiler: None }
     }
 }
 

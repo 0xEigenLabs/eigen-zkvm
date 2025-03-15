@@ -271,11 +271,8 @@ impl<M: MerkleTree> StarkProof<M> {
 
         let mut transcript = T::new();
         for i in 0..starkinfo.publics.len() {
-            let b = ctx.publics[i]
-                .as_elements()
-                .iter()
-                .map(|e| vec![*e])
-                .collect::<Vec<Vec<FGL>>>();
+            let b =
+                ctx.publics[i].as_elements().iter().map(|e| vec![*e]).collect::<Vec<Vec<FGL>>>();
             transcript.put(&b[..])?;
         }
 
@@ -395,12 +392,7 @@ impl<M: MerkleTree> StarkProof<M> {
 
         // powdr may produce constant polynomial only
         if starkinfo.q_deg > 0 {
-            fft(
-                &qq2,
-                starkinfo.q_dim * starkinfo.q_deg,
-                ctx.nbits_ext,
-                &mut ctx.cm4_2ns,
-            );
+            fft(&qq2, starkinfo.q_dim * starkinfo.q_deg, ctx.nbits_ext, &mut ctx.cm4_2ns);
         }
 
         log::trace!("Merkelizing 4....");
@@ -475,11 +467,7 @@ impl<M: MerkleTree> StarkProof<M> {
 
         log::trace!("Add evals to transcript");
         for i in 0..ctx.evals.len() {
-            let b = ctx.evals[i]
-                .as_elements()
-                .iter()
-                .map(|e| vec![*e])
-                .collect::<Vec<Vec<FGL>>>();
+            let b = ctx.evals[i].as_elements().iter().map(|e| vec![*e]).collect::<Vec<Vec<FGL>>>();
             transcript.put(&b)?;
         }
 
@@ -508,14 +496,12 @@ impl<M: MerkleTree> StarkProof<M> {
             *xb = shift_ext * w_ext.exp(k);
         });
 
-        tmp_den
-            .par_iter_mut()
-            .zip_eq(tmp_denw.par_iter_mut())
-            .enumerate()
-            .for_each(|(k, (td, tdw))| {
+        tmp_den.par_iter_mut().zip_eq(tmp_denw.par_iter_mut()).enumerate().for_each(
+            |(k, (td, tdw))| {
                 *td = x_buff[k] - xi;
                 *tdw = x_buff[k] - wxi;
-            });
+            },
+        );
 
         tmp_den = batch_inverse(&tmp_den);
         tmp_denw = batch_inverse(&tmp_denw);
@@ -657,13 +643,10 @@ fn calculate_H1H2<F: FieldExtension>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
 
     let mut h1 = vec![F::ZERO; f.len()];
     let mut h2 = vec![F::ZERO; f.len()];
-    h1.par_iter_mut()
-        .zip(h2.par_iter_mut())
-        .enumerate()
-        .for_each(|(i, (h1_, h2_))| {
-            *h1_ = s[2 * i].0;
-            *h2_ = s[2 * i + 1].0;
-        });
+    h1.par_iter_mut().zip(h2.par_iter_mut()).enumerate().for_each(|(i, (h1_, h2_))| {
+        *h1_ = s[2 * i].0;
+        *h2_ = s[2 * i + 1].0;
+    });
     (h1, h2)
 }
 
@@ -740,11 +723,9 @@ pub fn extend_and_merkelize<M: MerkleTree>(
     let p = ctx.get_mut(section_name);
     interpolate(p, n_pols, nBits, result, nBitsExt);
     let mut p_be = vec![FGL::ZERO; result.len()];
-    p_be.par_iter_mut()
-        .zip(result)
-        .for_each(|(be_out, f3g_in)| {
-            *be_out = f3g_in.to_be();
-        });
+    p_be.par_iter_mut().zip(result).for_each(|(be_out, f3g_in)| {
+        *be_out = f3g_in.to_be();
+    });
     let mut tree = M::new();
     tree.merkelize(p_be, n_pols, 1 << nBitsExt)?;
     Ok(tree)
@@ -821,157 +802,55 @@ pub fn calculate_exps_parallel<F: FieldExtension>(
         output_sections: Vec<ExecItem>,
     }
 
-    let mut exec_info = ExecInfo {
-        input_sections: vec![],
-        output_sections: vec![],
-    };
+    let mut exec_info = ExecInfo { input_sections: vec![], output_sections: vec![] };
 
     let dom = match step {
         "step2prev" => {
-            exec_info.input_sections.push(ExecItem {
-                name: "cm1_n".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "const_n".to_string(),
-                width: 0,
-            });
-            exec_info.output_sections.push(ExecItem {
-                name: "cm2_n".to_string(),
-                width: 0,
-            });
-            exec_info.output_sections.push(ExecItem {
-                name: "cm3_n".to_string(),
-                width: 0,
-            });
-            exec_info.output_sections.push(ExecItem {
-                name: "tmpexp_n".to_string(),
-                width: 0,
-            });
+            exec_info.input_sections.push(ExecItem { name: "cm1_n".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "const_n".to_string(), width: 0 });
+            exec_info.output_sections.push(ExecItem { name: "cm2_n".to_string(), width: 0 });
+            exec_info.output_sections.push(ExecItem { name: "cm3_n".to_string(), width: 0 });
+            exec_info.output_sections.push(ExecItem { name: "tmpexp_n".to_string(), width: 0 });
             "n"
         }
         "step3prev" => {
-            exec_info.input_sections.push(ExecItem {
-                name: "cm1_n".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "cm2_n".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "cm3_n".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "const_n".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "x_n".to_string(),
-                width: 0,
-            });
-            exec_info.output_sections.push(ExecItem {
-                name: "cm3_n".to_string(),
-                width: 0,
-            });
-            exec_info.output_sections.push(ExecItem {
-                name: "tmpexp_n".to_string(),
-                width: 0,
-            });
+            exec_info.input_sections.push(ExecItem { name: "cm1_n".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "cm2_n".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "cm3_n".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "const_n".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "x_n".to_string(), width: 0 });
+            exec_info.output_sections.push(ExecItem { name: "cm3_n".to_string(), width: 0 });
+            exec_info.output_sections.push(ExecItem { name: "tmpexp_n".to_string(), width: 0 });
             "n"
         }
         "step3" => {
-            exec_info.input_sections.push(ExecItem {
-                name: "cm1_n".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "cm2_n".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "cm3_n".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "const_n".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "x_n".to_string(),
-                width: 0,
-            });
-            exec_info.output_sections.push(ExecItem {
-                name: "cm3_n".to_string(),
-                width: 0,
-            });
-            exec_info.output_sections.push(ExecItem {
-                name: "tmpexp_n".to_string(),
-                width: 0,
-            });
+            exec_info.input_sections.push(ExecItem { name: "cm1_n".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "cm2_n".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "cm3_n".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "const_n".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "x_n".to_string(), width: 0 });
+            exec_info.output_sections.push(ExecItem { name: "cm3_n".to_string(), width: 0 });
+            exec_info.output_sections.push(ExecItem { name: "tmpexp_n".to_string(), width: 0 });
             "n"
         }
         "step4" => {
-            exec_info.input_sections.push(ExecItem {
-                name: "cm1_2ns".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "cm2_2ns".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "cm3_2ns".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "const_2ns".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "x_2ns".to_string(),
-                width: 0,
-            });
-            exec_info.output_sections.push(ExecItem {
-                name: "q_2ns".to_string(),
-                width: 0,
-            });
+            exec_info.input_sections.push(ExecItem { name: "cm1_2ns".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "cm2_2ns".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "cm3_2ns".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "const_2ns".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "x_2ns".to_string(), width: 0 });
+            exec_info.output_sections.push(ExecItem { name: "q_2ns".to_string(), width: 0 });
             "2ns"
         }
         "step5" => {
-            exec_info.input_sections.push(ExecItem {
-                name: "cm1_2ns".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "cm2_2ns".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "cm3_2ns".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "cm4_2ns".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "const_2ns".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "xDivXSubXi".to_string(),
-                width: 0,
-            });
-            exec_info.input_sections.push(ExecItem {
-                name: "xDivXSubWXi".to_string(),
-                width: 0,
-            });
-            exec_info.output_sections.push(ExecItem {
-                name: "f_2ns".to_string(),
-                width: 0,
-            });
+            exec_info.input_sections.push(ExecItem { name: "cm1_2ns".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "cm2_2ns".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "cm3_2ns".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "cm4_2ns".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "const_2ns".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "xDivXSubXi".to_string(), width: 0 });
+            exec_info.input_sections.push(ExecItem { name: "xDivXSubWXi".to_string(), width: 0 });
+            exec_info.output_sections.push(ExecItem { name: "f_2ns".to_string(), width: 0 });
             "2ns"
         }
         _ => panic!("Invalid step {}", step),
@@ -1058,21 +937,18 @@ pub fn calculate_exps_parallel<F: FieldExtension>(
         ctx_chunks.push(tmp_ctx);
     }
 
-    ctx_chunks
-        .par_iter_mut()
-        .enumerate()
-        .for_each(|(i, tmp_ctx)| {
-            let cur_n = std::cmp::min(n_per_thread, n - i * n_per_thread);
-            log::trace!("execute trace LDE {}/{}", i * n_per_thread, n);
-            tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i * n_per_thread);
-            for so in &exec_info.output_sections {
-                let tmp = tmp_ctx.get_mut(so.name.as_str());
-                if tmp.is_empty() {
-                    *tmp = vec![F::ZERO; so.width * (cur_n + next)];
-                }
+    ctx_chunks.par_iter_mut().enumerate().for_each(|(i, tmp_ctx)| {
+        let cur_n = std::cmp::min(n_per_thread, n - i * n_per_thread);
+        log::trace!("execute trace LDE {}/{}", i * n_per_thread, n);
+        tmp_ctx.Zi = build_Zh_Inv(ctx.nbits, extend_bits, i * n_per_thread);
+        for so in &exec_info.output_sections {
+            let tmp = tmp_ctx.get_mut(so.name.as_str());
+            if tmp.is_empty() {
+                *tmp = vec![F::ZERO; so.width * (cur_n + next)];
             }
-            calculate_exps(tmp_ctx, starkinfo, seg, dom, cur_n);
-        });
+        }
+        calculate_exps(tmp_ctx, starkinfo, seg, dom, cur_n);
+    });
 
     // write back the output
     for i in 0..ctx_chunks.len() {

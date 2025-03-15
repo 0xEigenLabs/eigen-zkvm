@@ -97,14 +97,11 @@ pub fn bit_reverse<F: FieldExtension>(
 
     let len = n * n_pols;
     assert_eq!(len, buffdst.len());
-    buffdst[0..len]
-        .par_iter_mut()
-        .enumerate()
-        .for_each(|(j, out)| {
-            let i = j / n_pols;
-            let k = j % n_pols;
-            *out = buffsrc[ris[i] * n_pols + k];
-        });
+    buffdst[0..len].par_iter_mut().enumerate().for_each(|(j, out)| {
+        let i = j / n_pols;
+        let k = j % n_pols;
+        *out = buffsrc[ris[i] * n_pols + k];
+    });
 }
 
 pub fn interpolate_bit_reverse<F: FieldExtension>(
@@ -116,15 +113,12 @@ pub fn interpolate_bit_reverse<F: FieldExtension>(
     let n = 1 << nbits;
     let ris = BRs(0, n, nbits); // move it outside the loop. obtain it from cache.
 
-    buffdst[0..n * n_pols]
-        .par_chunks_mut(n_pols)
-        .enumerate()
-        .for_each(|(i, out)| {
-            let rii = (n - ris[i]) % n;
-            for k in 0..n_pols {
-                out[k] = buffsrc[rii * n_pols + k];
-            }
-        });
+    buffdst[0..n * n_pols].par_chunks_mut(n_pols).enumerate().for_each(|(i, out)| {
+        let rii = (n - ris[i]) % n;
+        for k in 0..n_pols {
+            out[k] = buffsrc[rii * n_pols + k];
+        }
+    });
 }
 
 pub fn inv_bit_reverse<F: FieldExtension>(
@@ -139,15 +133,12 @@ pub fn inv_bit_reverse<F: FieldExtension>(
 
     let len = n * n_pols;
     assert_eq!(len, buffdst.len());
-    buffdst[0..len]
-        .par_iter_mut()
-        .enumerate()
-        .for_each(|(j, out)| {
-            let i = j / n_pols;
-            let k = j % n_pols;
-            let rii = (n - ris[i]) % n;
-            *out = buffsrc[rii * n_pols + k] * n_inv;
-        });
+    buffdst[0..len].par_iter_mut().enumerate().for_each(|(j, out)| {
+        let i = j / n_pols;
+        let k = j % n_pols;
+        let rii = (n - ris[i]) % n;
+        *out = buffsrc[rii * n_pols + k] * n_inv;
+    });
 }
 
 pub fn interpolate_prepare<F: FieldExtension>(buff: &mut Vec<F>, n_pols: usize, nbits: usize) {
@@ -173,14 +164,11 @@ pub fn interpolate_prepare<F: FieldExtension>(buff: &mut Vec<F>, n_pols: usize, 
     }
     */
     let tmp_buff = &mut buff[0..(n * n_pols)];
-    tmp_buff
-        .par_chunks_mut(n_per_thread_f * n_pols)
-        .enumerate()
-        .for_each(|(j, bb)| {
-            let i = j * n_per_thread_f;
-            let start = inv_n * (F::from(*SHIFT).exp(i));
-            interpolate_prepare_block(bb, n_pols, start, F::from(*SHIFT), i, n);
-        });
+    tmp_buff.par_chunks_mut(n_per_thread_f * n_pols).enumerate().for_each(|(j, bb)| {
+        let i = j * n_per_thread_f;
+        let start = inv_n * (F::from(*SHIFT).exp(i));
+        interpolate_prepare_block(bb, n_pols, start, F::from(*SHIFT), i, n);
+    });
 }
 
 pub fn _fft<F: FieldExtension>(
@@ -238,19 +226,9 @@ pub fn _fft<F: FieldExtension>(
     rayon::scope(|_s| {
         for i in (0..nbits).step_by(blockbits) {
             let s_inc = min(blockbits, nbits - i);
-            bin.par_chunks_mut(blocksize * n_pols)
-                .enumerate()
-                .for_each(|(j, bb)| {
-                    fft_block(
-                        bb,
-                        j * blocksize,
-                        n_pols,
-                        nbits,
-                        i + s_inc,
-                        blockbits,
-                        s_inc,
-                    );
-                });
+            bin.par_chunks_mut(blocksize * n_pols).enumerate().for_each(|(j, bb)| {
+                fft_block(bb, j * blocksize, n_pols, nbits, i + s_inc, blockbits, s_inc);
+            });
 
             if s_inc < nbits {
                 // Do not transpose if it's the same
@@ -344,19 +322,9 @@ pub fn interpolate<F: FieldExtension>(
     for i in (0..nbits).step_by(blockbits) {
         log::trace!("Layer ifft {}", i);
         let s_inc = min(blockbits, nbits - i);
-        bin.par_chunks_mut(blocksize * n_pols)
-            .enumerate()
-            .for_each(|(j, bb)| {
-                fft_block(
-                    bb,
-                    j * blocksize,
-                    n_pols,
-                    nbits,
-                    i + s_inc,
-                    blockbits,
-                    s_inc,
-                );
-            });
+        bin.par_chunks_mut(blocksize * n_pols).enumerate().for_each(|(j, bb)| {
+            fft_block(bb, j * blocksize, n_pols, nbits, i + s_inc, blockbits, s_inc);
+        });
 
         if s_inc < nbits {
             // Do not transpose if it's the same
@@ -374,19 +342,9 @@ pub fn interpolate<F: FieldExtension>(
     for i in (0..nbitsext).step_by(blockbitsext) {
         log::trace!("Layer fft {}", i);
         let s_inc = min(blockbitsext, nbitsext - i);
-        bin.par_chunks_mut(blocksizeext * n_pols)
-            .enumerate()
-            .for_each(|(j, bb)| {
-                fft_block(
-                    bb,
-                    j * blocksizeext,
-                    n_pols,
-                    nbitsext,
-                    i + s_inc,
-                    blockbitsext,
-                    s_inc,
-                );
-            });
+        bin.par_chunks_mut(blocksizeext * n_pols).enumerate().for_each(|(j, bb)| {
+            fft_block(bb, j * blocksizeext, n_pols, nbitsext, i + s_inc, blockbitsext, s_inc);
+        });
         if s_inc < nbitsext {
             // Do not transpose if it's the same
             transpose(bout, bin, n_pols, nbitsext, s_inc);

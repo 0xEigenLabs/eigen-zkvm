@@ -30,9 +30,7 @@ mod test {
     // This test is check whether the js_res the js version pilcom.compile equals to compile_pil_from_str.
     #[test]
     fn test_compile_pil_from_str() {
-        let path = Path::new("../starkjs/fibonacci/fibonacci.pil")
-            .canonicalize()
-            .unwrap();
+        let path = Path::new("../starkjs/fibonacci/fibonacci.pil").canonicalize().unwrap();
 
         let pil_str = fs::read_to_string(path).unwrap();
         // The target and actual pil_json

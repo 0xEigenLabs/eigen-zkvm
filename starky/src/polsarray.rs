@@ -99,13 +99,7 @@ impl PolsArray {
             }
         }
 
-        PolsArray {
-            nPols: defArray.len(),
-            n: defArray[0].polDeg,
-            defArray,
-            array,
-            def,
-        }
+        PolsArray { nPols: defArray.len(), n: defArray[0].polDeg, defArray, array, def }
     }
 
     #[inline(always)]
@@ -224,13 +218,11 @@ impl PolsArray {
 
     pub fn write_buff<F: FieldExtension>(&self) -> Vec<F> {
         let mut buff: Vec<F> = vec![F::ZERO; self.n * self.nPols];
-        buff.par_chunks_mut(self.nPols)
-            .enumerate()
-            .for_each(|(i, chunk)| {
-                for j in 0..self.nPols {
-                    chunk[j] = F::from(self.array[j][i]);
-                }
-            });
+        buff.par_chunks_mut(self.nPols).enumerate().for_each(|(i, chunk)| {
+            for j in 0..self.nPols {
+                chunk[j] = F::from(self.array[j][i]);
+            }
+        });
         buff
     }
 }
