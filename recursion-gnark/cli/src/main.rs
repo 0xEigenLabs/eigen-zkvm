@@ -38,12 +38,9 @@ fn run_test(args: TestArgs) {
 
     match args.system.as_str() {
         "plonk" => panic!("Unsupported system: {} or mismatched proof type", args.system),
-        "groth16" => build_groth16(
-            &args.vk_path,
-            &args.output_dir,
-            &proof.raw_proof,
-            &public_input,
-        ),
+        "groth16" => {
+            build_groth16(&args.vk_path, &args.output_dir, &proof.raw_proof, &public_input)
+        }
         _ => panic!("Unsupported system: {} or mismatched proof type", args.system),
     };
 }
