@@ -1909,6 +1909,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "eigen-recursion-gnark-ffi"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ark-bls12-381",
+ "ark-ec 0.5.0",
+ "ark-ff 0.5.0",
+ "ark-groth16",
+ "ark-serialize 0.5.0",
+ "bincode",
+ "bindgen",
+ "cc",
+ "cfg-if 1.0.0",
+ "hex",
+ "log",
+ "num-bigint 0.4.6",
+ "rayon",
+ "serde",
+ "serde_json",
+ "sha2 0.10.8",
+ "tempfile",
+]
+
+[[package]]
 name = "eigen-zkit"
 version = "0.0.1"
 dependencies = [
@@ -4305,33 +4329,9 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "clap 4.5.26",
+ "eigen-recursion-gnark-ffi",
  "hex",
- "recursion-gnark-ffi",
  "serde_json",
-]
-
-[[package]]
-name = "recursion-gnark-ffi"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "ark-bls12-381",
- "ark-ec 0.5.0",
- "ark-ff 0.5.0",
- "ark-groth16",
- "ark-serialize 0.5.0",
- "bincode",
- "bindgen",
- "cc",
- "cfg-if 1.0.0",
- "hex",
- "log",
- "num-bigint 0.4.6",
- "rayon",
- "serde",
- "serde_json",
- "sha2 0.10.8",
- "tempfile",
 ]
 
 [[package]]

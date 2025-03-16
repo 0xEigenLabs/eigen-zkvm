@@ -60,6 +60,6 @@ unsafe fn ptr_to_string_cloned(input: *mut c_char) -> String {
 /// after this function is called.
 unsafe fn ptr_to_string_freed(input: *mut c_char) -> String {
     let string = ptr_to_string_cloned(input);
-    bind::FreeString(input);
+    bind::EigenFreeString(input);
     string
 }

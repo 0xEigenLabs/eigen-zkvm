@@ -1,7 +1,7 @@
 //! A simple CLI that wraps the gnark-ffi crate. This is called using Docker in gnark-ffi when the
 //! native feature is disabled.
 
-use recursion_gnark_ffi::ffi::build_groth16;
+use eigen_recursion_gnark_ffi::ffi::build_groth16;
 
 use clap::{Args, Parser, Subcommand};
 use std::fs::File;
@@ -31,7 +31,7 @@ struct TestArgs {
 
 fn run_test(args: TestArgs) {
     let mut file = File::open(&args.proof_path).unwrap();
-    let proof: recursion_gnark_ffi::Groth16Bn254Proof =
+    let proof: eigen_recursion_gnark_ffi::Groth16Bn254Proof =
         bincode::deserialize_from(&mut file).expect("Failed to deserialize proof");
 
     let public_input = serde_json::to_string(&proof.public_inputs).unwrap();

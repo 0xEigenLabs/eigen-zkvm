@@ -22,7 +22,7 @@ func BuildGroth16(vkPath *C.char, outputDir *C.char, proof *C.char, publicInputJ
 	eigen.BuildGroth16(vkPathString, outputDirString, proofString, publicInputJsonString)
 }
 
-//export FreeString
-func FreeString(s *C.char) {
+//export EigenFreeString
+func EigenFreeString(s *C.char) {
 	C.free(unsafe.Pointer(s))
 }
