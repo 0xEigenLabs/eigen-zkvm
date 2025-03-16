@@ -19,8 +19,11 @@ enum Command {
 
 #[derive(Debug, Args)]
 struct TestArgs {
+    #[arg(short, long)]
     output_dir: String,
-    input_dir: String,
+    #[arg(short, long)]
+    vk_path: String,
+    #[arg(short, long)]
     proof_path: String,
     #[arg(short, long)]
     system: String,
@@ -31,13 +34,12 @@ fn run_test(args: TestArgs) {
     let proof: recursion_gnark_ffi::Groth16Bn254Proof =
         bincode::deserialize_from(&mut file).expect("Failed to deserialize proof");
 
-    let vk_path = std::path::Path::new(&args.input_dir).join("groth16_vk.bin");
     let public_input = serde_json::to_string(&proof.public_inputs).unwrap();
 
     match args.system.as_str() {
         "plonk" => panic!("Unsupported system: {} or mismatched proof type", args.system),
         "groth16" => build_groth16(
-            vk_path.to_str().unwrap(),
+            &args.vk_path,
             &args.output_dir,
             &proof.raw_proof,
             &public_input,
