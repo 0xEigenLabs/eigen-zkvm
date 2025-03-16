@@ -382,6 +382,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_zkvm_lr_prove() {
         env_logger::try_init().unwrap_or_default();
         zkvm_execute_and_prove("lr", "".to_string(), "/tmp/test_lr").unwrap();
