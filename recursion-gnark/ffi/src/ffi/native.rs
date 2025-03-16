@@ -22,10 +22,26 @@ enum ProofSystem {
     Groth16,
 }
 
-pub fn test(data_dir: &str, proof: &str) {
-    let c_data_dir = CString::new(data_dir).expect("CString::new failed");
-    let c_proof = CString::new(proof).expect("CString::new failed");
-    unsafe { bind::BuildGroth16(c_data_dir.as_ptr() as *mut i8, c_proof.as_ptr() as *mut i8) }
+/// Build Gnark proof over BLS12381 from BN254
+/// Description
+///   TODO: proof and public input are encoded with different serialization.
+/// * `vk_path` - vk over BN254
+/// * `output_dir` - directory including vk, proof, and public input over BLS12381
+/// * `proof` - groth16 proof over BN254
+/// * `public_input_json` - public input over BN254 in json
+pub fn build_groth16(vk_path: &str, output_dir: &str, proof: &str, public_input_json: &str) {
+    let c_output_dir = CString::new(output_dir).expect("CString::new output failed");
+    let c_vk_path = CString::new(vk_path).expect("CString::new vk failed");
+    let c_proof = CString::new(proof).expect("CString::new proof failed");
+    let c_input = CString::new(public_input_json).expect("CString::new public input failed");
+    unsafe {
+        bind::BuildGroth16(
+            c_vk_path.as_ptr() as *mut i8,
+            c_output_dir.as_ptr() as *mut i8,
+            c_proof.as_ptr() as *mut i8,
+            c_input.as_ptr() as *mut i8,
+        )
+    }
 }
 
 /// Converts a C string into a Rust String.
