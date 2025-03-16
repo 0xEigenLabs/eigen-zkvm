@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -21,7 +20,7 @@ var globalR1csInitialized = false
 var globalPk groth16.ProvingKey = groth16.NewProvingKey(ecc.BN254)
 var globalPkInitialized = false
 
-func BuildGroth16(dataDir string, verifyCmdProof string) {
+func BuildGroth16(vk_path string, outputDir string, verifyCmdProof string, publicInput string) {
 	// Load proof
 	proofDecodedBytes, err := hex.DecodeString(verifyCmdProof)
 	if err != nil {
@@ -37,7 +36,7 @@ func BuildGroth16(dataDir string, verifyCmdProof string) {
 	}
 
 	// Load vkey
-	vkFile, err := os.Open(fmt.Sprintf("%s/groth16_vk.bin", dataDir))
+	vkFile, err := os.Open(vk_path)
 	if err != nil {
 		panic(err)
 	}
@@ -49,11 +48,7 @@ func BuildGroth16(dataDir string, verifyCmdProof string) {
 	}
 
 	// Load public signals
-	publicSignalsData, err := os.ReadFile(fmt.Sprintf("%s/public_inputs.json", dataDir))
-	if err != nil {
-		log.Fatalf("failed to read public signals: %v", err)
-	}
-	publicSignals, err := UnmarshalPublicSignalsJSON(publicSignalsData)
+	publicSignals, err := UnmarshalPublicSignalsJSON([]byte(publicInput))
 	if err != nil {
 		log.Fatalf("failed to unmarshal public signals: %v", err)
 	}
@@ -78,7 +73,7 @@ func BuildGroth16(dataDir string, verifyCmdProof string) {
 	if err != nil {
 		log.Fatalf("failed to marshal proof: %v", err)
 	}
-	if err := os.WriteFile(dataDir+"/proof_bls12381.json", data, 0644); err != nil {
+	if err := os.WriteFile(outputDir + "/proof_bls12381.json", data, 0644); err != nil {
 		log.Fatalf("failed to write proof: %v", err)
 	}
 	// Write the verifier key.
@@ -86,7 +81,7 @@ func BuildGroth16(dataDir string, verifyCmdProof string) {
 	if err != nil {
 		log.Fatalf("failed to marshal verification key: %v", err)
 	}
-	if err := os.WriteFile(dataDir+"/groth16_vk_bls12381.json", data, 0644); err != nil {
+	if err := os.WriteFile(outputDir + "/groth16_vk_bls12381.json", data, 0644); err != nil {
 		log.Fatalf("failed to write verification key: %v", err)
 	}
 	// Write the public inputs.
@@ -94,7 +89,7 @@ func BuildGroth16(dataDir string, verifyCmdProof string) {
 	if err != nil {
 		log.Fatalf("failed to marshal public value: %v", err)
 	}
-	if err := os.WriteFile(dataDir+"/public_inputs_bls12381.json", data, 0644); err != nil {
+	if err := os.WriteFile(outputDir + "/public_inputs_bls12381.json", data, 0644); err != nil {
 		log.Fatalf("failed to write public value: %v", err)
 	}
 }

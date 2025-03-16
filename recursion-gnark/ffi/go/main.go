@@ -14,10 +14,12 @@ import (
 func main() {}
 
 //export BuildGroth16
-func BuildGroth16(dataDir *C.char, proof *C.char) {
-	dataDirString := C.GoString(dataDir)
+func BuildGroth16(vkPath *C.char, outputDir *C.char, proof *C.char, publicInputJson *C.char) {
+	vkPathString := C.GoString(vkPath)
+	outputDirString := C.GoString(outputDir)
 	proofString := C.GoString(proof)
-	eigen.BuildGroth16(dataDirString, proofString)
+	publicInputJsonString := C.GoString(publicInputJson)
+	eigen.BuildGroth16(vkPathString, outputDirString, proofString, publicInputJsonString)
 }
 
 //export FreeString

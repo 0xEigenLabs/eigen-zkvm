@@ -9,3 +9,4 @@ recursion-gnark-ffi = { path = "../ffi" }
 clap = { version = "4.5.9", features = ["derive"] }
 bincode = "1.3.3"
 hex = "*"
+serde_json = "1.0.140"
