@@ -57,7 +57,7 @@ impl StarkInfo {
             }
 
             if E::is_nop(&t_exp) {
-                panic!("nop {:?}", t_exp);
+                panic!("nop {t_exp:?}");
             }
 
             let t_exp_id = pil.expressions.len();
@@ -83,7 +83,7 @@ impl StarkInfo {
 
             let f_exp_id = pil.expressions.len();
             if E::is_nop(&f_exp) {
-                panic!("nop {:?}", f_exp);
+                panic!("nop {f_exp:?}");
             }
 
             pil.expressions.push(f_exp);
@@ -220,7 +220,7 @@ impl StarkInfo {
             let zp = E::cm(self.pe_ctx[i].z_id, Some(true));
 
             if !pil.references.contains_key(global_l1) {
-                panic!("{} must be defined", global_l1);
+                panic!("{global_l1} must be defined");
             }
             let l1 = E::const_(pil.references[global_l1].id, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));
@@ -379,7 +379,7 @@ impl StarkInfo {
             let zp = E::cm(ci_ctx.z_id, Some(true));
 
             if !pil.references.contains_key(global_l1) {
-                panic!("{} must be defined", global_l1);
+                panic!("{global_l1} must be defined");
             }
             let l1 = E::const_(pil.references[global_l1].id, None);
             let mut c1 = E::mul(&l1, &E::sub(&z, &E::number("1".to_string())));

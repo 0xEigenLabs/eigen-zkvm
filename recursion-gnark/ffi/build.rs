@@ -11,10 +11,10 @@ fn main() {
     println!("cargo:rerun-if-changed=go");
     // Define the output directory
     let out_dir = env::var("OUT_DIR").unwrap();
-    println!("OUT_DIR is: {}", out_dir);
+    println!("OUT_DIR is: {out_dir}");
     let dest_path = PathBuf::from(&out_dir);
     let lib_name = "eigengnark";
-    let dest = dest_path.join(format!("lib{}.a", lib_name));
+    let dest = dest_path.join(format!("lib{lib_name}.a"));
 
     println!("Building Go library at {}", dest.display());
 
@@ -30,7 +30,7 @@ fn main() {
     }
 
     // Generate bindings using bindgen
-    let header_path = dest_path.join(format!("lib{}.h", lib_name));
+    let header_path = dest_path.join(format!("lib{lib_name}.h"));
     let bindings = bindgen::Builder::default()
         .header(header_path.to_str().unwrap())
         .generate()
@@ -42,7 +42,7 @@ fn main() {
 
     // Link the Go library
     println!("cargo:rustc-link-search=native={}", dest_path.display());
-    println!("cargo:rustc-link-lib=static={}", lib_name);
+    println!("cargo:rustc-link-lib=static={lib_name}");
 
     // Static linking doesn't really work on macos, so we need to link some system libs
     if cfg!(target_os = "macos") {

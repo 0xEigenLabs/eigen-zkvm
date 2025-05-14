@@ -141,7 +141,7 @@ impl<F: FieldExtension> StarkContext<F> {
         match section {
             "xDivXSubXi" => &mut self.xDivXSubXi,
             "xDivXSubWXi" => &mut self.xDivXSubWXi,
-            _ => panic!("invalid symbol {:?}", section),
+            _ => panic!("invalid symbol {section:?}"),
         }
     }
     pub fn get_mut(&mut self, section: &str) -> &mut Vec<F> {
@@ -168,7 +168,7 @@ impl<F: FieldExtension> StarkContext<F> {
             "x_n" => &mut self.x_n,
             "x_2ns" => &mut self.x_2ns,
             _ => {
-                panic!("invalid symbol {:?}", section);
+                panic!("invalid symbol {section:?}");
             }
         }
     }
@@ -634,7 +634,7 @@ fn calculate_H1H2<F: FieldExtension>(f: Vec<F>, t: Vec<F>) -> (Vec<F>, Vec<F>) {
     for (i, e) in f.iter().enumerate() {
         let idx = idx_t.get(e);
         if idx.is_none() {
-            panic!("Number not included: {:?}", e);
+            panic!("Number not included: {e:?}");
         }
         s[i + t.len()] = (*e, *idx.unwrap());
     }
@@ -853,7 +853,7 @@ pub fn calculate_exps_parallel<F: FieldExtension>(
             exec_info.output_sections.push(ExecItem { name: "f_2ns".to_string(), width: 0 });
             "2ns"
         }
-        _ => panic!("Invalid step {}", step),
+        _ => panic!("Invalid step {step}"),
     };
 
     let set_width = |section: &mut ExecItem| {
@@ -869,7 +869,7 @@ pub fn calculate_exps_parallel<F: FieldExtension>(
         } else if ["q_2ns"].contains(&name) {
             section.width = starkinfo.q_dim;
         } else {
-            panic!("Invalid section name {}", name)
+            panic!("Invalid section name {name}")
         }
     };
 

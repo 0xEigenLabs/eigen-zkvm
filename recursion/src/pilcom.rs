@@ -43,6 +43,6 @@ mod test {
         // Check the file manually.
         let mut file = File::create(Path::new("data/fib2.pil.json")).unwrap();
         let input = serde_json::to_string_pretty(&actual).unwrap();
-        write!(file, "{}", input).unwrap();
+        write!(file, "{input}").unwrap();
     }
 }

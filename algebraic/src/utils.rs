@@ -9,7 +9,7 @@ pub use franklin_crypto::plonk::circuit::bigint::bigint::{biguint_to_fe, fe_to_b
 
 /// convert a hex integer representation ("0x...") to decimal representation
 pub fn repr_to_big<T: Display>(r: T) -> String {
-    BigUint::from_str_radix(&format!("{}", r)[2..], 16).unwrap().to_str_radix(10)
+    BigUint::from_str_radix(&format!("{r}")[2..], 16).unwrap().to_str_radix(10)
 }
 
 fn from_single_size_limb_witnesses<E: Engine, F: PrimeField>(

@@ -105,7 +105,7 @@ impl Input {
             out_sym: Input::build_output(output_path, &file_name, SYM),
             out_json_constraints: Input::build_output(
                 output_path,
-                &format!("{}_constraints", file_name),
+                &format!("{file_name}_constraints"),
                 JSON,
             ),
             wat_flag: false,
@@ -131,7 +131,7 @@ impl Input {
 
     fn build_folder(output_path: &Path, filename: &str, ext: &str) -> Box<Path> {
         let mut file = output_path.to_path_buf();
-        let folder_name = format!("{}_{}", filename, ext);
+        let folder_name = format!("{filename}_{ext}");
         file.push(folder_name);
 
         file.into_boxed_path()
@@ -139,7 +139,7 @@ impl Input {
 
     fn build_output(output_path: &Path, filename: &str, ext: &str) -> PathBuf {
         let mut file = output_path.to_path_buf();
-        file.push(format!("{}.{}", filename, ext));
+        file.push(format!("{filename}.{ext}"));
         file
     }
 

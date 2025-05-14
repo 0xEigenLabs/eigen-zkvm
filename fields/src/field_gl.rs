@@ -739,7 +739,7 @@ mod tests {
     fn test_serde_and_deserde() {
         let data = Fr::one();
         let serialized = serde_json::to_string(&data).unwrap();
-        println!("Serialized: {}", serialized);
+        println!("Serialized: {serialized}");
 
         let expect: Fr = serde_json::from_str(&serialized).unwrap();
 

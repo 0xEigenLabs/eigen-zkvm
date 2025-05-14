@@ -251,9 +251,9 @@ pub fn value_to_bigint(v: Value) -> BigInt {
     match v {
         Value::String(inner) => BigInt::from_str(&inner).unwrap(),
         Value::Number(inner) => {
-            BigInt::from(inner.as_u64().unwrap_or_else(|| panic!("{} not a u32", inner)))
+            BigInt::from(inner.as_u64().unwrap_or_else(|| panic!("{inner} not a u32")))
         }
-        _ => panic!("unsupported type {:?}", v),
+        _ => panic!("unsupported type {v:?}"),
     }
 }
 

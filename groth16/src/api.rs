@@ -421,7 +421,7 @@ pub fn generate_verifier(vk_file_path: &str, sol_file_path: &str) -> Result<()> 
 
     let gamma_abc_count: usize = vk_gamma_abc.len();
     template_text = vk_gamma_abc_len_regex
-        .replace(template_text.as_str(), format!("{}", gamma_abc_count).as_str())
+        .replace(template_text.as_str(), format!("{gamma_abc_count}").as_str())
         .into_owned();
 
     template_text = vk_input_len_regex
@@ -472,7 +472,7 @@ pub fn generate_verifier(vk_file_path: &str, sol_file_path: &str) -> Result<()> 
 
     match std::fs::write(
         sol_file_path,
-        format!("{}{}", solidity_pairing_lib_sans_bn256g2, template_text),
+        format!("{solidity_pairing_lib_sans_bn256g2}{template_text}"),
     ) {
         Ok(()) => println!("Generate solidity verifier successfully!"),
         Err(e) => {

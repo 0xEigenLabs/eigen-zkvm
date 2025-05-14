@@ -31,7 +31,7 @@ pub fn load_witness_from_json_file<E: PrimeField>(filename: &str) -> Vec<E> {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
-        .unwrap_or_else(|_| panic!("Unable to open {}.", filename));
+        .unwrap_or_else(|_| panic!("Unable to open {filename}."));
     load_witness_from_json::<E, BufReader<File>>(BufReader::new(reader))
 }
 
@@ -46,7 +46,7 @@ pub fn load_witness_from_bin_file<E: PrimeField>(filename: &str) -> Vec<E> {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
-        .unwrap_or_else(|_| panic!("Unable to open {}.", filename));
+        .unwrap_or_else(|_| panic!("Unable to open {filename}."));
     load_witness_from_bin_reader::<E, BufReader<File>>(BufReader::new(reader))
         .expect("read witness failed")
 }
@@ -135,7 +135,7 @@ fn load_r1cs_from_json_file<E: PrimeField>(filename: &str) -> R1CS<E> {
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
-        .unwrap_or_else(|_| panic!("Unable to open {}.", filename));
+        .unwrap_or_else(|_| panic!("Unable to open {filename}."));
     load_r1cs_from_json(BufReader::new(reader))
 }
 
@@ -174,7 +174,7 @@ fn load_r1cs_from_bin_file<E: PrimeField>(filename: &str) -> (R1CS<E>, Vec<usize
     let reader = OpenOptions::new()
         .read(true)
         .open(filename)
-        .unwrap_or_else(|_| panic!("Unable to open {}.", filename));
+        .unwrap_or_else(|_| panic!("Unable to open {filename}."));
     load_r1cs_from_bin(BufReader::new(reader))
 }
 

@@ -564,7 +564,7 @@ pub fn plonk_setup_compressor(
                     );
                 }
             } else {
-                panic!("invalit FFT4 type: {}", t);
+                panic!("invalit FFT4 type: {t}");
             }
 
             let index = r;

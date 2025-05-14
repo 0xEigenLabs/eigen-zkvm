@@ -144,7 +144,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         let params = Groth16::circuit_specific_setup(circuit, &mut rng)?;
         let elapsed = t.elapsed().as_secs_f64();
-        println!("1-groth16-bn128 setup run time: {} secs", elapsed);
+        println!("1-groth16-bn128 setup run time: {elapsed} secs");
 
         //2. Prove
         let t1 = std::time::Instant::now();
@@ -171,7 +171,7 @@ mod tests {
         let inputs = circuit1.get_public_inputs().unwrap();
         let proof = Groth16::prove(&params.0, circuit1, &mut rng)?;
         let elapsed1 = t1.elapsed().as_secs_f64();
-        println!("2-groth16-bn128 prove run time: {} secs", elapsed1);
+        println!("2-groth16-bn128 prove run time: {elapsed1} secs");
 
         //3. Verify
         let t2 = std::time::Instant::now();
@@ -179,7 +179,7 @@ mod tests {
             &params.1, &inputs, &proof,
         )?;
         let elapsed2 = t2.elapsed().as_secs_f64();
-        println!("3-groth16-bn128 verify run time: {} secs", elapsed2);
+        println!("3-groth16-bn128 verify run time: {elapsed2} secs");
 
         assert!(verified);
 
@@ -196,7 +196,7 @@ mod tests {
             _ => panic!("Expected BLS12381 setup result"),
         };
         let elapsed = t.elapsed().as_secs_f64();
-        println!("1-groth16-bls12381 setup run time: {} secs", elapsed);
+        println!("1-groth16-bls12381 setup run time: {elapsed} secs");
 
         //2. Prove
         let t1 = std::time::Instant::now();
@@ -207,7 +207,7 @@ mod tests {
         let circuit1: CircomCircuit<Bls12> = create_circuit_add_witness::<Bls12>(circuit, w);
         let proof = Groth16::prove(&pk, circuit1.clone(), &mut rng)?;
         let elapsed1 = t1.elapsed().as_secs_f64();
-        println!("2-groth16-bls12381 prove run time: {} secs", elapsed1);
+        println!("2-groth16-bls12381 prove run time: {elapsed1} secs");
 
         //3. Verify
         let t2 = std::time::Instant::now();
@@ -215,7 +215,7 @@ mod tests {
         let verified =
             Groth16::<_, CircomCircuit<Bls12>>::verify_with_processed_vk(&vk, &inputs, &proof)?;
         let elapsed2 = t2.elapsed().as_secs_f64();
-        println!("3-groth16-bls12381 verify run time: {} secs", elapsed2);
+        println!("3-groth16-bls12381 verify run time: {elapsed2} secs");
 
         assert!(verified);
 
@@ -235,7 +235,7 @@ mod tests {
             _ => panic!("Expected BLS12381 setup result"),
         };
         let elapsed = t.elapsed().as_secs_f64();
-        println!("1-groth16-bls12381 setup run time: {} secs", elapsed);
+        println!("1-groth16-bls12381 setup run time: {elapsed} secs");
 
         //2. Prove
         let t1 = std::time::Instant::now();
@@ -250,13 +250,13 @@ mod tests {
             false,
         );
         let elapsed1 = t1.elapsed().as_secs_f64();
-        println!("2-groth16-bls12381 prove run time: {} secs", elapsed1);
+        println!("2-groth16-bls12381 prove run time: {elapsed1} secs");
 
         //3. Verify
         let t2 = std::time::Instant::now();
         let _ = groth16_verify_inplace(vk, public_input_file, proof_file);
         let elapsed2 = t2.elapsed().as_secs_f64();
-        println!("3-groth16-bls12381 verify run time: {} secs", elapsed2);
+        println!("3-groth16-bls12381 verify run time: {elapsed2} secs");
 
         Ok(())
     }

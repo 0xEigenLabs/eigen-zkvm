@@ -2,7 +2,7 @@ use anyhow::Result;
 
 pub fn write_vec_to_file<W: std::io::Write>(writer: &mut W, vec: &[u64]) -> Result<()> {
     let input = serde_json::to_string(&vec)?;
-    write!(writer, "{}", input)?;
+    write!(writer, "{input}")?;
     Ok(())
 }
 
