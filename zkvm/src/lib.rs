@@ -93,8 +93,8 @@ fn generate_verifier<F: FieldElement>(
             continue;
         }
         let pil = pils.get(&machine_proof.machine).unwrap();
-        let proof_file = Path::new(output_path)
-            .join(format!("{task}_chunk_{chunk_idx}_submachine_{idx}.json"));
+        let proof_file =
+            Path::new(output_path).join(format!("{task}_chunk_{chunk_idx}_submachine_{idx}.json"));
 
         log::debug!("Running proof generation to {:?}...", proof_file);
         fs::write(proof_file, machine_proof.proof)?;
