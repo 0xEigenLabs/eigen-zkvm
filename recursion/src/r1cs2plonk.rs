@@ -257,11 +257,11 @@ mod test {
         let mut file = File::create(Path::new("plonk_constrains_rs.json")).unwrap();
         let input = plonk_constrains.iter().map(|pa| pa.to_string()).collect::<Vec<String>>();
         let input = serde_json::to_string(&input).unwrap();
-        write!(file, "{}", input).unwrap();
+        write!(file, "{input}").unwrap();
 
         let mut file = File::create(Path::new("/tmp/plonk_additions_rs.json")).unwrap();
         let input = plonk_additions.iter().map(|pa| pa.to_string()).collect::<Vec<String>>();
         let input = serde_json::to_string(&input).unwrap();
-        write!(file, "{}", input).unwrap();
+        write!(file, "{input}").unwrap();
     }
 }

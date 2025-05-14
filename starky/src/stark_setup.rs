@@ -126,7 +126,7 @@ pub mod tests {
             StarkSetup::<MerkleTreeBN128>::new(&const_pol, &mut pil, &stark_struct, None).unwrap();
 
         let serialized = serde_json::to_string(&data).unwrap();
-        println!("Serialized: {}", serialized);
+        println!("Serialized: {serialized}");
 
         let expect: StarkSetup<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
         let root: Fr = Fr(expect.const_root.as_scalar::<Fr>());

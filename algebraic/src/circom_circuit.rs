@@ -96,10 +96,10 @@ impl<E: Engine> Circuit<E> for CircomCircuit<E> {
         let wire_mapping = &self.wire_mapping;
         for i in 1..self.r1cs.num_inputs {
             cs.alloc_input(
-                || format!("variable {}", i),
+                || format!("variable {i}"),
                 || {
                     Ok(match witness {
-                        None => E::Fr::from_str(&format!("alloc input {} error", i)).unwrap(),
+                        None => E::Fr::from_str(&format!("alloc input {i} error")).unwrap(),
                         Some(w) => match wire_mapping {
                             None => w[i],
                             Some(m) => w[m[i]],
@@ -145,7 +145,7 @@ impl<E: Engine> Circuit<E> for CircomCircuit<E> {
             // 0 * LC = 0 must be ignored
             if !((constraint.0.is_empty() || constraint.1.is_empty()) && constraint.2.is_empty()) {
                 cs.enforce(
-                    || format!("{}", i),
+                    || format!("{i}"),
                     |_| make_lc(constraint.0.clone()),
                     |_| make_lc(constraint.1.clone()),
                     |_| make_lc(constraint.2.clone()),

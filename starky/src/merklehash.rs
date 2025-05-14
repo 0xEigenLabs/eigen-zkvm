@@ -483,7 +483,7 @@ mod tests {
         let (v, mp) = tree.get_group_proof(idx).unwrap();
         let root = tree.root();
         let duration = start.elapsed();
-        println!("time: {:?}", duration);
+        println!("time: {duration:?}");
         let re = root.as_elements();
         let expected = vec![
             FGL::from(11508832812350783315u64),

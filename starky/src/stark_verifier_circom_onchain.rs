@@ -61,11 +61,11 @@ impl Transcript {
 
     fn getField(&mut self, v: &str, _l: usize) {
         let tmp = self.getFields1();
-        self.code.push(format!("{}[0] <== {};", v, tmp));
+        self.code.push(format!("{v}[0] <== {tmp};"));
         let tmp = self.getFields1();
-        self.code.push(format!("{}[1] <== {};", v, tmp));
+        self.code.push(format!("{v}[1] <== {tmp};"));
         let tmp = self.getFields1();
-        self.code.push(format!("{}[2] <== {};", v, tmp));
+        self.code.push(format!("{v}[2] <== {tmp};"));
     }
 
     fn getFields1(&mut self) -> String {
@@ -77,14 +77,14 @@ impl Transcript {
         if !self.out.is_empty() {
             let cName = format!("bn1togl3_{}", self.bn1togl3Cnt);
             self.bn1togl3Cnt += 1;
-            self.code.push(format!("component {} = BN1toGL3();", cName));
+            self.code.push(format!("component {cName} = BN1toGL3();"));
             let first = self.out[0].to_owned();
             self.out.remove(0);
-            self.code.push(format!("{}.in <== {};", cName, first));
+            self.code.push(format!("{cName}.in <== {first};"));
 
-            self.out3.push(format!("{}.out[0]", cName));
-            self.out3.push(format!("{}.out[1]", cName));
-            self.out3.push(format!("{}.out[2]", cName));
+            self.out3.push(format!("{cName}.out[0]"));
+            self.out3.push(format!("{cName}.out[1]"));
+            self.out3.push(format!("{cName}.out[2]"));
             return self.getFields1();
         }
         self.updateState();
@@ -130,7 +130,7 @@ impl Transcript {
     pub fn put(&mut self, a: &str, l: i32) {
         if l >= 0 {
             for i in 0..l {
-                self._add1(&format!("{}[{}]", a, i));
+                self._add1(&format!("{a}[{i}]"));
             }
         } else {
             self._add1(a);
@@ -704,16 +704,15 @@ template parallel VerifyQuery() {{
     res.push_str(&format!(
         r#"
     component normC = GLCNorm();
-    normC.in[0] <== {}[0];
-    normC.in[1] <== {}[1];
-    normC.in[2] <== {}[2];
+    normC.in[0] <== {evalQ}[0];
+    normC.in[1] <== {evalQ}[1];
+    normC.in[2] <== {evalQ}[2];
 
     out[0] <== normC.out[0];
     out[1] <== normC.out[1];
     out[2] <== normC.out[2];
 }}
-    "#,
-        evalQ, evalQ, evalQ
+    "#
     ));
 
     res
@@ -756,14 +755,12 @@ template MapValues() {{
             if p.dim == 1 {
                 res.push_str(&format!(
                     r#"
-    signal output tree{}_{};"#,
-                    t, i
+    signal output tree{t}_{i};"#
                 ));
             } else if p.dim == 3 {
                 res.push_str(&format!(
                     r#"
-    signal output tree{}_{}[3];"#,
-                    t, i
+    signal output tree{t}_{i}[3];"#
                 ));
             } else {
                 panic!("Invalid dim");
@@ -980,9 +977,8 @@ template StarkVerifier() {{
     for s in 0..stark_struct.steps.len() {
         res.push_str(&format!(
             r#"
-    signal s{}_specialX[3];
-    "#,
-            s
+    signal s{s}_specialX[3];
+    "#
         ));
     }
 
@@ -1012,17 +1008,17 @@ template StarkVerifier() {{
     transcript.put("root4", -1);
     transcript.getField("challenges[7]", 3);
     for i in 0..starkinfo.ev_map.len() {
-        transcript.put(&format!("evals[{}]", i), 3);
+        transcript.put(&format!("evals[{i}]"), 3);
     }
     transcript.getField("challenges[5]", 3);
     transcript.getField("challenges[6]", 3);
     for si in 0..stark_struct.steps.len() {
-        transcript.getField(&format!("s{}_specialX", si), 3);
+        transcript.getField(&format!("s{si}_specialX"), 3);
         if si < stark_struct.steps.len() - 1 {
             transcript.put(&format!("s{}_root", si + 1), -1);
         } else {
             for j in 0..(1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits) {
-                transcript.put(&format!("finalPol[{}]", j), 3);
+                transcript.put(&format!("finalPol[{j}]"), 3);
             }
         }
     }
@@ -1506,12 +1502,11 @@ template StarkVerifier() {{
 
         res.push_str(&format!(
             r#"
-        s{}_cNorm[q] = GLCNorm();
+        s{s}_cNorm[q] = GLCNorm();
         for (var e=0; e<3; e++) {{
-            s{}_cNorm[q].in[e] <== s{}_evalPol[q].out[e] - s{}_lowValues[q].out[e] + p;
+            s{s}_cNorm[q].in[e] <== s{s}_evalPol[q].out[e] - s{s}_lowValues[q].out[e] + p;
         }}
-    }}"#,
-            s, s, s, s
+    }}"#
         ));
     }
     // Checks
@@ -1771,10 +1766,9 @@ template Main() {{
         for s in 1..stark_struct.steps.len() {
             res.push_str(&format!(
                 r#"
-    sv.s{}_vals <== s{}_vals;
-    sv.s{}_siblings <== s{}_siblings;
-    "#,
-                s, s, s, s
+    sv.s{s}_vals <== s{s}_vals;
+    sv.s{s}_siblings <== s{s}_siblings;
+    "#
             ));
         }
         res.push_str(

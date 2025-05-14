@@ -146,14 +146,14 @@ fn prove<
         &mut setup.program,
         &opt,
     )?;
-    write!(circom_file_writer, "{}", str_ver)?;
+    write!(circom_file_writer, "{str_ver}")?;
 
     // if agg_stage {
     //     starkproof.rootC = None;
     // }
 
     let input = serde_json::to_string(&starkproof)?;
-    write!(zkin_writer, "{}", input)?;
+    write!(zkin_writer, "{input}")?;
     drop(setup);
     drop(starkproof);
     Ok(())

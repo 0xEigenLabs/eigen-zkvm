@@ -391,6 +391,6 @@ mod test {
     fn test_render_and_compile() {
         let pil_string = render(5, 5);
         let mut file = File::create(Path::new("/tmp/render_pil_rs.pil")).unwrap();
-        write!(file, "{}", pil_string).unwrap();
+        write!(file, "{pil_string}").unwrap();
     }
 }

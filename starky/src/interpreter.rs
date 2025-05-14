@@ -56,7 +56,7 @@ impl<T: FieldExtension> fmt::Display for Expr<T> {
                 )
             }
             Ops::Vari(x) => {
-                write!(f, "{}", x)
+                write!(f, "{x}")
             }
             Ops::Write => {
                 write!(f, "write ({})", self.defs[0])
@@ -211,7 +211,7 @@ pub fn compile_code<T: FieldExtension>(
             "mul" => Expr::new(Ops::Mul, Vec::new(), src[0..2].to_vec(), vec![]),
             "copy" => Expr::new(Ops::Copy_, Vec::new(), src[0..1].to_vec(), vec![]),
             _ => {
-                panic!("Invalid op {:?}", cj)
+                panic!("Invalid op {cj:?}")
             }
         };
         set_ref(ctx, starkinfo, &cj.dest, exp, dom, next, modulas, &mut body);
@@ -277,7 +277,7 @@ fn get_value<T: FieldExtension>(ctx: &mut StarkContext<T>, expr: &Expr<T>, arg_i
         }
         "Zi" => (ctx.Zi)(arg_i),
         _ => {
-            panic!("invalid symbol {:?}", addr);
+            panic!("invalid symbol {addr:?}");
         }
     }
 }

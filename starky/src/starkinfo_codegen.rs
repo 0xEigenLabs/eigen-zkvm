@@ -100,7 +100,7 @@ impl Segment {
             0 => &mut self.first,
             1 => &mut self.i,
             2 => &mut self.last,
-            _ => panic!("invalid code idx: {}", i),
+            _ => panic!("invalid code idx: {i}"),
         }
     }
 
@@ -138,7 +138,7 @@ impl IndexVec {
             "tmpexp_n" => &self.tmpexp_n,
             "q_2ns" => &self.q_2ns,
             "f_2ns" => &self.q_2ns,
-            _ => panic!("Invalid name={} in index", name),
+            _ => panic!("Invalid name={name} in index"),
         }
     }
 }
@@ -211,7 +211,7 @@ impl Index {
             "tmpexp_n" => {
                 self.tmpexp_n = val;
             }
-            _ => panic!("Invalid name={} in index", name),
+            _ => panic!("Invalid name={name} in index"),
         }
     }
 }
@@ -428,7 +428,7 @@ pub fn eval_exp(
 ) -> Result<Node> {
     //log::trace!("eval, expression {}", exp);
     if ExpressionOps::is_nop(exp) {
-        panic!("exp: {:?}", exp);
+        panic!("exp: {exp:?}");
     }
 
     let default = vec![];

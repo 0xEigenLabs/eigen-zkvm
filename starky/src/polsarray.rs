@@ -129,7 +129,7 @@ impl PolsArray {
     }
     #[inline(always)]
     pub fn get_pol_id(&self, pil: &PIL, ns: &String, np: &String, k: usize) -> usize {
-        let pol = &pil.references[&format!("{}.{}", ns, np)];
+        let pol = &pil.references[&format!("{ns}.{np}")];
         pol.id + k
     }
 

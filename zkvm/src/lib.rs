@@ -93,14 +93,14 @@ fn generate_verifier<F: FieldElement>(
             continue;
         }
         let pil = pils.get(&machine_proof.machine).unwrap();
-        let proof_file = Path::new(output_path)
-            .join(format!("{}_chunk_{}_submachine_{}.json", task, chunk_idx, idx));
+        let proof_file =
+            Path::new(output_path).join(format!("{task}_chunk_{chunk_idx}_submachine_{idx}.json"));
 
         log::debug!("Running proof generation to {:?}...", proof_file);
         fs::write(proof_file, machine_proof.proof)?;
 
         let verifier_file = Path::new(output_path)
-            .join(format!("{}_chunk_{}_submachine_{}.circom", task, chunk_idx, idx));
+            .join(format!("{task}_chunk_{chunk_idx}_submachine_{idx}.circom"));
         log::debug!("Running circom verifier generation to {:?}...", verifier_file);
         let mut writer = fs::File::create(verifier_file)?;
 
@@ -156,7 +156,7 @@ fn generate_verifier<F: FieldElement>(
                 &opt,
             )
             .unwrap();
-            writer.write_fmt(format_args!("{}", str_ver))?;
+            writer.write_fmt(format_args!("{str_ver}"))?;
             ids.push(idx);
         } else {
             log::info!("No public vars in {}", machine_proof.machine);
@@ -286,7 +286,7 @@ pub fn zkvm_prove_only(
     output_path: &str,
 ) -> Result<Vec<usize>> {
     log::debug!("Compiling Rust...");
-    let asm_file_path = Path::new(output_path).join(format!("{}.asm", task));
+    let asm_file_path = Path::new(output_path).join(format!("{task}.asm"));
 
     let pipeline = Pipeline::<GoldilocksField>::default()
         .with_output(output_path.into(), true)
@@ -341,7 +341,7 @@ where
         .1
         .len() as u64;
 
-    let name = format!("{}_chunk_{}", task, i);
+    let name = format!("{task}_chunk_{i}");
     log::debug!("\nRunning chunk {} in {}...", i + 1, name);
 
     // we used to do
@@ -397,7 +397,7 @@ mod tests {
 
         let task = "evm";
         let output_path = "/tmp/test_evm";
-        let workspace = format!("program/{}", task);
+        let workspace = format!("program/{task}");
         let bootloader_inputs =
             zkvm_generate_chunks(workspace.as_str(), &suite_json, output_path).unwrap();
         // save the chunks

@@ -92,7 +92,7 @@ impl StarkInfo {
                     r.type_ = "eval".to_string();
                 }
                 "number" | "challenge" | "public" | "tmp" | "Z" | "x" | "eval" => {}
-                _ => panic!("Invalid reference type: {:?}", r),
+                _ => panic!("Invalid reference type: {r:?}"),
             };
         };
 

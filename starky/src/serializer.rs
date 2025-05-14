@@ -33,7 +33,7 @@ impl Serialize for F3G {
             }
             seq.end()
         } else {
-            panic!("Invalid dim {}", self);
+            panic!("Invalid dim {self}");
         }
     }
 }
@@ -91,7 +91,7 @@ impl Serialize for F5G {
             }
             seq.end()
         } else {
-            panic!("Invalid dim {}", self);
+            panic!("Invalid dim {self}");
         }
     }
 }
@@ -154,7 +154,7 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
         map.serialize_entry("evals", &self.evals)?;
 
         for i in 1..(self.fri_proof.queries.len()) {
-            map.serialize_entry(&format!("s{}_root", i), &self.fri_proof.queries[i].root)?;
+            map.serialize_entry(&format!("s{i}_root"), &self.fri_proof.queries[i].root)?;
             let mut vals: Vec<Vec<F3G>> = vec![];
             let mut sibs: Vec<Vec<Vec<M::MTNode>>> = vec![];
             for q in 0..self.fri_proof.queries[0].pol_queries.len() {
@@ -170,8 +170,8 @@ impl<M: MerkleTree> Serialize for StarkProof<M> {
                         .collect::<Vec<Vec<M::MTNode>>>(),
                 );
             }
-            map.serialize_entry(&format!("s{}_vals", i), &vals)?;
-            map.serialize_entry(&format!("s{}_siblings", i), &sibs)?;
+            map.serialize_entry(&format!("s{i}_vals"), &vals)?;
+            map.serialize_entry(&format!("s{i}_siblings"), &sibs)?;
         }
 
         let mut s0_vals1: Vec<Vec<F3G>> = vec![];
@@ -324,7 +324,7 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
                 // less than 32
                 let num_query: usize = (1..32)
                     .map(|i| {
-                        let key = map.get(&format!("s{}_root", i));
+                        let key = map.get(&format!("s{i}_root"));
                         if key.is_some() {
                             i
                         } else {
@@ -341,7 +341,7 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
                 let mut s0_siblings_all: Vec<Vec<Vec<Vec<MT::MTNode>>>> = vec![];
                 // handle queries[0]
                 for j in ["1", "2", "3", "4", "C"] {
-                    let key = map.get(&format!("s0_vals{}", j));
+                    let key = map.get(&format!("s0_vals{j}"));
                     if key.is_none() {
                         log::info!("skip s0_vals{}", j);
                         s0_vals_all.push(vec![]);
@@ -364,7 +364,7 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
                         })
                         .collect();
 
-                    let key = map.get(&format!("s0_siblings{}", j));
+                    let key = map.get(&format!("s0_siblings{j}"));
                     let s0_siblings: Vec<Vec<Vec<MT::MTNode>>> =
                         serde_json::from_value(key.unwrap().clone()).unwrap();
                     s0_vals_all.push(s0_vals);
@@ -408,11 +408,11 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
 
                 // handle query 1 to num_query
                 for i in 1..=num_query {
-                    let key = map.get(&format!("s{}_root", i));
+                    let key = map.get(&format!("s{i}_root"));
                     let root: MT::MTNode = serde_json::from_value(key.unwrap().clone()).unwrap();
                     fri_proof.queries[i].root = root;
 
-                    let key = map.get(&format!("s{}_vals", i));
+                    let key = map.get(&format!("s{i}_vals"));
                     let val: Vec<Vec<F3G>> = serde_json::from_value(key.unwrap().clone()).unwrap();
                     let vals: Vec<Vec<FGL>> = val
                         .iter()
@@ -428,7 +428,7 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
                         })
                         .collect();
 
-                    let key = map.get(&format!("s{}_siblings", i));
+                    let key = map.get(&format!("s{i}_siblings"));
                     let sibs: Vec<Vec<Vec<MT::MTNode>>> =
                         serde_json::from_value(key.unwrap().clone()).unwrap();
                     fri_proof.queries[i].pol_queries = vec![vec![]; num_pol_queries];
@@ -577,13 +577,13 @@ mod tests {
         // serde to json
         let serialized = serde_json::to_string(&starkproof).unwrap();
         let mut file = File::create("/tmp/test_stark_proof_serialize.json").unwrap();
-        write!(file, "{}", serialized).unwrap();
+        write!(file, "{serialized}").unwrap();
         // deserialized
         let actual: StarkProof<MerkleTreeBN128> = serde_json::from_str(&serialized).unwrap();
 
         let mut file = File::create("/tmp/test_stark_proof_serialize.actual.json").unwrap();
         let serialized2 = serde_json::to_string(&actual).unwrap();
-        write!(file, "{}", serialized2).unwrap();
+        write!(file, "{serialized2}").unwrap();
 
         // assert
         assert_eq!(serialized, serialized2);
@@ -626,13 +626,13 @@ mod tests {
         // serde to json
         let serialized = serde_json::to_string(&starkproof).unwrap();
         let mut file = File::create("/tmp/test_stark_proof_serialize.gl.json").unwrap();
-        write!(file, "{}", serialized).unwrap();
+        write!(file, "{serialized}").unwrap();
         // deserialized
         let actual: StarkProof<MerkleTreeGL> = serde_json::from_str(&serialized).unwrap();
 
         let mut file = File::create("/tmp/test_stark_proof_serialize.actual.gl.json").unwrap();
         let serialized2 = serde_json::to_string(&actual).unwrap();
-        write!(file, "{}", serialized2).unwrap();
+        write!(file, "{serialized2}").unwrap();
 
         // assert
         assert_eq!(serialized, serialized2);
@@ -677,14 +677,14 @@ mod tests {
         // serde to json
         let serialized = serde_json::to_string(&starkproof).unwrap();
         let mut file = File::create("/tmp/test_stark_proof_serialize.bls12381.json").unwrap();
-        write!(file, "{}", serialized).unwrap();
+        write!(file, "{serialized}").unwrap();
         // deserialized
         let actual: StarkProof<MerkleTreeBLS12381> = serde_json::from_str(&serialized).unwrap();
 
         let mut file =
             File::create("/tmp/test_stark_proof_serialize.bls12381.actual.json").unwrap();
         let serialized2 = serde_json::to_string(&actual).unwrap();
-        write!(file, "{}", serialized2).unwrap();
+        write!(file, "{serialized2}").unwrap();
 
         // assert
         assert_eq!(serialized, serialized2);

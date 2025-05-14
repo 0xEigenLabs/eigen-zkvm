@@ -14,7 +14,7 @@ pub use num_bigint::BigUint;
 use num_traits::Num;
 
 pub fn repr_to_big<T: std::fmt::Debug>(r: T) -> String {
-    let hex_str = format!("{:?}", r);
+    let hex_str = format!("{r:?}");
     let trim_quotes = hex_str.trim_start_matches("Scalar(0x").trim_end_matches(')');
     let clean_hex = trim_quotes.trim_matches('"').trim_start_matches("0x");
     BigUint::from_str_radix(clean_hex, 16).map(|bigint: BigUint| bigint.to_str_radix(10)).unwrap()
@@ -99,10 +99,10 @@ impl<E: PrimeField> Circuit<E> for CircomCircuit<E> {
         let wire_mapping = &self.wire_mapping;
         for i in 1..self.r1cs.num_inputs {
             cs.alloc_input(
-                || format!("variable {}", i),
+                || format!("variable {i}"),
                 || {
                     Ok(match witness {
-                        None => E::from_str_vartime(&format!("alloc input {} error", i)).unwrap(),
+                        None => E::from_str_vartime(&format!("alloc input {i} error")).unwrap(),
                         Some(w) => match wire_mapping {
                             None => w[i],
                             Some(m) => w[m[i]],
@@ -148,7 +148,7 @@ impl<E: PrimeField> Circuit<E> for CircomCircuit<E> {
             // 0 * LC = 0 must be ignored
             if !((constraint.0.is_empty() || constraint.1.is_empty()) && constraint.2.is_empty()) {
                 cs.enforce(
-                    || format!("{}", i),
+                    || format!("{i}"),
                     |_| make_lc(constraint.0.clone()),
                     |_| make_lc(constraint.1.clone()),
                     |_| make_lc(constraint.2.clone()),

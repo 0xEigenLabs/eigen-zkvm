@@ -22,15 +22,15 @@ mod tests {
         let public_input =
             serde_json::from_str::<JsonPublicInput<ark_bls12_381::Fr>>(&public_input)
                 .expect("Failed to parse JSON public input");
-        println!("Public Input: {:?}", public_input);
+        println!("Public Input: {public_input:?}");
         let vk_string =
             fs::read_to_string(VK_FILE_BLS12).expect("Failed to read public inputs JSON file");
         let vk = serde_json::from_str::<JsonVerificationKey<Bls12_381>>(&vk_string).unwrap();
-        println!("vk: {:?}", vk);
+        println!("vk: {vk:?}");
         let proof_string =
             fs::read_to_string(PROOF_FILE_BLS12).expect("Failed to read public inputs JSON file");
         let proof = serde_json::from_str::<Groth16Proof<Bls12_381>>(&proof_string).unwrap();
-        println!("proof: {:?}", proof);
+        println!("proof: {proof:?}");
 
         let vk = VerifyingKey::<Bls12_381> {
             alpha_g1: vk.alpha_1,

@@ -60,11 +60,11 @@ impl Transcript {
 
     fn getField(&mut self, v: &str, _l: usize) {
         let tmp = self.getFields1();
-        self.code.push(format!("{}[0] <== {};", v, tmp));
+        self.code.push(format!("{v}[0] <== {tmp};"));
         let tmp = self.getFields1();
-        self.code.push(format!("{}[1] <== {};", v, tmp));
+        self.code.push(format!("{v}[1] <== {tmp};"));
         let tmp = self.getFields1();
-        self.code.push(format!("{}[2] <== {};", v, tmp));
+        self.code.push(format!("{v}[2] <== {tmp};"));
     }
 
     fn getFields1(&mut self) -> String {
@@ -95,7 +95,7 @@ impl Transcript {
     pub fn put(&mut self, a: &str, l: i32) {
         if l >= 0 {
             for i in 0..l {
-                self._add1(&format!("{}[{}]", a, i));
+                self._add1(&format!("{a}[{i}]"));
             }
         } else {
             self._add1(a);
@@ -702,12 +702,11 @@ template parallel VerifyQuery() {{
 
     res.push_str(&format!(
         r#"
-    out[0] <== {}[0];
-    out[1] <== {}[1];
-    out[2] <== {}[2];
+    out[0] <== {evalQ}[0];
+    out[1] <== {evalQ}[1];
+    out[2] <== {evalQ}[2];
 }}
-    "#,
-        evalQ, evalQ, evalQ
+    "#
     ));
 
     res
@@ -750,14 +749,12 @@ template MapValues() {{
             if p.dim == 1 {
                 res.push_str(&format!(
                     r#"
-    signal output tree{}_{};"#,
-                    t, i
+    signal output tree{t}_{i};"#
                 ));
             } else if p.dim == 3 {
                 res.push_str(&format!(
                     r#"
-    signal output tree{}_{}[3];"#,
-                    t, i
+    signal output tree{t}_{i}[3];"#
                 ));
             } else {
                 panic!("Invalid dim");
@@ -977,9 +974,8 @@ template StarkVerifier() {{
     for s in 0..stark_struct.steps.len() {
         res.push_str(&format!(
             r#"
-    signal s{}_specialX[3];
-    "#,
-            s
+    signal s{s}_specialX[3];
+    "#
         ));
     }
 
@@ -1007,17 +1003,17 @@ template StarkVerifier() {{
     transcript.put("root4", 4);
     transcript.getField("challenges[7]", 3);
     for i in 0..starkinfo.ev_map.len() {
-        transcript.put(&format!("evals[{}]", i), 3);
+        transcript.put(&format!("evals[{i}]"), 3);
     }
     transcript.getField("challenges[5]", 3);
     transcript.getField("challenges[6]", 3);
     for si in 0..stark_struct.steps.len() {
-        transcript.getField(&format!("s{}_specialX", si), 3);
+        transcript.getField(&format!("s{si}_specialX"), 3);
         if si < stark_struct.steps.len() - 1 {
             transcript.put(&format!("s{}_root", si + 1), 4);
         } else {
             for j in 0..(1 << stark_struct.steps[stark_struct.steps.len() - 1].nBits) {
-                transcript.put(&format!("finalPol[{}]", j), 3);
+                transcript.put(&format!("finalPol[{j}]"), 3);
             }
         }
     }
@@ -1458,16 +1454,15 @@ template StarkVerifier() {{
         res.push_str(&format!(
             r#"
         for (var e=0; e<3; e++) {{
-            enable * (s{}_lowValues[q].out[e] - s{}_evalPol[q].out[e]) === 0;
+            enable * (s{s}_lowValues[q].out[e] - s{s}_evalPol[q].out[e]) === 0;
         }}
 
-        enable * (s{}_merkle[q].root[0] - s{}_root[0]) === 0;
-        enable * (s{}_merkle[q].root[1] - s{}_root[1]) === 0;
-        enable * (s{}_merkle[q].root[2] - s{}_root[2]) === 0;
-        enable * (s{}_merkle[q].root[3] - s{}_root[3]) === 0;
+        enable * (s{s}_merkle[q].root[0] - s{s}_root[0]) === 0;
+        enable * (s{s}_merkle[q].root[1] - s{s}_root[1]) === 0;
+        enable * (s{s}_merkle[q].root[2] - s{s}_root[2]) === 0;
+        enable * (s{s}_merkle[q].root[3] - s{s}_root[3]) === 0;
     }}
-        "#,
-            s, s, s, s, s, s, s, s, s, s
+        "#
         ));
     }
 
@@ -1650,11 +1645,10 @@ template Main() {{
         for s in 1..(stark_struct.steps.len()) {
             res.push_str(&format!(
                 r#"
-    vA.s{}_root <== s{}_root;
-    vA.s{}_vals <== s{}_vals;
-    vA.s{}_siblings <== s{}_siblings;
+    vA.s{s}_root <== s{s}_root;
+    vA.s{s}_vals <== s{s}_vals;
+    vA.s{s}_siblings <== s{s}_siblings;
             "#,
-                s, s, s, s, s, s,
             ));
         }
 
@@ -1812,11 +1806,10 @@ template Main() {{
         for s in 1..(stark_struct.steps.len()) {
             res.push_str(&format!(
                 r#"
-    vA.s{}_root <== s{}_root;
-    vA.s{}_vals <== s{}_vals;
-    vA.s{}_siblings <== s{}_siblings;
+    vA.s{s}_root <== s{s}_root;
+    vA.s{s}_vals <== s{s}_vals;
+    vA.s{s}_siblings <== s{s}_siblings;
             "#,
-                s, s, s, s, s, s,
             ));
         }
 
@@ -2056,11 +2049,10 @@ template Main() {{
         for s in 1..(stark_struct.steps.len()) {
             res.push_str(&format!(
                 r#"
-    vA.s{}_root <== a_s{}_root;
-    vA.s{}_vals <== a_s{}_vals;
-    vA.s{}_siblings <== a_s{}_siblings;
+    vA.s{s}_root <== a_s{s}_root;
+    vA.s{s}_vals <== a_s{s}_vals;
+    vA.s{s}_siblings <== a_s{s}_siblings;
             "#,
-                s, s, s, s, s, s,
             ));
         }
 
@@ -2094,11 +2086,10 @@ template Main() {{
         for s in 1..(stark_struct.steps.len()) {
             res.push_str(&format!(
                 r#"
-    vB.s{}_root <== b_s{}_root;
-    vB.s{}_vals <== b_s{}_vals;
-    vB.s{}_siblings <== b_s{}_siblings;
+    vB.s{s}_root <== b_s{s}_root;
+    vB.s{s}_vals <== b_s{s}_vals;
+    vB.s{s}_siblings <== b_s{s}_siblings;
             "#,
-                s, s, s, s, s, s,
             ));
         }
 
