@@ -153,7 +153,7 @@ func elementToString(e bls12381fr.Element) string {
 	return e.BigInt(new(big.Int)).String()
 }
 
-// computeAlphabeta12 computes vk_alphabeta_12 = e(vk_alpha_1, vk_beta_2)
+// ComputeAlphabeta12 computes vk_alphabeta_12 = e(vk_alpha_1, vk_beta_2)
 // and returns a 2×3×2 slice of decimal strings.
 // The output format is:
 //

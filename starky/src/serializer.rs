@@ -305,14 +305,14 @@ impl<'de, T: MerkleTree + Default> Deserialize<'de> for StarkProof<T> {
                 sp.root4 = root;
 
                 let root = map.get("rootC");
-                if root.is_some() {
-                    let root: MT::MTNode = serde_json::from_value(root.unwrap().clone()).unwrap();
+                if let Some(root_value) = root {
+                    let root: MT::MTNode = serde_json::from_value(root_value.clone()).unwrap();
                     sp.rootC = Some(root);
                 }
 
                 let prover_addr = map.get("proverAddr");
-                if prover_addr.is_some() {
-                    sp.prover_addr = serde_json::from_value(prover_addr.unwrap().clone()).unwrap();
+                if let Some(prover_addr_value) = prover_addr {
+                    sp.prover_addr = serde_json::from_value(prover_addr_value.clone()).unwrap();
                 }
                 sp.evals = serde_json::from_value(map.get("evals").unwrap().clone()).unwrap();
 

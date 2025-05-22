@@ -41,7 +41,7 @@ func PlaceholdersForRecursion(vk *groth16_bn254.VerifyingKey, nPublicInputs int,
 	return createPlaceholdersForRecursion(vk, nPublicInputs)
 }
 
-// createPlaceholdersForRecursion creates placeholders for the recursion proof
+// createPlaceholdersForRecursionWithFixedVk creates placeholders for the recursion proof
 // and verification key. It returns a set of placeholders needed to define the
 // recursive circuit. Use this function when the verification key is fixed
 // (defined as 'gnark:"-"').
