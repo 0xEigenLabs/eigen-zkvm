@@ -112,7 +112,7 @@ fn from_double_size_limb_witnesses<E: Engine, F: PrimeField>(
     biguint_to_fe(this_value)
 }
 
-// refer to plonk/circuit/bigint/field, merge the limbs into prime field without allocting
+// refer to plonk/circuit/bigint/field, merge the limbs into prime field without allocating
 // inside a cs
 pub fn witness_to_field<E: Engine, F: PrimeField>(
     limbs: &[BigUint],
