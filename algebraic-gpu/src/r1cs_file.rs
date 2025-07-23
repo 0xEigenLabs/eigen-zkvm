@@ -206,7 +206,7 @@ pub fn from_reader<R: Read + Seek, E: PrimeField>(mut reader: R) -> Result<R1CSF
     let mut section_offsets = BTreeMap::<u32, u64>::new();
     let mut section_sizes = BTreeMap::<u32, u64>::new();
 
-    // get file offset of each section, we donot support custom gate yet, so ignore the
+    // get file offset of each section, we do not support custom gate yet, so ignore the
     // last two sections.
     for i in 0..(num_sections) {
         let section_type = reader.read_u32::<LittleEndian>()?;
