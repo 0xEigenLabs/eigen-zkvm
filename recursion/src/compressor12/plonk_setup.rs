@@ -45,8 +45,8 @@ impl PlonkSetup {
 #[derive(Debug)]
 pub(crate) struct NormalPlonkInfo {
     pub N: usize,
-    // never used fileds
-    // pub n_constaints: usize,
+    // never used fields
+    // pub n_constraints: usize,
     // pub n_plonk_gates: usize,
     // pub n_plonk_adds: usize,
 }
@@ -71,7 +71,7 @@ impl NormalPlonkInfo {
 
         Self {
             N,
-            // n_constaints: r1cs.constraints.len(),
+            // n_constraints: r1cs.constraints.len(),
             // n_plonk_gates: plonk_constrains_len,
             // n_plonk_adds: plonk_additions.len(),
         }
@@ -342,7 +342,7 @@ pub fn plonk_setup_compressor(
         }
     }
 
-    // Terminate the empty rows (Copyn the same constraint)
+    // Terminate the empty rows (Copy the same constraint)
     for (_, pr) in partial_rows.iter_mut() {
         if pr.n_used == 1 {
             s_map[3][pr.row] = s_map[0][pr.row];
@@ -564,7 +564,7 @@ pub fn plonk_setup_compressor(
                     );
                 }
             } else {
-                panic!("invalit FFT4 type: {t}");
+                panic!("invalid FFT4 type: {t}");
             }
 
             let index = r;
