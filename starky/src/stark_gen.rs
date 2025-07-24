@@ -776,7 +776,7 @@ pub fn calculate_exps<F: FieldExtension>(
     // N-next ~ N: c_last
     for i in 0..N {
         c_first.eval(ctx, i);
-        if (i % 10000) == 0 {
+        if i.is_multiple_of(10000) {
             log::trace!("Calculating expression.. {}/{}", i, N);
         }
     }
