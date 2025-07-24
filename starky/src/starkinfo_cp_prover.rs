@@ -152,12 +152,12 @@ fn _calculate_im_pols(
         }
         (im_e, md)
     } else if ["number", "public", "challenge"].contains(&exp.op.as_str()) {
-        return (im_expressions.clone(), 0);
+        (im_expressions.clone(), 0)
     } else if ["x", "const", "cm"].contains(&exp.op.as_str()) {
         if max_deg < 1 {
             return (None, -1);
         }
-        return (im_expressions.clone(), 1);
+        (im_expressions.clone(), 1)
     } else if exp.op.as_str() == "mul" {
         let mut eb: Option<HashMap<usize, bool>> = None;
         let mut ed = -1;
@@ -192,11 +192,11 @@ fn _calculate_im_pols(
             let (e1, d1) =
                 _calculate_im_pols(pil, &(values[0]), im_expressions, l, abs_max, abs_max_d);
             let (e2, d2) = _calculate_im_pols(pil, &(values[1]), &e1, r, abs_max, abs_max_d);
-            if e2.is_some() {
+            if let Some(ref e2_) = e2 {
                 if eb.is_none() {
                     eb = e2;
                     ed = d1 + d2;
-                } else if e2.as_ref().unwrap().len() < eb.as_ref().unwrap().len() {
+                } else if e2_.len() < eb.as_ref().unwrap().len() {
                     eb = e2;
                     ed = d1 + d2;
                 }
@@ -208,7 +208,7 @@ fn _calculate_im_pols(
                 return (eb, ed);
             }
         }
-        return (eb, ed);
+        (eb, ed)
     } else if exp.op.as_str() == "exp" {
         if max_deg < 1 {
             return (None, -1);
@@ -231,9 +231,9 @@ fn _calculate_im_pols(
             if d > *abs_max_d {
                 *abs_max_d = d;
             }
-            return (Some(e), 1);
+            (Some(e), 1)
         } else {
-            return (Some(e), d);
+            (Some(e), d)
         }
     } else {
         panic!("Exp op not defined: {}", exp.op);

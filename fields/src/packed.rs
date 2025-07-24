@@ -70,7 +70,7 @@ where
 
     fn pack_slice(buf: &[Self::Scalar]) -> &[Self] {
         assert!(
-            buf.len() % Self::WIDTH == 0,
+            buf.len().is_multiple_of(Self::WIDTH),
             "Slice length (got {}) must be a multiple of packed field width ({}).",
             buf.len(),
             Self::WIDTH
@@ -81,7 +81,7 @@ where
     }
     fn pack_slice_mut(buf: &mut [Self::Scalar]) -> &mut [Self] {
         assert!(
-            buf.len() % Self::WIDTH == 0,
+            buf.len().is_multiple_of(Self::WIDTH),
             "Slice length (got {}) must be a multiple of packed field width ({}).",
             buf.len(),
             Self::WIDTH

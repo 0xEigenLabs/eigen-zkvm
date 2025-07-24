@@ -18,7 +18,10 @@ fn from_single_size_limb_witnesses<E: Engine, F: PrimeField>(
 ) -> F {
     assert_eq!(params.num_limbs_for_in_field_representation, witnesses.len());
     assert!(
-        params.binary_limbs_params.limb_size_bits % params.range_check_info.minimal_multiple == 0,
+        params
+            .binary_limbs_params
+            .limb_size_bits
+            .is_multiple_of(params.range_check_info.minimal_multiple),
         "limb size must be divisible by range constraint strategy granularity"
     );
 
