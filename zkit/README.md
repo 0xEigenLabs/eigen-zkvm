@@ -1,6 +1,6 @@
 # eigen zkit
 
-A universal commandline for [plonky](../plonky) and [starky](../starky).
+A universal commandline for [recursion](../recursion) and [starky](../starky).
 
 ## Usage
 
