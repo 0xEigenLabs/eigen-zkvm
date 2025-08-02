@@ -5,7 +5,7 @@ module.exports = {
   // * Maximum degree of constraints d
   // * Domain blowup factor b
   // * Collision resistance of the hash function c
-  // * Nummber of queries n
+  // * Number of queries n
   // Security Level(bits):
   //   min(log2(q/(t*b)), log2(b/d)*n, c)
   security_test(starkStruct, execution_trace) {
