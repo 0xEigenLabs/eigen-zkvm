@@ -10,9 +10,9 @@ pub fn interpolate_prepare_block<F: FieldExtension>(
     st_n: usize,
 ) {
     log::trace!("linear interpolatePrepare start....{}/{}", st_i, st_n);
-    let heigth = buff.len() / width;
+    let height = buff.len() / width;
     let mut w = start;
-    for i in 0..heigth {
+    for i in 0..height {
         for j in 0..width {
             buff[i * width + j] *= w;
         }
@@ -51,9 +51,9 @@ fn _fft_block<F: FieldExtension>(
     let mut w = F::ZERO;
     if s > blockbits {
         let width = 1 << (s - layers);
-        let heigth = n / width;
-        let y = start_pos / heigth;
-        let x = start_pos % heigth;
+        let height = n / width;
+        let y = start_pos / height;
+        let x = start_pos % height;
         let p = x * width + y;
         w = F::from(MG.0[s].exp(p as u64));
     } else {
