@@ -620,7 +620,7 @@ impl F5G {
         // order p^5-1), obtain that x^r is a root of the polynomial
         // X^(p-1) - 1. However, all non-zero elements of GF(p) are
         // roots of X^(p-1) - 1, and there are p-1 non-zero elements in
-        // GF(p), and a polynomial of degre p-1 cannot have more than
+        // GF(p), and a polynomial of degree p-1 cannot have more than
         // p-1 roots in a field. Therefore, the roots of X^(p-1) - 1
         // are _exactly_ the elements of GF(p). It follows that x^r is
         // in GF(p), for any x != 0 in GF(p^5) (this also holds for x = 0).
