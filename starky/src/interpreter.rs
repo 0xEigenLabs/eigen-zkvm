@@ -298,7 +298,7 @@ fn set_ref<T: FieldExtension>(
         "tmp" => Expr::new(Ops::Refer, vec!["tmp".to_string()], vec![], vec![r.id, 0, modulas, 0]),
         "q" => {
             if dom == "n" {
-                panic!("Accesssing q in domain n");
+                panic!("Accessing q in domain n");
             } else if dom == "2ns" {
                 if starkinfo.q_dim == 3 {
                     Expr::new(
@@ -323,7 +323,7 @@ fn set_ref<T: FieldExtension>(
         }
         "f" => {
             if dom == "n" {
-                panic!("Accesssing q in domain n");
+                panic!("Accessing q in domain n");
             } else if dom == "2ns" {
                 Expr::new(
                     Ops::Refer,

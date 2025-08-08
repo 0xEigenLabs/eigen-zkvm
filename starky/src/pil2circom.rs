@@ -11,7 +11,7 @@ pub struct StarkOption {
     pub enable_input: bool,
     // normalize the proof
     pub verkey_input: bool,
-    // aggragte the proof
+    // aggregate the proof
     pub agg_stage: bool,
     // generate the main component in Circom
     pub skip_main: bool,
