@@ -1,7 +1,7 @@
 use crate::ff::PrimeFieldRepr;
 use crate::packed::PackedField;
 
-/// Points us to the default packing for a particular field. There may me multiple choices of
+/// Points us to the default packing for a particular field. There may be multiple choices of
 /// PackedField for a particular Field (e.g. every Field is also a PackedField), but this is the
 /// recommended one. The recommended packing varies by target_arch and target_feature.
 pub trait Packable: PrimeFieldRepr {

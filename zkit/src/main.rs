@@ -65,7 +65,7 @@ struct GenerateVerifierOpt {
     #[arg(short, default_value = "vk.bin")]
     vk_file: String,
     #[arg(short, default_value = "groth16")]
-    protocal: String,
+    protocol: String,
     #[arg(short, default_value = "verifier.sol")]
     sol: String,
 }
@@ -97,7 +97,7 @@ struct ExportAggregationVerificationKeyOpt {
 /// Stark proving and verifying all in one
 #[derive(Parser, Debug)]
 struct StarkProveOpt {
-    #[arg(short, long = "stark_stuct", default_value = "stark_struct.json")]
+    #[arg(short, long = "stark_struct", default_value = "stark_struct.json")]
     stark_struct: String,
     #[arg(short, long = "piljson", default_value = "pil.json")]
     piljson: String,
@@ -111,7 +111,7 @@ struct StarkProveOpt {
     const_pols: String,
     #[arg(long = "m", default_value = "pols.cm")]
     cm_pols: String,
-    #[arg(short, long = "circom", default_value = "stark_verfier.circom")]
+    #[arg(short, long = "circom", default_value = "stark_verifier.circom")]
     circom_file: String,
     #[arg(long = "i", default_value = "zkin.json")]
     zkin: String,

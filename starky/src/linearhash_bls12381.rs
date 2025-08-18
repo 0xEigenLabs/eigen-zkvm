@@ -74,7 +74,7 @@ impl LinearHashBLS12381 {
         let bn_mont = match Fr::from_repr(bn.into_raw_repr()) {
             Ok(x) => x,
             _ => {
-                //cornor case: x > MODULUS
+                //corner case: x > MODULUS
                 let mut r = Fr(bn.into_raw_repr());
                 const R2: FrRepr = FrRepr([
                     14526898881837571181u64,
